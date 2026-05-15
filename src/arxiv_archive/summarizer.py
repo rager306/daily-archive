@@ -118,37 +118,38 @@ class MiniMaxSummarizer:
             stripped = line.strip()
 
             # Strip all markdown bold/italic markers repeatedly until clean
+            # Strip adjacent whitespace after each removal (model often outputs "** Think" with space)
             while True:
                 old = stripped
                 for marker in ["**", "*", "_"]:
                     if stripped.startswith(marker):
-                        stripped = stripped[len(marker):]
+                        stripped = stripped[len(marker):].strip()
                     if stripped.endswith(marker):
-                        stripped = stripped[:-len(marker)]
+                        stripped = stripped[:-len(marker)].strip()
                 if stripped == old:
                     break
             stripped = stripped.strip()
 
             if stripped.startswith("HEADLINE:"):
                 if current_field and current_value_parts:
-                    result[current_field] = " ".join(current_value_parts)
+                    result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "headline"
-                current_value_parts = [stripped[len("HEADLINE:") :].strip()]
+                current_value_parts = [stripped[len("HEADLINE:"):].strip()]
             elif stripped.startswith("WHAT IT DOES:"):
                 if current_field and current_value_parts:
-                    result[current_field] = " ".join(current_value_parts)
+                    result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "what_it_does"
-                current_value_parts = [stripped[len("WHAT IT DOES:") :].strip()]
+                current_value_parts = [stripped[len("WHAT IT DOES:"):].strip()]
             elif stripped.startswith("WHY IT MATTERS:"):
                 if current_field and current_value_parts:
-                    result[current_field] = " ".join(current_value_parts)
+                    result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "why_it_matters"
-                current_value_parts = [stripped[len("WHY IT MATTERS:") :].strip()]
+                current_value_parts = [stripped[len("WHY IT MATTERS:"):].strip()]
             elif stripped.startswith("ANALOGY:"):
                 if current_field and current_value_parts:
-                    result[current_field] = " ".join(current_value_parts)
+                    result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "analogy"
-                current_value_parts = [stripped[len("ANALOGY:") :].strip()]
+                current_value_parts = [stripped[len("ANALOGY:"):].strip()]
             elif current_field and stripped:
                 # Strip all markdown markers from continuation lines
                 while True:
@@ -163,7 +164,7 @@ class MiniMaxSummarizer:
                 current_value_parts.append(stripped.strip() or "")
 
         if current_field and current_value_parts:
-            result[current_field] = " ".join(current_value_parts)
+            result[current_field] = " ".join(current_value_parts).strip()
 
         headline = result.get("headline", "")
         what_it_does = result.get("what_it_does", "")
