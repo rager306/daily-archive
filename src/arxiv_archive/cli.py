@@ -2,12 +2,24 @@
 
 import argparse
 import json
+import os
 from datetime import date
 from pathlib import Path
 
-from arxiv_archive.arxiv_client import ArxivClient
-from arxiv_archive.keyword_extractor import KeywordExtractor
-from arxiv_archive.scoring import ScoringEngine, ScoredPaper
+# Load .env before any module that might need API keys
+_env_path = Path(__file__).parent.parent.parent / ".env"
+if _env_path.exists():
+    for line in _env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip())
+
+from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
+from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
+from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
@@ -81,8 +93,8 @@ def run_pipeline(run_date: date) -> None:
     Args:
         run_date: The date to fetch papers for.
     """
-    # Load preferences
-    preferences = load_preferences()
+    # Load preferences (for future use in scoring)
+    _preferences = load_preferences()
 
     # Create components
     client = ArxivClient()
@@ -111,8 +123,8 @@ def run_pipeline(run_date: date) -> None:
     session_path = save_session(run_date, len(papers), top10)
 
     # Print summary
-    print(f"Fetched {len(papers)} papers, selected top {len(top10)}")
-    print(f"Session saved to {session_path}")
+    print(f"Fetched {len(papers)} papers, selected top {len(top10)}")  # noqa: T201
+    print(f"Session saved to {session_path}")  # noqa: T201
 
 
 def main() -> None:

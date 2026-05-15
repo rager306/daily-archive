@@ -1,8 +1,9 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterator, Annotated
-import httpx
+
 import feedparser
+import httpx
 
 ARXIV_API_URL = "https://export.arxiv.org/api/query"
 

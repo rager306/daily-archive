@@ -66,14 +66,27 @@ ANALOGY: Think of it like a test."""
 
 
 def test_summarize_api_call() -> None:
-    """Test actual API call to MiniMax (skip if no API key)."""
+    """Test actual API call to MiniMax (skip if no real API key)."""
     import os
+    from pathlib import Path
 
-    api_key = os.environ.get("MINIMAX_API_KEY")
-    if not api_key:
-        pytest.skip("MINIMAX_API_KEY not set")
+    # Try env var first (allows override from shell)
+    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
 
-    summarizer = MiniMaxSummarizer(api_key=api_key)  # type: ignore[arg-type]
+    # Fallback: read from .env file in project root
+    if not api_key or api_key == "your_key_here":
+        env_path = Path(__file__).parent.parent / ".env"
+        if env_path.exists():
+            for line in open(env_path):
+                if line.startswith("ANTHROPIC_API_KEY=") or line.startswith("ANTHROPIC_AUTH_TOKEN="):
+                    api_key = line.split("=", 1)[1].strip()
+                    break
+
+    # Skip if no real key
+    if not api_key or api_key in ("", "your_key_here"):
+        pytest.skip("ANTHROPIC_AUTH_TOKEN not set (use real key in .env or env)")
+
+    summarizer = MiniMaxSummarizer(api_key=api_key)
 
     title = "Attention Is All You Need"
     abstract = (

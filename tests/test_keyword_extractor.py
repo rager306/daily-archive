@@ -1,6 +1,5 @@
-import pytest
 
-from arxiv_archive.keyword_extractor import KeywordExtractor, KeywordScore
+from arxiv_archive.keyword_extractor import KeywordExtractor
 
 
 def test_keyword_extractor_init() -> None:

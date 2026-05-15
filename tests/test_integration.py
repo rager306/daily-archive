@@ -2,11 +2,9 @@
 
 from datetime import date
 
-import pytest
-
 from arxiv_archive.arxiv_client import ArxivClient
 from arxiv_archive.keyword_extractor import KeywordExtractor
-from arxiv_archive.scoring import ScoringEngine, ScoredPaper
+from arxiv_archive.scoring import ScoredPaper, ScoringEngine
 
 
 class TestFullPipeline:

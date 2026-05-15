@@ -6,7 +6,6 @@ from datetime import date
 from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.semantic_scholar import SemanticScholarPaper
 
-
 TOPIC_WEIGHTS = {
     "cs.SI": 1.5,
     "cs.KG": 1.5,
@@ -37,7 +36,7 @@ class ScoredPaper:
 class ScoringEngine:
     """Engine for scoring arxiv papers based on multiple factors."""
 
-    weights: dict[str, float] = None
+    weights: dict[str, float] | None = None
 
     def __post_init__(self):
         if self.weights is None:
@@ -69,7 +68,7 @@ class ScoringEngine:
         }
 
         total = sum(
-            breakdown[k] * self.weights[k] for k in self.weights
+            breakdown[k] * (self.weights or {})[k] for k in (self.weights or {})
         )
 
         return ScoredPaper(

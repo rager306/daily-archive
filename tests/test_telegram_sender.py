@@ -1,9 +1,6 @@
 """Tests for Telegram sender."""
 
 from datetime import date
-from unittest.mock import MagicMock
-
-import pytest
 
 from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoredPaper

@@ -1,12 +1,11 @@
 """Tests for Semantic Scholar enricher."""
 
-import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 import httpx
+import pytest
 
-from arxiv_archive.semantic_scholar import SemanticScholarPaper, SemanticScholarClient
+from arxiv_archive.semantic_scholar import SemanticScholarClient, SemanticScholarPaper
 
 
 def test_semantic_scholar_paper_dataclass():

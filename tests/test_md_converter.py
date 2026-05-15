@@ -1,9 +1,7 @@
 """Tests for md_converter module."""
 
-from pathlib import Path
 
 import pymupdf
-import pytest
 
 from arxiv_archive.md_converter import MDConverter
 

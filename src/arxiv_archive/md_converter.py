@@ -18,9 +18,10 @@ class MDConverter:
             Extracted text from all pages joined with double newlines.
         """
         doc = pymupdf.open(pdf_path)
-        pages = []
+        pages: list[str] = []
         for page in doc:
-            pages.append(page.get_text())
+            text = str(page.get_text())
+            pages.append(text if text is not None else "")
         doc.close()
         return "\n\n".join(pages)
 
