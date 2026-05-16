@@ -7,6 +7,7 @@ implementation exists. They must not call live arXiv, YAKE, or persistence.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from dataclasses import replace
 from datetime import date, datetime
@@ -686,3 +687,217 @@ def test_s03_cli_json_run_invokes_json_writers_and_keeps_status_stdout(
     assert "date: 2026-05-14" in output
     assert "papers fetched: 2" in output
     assert "top papers: 2" in output
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def write_s05_sitecustomize(tmp_path: Path) -> Path:
+    """Install a child-process stub that replaces live analysis dependencies."""
+    sitecustomize = tmp_path / "sitecustomize.py"
+    sitecustomize.write_text(
+        '''\
+import os
+from datetime import UTC, date, datetime
+
+import arxiv_archive.cli as cli
+from arxiv_archive.arxiv_client import ArxivPaper
+from arxiv_archive.scoring import ScoredPaper
+
+RUN_DATE = date(2026, 5, 14)
+
+
+def _paper(index, label):
+    return ArxivPaper(
+        id=f"2605.{index:05d}",
+        title=f"{label} Paper {index}",
+        abstract=f"{label} abstract for paper {index}",
+        authors=[f"Author {index}"],
+        published=RUN_DATE,
+        updated=RUN_DATE,
+        categories=["cs.AI", "cs.CL"] if index == 1 else ["cs.AI", "cs.IR"],
+        pdf_url=f"https://arxiv.org/pdf/2605.{index:05d}.pdf",
+    )
+
+
+def _scored(paper, score, keywords):
+    return ScoredPaper(
+        paper=paper,
+        semschol=None,
+        keywords=keywords,
+        score=score,
+        breakdown={"fixture": score},
+    )
+
+
+def _fake_run_analysis(run_date):
+    mode = os.environ.get("ARXIV_ARCHIVE_S05_STUB", "done")
+    label = os.environ.get("ARXIV_ARCHIVE_S05_LABEL", "fixture")
+    if mode == "failed":
+        raise RuntimeError("fixture subprocess analysis failed")
+    if mode == "empty":
+        return cli.DailyAnalysis(
+            run_date=run_date,
+            status="empty",
+            papers_fetched=0,
+            papers=[],
+            top_papers=[],
+            analysis_timestamp=datetime(2026, 5, 14, 12, 30, tzinfo=UTC),
+        )
+
+    papers = [_paper(1, label), _paper(2, label)]
+    scored = [
+        _scored(papers[0], 9.5, ["agent", "graph"]),
+        _scored(papers[1], 7.25, ["agent", "retrieval"]),
+    ]
+    return cli.DailyAnalysis(
+        run_date=run_date,
+        status="done",
+        papers_fetched=2,
+        papers=scored,
+        top_papers=scored,
+        analysis_timestamp=datetime(2026, 5, 14, 12, 30, tzinfo=UTC),
+    )
+
+
+cli.run_analysis = _fake_run_analysis
+'''
+    )
+    return sitecustomize
+
+
+def run_s05_cli(
+    tmp_path: Path,
+    mode: str,
+    *,
+    label: str = "fixture",
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    """Run the local CLI in a child process with isolated HOME and stubs."""
+    sitecustomize = write_s05_sitecustomize(tmp_path)
+    home = tmp_path / "home"
+    home.mkdir(exist_ok=True)
+    env = os.environ.copy()
+    env.update(
+        {
+            "HOME": str(home),
+            "PYTHONPATH": f"{sitecustomize.parent}{os.pathsep}{env.get('PYTHONPATH', '')}",
+            "ARXIV_ARCHIVE_S05_STUB": mode,
+            "ARXIV_ARCHIVE_S05_LABEL": label,
+        }
+    )
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "arxiv_archive",
+            "--date",
+            "2026-05-14",
+            "--json",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    return result, home
+
+
+def assert_s05_cli_success(result: subprocess.CompletedProcess[str], status: str) -> None:
+    assert result.returncode == 0, f"stdout={result.stdout}\nstderr={result.stderr}"
+    assert f"status: {status}" in result.stdout
+    assert "date: 2026-05-14" in result.stdout
+    assert result.stderr == ""
+
+
+def read_json(path: Path) -> Any:
+    return json.loads(path.read_text())
+
+
+def test_s05_subprocess_json_success_persists_public_contract(tmp_path: Path) -> None:
+    result, home = run_s05_cli(tmp_path, "done")
+
+    assert_s05_cli_success(result, "done")
+    research = home / ".research"
+    session_path = research / "ops" / "sessions" / "2026-05-14.json"
+    overview_path = research / "analysis" / "2026-05-14" / "overview.json"
+    queue_path = research / "ops" / "queue" / "2026-05-14.json"
+
+    session = read_json(session_path)
+    overview = read_json(overview_path)
+    queue = read_json(queue_path)
+    assert session["status"] == "done"
+    assert session["paper_count"] == 2
+    assert [paper["id"] for paper in session["papers"]] == ["2605.00001", "2605.00002"]
+    assert overview["status"] == "done"
+    assert overview["paper_count"] == 2
+    assert overview["top_paper_count"] == 2
+    assert queue["status"] == "done"
+    assert queue["stage"] == "done"
+
+    for paper_id in ["2605.00001", "2605.00002"]:
+        paper_dir = research / "papers" / paper_id
+        paper = read_json(paper_dir / "paper.json")
+        scored = read_json(paper_dir / "scored.json")
+        assert paper["id"] == paper_id
+        assert "score" not in paper
+        assert scored["id"] == paper_id
+        assert "score" in scored
+        assert "keywords" in scored
+
+
+def test_s05_subprocess_empty_day_persists_empty_contract(tmp_path: Path) -> None:
+    result, home = run_s05_cli(tmp_path, "empty")
+
+    assert_s05_cli_success(result, "empty")
+    research = home / ".research"
+    overview = read_json(research / "analysis" / "2026-05-14" / "overview.json")
+    queue = read_json(research / "ops" / "queue" / "2026-05-14.json")
+
+    assert overview["status"] == "empty"
+    assert overview["papers_fetched"] == 0
+    assert overview["paper_count"] == 0
+    assert overview["top_paper_count"] == 0
+    assert overview["categories"] == []
+    assert overview["keywords"] == []
+    assert overview["top_papers"] == []
+    assert overview["score_breakdown"] == {}
+    assert queue["status"] == "empty"
+    assert queue["stage"] == "done"
+
+
+def test_s05_subprocess_failure_persists_failed_queue_state(tmp_path: Path) -> None:
+    result, home = run_s05_cli(tmp_path, "failed")
+
+    assert result.returncode == 1, f"stdout={result.stdout}\nstderr={result.stderr}"
+    assert "fixture subprocess analysis failed" in result.stderr
+    queue = read_json(home / ".research" / "ops" / "queue" / "2026-05-14.json")
+    assert queue["status"] == "failed"
+    assert queue["stage"] == "failed"
+    assert queue["error"] == "fixture subprocess analysis failed"
+    assert "Traceback" not in queue["error"]
+
+
+def test_s05_subprocess_same_date_rerun_overwrites_stable_paths(tmp_path: Path) -> None:
+    first_result, home = run_s05_cli(tmp_path, "done", label="first")
+    assert_s05_cli_success(first_result, "done")
+
+    research = home / ".research"
+    session_path = research / "ops" / "sessions" / "2026-05-14.json"
+    overview_path = research / "analysis" / "2026-05-14" / "overview.json"
+    paper_path = research / "papers" / "2605.00001" / "paper.json"
+    queue_path = research / "ops" / "queue" / "2026-05-14.json"
+    assert read_json(session_path)["papers"][0]["title"] == "first Paper 1"
+
+    second_result, second_home = run_s05_cli(tmp_path, "done", label="second")
+    assert second_home == home
+    assert_s05_cli_success(second_result, "done")
+
+    assert read_json(session_path)["papers"][0]["title"] == "second Paper 1"
+    assert read_json(overview_path)["top_papers"][0]["title"] == "second Paper 1"
+    assert read_json(paper_path)["title"] == "second Paper 1"
+    assert read_json(queue_path)["status"] == "done"
+    assert sorted(path.name for path in queue_path.parent.glob("*.json")) == ["2026-05-14.json"]
