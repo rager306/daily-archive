@@ -339,8 +339,8 @@ def run(
         typer.Option(
             "--json",
             help=(
-                "Documented Hermes option for future machine-readable output; "
-                "currently runs the legacy pipeline without JSON persistence."
+                "Write Hermes-readable session JSON and daily analysis artifacts "
+                "after analysis succeeds."
             ),
         ),
     ] = False,
