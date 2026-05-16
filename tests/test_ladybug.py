@@ -40,3 +40,71 @@ def test_ladybug_schema_and_query(memory_db):
     record = res.get_next()
     assert record[0] == "Test Paper"
     assert record[1] == "llm"
+
+def test_upsert_daily_analysis(memory_db, monkeypatch):
+    from arxiv_archive.cli import DailyAnalysis
+    from arxiv_archive.scoring import ScoredPaper
+    from arxiv_archive.arxiv_client import ArxivPaper
+    from datetime import date, datetime, timezone
+    from arxiv_archive.ladybug_client import upsert_daily_analysis
+    
+    paper = ArxivPaper(
+        id="arxiv:test-1",
+        title="Test Title",
+        abstract="Test abstract",
+        authors=["Alice", "Bob O'Brian"], # tests escaping
+        published=date(2026, 1, 1),
+        updated=date(2026, 1, 1),
+        categories=["cs.AI"],
+        pdf_url="http://test",
+    )
+    
+    scored = ScoredPaper(
+        paper=paper,
+        semschol=None,
+        keywords=["ai", "test"],
+        score=5.5,
+        breakdown={},
+        embedding=[0.5] * 512
+    )
+    
+    analysis = DailyAnalysis(
+        run_date=date(2026, 1, 1),
+        status="done",
+        analysis_timestamp=datetime.now(timezone.utc),
+        papers_fetched=1,
+        papers=[scored],
+        top_papers=[scored],
+    )
+    
+    upsert_daily_analysis(memory_db, analysis)
+    
+    # Verify paper
+    res = memory_db.execute("MATCH (p:Paper) RETURN p.id, p.title, p.emb[1], p.score")
+    assert res.has_next()
+    rec = res.get_next()
+    assert rec[0] == "arxiv:test-1"
+    assert rec[1] == "Test Title"
+    assert rec[2] == 0.5
+    assert rec[3] == 5.5
+    
+    # Verify authors
+    res = memory_db.execute("MATCH (a:Author) RETURN a.name ORDER BY a.name")
+    authors = []
+    while res.has_next():
+        authors.append(res.get_next()[0])
+    assert authors == ["Alice", "Bob O'Brian"]
+    
+    # Verify keywords
+    res = memory_db.execute("MATCH (k:Keyword) RETURN k.word ORDER BY k.word")
+    keywords = []
+    while res.has_next():
+        keywords.append(res.get_next()[0])
+    assert keywords == ["ai", "test"]
+    
+    # Verify connections
+    res = memory_db.execute("MATCH (p:Paper)-[:AUTHORED_BY]->(a:Author) RETURN p.id, a.name ORDER BY a.name")
+    assert res.has_next()
+    assert res.get_next()[1] == "Alice"
+    assert res.get_next()[1] == "Bob O'Brian"
+

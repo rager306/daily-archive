@@ -48,3 +48,66 @@ def init_db(db_path: Path | str = DB_DIR) -> ladybug.Connection:
             raise
 
     return conn
+
+def upsert_daily_analysis(conn: ladybug.Connection, analysis: "DailyAnalysis") -> None:
+    """Bulk upsert a DailyAnalysis payload into LadybugDB.
+    
+    Uses explicit transactions and parameterized MERGE statements to handle deduplication 
+    gracefully and ensure atomic single-writer concurrency.
+    """
+    if analysis.status == "empty" or not analysis.papers:
+        return
+        
+    conn.execute("BEGIN TRANSACTION")
+    try:
+        for p in analysis.papers:
+            paper = p.paper
+            
+            # 1. Upsert Paper
+            emb_list = p.embedding if p.embedding else []
+            conn.execute(
+                "MERGE (p:Paper {id: $id}) "
+                "ON MATCH SET p.title = $title, p.published = date($published), p.emb = $emb, p.score = $score "
+                "ON CREATE SET p.title = $title, p.published = date($published), p.emb = $emb, p.score = $score",
+                {
+                    "id": paper.id, 
+                    "title": paper.title, 
+                    "published": paper.published.isoformat(), 
+                    "emb": emb_list, 
+                    "score": p.score
+                }
+            )
+            
+            # 2. Upsert Authors and AUTHORED_BY
+            for author in paper.authors:
+                conn.execute("MERGE (a:Author {name: $name})", {"name": author})
+                conn.execute(
+                    "MATCH (p:Paper {id: $id}), (a:Author {name: $name}) "
+                    "MERGE (p)-[:AUTHORED_BY]->(a)",
+                    {"id": paper.id, "name": author}
+                )
+                
+            # 3. Upsert Categories and BELONGS_TO
+            for cat in paper.categories:
+                conn.execute("MERGE (c:Category {name: $name})", {"name": cat})
+                conn.execute(
+                    "MATCH (p:Paper {id: $id}), (c:Category {name: $name}) "
+                    "MERGE (p)-[:BELONGS_TO]->(c)",
+                    {"id": paper.id, "name": cat}
+                )
+                
+            # 4. Upsert Keywords and TAGGED_WITH
+            for keyword in p.keywords:
+                conn.execute("MERGE (k:Keyword {word: $word})", {"word": keyword})
+                conn.execute(
+                    "MATCH (p:Paper {id: $id}), (k:Keyword {word: $word}) "
+                    "MERGE (p)-[:TAGGED_WITH]->(k)",
+                    {"id": paper.id, "word": keyword}
+                )
+                
+        conn.execute("COMMIT")
+        logger.info(f"Bulk upserted {len(analysis.papers)} papers into LadybugDB.")
+    except Exception as e:
+        conn.execute("ROLLBACK")
+        logger.error(f"Failed to bulk upsert papers: {e}")
+        raise

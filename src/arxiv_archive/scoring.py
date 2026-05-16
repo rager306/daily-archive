@@ -30,6 +30,7 @@ class ScoredPaper:
     keywords: list[str]
     score: float
     breakdown: dict[str, float]
+    embedding: list[float] | None = None
 
 
 @dataclass

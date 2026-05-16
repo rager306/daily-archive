@@ -24,7 +24,8 @@ if _env_path.exists():
 
 from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
-from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
+from arxiv_archive.scoring import ScoredPaper, ScoringEngine
+from arxiv_archive.embedder import Embedder  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
@@ -327,21 +328,18 @@ def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
     return day_dir
 
 
+async def _process_paper_async(paper, extractor, scorer):
+    # Offload CPU-bound extraction and scoring to threadpool
+    loop = asyncio.get_running_loop()
+    def _extract_and_score():
+        if not isinstance(paper.title, str) or not isinstance(paper.abstract, str):
+            raise TypeError("fetched paper title and abstract must be strings")
+        keywords = extractor.extract_for_paper(paper.title, paper.abstract)
+        return scorer.score(paper, semschol=None, keywords=keywords)
+    return await loop.run_in_executor(None, _extract_and_score)
+
 def run_analysis(run_date: date) -> DailyAnalysis:
-    """Build the normalized in-memory analysis result for one run date.
-
-    This boundary performs fetch, keyword extraction, scoring, and sorting only.
-    It intentionally does not persist session or JSON artifacts; storage belongs
-    to later slices.
-
-    Args:
-        run_date: The date to fetch papers for.
-
-    Returns:
-        Normalized daily analysis with all scored papers and the top 10 subset.
-    """
-    # Load preferences to preserve the existing pipeline boundary for future
-    # scoring use, even though the current ScoringEngine does not consume them.
+    """Build the normalized in-memory analysis result for one run date."""
     _preferences = load_preferences()
 
     client = ArxivClient()
@@ -354,25 +352,53 @@ def run_analysis(run_date: date) -> DailyAnalysis:
         categories=CATEGORIES,
     )
 
-    scored_papers: list[ScoredPaper] = []
-    for paper in papers:
-        if not isinstance(paper.title, str) or not isinstance(paper.abstract, str):
-            raise TypeError("fetched paper title and abstract must be strings")
-        keywords = extractor.extract_for_paper(paper.title, paper.abstract)
-        scored = scorer.score(paper, semschol=None, keywords=keywords)
-        scored_papers.append(scored)
+    if not papers:
+        from datetime import datetime, timezone
+        return DailyAnalysis(
+            run_date=run_date,
+            status="empty",
+            analysis_timestamp=datetime.now(timezone.utc),
+            papers_fetched=0,
+            papers=[],
+            top_papers=[]
+        )
+
+    # 1. Run extraction and scoring concurrently using asyncio
+    async def _process_all():
+        tasks = [_process_paper_async(p, extractor, scorer) for p in papers]
+        scored_list = await asyncio.gather(*tasks)
+        
+        # 2. Embed all abstracts via the Embedder batch API
+        embedder = Embedder()
+        try:
+            abstracts = [p.paper.abstract for p in scored_list]
+            embeddings = await embedder.embed_all(abstracts)
+            
+            # Attach embeddings back to scored papers
+            for scored, emb in zip(scored_list, embeddings):
+                scored.embedding = emb
+        finally:
+            await embedder.close()
+            
+        return scored_list
+
+    try:
+        loop = asyncio.get_running_loop()
+        scored_papers = loop.run_until_complete(_process_all())
+    except RuntimeError:
+        scored_papers = asyncio.run(_process_all())
 
     scored_papers.sort(key=lambda x: x.score, reverse=True)
     top_papers = scored_papers[:10]
-    status: DailyAnalysisStatus = "done" if papers else "empty"
 
+    from datetime import datetime, timezone
     return DailyAnalysis(
         run_date=run_date,
-        status=status,
+        status="done",
+        analysis_timestamp=datetime.now(timezone.utc),
         papers_fetched=len(papers),
         papers=scored_papers,
         top_papers=top_papers,
-        analysis_timestamp=datetime.now(UTC),
     )
 
 
