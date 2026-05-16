@@ -3,7 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -188,7 +188,7 @@ def run_analysis(run_date: date) -> DailyAnalysis:
         papers_fetched=len(papers),
         papers=scored_papers,
         top_papers=top_papers,
-        analysis_timestamp=datetime.now(timezone.utc),
+        analysis_timestamp=datetime.now(UTC),
     )
 
 

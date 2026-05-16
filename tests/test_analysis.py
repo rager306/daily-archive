@@ -17,7 +17,6 @@ import pytest
 from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoredPaper
 
-
 RUN_DATE = date(2026, 5, 14)
 
 
