@@ -1,10 +1,12 @@
 """CLI for arxiv-archive."""
 
-import argparse
 import json
 import os
 from datetime import date
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 # Load .env before any module that might need API keys
 _env_path = Path(__file__).parent.parent.parent / ".env"
@@ -25,6 +27,46 @@ PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
+
+AGENT_CONTRACT_HELP = """Daily arXiv archive CLI for research agents.
+
+Purpose: fetch a day's arXiv papers, analyze/score them against research interests,
+and archive the selected papers for later review.
+
+Hermes / cron usage: invoke the stable public entrypoint with
+`uv run python -m arxiv_archive run --date YYYY-MM-DD`. Hermes should inspect the
+same stdout/stderr and exit codes that cron sees.
+
+Artifacts documented for the M001 contract:
+- ~/research/ops/sessions/YYYY-MM-DD.json: future Hermes session/state summary.
+- ~/research/analysis/YYYY-MM-DD/overview.json: future analysis overview artifact.
+- ~/research/papers/: future downloaded paper archive.
+Current implementation still writes the legacy markdown session under
+~/.research/ops/sessions until later storage slices replace it.
+
+Status/state meanings for future state files: running means work is in progress,
+done means papers were archived, empty means no matching papers were found, and
+failed means the run stopped before producing a complete archive.
+
+Exit codes: 0 success/help, 1 runtime failure, 2 command-line usage or validation error.
+
+Examples:
+  uv run python -m arxiv_archive --help
+  uv run python -m arxiv_archive run --help
+  uv run python -m arxiv_archive run --date YYYY-MM-DD
+  uv run python -m arxiv_archive run --date YYYY-MM-DD --json
+
+Out of scope / non-goals for M001: Telegram delivery, Graphify integration,
+Surprise Me ranking, preference learning, PDF conversion/download behavior, and LLM
+summarization changes. Those belong to later slices.
+"""
+
+app = typer.Typer(
+    add_completion=False,
+    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120},
+    help=AGENT_CONTRACT_HELP,
+    no_args_is_help=True,
+)
 
 
 def load_preferences() -> dict:
@@ -127,25 +169,40 @@ def run_pipeline(run_date: date) -> None:
     print(f"Session saved to {session_path}")  # noqa: T201
 
 
+@app.command(help=AGENT_CONTRACT_HELP)
+def run(
+    run_date: Annotated[
+        str,
+        typer.Option(
+            "--date",
+            help="Run date in YYYY-MM-DD format.",
+        ),
+    ],
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help=(
+                "Documented Hermes option for future machine-readable output; "
+                "currently runs the legacy pipeline without JSON persistence."
+            ),
+        ),
+    ] = False,
+) -> None:
+    """Run the daily arXiv archive pipeline for one YYYY-MM-DD date."""
+    try:
+        parsed_date = date.fromisoformat(run_date)
+    except ValueError as exc:
+        raise typer.BadParameter("date must be in YYYY-MM-DD format") from exc
+
+    if json_output:
+        typer.echo(
+            "--json is documented for Hermes but JSON persistence is not implemented in M001.",
+            err=True,
+        )
+    run_pipeline(parsed_date)
+
+
 def main() -> None:
     """Main CLI entry point."""
-    parser = argparse.ArgumentParser(prog="arxiv-archive", description="Arxiv Archive CLI")
-    parser.add_argument(
-        "command",
-        nargs="?",
-        default="run",
-        help="Command to run (default: run)",
-    )
-    parser.add_argument(
-        "--date",
-        type=date.fromisoformat,
-        required=True,
-        help="Run date in YYYY-MM-DD format",
-    )
-
-    args = parser.parse_args()
-
-    if args.command == "run":
-        run_pipeline(args.date)
-    else:
-        parser.print_help()
+    app()
