@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from src.arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
+from arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
 
 
 def test_paper_summary_dataclass() -> None:

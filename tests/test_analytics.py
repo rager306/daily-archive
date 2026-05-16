@@ -1,3 +1,5 @@
+from typing import cast
+
 import ladybug
 import pytest
 
@@ -80,3 +82,100 @@ def test_recommend_papers(test_db):
 def test_recommend_papers_invalid_profile(test_db):
     with pytest.raises(ValueError):
         recommend_papers(test_db, [0.1] * 10) # Wrong dimension
+
+
+def make_empty_recommendation_db():
+    db = ladybug.Database(":memory:")
+    conn = ladybug.Connection(db)
+    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
+    conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
+    conn.execute("CREATE REL TABLE TAGGED_WITH(FROM Paper TO Keyword)")
+    return conn
+
+
+def test_compute_graph_metrics_empty_graph_is_safe():
+    conn = make_empty_recommendation_db()
+
+    compute_graph_metrics(conn)
+
+    res = conn.execute("MATCH (p:Paper) RETURN p.id")
+    assert not res.has_next()
+
+
+def test_recommend_papers_returns_empty_for_no_papers():
+    conn = make_empty_recommendation_db()
+    compute_graph_metrics(conn)
+
+    assert recommend_papers(conn, [0.1] * 512) == []
+
+
+def test_recommend_papers_skips_missing_embeddings():
+    conn = make_empty_recommendation_db()
+    conn.execute("CREATE (p:Paper {id: 'missing', title: 'No Embedding', published: date('2024-01-01'), score: 1.0})")
+    compute_graph_metrics(conn)
+
+    assert recommend_papers(conn, [0.1] * 512) == []
+
+
+def test_recommend_papers_respects_top_k(test_db):
+    compute_graph_metrics(test_db)
+
+    emb3 = [0.0] * 512
+    emb3[0] = 1.0
+    test_db.execute(f"CREATE (p:Paper {{id: '3', title: 'Third', published: date('2024-01-01'), emb: {emb3}, score: 1.0}})")
+
+    recs = recommend_papers(test_db, [0.1] * 512, top_k=2)
+
+    assert len(recs) == 2
+
+
+def test_compute_graph_metrics_covers_algo_success_path():
+    class FakeResult:
+        def __init__(self) -> None:
+            self.rows = iter([("node-1", 0.7), ("node-2", 0.2)])
+            self.current = None
+
+        def has_next(self) -> bool:
+            try:
+                self.current = next(self.rows)
+            except StopIteration:
+                return False
+            return True
+
+        def get_next(self):
+            return self.current
+
+    class FakeConn:
+        def __init__(self) -> None:
+            self.queries: list[str] = []
+
+        def execute(self, query: str):
+            self.queries.append(query)
+            if "CALL pagerank" in query:
+                return FakeResult()
+            return None
+
+    conn = FakeConn()
+
+    compute_graph_metrics(cast(ladybug.Connection, conn))
+
+    assert "DROP PROJECTED GRAPH paper_kw_graph" in conn.queries
+
+
+def test_compute_graph_metrics_logs_unexpected_alter_warning(caplog):
+    class FakeConn:
+        def __init__(self) -> None:
+            self.queries: list[str] = []
+
+        def execute(self, query: str):
+            self.queries.append(query)
+            if query.startswith("ALTER TABLE"):
+                raise RuntimeError("permission denied")
+            if "MATCH (p:Paper)-[:TAGGED_WITH]" in query:
+                return None
+            raise RuntimeError("force fallback")
+
+    with caplog.at_level("WARNING"):
+        compute_graph_metrics(cast(ladybug.Connection, FakeConn()))
+
+    assert "Alter table warning" in caplog.text

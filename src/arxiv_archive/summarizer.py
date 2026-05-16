@@ -98,8 +98,8 @@ class MiniMaxSummarizer:
         # Get the text content from the response
         text = ""
         for block in response.content:
-            if block.type == "text":
-                text = block.text
+            if getattr(block, "type", None) == "text":
+                text = str(getattr(block, "text", ""))
                 break
 
         if not text:

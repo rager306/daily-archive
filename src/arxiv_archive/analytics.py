@@ -1,4 +1,5 @@
 import logging
+from typing import Any, cast
 
 import ladybug
 
@@ -37,7 +38,7 @@ def compute_graph_metrics(conn: ladybug.Connection) -> None:
         conn.execute("CALL project_graph('paper_kw_graph', ['Paper', 'Keyword'], ['TAGGED_WITH'])")
 
         # Calculate PageRank
-        res = conn.execute("CALL pagerank('paper_kw_graph') YIELD _node, rank RETURN _node, rank")
+        res = cast(Any, conn.execute("CALL pagerank('paper_kw_graph') YIELD _node, rank RETURN _node, rank"))
 
         # We must write it back. This can be done by collecting into a DataFrame and merging back,
         # but since we don't have polars as a strict dependency, we can just iterate.
@@ -91,7 +92,7 @@ def recommend_papers(conn: ladybug.Connection, profile_embedding: list[float], t
     LIMIT {top_k}
     """
 
-    res = conn.execute(query)
+    res = cast(Any, conn.execute(query))
     recommendations = []
     while res.has_next():
         row = res.get_next()

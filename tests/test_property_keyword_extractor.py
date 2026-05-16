@@ -53,7 +53,7 @@ def test_empty_or_whitespace_handled(text: str) -> None:
     )
 )
 def test_repeated_word_increases_extraction(
-    text: st.text,
+    text: str,
 ) -> None:
     """Text with repeated domain words should extract those words."""
     extractor = KeywordExtractor()

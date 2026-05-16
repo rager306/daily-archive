@@ -76,6 +76,7 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "not found" in result.error
 
 @pytest.mark.asyncio
@@ -95,6 +96,7 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "timeout" in result.error
 
 @pytest.mark.asyncio
@@ -146,6 +148,7 @@ async def test_marker_missing_pdf(temp_cache, monkeypatch):
     converter = MDConverter()
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "PDF not found" in result.error
 
 @pytest.mark.asyncio
@@ -161,6 +164,7 @@ async def test_marker_cli_not_found(temp_cache, monkeypatch):
 
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "Marker CLI not found" in result.error
 
 def test_convert_sync(monkeypatch):
@@ -209,6 +213,7 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "arxiv2md API error: Request failed" in result.error
 
 @pytest.mark.asyncio
@@ -234,6 +239,7 @@ async def test_marker_timeout(temp_cache, monkeypatch):
 
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "Marker timed out" in result.error
 
 @pytest.mark.asyncio
@@ -258,7 +264,9 @@ async def test_marker_failed_code(temp_cache, monkeypatch):
 
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "Marker failed with code 1" in result.error
+    assert result.error is not None
     assert "Some error" in result.error
 
 def test_cache_read_exception(temp_cache, monkeypatch):
@@ -332,4 +340,5 @@ async def test_marker_no_markdown_output(temp_cache, monkeypatch):
 
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
+    assert result.error is not None
     assert "Marker produced no markdown file" in result.error
