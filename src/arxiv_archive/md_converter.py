@@ -151,51 +151,46 @@ class MDConverter:
         output_dir = CACHE_DIR / f"marker_{arxiv_id}"
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        proc = await asyncio.create_subprocess_exec(
+            marker_cmd,
+            str(pdf_path),
+            str(output_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
         try:
-            proc = await asyncio.create_subprocess_exec(
-                marker_cmd,
-                str(pdf_path),
-                str(output_dir),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(), timeout=MARKER_TIMEOUT_SECONDS
             )
-
-            if proc.returncode == 0:
-                # Marker outputs a single file in the output directory
-                md_files = list(output_dir.glob("*.md"))
-                if md_files:
-                    markdown = md_files[0].read_text(encoding="utf-8")
-                    return ConversionResult(
-                        markdown=markdown,
-                        method="marker",
-                        error=None,
-                    )
-                return ConversionResult(
-                    markdown=None,
-                    method="marker",
-                    error="Marker produced no markdown file",
-                )
-            else:
-                stderr_text = stderr.decode() if stderr else ""
-                return ConversionResult(
-                    markdown=None,
-                    method="marker",
-                    error=f"Marker failed with code {proc.returncode}: {stderr_text[:200]}",
-                )
         except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
             return ConversionResult(
                 markdown=None,
                 method="marker",
                 error=f"Marker timed out after {MARKER_TIMEOUT_SECONDS}s",
             )
-        except Exception as exc:
+
+        if proc.returncode == 0:
+            md_files = list(output_dir.glob("*.md"))
+            if md_files:
+                markdown = md_files[0].read_text(encoding="utf-8")
+                return ConversionResult(
+                    markdown=markdown,
+                    method="marker",
+                    error=None,
+                )
             return ConversionResult(
                 markdown=None,
                 method="marker",
-                error=f"Marker error: {exc}",
+                error="Marker produced no markdown file",
+            )
+        else:
+            stderr_text = stderr.decode() if stderr else ""
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error=f"Marker failed with code {proc.returncode}: {stderr_text[:200]}",
             )
 
     def _needs_marker_fallback(self, arxiv_id: str) -> bool:
@@ -305,11 +300,12 @@ class MDConverter:
     # Sync wrapper for backwards compatibility
     def convert_sync(self, arxiv_id: str) -> ConversionResult:
         """Synchronous wrapper for convert()."""
-        import asyncio
-
         try:
-            asyncio.get_running_loop()
-            # Already in async context — schedule and block
-            return asyncio.run(self.convert(arxiv_id))
+            loop = asyncio.get_running_loop()
         except RuntimeError:
+            # No running loop — create one
             return asyncio.run(self.convert(arxiv_id))
+        else:
+            # Already in async context — schedule and block
+            future = asyncio.ensure_future(self.convert(arxiv_id))
+            return loop.run_until_complete(future)
