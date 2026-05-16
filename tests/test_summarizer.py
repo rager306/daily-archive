@@ -1,8 +1,12 @@
-"""Tests for MiniMax summarizer."""
+"""Tests for the MiniMax summarizer module."""
+
+from dotenv import load_dotenv
+from pathlib import Path
+import os
 
 import pytest
 
-from arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
+from src.arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
 
 
 def test_paper_summary_dataclass() -> None:
@@ -67,10 +71,9 @@ ANALOGY: Think of it like a test."""
 
 def test_summarize_api_call() -> None:
     """Test actual API call to MiniMax (skip if no real API key)."""
-    import os
-    from pathlib import Path
+    # Load .env so api_key is available outside of shell context
+    load_dotenv()
 
-    # Try env var first (allows override from shell)
     api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
 
     # Fallback: read from .env file in project root

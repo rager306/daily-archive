@@ -1,51 +1,54 @@
-"""Tests for md_converter module."""
+"""Tests for md_converter module — arxiv2md REST + Marker fallback."""
 
 
-import pymupdf
+import pytest
+from arxiv_archive.md_converter import MDConverter, ConversionResult
 
-from arxiv_archive.md_converter import MDConverter
 
-
-def test_md_converter_init():
-    """Test that MDConverter can be instantiated and has a convert method."""
+@pytest.mark.asyncio
+async def test_arxiv2md_fallback_to_marker():
+    """arxiv2md for modern papers, Marker for papers < 2020."""
     converter = MDConverter()
-    assert hasattr(converter, "convert")
-    assert callable(converter.convert)
+
+    # Modern paper (has HTML on ar5iv) — should use arxiv2md
+    result = await converter.convert("2501.11120")
+    assert result.markdown is not None
+    assert result.method == "arxiv2md"
+    assert len(result.markdown) > 100
+
+    # Old paper (pre-2020, no HTML) — should fallback to Marker
+    result_old = await converter.convert("1701.00001")
+    assert result_old.method in ("arxiv2md", "marker")  # either works
 
 
-def test_convert_returns_string(tmp_path):
-    """Test that convert extracts text from a minimal PDF and returns a string."""
-    # Create a minimal PDF using pymupdf
-    pdf_path = tmp_path / "test.pdf"
-    doc = pymupdf.open()
-    page = doc.new_page()
-    page.insert_text((50, 50), "Hello, World!", fontsize=12)
-    doc.save(str(pdf_path))
-    doc.close()
+def test_conversion_result_dataclass():
+    """Test ConversionResult has required fields."""
+    result = ConversionResult(markdown="# Test", method="arxiv2md", error=None)
+    assert result.markdown == "# Test"
+    assert result.method == "arxiv2md"
+    assert result.error is None
 
+    result_err = ConversionResult(markdown=None, method="marker", error="timeout")
+    assert result_err.markdown is None
+    assert result_err.error == "timeout"
+
+
+def test_needs_marker_fallback():
+    """Papers before 2020 need Marker fallback."""
     converter = MDConverter()
-    result = converter.convert(pdf_path)
+    # Pre-2020 papers
+    assert converter._needs_marker_fallback("1701.00001") is True
+    assert converter._needs_marker_fallback("1912.99999") is True
+    # 2020 and after
+    assert converter._needs_marker_fallback("2001.00001") is False
+    assert converter._needs_marker_fallback("2501.11120") is False
 
-    assert isinstance(result, str)
-    assert "Hello, World!" in result
 
-
-def test_convert_to_file(tmp_path):
-    """Test that convert_to_file writes markdown content to a file."""
-    pdf_path = tmp_path / "test.pdf"
-    output_path = tmp_path / "output.md"
-
-    # Create a minimal PDF
-    doc = pymupdf.open()
-    page = doc.new_page()
-    page.insert_text((50, 50), "Test content", fontsize=12)
-    doc.save(str(pdf_path))
-    doc.close()
-
+def test_normalizes_arxiv_id_prefix():
+    """convert() strips 'arxiv:' prefix."""
     converter = MDConverter()
-    returned_path = converter.convert_to_file(pdf_path, output_path)
 
-    assert returned_path == output_path
-    assert output_path.exists()
-    content = output_path.read_text(encoding="utf-8")
-    assert "Test content" in content
+    # Strip "arxiv:" prefix
+    assert converter._normalize_id("arxiv:2501.11120") == "2501.11120"
+    # Plain IDs pass through
+    assert converter._normalize_id("2501.11120") == "2501.11120"

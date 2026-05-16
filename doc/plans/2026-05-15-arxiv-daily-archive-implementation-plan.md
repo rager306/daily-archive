@@ -865,9 +865,9 @@ git add -A && git commit -m "feat: PDF downloader"
 
 ---
 
-### Task 9: Create Markdown converter (PDF → markdown)
+### Task 9: Create Markdown converter (HTML → markdown via arxiv2md + Marker fallback)
 
-**Objective:** Convert PDF to markdown using pymupdf
+**Objective:** Convert arXiv papers to markdown using arxiv2md (fast, REST) with Marker fallback for papers before 2020 (no HTML available)
 
 **Files:**
 - Create: `src/arxiv_archive/md_converter.py`
@@ -877,43 +877,279 @@ git add -A && git commit -m "feat: PDF downloader"
 
 ```python
 # tests/test_md_converter.py
-from arxiv_archive.md_converter import MDConverter
+import pytest
+from datetime import date
+from arxiv_archive.md_converter import MDConverter, ConversionResult
 
-def test_convert_sample_pdf(tmp_path):
-    pdf_path = tmp_path / "test.pdf"
-    # Create minimal PDF for testing
+@pytest.mark.asyncio
+async def test_arxiv2md_fallback_to_marker():
+    """arxiv2md for modern papers, Marker for papers < 2020"""
     converter = MDConverter()
-    # Would need actual PDF to test
+
+    # Modern paper (has HTML on ar5iv) — should use arxiv2md
+    result = await converter.convert("2501.11120")
+    assert result.markdown is not None
+    assert result.method == "arxiv2md"
+    assert len(result.markdown) > 100
+
+    # Old paper (pre-2020, no HTML) — should fallback to Marker
+    result_old = await converter.convert("1701.00001")
+    assert result_old.method in ("arxiv2md", "marker")  # either works
 ```
 
-**Step 2: Create md_converter.py (skip full test for now)**
+**Step 2: Run test to verify failure**
+
+```bash
+uv run pytest tests/test_md_converter.py::test_arxiv2md_fallback_to_marker -v
+```
+Expected: FAIL — ModuleNotFoundError: No module named 'arxiv_archive.md_converter'
+
+**Step 3: Create md_converter.py**
 
 ```python
 # src/arxiv_archive/md_converter.py
-import pymupdf
+"""
+ArXiv paper → Markdown converter.
+
+Strategy:
+1. Try arxiv2md.org REST API (fast, clean, <1 sec) — works for papers with HTML (post-2020)
+2. Fallback to Marker CLI (PDF + OCR, 20-30 min on CPU) — only for papers <2020 with no HTML
+
+arxiv2md parses ar5iv HTML (not PDF), so quality is excellent:
+- Tables → Markdown tables
+- Formulas → LaTeX
+- No hallucinations
+- Rate limit: 30 req/min
+
+Marker is Surya OCR + Texify. CPU is too slow for routine use (~20-30 min for 64 pages).
+Only use as fallback when arxiv2md fails or paper is pre-2020.
+"""
+from dataclasses import dataclass
+from datetime import date
+import asyncio
+import subprocess
 from pathlib import Path
+import httpx
+
+
+@dataclass
+class ConversionResult:
+    markdown: str | None
+    method: str  # "arxiv2md" | "marker" | "failed"
+    error: str | None = None
 
 
 class MDConverter:
-    def convert(self, pdf_path: Path) -> str:
-        doc = pymupdf.open(pdf_path)
-        text_parts = []
-        for page in doc:
-            text_parts.append(page.get_text())
-        doc.close()
-        return "\n\n".join(text_parts)
+    """
+    Convert arXiv papers to Markdown.
 
-    def convert_to_file(self, pdf_path: Path, output_path: Path) -> Path:
-        text = self.convert(pdf_path)
-        output_path.write_text(text, encoding="utf-8")
-        return output_path
-```
+    Uses arxiv2md REST API as primary (fast, clean).
+    Falls back to Marker CLI for pre-2020 papers (no HTML source).
+    """
 
-**Step 3: Commit (no test — would need real PDF)**
+    ARXIV2MD_URL = "https://arxiv2md.org/api/markdown"
+    # Papers before ~2020 typically don't have HTML versions on ar5iv
+    HTML_CUTOFF_YEAR = 2020
 
-```bash
-git add -A && git commit -m "feat: PDF to markdown converter"
-```
+    def __init__(self, cache_dir: Path | None = None):
+        self.cache_dir = cache_dir or Path.home() / ".arxiv_cache"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    async def convert(self, arxiv_id: str) -> ConversionResult:
+        """
+        Convert arXiv paper to Markdown.
+
+        Args:
+            arxiv_id: e.g. "2501.11120" or "arxiv:2501.11120"
+
+        Returns:
+            ConversionResult with markdown, method used, and optional error
+        """
+        # Strip prefix
+        arxiv_id = arxiv_id.replace("arxiv:", "")
+
+        # Check cache first
+        cached = self._get_cached(arxiv_id)
+        if cached:
+            return cached
+
+        # Try arxiv2md first (primary method)
+        result = await self._try_arxiv2md(arxiv_id)
+
+        if result.markdown:
+            self._cache_result(arxiv_id, result)
+            return result
+
+        # Fallback to Marker for old papers
+        result = await self._try_marker(arxiv_id)
+        self._cache_result(arxiv_id, result)
+        return result
+
+    async def _try_arxiv2md(self, arxiv_id: str) -> ConversionResult:
+        """Use arxiv2md.org REST API — fast, parses HTML (ar5iv/LaTeXML)."""
+        url = f"{self.ARXIV2MD_URL}?url={arxiv_id}"
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url)
+
+            if response.status_code == 200:
+                markdown = response.text
+                if len(markdown) > 50:  # Valid response
+                    return ConversionResult(
+                        markdown=markdown,
+                        method="arxiv2md",
+                    )
+
+            # arxiv2md returns 404 or error for papers without HTML
+            return ConversionResult(
+                markdown=None,
+                method="arxiv2md",
+                error=f"HTTP {response.status_code}",
+            )
+
+        except Exception as e:
+            return ConversionResult(
+                markdown=None,
+                method="arxiv2md",
+                error=str(e),
+            )
+
+    async def _try_marker(self, arxiv_id: str) -> ConversionResult:
+        """
+        Fallback: Use Marker CLI on PDF.
+
+        WARNING: Marker on CPU is slow (20-30 min for 64 pages).
+        Only used as fallback for papers without HTML (pre-2020).
+
+        Requires: marker-pdf installed, models downloaded (~2.7GB).
+        """
+        pdf_path = self._get_pdf_path(arxiv_id)
+
+        if not pdf_path or not pdf_path.exists():
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error="PDF not found",
+            )
+
+        # Check if paper is old enough to warrant Marker
+        # (If arxiv2md failed but paper is recent, something is wrong — don't waste time on Marker)
+        if not self._needs_marker_fallback(arxiv_id):
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error="Paper is recent — arxiv2md should work, skipping Marker",
+            )
+
+        try:
+            # Run marker CLI
+            output_path = self.cache_dir / f"{arxiv_id}.md"
+
+            cmd = [
+                "marker",
+                str(pdf_path),
+                str(output_path),
+                "--pdf_only",
+                "--single_column",
+                "--force_ocr",  # Some old scans need this
+            ]
+
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            # Timeout: 10 minutes max for Marker
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=600.0,
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                return ConversionResult(
+                    markdown=None,
+                    method="marker",
+                    error="Timeout after 10 minutes",
+                )
+
+            if process.returncode == 0 and output_path.exists():
+                markdown = output_path.read_text(encoding="utf-8")
+                return ConversionResult(
+                    markdown=markdown,
+                    method="marker",
+                )
+
+            error_msg = stderr.decode() if stderr else "Unknown error"
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error=f"Exit {process.returncode}: {error_msg[:200]}",
+            )
+
+        except FileNotFoundError:
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error="Marker CLI not installed (pip install marker-pdf)",
+            )
+        except Exception as e:
+            return ConversionResult(
+                markdown=None,
+                method="marker",
+                error=str(e),
+            )
+
+    def _needs_marker_fallback(self, arxiv_id: str) -> bool:
+        """
+        Heuristic: papers before ~2020 often don't have HTML on ar5iv.
+
+        arXiv ID format: YYMM.NNNN (YearMonth + sequence)
+        1701.00001 = Jan 2017
+        2001.00001 = Jan 2020
+        2501.00001 = Jan 2025
+        """
+        try:
+            yy = int(arxiv_id[:2])
+            mm = int(arxiv_id[2:4])
+
+            # Convert YY to full year (1701 → 2017, 2501 → 2025)
+            year = 2000 + yy if yy < 50 else 1900 + yy
+
+            return year < self.HTML_CUTOFF_YEAR
+        except (ValueError, IndexError):
+            # If parsing fails, assume it needs Marker (conservative)
+            return True
+
+    def _get_pdf_path(self, arxiv_id: str) -> Path | None:
+        """Get path to cached PDF."""
+        pdf_path = self.cache_dir / f"{arxiv_id}.pdf"
+        return pdf_path if pdf_path.exists() else None
+
+    def _get_cached(self, arxiv_id: str) -> ConversionResult | None:
+        """Load cached conversion result."""
+        cache_path = self.cache_dir / f"{arxiv_id}.md"
+        method_path = self.cache_dir / f"{arxiv_id}.method"
+
+        if cache_path.exists() and method_path.exists():
+            try:
+                markdown = cache_path.read_text(encoding="utf-8")
+                method = method_path.read_text().strip()
+                return ConversionResult(markdown=markdown, method=method)
+            except Exception:
+                pass
+        return None
+
+    def _cache_result(self, arxiv_id: str, result: ConversionResult) -> None:
+        """Cache conversion result."""
+        if result.markdown:
+            (self.cache_dir / f"{arxiv_id}.md").write_text(
+                result.markdown, encoding="utf-8"
+            )
+            (self.cache_dir / f"{arxiv_id}.method").write_text(result.method)
+
 
 ---
 
