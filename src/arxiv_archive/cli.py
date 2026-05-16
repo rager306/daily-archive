@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -27,6 +28,7 @@ from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
 ANALYSIS_DIR = Path.home() / ".research" / "analysis"
+PAPERS_DIR = Path.home() / ".research" / "papers"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
 
@@ -226,24 +228,74 @@ def write_session_json(analysis: DailyAnalysis) -> Path:
     return filepath
 
 
-def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
-    """Write daily analysis artifacts for local tools and later S04 aggregation."""
-    day_dir = ANALYSIS_DIR / analysis.run_date.isoformat()
-    day_dir.mkdir(parents=True, exist_ok=True)
+def write_paper_artifacts(scored: ScoredPaper) -> Path:
+    """Write reusable per-paper raw and scored JSON artifacts."""
+    paper_dir = PAPERS_DIR / scored.paper.id
+    paper_dir.mkdir(parents=True, exist_ok=True)
+    (paper_dir / "paper.json").write_text(
+        json.dumps(_serialize_paper(scored.paper), indent=2, sort_keys=True) + "\n"
+    )
+    (paper_dir / "scored.json").write_text(
+        json.dumps(_serialize_scored_paper(scored), indent=2, sort_keys=True) + "\n"
+    )
+    return paper_dir
 
-    papers_payload = [_serialize_paper(scored.paper) for scored in analysis.papers]
-    scored_payload = [_serialize_scored_paper(scored) for scored in analysis.papers]
-    overview_payload = {
+
+def _count_payloads(counter: Counter[str], name_key: str, limit: int) -> list[dict[str, Any]]:
+    """Return deterministic top-N count payloads sorted by count then name."""
+    return [
+        {name_key: name, "count": count}
+        for name, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))[:limit]
+    ]
+
+
+def build_overview_payload(analysis: DailyAnalysis) -> dict[str, Any]:
+    """Build the populated daily overview artifact for inspection and calibration."""
+    category_counts: Counter[str] = Counter()
+    keyword_counts: Counter[str] = Counter()
+    breakdown_values: dict[str, list[float]] = defaultdict(list)
+
+    for scored in analysis.papers:
+        category_counts.update(scored.paper.categories)
+        keyword_counts.update(scored.keywords)
+        for component, value in scored.breakdown.items():
+            breakdown_values[component].append(float(value))
+
+    score_breakdown = {
+        component: {
+            "min": min(values),
+            "max": max(values),
+            "mean": sum(values) / len(values),
+        }
+        for component, values in sorted(breakdown_values.items())
+    }
+
+    return {
         "date": analysis.run_date.isoformat(),
         "status": analysis.status,
         "papers_fetched": analysis.papers_fetched,
         "paper_count": len(analysis.papers),
         "top_paper_count": len(analysis.top_papers),
-        "categories": [],
-        "keywords": [],
-        "top_papers": [],
-        "score_breakdown": {},
+        "categories": _count_payloads(category_counts, "category", 20),
+        "keywords": _count_payloads(keyword_counts, "keyword", 30),
+        "top_papers": [
+            _serialize_scored_paper(scored) for scored in analysis.top_papers[:10]
+        ],
+        "score_breakdown": score_breakdown,
     }
+
+
+def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
+    """Write daily analysis artifacts for local tools and S04 aggregation."""
+    day_dir = ANALYSIS_DIR / analysis.run_date.isoformat()
+    day_dir.mkdir(parents=True, exist_ok=True)
+
+    papers_payload = [_serialize_paper(scored.paper) for scored in analysis.papers]
+    scored_payload = [_serialize_scored_paper(scored) for scored in analysis.papers]
+    overview_payload = build_overview_payload(analysis)
+
+    for scored in analysis.papers:
+        write_paper_artifacts(scored)
 
     (day_dir / "papers.json").write_text(json.dumps(papers_payload, indent=2, sort_keys=True) + "\n")
     (day_dir / "scored.json").write_text(json.dumps(scored_payload, indent=2, sort_keys=True) + "\n")
