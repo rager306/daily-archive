@@ -1,6 +1,7 @@
 """CLI for arxiv-archive."""
 
 import json
+import asyncio
 import os
 from collections import Counter, defaultdict
 from dataclasses import dataclass
