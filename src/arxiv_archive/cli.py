@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 import typer
 
@@ -26,6 +26,7 @@ from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
+ANALYSIS_DIR = Path.home() / ".research" / "analysis"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
 
@@ -143,6 +144,113 @@ def save_session(
     return filepath
 
 
+def _serialize_date(value: date) -> str:
+    """Serialize a date using the Rust-portable YYYY-MM-DD form."""
+    return value.isoformat()
+
+
+def _serialize_analysis_timestamp(value: datetime) -> str:
+    """Serialize analysis timestamps without Python-specific datetime objects.
+
+    UTC-aware datetimes are normalized to a compact `YYYY-MM-DDTHH:MM:SSZ`
+    value. Other datetimes preserve their ISO timezone information when present;
+    naive fixtures remain naive ISO strings for backwards-compatible tests.
+    """
+    if value.tzinfo is not None and value.utcoffset() is not None:
+        utc_value = value.astimezone(UTC).replace(microsecond=0)
+        return utc_value.isoformat().replace("+00:00", "Z")
+    return value.replace(microsecond=0).isoformat()
+
+
+def _serialize_paper(paper: Any) -> dict[str, Any]:
+    """Serialize an ArxivPaper to JSON-native, portable values."""
+    return {
+        # S03 tests consume `id`; `paper_id` is included as the explicit public
+        # name for consumers that should not rely on the Python dataclass field.
+        "id": paper.id,
+        "paper_id": paper.id,
+        "title": paper.title,
+        "abstract": paper.abstract,
+        "authors": list(paper.authors),
+        "published": _serialize_date(paper.published),
+        "updated": _serialize_date(paper.updated),
+        "categories": list(paper.categories),
+        "pdf_url": paper.pdf_url,
+    }
+
+
+def _serialize_semantic_scholar(semschol: Any | None) -> dict[str, Any] | None:
+    """Serialize optional Semantic Scholar enrichment without repr/asdict."""
+    if semschol is None:
+        return None
+    return {
+        "arxiv_id": semschol.arxiv_id,
+        "title": semschol.title,
+        "citation_count": semschol.citation_count,
+        "year": semschol.year,
+        "venue": semschol.venue,
+    }
+
+
+def _serialize_scored_paper(scored: ScoredPaper) -> dict[str, Any]:
+    """Serialize a ScoredPaper with JSON-native scoring metadata."""
+    payload = _serialize_paper(scored.paper)
+    payload.update(
+        {
+            "keywords": list(scored.keywords),
+            "score": float(scored.score),
+            "breakdown": {key: float(value) for key, value in scored.breakdown.items()},
+            "semschol": _serialize_semantic_scholar(scored.semschol),
+        }
+    )
+    return payload
+
+
+def write_session_json(analysis: DailyAnalysis) -> Path:
+    """Write the Hermes-readable JSON session summary for a daily analysis."""
+    SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    filepath = SESSIONS_DIR / f"{analysis.run_date.isoformat()}.json"
+    payload = {
+        "date": analysis.run_date.isoformat(),
+        "status": analysis.status,
+        "analysis_timestamp": _serialize_analysis_timestamp(analysis.analysis_timestamp),
+        "papers_fetched": analysis.papers_fetched,
+        "paper_count": len(analysis.papers),
+        "top_paper_count": len(analysis.top_papers),
+        "papers_count": len(analysis.papers),
+        "top_papers_count": len(analysis.top_papers),
+        "papers": [_serialize_scored_paper(scored) for scored in analysis.papers],
+        "top_papers": [_serialize_scored_paper(scored) for scored in analysis.top_papers],
+    }
+    filepath.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return filepath
+
+
+def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
+    """Write daily analysis artifacts for local tools and later S04 aggregation."""
+    day_dir = ANALYSIS_DIR / analysis.run_date.isoformat()
+    day_dir.mkdir(parents=True, exist_ok=True)
+
+    papers_payload = [_serialize_paper(scored.paper) for scored in analysis.papers]
+    scored_payload = [_serialize_scored_paper(scored) for scored in analysis.papers]
+    overview_payload = {
+        "date": analysis.run_date.isoformat(),
+        "status": analysis.status,
+        "papers_fetched": analysis.papers_fetched,
+        "paper_count": len(analysis.papers),
+        "top_paper_count": len(analysis.top_papers),
+        "categories": [],
+        "keywords": [],
+        "top_papers": [],
+        "score_breakdown": {},
+    }
+
+    (day_dir / "papers.json").write_text(json.dumps(papers_payload, indent=2, sort_keys=True) + "\n")
+    (day_dir / "scored.json").write_text(json.dumps(scored_payload, indent=2, sort_keys=True) + "\n")
+    (day_dir / "overview.json").write_text(json.dumps(overview_payload, indent=2, sort_keys=True) + "\n")
+    return day_dir
+
+
 def run_analysis(run_date: date) -> DailyAnalysis:
     """Build the normalized in-memory analysis result for one run date.
 
@@ -243,12 +351,10 @@ def run(
     except ValueError as exc:
         raise typer.BadParameter("date must be in YYYY-MM-DD format") from exc
 
-    if json_output:
-        typer.echo(
-            "--json is documented for Hermes but JSON persistence is not implemented in M001.",
-            err=True,
-        )
     analysis = run_analysis(parsed_date)
+    if json_output:
+        write_session_json(analysis)
+        write_daily_artifacts(analysis)
     typer.echo(
         " | ".join(
             [
