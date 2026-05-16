@@ -2,9 +2,10 @@
 
 import json
 import os
-from datetime import date
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 
@@ -27,6 +28,21 @@ PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
+
+DailyAnalysisStatus = Literal["done", "empty"]
+
+
+@dataclass(frozen=True)
+class DailyAnalysis:
+    """Normalized in-memory analysis result for one arXiv archive day."""
+
+    run_date: date
+    status: DailyAnalysisStatus
+    papers_fetched: int
+    papers: list[ScoredPaper]
+    top_papers: list[ScoredPaper]
+    analysis_timestamp: datetime
+
 
 AGENT_CONTRACT_HELP = """Daily arXiv archive CLI for research agents.
 
@@ -127,45 +143,77 @@ def save_session(
     return filepath
 
 
-def run_pipeline(run_date: date) -> None:
-    """Run the arxiv archive pipeline for a given date.
+def run_analysis(run_date: date) -> DailyAnalysis:
+    """Build the normalized in-memory analysis result for one run date.
 
-    Fetches papers, extracts keywords, scores them, and saves the session.
+    This boundary performs fetch, keyword extraction, scoring, and sorting only.
+    It intentionally does not persist session or JSON artifacts; storage belongs
+    to later slices.
 
     Args:
         run_date: The date to fetch papers for.
+
+    Returns:
+        Normalized daily analysis with all scored papers and the top 10 subset.
     """
-    # Load preferences (for future use in scoring)
+    # Load preferences to preserve the existing pipeline boundary for future
+    # scoring use, even though the current ScoringEngine does not consume them.
     _preferences = load_preferences()
 
-    # Create components
     client = ArxivClient()
     extractor = KeywordExtractor()
     scorer = ScoringEngine()
 
-    # Fetch papers
     papers = client.fetch_papers(
         start_date=run_date,
         end_date=run_date,
         categories=CATEGORIES,
     )
 
-    # Extract keywords and score
-    scored_papers = []
+    scored_papers: list[ScoredPaper] = []
     for paper in papers:
+        if not isinstance(paper.title, str) or not isinstance(paper.abstract, str):
+            raise TypeError("fetched paper title and abstract must be strings")
         keywords = extractor.extract_for_paper(paper.title, paper.abstract)
         scored = scorer.score(paper, semschol=None, keywords=keywords)
         scored_papers.append(scored)
 
-    # Sort by score descending and take top 10
     scored_papers.sort(key=lambda x: x.score, reverse=True)
-    top10 = scored_papers[:10]
+    top_papers = scored_papers[:10]
+    status: DailyAnalysisStatus = "done" if papers else "empty"
+
+    return DailyAnalysis(
+        run_date=run_date,
+        status=status,
+        papers_fetched=len(papers),
+        papers=scored_papers,
+        top_papers=top_papers,
+        analysis_timestamp=datetime.now(timezone.utc),
+    )
+
+
+def run_pipeline(run_date: date) -> None:
+    """Run the legacy arxiv archive pipeline for a given date and save a session.
+
+    This compatibility wrapper preserves the pre-S02 persistence behavior for any
+    direct callers while sharing the normalized analysis boundary.
+
+    Args:
+        run_date: The date to fetch papers for.
+    """
+    analysis = run_analysis(run_date)
 
     # Save session
-    session_path = save_session(run_date, len(papers), top10)
+    session_path = save_session(
+        analysis.run_date,
+        analysis.papers_fetched,
+        analysis.top_papers,
+    )
 
-    # Print summary
-    print(f"Fetched {len(papers)} papers, selected top {len(top10)}")  # noqa: T201
+    # Print legacy summary
+    print(  # noqa: T201
+        f"Fetched {analysis.papers_fetched} papers, selected top {len(analysis.top_papers)}"
+    )
     print(f"Session saved to {session_path}")  # noqa: T201
 
 
@@ -200,7 +248,17 @@ def run(
             "--json is documented for Hermes but JSON persistence is not implemented in M001.",
             err=True,
         )
-    run_pipeline(parsed_date)
+    analysis = run_analysis(parsed_date)
+    typer.echo(
+        " | ".join(
+            [
+                f"status: {analysis.status}",
+                f"date: {analysis.run_date.isoformat()}",
+                f"papers fetched: {analysis.papers_fetched}",
+                f"top papers: {len(analysis.top_papers)}",
+            ]
+        )
+    )
 
 
 def main() -> None:
