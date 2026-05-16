@@ -29,9 +29,14 @@ class ArxivClient:
     ) -> list[ArxivPaper]:
         if categories is None:
             categories = []
+        
+        seen_ids = set()
         papers = []
         for category in categories:
-            papers.extend(self._fetch_category(category, start_date, end_date))
+            for paper in self._fetch_category(category, start_date, end_date):
+                if paper.id not in seen_ids:
+                    seen_ids.add(paper.id)
+                    papers.append(paper)
         return papers
 
     def _fetch_category(
