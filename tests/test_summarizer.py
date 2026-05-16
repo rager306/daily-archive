@@ -1,10 +1,10 @@
 """Tests for the MiniMax summarizer module."""
 
-from dotenv import load_dotenv
-from pathlib import Path
 import os
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 from src.arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
 

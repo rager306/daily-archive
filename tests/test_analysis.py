@@ -11,12 +11,15 @@ import subprocess
 from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoredPaper
+
+if TYPE_CHECKING:
+    from arxiv_archive.cli import DailyAnalysis
 
 RUN_DATE = date(2026, 5, 14)
 
@@ -259,7 +262,7 @@ def test_cli_malformed_date_fails_typer_validation() -> None:
 
 
 
-def make_s03_done_analysis() -> "DailyAnalysis":
+def make_s03_done_analysis() -> DailyAnalysis:
     """Build a complete S03 DailyAnalysis fixture with scored and null-enriched papers."""
     import arxiv_archive.cli as cli
     from arxiv_archive.semantic_scholar import SemanticScholarPaper
@@ -288,7 +291,7 @@ def make_s03_done_analysis() -> "DailyAnalysis":
     )
 
 
-def make_s03_empty_analysis() -> "DailyAnalysis":
+def make_s03_empty_analysis() -> DailyAnalysis:
     """Build an empty S03 DailyAnalysis fixture without invoking live dependencies."""
     import arxiv_archive.cli as cli
 
@@ -302,7 +305,7 @@ def make_s03_empty_analysis() -> "DailyAnalysis":
     )
 
 
-def make_s04_scored_analysis() -> "DailyAnalysis":
+def make_s04_scored_analysis() -> DailyAnalysis:
     """Build an S04 fixture with overlapping categories, keywords, and breakdown keys."""
     import arxiv_archive.cli as cli
     from arxiv_archive.semantic_scholar import SemanticScholarPaper
