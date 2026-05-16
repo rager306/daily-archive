@@ -31,7 +31,7 @@ def init_db(db_path: Path | str = DB_DIR) -> ladybug.Connection:
     try:
         # Schema definition. We use explicit transactions for DDL? DDL is auto-commit in Ladybug.
         # Paper node with 1024-dim embedding for deepvk/USER-bge-m3
-        conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[1024], score DOUBLE, PRIMARY KEY (id))")
+        conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
         conn.execute("CREATE NODE TABLE Author(name STRING, PRIMARY KEY (name))")
         conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
         conn.execute("CREATE NODE TABLE Category(name STRING, PRIMARY KEY (name))")

@@ -24,7 +24,7 @@ CREATE REL TABLE TaggedWith(FROM Paper TO Keyword);
 ## 3. Vector Embeddings
 Vectors are treated as first-class fixed-size arrays (`FLOAT[N]`).
 ```cypher
-CREATE NODE TABLE Document(id STRING, emb FLOAT[384], PRIMARY KEY (id));
+CREATE NODE TABLE Document(id STRING, emb FLOAT[512], PRIMARY KEY (id));
 ```
 - Similarity search is done natively via `array_cosine_similarity(a, b)`.
 - You can create an HNSW index using the `vector` extension: `CREATE_VECTOR_INDEX(...)`.

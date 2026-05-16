@@ -8,7 +8,7 @@ def memory_db():
     conn = ladybug.Connection(db)
     
     # Init schema
-    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[1024], score DOUBLE, PRIMARY KEY (id))")
+    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
     conn.execute("CREATE NODE TABLE Author(name STRING, PRIMARY KEY (name))")
     conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
     conn.execute("CREATE NODE TABLE Category(name STRING, PRIMARY KEY (name))")
@@ -23,7 +23,7 @@ def test_ladybug_schema_and_query(memory_db):
     conn = memory_db
     
     # Create test data
-    emb = [0.1] * 1024
+    emb = [0.1] * 512
     # Note: Kuzu/Ladybug arrays are formatted like [0.1, 0.2, ...] in cypher
     emb_str = "[" + ",".join(map(str, emb)) + "]"
     
