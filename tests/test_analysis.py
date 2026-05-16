@@ -96,6 +96,13 @@ def reset_fakes() -> None:
     FakeScoringEngine.calls = []
 
 
+@pytest.fixture(autouse=True)
+def patch_queue_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    import arxiv_archive.cli as cli
+
+    monkeypatch.setattr(cli, "QUEUE_DIR", tmp_path / "queue")
+
+
 @pytest.fixture
 def patch_analysis_components(monkeypatch: pytest.MonkeyPatch) -> None:
     import arxiv_archive.cli as cli
@@ -187,6 +194,26 @@ def test_run_analysis_fails_on_malformed_fetched_paper(
         run_analysis(RUN_DATE)
 
 
+def test_write_state_json_persists_cron_queue_schema(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import arxiv_archive.cli as cli
+
+    queue_dir = tmp_path / "queue"
+    monkeypatch.setattr(cli, "QUEUE_DIR", queue_dir)
+
+    path = cli.write_state_json(RUN_DATE, "running", "fetch")
+
+    assert path == queue_dir / "2026-05-14.json"
+    payload = json.loads(path.read_text())
+    assert payload["date"] == "2026-05-14"
+    assert payload["status"] == "running"
+    assert payload["stage"] == "fetch"
+    assert payload["timestamp"].endswith("Z")
+    assert "error" not in payload
+
+
 def test_cli_run_outputs_done_summary_without_live_dependencies(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -235,6 +262,53 @@ def test_cli_run_outputs_empty_summary_without_live_dependencies(
     assert "date: 2026-05-14" in output
     assert "papers fetched: 0" in output
     assert "top papers: 0" in output
+
+
+def test_cli_run_persists_empty_queue_state_without_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import arxiv_archive.cli as cli
+
+    analysis = cli.DailyAnalysis(
+        run_date=RUN_DATE,
+        status="empty",
+        papers_fetched=0,
+        papers=[],
+        top_papers=[],
+        analysis_timestamp=datetime(2026, 5, 14, 12, 0, 0),
+    )
+    monkeypatch.setattr(cli, "run_analysis", lambda run_date: analysis)
+
+    cli.run("2026-05-14")
+
+    payload = json.loads((cli.QUEUE_DIR / "2026-05-14.json").read_text())
+    assert payload["date"] == "2026-05-14"
+    assert payload["status"] == "empty"
+    assert payload["stage"] == "done"
+    assert payload["timestamp"].endswith("Z")
+    assert "error" not in payload
+
+
+def test_cli_run_persists_failed_queue_state_before_reraising(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import arxiv_archive.cli as cli
+
+    def raise_analysis(_run_date: date) -> None:
+        raise RuntimeError("fixture analysis failed")
+
+    monkeypatch.setattr(cli, "run_analysis", raise_analysis)
+
+    with pytest.raises(RuntimeError, match="fixture analysis failed"):
+        cli.run("2026-05-14")
+
+    payload = json.loads((cli.QUEUE_DIR / "2026-05-14.json").read_text())
+    assert payload["date"] == "2026-05-14"
+    assert payload["status"] == "failed"
+    assert payload["stage"] == "failed"
+    assert payload["timestamp"].endswith("Z")
+    assert payload["error"] == "fixture analysis failed"
+    assert "Traceback" not in payload["error"]
 
 
 def test_cli_malformed_date_fails_typer_validation() -> None:

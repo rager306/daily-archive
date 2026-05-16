@@ -27,12 +27,14 @@ from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
+QUEUE_DIR = Path.home() / ".research" / "ops" / "queue"
 ANALYSIS_DIR = Path.home() / ".research" / "analysis"
 PAPERS_DIR = Path.home() / ".research" / "papers"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
 
 DailyAnalysisStatus = Literal["done", "empty"]
+QueueStateStatus = Literal["running", "done", "empty", "failed"]
 
 
 @dataclass(frozen=True)
@@ -162,6 +164,27 @@ def _serialize_analysis_timestamp(value: datetime) -> str:
         utc_value = value.astimezone(UTC).replace(microsecond=0)
         return utc_value.isoformat().replace("+00:00", "Z")
     return value.replace(microsecond=0).isoformat()
+
+
+def write_state_json(
+    run_date: date,
+    status: QueueStateStatus,
+    stage: str,
+    error: str | None = None,
+) -> Path:
+    """Write the cron/Hermes queue state file for one daily CLI run."""
+    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    filepath = QUEUE_DIR / f"{run_date.isoformat()}.json"
+    payload = {
+        "date": run_date.isoformat(),
+        "status": status,
+        "stage": stage,
+        "timestamp": _serialize_analysis_timestamp(datetime.now(UTC)),
+    }
+    if error:
+        payload["error"] = error
+    filepath.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return filepath
 
 
 def _serialize_paper(paper: Any) -> dict[str, Any]:
@@ -403,7 +426,14 @@ def run(
     except ValueError as exc:
         raise typer.BadParameter("date must be in YYYY-MM-DD format") from exc
 
-    analysis = run_analysis(parsed_date)
+    write_state_json(parsed_date, "running", "fetch")
+    try:
+        analysis = run_analysis(parsed_date)
+    except Exception as exc:
+        write_state_json(parsed_date, "failed", "failed", str(exc))
+        raise
+
+    write_state_json(parsed_date, analysis.status, "done")
     if json_output:
         write_session_json(analysis)
         write_daily_artifacts(analysis)
