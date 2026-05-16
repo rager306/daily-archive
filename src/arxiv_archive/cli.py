@@ -1,7 +1,7 @@
 """CLI for arxiv-archive."""
 
-import json
 import asyncio
+import json
 import os
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -23,9 +23,9 @@ if _env_path.exists():
             os.environ.setdefault(key.strip(), value.strip())
 
 from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
-from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
-from arxiv_archive.scoring import ScoredPaper, ScoringEngine
 from arxiv_archive.embedder import Embedder  # noqa: E402
+from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
+from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
@@ -353,11 +353,11 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     )
 
     if not papers:
-        from datetime import datetime, timezone
+        from datetime import datetime
         return DailyAnalysis(
             run_date=run_date,
             status="empty",
-            analysis_timestamp=datetime.now(timezone.utc),
+            analysis_timestamp=datetime.now(UTC),
             papers_fetched=0,
             papers=[],
             top_papers=[]
@@ -367,19 +367,19 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     async def _process_all():
         tasks = [_process_paper_async(p, extractor, scorer) for p in papers]
         scored_list = await asyncio.gather(*tasks)
-        
+
         # 2. Embed all abstracts via the Embedder batch API
         embedder = Embedder()
         try:
             abstracts = [p.paper.abstract for p in scored_list]
             embeddings = await embedder.embed_all(abstracts)
-            
+
             # Attach embeddings back to scored papers
-            for scored, emb in zip(scored_list, embeddings):
+            for scored, emb in zip(scored_list, embeddings, strict=True):
                 scored.embedding = emb
         finally:
             await embedder.close()
-            
+
         return scored_list
 
     try:
@@ -391,11 +391,11 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     scored_papers.sort(key=lambda x: x.score, reverse=True)
     top_papers = scored_papers[:10]
 
-    from datetime import datetime, timezone
+    from datetime import datetime
     return DailyAnalysis(
         run_date=run_date,
         status="done",
-        analysis_timestamp=datetime.now(timezone.utc),
+        analysis_timestamp=datetime.now(UTC),
         papers_fetched=len(papers),
         papers=scored_papers,
         top_papers=top_papers,

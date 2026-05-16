@@ -1,10 +1,9 @@
 """Property-based tests for Markdown Converter using Hypothesis and Adaptix."""
 
-from datetime import date
 from typing import Any
 
 from adaptix import Retort
-from hypothesis import Verbosity, given, settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from arxiv_archive.md_converter import ConversionResult, MDConverter
@@ -48,12 +47,12 @@ def test_normalize_id_strips_prefix_and_whitespace(
 ) -> None:
     """_normalize_id must always strip surrounding whitespace and 'arxiv:' prefix."""
     converter = MDConverter()
-    
+
     prefix = "arxiv:" if include_prefix else ""
     padded_id = (" " * spaces_before) + prefix + base_id + (" " * spaces_after)
-    
+
     normalized = converter._normalize_id(padded_id)
-    
+
     assert normalized == base_id.strip()
 
 # --- Property: needs_marker_fallback ---
@@ -70,15 +69,15 @@ def test_needs_marker_fallback_correctly_identifies_years(
 ) -> None:
     """_needs_marker_fallback must return True for year < 2020, False otherwise, given valid IDs."""
     converter = MDConverter()
-    
+
     if four_digit_year:
         arxiv_id = f"{year:04d}{month:02d}.{seq:04d}"
     else:
         short_year = year % 100
         arxiv_id = f"{short_year:02d}{month:02d}.{seq:04d}"
-        
+
     needs_fallback = converter._needs_marker_fallback(arxiv_id)
-    
+
     if year < 2020:
         assert needs_fallback is True
     else:

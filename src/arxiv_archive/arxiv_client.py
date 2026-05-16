@@ -29,7 +29,7 @@ class ArxivClient:
     ) -> list[ArxivPaper]:
         if categories is None:
             categories = []
-        
+
         seen_ids = set()
         papers = []
         for category in categories:

@@ -1,15 +1,15 @@
-import httpx
 import logging
-from typing import List
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
 class Embedder:
     """Async HTTP client for generating text embeddings using local TEI container."""
-    
+
     def __init__(self, endpoint: str = "http://localhost:30080/embed", dimensions: int = 512, batch_size: int = 32):
         """Initialize the embedder.
-        
+
         Args:
             endpoint: URL to the Text Embeddings Inference server.
             dimensions: Matryoshka dimension truncation limit.
@@ -30,36 +30,36 @@ class Embedder:
             await self._client.aclose()
             self._client = None
 
-    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for a batch of texts.
-        
+
         Args:
             texts: List of strings (e.g., abstracts).
-            
+
         Returns:
             List of float lists representing the embeddings.
         """
         if not texts:
             return []
-            
+
         client = await self._get_client()
         payload = {
             "inputs": texts,
             "truncate": True,
             "dimensions": self.dimensions
         }
-        
+
         try:
             response = await client.post(self.endpoint, json=payload)
             response.raise_for_status()
-            
+
             # TEI server returns a list of float arrays
             data = response.json()
             if not isinstance(data, list):
                 raise ValueError(f"Expected list response from TEI, got {type(data)}")
-                
+
             return data
-            
+
         except httpx.HTTPError as e:
             logger.error(f"HTTP error during embedding generation: {e}")
             raise
@@ -67,7 +67,7 @@ class Embedder:
             logger.error(f"Unexpected error parsing embedding response: {e}")
             raise
 
-    async def embed_all(self, texts: List[str]) -> List[List[float]]:
+    async def embed_all(self, texts: list[str]) -> list[list[float]]:
         """Embed all texts by splitting them into batches."""
         all_embeddings = []
         for i in range(0, len(texts), self.batch_size):
