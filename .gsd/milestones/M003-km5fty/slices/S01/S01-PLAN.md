@@ -24,7 +24,7 @@ Connects existing paper artifacts to the future PageIndex and chunk pipeline wit
 
 ## Tasks
 
-- [ ] **T01: Add full text ingestion contract tests and fixtures** `est:45m`
+- [x] **T01: Add full text ingestion contract tests and fixtures** `est:45m`
   Create deterministic fixture inputs and red contract tests for the S01 full-text ingestion boundary before implementation. Add representative markdown/full-text fixtures under tests, define expected behavior for structured markdown, plain-text fallback, missing source, and malformed or empty content. Done when the new tests fail for missing implementation while existing test collection still runs.
   - Files: `tests/fixtures/full_text/structured_paper.md`, `tests/fixtures/full_text/plain_fallback.txt`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py -q
