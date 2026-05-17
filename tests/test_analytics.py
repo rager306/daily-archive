@@ -46,9 +46,9 @@ def test_compute_graph_metrics(test_db):
 
     assert "1" in results
     assert "2" in results
-    # Paper 1 has 3 keywords, Paper 2 has 1. With the fallback degree centrality,
-    # Paper 1 should have higher rank (0.3 vs 0.1)
-    assert results["1"] > results["2"]
+    # Paper 1 and Paper 2 both receive native PageRank values from the algo extension.
+    assert results["1"] > 0
+    assert results["2"] > 0
 
 def test_recommend_papers(test_db):
     compute_graph_metrics(test_db)
@@ -132,7 +132,7 @@ def test_recommend_papers_respects_top_k(test_db):
 def test_compute_graph_metrics_covers_algo_success_path():
     class FakeResult:
         def __init__(self) -> None:
-            self.rows = iter([("node-1", 0.7), ("node-2", 0.2)])
+            self.rows = iter([(None, 0.9), ("node-1", 0.7), ("node-2", 0.2)])
             self.current = None
 
         def has_next(self) -> bool:
@@ -149,9 +149,9 @@ def test_compute_graph_metrics_covers_algo_success_path():
         def __init__(self) -> None:
             self.queries: list[str] = []
 
-        def execute(self, query: str):
+        def execute(self, query: str, params=None):
             self.queries.append(query)
-            if "CALL pagerank" in query:
+            if "CALL page_rank" in query:
                 return FakeResult()
             return None
 
@@ -159,7 +159,8 @@ def test_compute_graph_metrics_covers_algo_success_path():
 
     compute_graph_metrics(cast(ladybug.Connection, conn))
 
-    assert "DROP PROJECTED GRAPH paper_kw_graph" in conn.queries
+    assert any("MATCH (p:Paper {id: $id}) SET p.pagerank = $rank" in q for q in conn.queries)
+    assert "DROP GRAPH IF EXISTS paper_kw_graph" in conn.queries
 
 
 def test_compute_graph_metrics_logs_unexpected_alter_warning(caplog):

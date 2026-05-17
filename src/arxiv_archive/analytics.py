@@ -22,42 +22,35 @@ def compute_graph_metrics(conn: ladybug.Connection) -> None:
         if "already exists" not in str(e).lower() and "exists" not in str(e).lower():
             logger.warning(f"Alter table warning: {e}")
 
-    # Ladybug/Kuzu projected graph execution for PageRank
-    # We want to create an implicit connection between papers sharing keywords
-    # Kuzu's algo extension typically operates on explicit relations. Let's compute
-    # PageRank just on the existing Paper->Keyword bipartite graph first,
-    # and assign the ranks. Alternatively, we can project a direct relation.
-
-    # For now, let's execute a direct query calculating node degree as a proxy if algo is complex,
-    # but the requirement states using algo. Let's try basic pagerank syntax for Kuzu:
-    # CALL project_graph('g', ['Paper', 'Keyword'], ['TAGGED_WITH'])
-    # CALL pagerank('g') YIELD node, rank
-
+    # Ladybug/Kuzu projected graph execution for PageRank. The algorithm runs on
+    # the Paper -> Keyword bipartite graph and returns both Paper and Keyword
+    # nodes; only Paper nodes have `id`, so only those ranks are persisted.
     try:
-        # Kuzu's standard projection syntax
         conn.execute("CALL project_graph('paper_kw_graph', ['Paper', 'Keyword'], ['TAGGED_WITH'])")
 
-        # Calculate PageRank
-        res = cast(Any, conn.execute("CALL pagerank('paper_kw_graph') YIELD _node, rank RETURN _node, rank"))
+        res = cast(
+            Any,
+            conn.execute(
+                "CALL page_rank('paper_kw_graph') "
+                "RETURN node.id, rank "
+                "ORDER BY rank DESC"
+            ),
+        )
 
-        # We must write it back. This can be done by collecting into a DataFrame and merging back,
-        # but since we don't have polars as a strict dependency, we can just iterate.
-        updates = []
         while res.has_next():
-            row = res.get_next()
-            node_internal_id = row[0]
-            rank = row[1]
-            updates.append((node_internal_id, rank))
+            paper_id, rank = res.get_next()
+            if paper_id is None:
+                continue
+            conn.execute(
+                "MATCH (p:Paper {id: $id}) SET p.pagerank = $rank",
+                {"id": paper_id, "rank": rank},
+            )
 
-        # Due to Kuzu restrictions, we might need a workaround to update by internal ID or match ID.
-        # Actually, Kuzu's `pagerank` output `_node` is an internal Node ID object.
-        # Let's drop the projection graph to clean up memory.
-        conn.execute("DROP PROJECTED GRAPH paper_kw_graph")
+        conn.execute("DROP GRAPH IF EXISTS paper_kw_graph")
 
     except Exception as e:
         logger.error(f"Failed to run algo extension PageRank: {e}")
-        # Graceful degradation: fallback to Degree Centrality directly in Cypher
-        logger.info("Falling back to Degree Centrality via Cypher...")
+        # Graceful degradation: fallback to Degree Centrality directly in Cypher.
         conn.execute("""
             MATCH (p:Paper)-[:TAGGED_WITH]->(k:Keyword)
             WITH p, count(k) as degree
