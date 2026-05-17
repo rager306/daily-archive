@@ -4,6 +4,13 @@ import ladybug
 import pytest
 
 
+def _rows(result):
+    rows = []
+    while result.has_next():
+        rows.append(result.get_next())
+    return rows
+
+
 @pytest.fixture
 def memory_db():
     db = ladybug.Database(":memory:")
@@ -110,3 +117,59 @@ def test_upsert_daily_analysis(memory_db, monkeypatch):
     assert res.has_next()
     assert res.get_next()[1] == "Alice"
     assert res.get_next()[1] == "Bob O'Brian"
+
+
+def test_vector_extension_hnsw_index_contract():
+    conn = ladybug.Connection(ladybug.Database(":memory:"))
+
+    assert _rows(conn.execute("LOAD VECTOR;"))[0][0] == "Extension: vector has been loaded."
+    conn.execute("CREATE NODE TABLE Embedding(id STRING, vec FLOAT[3], PRIMARY KEY (id));")
+    conn.execute("CREATE (:Embedding {id: 'a', vec: CAST([1.0, 0.0, 0.0], 'FLOAT[3]')});")
+    conn.execute("CREATE (:Embedding {id: 'b', vec: CAST([0.0, 1.0, 0.0], 'FLOAT[3]')});")
+    conn.execute("CREATE (:Embedding {id: 'c', vec: CAST([0.9, 0.1, 0.0], 'FLOAT[3]')});")
+    conn.execute("CALL CREATE_VECTOR_INDEX('Embedding', 'embedding_vec_idx', 'vec', metric := 'l2');")
+
+    rows = _rows(
+        conn.execute(
+            "CALL QUERY_VECTOR_INDEX('Embedding', 'embedding_vec_idx', "
+            "CAST([1.0, 0.0, 0.0], 'FLOAT[3]'), 3) "
+            "RETURN node.id, distance ORDER BY distance;"
+        )
+    )
+
+    assert [row[0] for row in rows] == ["a", "c", "b"]
+    assert rows[0][1] == 0.0
+
+
+def test_fts_extension_index_contract():
+    conn = ladybug.Connection(ladybug.Database(":memory:"))
+
+    assert _rows(conn.execute("LOAD FTS;"))[0][0] == "Extension: fts has been loaded."
+    conn.execute("CREATE NODE TABLE Doc(id STRING, title STRING, body STRING, PRIMARY KEY (id));")
+    conn.execute("CREATE (:Doc {id: 'd1', title: 'Graph retrieval', body: 'graph neural retrieval graph'});")
+    conn.execute("CREATE (:Doc {id: 'd2', title: 'Bayes', body: 'bayesian optimization'});")
+    result = _rows(conn.execute("CALL CREATE_FTS_INDEX('Doc', 'doc_fts_idx', ['title', 'body']);"))
+    assert result == [["Index doc_fts_idx has been created."]]
+
+    rows = _rows(conn.execute("CALL QUERY_FTS_INDEX('Doc', 'doc_fts_idx', 'graph') RETURN node.id, score;"))
+
+    assert rows[0][0] == "d1"
+    assert rows[0][1] > 0
+
+
+def test_ladybug_allows_reads_but_rejects_second_writer_during_write_transaction():
+    db = ladybug.Database(":memory:")
+    writer = ladybug.Connection(db)
+    reader_or_second_writer = ladybug.Connection(db)
+    writer.execute("CREATE NODE TABLE Item(id INT64, PRIMARY KEY (id));")
+
+    writer.execute("BEGIN TRANSACTION;")
+    writer.execute("CREATE (:Item {id: 1});")
+
+    with pytest.raises(RuntimeError, match="Only one write transaction at a time"):
+        reader_or_second_writer.execute("CREATE (:Item {id: 2});")
+
+    assert _rows(reader_or_second_writer.execute("MATCH (i:Item) RETURN count(i);")) == [[0]]
+
+    writer.execute("COMMIT;")
+    assert _rows(reader_or_second_writer.execute("MATCH (i:Item) RETURN count(i);")) == [[1]]
