@@ -29,7 +29,7 @@ Consumes S01 `FullTextIngestionResult` and produces a deterministic PageIndex tr
   - Files: `tests/fixtures/page_index/no_headings.txt`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py -q
 
-- [ ] **T02: Implement PageIndex document construction** `est:1h 15m`
+- [x] **T02: Implement PageIndex document construction** `est:1h 15m`
   Implement `src/arxiv_archive/page_index.py` with typed `PageIndexNode`, `PageIndexDocument`, and construction from `FullTextIngestionResult`. Parse markdown headings into a hierarchy with deterministic node IDs and ordered relationships; create an explicit fallback root/section when no headings exist. Done when the initial PageIndex contract tests pass.
   - Files: `src/arxiv_archive/page_index.py`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q

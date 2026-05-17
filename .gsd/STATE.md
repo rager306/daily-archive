@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T02: Implement PageIndex document construction in slice S02.
+Execute T03: Add PageIndex navigation and validation helpers in slice S02.
