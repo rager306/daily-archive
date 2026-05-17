@@ -5,6 +5,7 @@ from arxiv_archive.arxiv_client import ArxivClient, ArxivPaper
 
 def test_arxiv_client_module_exists():
     from arxiv_archive import arxiv_client
+
     assert arxiv_client is not None
 
 
@@ -29,7 +30,30 @@ def test_arxiv_paper_dataclass():
     assert paper.pdf_url == "https://arxiv.org/pdf/2501.12345.pdf"
 
 
-def test_fetch_papers_returns_list():
+def test_fetch_papers_returns_list_without_live_network(monkeypatch):
+    """The public fetch method should return a list and de-duplicate IDs per run."""
+    paper = ArxivPaper(
+        id="2501.12345",
+        title="Test Paper",
+        abstract="This is a test abstract.",
+        authors=["Author One"],
+        published=date(2026, 5, 14),
+        updated=date(2026, 5, 14),
+        categories=["cs.AI"],
+        pdf_url="https://arxiv.org/pdf/2501.12345.pdf",
+    )
+
+    def fake_fetch_category(self, category, start_date, end_date=None):
+        assert category == "cs.AI"
+        assert start_date == date(2026, 5, 14)
+        assert end_date is None
+        yield paper
+        yield paper
+
+    monkeypatch.setattr(ArxivClient, "_fetch_category", fake_fetch_category)
+
     client = ArxivClient()
     papers = client.fetch_papers(start_date=date(2026, 5, 14), categories=["cs.AI"])
+
     assert isinstance(papers, list)
+    assert papers == [paper]

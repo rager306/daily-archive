@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from arxiv_archive.pdf_downloader import PDFDownloader
 
 
@@ -21,11 +19,9 @@ def test_download_returns_path(tmp_path: Path) -> None:
     arxiv_id = "2310.00001"
     pdf_url = "https://arxiv.org/pdf/2310.00001.pdf"
 
-    try:
-        result_path = downloader.download(arxiv_id, pdf_url)
-    except Exception:
-        pytest.skip("Download failed, skipping test")
+    result_path = downloader.download(arxiv_id, pdf_url)
 
     assert isinstance(result_path, Path)
     assert result_path.exists()
     assert result_path.name == f"{arxiv_id}.pdf"
+    assert result_path.stat().st_size > 0

@@ -45,7 +45,7 @@ def assert_help_contract(output: str) -> None:
         assert status in output
 
     assert any(term in output for term in ["example", "examples"])
-    assert "uv run python -m arxiv_archive run --date" in output
+    assert "uv run python -m arxiv_archive --date" in output
 
     assert any(term in output for term in ["non-goal", "non goal", "out of scope"])
     for non_goal in ["telegram", "graphify", "surprise me", "preference learning", "pdf", "llm"]:

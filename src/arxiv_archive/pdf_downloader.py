@@ -15,7 +15,7 @@ class PDFDownloader:
         if pdf_path.exists():
             return pdf_path
 
-        client = httpx.Client(timeout=120.0)
+        client = httpx.Client(timeout=120.0, follow_redirects=True)
         try:
             response = client.get(pdf_url)
             response.raise_for_status()
