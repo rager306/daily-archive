@@ -23,7 +23,7 @@
 - [x] **S03: Semantic chunks and evidence paths** `risk:medium` `depends:[S02]`
   > After this: After this: PageIndex nodes can own SemanticChunk records and EvidencePath objects can point from paper to section to chunk.
 
-- [ ] **S04: Claim entity relation contracts** `risk:high` `depends:[S03]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: After this: fixture text can produce typed Claim, ScientificEntity, and ScientificRelation drafts with confidence, provenance, and validation errors.
 
 - [ ] **S05: LadybugDB SCI KG schema expansion** `risk:high` `depends:[S02,S03,S04]`

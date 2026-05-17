@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M003-km5fty: Scientific Hybrid Graph RAG and RLM Navigation Base
-**Active Slice:** S04: Claim entity relation contracts
-**Phase:** evaluating-gates
+**Active Slice:** S05: LadybugDB SCI KG schema expansion
+**Phase:** planning
 **Requirements Status:** 7 active · 16 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Evaluate 2 quality gate(s) for S04 before execution.
+Slice S05 has no DB tasks. Plan slice tasks before execution.

@@ -4,17 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R017 — Claim, ScientificEntity, and ScientificRelation contracts must reference EvidencePath records or explicit validation errors.
-- Class: core-capability
-- Status: active
-- Description: Claim, ScientificEntity, and ScientificRelation contracts must reference EvidencePath records or explicit validation errors.
-- Why it matters: Scientific KG extraction must be typed, traceable, and validator-backed before storage, retrieval, or DSPy/RLM workflows rely on it.
-- Source: M003 requirements restoration after S03
-- Primary owning slice: M003-km5fty/S04
-- Supporting slices: S03,S05,S07,S08
-- Validation: Pending S04 contract and validator tests for missing evidence, invalid relation endpoints, confidence/provenance fields, and unstable IDs.
-- Notes: Restores planned M003 extraction-contract requirement from the missing historical R026-R035 range using current GSD auto-assigned IDs.
-
 ### R018 — LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.
 - Class: integration
 - Status: active
@@ -233,6 +222,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by S03: `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed with 44 tests.
 - Notes: Restores M003 SemanticChunk/EvidencePath requirement from the missing historical R026-R035 range using current GSD auto-assigned IDs.
 
+### R017 — Claim, ScientificEntity, and ScientificRelation contracts must reference EvidencePath records or explicit validation errors.
+- Class: core-capability
+- Status: validated
+- Description: Claim, ScientificEntity, and ScientificRelation contracts must reference EvidencePath records or explicit validation errors.
+- Why it matters: Scientific KG extraction must be typed, traceable, and validator-backed before storage, retrieval, or DSPy/RLM workflows rely on it.
+- Source: M003 requirements restoration after S03
+- Primary owning slice: M003-km5fty/S04
+- Supporting slices: S03,S05,S07,S08
+- Validation: S04 verification passed: `uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` => 50 passed; Ruff all checks passed; CLI help smoke exit 0; LSP diagnostics clean; Pyrefly 0 errors; Ty all checks passed.
+- Notes: Validated by M003-km5fty/S04. S04 added deterministic Claim, ScientificEntity, ScientificRelation, and ExtractionPatch contracts backed by EvidencePath fields plus explicit validation diagnostics. The slice intentionally remains local-only and does not add LLM/DSPy/storage/retrieval behavior.
+
 ## Deferred
 
 ## Out of Scope
@@ -257,7 +257,7 @@ This file is the explicit capability and coverage contract for the project.
 | R014 | core-capability | validated | M003-km5fty/S01 | S02,S03 | Validated by S01: `uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed during S01 closeout. |
 | R015 | core-capability | validated | M003-km5fty/S02 | S03,S09 | Validated by S02: `uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed during S02 closeout. |
 | R016 | core-capability | validated | M003-km5fty/S03 | S04,S05,S06,S07,S09 | Validated by S03: `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed with 44 tests. |
-| R017 | core-capability | active | M003-km5fty/S04 | S03,S05,S07,S08 | Pending S04 contract and validator tests for missing evidence, invalid relation endpoints, confidence/provenance fields, and unstable IDs. |
+| R017 | core-capability | validated | M003-km5fty/S04 | S03,S05,S07,S08 | S04 verification passed: `uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` => 50 passed; Ruff all checks passed; CLI help smoke exit 0; LSP diagnostics clean; Pyrefly 0 errors; Ty all checks passed. |
 | R018 | integration | active | M003-km5fty/S05 | S02,S03,S04,S06,S10 | Pending S05 integration tests for schema creation, idempotent ingest, duplicate prevention, rollback, and partial invalid patch rejection. |
 | R019 | core-capability | active | M003-km5fty/S06 | S03,S05,S07,S10 | Pending S06 retrieval and ablation tests comparing vector-only, graph expansion, and fused retrieval over fixtures. |
 | R020 | quality-attribute | active | M003-km5fty/S07 | S03,S04,S06,S08,S09,S10 | Pending S07 benchmark tests covering expected claims, entities, evidence paths, retrieval questions, evidence-path hit rate, retrieval recall, schema validity, and groundedness proxy metrics. |
@@ -267,7 +267,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 7
-- Mapped to slices: 7
-- Validated: 16 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016)
+- Active requirements: 6
+- Mapped to slices: 6
+- Validated: 17 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017)
 - Unmapped active requirements: 0
