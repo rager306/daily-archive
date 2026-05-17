@@ -43,6 +43,26 @@ class FullTextIngestionResult:
     provenance: dict[str, str]
 
 
+def full_text_source_for_paper(
+    paper_id: str,
+    papers_dir: Path,
+    *,
+    source_type: FullTextSourceType = "markdown",
+    filename: str = "full_text.md",
+) -> FullTextSource:
+    """Build the deterministic local full-text source for a stored paper artifact.
+
+    Existing daily artifacts use a `papers/{paper_id}/` directory. S01 keeps the
+    full-text boundary compatible with that layout by deriving the local source
+    path without importing CLI code or changing the public cron surface.
+    """
+    return FullTextSource(
+        paper_id=paper_id,
+        source_type=source_type,
+        source_path=Path(papers_dir) / paper_id / filename,
+    )
+
+
 def ingest_full_text(source: FullTextSource) -> FullTextIngestionResult:
     """Read a local markdown/text source and return typed ingestion diagnostics.
 
@@ -136,5 +156,6 @@ __all__ = [
     "FullTextIngestionResult",
     "FullTextSource",
     "FullTextSourceType",
+    "full_text_source_for_paper",
     "ingest_full_text",
 ]

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T16:27:05.775Z",
+  "exported_at": "2026-05-17T16:29:55.302Z",
   "milestones": [
     {
       "id": "M001",
@@ -2131,19 +2131,25 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S01",
       "id": "T03",
-      "title": "Verify artifact to ingestion boundary for PageIndex consumers",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Verified the stored paper artifact path can feed the full-text ingestion boundary for future PageIndex consumers.",
+      "status": "complete",
+      "one_liner": "Verified the stored paper artifact path can feed the full-text ingestion boundary for future PageIndex consumers.",
+      "narrative": "Added `full_text_source_for_paper(paper_id, papers_dir, source_type='markdown', filename='full_text.md')` to derive a deterministic local full-text source from the stored paper artifact layout without importing or modifying the CLI. Added a PageIndex-readiness contract test proving a stored paper id under a `papers/{paper_id}/full_text.md` path produces a non-empty structured ingestion result with preserved paper id, source path, extraction mode, warnings, fallback reason, and provenance. Existing T01/T02 behavior remains covered.",
+      "verification_result": "Ran `uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q`; 27 tests passed. Ran `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py`; all checks passed. LSP diagnostics reported no diagnostics for the touched files. GitNexus change detection reported low risk with no indexed changed symbols.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T16:29:55.266Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "GitNexus has not indexed the new symbols yet, so impact/context calls return target-not-found until analysis is rebuilt.",
+      "key_files": [
+        "src/arxiv_archive/full_text.py",
+        "tests/test_full_text_ingestion.py"
+      ],
+      "key_decisions": [
+        "Use `papers/{paper_id}/full_text.md` as the deterministic default local full-text source path for stored paper artifacts.",
+        "Keep the artifact-to-ingestion helper independent of `arxiv_archive.cli` to avoid changing the public daily CLI contract."
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S01\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/full_text.py\n  - tests/test_full_text_ingestion.py\nkey_decisions:\n  - Use `papers/{paper_id}/full_text.md` as the deterministic default local full-text source path for stored paper artifacts.\n  - Keep the artifact-to-ingestion helper independent of `arxiv_archive.cli` to avoid changing the public daily CLI contract.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T16:29:55.265Z\nblocker_discovered: false\n---\n\n# T03: Verified the stored paper artifact path can feed the full-text ingestion boundary for future PageIndex consumers.\n\n**Verified the stored paper artifact path can feed the full-text ingestion boundary for future PageIndex consumers.**\n\n## What Happened\n\nAdded `full_text_source_for_paper(paper_id, papers_dir, source_type='markdown', filename='full_text.md')` to derive a deterministic local full-text source from the stored paper artifact layout without importing or modifying the CLI. Added a PageIndex-readiness contract test proving a stored paper id under a `papers/{paper_id}/full_text.md` path produces a non-empty structured ingestion result with preserved paper id, source path, extraction mode, warnings, fallback reason, and provenance. Existing T01/T02 behavior remains covered.\n\n## Verification\n\nRan `uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q`; 27 tests passed. Ran `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py`; all checks passed. LSP diagnostics reported no diagnostics for the touched files. GitNexus change detection reported low risk with no indexed changed symbols.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q` | 0 | ✅ pass: 27 tests passed | 3600ms |\n| 2 | `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py` | 0 | ✅ pass: Ruff clean | 0ms |\n| 3 | `lsp diagnostics src/arxiv_archive/full_text.py and tests/test_full_text_ingestion.py` | 0 | ✅ pass: no diagnostics | 0ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nGitNexus has not indexed the new symbols yet, so impact/context calls return target-not-found until analysis is rebuilt.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/full_text.py`\n- `tests/test_full_text_ingestion.py`\n",
       "description": "Wire the ingestion boundary to existing stored paper artifact assumptions without changing the public daily CLI. Add tests proving a stored paper id plus deterministic local source path can produce an ingestion result ready for PageIndex construction, and document the S01 boundary in module docstrings or test names. Run targeted tests plus lint on the new production module. Done when future S02 can consume the result shape without touching M001 cron artifacts.",
       "estimate": "45m",
       "files": [
@@ -2279,6 +2285,39 @@
       "verdict": "✅ pass: no diagnostics",
       "duration_ms": 0,
       "created_at": "2026-05-17T16:27:05.746Z"
+    },
+    {
+      "id": 7,
+      "task_id": "T03",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 27 tests passed",
+      "duration_ms": 3600,
+      "created_at": "2026-05-17T16:29:55.266Z"
+    },
+    {
+      "id": 8,
+      "task_id": "T03",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: Ruff clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:29:55.267Z"
+    },
+    {
+      "id": 9,
+      "task_id": "T03",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/full_text.py and tests/test_full_text_ingestion.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: no diagnostics",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:29:55.267Z"
     }
   ]
 }

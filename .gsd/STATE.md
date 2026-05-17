@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T03: Verify artifact to ingestion boundary for PageIndex consumers in slice S01.
+Execute T04: Run S01 quality gates and regression smoke in slice S01.

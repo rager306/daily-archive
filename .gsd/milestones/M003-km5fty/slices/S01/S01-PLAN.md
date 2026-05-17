@@ -34,7 +34,7 @@ Connects existing paper artifacts to the future PageIndex and chunk pipeline wit
   - Files: `src/arxiv_archive/full_text.py`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py -q
 
-- [ ] **T03: Verify artifact to ingestion boundary for PageIndex consumers** `est:45m`
+- [x] **T03: Verify artifact to ingestion boundary for PageIndex consumers** `est:45m`
   Wire the ingestion boundary to existing stored paper artifact assumptions without changing the public daily CLI. Add tests proving a stored paper id plus deterministic local source path can produce an ingestion result ready for PageIndex construction, and document the S01 boundary in module docstrings or test names. Run targeted tests plus lint on the new production module. Done when future S02 can consume the result shape without touching M001 cron artifacts.
   - Files: `src/arxiv_archive/full_text.py`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q
