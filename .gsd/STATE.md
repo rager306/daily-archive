@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T03: Implement EvidencePath validation helpers in slice S03.
+Execute T04: Run S03 quality gates and regression smoke in slice S03.

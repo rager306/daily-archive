@@ -34,7 +34,7 @@ Consumes S02 PageIndexDocument and PageIndexNode IDs, producing chunk and eviden
   - Files: `src/arxiv_archive/evidence.py`, `tests/test_evidence_paths.py`
   - Verify: uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q
 
-- [ ] **T03: Implement EvidencePath validation helpers** `est:1h`
+- [x] **T03: Implement EvidencePath validation helpers** `est:1h`
   Implement `EvidencePath` construction and validation helpers that prove each path references an existing paper id, PageIndexNode id, and SemanticChunk id. Add tests for valid paths, missing node, missing chunk, paper mismatch, and fallback-section evidence. Done when S04 can reference evidence paths without revalidating PageIndex internals.
   - Files: `src/arxiv_archive/evidence.py`, `tests/test_evidence_paths.py`
   - Verify: uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py -q

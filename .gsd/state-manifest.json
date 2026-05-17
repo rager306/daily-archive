@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T17:26:56.767Z",
+  "exported_at": "2026-05-17T17:28:26.806Z",
   "milestones": [
     {
       "id": "M001",
@@ -2511,19 +2511,25 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S03",
       "id": "T03",
-      "title": "Implement EvidencePath validation helpers",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added EvidencePath validation coverage for missing chunks, node-path mismatch, and fallback evidence.",
+      "status": "complete",
+      "one_liner": "Added EvidencePath validation coverage for missing chunks, node-path mismatch, and fallback evidence.",
+      "narrative": "Expanded `tests/test_evidence_paths.py` with validation coverage for missing SemanticChunk references, mismatched node paths, and valid fallback-section evidence paths. Existing `validate_evidence_path()` behavior already satisfied the new cases, so no production code changes were required. This confirms S04 can reference evidence paths without revalidating PageIndex internals and can inspect explicit diagnostics for broken links.",
+      "verification_result": "Ran `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py -q`; 21 tests passed. Ran `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py`; all checks passed. LSP diagnostics for `tests/test_evidence_paths.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T17:28:26.764Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "No production changes were needed because T02 had already implemented the initial EvidencePath boundary required by the red contract. T03 added the planned missing chunk, node path mismatch, and fallback evidence-path validation coverage.",
+      "known_issues": "GitNexus has not indexed new evidence symbols yet; impact calls return target-not-found until `gitnexus analyze . --name daily-archive` is rerun.",
+      "key_files": [
+        "tests/test_evidence_paths.py",
+        "src/arxiv_archive/evidence.py"
+      ],
+      "key_decisions": [
+        "Keep EvidencePath validation pure and fixture-local; callers pass the document and chunk list explicitly.",
+        "Treat fallback full-text sections as valid evidence targets when PageIndex fallback diagnostics are present."
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S03\nmilestone: M003-km5fty\nkey_files:\n  - tests/test_evidence_paths.py\n  - src/arxiv_archive/evidence.py\nkey_decisions:\n  - Keep EvidencePath validation pure and fixture-local; callers pass the document and chunk list explicitly.\n  - Treat fallback full-text sections as valid evidence targets when PageIndex fallback diagnostics are present.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T17:28:26.763Z\nblocker_discovered: false\n---\n\n# T03: Added EvidencePath validation coverage for missing chunks, node-path mismatch, and fallback evidence.\n\n**Added EvidencePath validation coverage for missing chunks, node-path mismatch, and fallback evidence.**\n\n## What Happened\n\nExpanded `tests/test_evidence_paths.py` with validation coverage for missing SemanticChunk references, mismatched node paths, and valid fallback-section evidence paths. Existing `validate_evidence_path()` behavior already satisfied the new cases, so no production code changes were required. This confirms S04 can reference evidence paths without revalidating PageIndex internals and can inspect explicit diagnostics for broken links.\n\n## Verification\n\nRan `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py -q`; 21 tests passed. Ran `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py`; all checks passed. LSP diagnostics for `tests/test_evidence_paths.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py -q` | 0 | ✅ pass: 21 tests passed | 150ms |\n| 2 | `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py` | 0 | ✅ pass: Ruff clean | 0ms |\n| 3 | `lsp diagnostics tests/test_evidence_paths.py` | 0 | ✅ pass: no diagnostics | 0ms |\n\n## Deviations\n\nNo production changes were needed because T02 had already implemented the initial EvidencePath boundary required by the red contract. T03 added the planned missing chunk, node path mismatch, and fallback evidence-path validation coverage.\n\n## Known Issues\n\nGitNexus has not indexed new evidence symbols yet; impact calls return target-not-found until `gitnexus analyze . --name daily-archive` is rerun.\n\n## Files Created/Modified\n\n- `tests/test_evidence_paths.py`\n- `src/arxiv_archive/evidence.py`\n",
       "description": "Implement `EvidencePath` construction and validation helpers that prove each path references an existing paper id, PageIndexNode id, and SemanticChunk id. Add tests for valid paths, missing node, missing chunk, paper mismatch, and fallback-section evidence. Done when S04 can reference evidence paths without revalidating PageIndex internals.",
       "estimate": "1h",
       "files": [
@@ -2948,6 +2954,39 @@
       "verdict": "✅ pass: no diagnostics",
       "duration_ms": 0,
       "created_at": "2026-05-17T17:26:56.728Z"
+    },
+    {
+      "id": 33,
+      "task_id": "T03",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 21 tests passed",
+      "duration_ms": 150,
+      "created_at": "2026-05-17T17:28:26.765Z"
+    },
+    {
+      "id": 34,
+      "task_id": "T03",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: Ruff clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T17:28:26.765Z"
+    },
+    {
+      "id": 35,
+      "task_id": "T03",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics tests/test_evidence_paths.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: no diagnostics",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T17:28:26.765Z"
     }
   ]
 }

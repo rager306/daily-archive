@@ -144,6 +144,58 @@ def test_evidence_path_validation_reports_missing_and_mismatched_links() -> None
     ]
 
 
+def test_validation_reports_missing_semantic_chunk() -> None:
+    document = build_document()
+    chunks = build_semantic_chunks(document)
+    missing = EvidencePath(
+        paper_id="2605.12345",
+        page_index_node_id="2605.12345:method",
+        semantic_chunk_id="2605.12345:method:missing-chunk",
+        node_path=["2605.12345:root", "2605.12345:method"],
+        validation_warnings=[],
+        provenance={},
+    )
+
+    assert validate_evidence_path(missing, document, chunks) == [
+        "evidence path references missing SemanticChunk 2605.12345:method:missing-chunk"
+    ]
+
+
+def test_validation_reports_node_path_mismatch() -> None:
+    document = build_document()
+    chunks = build_semantic_chunks(document)
+    method = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method")
+    broken_path = EvidencePath(
+        paper_id="2605.12345",
+        page_index_node_id="2605.12345:method",
+        semantic_chunk_id=method.id,
+        node_path=["2605.12345:root", "2605.12345:abstract"],
+        validation_warnings=[],
+        provenance={},
+    )
+
+    assert validate_evidence_path(broken_path, document, chunks) == [
+        "evidence path node_path 2605.12345:root/2605.12345:abstract does not match PageIndexNode path 2605.12345:root/2605.12345:method"
+    ]
+
+
+def test_fallback_chunk_builds_valid_evidence_path() -> None:
+    document = build_document(
+        paper_id="2605.noheadings",
+        source_path=PAGE_INDEX_FIXTURES / "no_headings.txt",
+        source_type="text",
+    )
+    chunks = build_semantic_chunks(document)
+
+    path = build_evidence_path(document, chunks[0])
+
+    assert path.page_index_node_id == "2605.noheadings:full-text"
+    assert path.semantic_chunk_id == "2605.noheadings:full-text:chunk-0001"
+    assert path.node_path == ["2605.noheadings:root", "2605.noheadings:full-text"]
+    assert path.validation_warnings == []
+    assert validate_evidence_path(path, document, chunks) == []
+
+
 def test_semantic_chunk_model_is_stable_for_downstream_storage() -> None:
     chunk = SemanticChunk(
         id="2605.12345:method:chunk-0001",
