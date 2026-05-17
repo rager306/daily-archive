@@ -1,0 +1,142 @@
+version: 1
+name: precommit-code-quality
+mode: yaml-step
+description: "Mandatory code-quality workflow: GitNexus before/after analysis, redundancy review, Ruff/Pyrefly/Ty gates, and tests before any local commit."
+params:
+  base_ref: "HEAD~1"
+  target_symbol: "changed symbols"
+  test_command: "uv run pytest tests/"
+steps:
+  - id: pre_development_gitnexus
+    name: "Pre-development GitNexus impact analysis"
+    prompt: |
+      Before changing code, identify the functions/classes/modules expected to change.
+      For every symbol-level edit, run GitNexus impact analysis:
+      - gitnexus_impact({target: "{{ target_symbol }}", direction: "upstream"}) when a concrete symbol is known.
+      - gitnexus_context({name: "{{ target_symbol }}"}) for caller/callee context.
+      - gitnexus_query(...) for unfamiliar execution flows.
+
+      Record direct callers, affected flows, risk level, and any HIGH/CRITICAL warnings before editing.
+      If GitNexus reports stale or missing index, run `gitnexus analyze` and retry.
+    produces:
+      - ".gsd/safety/pre-development-gitnexus.md"
+    verify:
+      type: prompt-verify
+      prompt: "Verify the pre-development artifact includes target symbols, GitNexus impact/context/query evidence, affected callers/flows, and risk notes."
+
+  - id: implementation
+    name: "Implement code changes"
+    prompt: |
+      Implement the requested code changes only after pre-development GitNexus analysis is recorded.
+      Keep changes minimal, avoid speculative abstractions, and update direct dependents discovered by GitNexus.
+      Do not commit in this step.
+    requires:
+      - pre_development_gitnexus
+    context_from:
+      - pre_development_gitnexus
+    produces:
+      - ".gsd/safety/implementation-notes.md"
+    verify:
+      type: prompt-verify
+      prompt: "Verify implementation notes explain what changed, why it was minimal, and how direct dependents were handled."
+
+  - id: redundancy_consistency_review
+    name: "Code consistency and redundancy review"
+    prompt: |
+      Review the changed code for consistency with existing patterns and avoid over-engineering.
+      Use GitNexus context/query plus local code inspection to check:
+      - duplicate or overlapping functions/classes/modules,
+      - unnecessary abstractions,
+      - dead or unreachable code,
+      - inconsistent API boundaries,
+      - changed symbols whose callers were not updated.
+
+      Record any simplifications made or intentionally deferred.
+    requires:
+      - implementation
+    context_from:
+      - implementation
+    produces:
+      - ".gsd/safety/redundancy-consistency-review.md"
+    verify:
+      type: prompt-verify
+      prompt: "Verify the review covers redundancy, consistency, dead code, API boundaries, and caller alignment."
+
+  - id: ruff_gate
+    name: "Ruff lint gate"
+    prompt: "Run Ruff on source and tests and fix all issues before continuing."
+    requires:
+      - redundancy_consistency_review
+    verify:
+      type: shell-command
+      command: "uv run ruff check src/ tests/"
+
+  - id: pyrefly_gate
+    name: "Pyrefly type gate"
+    prompt: "Run Pyrefly type checking and fix all issues before continuing."
+    requires:
+      - ruff_gate
+    verify:
+      type: shell-command
+      command: "uv run pyrefly check src tests"
+
+  - id: ty_gate
+    name: "Ty type gate"
+    prompt: "Run Ty type checking and fix all issues before continuing."
+    requires:
+      - pyrefly_gate
+    verify:
+      type: shell-command
+      command: "uv run ty check src tests"
+
+  - id: test_gate
+    name: "Project test gate"
+    prompt: "Run the project tests after lint/type gates pass."
+    requires:
+      - ty_gate
+    verify:
+      type: shell-command
+      command: "{{ test_command }}"
+
+  - id: post_development_gitnexus
+    name: "Post-development GitNexus change detection"
+    prompt: |
+      After code and tests pass, run GitNexus post-change analysis before any commit:
+      - gitnexus_detect_changes({scope: "all"}) when available.
+      - If worktree isolation breaks diff detection, run `gitnexus analyze`, then use GitNexus context/query on the changed symbols and compare against intended scope.
+      - Confirm changed files/symbols match the implementation notes.
+      - Flag unexpected flows, accidental public API changes, and high-risk blast radius.
+
+      Do not commit unless the detected scope matches the expected scope.
+    requires:
+      - test_gate
+    context_from:
+      - pre_development_gitnexus
+      - implementation
+      - redundancy_consistency_review
+    produces:
+      - ".gsd/safety/post-development-gitnexus.md"
+    verify:
+      type: prompt-verify
+      prompt: "Verify post-development GitNexus evidence confirms changed symbols/files/flows match intended scope and no unexpected high-risk impact remains."
+
+  - id: commit_ready_gate
+    name: "Commit readiness gate"
+    prompt: |
+      Commit is allowed only if all prior gates passed:
+      - pre-development GitNexus impact/context recorded,
+      - redundancy/consistency review completed,
+      - Ruff passed,
+      - Pyrefly passed,
+      - Ty passed,
+      - tests passed,
+      - post-development GitNexus change detection passed.
+
+      Summarize the exact verification evidence and then make the local commit if requested by the active GSD task.
+    requires:
+      - post_development_gitnexus
+    produces:
+      - ".gsd/safety/commit-readiness.md"
+    verify:
+      type: prompt-verify
+      prompt: "Verify the commit readiness artifact lists all gates and fresh evidence for each one."

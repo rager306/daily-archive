@@ -6,7 +6,19 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from src.arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
+from arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
+
+
+def load_project_env() -> None:
+    """Load .env from the active worktree or canonical project root without printing secrets."""
+    candidates = [
+        Path.cwd() / ".env",
+        Path(__file__).parents[1] / ".env",
+        Path("/root/daily-archive/.env"),
+    ]
+    for env_path in candidates:
+        if env_path.exists():
+            load_dotenv(env_path, override=False)
 
 
 def test_paper_summary_dataclass() -> None:
@@ -71,8 +83,8 @@ ANALOGY: Think of it like a test."""
 
 def test_summarize_api_call() -> None:
     """Test actual API call to MiniMax (skip if no real API key)."""
-    # Load .env so api_key is available outside of shell context
-    load_dotenv()
+    # Load .env so api_key is available outside of shell context.
+    load_project_env()
 
     api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
 

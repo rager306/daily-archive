@@ -83,7 +83,38 @@ def test_scored_paper_roundtrip() -> None:
     assert restored.score == scored.score
     assert restored.breakdown == scored.breakdown
     assert restored.paper.id == scored.paper.id
+    assert restored.semschol is not None
+    assert scored.semschol is not None
     assert restored.semschol.citation_count == scored.semschol.citation_count
+
+
+def test_scored_paper_embedding_roundtrip() -> None:
+    """ScoredPaper embeddings must survive Adaptix serialization boundaries."""
+    paper = ArxivPaper(
+        id="arxiv:2310.00002",
+        title="Embedding Test",
+        abstract="Test abstract",
+        authors=["Author"],
+        published=date(2026, 5, 14),
+        updated=date(2026, 5, 14),
+        categories=["cs.AI"],
+        pdf_url="https://arxiv.org/pdf/2310.00002.pdf",
+    )
+    scored = ScoredPaper(
+        paper=paper,
+        semschol=None,
+        keywords=["graph", "vector"],
+        score=7.25,
+        breakdown={"novelty": 1.0},
+        embedding=[float(i % 7) / 7 for i in range(512)],
+    )
+
+    dumped = PAPER_RETORT.dump(scored)
+    restored = dict_to_scored_paper(dumped)
+
+    assert restored.embedding == scored.embedding
+    assert restored.paper.id == scored.paper.id
+    assert restored.keywords == scored.keywords
 
 
 # --- Property: session file format is valid JSON ---

@@ -98,8 +98,8 @@ class MiniMaxSummarizer:
         # Get the text content from the response
         text = ""
         for block in response.content:
-            if block.type == "text":
-                text = block.text
+            if getattr(block, "type", None) == "text":
+                text = str(getattr(block, "text", ""))
                 break
 
         if not text:
@@ -113,6 +113,18 @@ class MiniMaxSummarizer:
         result: dict[str, str] = {}
         current_field: str | None = None
         current_value_parts: list[str] = []
+
+        def clean_field_value(value: str) -> str:
+            value = value.strip()
+            while True:
+                old = value
+                for marker in ["**", "*", "_"]:
+                    if value.startswith(marker):
+                        value = value[len(marker):].strip()
+                    if value.endswith(marker):
+                        value = value[:-len(marker)].strip()
+                if value == old:
+                    return value.strip()
 
         for line in lines:
             stripped = line.strip()
@@ -134,22 +146,22 @@ class MiniMaxSummarizer:
                 if current_field and current_value_parts:
                     result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "headline"
-                current_value_parts = [stripped[len("HEADLINE:"):].strip()]
+                current_value_parts = [clean_field_value(stripped[len("HEADLINE:"):])]
             elif stripped.startswith("WHAT IT DOES:"):
                 if current_field and current_value_parts:
                     result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "what_it_does"
-                current_value_parts = [stripped[len("WHAT IT DOES:"):].strip()]
+                current_value_parts = [clean_field_value(stripped[len("WHAT IT DOES:"):])]
             elif stripped.startswith("WHY IT MATTERS:"):
                 if current_field and current_value_parts:
                     result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "why_it_matters"
-                current_value_parts = [stripped[len("WHY IT MATTERS:"):].strip()]
+                current_value_parts = [clean_field_value(stripped[len("WHY IT MATTERS:"):])]
             elif stripped.startswith("ANALOGY:"):
                 if current_field and current_value_parts:
                     result[current_field] = " ".join(current_value_parts).strip()
                 current_field = "analogy"
-                current_value_parts = [stripped[len("ANALOGY:"):].strip()]
+                current_value_parts = [clean_field_value(stripped[len("ANALOGY:"):])]
             elif current_field and stripped:
                 # Strip all markdown markers from continuation lines
                 while True:
