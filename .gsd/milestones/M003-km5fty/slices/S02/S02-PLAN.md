@@ -39,7 +39,7 @@ Consumes S01 `FullTextIngestionResult` and produces a deterministic PageIndex tr
   - Files: `src/arxiv_archive/page_index.py`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q
 
-- [ ] **T04: Run S02 quality gates and regression smoke** `est:30m`
+- [x] **T04: Run S02 quality gates and regression smoke** `est:30m`
   Run final S02 regression gates: PageIndex tests, S01 ingestion tests, relevant analysis regression, Ruff on touched files, and a no-CLI-change smoke check. Record known limitations for S03, especially simple markdown parsing and no chunking yet. Done when S02 is ready for closeout.
   - Files: `src/arxiv_archive/page_index.py`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q
