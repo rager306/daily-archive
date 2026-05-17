@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T16:31:54.627Z",
+  "exported_at": "2026-05-17T16:34:27.490Z",
   "milestones": [
     {
       "id": "M001",
@@ -512,11 +512,11 @@
       "completed_at": null,
       "full_summary_md": "",
       "full_uat_md": "",
-      "goal": "Implement the PageIndexNode hierarchy and navigation primitives for intra-paper structure.",
-      "success_criteria": "- PageIndexNode records preserve title, level, order, parent, children, NEXT relation, and provenance.\n- Tests can locate abstract, methods, results, limitations, and fallback sections in fixtures.\n- Navigation returns stable Paper -> PageIndexNode paths.\n- Structure-quality validation reports completeness/order issues.",
-      "proof_level": "schema and navigation tests",
-      "integration_closure": "Provides the structural layer that SemanticChunk, Claim, EvidencePath, and RLM document navigation will consume.",
-      "observability_impact": "Exposes hierarchy completeness, section ordering, page/offset ranges where available, and parser fallback status.",
+      "goal": "Implement the PageIndexNode hierarchy and navigation primitives for intra-paper structure using the S01 full-text ingestion boundary.",
+      "success_criteria": "- PageIndexNode records preserve title, level, order, parent, children, NEXT relation, source path, and provenance.\n- Tests can locate abstract, method, conclusion, and fallback sections in fixtures.\n- Navigation returns stable Paper -> PageIndexNode paths and ordered NEXT traversal.\n- Structure-quality validation reports completeness/order issues without requiring network or PDF access.",
+      "proof_level": "This slice proves: deterministic PageIndexNode hierarchy and navigation primitives over fixture full text.",
+      "integration_closure": "Consumes S01 `FullTextIngestionResult` and produces a deterministic PageIndex tree that S03 SemanticChunk and EvidencePath work can attach to. Does not change M001 cron CLI behavior or introduce LadybugDB writes.",
+      "observability_impact": "PageIndex construction returns validation diagnostics for missing headings, order gaps, empty sections, fallback section creation, parent/child consistency, and NEXT-link consistency so future agents can diagnose bad document structure without inspecting parser internals.",
       "sequence": 2,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -2214,6 +2214,172 @@
         "tests/test_full_text_ingestion.py"
       ],
       "observability_impact": "Final verification checks both feature behavior and diagnostic fields so failure inspection remains agent-friendly.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S02",
+      "id": "T01",
+      "title": "Add PageIndex contract tests and fallback fixture",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Create red contract tests for PageIndex construction over the S01 structured markdown fixture and a malformed/no-heading fallback fixture. Define expected `PageIndexNode` fields, deterministic IDs, parent/child relationships, ordered NEXT traversal, stable Paper -> node paths, and validation diagnostics. Done when the new tests fail for missing `arxiv_archive.page_index` while S01 ingestion tests still pass.",
+      "estimate": "45m",
+      "files": [
+        "tests/fixtures/page_index/no_headings.txt",
+        "tests/test_page_index.py"
+      ],
+      "verify": "uv run pytest tests/test_page_index.py -q",
+      "inputs": [
+        ".gsd/milestones/M003-km5fty/slices/S01/S01-SUMMARY.md",
+        "tests/fixtures/full_text/structured_paper.md",
+        "src/arxiv_archive/full_text.py"
+      ],
+      "expected_output": [
+        "tests/fixtures/page_index/no_headings.txt",
+        "tests/test_page_index.py"
+      ],
+      "observability_impact": "Defines diagnostic expectations for structure parsing failures, fallback sections, and ordered navigation errors before implementation.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S02",
+      "id": "T02",
+      "title": "Implement PageIndex document construction",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Implement `src/arxiv_archive/page_index.py` with typed `PageIndexNode`, `PageIndexDocument`, and construction from `FullTextIngestionResult`. Parse markdown headings into a hierarchy with deterministic node IDs and ordered relationships; create an explicit fallback root/section when no headings exist. Done when the initial PageIndex contract tests pass.",
+      "estimate": "1h 15m",
+      "files": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "verify": "uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q",
+      "inputs": [
+        "tests/test_page_index.py",
+        "src/arxiv_archive/full_text.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/page_index.py"
+      ],
+      "observability_impact": "Construction result exposes validation diagnostics and parser mode in code-readable fields.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S02",
+      "id": "T03",
+      "title": "Add PageIndex navigation and validation helpers",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Add navigation helpers and tests for locating sections by title, computing stable Paper -> PageIndexNode paths, walking NEXT links, and validating parent/child/NEXT consistency. Keep helpers pure and fixture-local. Done when downstream S03 can attach chunks to stable node IDs without inspecting parser internals.",
+      "estimate": "1h",
+      "files": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "verify": "uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q",
+      "inputs": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "observability_impact": "Validation diagnostics identify broken path, parent, order, or NEXT-link invariants explicitly.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S02",
+      "id": "T04",
+      "title": "Run S02 quality gates and regression smoke",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Run final S02 regression gates: PageIndex tests, S01 ingestion tests, relevant analysis regression, Ruff on touched files, and a no-CLI-change smoke check. Record known limitations for S03, especially simple markdown parsing and no chunking yet. Done when S02 is ready for closeout.",
+      "estimate": "30m",
+      "files": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "verify": "uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q",
+      "inputs": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py",
+        "src/arxiv_archive/cli.py",
+        "tests/test_cli_contract.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "observability_impact": "Final gates confirm PageIndex diagnostics remain available and public CLI behavior is unchanged.",
       "full_plan_md": "",
       "sequence": 0,
       "blocker_source": "",
