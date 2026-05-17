@@ -34,7 +34,7 @@ Consumes S01 `FullTextIngestionResult` and produces a deterministic PageIndex tr
   - Files: `src/arxiv_archive/page_index.py`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q
 
-- [ ] **T03: Add PageIndex navigation and validation helpers** `est:1h`
+- [x] **T03: Add PageIndex navigation and validation helpers** `est:1h`
   Add navigation helpers and tests for locating sections by title, computing stable Paper -> PageIndexNode paths, walking NEXT links, and validating parent/child/NEXT consistency. Keep helpers pure and fixture-local. Done when downstream S03 can attach chunks to stable node IDs without inspecting parser internals.
   - Files: `src/arxiv_archive/page_index.py`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q

@@ -51,9 +51,20 @@ class PageIndexDocument:
         normalized = title.casefold()
         return next((node for node in self.nodes if node.title.casefold() == normalized), None)
 
+    def node_by_id(self, node_id: str) -> PageIndexNode | None:
+        """Return a node by stable id for downstream chunk attachment."""
+        return next((node for node in self.nodes if node.id == node_id), None)
+
+    def children_of(self, node_id: str) -> list[PageIndexNode]:
+        """Return direct children in stored child order."""
+        node = self.node_by_id(node_id)
+        if node is None:
+            return []
+        return [child for child_id in node.children_ids if (child := self.node_by_id(child_id))]
+
     def path_to(self, node_id: str) -> list[str]:
         """Return the stable Paper -> PageIndexNode path for a node id."""
-        node = self._node_by_id(node_id)
+        node = self.node_by_id(node_id)
         return list(node.path) if node is not None else []
 
     def walk_next(self) -> list[PageIndexNode]:
@@ -73,8 +84,51 @@ class PageIndexDocument:
             current = next_node
         return ordered
 
+    def validate_navigation(self) -> list[str]:
+        """Return structural navigation diagnostics for parent/child/NEXT/path invariants."""
+        diagnostics: list[str] = []
+        by_id = {node.id: node for node in self.nodes}
+
+        if self.root.id not in by_id:
+            diagnostics.append(f"root node missing from node list: {self.root.id}")
+
+        for expected_order, node in enumerate(self.nodes):
+            if node.order != expected_order:
+                diagnostics.append(
+                    f"node {node.id} order {node.order} does not match position {expected_order}"
+                )
+            if not node.path or node.path[-1] != node.id:
+                diagnostics.append(f"node {node.id} path does not end with its own id")
+            if node is self.root and node.parent_id is not None:
+                diagnostics.append(f"root node {node.id} unexpectedly has parent {node.parent_id}")
+            if node is not self.root:
+                if node.parent_id not in by_id:
+                    diagnostics.append(f"node {node.id} references missing parent {node.parent_id}")
+                elif node.id not in by_id[node.parent_id].children_ids:
+                    diagnostics.append(
+                        f"node {node.id} parent {node.parent_id} does not reference it as a child"
+                    )
+            for child_id in node.children_ids:
+                child = by_id.get(child_id)
+                if child is None:
+                    diagnostics.append(f"node {node.id} references missing child {child_id}")
+                elif child.parent_id != node.id:
+                    diagnostics.append(
+                        f"child {child_id} parent {child.parent_id} does not match {node.id}"
+                    )
+
+        for current, next_node in zip(self.nodes, self.nodes[1:], strict=False):
+            if current.next_id != next_node.id:
+                diagnostics.append(
+                    f"node {current.id} next_id {current.next_id} does not match {next_node.id}"
+                )
+        if self.nodes and self.nodes[-1].next_id is not None:
+            diagnostics.append(f"last node {self.nodes[-1].id} unexpectedly has next_id")
+
+        return diagnostics
+
     def _node_by_id(self, node_id: str) -> PageIndexNode | None:
-        return next((node for node in self.nodes if node.id == node_id), None)
+        return self.node_by_id(node_id)
 
 
 def build_page_index(ingestion: FullTextIngestionResult) -> PageIndexDocument:

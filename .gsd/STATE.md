@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T03: Add PageIndex navigation and validation helpers in slice S02.
+Execute T04: Run S02 quality gates and regression smoke in slice S02.

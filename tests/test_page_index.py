@@ -8,9 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from arxiv_archive.page_index import build_page_index
-
 from arxiv_archive.full_text import FullTextSource, ingest_full_text
+from arxiv_archive.page_index import build_page_index
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"
@@ -81,7 +80,41 @@ def test_can_locate_sections_and_return_stable_paths() -> None:
     assert "PageIndex from deterministic local markdown" in method.text
 
     assert conclusion is not None
+    assert document.node_by_id(method.id) == method
     assert document.path_to(conclusion.id) == ["2605.12345:root", "2605.12345:conclusion"]
+    assert [node.id for node in document.children_of(document.root.id)] == [
+        "2605.12345:abstract",
+        "2605.12345:introduction",
+        "2605.12345:method",
+        "2605.12345:conclusion",
+    ]
+
+
+def test_validate_navigation_reports_no_diagnostics_for_valid_fixture() -> None:
+    ingestion = ingest_fixture("2605.12345", FULL_TEXT_FIXTURES / "structured_paper.md")
+    document = build_page_index(ingestion)
+
+    assert document.validate_navigation() == []
+
+
+def test_validate_navigation_reports_broken_parent_child_next_and_path() -> None:
+    ingestion = ingest_fixture("2605.12345", FULL_TEXT_FIXTURES / "structured_paper.md")
+    document = build_page_index(ingestion)
+    method = document.find_by_title("Method")
+    assert method is not None
+
+    method.parent_id = "2605.12345:missing-parent"
+    method.path = ["2605.12345:root"]
+    document.root.children_ids.append("2605.12345:missing-child")
+    document.root.next_id = "2605.12345:method"
+
+    assert document.validate_navigation() == [
+        "child 2605.12345:method parent 2605.12345:missing-parent does not match 2605.12345:root",
+        "node 2605.12345:root references missing child 2605.12345:missing-child",
+        "node 2605.12345:method path does not end with its own id",
+        "node 2605.12345:method references missing parent 2605.12345:missing-parent",
+        "node 2605.12345:root next_id 2605.12345:method does not match 2605.12345:abstract",
+    ]
 
 
 def test_walk_next_returns_document_order() -> None:

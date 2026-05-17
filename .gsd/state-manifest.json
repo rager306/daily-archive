@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T16:40:53.131Z",
+  "exported_at": "2026-05-17T16:44:28.594Z",
   "milestones": [
     {
       "id": "M001",
@@ -2319,19 +2319,25 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S02",
       "id": "T03",
-      "title": "Add PageIndex navigation and validation helpers",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added PageIndex navigation lookup helpers and structural validation diagnostics.",
+      "status": "complete",
+      "one_liner": "Added PageIndex navigation lookup helpers and structural validation diagnostics.",
+      "narrative": "Added public navigation helpers on `PageIndexDocument`: `node_by_id()`, `children_of()`, and `validate_navigation()`. The validator checks root membership, order consistency, path endings, parent existence, parent/child reciprocal links, missing children, NEXT-link ordering, and unexpected terminal NEXT links. Tests now prove valid fixture diagnostics are empty and intentionally corrupted parent/child/NEXT/path invariants produce explicit diagnostic strings for future agents and S03 chunk attachment.",
+      "verification_result": "Ran `uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q`; 12 tests passed. Ran `uv run ruff check src/arxiv_archive/page_index.py tests/test_page_index.py`; all checks passed. LSP diagnostics for `tests/test_page_index.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T16:44:28.537Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "GitNexus has not indexed new PageIndex symbols yet; impact calls return target-not-found until analysis is rebuilt.",
+      "key_files": [
+        "src/arxiv_archive/page_index.py",
+        "tests/test_page_index.py"
+      ],
+      "key_decisions": [
+        "Expose `node_by_id()` and `children_of()` as public pure helpers for downstream S03 chunk attachment.",
+        "Keep `validate_navigation()` deterministic and string-based so agents can inspect broken PageIndex invariants without custom exception handling."
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S02\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/page_index.py\n  - tests/test_page_index.py\nkey_decisions:\n  - Expose `node_by_id()` and `children_of()` as public pure helpers for downstream S03 chunk attachment.\n  - Keep `validate_navigation()` deterministic and string-based so agents can inspect broken PageIndex invariants without custom exception handling.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T16:44:28.536Z\nblocker_discovered: false\n---\n\n# T03: Added PageIndex navigation lookup helpers and structural validation diagnostics.\n\n**Added PageIndex navigation lookup helpers and structural validation diagnostics.**\n\n## What Happened\n\nAdded public navigation helpers on `PageIndexDocument`: `node_by_id()`, `children_of()`, and `validate_navigation()`. The validator checks root membership, order consistency, path endings, parent existence, parent/child reciprocal links, missing children, NEXT-link ordering, and unexpected terminal NEXT links. Tests now prove valid fixture diagnostics are empty and intentionally corrupted parent/child/NEXT/path invariants produce explicit diagnostic strings for future agents and S03 chunk attachment.\n\n## Verification\n\nRan `uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q`; 12 tests passed. Ran `uv run ruff check src/arxiv_archive/page_index.py tests/test_page_index.py`; all checks passed. LSP diagnostics for `tests/test_page_index.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q` | 0 | ✅ pass: 12 tests passed | 130ms |\n| 2 | `uv run ruff check src/arxiv_archive/page_index.py tests/test_page_index.py` | 0 | ✅ pass: Ruff clean | 0ms |\n| 3 | `lsp diagnostics tests/test_page_index.py` | 0 | ✅ pass: no diagnostics | 0ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nGitNexus has not indexed new PageIndex symbols yet; impact calls return target-not-found until analysis is rebuilt.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/page_index.py`\n- `tests/test_page_index.py`\n",
       "description": "Add navigation helpers and tests for locating sections by title, computing stable Paper -> PageIndexNode paths, walking NEXT links, and validating parent/child/NEXT consistency. Keep helpers pure and fixture-local. Done when downstream S03 can attach chunks to stable node IDs without inspecting parser internals.",
       "estimate": "1h",
       "files": [
@@ -2610,6 +2616,39 @@
       "verdict": "✅ pass: no diagnostics",
       "duration_ms": 0,
       "created_at": "2026-05-17T16:40:53.077Z"
+    },
+    {
+      "id": 20,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 12 tests passed",
+      "duration_ms": 130,
+      "created_at": "2026-05-17T16:44:28.537Z"
+    },
+    {
+      "id": 21,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/page_index.py tests/test_page_index.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: Ruff clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:44:28.537Z"
+    },
+    {
+      "id": 22,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics tests/test_page_index.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: no diagnostics",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:44:28.537Z"
     }
   ]
 }
