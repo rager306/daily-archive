@@ -29,7 +29,7 @@ Consumes S02 PageIndexDocument and PageIndexNode IDs, producing chunk and eviden
   - Files: `tests/test_evidence_paths.py`
   - Verify: uv run pytest tests/test_evidence_paths.py -q
 
-- [ ] **T02: Implement deterministic SemanticChunk construction** `est:1h 15m`
+- [x] **T02: Implement deterministic SemanticChunk construction** `est:1h 15m`
   Implement `src/arxiv_archive/evidence.py` with `SemanticChunk`, deterministic chunking from `PageIndexDocument`, chunk provenance, chunk order, and character spans. Keep chunking simple and deterministic: section-level or paragraph-aware chunks over PageIndexNode text, no embeddings or LLM calls. Done when initial SemanticChunk contract tests pass together with PageIndex tests.
   - Files: `src/arxiv_archive/evidence.py`, `tests/test_evidence_paths.py`
   - Verify: uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q

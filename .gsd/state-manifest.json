@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T17:24:23.197Z",
+  "exported_at": "2026-05-17T17:26:56.767Z",
   "milestones": [
     {
       "id": "M001",
@@ -2464,19 +2464,26 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S03",
       "id": "T02",
-      "title": "Implement deterministic SemanticChunk construction",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Implemented deterministic SemanticChunk construction and the initial EvidencePath boundary.",
+      "status": "complete",
+      "one_liner": "Implemented deterministic SemanticChunk construction and the initial EvidencePath boundary.",
+      "narrative": "Implemented `src/arxiv_archive/evidence.py` with `SemanticChunk`, `EvidencePath`, `build_semantic_chunks()`, `build_evidence_path()`, and `validate_evidence_path()`. Chunking is deterministic and local-only: it emits section-level chunks for non-empty non-root PageIndex nodes, preserves chunk order, stable IDs, character spans, source node ids, PageIndex paths, chunking strategy, and provenance. Evidence-path construction and validation now prove the Paper -> PageIndexNode -> SemanticChunk references are internally consistent and produce explicit diagnostics when links mismatch.",
+      "verification_result": "Ran `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q`; 12 tests passed. Ran `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py`; all checks passed. LSP diagnostics for `src/arxiv_archive/evidence.py` and `tests/test_evidence_paths.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T17:26:56.728Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "T02 also implemented the minimal EvidencePath dataclass/build/validation boundary because the red T01 contract included basic evidence-path behavior. T03 will strengthen validation coverage rather than introduce the boundary from scratch.",
+      "known_issues": "GitNexus has not indexed new evidence symbols yet; impact calls return target-not-found until `gitnexus analyze . --name daily-archive` is rerun.",
+      "key_files": [
+        "src/arxiv_archive/evidence.py",
+        "tests/test_evidence_paths.py"
+      ],
+      "key_decisions": [
+        "Use section-level deterministic chunking strategy `section_text_v1` before embeddings or LLMs.",
+        "Skip the PageIndex root node and emit chunks only for non-empty child/fallback nodes.",
+        "Keep chunk and evidence validation diagnostics as returned lists of strings."
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S03\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/evidence.py\n  - tests/test_evidence_paths.py\nkey_decisions:\n  - Use section-level deterministic chunking strategy `section_text_v1` before embeddings or LLMs.\n  - Skip the PageIndex root node and emit chunks only for non-empty child/fallback nodes.\n  - Keep chunk and evidence validation diagnostics as returned lists of strings.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T17:26:56.727Z\nblocker_discovered: false\n---\n\n# T02: Implemented deterministic SemanticChunk construction and the initial EvidencePath boundary.\n\n**Implemented deterministic SemanticChunk construction and the initial EvidencePath boundary.**\n\n## What Happened\n\nImplemented `src/arxiv_archive/evidence.py` with `SemanticChunk`, `EvidencePath`, `build_semantic_chunks()`, `build_evidence_path()`, and `validate_evidence_path()`. Chunking is deterministic and local-only: it emits section-level chunks for non-empty non-root PageIndex nodes, preserves chunk order, stable IDs, character spans, source node ids, PageIndex paths, chunking strategy, and provenance. Evidence-path construction and validation now prove the Paper -> PageIndexNode -> SemanticChunk references are internally consistent and produce explicit diagnostics when links mismatch.\n\n## Verification\n\nRan `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q`; 12 tests passed. Ran `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py`; all checks passed. LSP diagnostics for `src/arxiv_archive/evidence.py` and `tests/test_evidence_paths.py` reported no diagnostics. GitNexus change detection reported low risk with no indexed changed symbols.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q` | 0 | ✅ pass: 12 tests passed | 150ms |\n| 2 | `uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py` | 0 | ✅ pass: Ruff clean | 0ms |\n| 3 | `lsp diagnostics src/arxiv_archive/evidence.py and tests/test_evidence_paths.py` | 0 | ✅ pass: no diagnostics | 0ms |\n\n## Deviations\n\nT02 also implemented the minimal EvidencePath dataclass/build/validation boundary because the red T01 contract included basic evidence-path behavior. T03 will strengthen validation coverage rather than introduce the boundary from scratch.\n\n## Known Issues\n\nGitNexus has not indexed new evidence symbols yet; impact calls return target-not-found until `gitnexus analyze . --name daily-archive` is rerun.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/evidence.py`\n- `tests/test_evidence_paths.py`\n",
       "description": "Implement `src/arxiv_archive/evidence.py` with `SemanticChunk`, deterministic chunking from `PageIndexDocument`, chunk provenance, chunk order, and character spans. Keep chunking simple and deterministic: section-level or paragraph-aware chunks over PageIndexNode text, no embeddings or LLM calls. Done when initial SemanticChunk contract tests pass together with PageIndex tests.",
       "estimate": "1h 15m",
       "files": [
@@ -2908,6 +2915,39 @@
       "verdict": "✅ pass: new evidence-path test file lint clean",
       "duration_ms": 0,
       "created_at": "2026-05-17T17:24:23.158Z"
+    },
+    {
+      "id": 30,
+      "task_id": "T02",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_evidence_paths.py tests/test_page_index.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 12 tests passed",
+      "duration_ms": 150,
+      "created_at": "2026-05-17T17:26:56.728Z"
+    },
+    {
+      "id": 31,
+      "task_id": "T02",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/evidence.py tests/test_evidence_paths.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: Ruff clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T17:26:56.728Z"
+    },
+    {
+      "id": 32,
+      "task_id": "T02",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/evidence.py and tests/test_evidence_paths.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: no diagnostics",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T17:26:56.728Z"
     }
   ]
 }

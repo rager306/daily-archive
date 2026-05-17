@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T02: Implement deterministic SemanticChunk construction in slice S03.
+Execute T03: Implement EvidencePath validation helpers in slice S03.

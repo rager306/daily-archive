@@ -15,7 +15,6 @@ from arxiv_archive.evidence import (
     build_semantic_chunks,
     validate_evidence_path,
 )
-
 from arxiv_archive.full_text import FullTextSource, ingest_full_text
 from arxiv_archive.page_index import PageIndexDocument, build_page_index
 
@@ -141,6 +140,7 @@ def test_evidence_path_validation_reports_missing_and_mismatched_links() -> None
         "evidence path paper_id different-paper does not match document paper_id 2605.12345",
         "evidence path references missing PageIndexNode 2605.12345:missing-node",
         "SemanticChunk 2605.12345:abstract:chunk-0001 belongs to node 2605.12345:abstract, not 2605.12345:missing-node",
+        "SemanticChunk 2605.12345:abstract:chunk-0001 paper_id 2605.12345 does not match evidence path paper_id different-paper",
     ]
 
 
