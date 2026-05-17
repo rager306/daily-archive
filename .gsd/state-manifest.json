@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T17:30:33.614Z",
+  "exported_at": "2026-05-17T17:39:14.690Z",
   "milestones": [
     {
       "id": "M001",
@@ -132,65 +132,14 @@
         "DSPy typed extraction boundary exists without premature optimizer use.",
         "RLM document, workflow-in-code, and graph traversal modes are prototyped as read/draft-only capabilities with deterministic validation and benchmark comparison."
       ],
-      "key_risks": [
-        {
-          "risk": "Overbuilding RLM before deterministic PageIndex and graph tools exist.",
-          "whyItMatters": "RLM without stable tools becomes untestable agent glue and cannot be benchmarked against cheaper baselines."
-        },
-        {
-          "risk": "Hybrid retrieval claims without evidence-path evaluation.",
-          "whyItMatters": "The project needs trustworthy scientific and editorial evidence, not only similar chunks."
-        },
-        {
-          "risk": "Full-text extraction quality may be poor for some arXiv PDFs or markdown conversions.",
-          "whyItMatters": "Bad structure will poison PageIndex, chunking, claim grounding, and later RLM navigation."
-        },
-        {
-          "risk": "DSPy optimizers may be introduced before reviewed examples and metrics exist.",
-          "whyItMatters": "Optimizers without train/dev sets create false confidence rather than reliable extraction."
-        }
-      ],
-      "proof_strategy": [
-        {
-          "riskOrUnknown": "Can the project preserve full-text structure enough for evidence navigation?",
-          "retireIn": "S01 and S02",
-          "whatWillBeProven": "Fixture markdown/full text can produce navigable PageIndexNode hierarchy with ordering and provenance."
-        },
-        {
-          "riskOrUnknown": "Can scientific claims/entities/relations be represented with traceable evidence?",
-          "retireIn": "S03 and S04",
-          "whatWillBeProven": "Typed models and fixtures preserve Paper -> section -> chunk -> claim/entity/relation/evidence paths."
-        },
-        {
-          "riskOrUnknown": "Can LadybugDB support the expanded schema and hybrid retrieval boundary?",
-          "retireIn": "S05 and S06",
-          "whatWillBeProven": "Idempotent graph writes and vector/graph/fusion retrieval return traceable contexts."
-        },
-        {
-          "riskOrUnknown": "Can retrieval and extraction quality be measured before scale claims?",
-          "retireIn": "S07",
-          "whatWillBeProven": "A benchmark fixture with ablations and expected evidence paths exists."
-        },
-        {
-          "riskOrUnknown": "Can DSPy/RLM be integrated without becoming unbounded agent glue?",
-          "retireIn": "S08 to S10",
-          "whatWillBeProven": "Typed read/draft-only modules and RLM tools return validated drafts and are compared to deterministic baselines."
-        }
-      ],
+      "key_risks": [],
+      "proof_strategy": [],
       "verification_contract": "Each slice must pass targeted tests plus Ruff, Pyrefly, Ty, and pytest before closure. Any real external-service smoke test must be explicit and must not hide failures behind broad skip blocks.",
       "verification_integration": "Integration proof must show Paper -> PageIndexNode -> SemanticChunk -> Claim/Entity/Relation -> EvidencePath stored in LadybugDB and consumed by hybrid retrieval.",
       "verification_operational": "Normal CI/local quality gates should not depend on live arXiv, PDF, or LLM services unless the test is explicitly a real smoke test with configured credentials and no broad silent skip.",
       "verification_uat": "A user can ask a fixture scientific question and receive traceable retrieved context with paper, section, chunk, claim/entity, score metadata, and evidence path.",
-      "definition_of_done": [
-        "A fixture paper can be represented with PageIndexNode hierarchy, SemanticChunk records, Claim records, ScientificEntity records, relations, and EvidencePath traceability.",
-        "LadybugDB stores and queries the expanded SCI KG schema idempotently.",
-        "Hybrid retrieval returns grounded contexts with vector, graph, and fusion metadata plus evidence paths.",
-        "Evaluation fixtures compare vector-only, local graph expansion, heuristic traversal, and RLM-assisted traversal where applicable.",
-        "DSPy-compatible extraction contracts exist without premature optimizer use.",
-        "RLM spikes are read/draft-only and produce typed outputs plus trajectories, with deterministic validation outside RLM.",
-        "Full quality gates pass and no external service is required for normal tests except explicitly marked real smoke tests."
-      ],
-      "requirement_coverage": "Covers R026-R035 as the primary milestone. Advances R017 from deferred M001 non-goal into a full-text prerequisite for PageIndex work. Keeps R025 BABOK deferred until SCI KG evidence paths exist. Respects R024 by keeping privacy/local-only optional for open scientific data.",
+      "definition_of_done": [],
+      "requirement_coverage": "Covers restored M003 requirements R014-R023. R014-R016 are validated by S01-S03. R017-R023 remain active for S04-S10. DSPy remains gated by R020/R021 until evaluation metrics and benchmark fixtures are verified in S07.",
       "boundary_map_markdown": "```text\nIn M003:\n  Full-text and markdown ingestion contracts\n  PageIndexNode hierarchy\n  SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath models\n  LadybugDB schema expansion for scientific KG\n  Hybrid retrieval baseline: vector + graph + RRF-style fusion\n  Evaluation fixtures and ablation baselines\n  DSPy-compatible typed extraction boundary\n  RLM read/draft-only spikes for document navigation, workflow-in-code, and graph traversal\n\nOut of M003:\n  DSPy optimizer training with GEPA/MIPROv2 unless enough reviewed examples exist\n  Production-scale corpus migration\n  BestBlogs/social editorial product layer\n  BABOK opportunity-analysis product layer\n  Autopublishing or external channel delivery\n  PyO3/Rust acceleration unless profiling proves a bottleneck\n```",
       "sequence": 3
     }
@@ -525,10 +474,12 @@
     {
       "milestone_id": "M003-km5fty",
       "id": "S03",
-      "title": "S03",
+      "title": "Semantic chunks and evidence paths",
       "status": "complete",
       "risk": "medium",
-      "depends": [],
+      "depends": [
+        "S02"
+      ],
       "demo": "After this: PageIndex nodes can own SemanticChunk records and EvidencePath objects can point from paper to section to chunk.",
       "created_at": "2026-05-17T10:29:47.977Z",
       "completed_at": "2026-05-17T17:30:22.860Z",
@@ -558,11 +509,11 @@
       "completed_at": null,
       "full_summary_md": "",
       "full_uat_md": "",
-      "goal": "Define typed scientific extraction contracts before adding DSPy optimizers or RLM workflows.",
-      "success_criteria": "- Claim, ScientificEntity, ScientificRelation, and extraction patch types exist.\n- Drafts reference EvidencePath or explicit validation errors.\n- Validators reject missing evidence, invalid relation endpoints, and unstable IDs.\n- No optimizer or RLM is required for baseline tests.",
+      "goal": "Define typed scientific extraction contracts for Claim, ScientificEntity, and ScientificRelation drafts before adding storage, DSPy, optimizers, or RLM workflows.",
+      "success_criteria": "- Claim, ScientificEntity, ScientificRelation, and extraction patch types exist.\n- Drafts reference EvidencePath records or explicit validation errors.\n- Validators reject missing evidence, invalid relation endpoints, paper mismatches, unsupported relation types, confidence out of range, and unstable IDs.\n- No optimizer, DSPy, RLM, LadybugDB write, embedding, or live LLM call is required for baseline tests.",
       "proof_level": "contract and validator tests",
-      "integration_closure": "Supplies storage-ready drafts for LadybugDB schema expansion and deterministic validators.",
-      "observability_impact": "Extraction results include schema version, extractor version, confidence, evidence spans, and validation diagnostics.",
+      "integration_closure": "Consumes S03 EvidencePath records and produces storage-ready draft contracts plus validators for S05 LadybugDB schema expansion. Does not call LLMs, does not enable DSPy, does not write LadybugDB, and does not perform retrieval.",
+      "observability_impact": "Extraction draft models expose schema version, extractor version, confidence, evidence path references, provenance, and validation diagnostics as code-readable fields.",
       "sequence": 4,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -585,7 +536,7 @@
       "full_summary_md": "",
       "full_uat_md": "",
       "goal": "Expand LadybugDB schema from paper-level foundation to scientific KG fixture schema.",
-      "success_criteria": "- Schema includes required nodes and relations from R026.\n- Idempotent ingest does not duplicate chunks, claims, entities, or relations.\n- Writes remain transaction-safe and parameterized.\n- Tests cover rollback and partial invalid patch rejection.",
+      "success_criteria": "- Schema includes required nodes and relations.\n- Idempotent ingest does not duplicate chunks, claims, entities, or relations.\n- Writes remain transaction-safe and parameterized.\n- Tests cover rollback and partial invalid patch rejection.",
       "proof_level": "LadybugDB integration and idempotency tests",
       "integration_closure": "Creates the graph substrate for hybrid retrieval and RLM graph traversal tools.",
       "observability_impact": "Logs schema version, write transaction stage, merge counts, validation rejects, and rollback errors without secrets.",
@@ -2601,6 +2552,174 @@
         "tests/test_evidence_paths.py"
       ],
       "observability_impact": "Final gates confirm chunk/evidence diagnostics remain available and public CLI behavior remains unchanged.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S04",
+      "id": "T01",
+      "title": "Add claim entity relation contract tests",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Create red contract tests for `Claim`, `ScientificEntity`, `ScientificRelation`, and extraction patch/draft models over S03 EvidencePath fixtures. Tests must define stable IDs, confidence fields, provenance, evidence-path references, schema/extractor version fields, and validation diagnostics for missing evidence and invalid confidence. Done when tests fail for missing extraction-contract implementation while S03 evidence tests still pass.",
+      "estimate": "45m",
+      "files": [
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "verify": "uv run pytest tests/test_scientific_extraction_contracts.py -q",
+      "inputs": [
+        ".gsd/milestones/M003-km5fty/slices/S03/S03-SUMMARY.md",
+        "src/arxiv_archive/evidence.py",
+        "tests/test_evidence_paths.py"
+      ],
+      "expected_output": [
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "observability_impact": "Defines expected extraction validation diagnostics before implementation, including evidence reference, confidence, schema version, and provenance fields.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S04",
+      "id": "T02",
+      "title": "Implement scientific extraction contract models",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Implement `src/arxiv_archive/scientific_extraction.py` with dataclasses for `Claim`, `ScientificEntity`, `ScientificRelation`, and `ExtractionPatch`. Add deterministic ID helpers and baseline validators for evidence presence, confidence range, schema version, and provenance. Done when initial extraction contract tests pass with no LLM/DSPy/storage calls.",
+      "estimate": "1h 15m",
+      "files": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "verify": "uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q",
+      "inputs": [
+        "tests/test_scientific_extraction_contracts.py",
+        "src/arxiv_archive/evidence.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/scientific_extraction.py"
+      ],
+      "observability_impact": "Validation returns explicit diagnostics for invalid confidence, missing evidence, schema/version omissions, and unstable IDs.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S04",
+      "id": "T03",
+      "title": "Implement relation and extraction patch validators",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Add relation and patch validators that reject invalid relation endpoints, unsupported relation types, paper mismatches between entities/claims/evidence, and evidence paths that fail S03 validation. Add tests for valid fixture drafts and invalid endpoint/mismatch cases. Done when S05 can use the patch contract as a pre-storage validation boundary.",
+      "estimate": "1h",
+      "files": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "verify": "uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py -q",
+      "inputs": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "src/arxiv_archive/evidence.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "observability_impact": "Patch validation reports relation endpoint, evidence path, paper mismatch, unsupported relation type, and duplicate ID diagnostics as data.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S04",
+      "id": "T04",
+      "title": "Run S04 quality gates and regression smoke",
+      "status": "pending",
+      "one_liner": "",
+      "narrative": "",
+      "verification_result": "",
+      "duration": "",
+      "completed_at": null,
+      "blocker_discovered": false,
+      "deviations": "",
+      "known_issues": "",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "",
+      "description": "Run final S04 regression gates: extraction contract tests, S03 evidence tests, PageIndex tests, S01 ingestion tests, analysis regression, CLI contract smoke, Ruff on touched files, and public module help smoke. Record limitations for S05/S07: contracts are deterministic drafts only, no extraction model, no embeddings, no LadybugDB persistence, no DSPy/RLM. Done when S04 is ready for closeout.",
+      "estimate": "30m",
+      "files": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "verify": "uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q",
+      "inputs": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py",
+        "src/arxiv_archive/evidence.py",
+        "src/arxiv_archive/page_index.py",
+        "src/arxiv_archive/full_text.py",
+        "src/arxiv_archive/cli.py",
+        "tests/test_cli_contract.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "tests/test_scientific_extraction_contracts.py"
+      ],
+      "observability_impact": "Final gates confirm extraction contract diagnostics remain available and public CLI behavior remains unchanged.",
       "full_plan_md": "",
       "sequence": 0,
       "blocker_source": "",

@@ -2,8 +2,8 @@
 
 **Active Milestone:** M003-km5fty: Scientific Hybrid Graph RAG and RLM Navigation Base
 **Active Slice:** S04: Claim entity relation contracts
-**Phase:** planning
-**Requirements Status:** 0 active · 13 validated · 0 deferred · 0 out of scope
+**Phase:** evaluating-gates
+**Requirements Status:** 7 active · 16 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
 - ✅ **M001:** Cron-safe arXiv article analysis for Hermes
@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Slice S04 has no DB tasks. Plan slice tasks before execution.
+Evaluate 2 quality gate(s) for S04 before execution.
