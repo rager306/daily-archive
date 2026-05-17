@@ -14,10 +14,10 @@
 
 ## Slices
 
-- [x] **S01: S01** `risk:medium` `depends:[]`
+- [x] **S01: Full text ingestion contract** `risk:medium` `depends:[]`
   > After this: After this: a representative paper fixture has stable full-text or markdown input, deterministic IDs, provenance, and parser fallbacks ready for PageIndex construction.
 
-- [x] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: PageIndex document navigation** `risk:high` `depends:[S01]`
   > After this: After this: a fixture paper can be navigated as an ordered PageIndexNode tree with parent child and NEXT links.
 
 - [ ] **S03: Semantic chunks and evidence paths** `risk:medium` `depends:[S02]`
