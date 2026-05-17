@@ -1,0 +1,339 @@
+{
+  "version": 1,
+  "exported_at": "2026-05-17T10:29:47.998Z",
+  "milestones": [
+    {
+      "id": "M003-km5fty",
+      "title": "Scientific Hybrid Graph RAG and RLM Navigation Base",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-05-17T10:29:47.976Z",
+      "completed_at": null,
+      "vision": "Evolve the M002 LadybugDB paper-level graph-vector foundation into a traceable scientific Hybrid Graph RAG base with PageIndex document navigation, chunk/claim/entity/evidence schema, hybrid retrieval baselines, evaluation metrics, DSPy typed extraction boundaries, and staged read-only RLM navigation workflows.",
+      "success_criteria": [
+        "Fixture full-text ingestion can produce navigable PageIndexNode hierarchies with validation diagnostics.",
+        "SemanticChunk, Claim, ScientificEntity, ScientificRelation, and EvidencePath contracts exist and are test-covered.",
+        "LadybugDB stores the expanded SCI KG fixture schema idempotently and transaction-safely.",
+        "Hybrid retrieval returns traceable evidence paths with vector, graph, and fusion metadata.",
+        "Evaluation fixtures and ablation baselines exist before any scale or optimizer claims.",
+        "DSPy typed extraction boundary exists without premature optimizer use.",
+        "RLM document, workflow-in-code, and graph traversal modes are prototyped as read/draft-only capabilities with deterministic validation and benchmark comparison."
+      ],
+      "key_risks": [
+        {
+          "risk": "Overbuilding RLM before deterministic PageIndex and graph tools exist.",
+          "whyItMatters": "RLM without stable tools becomes untestable agent glue and cannot be benchmarked against cheaper baselines."
+        },
+        {
+          "risk": "Hybrid retrieval claims without evidence-path evaluation.",
+          "whyItMatters": "The project needs trustworthy scientific and editorial evidence, not only similar chunks."
+        },
+        {
+          "risk": "Full-text extraction quality may be poor for some arXiv PDFs or markdown conversions.",
+          "whyItMatters": "Bad structure will poison PageIndex, chunking, claim grounding, and later RLM navigation."
+        },
+        {
+          "risk": "DSPy optimizers may be introduced before reviewed examples and metrics exist.",
+          "whyItMatters": "Optimizers without train/dev sets create false confidence rather than reliable extraction."
+        }
+      ],
+      "proof_strategy": [
+        {
+          "riskOrUnknown": "Can the project preserve full-text structure enough for evidence navigation?",
+          "retireIn": "S01 and S02",
+          "whatWillBeProven": "Fixture markdown/full text can produce navigable PageIndexNode hierarchy with ordering and provenance."
+        },
+        {
+          "riskOrUnknown": "Can scientific claims/entities/relations be represented with traceable evidence?",
+          "retireIn": "S03 and S04",
+          "whatWillBeProven": "Typed models and fixtures preserve Paper -> section -> chunk -> claim/entity/relation/evidence paths."
+        },
+        {
+          "riskOrUnknown": "Can LadybugDB support the expanded schema and hybrid retrieval boundary?",
+          "retireIn": "S05 and S06",
+          "whatWillBeProven": "Idempotent graph writes and vector/graph/fusion retrieval return traceable contexts."
+        },
+        {
+          "riskOrUnknown": "Can retrieval and extraction quality be measured before scale claims?",
+          "retireIn": "S07",
+          "whatWillBeProven": "A benchmark fixture with ablations and expected evidence paths exists."
+        },
+        {
+          "riskOrUnknown": "Can DSPy/RLM be integrated without becoming unbounded agent glue?",
+          "retireIn": "S08 to S10",
+          "whatWillBeProven": "Typed read/draft-only modules and RLM tools return validated drafts and are compared to deterministic baselines."
+        }
+      ],
+      "verification_contract": "Each slice must pass targeted tests plus Ruff, Pyrefly, Ty, and pytest before closure. Any real external-service smoke test must be explicit and must not hide failures behind broad skip blocks.",
+      "verification_integration": "Integration proof must show Paper -> PageIndexNode -> SemanticChunk -> Claim/Entity/Relation -> EvidencePath stored in LadybugDB and consumed by hybrid retrieval.",
+      "verification_operational": "Normal CI/local quality gates should not depend on live arXiv, PDF, or LLM services unless the test is explicitly a real smoke test with configured credentials and no broad silent skip.",
+      "verification_uat": "A user can ask a fixture scientific question and receive traceable retrieved context with paper, section, chunk, claim/entity, score metadata, and evidence path.",
+      "definition_of_done": [
+        "A fixture paper can be represented with PageIndexNode hierarchy, SemanticChunk records, Claim records, ScientificEntity records, relations, and EvidencePath traceability.",
+        "LadybugDB stores and queries the expanded SCI KG schema idempotently.",
+        "Hybrid retrieval returns grounded contexts with vector, graph, and fusion metadata plus evidence paths.",
+        "Evaluation fixtures compare vector-only, local graph expansion, heuristic traversal, and RLM-assisted traversal where applicable.",
+        "DSPy-compatible extraction contracts exist without premature optimizer use.",
+        "RLM spikes are read/draft-only and produce typed outputs plus trajectories, with deterministic validation outside RLM.",
+        "Full quality gates pass and no external service is required for normal tests except explicitly marked real smoke tests."
+      ],
+      "requirement_coverage": "Covers R026-R035 as the primary milestone. Advances R017 from deferred M001 non-goal into a full-text prerequisite for PageIndex work. Keeps R025 BABOK deferred until SCI KG evidence paths exist. Respects R024 by keeping privacy/local-only optional for open scientific data.",
+      "boundary_map_markdown": "```text\nIn M003:\n  Full-text and markdown ingestion contracts\n  PageIndexNode hierarchy\n  SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath models\n  LadybugDB schema expansion for scientific KG\n  Hybrid retrieval baseline: vector + graph + RRF-style fusion\n  Evaluation fixtures and ablation baselines\n  DSPy-compatible typed extraction boundary\n  RLM read/draft-only spikes for document navigation, workflow-in-code, and graph traversal\n\nOut of M003:\n  DSPy optimizer training with GEPA/MIPROv2 unless enough reviewed examples exist\n  Production-scale corpus migration\n  BestBlogs/social editorial product layer\n  BABOK opportunity-analysis product layer\n  Autopublishing or external channel delivery\n  PyO3/Rust acceleration unless profiling proves a bottleneck\n```\n",
+      "sequence": 0
+    }
+  ],
+  "slices": [
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S01",
+      "title": "Full text ingestion contract",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [],
+      "demo": "After this: a representative paper fixture has stable full-text or markdown input, deterministic IDs, provenance, and parser fallbacks ready for PageIndex construction.",
+      "created_at": "2026-05-17T10:29:47.976Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Define the full-text and markdown ingestion contract required for PageIndex and scientific evidence paths.",
+      "success_criteria": "- Full-text/markdown fixture inputs are stored under deterministic test paths.\n- Ingestion contract records paper id, source type, source path, text, provenance, and warnings.\n- Poor or missing structure produces explicit fallback metadata rather than silent bad output.\n- Normal tests do not require live PDF/network access.",
+      "proof_level": "fixture and contract tests",
+      "integration_closure": "Connects existing paper artifacts to the future PageIndex and chunk pipeline without changing the daily cron contract.",
+      "observability_impact": "Records source path, extraction mode, parser warnings, and fallback reason for each full-text ingestion attempt.",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S02",
+      "title": "PageIndex document navigation",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S01"
+      ],
+      "demo": "After this: a fixture paper can be navigated as an ordered PageIndexNode tree with parent child and NEXT links.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Implement the PageIndexNode hierarchy and navigation primitives for intra-paper structure.",
+      "success_criteria": "- PageIndexNode records preserve title, level, order, parent, children, NEXT relation, and provenance.\n- Tests can locate abstract, methods, results, limitations, and fallback sections in fixtures.\n- Navigation returns stable Paper -> PageIndexNode paths.\n- Structure-quality validation reports completeness/order issues.",
+      "proof_level": "schema and navigation tests",
+      "integration_closure": "Provides the structural layer that SemanticChunk, Claim, EvidencePath, and RLM document navigation will consume.",
+      "observability_impact": "Exposes hierarchy completeness, section ordering, page/offset ranges where available, and parser fallback status.",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S03",
+      "title": "Semantic chunks and evidence paths",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S02"
+      ],
+      "demo": "After this: PageIndex nodes can own SemanticChunk records and EvidencePath objects can point from paper to section to chunk.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Add SemanticChunk and EvidencePath models with deterministic IDs and traceability.",
+      "success_criteria": "- SemanticChunk records attach to PageIndexNode.\n- EvidencePath can represent Paper -> PageIndexNode -> SemanticChunk.\n- Chunk IDs are deterministic and idempotent.\n- Tests cover boundary ordering, empty sections, and malformed section fallbacks.",
+      "proof_level": "model and fixture tests",
+      "integration_closure": "Creates the evidence substrate for claims, retrieval contexts, and downstream editorial/opportunity layers.",
+      "observability_impact": "Records chunk boundaries, chunking strategy, token/character spans, and evidence-path validation errors.",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S04",
+      "title": "Claim entity relation contracts",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S03"
+      ],
+      "demo": "After this: fixture text can produce typed Claim, ScientificEntity, and ScientificRelation drafts with confidence, provenance, and validation errors.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Define typed scientific extraction contracts before adding DSPy optimizers or RLM workflows.",
+      "success_criteria": "- Claim, ScientificEntity, ScientificRelation, and extraction patch types exist.\n- Drafts reference EvidencePath or explicit validation errors.\n- Validators reject missing evidence, invalid relation endpoints, and unstable IDs.\n- No optimizer or RLM is required for baseline tests.",
+      "proof_level": "contract and validator tests",
+      "integration_closure": "Supplies storage-ready drafts for LadybugDB schema expansion and deterministic validators.",
+      "observability_impact": "Extraction results include schema version, extractor version, confidence, evidence spans, and validation diagnostics.",
+      "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S05",
+      "title": "LadybugDB SCI KG schema expansion",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "demo": "After this: LadybugDB stores the expanded SCI KG fixture with Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, and relation edges idempotently.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Expand LadybugDB schema from paper-level foundation to scientific KG fixture schema.",
+      "success_criteria": "- Schema includes required nodes and relations from R026.\n- Idempotent ingest does not duplicate chunks, claims, entities, or relations.\n- Writes remain transaction-safe and parameterized.\n- Tests cover rollback and partial invalid patch rejection.",
+      "proof_level": "LadybugDB integration and idempotency tests",
+      "integration_closure": "Creates the graph substrate for hybrid retrieval and RLM graph traversal tools.",
+      "observability_impact": "Logs schema version, write transaction stage, merge counts, validation rejects, and rollback errors without secrets.",
+      "sequence": 5,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S06",
+      "title": "Hybrid retrieval baseline",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S05"
+      ],
+      "demo": "After this: a query over fixtures returns fused vector and graph results with evidence paths and score metadata.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Implement a hybrid retrieval baseline combining vector search, graph expansion, and RRF-style fusion.",
+      "success_criteria": "- Vector-only retrieval returns chunk/claim candidates.\n- Graph expansion retrieves entity/claim/paper neighborhoods.\n- Fusion returns stable ordered results with score metadata.\n- Retrieval output includes evidence paths.\n- Tests include vector-only versus hybrid ablation.",
+      "proof_level": "retrieval and ablation tests",
+      "integration_closure": "Provides the first grounded retrieval API for future answer synthesis and editorial layers.",
+      "observability_impact": "Returns retrieval mode, candidate source, vector score, graph score, fusion score, and evidence path for each result.",
+      "sequence": 6,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S07",
+      "title": "Evaluation benchmark and ablations",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S03",
+        "S04",
+        "S06"
+      ],
+      "demo": "After this: benchmark fixtures define expected claims, entities, evidence paths, and retrieval questions with metric calculations.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Create explicit evaluation fixtures and metrics before scaling or optimizer claims.",
+      "success_criteria": "- Benchmark fixture includes at least several representative papers or paper sections.\n- Expected evidence paths and retrieval questions are recorded.\n- Metrics cover schema validity, evidence-path hit rate, retrieval recall, and groundedness proxy.\n- Baselines include vector-only and hybrid retrieval.",
+      "proof_level": "benchmark tests and metric report",
+      "integration_closure": "Blocks premature quality claims and provides baselines for DSPy/RLM comparisons.",
+      "observability_impact": "Stores metric definitions, fixture provenance, expected outputs, and ablation results.",
+      "sequence": 7,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S08",
+      "title": "DSPy extraction boundary",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S04",
+        "S07"
+      ],
+      "demo": "After this: baseline extraction functions are wrapped in DSPy-compatible typed modules without changing storage schema or requiring optimizers.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Add the DSPy typed extraction boundary while avoiding premature GEPA or MIPROv2 optimization.",
+      "success_criteria": "- DSPy-compatible Signatures or equivalent typed module boundaries exist for core extraction tasks.\n- Outputs match existing extraction contracts.\n- Cache/versioning policy is documented.\n- Optimizer use is gated pending reviewed examples and metrics.",
+      "proof_level": "contract tests with mocked LM where needed",
+      "integration_closure": "Makes extraction contracts optimizable later without coupling storage to prompt strings.",
+      "observability_impact": "Records signature/schema version, module version, model name, cache key ingredients, and validation output.",
+      "sequence": 8,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S09",
+      "title": "RLM document and workflow harness",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S02",
+        "S03",
+        "S04",
+        "S08"
+      ],
+      "demo": "After this: RLM can navigate a fixture PageIndex tree and run a read-only workflow-in-code extraction loop, returning a typed draft plus trajectory.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Prototype read/draft-only RLM document navigation and workflow-in-code over bounded tools.",
+      "success_criteria": "- RLM tools are read-only and bounded.\n- Document navigation can select relevant PageIndex nodes/chunks.\n- Workflow-in-code can search/read/extract/validate over fixture data.\n- Output is a typed draft patch validated by deterministic code.\n- No direct LadybugDB write tool is exposed to RLM.",
+      "proof_level": "RLM or mocked-interpreter spike tests",
+      "integration_closure": "Validates the first two RLM modes without giving RLM write access to LadybugDB.",
+      "observability_impact": "Persists or returns trajectory, tool calls, iteration count, subcall count, and validation result.",
+      "sequence": 9,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "id": "S10",
+      "title": "RLM graph traversal spike",
+      "status": "pending",
+      "risk": "high",
+      "depends": [
+        "S05",
+        "S06",
+        "S07",
+        "S09"
+      ],
+      "demo": "After this: RLM graph traversal is compared against vector-only, one-hop graph expansion, and heuristic BFS on scattered-evidence fixture questions.",
+      "created_at": "2026-05-17T10:29:47.977Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Prototype adaptive graph traversal over LadybugDB tools behind a router and benchmark it against cheaper baselines.",
+      "success_criteria": "- Graph traversal tools expose bounded neighbors, claims, entities, citations, communities, vector search, and rerank operations.\n- Heuristic BFS baseline exists.\n- RLM graph traversal is read/draft-only.\n- Benchmark compares vector-only, one-hop graph expansion, heuristic BFS, and RLM traversal.\n- Recommendation states when RLM should or should not be used.",
+      "proof_level": "comparative benchmark spike",
+      "integration_closure": "Validates the third RLM mode and decides when it is worth using versus deterministic retrieval.",
+      "observability_impact": "Records router decision, graph tools used, traversal path, cost/latency, candidate set, and evidence recall.",
+      "sequence": 10,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    }
+  ],
+  "tasks": [],
+  "decisions": [],
+  "verification_evidence": []
+}
