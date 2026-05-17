@@ -24,7 +24,7 @@ Consumes S02 PageIndexDocument and PageIndexNode IDs, producing chunk and eviden
 
 ## Tasks
 
-- [ ] **T01: Add SemanticChunk and EvidencePath contract tests** `est:45m`
+- [x] **T01: Add SemanticChunk and EvidencePath contract tests** `est:45m`
   Create red contract tests for `SemanticChunk`, `EvidencePath`, deterministic chunk IDs, chunk ordering, PageIndexNode attachment, empty/fallback section behavior, and validation diagnostics. Tests should consume S01/S02 fixtures through `ingest_full_text()` and `build_page_index()` so the contract is vertical. Done when the new tests fail for missing semantic/evidence implementation while PageIndex tests still pass.
   - Files: `tests/test_evidence_paths.py`
   - Verify: uv run pytest tests/test_evidence_paths.py -q

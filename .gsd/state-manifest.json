@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T17:21:42.068Z",
+  "exported_at": "2026-05-17T17:24:23.197Z",
   "milestones": [
     {
       "id": "M001",
@@ -525,12 +525,10 @@
     {
       "milestone_id": "M003-km5fty",
       "id": "S03",
-      "title": "Semantic chunks and evidence paths",
+      "title": "S03",
       "status": "pending",
       "risk": "medium",
-      "depends": [
-        "S02"
-      ],
+      "depends": [],
       "demo": "After this: PageIndex nodes can own SemanticChunk records and EvidencePath objects can point from paper to section to chunk.",
       "created_at": "2026-05-17T10:29:47.977Z",
       "completed_at": null,
@@ -2418,19 +2416,25 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S03",
       "id": "T01",
-      "title": "Add SemanticChunk and EvidencePath contract tests",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added red SemanticChunk and EvidencePath contract tests for S03.",
+      "status": "complete",
+      "one_liner": "Added red SemanticChunk and EvidencePath contract tests for S03.",
+      "narrative": "Added `tests/test_evidence_paths.py` as a red vertical contract over S01 ingestion and S02 PageIndex construction. The tests define deterministic `SemanticChunk` IDs, PageIndexNode attachment, section/fallback chunk behavior, chunk provenance and spans, EvidencePath construction, and validation diagnostics for missing or mismatched links. The focused test command fails during collection because `arxiv_archive.evidence` does not exist yet, which is the intended S03 T02/T03 implementation boundary.",
+      "verification_result": "Ran `uv run pytest tests/test_evidence_paths.py -q`; it failed as expected during collection with `ModuleNotFoundError: No module named 'arxiv_archive.evidence'`. Ran `uv run pytest tests/test_page_index.py -q`; 6 tests passed. Ran `uv run ruff check tests/test_evidence_paths.py`; all checks passed.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T17:24:23.158Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None; T01 intentionally ends red because S03 T02 owns implementation.",
+      "known_issues": "`arxiv_archive.evidence` is not implemented yet; T02 must add `SemanticChunk`, chunk construction, and T03 must add `EvidencePath` validation matching this contract.",
+      "key_files": [
+        "tests/test_evidence_paths.py"
+      ],
+      "key_decisions": [
+        "Define the S03 module boundary as `arxiv_archive.evidence`.",
+        "Use `build_semantic_chunks(document)` and `build_evidence_path(document, chunk)` as pure construction entrypoints.",
+        "Keep EvidencePath validation deterministic and diagnostic-list based."
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S03\nmilestone: M003-km5fty\nkey_files:\n  - tests/test_evidence_paths.py\nkey_decisions:\n  - Define the S03 module boundary as `arxiv_archive.evidence`.\n  - Use `build_semantic_chunks(document)` and `build_evidence_path(document, chunk)` as pure construction entrypoints.\n  - Keep EvidencePath validation deterministic and diagnostic-list based.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T17:24:23.157Z\nblocker_discovered: false\n---\n\n# T01: Added red SemanticChunk and EvidencePath contract tests for S03.\n\n**Added red SemanticChunk and EvidencePath contract tests for S03.**\n\n## What Happened\n\nAdded `tests/test_evidence_paths.py` as a red vertical contract over S01 ingestion and S02 PageIndex construction. The tests define deterministic `SemanticChunk` IDs, PageIndexNode attachment, section/fallback chunk behavior, chunk provenance and spans, EvidencePath construction, and validation diagnostics for missing or mismatched links. The focused test command fails during collection because `arxiv_archive.evidence` does not exist yet, which is the intended S03 T02/T03 implementation boundary.\n\n## Verification\n\nRan `uv run pytest tests/test_evidence_paths.py -q`; it failed as expected during collection with `ModuleNotFoundError: No module named 'arxiv_archive.evidence'`. Ran `uv run pytest tests/test_page_index.py -q`; 6 tests passed. Ran `uv run ruff check tests/test_evidence_paths.py`; all checks passed.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_evidence_paths.py -q` | 2 | ✅ expected red contract: collection fails on missing arxiv_archive.evidence implementation boundary | 180ms |\n| 2 | `uv run pytest tests/test_page_index.py -q` | 0 | ✅ pass: 6 PageIndex tests passed | 140ms |\n| 3 | `uv run ruff check tests/test_evidence_paths.py` | 0 | ✅ pass: new evidence-path test file lint clean | 0ms |\n\n## Deviations\n\nNone; T01 intentionally ends red because S03 T02 owns implementation.\n\n## Known Issues\n\n`arxiv_archive.evidence` is not implemented yet; T02 must add `SemanticChunk`, chunk construction, and T03 must add `EvidencePath` validation matching this contract.\n\n## Files Created/Modified\n\n- `tests/test_evidence_paths.py`\n",
       "description": "Create red contract tests for `SemanticChunk`, `EvidencePath`, deterministic chunk IDs, chunk ordering, PageIndexNode attachment, empty/fallback section behavior, and validation diagnostics. Tests should consume S01/S02 fixtures through `ingest_full_text()` and `build_page_index()` so the contract is vertical. Done when the new tests fail for missing semantic/evidence implementation while PageIndex tests still pass.",
       "estimate": "45m",
       "files": [
@@ -2871,6 +2875,39 @@
       "verdict": "✅ pass: no diagnostics",
       "duration_ms": 0,
       "created_at": "2026-05-17T16:45:47.780Z"
+    },
+    {
+      "id": 27,
+      "task_id": "T01",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_evidence_paths.py -q",
+      "exit_code": 2,
+      "verdict": "✅ expected red contract: collection fails on missing arxiv_archive.evidence implementation boundary",
+      "duration_ms": 180,
+      "created_at": "2026-05-17T17:24:23.158Z"
+    },
+    {
+      "id": 28,
+      "task_id": "T01",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_page_index.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 6 PageIndex tests passed",
+      "duration_ms": 140,
+      "created_at": "2026-05-17T17:24:23.158Z"
+    },
+    {
+      "id": 29,
+      "task_id": "T01",
+      "slice_id": "S03",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check tests/test_evidence_paths.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: new evidence-path test file lint clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T17:24:23.158Z"
     }
   ]
 }
