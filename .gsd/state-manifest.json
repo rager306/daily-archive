@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T16:34:27.490Z",
+  "exported_at": "2026-05-17T16:37:29.493Z",
   "milestones": [
     {
       "id": "M001",
@@ -501,12 +501,10 @@
     {
       "milestone_id": "M003-km5fty",
       "id": "S02",
-      "title": "PageIndex document navigation",
+      "title": "S02",
       "status": "pending",
       "risk": "high",
-      "depends": [
-        "S01"
-      ],
+      "depends": [],
       "demo": "After this: a fixture paper can be navigated as an ordered PageIndexNode tree with parent child and NEXT links.",
       "created_at": "2026-05-17T10:29:47.977Z",
       "completed_at": null,
@@ -2226,19 +2224,26 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S02",
       "id": "T01",
-      "title": "Add PageIndex contract tests and fallback fixture",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Added red PageIndex contract tests and a fallback no-heading fixture for S02.",
+      "status": "complete",
+      "one_liner": "Added red PageIndex contract tests and a fallback no-heading fixture for S02.",
+      "narrative": "Created the S02 no-heading fallback fixture and a new `tests/test_page_index.py` contract suite. The tests define the future PageIndex contract over S01 ingestion results: ordered PageIndexNode tree construction from structured markdown, deterministic root and section IDs, parent/child links, NEXT traversal, stable Paper -> PageIndexNode paths, case-insensitive section lookup, and explicit fallback diagnostics for no-heading text. The focused test command fails during collection because `arxiv_archive.page_index` does not exist yet, which is the intended T02 implementation boundary.",
+      "verification_result": "Ran `uv run pytest tests/test_page_index.py -q`; it failed as expected during collection with `ModuleNotFoundError: No module named 'arxiv_archive.page_index'`. Ran `uv run pytest tests/test_full_text_ingestion.py -q`; 6 tests passed. Ran `uv run ruff check tests/test_page_index.py`; all checks passed.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T16:37:29.454Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None; T01 intentionally ends red because S02 T02 owns implementation.",
+      "known_issues": "`arxiv_archive.page_index` is not implemented yet; T02 must add `build_page_index`, PageIndex document/node models, navigation helpers, and validation diagnostics matching the red contract.",
+      "key_files": [
+        "tests/fixtures/page_index/no_headings.txt",
+        "tests/test_page_index.py"
+      ],
+      "key_decisions": [
+        "Define the PageIndex construction entrypoint as `build_page_index(ingestion)`.",
+        "Use deterministic node IDs derived from paper id and slugged section titles, with root id `{paper_id}:root`.",
+        "Require validation diagnostics for no-heading fallback input before implementation."
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S02\nmilestone: M003-km5fty\nkey_files:\n  - tests/fixtures/page_index/no_headings.txt\n  - tests/test_page_index.py\nkey_decisions:\n  - Define the PageIndex construction entrypoint as `build_page_index(ingestion)`.\n  - Use deterministic node IDs derived from paper id and slugged section titles, with root id `{paper_id}:root`.\n  - Require validation diagnostics for no-heading fallback input before implementation.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T16:37:29.453Z\nblocker_discovered: false\n---\n\n# T01: Added red PageIndex contract tests and a fallback no-heading fixture for S02.\n\n**Added red PageIndex contract tests and a fallback no-heading fixture for S02.**\n\n## What Happened\n\nCreated the S02 no-heading fallback fixture and a new `tests/test_page_index.py` contract suite. The tests define the future PageIndex contract over S01 ingestion results: ordered PageIndexNode tree construction from structured markdown, deterministic root and section IDs, parent/child links, NEXT traversal, stable Paper -> PageIndexNode paths, case-insensitive section lookup, and explicit fallback diagnostics for no-heading text. The focused test command fails during collection because `arxiv_archive.page_index` does not exist yet, which is the intended T02 implementation boundary.\n\n## Verification\n\nRan `uv run pytest tests/test_page_index.py -q`; it failed as expected during collection with `ModuleNotFoundError: No module named 'arxiv_archive.page_index'`. Ran `uv run pytest tests/test_full_text_ingestion.py -q`; 6 tests passed. Ran `uv run ruff check tests/test_page_index.py`; all checks passed.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_page_index.py -q` | 2 | ✅ expected red contract: collection fails on missing arxiv_archive.page_index implementation boundary | 170ms |\n| 2 | `uv run pytest tests/test_full_text_ingestion.py -q` | 0 | ✅ pass: 6 S01 ingestion tests passed | 120ms |\n| 3 | `uv run ruff check tests/test_page_index.py` | 0 | ✅ pass: new PageIndex test file lint clean | 0ms |\n\n## Deviations\n\nNone; T01 intentionally ends red because S02 T02 owns implementation.\n\n## Known Issues\n\n`arxiv_archive.page_index` is not implemented yet; T02 must add `build_page_index`, PageIndex document/node models, navigation helpers, and validation diagnostics matching the red contract.\n\n## Files Created/Modified\n\n- `tests/fixtures/page_index/no_headings.txt`\n- `tests/test_page_index.py`\n",
       "description": "Create red contract tests for PageIndex construction over the S01 structured markdown fixture and a malformed/no-heading fallback fixture. Define expected `PageIndexNode` fields, deterministic IDs, parent/child relationships, ordered NEXT traversal, stable Paper -> node paths, and validation diagnostics. Done when the new tests fail for missing `arxiv_archive.page_index` while S01 ingestion tests still pass.",
       "estimate": "45m",
       "files": [
@@ -2533,6 +2538,39 @@
       "verdict": "✅ pass: no diagnostics",
       "duration_ms": 0,
       "created_at": "2026-05-17T16:31:06.451Z"
+    },
+    {
+      "id": 14,
+      "task_id": "T01",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_page_index.py -q",
+      "exit_code": 2,
+      "verdict": "✅ expected red contract: collection fails on missing arxiv_archive.page_index implementation boundary",
+      "duration_ms": 170,
+      "created_at": "2026-05-17T16:37:29.454Z"
+    },
+    {
+      "id": 15,
+      "task_id": "T01",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_full_text_ingestion.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 6 S01 ingestion tests passed",
+      "duration_ms": 120,
+      "created_at": "2026-05-17T16:37:29.454Z"
+    },
+    {
+      "id": 16,
+      "task_id": "T01",
+      "slice_id": "S02",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check tests/test_page_index.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: new PageIndex test file lint clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:37:29.454Z"
     }
   ]
 }

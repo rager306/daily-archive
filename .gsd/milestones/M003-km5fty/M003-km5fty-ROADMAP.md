@@ -17,7 +17,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this: a representative paper fixture has stable full-text or markdown input, deterministic IDs, provenance, and parser fallbacks ready for PageIndex construction.
 
-- [ ] **S02: PageIndex document navigation** `risk:high` `depends:[S01]`
+- [ ] **S02: S02** `risk:high` `depends:[]`
   > After this: After this: a fixture paper can be navigated as an ordered PageIndexNode tree with parent child and NEXT links.
 
 - [ ] **S03: Semantic chunks and evidence paths** `risk:medium` `depends:[S02]`

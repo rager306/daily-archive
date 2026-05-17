@@ -24,7 +24,7 @@ Consumes S01 `FullTextIngestionResult` and produces a deterministic PageIndex tr
 
 ## Tasks
 
-- [ ] **T01: Add PageIndex contract tests and fallback fixture** `est:45m`
+- [x] **T01: Add PageIndex contract tests and fallback fixture** `est:45m`
   Create red contract tests for PageIndex construction over the S01 structured markdown fixture and a malformed/no-heading fallback fixture. Define expected `PageIndexNode` fields, deterministic IDs, parent/child relationships, ordered NEXT traversal, stable Paper -> node paths, and validation diagnostics. Done when the new tests fail for missing `arxiv_archive.page_index` while S01 ingestion tests still pass.
   - Files: `tests/fixtures/page_index/no_headings.txt`, `tests/test_page_index.py`
   - Verify: uv run pytest tests/test_page_index.py -q
