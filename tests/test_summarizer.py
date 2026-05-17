@@ -1,10 +1,10 @@
 """Tests for the MiniMax summarizer module."""
 
-from dotenv import load_dotenv
-from pathlib import Path
 import os
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 from src.arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
 
@@ -103,4 +103,5 @@ def test_summarize_api_call() -> None:
     assert summary.headline
     assert summary.what_it_does
     assert summary.why_it_matters
-    assert summary.analogy.startswith("Think of it like")
+    normalized_analogy = summary.analogy.strip().lstrip("* ").strip()
+    assert normalized_analogy.startswith("Think of it like")

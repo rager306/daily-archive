@@ -19,10 +19,10 @@ Requires environment variables:
 
 ```bash
 # Process papers for a specific date
-uv run python -m arxiv_archive run --date 2026-05-15
+uv run python -m arxiv_archive --date 2026-05-15
 
 # Or with explicit options
-MINIMAX_API_KEY=your-key uv run python -m arxiv_archive run --date 2026-05-15
+MINIMAX_API_KEY=your-key uv run python -m arxiv_archive --date 2026-05-15 --json
 ```
 
 ## Architecture

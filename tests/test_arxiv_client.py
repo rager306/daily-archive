@@ -1,5 +1,8 @@
 from datetime import date
 
+import httpx
+import pytest
+
 from arxiv_archive.arxiv_client import ArxivClient, ArxivPaper
 
 
@@ -29,7 +32,20 @@ def test_arxiv_paper_dataclass():
     assert paper.pdf_url == "https://arxiv.org/pdf/2501.12345.pdf"
 
 
+def fetch_papers_or_skip_on_rate_limit(client: ArxivClient, **kwargs):
+    try:
+        return client.fetch_papers(**kwargs)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 429:
+            pytest.skip("arXiv API rate limit returned HTTP 429")
+        raise
+
+
 def test_fetch_papers_returns_list():
     client = ArxivClient()
-    papers = client.fetch_papers(start_date=date(2026, 5, 14), categories=["cs.AI"])
+    papers = fetch_papers_or_skip_on_rate_limit(
+        client,
+        start_date=date(2026, 5, 14),
+        categories=["cs.AI"],
+    )
     assert isinstance(papers, list)

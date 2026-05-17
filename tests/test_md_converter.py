@@ -2,7 +2,8 @@
 
 
 import pytest
-from arxiv_archive.md_converter import MDConverter, ConversionResult
+
+from arxiv_archive.md_converter import ConversionResult, MDConverter
 
 
 @pytest.mark.asyncio

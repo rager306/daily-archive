@@ -2,9 +2,21 @@
 
 from datetime import date
 
+import httpx
+import pytest
+
 from arxiv_archive.arxiv_client import ArxivClient
 from arxiv_archive.keyword_extractor import KeywordExtractor
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine
+
+
+def fetch_papers_or_skip_on_rate_limit(client: ArxivClient, **kwargs):
+    try:
+        return client.fetch_papers(**kwargs)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 429:
+            pytest.skip("arXiv API rate limit returned HTTP 429")
+        raise
 
 
 class TestFullPipeline:
@@ -21,7 +33,8 @@ class TestFullPipeline:
         scorer = ScoringEngine()
 
         # Fetch papers for date 2026-05-14 with categories cs.AI
-        papers = client.fetch_papers(
+        papers = fetch_papers_or_skip_on_rate_limit(
+            client,
             start_date=run_date,
             end_date=run_date,
             categories=categories,
@@ -54,7 +67,8 @@ class TestFullPipeline:
         scorer = ScoringEngine()
 
         # Fetch papers
-        papers = client.fetch_papers(
+        papers = fetch_papers_or_skip_on_rate_limit(
+            client,
             start_date=run_date,
             end_date=run_date,
             categories=categories,

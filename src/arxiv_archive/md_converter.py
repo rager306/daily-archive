@@ -9,7 +9,6 @@ from __future__ import annotations
 import asyncio
 import re
 import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -162,7 +161,7 @@ class MDConverter:
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(), timeout=MARKER_TIMEOUT_SECONDS
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
             await proc.wait()
             return ConversionResult(
