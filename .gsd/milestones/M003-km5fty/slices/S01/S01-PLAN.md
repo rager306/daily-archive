@@ -29,7 +29,7 @@ Connects existing paper artifacts to the future PageIndex and chunk pipeline wit
   - Files: `tests/fixtures/full_text/structured_paper.md`, `tests/fixtures/full_text/plain_fallback.txt`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py -q
 
-- [ ] **T02: Implement local full text ingestion boundary** `est:1h`
+- [x] **T02: Implement local full text ingestion boundary** `est:1h`
   Implement the minimal production ingestion boundary for local markdown and plain text sources. Add typed dataclasses or equivalent models for `FullTextSource`, `FullTextIngestionResult`, provenance, warnings, and fallback metadata. The implementation must be deterministic, local-only, and must not fetch PDFs or use network services. Done when S01 contract tests pass for structured markdown, plain text fallback, missing files, and empty/malformed content.
   - Files: `src/arxiv_archive/full_text.py`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py -q

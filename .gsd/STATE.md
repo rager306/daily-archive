@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T02: Implement local full text ingestion boundary in slice S01.
+Execute T03: Verify artifact to ingestion boundary for PageIndex consumers in slice S01.

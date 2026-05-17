@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T16:24:57.056Z",
+  "exported_at": "2026-05-17T16:27:05.775Z",
   "milestones": [
     {
       "id": "M001",
@@ -2083,19 +2083,25 @@
       "milestone_id": "M003-km5fty",
       "slice_id": "S01",
       "id": "T02",
-      "title": "Implement local full text ingestion boundary",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Implemented the local full-text ingestion boundary and made the S01 contract tests pass.",
+      "status": "complete",
+      "one_liner": "Implemented the local full-text ingestion boundary and made the S01 contract tests pass.",
+      "narrative": "Implemented `src/arxiv_archive/full_text.py` with frozen dataclasses for `FullTextSource` and `FullTextIngestionResult`, plus a local-only `ingest_full_text(source)` function. The implementation validates source type before parsing, reads UTF-8 local files, returns structured markdown results when markdown headings are present, returns explicit plain-text fallback metadata for unstructured inputs, and returns typed diagnostic results for missing or empty sources. It preserves source path, source type, extraction mode, warnings, fallback reason, and provenance in code-readable fields for downstream PageIndex construction.",
+      "verification_result": "Ran `uv run pytest tests/test_full_text_ingestion.py -q`; all 5 tests passed. Ran `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py`; all checks passed. LSP diagnostics reported no diagnostics for `src/arxiv_archive/full_text.py`. GitNexus impact for the new symbols returned target-not-found/zero indexed callers as expected for new code, and change detection reported no indexed changed symbols.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-05-17T16:27:05.746Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "src/arxiv_archive/full_text.py",
+        "tests/test_full_text_ingestion.py"
+      ],
+      "key_decisions": [
+        "Keep full-text ingestion local-only: no PDF fetching, arXiv calls, or network access.",
+        "Return diagnostic fields in `FullTextIngestionResult` instead of logging-only parser state."
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S01\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/full_text.py\n  - tests/test_full_text_ingestion.py\nkey_decisions:\n  - Keep full-text ingestion local-only: no PDF fetching, arXiv calls, or network access.\n  - Return diagnostic fields in `FullTextIngestionResult` instead of logging-only parser state.\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T16:27:05.745Z\nblocker_discovered: false\n---\n\n# T02: Implemented the local full-text ingestion boundary and made the S01 contract tests pass.\n\n**Implemented the local full-text ingestion boundary and made the S01 contract tests pass.**\n\n## What Happened\n\nImplemented `src/arxiv_archive/full_text.py` with frozen dataclasses for `FullTextSource` and `FullTextIngestionResult`, plus a local-only `ingest_full_text(source)` function. The implementation validates source type before parsing, reads UTF-8 local files, returns structured markdown results when markdown headings are present, returns explicit plain-text fallback metadata for unstructured inputs, and returns typed diagnostic results for missing or empty sources. It preserves source path, source type, extraction mode, warnings, fallback reason, and provenance in code-readable fields for downstream PageIndex construction.\n\n## Verification\n\nRan `uv run pytest tests/test_full_text_ingestion.py -q`; all 5 tests passed. Ran `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py`; all checks passed. LSP diagnostics reported no diagnostics for `src/arxiv_archive/full_text.py`. GitNexus impact for the new symbols returned target-not-found/zero indexed callers as expected for new code, and change detection reported no indexed changed symbols.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_full_text_ingestion.py -q` | 0 | ✅ pass: 5 full-text ingestion tests passed | 110ms |\n| 2 | `uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py` | 0 | ✅ pass: Ruff clean | 0ms |\n| 3 | `lsp diagnostics src/arxiv_archive/full_text.py` | 0 | ✅ pass: no diagnostics | 0ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/full_text.py`\n- `tests/test_full_text_ingestion.py`\n",
       "description": "Implement the minimal production ingestion boundary for local markdown and plain text sources. Add typed dataclasses or equivalent models for `FullTextSource`, `FullTextIngestionResult`, provenance, warnings, and fallback metadata. The implementation must be deterministic, local-only, and must not fetch PDFs or use network services. Done when S01 contract tests pass for structured markdown, plain text fallback, missing files, and empty/malformed content.",
       "estimate": "1h",
       "files": [
@@ -2240,6 +2246,39 @@
       "verdict": "✅ pass: new test file lint clean",
       "duration_ms": 0,
       "created_at": "2026-05-17T16:24:57.032Z"
+    },
+    {
+      "id": 4,
+      "task_id": "T02",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_full_text_ingestion.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 5 full-text ingestion tests passed",
+      "duration_ms": 110,
+      "created_at": "2026-05-17T16:27:05.746Z"
+    },
+    {
+      "id": 5,
+      "task_id": "T02",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/full_text.py tests/test_full_text_ingestion.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: Ruff clean",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:27:05.746Z"
+    },
+    {
+      "id": 6,
+      "task_id": "T02",
+      "slice_id": "S01",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/full_text.py",
+      "exit_code": 0,
+      "verdict": "✅ pass: no diagnostics",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T16:27:05.746Z"
     }
   ]
 }
