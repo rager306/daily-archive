@@ -20,7 +20,7 @@
 - [x] **S02: PageIndex document navigation** `risk:high` `depends:[S01]`
   > After this: After this: a fixture paper can be navigated as an ordered PageIndexNode tree with parent child and NEXT links.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After this: PageIndex nodes can own SemanticChunk records and EvidencePath objects can point from paper to section to chunk.
 
 - [ ] **S04: Claim entity relation contracts** `risk:high` `depends:[S03]`

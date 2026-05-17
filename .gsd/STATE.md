@@ -1,8 +1,8 @@
 # GSD State
 
 **Active Milestone:** M003-km5fty: Scientific Hybrid Graph RAG and RLM Navigation Base
-**Active Slice:** S03: S03
-**Phase:** executing
+**Active Slice:** S04: Claim entity relation contracts
+**Phase:** planning
 **Requirements Status:** 0 active · 13 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
@@ -17,4 +17,4 @@
 - None
 
 ## Next Action
-Execute T04: Run S03 quality gates and regression smoke in slice S03.
+Slice S04 has no DB tasks. Plan slice tasks before execution.
