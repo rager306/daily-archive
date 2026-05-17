@@ -39,7 +39,7 @@ Connects existing paper artifacts to the future PageIndex and chunk pipeline wit
   - Files: `src/arxiv_archive/full_text.py`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py -q
 
-- [ ] **T04: Run S01 quality gates and regression smoke** `est:30m`
+- [x] **T04: Run S01 quality gates and regression smoke** `est:30m`
   Run final S01 quality gates and record any known limitations for downstream S02. Execute targeted ingestion tests, relevant regression tests, Ruff on touched files, and public CLI help smoke to ensure the full-text contract did not alter M001/M002 public surfaces. Done when all commands pass and the slice is ready for execution closeout.
   - Files: `src/arxiv_archive/full_text.py`, `tests/test_full_text_ingestion.py`
   - Verify: uv run pytest tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q
