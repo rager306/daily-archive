@@ -160,7 +160,7 @@ def test_compute_graph_metrics_covers_algo_success_path():
     compute_graph_metrics(cast(ladybug.Connection, conn))
 
     assert any("MATCH (p:Paper {id: $id}) SET p.pagerank = $rank" in q for q in conn.queries)
-    assert "DROP GRAPH IF EXISTS paper_kw_graph" in conn.queries
+    assert "CALL drop_projected_graph('paper_kw_graph')" in conn.queries
 
 
 def test_compute_graph_metrics_logs_unexpected_alter_warning(caplog):

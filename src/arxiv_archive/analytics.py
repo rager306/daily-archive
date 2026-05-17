@@ -46,7 +46,7 @@ def compute_graph_metrics(conn: ladybug.Connection) -> None:
                 {"id": paper_id, "rank": rank},
             )
 
-        conn.execute("DROP GRAPH IF EXISTS paper_kw_graph")
+        conn.execute("CALL drop_projected_graph('paper_kw_graph')")
 
     except Exception as e:
         logger.error(f"Failed to run algo extension PageRank: {e}")

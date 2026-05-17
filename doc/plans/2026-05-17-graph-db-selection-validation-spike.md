@@ -37,6 +37,7 @@ Observed local behavior:
 - Stores 512-dimensional embeddings in `FLOAT[512]`.
 - Runs vector similarity with `array_cosine_similarity`.
 - Runs native graph PageRank through the `algo` extension with `page_rank`.
+- Manages projected graphs with `project_graph`, `show_projected_graphs`, `projected_graph_info`, and `drop_projected_graph`.
 - Produces hybrid recommendations combining vector similarity and graph centrality.
 
 Known limitations to validate further:
@@ -155,7 +156,7 @@ uv run ruff check src/arxiv_archive/analytics.py tests/test_analytics.py
 # All checks passed
 ```
 
-A temporary persistent LadybugDB smoke produced two recommendations and persisted PageRank values for two papers using native `page_rank`.
+A temporary persistent LadybugDB smoke produced two recommendations and persisted PageRank values for two papers using native `page_rank`. Source inspection of the indexed LadybugDB repo confirmed the projected graph lifecycle functions: `project_graph`, `show_projected_graphs`, `projected_graph_info`, and `drop_projected_graph`.
 
 ## Next work items
 
