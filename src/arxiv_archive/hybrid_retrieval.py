@@ -50,6 +50,15 @@ class GraphCandidate:
     page_index_node_id: str
     evidence_path_id: str
     graph_score: float
+    graph_source: str
+
+
+@dataclass(frozen=True)
+class GraphExpansion:
+    """Read-only graph expansion result plus text-free diagnostics."""
+
+    candidates: list[GraphCandidate]
+    diagnostics: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -111,15 +120,15 @@ def retrieve_hybrid(
     if use_vector and vector_index is not None and query.vector is not None:
         vector_candidates = vector_index.search(query.vector, limit=query.limit)
 
-    graph_candidates: list[GraphCandidate] = []
+    graph_expansion = GraphExpansion(candidates=[], diagnostics=_empty_graph_diagnostics(query.text, reason=None))
     if use_graph:
-        graph_candidates = _graph_candidates(conn, query.text, limit=query.limit)
+        graph_expansion = _expand_graph_candidates(conn, query.text, limit=query.limit)
 
     evidence_by_chunk = _evidence_paths_by_chunk(conn)
     results = _fuse_results(
         mode=query.mode,
         vector_candidates=vector_candidates,
-        graph_candidates=graph_candidates,
+        graph_candidates=graph_expansion.candidates,
         evidence_by_chunk=evidence_by_chunk,
         limit=query.limit,
         vector_weight=vector_weight,
@@ -133,8 +142,13 @@ def retrieve_hybrid(
     ]
 
     diagnostics = {
+        "query_text": query.text,
+        "vector_candidate_count": len(vector_candidates),
+        "graph_candidate_count": len(graph_expansion.candidates) if use_graph else None,
         "empty_vector_candidates": (not vector_candidates) if use_vector else None,
-        "empty_graph_candidates": (not graph_candidates) if use_graph else None,
+        "empty_graph_candidates": (not graph_expansion.candidates) if use_graph else None,
+        "empty_graph_reason": graph_expansion.diagnostics["empty_graph_reason"] if use_graph else None,
+        "graph_evidence_path_ids": graph_expansion.diagnostics["evidence_path_ids"] if use_graph else [],
         "missing_evidence_path_links": missing_evidence_path_links,
     }
     return HybridRetrievalResponse(results=results, diagnostics=diagnostics)
@@ -226,39 +240,120 @@ def _cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
     return dot / (left_norm * right_norm)
 
 
-def _graph_candidates(conn: ladybug.Connection, text: str, *, limit: int) -> list[GraphCandidate]:
+def _expand_graph_candidates(conn: ladybug.Connection, text: str, *, limit: int) -> GraphExpansion:
+    """Expand SCI KG neighborhoods through read-only evidence-backed queries."""
     needle = text.casefold().strip()
     if not needle:
-        return []
+        return GraphExpansion(candidates=[], diagnostics=_empty_graph_diagnostics(text, reason="blank_query"))
 
     rows: dict[str, GraphCandidate] = {}
-    for label, text_property in [
-        ("Claim", "text"),
-        ("ScientificEntity", "label"),
-        ("ScientificRelation", "relation_type"),
+    for candidate in _direct_scientific_kg_candidates(conn, needle):
+        _keep_best_graph_candidate(rows, candidate)
+    for candidate in _relation_neighborhood_candidates(conn, needle):
+        _keep_best_graph_candidate(rows, candidate)
+
+    candidates = list(rows.values())
+    candidates.sort(key=lambda candidate: (-candidate.graph_score, candidate.semantic_chunk_id, candidate.evidence_path_id))
+    limited = candidates[: max(limit, 0)]
+    reason = None if limited else "no_scientific_kg_matches"
+    return GraphExpansion(
+        candidates=limited,
+        diagnostics={
+            "query_text": text,
+            "candidate_count": len(limited),
+            "empty_graph_reason": reason,
+            "evidence_path_ids": [candidate.evidence_path_id for candidate in limited],
+        },
+    )
+
+
+# Backwards-compatible name for tests or callers that imported the T02 helper.
+def _graph_candidates(conn: ladybug.Connection, text: str, *, limit: int) -> list[GraphCandidate]:
+    return _expand_graph_candidates(conn, text, limit=limit).candidates
+
+
+def _direct_scientific_kg_candidates(conn: ladybug.Connection, needle: str) -> list[GraphCandidate]:
+    candidates: list[GraphCandidate] = []
+    for label, text_property, source_name in [
+        ("Claim", "text", "claim"),
+        ("ScientificEntity", "label", "entity"),
+        ("ScientificRelation", "relation_type", "relation"),
     ]:
         result = conn.execute(
             f"MATCH (item:{label})-[:EVIDENCED_BY]->(evidence:EvidencePath) "
             "RETURN item."
-            f"{text_property}, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+            f"{text_property}, item.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
         )
         while result.has_next():
-            item_text, evidence_id, page_index_node_id, semantic_chunk_id = result.get_next()
+            item_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = result.get_next()
             if needle not in str(item_text).casefold():
                 continue
-            rows.setdefault(
-                str(semantic_chunk_id),
+            candidates.append(
                 GraphCandidate(
                     semantic_chunk_id=str(semantic_chunk_id),
                     page_index_node_id=str(page_index_node_id),
                     evidence_path_id=str(evidence_id),
-                    graph_score=1.0,
-                ),
+                    graph_score=_bounded_score(confidence),
+                    graph_source=source_name,
+                )
             )
+    return candidates
 
-    candidates = list(rows.values())
-    candidates.sort(key=lambda candidate: (-candidate.graph_score, candidate.semantic_chunk_id))
-    return candidates[: max(limit, 0)]
+
+def _relation_neighborhood_candidates(conn: ladybug.Connection, needle: str) -> list[GraphCandidate]:
+    """Return one-hop relation endpoint evidence without mutating the graph."""
+    candidates: list[GraphCandidate] = []
+    for endpoint_label, text_property, endpoint_role in [
+        ("Claim", "text", "claim_endpoint"),
+        ("ScientificEntity", "label", "entity_endpoint"),
+    ]:
+        for rel_table in ["SCIENTIFIC_RELATION_SOURCE", "SCIENTIFIC_RELATION_TARGET"]:
+            result = conn.execute(
+                f"MATCH (relation:ScientificRelation)-[:{rel_table}]->(endpoint:{endpoint_label}), "
+                "(relation)-[:EVIDENCED_BY]->(evidence:EvidencePath) "
+                "RETURN endpoint."
+                f"{text_property}, relation.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+            )
+            while result.has_next():
+                endpoint_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = result.get_next()
+                if needle not in str(endpoint_text).casefold():
+                    continue
+                candidates.append(
+                    GraphCandidate(
+                        semantic_chunk_id=str(semantic_chunk_id),
+                        page_index_node_id=str(page_index_node_id),
+                        evidence_path_id=str(evidence_id),
+                        graph_score=_bounded_score(confidence) * 0.9,
+                        graph_source=endpoint_role,
+                    )
+                )
+    return candidates
+
+
+def _keep_best_graph_candidate(rows: dict[str, GraphCandidate], candidate: GraphCandidate) -> None:
+    current = rows.get(candidate.semantic_chunk_id)
+    if current is None or (candidate.graph_score, candidate.evidence_path_id) > (
+        current.graph_score,
+        current.evidence_path_id,
+    ):
+        rows[candidate.semantic_chunk_id] = candidate
+
+
+def _bounded_score(value: Any) -> float:
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        return 1.0
+    return min(max(score, 0.0), 1.0)
+
+
+def _empty_graph_diagnostics(text: str, *, reason: str | None) -> dict[str, Any]:
+    return {
+        "query_text": text,
+        "candidate_count": 0,
+        "empty_graph_reason": reason,
+        "evidence_path_ids": [],
+    }
 
 
 def _evidence_paths_by_chunk(conn: ladybug.Connection) -> dict[str, tuple[str, str]]:

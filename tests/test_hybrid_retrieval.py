@@ -9,7 +9,7 @@ log paper text, or require live credentials.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import ladybug
 import pytest
@@ -98,8 +98,13 @@ def test_vector_only_retrieval_returns_evidence_backed_score_metadata(
         "fusion_score": pytest.approx(1.0),
     }
     assert _diagnostics(response) == {
+        "query_text": "local markdown page index method",
+        "vector_candidate_count": 1,
+        "graph_candidate_count": None,
         "empty_vector_candidates": False,
         "empty_graph_candidates": None,
+        "empty_graph_reason": None,
+        "graph_evidence_path_ids": [],
         "missing_evidence_path_links": [],
     }
 
@@ -133,15 +138,101 @@ def test_graph_only_retrieval_expands_from_scientific_kg_without_vectors(
             "page_index_node_id": "2605.12345:method",
             "evidence_path_id": "evidence:2605.12345:method:2605.12345:method:chunk-0001",
             "vector_score": None,
-            "graph_score": pytest.approx(1.0),
-            "fusion_score": pytest.approx(1.0),
+            "graph_score": pytest.approx(0.91),
+            "fusion_score": pytest.approx(0.91),
         }
     ]
     assert _diagnostics(response) == {
+        "query_text": "PageIndex",
+        "vector_candidate_count": 0,
+        "graph_candidate_count": 1,
         "empty_vector_candidates": None,
         "empty_graph_candidates": False,
+        "empty_graph_reason": None,
+        "graph_evidence_path_ids": ["evidence:2605.12345:method:2605.12345:method:chunk-0001"],
         "missing_evidence_path_links": [],
     }
+
+
+def test_graph_only_retrieval_expands_relation_neighborhood_from_endpoint_match(
+    scientific_kg_conn: ladybug.Connection,
+) -> None:
+    """Graph expansion uses SCIENTIFIC_RELATION endpoint edges without exposing text."""
+    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+        HybridRetrievalMode,
+        HybridRetrievalQuery,
+        retrieve_hybrid,
+    )
+
+    response = retrieve_hybrid(
+        scientific_kg_conn,
+        HybridRetrievalQuery(
+            text="Local markdown is enough",
+            vector=None,
+            mode=HybridRetrievalMode.GRAPH_ONLY,
+            limit=3,
+        ),
+    )
+
+    rows = _result_rows(response)
+    assert rows == [
+        {
+            "retrieval_mode": "graph_only",
+            "candidate_source": "graph",
+            "semantic_chunk_id": "2605.12345:method:chunk-0001",
+            "page_index_node_id": "2605.12345:method",
+            "evidence_path_id": "evidence:2605.12345:method:2605.12345:method:chunk-0001",
+            "vector_score": None,
+            "graph_score": pytest.approx(0.91),
+            "fusion_score": pytest.approx(0.91),
+        }
+    ]
+    diagnostics = _diagnostics(response)
+    assert diagnostics["graph_candidate_count"] == 1
+    assert diagnostics["graph_evidence_path_ids"] == [
+        "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+    ]
+    assert "Local markdown is enough" == diagnostics["query_text"]
+    assert "Local markdown is enough to build a deterministic PageIndex." not in diagnostics.values()
+
+
+def test_graph_retrieval_does_not_open_write_transactions_or_mutate_schema(
+    scientific_kg_conn: ladybug.Connection,
+) -> None:
+    """Retrieval must be read-only: no BEGIN, CREATE, MERGE, SET, COMMIT, or ROLLBACK."""
+    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+        HybridRetrievalMode,
+        HybridRetrievalQuery,
+        retrieve_hybrid,
+    )
+
+    class RecordingReadOnlyConn:
+        def __init__(self, delegate: ladybug.Connection) -> None:
+            self.delegate = delegate
+            self.queries: list[str] = []
+
+        def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
+            del params
+            normalized = query.strip().upper()
+            assert not normalized.startswith(("BEGIN", "COMMIT", "ROLLBACK", "CREATE", "MERGE"))
+            assert " SET " not in f" {normalized} "
+            self.queries.append(query)
+            return self.delegate.execute(query)
+
+    conn = RecordingReadOnlyConn(scientific_kg_conn)
+    response = retrieve_hybrid(
+        cast(ladybug.Connection, conn),
+        HybridRetrievalQuery(
+            text="supports",
+            vector=None,
+            mode=HybridRetrievalMode.GRAPH_ONLY,
+            limit=3,
+        ),
+    )
+
+    assert _result_rows(response)
+    assert conn.queries
+    assert all(query.strip().upper().startswith("MATCH") for query in conn.queries)
 
 
 def test_hybrid_retrieval_stably_fuses_vector_and_graph_candidates(
@@ -177,12 +268,17 @@ def test_hybrid_retrieval_stably_fuses_vector_and_graph_candidates(
         "page_index_node_id": "2605.12345:method",
         "evidence_path_id": "evidence:2605.12345:method:2605.12345:method:chunk-0001",
         "vector_score": pytest.approx(1.0),
-        "graph_score": pytest.approx(1.0),
-        "fusion_score": pytest.approx(1.0),
+        "graph_score": pytest.approx(0.91),
+        "fusion_score": pytest.approx(0.973),
     }
     assert _diagnostics(response) == {
+        "query_text": "PageIndex",
+        "vector_candidate_count": 1,
+        "graph_candidate_count": 1,
         "empty_vector_candidates": False,
         "empty_graph_candidates": False,
+        "empty_graph_reason": None,
+        "graph_evidence_path_ids": ["evidence:2605.12345:method:2605.12345:method:chunk-0001"],
         "missing_evidence_path_links": [],
     }
 
@@ -225,8 +321,13 @@ def test_hybrid_retrieval_reports_empty_candidate_sets_and_missing_evidence_link
         }
     ]
     assert _diagnostics(response) == {
+        "query_text": "no graph match",
+        "vector_candidate_count": 1,
+        "graph_candidate_count": 0,
         "empty_vector_candidates": False,
         "empty_graph_candidates": True,
+        "empty_graph_reason": "no_scientific_kg_matches",
+        "graph_evidence_path_ids": [],
         "missing_evidence_path_links": ["2605.12345:abstract:chunk-0001"],
     }
 
@@ -243,7 +344,12 @@ def test_hybrid_retrieval_reports_empty_candidate_sets_and_missing_evidence_link
 
     assert _result_rows(empty_response) == []
     assert _diagnostics(empty_response) == {
+        "query_text": "still no graph match",
+        "vector_candidate_count": 0,
+        "graph_candidate_count": 0,
         "empty_vector_candidates": True,
         "empty_graph_candidates": True,
+        "empty_graph_reason": "no_scientific_kg_matches",
+        "graph_evidence_path_ids": [],
         "missing_evidence_path_links": [],
     }
