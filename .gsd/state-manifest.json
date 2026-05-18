@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-17T17:56:48.204Z",
+  "exported_at": "2026-05-18T02:41:08.097Z",
   "milestones": [
     {
       "id": "M001",
@@ -134,12 +134,12 @@
       ],
       "key_risks": [],
       "proof_strategy": [],
-      "verification_contract": "Each slice must pass targeted tests plus Ruff, Pyrefly, Ty, and pytest before closure. Any real external-service smoke test must be explicit and must not hide failures behind broad skip blocks.",
-      "verification_integration": "Integration proof must show Paper -> PageIndexNode -> SemanticChunk -> Claim/Entity/Relation -> EvidencePath stored in LadybugDB and consumed by hybrid retrieval.",
-      "verification_operational": "Normal CI/local quality gates should not depend on live arXiv, PDF, or LLM services unless the test is explicitly a real smoke test with configured credentials and no broad silent skip.",
-      "verification_uat": "A user can ask a fixture scientific question and receive traceable retrieved context with paper, section, chunk, claim/entity, score metadata, and evidence path.",
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
       "definition_of_done": [],
-      "requirement_coverage": "Covers restored M003 requirements R014-R023. R014-R016 are validated by S01-S03. R017-R023 remain active for S04-S10. DSPy remains gated by R020/R021 until evaluation metrics and benchmark fixtures are verified in S07.",
+      "requirement_coverage": "Not provided.",
       "boundary_map_markdown": "```text\nIn M003:\n  Full-text and markdown ingestion contracts\n  PageIndexNode hierarchy\n  SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath models\n  LadybugDB schema expansion for scientific KG\n  Hybrid retrieval baseline: vector + graph + RRF-style fusion\n  Evaluation fixtures and ablation baselines\n  DSPy-compatible typed extraction boundary\n  RLM read/draft-only spikes for document navigation, workflow-in-code, and graph traversal\n\nOut of M003:\n  DSPy optimizer training with GEPA/MIPROv2 unless enough reviewed examples exist\n  Production-scale corpus migration\n  BestBlogs/social editorial product layer\n  BABOK opportunity-analysis product layer\n  Autopublishing or external channel delivery\n  PyO3/Rust acceleration unless profiling proves a bottleneck\n```",
       "sequence": 3
     }
@@ -521,7 +521,7 @@
       "milestone_id": "M003-km5fty",
       "id": "S05",
       "title": "LadybugDB SCI KG schema expansion",
-      "status": "pending",
+      "status": "complete",
       "risk": "high",
       "depends": [
         "S02",
@@ -530,14 +530,14 @@
       ],
       "demo": "After this: LadybugDB stores the expanded SCI KG fixture with Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, and relation edges idempotently.",
       "created_at": "2026-05-17T10:29:47.977Z",
-      "completed_at": null,
-      "full_summary_md": "",
-      "full_uat_md": "",
-      "goal": "Expand LadybugDB schema from paper-level foundation to scientific KG fixture schema.",
-      "success_criteria": "- Schema includes required nodes and relations.\n- Idempotent ingest does not duplicate chunks, claims, entities, or relations.\n- Writes remain transaction-safe and parameterized.\n- Tests cover rollback and partial invalid patch rejection.",
-      "proof_level": "LadybugDB integration and idempotency tests",
-      "integration_closure": "Creates the graph substrate for hybrid retrieval and RLM graph traversal tools.",
-      "observability_impact": "Logs schema version, write transaction stage, merge counts, validation rejects, and rollback errors without secrets.",
+      "completed_at": "2026-05-17T18:46:17.251Z",
+      "full_summary_md": "---\nid: S05\nparent: M003-km5fty\nmilestone: M003-km5fty\nprovides:\n  - Idempotent SCI KG schema initialization in `init_scientific_kg_schema`.\n  - Transaction-safe `upsert_scientific_kg` for PageIndex, SemanticChunk, EvidencePath, Claim, ScientificEntity, and ScientificRelation fixture records.\n  - Contract tests that S06/S07/S10 can extend for retrieval and traversal fixtures.\nrequires:\n  []\naffects:\n  - S06: Hybrid retrieval baseline can now consume persisted SCI KG fixture records\n  - S07: Evaluation fixtures can validate storage-backed evidence paths and graph records\n  - S10: RLM graph traversal has a storage schema substrate but no traversal behavior yet\nkey_files:\n  - src/arxiv_archive/ladybug_client.py\n  - src/arxiv_archive/page_index.py\n  - tests/test_ladybug_scientific_kg.py\nkey_decisions:\n  - Kept the S05 storage boundary in `arxiv_archive.ladybug_client` instead of adding a new persistence module so the existing LadybugDB entrypoint remains the public integration surface.\n  - Stored PageIndex and EvidencePath path lists as slash-delimited strings in LadybugDB properties for compatibility with the current embedded schema.\n  - Validation occurs before opening the SCI KG write transaction so invalid ExtractionPatch/EvidencePath payloads cannot create partial graph state.\npatterns_established:\n  - Validate SCI KG payloads before opening a LadybugDB write transaction.\n  - Use deterministic EvidencePath node IDs based on PageIndexNode ID and SemanticChunk ID.\n  - Keep later retrieval/DSPy/RLM behavior gated behind storage and evaluation slices.\nobservability_surfaces:\n  - Schema helpers log created/existing statement counts per schema group.\n  - SCI KG writes log paper id and record counts for nodes, chunks, evidence paths, claims, entities, and relations without logging full paper text or embeddings.\n  - Failure logs include paper id, write phase, and exception text; invalid payloads return aggregated validation diagnostics.\ndrill_down_paths:\n  - .gsd/milestones/M003-km5fty/slices/S05/tasks/T01-SUMMARY.md\n  - .gsd/milestones/M003-km5fty/slices/S05/tasks/T02-SUMMARY.md\n  - .gsd/milestones/M003-km5fty/slices/S05/tasks/T03-SUMMARY.md\n  - .gsd/milestones/M003-km5fty/slices/S05/tasks/T04-SUMMARY.md\n  - .gsd/milestones/M003-km5fty/slices/S05/tasks/T05-SUMMARY.md\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-17T18:46:17.252Z\nblocker_discovered: false\n---\n\n# S05: LadybugDB SCI KG schema expansion\n\n**LadybugDB now stores the expanded SCI KG fixture schema idempotently and transaction-safely.**\n\n## What Happened\n\nS05 expanded the LadybugDB graph persistence layer from paper/author/keyword/category records into a scientific KG fixture schema. The implementation adds idempotent schema creation for PageIndexNode, SemanticChunk, EvidencePath, Claim, ScientificEntity, and ScientificRelation nodes plus relationship tables for document structure, chunk attachment, evidence anchoring, and scientific relation endpoints. `upsert_scientific_kg` validates document/chunk/evidence/patch consistency before writes, uses explicit transactions and parameterized MERGE statements, and rolls back on mid-write failures. The new tests prove duplicate reruns do not duplicate fixture records and invalid patches are rejected before transaction open.\n\n## Verification\n\nFresh final verification after the last code change passed: 41 pytest tests, Ruff on touched files, Pyrefly on src, Ty on src plus S05 test, CLI help smoke, LSP diagnostics, and GitNexus detect_changes review.\n\n## Requirements Advanced\n\n- R019 — Provides storage substrate required by S06 hybrid retrieval and S10 graph traversal, while preserving S07 evaluation gating.\n- R020 — Maintains the requirement that evaluation and metrics still precede DSPy/RLM quality claims.\n\n## Requirements Validated\n\n- R018 — S05 final verification passed: 41 pytest tests, Ruff, Pyrefly, Ty, CLI help smoke, LSP diagnostics, and GitNexus change review.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nThe final type gate exposed pre-existing PageIndex annotation imprecision, so S05 included a small type-only `_HeadingSection` cleanup in `src/arxiv_archive/page_index.py`. The runtime PageIndex behavior was unchanged and covered by PageIndex/evidence tests.\n\n## Known Limitations\n\nFixture-level persistence only. No hybrid retrieval/fusion scoring, no benchmark metrics, no DSPy typed LM modules, no RLM workflow/traversal, and no production corpus migration.\n\n## Follow-ups\n\nS06 should build the hybrid retrieval baseline against the new persisted SCI KG fixture schema. S07 still must define evaluation metrics before any DSPy/RLM/optimizer quality claims.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/ladybug_client.py` — Added idempotent base/scientific schema helpers, `upsert_scientific_kg`, deterministic EvidencePath IDs, validation-before-transaction, rollback-on-failure, and SCI KG MERGE writes.\n- `src/arxiv_archive/page_index.py` — Added `_HeadingSection` typed shape to make PageIndex heading parsing type-check cleanly without changing runtime behavior.\n- `tests/test_ladybug_scientific_kg.py` — Added S05 contract/integration tests for schema creation, idempotent fixture persistence, invalid patch rejection before transaction, and rollback on mid-write failure.\n",
+      "full_uat_md": "# S05: LadybugDB SCI KG schema expansion — UAT\n\n**Milestone:** M003-km5fty\n**Written:** 2026-05-17T18:46:17.252Z\n\n# S05 UAT — LadybugDB SCI KG schema expansion\n\n## Scenario\nA fixture paper is ingested into PageIndex, chunked into SemanticChunk records, linked through EvidencePath, grouped into an ExtractionPatch, and persisted into in-memory LadybugDB.\n\n## Acceptance checks\n- `init_db()` exposes empty SCI KG labels including PageIndexNode, SemanticChunk, EvidencePath, Claim, ScientificEntity, and ScientificRelation.\n- `init_scientific_kg_schema()` can be called standalone and creates the base Paper table plus SCI KG relation tables.\n- `upsert_scientific_kg()` can be run twice for the same fixture without duplicating Paper, PageIndexNode, SemanticChunk, EvidencePath, Claim, ScientificEntity, or ScientificRelation records.\n- Invalid ExtractionPatch data is rejected before a write transaction begins.\n- A simulated mid-write SemanticChunk failure issues ROLLBACK and re-raises the original error.\n\n## Verification evidence\n- `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` → 41 passed.\n- `uv run ruff check src/arxiv_archive/ladybug_client.py src/arxiv_archive/page_index.py tests/test_ladybug_scientific_kg.py` → All checks passed.\n- `uv run pyrefly check src/` → 0 errors.\n- `uv run ty check src/ tests/test_ladybug_scientific_kg.py` → All checks passed.\n- `uv run python -m arxiv_archive --help` → exit 0.\n\n## Out of scope confirmed\nNo retrieval/fusion scoring, DSPy, RLM, optimizer, live LLM, or production corpus migration behavior was added.\n",
+      "goal": "Expand the LadybugDB persistence layer so fixture scientific KG records from PageIndex, SemanticChunk, EvidencePath, and ExtractionPatch contracts can be stored idempotently and transaction-safely.",
+      "success_criteria": "- LadybugDB schema initialization creates or tolerates Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, ScientificRelation, and required relationship tables.\n- A representative fixture document plus ExtractionPatch can be persisted into LadybugDB with deterministic node and edge IDs.\n- Re-running the same fixture persistence path does not duplicate nodes or relationships.\n- Invalid ExtractionPatch or broken EvidencePath inputs are rejected before opening or committing storage writes.\n- Mid-write failures roll back and expose a clear error instead of leaving partial SCI KG state.\n- No retrieval/fusion, DSPy, RLM, optimizer, or live LLM behavior is introduced.",
+      "proof_level": "This slice proves integration contract and fixture-level storage behavior with in-memory LadybugDB tests; no production corpus migration, retrieval baseline, DSPy, RLM, or human UAT required.",
+      "integration_closure": "Consumes S02 PageIndexDocument/PageIndexNode, S03 SemanticChunk/EvidencePath, and S04 ExtractionPatch contracts. Produces an idempotent LadybugDB SCI KG write boundary that S06 retrieval can query without inspecting parser or extraction internals. Leaves hybrid retrieval, metrics, DSPy, and RLM work to later slices.",
+      "observability_impact": "Adds explicit validation diagnostics and rollback failure visibility for SCI KG writes. Runtime logging must include counts and phase context without logging paper text, secrets, or embeddings.",
       "sequence": 5,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -2736,6 +2736,228 @@
       "escalation_awaiting_review": 0,
       "escalation_artifact_path": null,
       "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S05",
+      "id": "T01",
+      "title": "Added RED contract tests for S05 LadybugDB SCI KG schema and persistence behavior.",
+      "status": "complete",
+      "one_liner": "Added RED contract tests for S05 LadybugDB SCI KG schema and persistence behavior.",
+      "narrative": "Planned S05 through the GSD DB and created the T01 contract-test file for LadybugDB scientific KG persistence. The tests define the public storage boundary as init_db/init_scientific_kg_schema/upsert_scientific_kg in arxiv_archive.ladybug_client, consuming PageIndexDocument, SemanticChunk, EvidencePath, and ExtractionPatch fixture objects. The RED run proves the tests are active: current code lacks PageIndexNode schema support and the new schema/write functions.",
+      "verification_result": "Ran `uv run pytest tests/test_ladybug_scientific_kg.py -q`; result was expected RED with 4 failures: missing PageIndexNode table plus missing init_scientific_kg_schema and upsert_scientific_kg functions. Ran LSP diagnostics on tests/test_ladybug_scientific_kg.py after import-order fix; no diagnostics.",
+      "duration": "",
+      "completed_at": "2026-05-17T18:30:10.272Z",
+      "blocker_discovered": false,
+      "deviations": "TDD-style T01 intentionally ends RED: the verification command exits 1 because the S05 implementation does not exist yet. This is expected for the contract-test task and feeds T02-T04.",
+      "known_issues": "S05 implementation is intentionally missing: init_db does not create SCI KG tables, and init_scientific_kg_schema/upsert_scientific_kg do not exist yet. T02 should make schema portions green first.",
+      "key_files": [
+        "tests/test_ladybug_scientific_kg.py",
+        ".gsd/milestones/M003-km5fty/slices/S05/S05-PLAN.md"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T01\nparent: S05\nmilestone: M003-km5fty\nkey_files:\n  - tests/test_ladybug_scientific_kg.py\n  - .gsd/milestones/M003-km5fty/slices/S05/S05-PLAN.md\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T18:30:10.271Z\nblocker_discovered: false\n---\n\n# T01: Added RED contract tests for S05 LadybugDB SCI KG schema and persistence behavior.\n\n**Added RED contract tests for S05 LadybugDB SCI KG schema and persistence behavior.**\n\n## What Happened\n\nPlanned S05 through the GSD DB and created the T01 contract-test file for LadybugDB scientific KG persistence. The tests define the public storage boundary as init_db/init_scientific_kg_schema/upsert_scientific_kg in arxiv_archive.ladybug_client, consuming PageIndexDocument, SemanticChunk, EvidencePath, and ExtractionPatch fixture objects. The RED run proves the tests are active: current code lacks PageIndexNode schema support and the new schema/write functions.\n\n## Verification\n\nRan `uv run pytest tests/test_ladybug_scientific_kg.py -q`; result was expected RED with 4 failures: missing PageIndexNode table plus missing init_scientific_kg_schema and upsert_scientific_kg functions. Ran LSP diagnostics on tests/test_ladybug_scientific_kg.py after import-order fix; no diagnostics.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_ladybug_scientific_kg.py -q` | 1 | ✅ expected RED for T01 contract tests | 3300ms |\n| 2 | `lsp diagnostics tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 0ms |\n\n## Deviations\n\nTDD-style T01 intentionally ends RED: the verification command exits 1 because the S05 implementation does not exist yet. This is expected for the contract-test task and feeds T02-T04.\n\n## Known Issues\n\nS05 implementation is intentionally missing: init_db does not create SCI KG tables, and init_scientific_kg_schema/upsert_scientific_kg do not exist yet. T02 should make schema portions green first.\n\n## Files Created/Modified\n\n- `tests/test_ladybug_scientific_kg.py`\n- `.gsd/milestones/M003-km5fty/slices/S05/S05-PLAN.md`\n",
+      "description": "Create red tests that define the LadybugDB SCI KG schema expansion and fixture persistence contract. Build a representative fixture through S01/S02/S03/S04 objects and assert node labels, relationship names, deterministic IDs, idempotent reruns, invalid ExtractionPatch rejection, and rollback behavior. Done when tests fail only because the new schema/write implementation does not exist yet.",
+      "estimate": "1h",
+      "files": [
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "verify": "uv run pytest tests/test_ladybug_scientific_kg.py -q",
+      "inputs": [
+        "src/arxiv_archive/page_index.py",
+        "src/arxiv_archive/evidence.py",
+        "src/arxiv_archive/scientific_extraction.py",
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/fixtures/full_text/structured_paper.md"
+      ],
+      "expected_output": [
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "observability_impact": "Tests define expected validation and rollback diagnostics for future agents.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S05",
+      "id": "T02",
+      "title": "Added idempotent LadybugDB SCI KG schema initialization while preserving existing archive graph behavior.",
+      "status": "complete",
+      "one_liner": "Added idempotent LadybugDB SCI KG schema initialization while preserving existing archive graph behavior.",
+      "narrative": "Extended `ladybug_client.py` with idempotent schema helpers. `init_db()` now initializes the base archive schema and the S05 scientific KG schema. Added `init_base_schema()` and `init_scientific_kg_schema()` with per-statement already-exists handling, including SCI KG node tables for PageIndexNode, SemanticChunk, EvidencePath, Claim, ScientificEntity, and ScientificRelation plus relationship tables for page-index, chunk, evidence, and scientific-relation links. Kept the existing daily-analysis upsert path compatible with the M002 tests.",
+      "verification_result": "Ran `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py -q`; all 12 tests passed. LSP diagnostics for `src/arxiv_archive/ladybug_client.py` and `tests/test_ladybug_scientific_kg.py` reported no diagnostics.",
+      "duration": "",
+      "completed_at": "2026-05-17T18:37:18.684Z",
+      "blocker_discovered": false,
+      "deviations": "Implementation also introduced the shared upsert scaffolding needed by T03/T04 because the schema helper and write boundary are coupled in the same module. Verification for T02 remained focused on schema and existing Ladybug compatibility.",
+      "known_issues": "None for T02. Retrieval, evaluation metrics, DSPy, and RLM remain intentionally out of scope for later slices.",
+      "key_files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T02\nparent: S05\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/ladybug_client.py\n  - tests/test_ladybug_scientific_kg.py\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T18:37:18.683Z\nblocker_discovered: false\n---\n\n# T02: Added idempotent LadybugDB SCI KG schema initialization while preserving existing archive graph behavior.\n\n**Added idempotent LadybugDB SCI KG schema initialization while preserving existing archive graph behavior.**\n\n## What Happened\n\nExtended `ladybug_client.py` with idempotent schema helpers. `init_db()` now initializes the base archive schema and the S05 scientific KG schema. Added `init_base_schema()` and `init_scientific_kg_schema()` with per-statement already-exists handling, including SCI KG node tables for PageIndexNode, SemanticChunk, EvidencePath, Claim, ScientificEntity, and ScientificRelation plus relationship tables for page-index, chunk, evidence, and scientific-relation links. Kept the existing daily-analysis upsert path compatible with the M002 tests.\n\n## Verification\n\nRan `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py -q`; all 12 tests passed. LSP diagnostics for `src/arxiv_archive/ladybug_client.py` and `tests/test_ladybug_scientific_kg.py` reported no diagnostics.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py -q` | 0 | ✅ pass | 4700ms |\n| 2 | `lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 0ms |\n\n## Deviations\n\nImplementation also introduced the shared upsert scaffolding needed by T03/T04 because the schema helper and write boundary are coupled in the same module. Verification for T02 remained focused on schema and existing Ladybug compatibility.\n\n## Known Issues\n\nNone for T02. Retrieval, evaluation metrics, DSPy, and RLM remain intentionally out of scope for later slices.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/ladybug_client.py`\n- `tests/test_ladybug_scientific_kg.py`\n",
+      "description": "Extend the LadybugDB client with schema creation for PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, ScientificRelation, and relation tables such as HAS_PAGE_INDEX_NODE, NEXT_PAGE_INDEX_NODE, HAS_SEMANTIC_CHUNK, EVIDENCED_BY, MENTIONS_ENTITY, and SCIENTIFIC_RELATION. Keep the existing M002 Paper/Author/Keyword/Category path compatible and idempotent. Done when schema tests pass without requiring retrieval or live services.",
+      "estimate": "1h 15m",
+      "files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py",
+        "tests/test_ladybug_client_property.py",
+        "tests/test_scientific_kg_e2e.py"
+      ],
+      "verify": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py -q",
+      "inputs": [
+        "tests/test_ladybug_scientific_kg.py",
+        "src/arxiv_archive/ladybug_client.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/ladybug_client.py"
+      ],
+      "observability_impact": "Schema initialization should log optional extension failures and schema-exists cases without hiding unexpected schema errors.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S05",
+      "id": "T03",
+      "title": "Persisted PageIndex, SemanticChunk, and EvidencePath fixture graph records idempotently.",
+      "status": "complete",
+      "one_liner": "Persisted PageIndex, SemanticChunk, and EvidencePath fixture graph records idempotently.",
+      "narrative": "Implemented the document/evidence portion of `upsert_scientific_kg()`. The write path validates payload consistency before opening a transaction, then MERGEs Paper, PageIndexNode hierarchy, NEXT links, SemanticChunk nodes, EvidencePath nodes, and evidence-to-node/chunk edges with deterministic IDs. Logging reports paper id and record counts while avoiding full text/embedding dumps.",
+      "verification_result": "Ran `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_evidence_paths.py tests/test_page_index.py -q`; all 19 tests passed. LSP diagnostics remained clean.",
+      "duration": "",
+      "completed_at": "2026-05-17T18:37:30.314Z",
+      "blocker_discovered": false,
+      "deviations": "The code was implemented during the same edit as T02 to avoid artificial split points inside the transaction boundary; T03 verification was run separately and passed.",
+      "known_issues": "None for PageIndex/SemanticChunk evidence graph persistence. The implementation stores path lists as slash-delimited strings for LadybugDB compatibility.",
+      "key_files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T03\nparent: S05\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/ladybug_client.py\n  - tests/test_ladybug_scientific_kg.py\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T18:37:30.313Z\nblocker_discovered: false\n---\n\n# T03: Persisted PageIndex, SemanticChunk, and EvidencePath fixture graph records idempotently.\n\n**Persisted PageIndex, SemanticChunk, and EvidencePath fixture graph records idempotently.**\n\n## What Happened\n\nImplemented the document/evidence portion of `upsert_scientific_kg()`. The write path validates payload consistency before opening a transaction, then MERGEs Paper, PageIndexNode hierarchy, NEXT links, SemanticChunk nodes, EvidencePath nodes, and evidence-to-node/chunk edges with deterministic IDs. Logging reports paper id and record counts while avoiding full text/embedding dumps.\n\n## Verification\n\nRan `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_evidence_paths.py tests/test_page_index.py -q`; all 19 tests passed. LSP diagnostics remained clean.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_evidence_paths.py tests/test_page_index.py -q` | 0 | ✅ pass | 24200ms |\n| 2 | `lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 0ms |\n\n## Deviations\n\nThe code was implemented during the same edit as T02 to avoid artificial split points inside the transaction boundary; T03 verification was run separately and passed.\n\n## Known Issues\n\nNone for PageIndex/SemanticChunk evidence graph persistence. The implementation stores path lists as slash-delimited strings for LadybugDB compatibility.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/ladybug_client.py`\n- `tests/test_ladybug_scientific_kg.py`\n",
+      "description": "Implement a storage boundary that validates and writes Paper-to-PageIndexNode hierarchy, NEXT PageIndex ordering, SemanticChunk nodes, and EvidencePath nodes/edges using deterministic MERGE statements and parameterized queries. Preserve write order so downstream claim/entity persistence can depend on existing evidence nodes. Done when fixture persistence and idempotency tests for document navigation and evidence graph pass.",
+      "estimate": "1h 30m",
+      "files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "verify": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_evidence_paths.py tests/test_page_index.py -q",
+      "inputs": [
+        "src/arxiv_archive/page_index.py",
+        "src/arxiv_archive/evidence.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/ladybug_client.py"
+      ],
+      "observability_impact": "Write diagnostics should identify phase, paper_id, and record counts while excluding full text and embeddings.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S05",
+      "id": "T04",
+      "title": "Persisted validated ExtractionPatch claims, entities, and relations with rollback-safe writes.",
+      "status": "complete",
+      "one_liner": "Persisted validated ExtractionPatch claims, entities, and relations with rollback-safe writes.",
+      "narrative": "Implemented ExtractionPatch persistence in `upsert_scientific_kg()`. Claims, ScientificEntities, and ScientificRelations are validated via S04 validators before transaction open, then persisted as nodes with EVIDENCED_BY edges and relation endpoint edges. Invalid payloads raise `ValueError` before write transactions; mid-write failures rollback and re-raise. Duplicate reruns use MERGE and remain idempotent for the fixture contract.",
+      "verification_result": "Ran `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q`; all 19 tests passed. LSP diagnostics remained clean.",
+      "duration": "",
+      "completed_at": "2026-05-17T18:37:42.311Z",
+      "blocker_discovered": false,
+      "deviations": "Implemented alongside T02/T03 because validation, rollback, and MERGE ordering share one transaction boundary.",
+      "known_issues": "None for fixture-level ExtractionPatch persistence. S05 does not add retrieval/fusion behavior or evaluation metrics.",
+      "key_files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T04\nparent: S05\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/ladybug_client.py\n  - tests/test_ladybug_scientific_kg.py\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T18:37:42.310Z\nblocker_discovered: false\n---\n\n# T04: Persisted validated ExtractionPatch claims, entities, and relations with rollback-safe writes.\n\n**Persisted validated ExtractionPatch claims, entities, and relations with rollback-safe writes.**\n\n## What Happened\n\nImplemented ExtractionPatch persistence in `upsert_scientific_kg()`. Claims, ScientificEntities, and ScientificRelations are validated via S04 validators before transaction open, then persisted as nodes with EVIDENCED_BY edges and relation endpoint edges. Invalid payloads raise `ValueError` before write transactions; mid-write failures rollback and re-raise. Duplicate reruns use MERGE and remain idempotent for the fixture contract.\n\n## Verification\n\nRan `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q`; all 19 tests passed. LSP diagnostics remained clean.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q` | 0 | ✅ pass | 4300ms |\n| 2 | `lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 0ms |\n\n## Deviations\n\nImplemented alongside T02/T03 because validation, rollback, and MERGE ordering share one transaction boundary.\n\n## Known Issues\n\nNone for fixture-level ExtractionPatch persistence. S05 does not add retrieval/fusion behavior or evaluation metrics.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/ladybug_client.py`\n- `tests/test_ladybug_scientific_kg.py`\n",
+      "description": "Persist S04 ExtractionPatch drafts after validation: Claim, ScientificEntity, and ScientificRelation nodes, plus edges to EvidencePath and relation endpoint nodes. Reject invalid patches before opening a transaction or before any commit, and ensure duplicate reruns are stable. Done when valid fixture patches are queryable and invalid endpoint, paper mismatch, duplicate ID, and broken evidence cases fail with actionable diagnostics.",
+      "estimate": "1h 30m",
+      "files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "verify": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q",
+      "inputs": [
+        "src/arxiv_archive/scientific_extraction.py",
+        "src/arxiv_archive/evidence.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "expected_output": [
+        "src/arxiv_archive/ladybug_client.py"
+      ],
+      "observability_impact": "Validation failures should report draft kind, draft id, and reason without logging claim text beyond existing fixture assertions.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M003-km5fty",
+      "slice_id": "S05",
+      "id": "T05",
+      "title": "Ran S05 final quality gates and regression smoke with all verification passing.",
+      "status": "complete",
+      "one_liner": "Ran S05 final quality gates and regression smoke with all verification passing.",
+      "narrative": "Ran final S05 verification after all code changes, including the PageIndex type-only cleanup. The final gates covered SCI KG persistence tests, extraction contracts, evidence paths, PageIndex, full-text ingestion, Ladybug property/e2e compatibility, CLI contract smoke, Ruff, Pyrefly, Ty, LSP diagnostics, and GitNexus change detection. GitNexus reported medium changed-symbol scope due to PageIndex symbols being touched, with affected PageIndex processes covered by the passing test set.",
+      "verification_result": "Fresh final verification after the last code change: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 41 tests; Ruff passed on touched files; Pyrefly reported 0 errors on src; Ty passed on src plus the new test; CLI help smoke exited 0; LSP diagnostics on touched files reported no diagnostics; GitNexus detect_changes reported medium scope with PageIndex processes covered by tests.",
+      "duration": "",
+      "completed_at": "2026-05-17T18:44:43.675Z",
+      "blocker_discovered": false,
+      "deviations": "Added a small type-only PageIndex `_HeadingSection` shape to make the global `ty check src/` gate pass. This did not change PageIndex runtime behavior and was covered by PageIndex/evidence tests.",
+      "known_issues": "None for S05. DSPy, RLM, hybrid retrieval/fusion, and evaluation metrics remain intentionally out of scope for later slices.",
+      "key_files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "src/arxiv_archive/page_index.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T05\nparent: S05\nmilestone: M003-km5fty\nkey_files:\n  - src/arxiv_archive/ladybug_client.py\n  - src/arxiv_archive/page_index.py\n  - tests/test_ladybug_scientific_kg.py\nkey_decisions: []\nduration: \nverification_result: passed\ncompleted_at: 2026-05-17T18:44:43.674Z\nblocker_discovered: false\n---\n\n# T05: Ran S05 final quality gates and regression smoke with all verification passing.\n\n**Ran S05 final quality gates and regression smoke with all verification passing.**\n\n## What Happened\n\nRan final S05 verification after all code changes, including the PageIndex type-only cleanup. The final gates covered SCI KG persistence tests, extraction contracts, evidence paths, PageIndex, full-text ingestion, Ladybug property/e2e compatibility, CLI contract smoke, Ruff, Pyrefly, Ty, LSP diagnostics, and GitNexus change detection. GitNexus reported medium changed-symbol scope due to PageIndex symbols being touched, with affected PageIndex processes covered by the passing test set.\n\n## Verification\n\nFresh final verification after the last code change: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 41 tests; Ruff passed on touched files; Pyrefly reported 0 errors on src; Ty passed on src plus the new test; CLI help smoke exited 0; LSP diagnostics on touched files reported no diagnostics; GitNexus detect_changes reported medium scope with PageIndex processes covered by tests.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` | 0 | ✅ pass: 41 passed | 4300ms |\n| 2 | `uv run ruff check src/arxiv_archive/ladybug_client.py src/arxiv_archive/page_index.py tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 13200ms |\n| 3 | `uv run pyrefly check src/` | 0 | ✅ pass: 0 errors | 13200ms |\n| 4 | `uv run ty check src/ tests/test_ladybug_scientific_kg.py` | 0 | ✅ pass | 13100ms |\n| 5 | `uv run python -m arxiv_archive --help` | 0 | ✅ pass | 13100ms |\n| 6 | `gitnexus_detect_changes(scope=all, repo=daily-archive)` | 0 | ✅ reviewed: medium scope, expected PageIndex and Ladybug S05 changes | 0ms |\n\n## Deviations\n\nAdded a small type-only PageIndex `_HeadingSection` shape to make the global `ty check src/` gate pass. This did not change PageIndex runtime behavior and was covered by PageIndex/evidence tests.\n\n## Known Issues\n\nNone for S05. DSPy, RLM, hybrid retrieval/fusion, and evaluation metrics remain intentionally out of scope for later slices.\n\n## Files Created/Modified\n\n- `src/arxiv_archive/ladybug_client.py`\n- `src/arxiv_archive/page_index.py`\n- `tests/test_ladybug_scientific_kg.py`\n",
+      "description": "Run the final S05 verification set: SCI KG Ladybug tests, S04 extraction contracts, S03 evidence paths, S02 PageIndex, S01 full-text ingestion, existing Ladybug property/e2e tests, CLI contract smoke, Ruff on touched files, LSP diagnostics, and type checks where configured. Record S05 limitations for S06/S07: persistence only, no retrieval/fusion scoring, no metrics benchmark, no DSPy, and no RLM.",
+      "estimate": "45m",
+      "files": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "verify": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q",
+      "inputs": [
+        "src/arxiv_archive/ladybug_client.py",
+        "tests/test_ladybug_scientific_kg.py"
+      ],
+      "expected_output": [
+        ".gsd/milestones/M003-km5fty/slices/S05/tasks/T05-SUMMARY.md"
+      ],
+      "observability_impact": "Final summary captures verification evidence and known diagnostic surfaces for future retrieval work.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
     }
   ],
   "decisions": [],
@@ -3300,6 +3522,160 @@
       "verdict": "✅ pass: All checks passed",
       "duration_ms": 6900,
       "created_at": "2026-05-17T17:56:06.111Z"
+    },
+    {
+      "id": 52,
+      "task_id": "T01",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_ladybug_scientific_kg.py -q",
+      "exit_code": 1,
+      "verdict": "✅ expected RED for T01 contract tests",
+      "duration_ms": 3300,
+      "created_at": "2026-05-17T18:30:10.272Z"
+    },
+    {
+      "id": 53,
+      "task_id": "T01",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T18:30:10.272Z"
+    },
+    {
+      "id": 54,
+      "task_id": "T02",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 4700,
+      "created_at": "2026-05-17T18:37:18.684Z"
+    },
+    {
+      "id": 55,
+      "task_id": "T02",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T18:37:18.684Z"
+    },
+    {
+      "id": 56,
+      "task_id": "T03",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_evidence_paths.py tests/test_page_index.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 24200,
+      "created_at": "2026-05-17T18:37:30.314Z"
+    },
+    {
+      "id": 57,
+      "task_id": "T03",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T18:37:30.314Z"
+    },
+    {
+      "id": 58,
+      "task_id": "T04",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 4300,
+      "created_at": "2026-05-17T18:37:42.311Z"
+    },
+    {
+      "id": 59,
+      "task_id": "T04",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "lsp diagnostics src/arxiv_archive/ladybug_client.py tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T18:37:42.311Z"
+    },
+    {
+      "id": 60,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q",
+      "exit_code": 0,
+      "verdict": "✅ pass: 41 passed",
+      "duration_ms": 4300,
+      "created_at": "2026-05-17T18:44:43.675Z"
+    },
+    {
+      "id": 61,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ruff check src/arxiv_archive/ladybug_client.py src/arxiv_archive/page_index.py tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 13200,
+      "created_at": "2026-05-17T18:44:43.675Z"
+    },
+    {
+      "id": 62,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run pyrefly check src/",
+      "exit_code": 0,
+      "verdict": "✅ pass: 0 errors",
+      "duration_ms": 13200,
+      "created_at": "2026-05-17T18:44:43.675Z"
+    },
+    {
+      "id": 63,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run ty check src/ tests/test_ladybug_scientific_kg.py",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 13100,
+      "created_at": "2026-05-17T18:44:43.675Z"
+    },
+    {
+      "id": 64,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "uv run python -m arxiv_archive --help",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 13100,
+      "created_at": "2026-05-17T18:44:43.675Z"
+    },
+    {
+      "id": 65,
+      "task_id": "T05",
+      "slice_id": "S05",
+      "milestone_id": "M003-km5fty",
+      "command": "gitnexus_detect_changes(scope=all, repo=daily-archive)",
+      "exit_code": 0,
+      "verdict": "✅ reviewed: medium scope, expected PageIndex and Ladybug S05 changes",
+      "duration_ms": 0,
+      "created_at": "2026-05-17T18:44:43.675Z"
     }
   ]
 }

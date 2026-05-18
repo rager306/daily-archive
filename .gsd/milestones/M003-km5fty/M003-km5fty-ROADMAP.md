@@ -26,7 +26,7 @@
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: After this: fixture text can produce typed Claim, ScientificEntity, and ScientificRelation drafts with confidence, provenance, and validation errors.
 
-- [ ] **S05: LadybugDB SCI KG schema expansion** `risk:high` `depends:[S02,S03,S04]`
+- [x] **S05: LadybugDB SCI KG schema expansion** `risk:high` `depends:[S02,S03,S04]`
   > After this: After this: LadybugDB stores the expanded SCI KG fixture with Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, and relation edges idempotently.
 
 - [ ] **S06: Hybrid retrieval baseline** `risk:high` `depends:[S05]`

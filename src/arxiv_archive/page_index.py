@@ -10,11 +10,18 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 from arxiv_archive.full_text import FullTextIngestionResult
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+class _HeadingSection(NamedTuple):
+    level: int
+    title: str
+    text: str
 
 
 @dataclass
@@ -142,23 +149,23 @@ def build_page_index(ingestion: FullTextIngestionResult) -> PageIndexDocument:
     used_ids: set[str] = set()
 
     for order, section in enumerate(headings):
-        parent = _nearest_parent(stack, section["level"])
-        node_id = _stable_node_id(ingestion.paper_id, section["title"], used_ids, root=order == 0)
+        parent = _nearest_parent(stack, section.level)
+        node_id = _stable_node_id(ingestion.paper_id, section.title, used_ids, root=order == 0)
         path = [node_id] if parent is None else [*parent.path, node_id]
         node = PageIndexNode(
             id=node_id,
             paper_id=ingestion.paper_id,
-            title=section["title"],
-            level=section["level"],
+            title=section.title,
+            level=section.level,
             order=order,
-            text=section["text"],
+            text=section.text,
             source_path=ingestion.source_path,
             parent_id=parent.id if parent is not None else None,
             path=path,
             provenance={
                 "paper_id": ingestion.paper_id,
                 "source_path": str(ingestion.source_path),
-                "heading_level": str(section["level"]),
+                "heading_level": str(section.level),
                 "parser": "markdown_headings_v1",
             },
         )
@@ -183,7 +190,7 @@ def build_page_index(ingestion: FullTextIngestionResult) -> PageIndexDocument:
     )
 
 
-def _parse_heading_sections(text: str) -> list[dict[str, object]]:
+def _parse_heading_sections(text: str) -> list[_HeadingSection]:
     body = _strip_yaml_frontmatter(text.strip())
     lines = body.splitlines()
     heading_positions: list[tuple[int, int, str]] = []
@@ -192,13 +199,15 @@ def _parse_heading_sections(text: str) -> list[dict[str, object]]:
         if match:
             heading_positions.append((index, len(match.group(1)), match.group(2).strip()))
 
-    sections: list[dict[str, object]] = []
+    sections: list[_HeadingSection] = []
     for position, (line_index, level, title) in enumerate(heading_positions):
         next_line_index = (
-            heading_positions[position + 1][0] if position + 1 < len(heading_positions) else len(lines)
+            heading_positions[position + 1][0]
+            if position + 1 < len(heading_positions)
+            else len(lines)
         )
         section_text = "\n".join(lines[line_index + 1 : next_line_index]).strip()
-        sections.append({"level": level, "title": title, "text": section_text})
+        sections.append(_HeadingSection(level=level, title=title, text=section_text))
     return sections
 
 

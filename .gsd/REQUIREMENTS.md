@@ -4,17 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R018 — LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.
-- Class: integration
-- Status: active
-- Description: LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.
-- Why it matters: Hybrid retrieval and graph traversal require a durable scientific graph schema whose writes are safe, repeatable, and observable.
-- Source: M003 requirements restoration after S03
-- Primary owning slice: M003-km5fty/S05
-- Supporting slices: S02,S03,S04,S06,S10
-- Validation: Pending S05 integration tests for schema creation, idempotent ingest, duplicate prevention, rollback, and partial invalid patch rejection.
-- Notes: Restores planned M003 LadybugDB schema expansion requirement from the missing historical R026-R035 range using current GSD auto-assigned IDs.
-
 ### R019 — Hybrid retrieval must return traceable evidence contexts with vector, graph, fusion score metadata, and EvidencePath references.
 - Class: core-capability
 - Status: active
@@ -233,6 +222,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S04 verification passed: `uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` => 50 passed; Ruff all checks passed; CLI help smoke exit 0; LSP diagnostics clean; Pyrefly 0 errors; Ty all checks passed.
 - Notes: Validated by M003-km5fty/S04. S04 added deterministic Claim, ScientificEntity, ScientificRelation, and ExtractionPatch contracts backed by EvidencePath fields plus explicit validation diagnostics. The slice intentionally remains local-only and does not add LLM/DSPy/storage/retrieval behavior.
 
+### R018 — LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.
+- Class: integration
+- Status: validated
+- Description: LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.
+- Why it matters: Hybrid retrieval and graph traversal require a durable scientific graph schema whose writes are safe, repeatable, and observable.
+- Source: M003 requirements restoration after S03
+- Primary owning slice: M003-km5fty/S05
+- Supporting slices: S02,S03,S04,S06,S10
+- Validation: Validated by M003-km5fty S05 post-review verification: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 42 tests; Ruff passed on touched files; Pyrefly reported 0 errors; Ty passed on `src/` plus S05 test; CLI help smoke exited 0; LSP diagnostics were clean; GitNexus detect_changes was reviewed with expected high scope for the uncommitted S05 persistence expansion.
+- Notes: S05 added post-review regression coverage requiring patch-embedded claim/entity/relation EvidencePath references to be present in the persisted evidence_paths list before any write transaction opens.
+
 ## Deferred
 
 ## Out of Scope
@@ -258,7 +258,7 @@ This file is the explicit capability and coverage contract for the project.
 | R015 | core-capability | validated | M003-km5fty/S02 | S03,S09 | Validated by S02: `uv run pytest tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed during S02 closeout. |
 | R016 | core-capability | validated | M003-km5fty/S03 | S04,S05,S06,S07,S09 | Validated by S03: `uv run pytest tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` passed with 44 tests. |
 | R017 | core-capability | validated | M003-km5fty/S04 | S03,S05,S07,S08 | S04 verification passed: `uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` => 50 passed; Ruff all checks passed; CLI help smoke exit 0; LSP diagnostics clean; Pyrefly 0 errors; Ty all checks passed. |
-| R018 | integration | active | M003-km5fty/S05 | S02,S03,S04,S06,S10 | Pending S05 integration tests for schema creation, idempotent ingest, duplicate prevention, rollback, and partial invalid patch rejection. |
+| R018 | integration | validated | M003-km5fty/S05 | S02,S03,S04,S06,S10 | Validated by M003-km5fty S05 post-review verification: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 42 tests; Ruff passed on touched files; Pyrefly reported 0 errors; Ty passed on `src/` plus S05 test; CLI help smoke exited 0; LSP diagnostics were clean; GitNexus detect_changes was reviewed with expected high scope for the uncommitted S05 persistence expansion. |
 | R019 | core-capability | active | M003-km5fty/S06 | S03,S05,S07,S10 | Pending S06 retrieval and ablation tests comparing vector-only, graph expansion, and fused retrieval over fixtures. |
 | R020 | quality-attribute | active | M003-km5fty/S07 | S03,S04,S06,S08,S09,S10 | Pending S07 benchmark tests covering expected claims, entities, evidence paths, retrieval questions, evidence-path hit rate, retrieval recall, schema validity, and groundedness proxy metrics. |
 | R021 | constraint | active | M003-km5fty/S08 | S04,S07 | Pending S08 contract tests after S07 metrics exist; no GEPA/MIPROv2 or optimizer claims before benchmark evidence. |
@@ -267,7 +267,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 6
-- Mapped to slices: 6
-- Validated: 17 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017)
+- Active requirements: 5
+- Mapped to slices: 5
+- Validated: 18 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018)
 - Unmapped active requirements: 0
