@@ -193,7 +193,9 @@ def test_graph_only_retrieval_expands_relation_neighborhood_from_endpoint_match(
         "evidence:2605.12345:method:2605.12345:method:chunk-0001"
     ]
     assert "Local markdown is enough" == diagnostics["query_text"]
-    assert "Local markdown is enough to build a deterministic PageIndex." not in diagnostics.values()
+    assert (
+        "Local markdown is enough to build a deterministic PageIndex." not in diagnostics.values()
+    )
 
 
 def test_graph_retrieval_does_not_open_write_transactions_or_mutate_schema(

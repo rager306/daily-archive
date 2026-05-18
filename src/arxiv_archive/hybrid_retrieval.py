@@ -120,7 +120,9 @@ def retrieve_hybrid(
     if use_vector and vector_index is not None and query.vector is not None:
         vector_candidates = vector_index.search(query.vector, limit=query.limit)
 
-    graph_expansion = GraphExpansion(candidates=[], diagnostics=_empty_graph_diagnostics(query.text, reason=None))
+    graph_expansion = GraphExpansion(
+        candidates=[], diagnostics=_empty_graph_diagnostics(query.text, reason=None)
+    )
     if use_graph:
         graph_expansion = _expand_graph_candidates(conn, query.text, limit=query.limit)
 
@@ -136,9 +138,7 @@ def retrieve_hybrid(
     )
 
     missing_evidence_path_links = [
-        row["semantic_chunk_id"]
-        for row in results
-        if row["evidence_path_id"] is None
+        row["semantic_chunk_id"] for row in results if row["evidence_path_id"] is None
     ]
 
     diagnostics = {
@@ -147,8 +147,12 @@ def retrieve_hybrid(
         "graph_candidate_count": len(graph_expansion.candidates) if use_graph else None,
         "empty_vector_candidates": (not vector_candidates) if use_vector else None,
         "empty_graph_candidates": (not graph_expansion.candidates) if use_graph else None,
-        "empty_graph_reason": graph_expansion.diagnostics["empty_graph_reason"] if use_graph else None,
-        "graph_evidence_path_ids": graph_expansion.diagnostics["evidence_path_ids"] if use_graph else [],
+        "empty_graph_reason": graph_expansion.diagnostics["empty_graph_reason"]
+        if use_graph
+        else None,
+        "graph_evidence_path_ids": graph_expansion.diagnostics["evidence_path_ids"]
+        if use_graph
+        else [],
         "missing_evidence_path_links": missing_evidence_path_links,
     }
     return HybridRetrievalResponse(results=results, diagnostics=diagnostics)
@@ -182,11 +186,19 @@ def _fuse_results(
             if evidence is not None
             else _page_index_node_id_from_chunk(semantic_chunk_id)
         )
-        evidence_path_id = graph_candidate.evidence_path_id if graph_candidate is not None else evidence[0] if evidence else None
+        evidence_path_id = (
+            graph_candidate.evidence_path_id
+            if graph_candidate is not None
+            else evidence[0]
+            if evidence
+            else None
+        )
         rows.append(
             {
                 "retrieval_mode": mode.value,
-                "candidate_source": _candidate_source(vector_candidate is not None, graph_candidate is not None),
+                "candidate_source": _candidate_source(
+                    vector_candidate is not None, graph_candidate is not None
+                ),
                 "semantic_chunk_id": semantic_chunk_id,
                 "page_index_node_id": page_index_node_id,
                 "evidence_path_id": evidence_path_id,
@@ -202,7 +214,9 @@ def _fuse_results(
             }
         )
 
-    rows.sort(key=lambda row: (-cast(float, row["fusion_score"]), cast(str, row["semantic_chunk_id"])))
+    rows.sort(
+        key=lambda row: (-cast(float, row["fusion_score"]), cast(str, row["semantic_chunk_id"]))
+    )
     return rows[: max(limit, 0)]
 
 
@@ -244,7 +258,9 @@ def _expand_graph_candidates(conn: ladybug.Connection, text: str, *, limit: int)
     """Expand SCI KG neighborhoods through read-only evidence-backed queries."""
     needle = text.casefold().strip()
     if not needle:
-        return GraphExpansion(candidates=[], diagnostics=_empty_graph_diagnostics(text, reason="blank_query"))
+        return GraphExpansion(
+            candidates=[], diagnostics=_empty_graph_diagnostics(text, reason="blank_query")
+        )
 
     rows: dict[str, GraphCandidate] = {}
     for candidate in _direct_scientific_kg_candidates(conn, needle):
@@ -253,7 +269,13 @@ def _expand_graph_candidates(conn: ladybug.Connection, text: str, *, limit: int)
         _keep_best_graph_candidate(rows, candidate)
 
     candidates = list(rows.values())
-    candidates.sort(key=lambda candidate: (-candidate.graph_score, candidate.semantic_chunk_id, candidate.evidence_path_id))
+    candidates.sort(
+        key=lambda candidate: (
+            -candidate.graph_score,
+            candidate.semantic_chunk_id,
+            candidate.evidence_path_id,
+        )
+    )
     limited = candidates[: max(limit, 0)]
     reason = None if limited else "no_scientific_kg_matches"
     return GraphExpansion(
@@ -279,13 +301,18 @@ def _direct_scientific_kg_candidates(conn: ladybug.Connection, needle: str) -> l
         ("ScientificEntity", "label", "entity"),
         ("ScientificRelation", "relation_type", "relation"),
     ]:
-        result = conn.execute(
-            f"MATCH (item:{label})-[:EVIDENCED_BY]->(evidence:EvidencePath) "
-            "RETURN item."
-            f"{text_property}, item.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+        result = cast(
+            Any,
+            conn.execute(
+                f"MATCH (item:{label})-[:EVIDENCED_BY]->(evidence:EvidencePath) "
+                "RETURN item."
+                f"{text_property}, item.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+            ),
         )
         while result.has_next():
-            item_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = result.get_next()
+            item_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = (
+                result.get_next()
+            )
             if needle not in str(item_text).casefold():
                 continue
             candidates.append(
@@ -300,7 +327,9 @@ def _direct_scientific_kg_candidates(conn: ladybug.Connection, needle: str) -> l
     return candidates
 
 
-def _relation_neighborhood_candidates(conn: ladybug.Connection, needle: str) -> list[GraphCandidate]:
+def _relation_neighborhood_candidates(
+    conn: ladybug.Connection, needle: str
+) -> list[GraphCandidate]:
     """Return one-hop relation endpoint evidence without mutating the graph."""
     candidates: list[GraphCandidate] = []
     for endpoint_label, text_property, endpoint_role in [
@@ -308,14 +337,19 @@ def _relation_neighborhood_candidates(conn: ladybug.Connection, needle: str) -> 
         ("ScientificEntity", "label", "entity_endpoint"),
     ]:
         for rel_table in ["SCIENTIFIC_RELATION_SOURCE", "SCIENTIFIC_RELATION_TARGET"]:
-            result = conn.execute(
-                f"MATCH (relation:ScientificRelation)-[:{rel_table}]->(endpoint:{endpoint_label}), "
-                "(relation)-[:EVIDENCED_BY]->(evidence:EvidencePath) "
-                "RETURN endpoint."
-                f"{text_property}, relation.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+            result = cast(
+                Any,
+                conn.execute(
+                    f"MATCH (relation:ScientificRelation)-[:{rel_table}]->(endpoint:{endpoint_label}), "
+                    "(relation)-[:EVIDENCED_BY]->(evidence:EvidencePath) "
+                    "RETURN endpoint."
+                    f"{text_property}, relation.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
+                ),
             )
             while result.has_next():
-                endpoint_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = result.get_next()
+                endpoint_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = (
+                    result.get_next()
+                )
                 if needle not in str(endpoint_text).casefold():
                     continue
                 candidates.append(
@@ -357,9 +391,12 @@ def _empty_graph_diagnostics(text: str, *, reason: str | None) -> dict[str, Any]
 
 
 def _evidence_paths_by_chunk(conn: ladybug.Connection) -> dict[str, tuple[str, str]]:
-    result = conn.execute(
-        "MATCH (evidence:EvidencePath) "
-        "RETURN evidence.semantic_chunk_id, evidence.id, evidence.page_index_node_id"
+    result = cast(
+        Any,
+        conn.execute(
+            "MATCH (evidence:EvidencePath) "
+            "RETURN evidence.semantic_chunk_id, evidence.id, evidence.page_index_node_id"
+        ),
     )
     evidence_by_chunk: dict[str, tuple[str, str]] = {}
     while result.has_next():
