@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
@@ -28,9 +29,77 @@ from arxiv_archive.scientific_extraction import (
 )
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
+RLM_WORKFLOW_MODULE = Path("src/arxiv_archive/rlm_workflow.py")
 SCHEMA_VERSION = "scientific_extraction.v1"
 EXTRACTOR_VERSION = "fixture-extractor.v1"
+RAW_FIXTURE_BODY_TEXT = (
+    "The agent builds a PageIndex from deterministic local markdown before any network or "
+    "PDF extraction is attempted."
+)
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
+FORBIDDEN_IMPORT_ROOTS = {
+    "dspy",
+    "socket",
+    "httpx",
+    "requests",
+    "urllib",
+    "openai",
+    "anthropic",
+    "cohere",
+    "sentence_transformers",
+    "transformers",
+    "subprocess",
+    "os",
+    "pathlib",
+    "sqlite3",
+}
+FORBIDDEN_RUNTIME_REFERENCES = {
+    "dspy",
+    "teleprompt",
+    "MIPRO",
+    "MIPROv2",
+    "GEPA",
+    "BootstrapFewShot",
+    "BootstrapFewShotWithRandomSearch",
+    "socket",
+    "create_connection",
+    "HTTPConnection",
+    "HTTPSConnection",
+    "httpx",
+    "requests",
+    "urlopen",
+    "OpenAI",
+    "Anthropic",
+    "Cohere",
+    "SentenceTransformer",
+    "Embedding",
+    "embeddings",
+    "LadybugDB",
+    "Database",
+    "Connection",
+    "connect",
+    "execute",
+    "executemany",
+    "commit",
+    "upsert_scientific_kg",
+    "init_db",
+    "subprocess",
+    "Popen",
+    "run",
+    "call",
+    "check_call",
+    "check_output",
+    "system",
+    "popen",
+    "Path",
+    "open",
+    "write",
+    "writelines",
+    "write_text",
+    "write_bytes",
+    "dump",
+    "dumps",
+}
 
 
 def build_document() -> PageIndexDocument:
@@ -428,3 +497,70 @@ def test_draft_and_boundary_output_are_hidden_from_repr() -> None:
     assert RAW_FIXTURE_CLAIM_TEXT not in rendered
     assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.boundary_output)
     assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.trajectory)
+
+
+def _rlm_workflow_static_scope(path: Path) -> tuple[list[str], list[str]]:
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(path))
+    imported_roots: list[str] = []
+    runtime_refs: list[str] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_roots.extend(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            imported_roots.append(node.module.split(".")[0])
+        elif isinstance(node, ast.Name):
+            runtime_refs.append(node.id)
+        elif isinstance(node, ast.Attribute):
+            runtime_refs.append(node.attr)
+
+    return imported_roots, runtime_refs
+
+
+def test_rlm_workflow_module_does_not_reference_forbidden_runtime_storage_or_io() -> None:
+    imports, refs = _rlm_workflow_static_scope(RLM_WORKFLOW_MODULE)
+    violations: list[str] = []
+    bad_imports = sorted(set(imports) & FORBIDDEN_IMPORT_ROOTS)
+    bad_refs = sorted(set(refs) & FORBIDDEN_RUNTIME_REFERENCES)
+
+    if bad_imports:
+        violations.append(f"{RLM_WORKFLOW_MODULE} forbidden imports: {bad_imports}")
+    if bad_refs:
+        violations.append(f"{RLM_WORKFLOW_MODULE} forbidden runtime refs: {bad_refs}")
+
+    assert violations == []
+
+
+def test_result_trajectory_and_diagnostics_do_not_expose_body_or_claim_text() -> None:
+    document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+    patch = build_fixture_patch(evidence)
+
+    result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(lambda boundary_input: patch),
+    )
+
+    assert RAW_FIXTURE_BODY_TEXT in " ".join(chunk.text for chunk in chunks)
+    assert RAW_FIXTURE_CLAIM_TEXT in result.draft.claims[0].text if result.draft else False
+    assert result.boundary_output is not None
+    safe_surfaces = {
+        "result_repr": repr(result),
+        "context_repr": repr(result.context),
+        "trajectory_repr": repr(result.trajectory),
+        "diagnostics_repr": repr(result.diagnostics),
+        "boundary_output_repr": repr(result.boundary_output),
+        "schema_diagnostics_repr": repr(result.boundary_output.schema_diagnostics),
+        "groundedness_diagnostics_repr": repr(result.boundary_output.groundedness_diagnostics),
+        "boundary_diagnostics_repr": repr(result.boundary_output.boundary_diagnostics),
+    }
+
+    leaks = [
+        surface
+        for surface, rendered in safe_surfaces.items()
+        if RAW_FIXTURE_BODY_TEXT in rendered or RAW_FIXTURE_CLAIM_TEXT in rendered
+    ]
+    assert leaks == []
