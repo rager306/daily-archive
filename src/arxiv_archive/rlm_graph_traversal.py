@@ -505,9 +505,14 @@ def _vector_rows(
 def _graph_rows(conn: Any, text: str, *, limit: int) -> list[dict[str, Any]]:
     response = retrieve_hybrid(
         conn,
-        HybridRetrievalQuery(text=text, vector=None, mode=HybridRetrievalMode.GRAPH_ONLY, limit=limit),
+        HybridRetrievalQuery(
+            text=text, vector=None, mode=HybridRetrievalMode.GRAPH_ONLY, limit=limit
+        ),
     )
-    return [dict(row, score=float(row.get("graph_score") or 0.0), source="graph") for row in response.results]
+    return [
+        dict(row, score=float(row.get("graph_score") or 0.0), source="graph")
+        for row in response.results
+    ]
 
 
 def _merge_scored_rows(
@@ -589,7 +594,9 @@ def _build_traversal_result(
         trajectory=tuple(route),
         candidates=tuple(candidates),
         visited_semantic_chunk_ids=list(visited),
-        returned_semantic_chunk_ids=sorted({candidate.semantic_chunk_id for candidate in candidates}),
+        returned_semantic_chunk_ids=sorted(
+            {candidate.semantic_chunk_id for candidate in candidates}
+        ),
         returned_evidence_path_ids=sorted(
             {candidate.evidence_path_id for candidate in candidates if candidate.evidence_path_id}
         ),
@@ -618,7 +625,9 @@ def _baseline_from_rows(
     )
 
 
-def _metrics(question: RLMGraphTraversalQuestion, rows: Iterable[Mapping[str, Any]]) -> TraversalMetrics:
+def _metrics(
+    question: RLMGraphTraversalQuestion, rows: Iterable[Mapping[str, Any]]
+) -> TraversalMetrics:
     row_list = list(rows)
     recall = calculate_retrieval_recall(
         row_list,
@@ -655,18 +664,16 @@ def _has_expected_ids(
 ) -> bool:
     returned_chunk_ids = {candidate.semantic_chunk_id for candidate in candidates}
     returned_evidence_ids = {candidate.evidence_path_id for candidate in candidates}
-    return set(question.expected_semantic_chunk_ids) <= returned_chunk_ids and set(
-        question.expected_evidence_path_ids
-    ) <= returned_evidence_ids
+    return (
+        set(question.expected_semantic_chunk_ids) <= returned_chunk_ids
+        and set(question.expected_evidence_path_ids) <= returned_evidence_ids
+    )
 
 
 def _evidence_paths_by_chunk(conn: Any) -> dict[str, tuple[str, str]]:
-    result = cast(
-        Any,
-        conn.execute(
-            "MATCH (evidence:EvidencePath) "
-            "RETURN evidence.semantic_chunk_id, evidence.id, evidence.page_index_node_id"
-        ),
+    result = conn.execute(
+        "MATCH (evidence:EvidencePath) "
+        "RETURN evidence.semantic_chunk_id, evidence.id, evidence.page_index_node_id"
     )
     rows: dict[str, tuple[str, str]] = {}
     while result.has_next():
@@ -686,13 +693,10 @@ def _page_neighbors(
     )[1]
     if not page_id:
         return []
-    result = cast(
-        Any,
-        conn.execute(
-            "MATCH (node:PageIndexNode)-[:NEXT_PAGE_INDEX_NODE]->(next:PageIndexNode), "
-            "(next)-[:HAS_SEMANTIC_CHUNK]->(chunk:SemanticChunk) "
-            "RETURN node.id, chunk.id"
-        ),
+    result = conn.execute(
+        "MATCH (node:PageIndexNode)-[:NEXT_PAGE_INDEX_NODE]->(next:PageIndexNode), "
+        "(next)-[:HAS_SEMANTIC_CHUNK]->(chunk:SemanticChunk) "
+        "RETURN node.id, chunk.id"
     )
     neighbors: list[str] = []
     while result.has_next():

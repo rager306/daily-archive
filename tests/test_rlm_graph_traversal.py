@@ -205,9 +205,18 @@ def test_public_contract_compares_rlm_graph_traversal_against_all_baselines(
     assert result.config.top_k == 4
     assert result.rlm_traversal.policy_label == "rlm_style_deterministic"
     assert result.rlm_traversal.stop_reason in {"target_recall_reached", "budget_exhausted"}
-    assert result.rlm_traversal.visited_semantic_chunk_ids[0] in scattered_fixture.seed_semantic_chunk_ids
-    assert set(result.rlm_traversal.returned_semantic_chunk_ids) >= scattered_fixture.expected_semantic_chunk_ids
-    assert set(result.rlm_traversal.returned_evidence_path_ids) >= scattered_fixture.expected_evidence_path_ids
+    assert (
+        result.rlm_traversal.visited_semantic_chunk_ids[0]
+        in scattered_fixture.seed_semantic_chunk_ids
+    )
+    assert (
+        set(result.rlm_traversal.returned_semantic_chunk_ids)
+        >= scattered_fixture.expected_semantic_chunk_ids
+    )
+    assert (
+        set(result.rlm_traversal.returned_evidence_path_ids)
+        >= scattered_fixture.expected_evidence_path_ids
+    )
     assert result.rlm_traversal.metrics.retrieval_recall == pytest.approx(1.0)
     assert result.rlm_traversal.metrics.evidence_path_hit_rate == pytest.approx(1.0)
     assert result.rlm_traversal.metrics.missing_expected_result_ids == []
@@ -218,15 +227,21 @@ def test_public_contract_compares_rlm_graph_traversal_against_all_baselines(
     assert steps
     assert {"step_index", "from_id", "to_id", "action", "score", "status"} <= set(steps[0])
     assert all(isinstance(step["step_index"], int) for step in steps)
-    assert all(step["action"] in {"seed", "expand_neighbor", "select_candidate", "stop"} for step in steps)
+    assert all(
+        step["action"] in {"seed", "expand_neighbor", "select_candidate", "stop"} for step in steps
+    )
 
     by_label = {baseline.label: baseline for baseline in result.baselines}
     assert set(by_label) == {"vector_only", "graph_one_hop", "hybrid", "heuristic_bfs"}
     for label, baseline in by_label.items():
         assert baseline.question_id == "scattered-pageindex-outcome"
         assert baseline.label == label
-        assert baseline.returned_semantic_chunk_ids == sorted(set(baseline.returned_semantic_chunk_ids))
-        assert baseline.returned_evidence_path_ids == sorted(set(baseline.returned_evidence_path_ids))
+        assert baseline.returned_semantic_chunk_ids == sorted(
+            set(baseline.returned_semantic_chunk_ids)
+        )
+        assert baseline.returned_evidence_path_ids == sorted(
+            set(baseline.returned_evidence_path_ids)
+        )
         assert 0.0 <= baseline.metrics.retrieval_recall <= 1.0
         assert 0.0 <= baseline.metrics.evidence_path_hit_rate <= 1.0
         assert isinstance(baseline.metrics.missing_expected_result_ids, list)
@@ -270,7 +285,9 @@ def test_diagnostics_and_reprs_are_text_safe(scattered_fixture: ScatteredFixture
         "trajectory_repr": repr(result.rlm_traversal.trajectory),
         "diagnostics_repr": repr(result.diagnostics),
         "baseline_repr": repr(result.baselines),
-        "source_diagnostics_repr": repr([baseline.source_diagnostics for baseline in result.baselines]),
+        "source_diagnostics_repr": repr(
+            [baseline.source_diagnostics for baseline in result.baselines]
+        ),
     }
     forbidden_fragments = [
         RAW_FIXTURE_BODY_TEXT,
@@ -326,7 +343,9 @@ def test_empty_seeds_are_rejected_before_traversal(scattered_fixture: ScatteredF
                 expected_semantic_chunk_ids=scattered_fixture.expected_semantic_chunk_ids,
                 expected_evidence_path_ids=scattered_fixture.expected_evidence_path_ids,
             ),
-            vector_index=InMemoryVectorCandidateIndex.from_fixture_vectors(scattered_fixture.vectors),
+            vector_index=InMemoryVectorCandidateIndex.from_fixture_vectors(
+                scattered_fixture.vectors
+            ),
             config=RLMGraphTraversalConfig(max_steps=4, max_neighbors_per_step=3, top_k=4),
         )
 
@@ -362,10 +381,13 @@ def test_zero_traversal_budget_returns_budget_exhaustion_diagnostic(
 
     assert result.rlm_traversal.stop_reason == "budget_exhausted"
     assert result.rlm_traversal.budget_exhausted is True
-    assert result.rlm_traversal.visited_semantic_chunk_ids == list(scattered_fixture.seed_semantic_chunk_ids)
+    assert result.rlm_traversal.visited_semantic_chunk_ids == list(
+        scattered_fixture.seed_semantic_chunk_ids
+    )
     assert result.rlm_traversal.metrics.retrieval_recall < 1.0
     assert sorted(result.rlm_traversal.metrics.missing_expected_result_ids) == sorted(
-        set(scattered_fixture.expected_semantic_chunk_ids) - set(scattered_fixture.seed_semantic_chunk_ids)
+        set(scattered_fixture.expected_semantic_chunk_ids)
+        - set(scattered_fixture.seed_semantic_chunk_ids)
     )
 
 
