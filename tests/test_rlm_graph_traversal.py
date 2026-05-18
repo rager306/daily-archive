@@ -12,6 +12,7 @@ reasons, and numeric scores only.
 from __future__ import annotations
 
 import ast
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -480,6 +481,99 @@ def test_no_neighborhood_graph_traversal_returns_empty_neighborhood_status(
     assert result.rlm_traversal.diagnostics["missing_expected_result_ids"] == sorted(
         scattered_fixture.expected_semantic_chunk_ids
     )
+
+
+def test_comparison_is_read_only_and_makes_no_adoption_recommendation(
+    scattered_fixture: ScatteredFixture,
+) -> None:
+    """The comparison facade reports fixture metrics only and does not mutate inputs."""
+    from arxiv_archive.hybrid_retrieval import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from arxiv_archive.rlm_graph_traversal import (  # noqa: PLC0415 - planned S10 API
+        RLMGraphTraversalConfig,
+        RLMGraphTraversalQuestion,
+        compare_rlm_graph_traversal,
+    )
+
+    class RecordingReadOnlyConn:
+        def __init__(self, delegate: ladybug.Connection) -> None:
+            self.delegate = delegate
+            self.queries: list[str] = []
+
+        def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
+            del params
+            normalized = query.strip().upper()
+            assert normalized.startswith("MATCH")
+            assert not normalized.startswith(("BEGIN", "COMMIT", "ROLLBACK", "CREATE", "MERGE"))
+            assert " SET " not in f" {normalized} "
+            self.queries.append(query)
+            return self.delegate.execute(query)
+
+    question = RLMGraphTraversalQuestion(
+        name="read-only-metrics-only",
+        query=scattered_fixture.query,
+        query_vector=scattered_fixture.query_vector,
+        seed_semantic_chunk_ids=scattered_fixture.seed_semantic_chunk_ids,
+        seed_evidence_path_ids=scattered_fixture.seed_evidence_path_ids,
+        expected_semantic_chunk_ids=scattered_fixture.expected_semantic_chunk_ids,
+        expected_evidence_path_ids=scattered_fixture.expected_evidence_path_ids,
+    )
+    vector_snapshot = deepcopy(scattered_fixture.vectors)
+    question_snapshot = deepcopy(question.__dict__)
+    conn = RecordingReadOnlyConn(scattered_fixture.conn)
+
+    result = compare_rlm_graph_traversal(
+        cast(ladybug.Connection, conn),
+        question,
+        vector_index=InMemoryVectorCandidateIndex.from_fixture_vectors(scattered_fixture.vectors),
+        config=RLMGraphTraversalConfig(max_steps=4, max_neighbors_per_step=3, top_k=4),
+    )
+
+    assert conn.queries
+    assert scattered_fixture.vectors == vector_snapshot
+    assert question.__dict__ == question_snapshot
+    rendered = repr(result).casefold()
+    assert "recommend" not in rendered
+    assert "adopt" not in rendered
+    assert "production_quality" not in rendered
+    assert "production-quality" not in rendered
+
+
+def test_invalid_query_vector_and_empty_candidate_index_are_typed_diagnostics(
+    scattered_fixture: ScatteredFixture,
+) -> None:
+    """Invalid vector dimensions should not hide graph/error diagnostics."""
+    from arxiv_archive.hybrid_retrieval import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from arxiv_archive.rlm_graph_traversal import (  # noqa: PLC0415 - planned S10 API
+        RLMGraphTraversalConfig,
+        RLMGraphTraversalQuestion,
+        compare_rlm_graph_traversal,
+    )
+
+    result = compare_rlm_graph_traversal(
+        scattered_fixture.conn,
+        RLMGraphTraversalQuestion(
+            name="invalid-query-vector",
+            query="no graph match",
+            query_vector=(1.0, 0.0, 0.0, 0.0),
+            seed_semantic_chunk_ids=scattered_fixture.seed_semantic_chunk_ids,
+            seed_evidence_path_ids=scattered_fixture.seed_evidence_path_ids,
+            expected_semantic_chunk_ids=scattered_fixture.expected_semantic_chunk_ids,
+            expected_evidence_path_ids=scattered_fixture.expected_evidence_path_ids,
+        ),
+        vector_index=InMemoryVectorCandidateIndex.from_fixture_vectors(
+            [FixtureVector("2605.12345:abstract:chunk-0001", (1.0, 0.0, 0.0))]
+        ),
+        config=RLMGraphTraversalConfig(max_steps=4, max_neighbors_per_step=3, top_k=4),
+    )
+
+    assert result.rlm_traversal.diagnostics["status"] == "error"
+    assert result.rlm_traversal.diagnostics["error_type"] == "invalid_query_vector"
+    by_label = {baseline.label: baseline for baseline in result.baselines}
+    assert by_label["vector_only"].source_diagnostics["error_type"] == "invalid_query_vector"
+    assert by_label["vector_only"].source_diagnostics["empty_candidate_index"] is True
+    assert by_label["hybrid"].source_diagnostics["error_type"] == "invalid_query_vector"
+    assert by_label["graph_one_hop"].source_diagnostics["candidate_count"] == 0
+    assert by_label["heuristic_bfs"].source_diagnostics["mode"] == "heuristic_bfs"
 
 
 def _rlm_graph_traversal_static_scope(path: Path) -> tuple[list[str], list[str]]:

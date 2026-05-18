@@ -172,7 +172,7 @@ def compare_rlm_graph_traversal(
         evidence_by_chunk=evidence_by_chunk,
     )
     baselines = (
-        _run_vector_only_baseline(question, vector_index, resolved_config, evidence_by_chunk),
+        _run_vector_only_baseline(conn, question, vector_index, resolved_config, evidence_by_chunk),
         _run_graph_one_hop_baseline(conn, question, resolved_config),
         _run_hybrid_baseline(conn, question, vector_index, resolved_config),
         _run_heuristic_bfs_baseline(conn, question, resolved_config, evidence_by_chunk),
@@ -251,7 +251,14 @@ def _run_rlm_style_traversal(
             budget_exhausted=True,
         )
 
-    vector_rows = _vector_rows(question, vector_index, config, evidence_by_chunk)
+    vector_diagnostics: dict[str, Any] = {}
+    vector_rows = _vector_rows(
+        question,
+        vector_index,
+        config,
+        evidence_by_chunk,
+        diagnostics=vector_diagnostics,
+    )
     graph_rows = _graph_rows(conn, question.query, limit=config.top_k)
     scored_rows = _merge_scored_rows(vector_rows, graph_rows)
     for row in scored_rows:
@@ -333,6 +340,7 @@ def _run_rlm_style_traversal(
                     visited=visited,
                     stop_reason="target_recall_reached",
                     budget_exhausted=False,
+                    extra_diagnostics=vector_diagnostics,
                 )
 
     stop_reason = "empty_neighborhood" if empty_neighborhood else "budget_exhausted"
@@ -345,21 +353,41 @@ def _run_rlm_style_traversal(
         visited=visited,
         stop_reason=stop_reason,
         budget_exhausted=stop_reason == "budget_exhausted",
+        extra_diagnostics=vector_diagnostics,
     )
 
 
 def _run_vector_only_baseline(
+    conn: Any,
     question: RLMGraphTraversalQuestion,
     vector_index: InMemoryVectorCandidateIndex,
     config: RLMGraphTraversalConfig,
     evidence_by_chunk: Mapping[str, tuple[str, str]],
 ) -> BaselineResult:
-    rows = _vector_rows(question, vector_index, config, evidence_by_chunk)
+    try:
+        response = retrieve_hybrid(
+            conn,
+            HybridRetrievalQuery(
+                text=question.query,
+                vector=question.query_vector,
+                mode=HybridRetrievalMode.VECTOR_ONLY,
+                limit=config.top_k,
+            ),
+            vector_index=vector_index,
+        )
+        rows = [dict(row, score=float(row.get("fusion_score") or 0.0)) for row in response.results]
+        diagnostics = _safe_diagnostics(response.diagnostics)
+        diagnostics["mode"] = "vector_only"
+    except ValueError as exc:
+        rows = []
+        diagnostics = _typed_error_diagnostics("vector_only", exc)
+    if not rows and "empty_candidate_index" not in diagnostics:
+        diagnostics["empty_candidate_index"] = True
     return _baseline_from_rows(
         question,
         label="vector_only",
         rows=rows,
-        source_diagnostics={"mode": "vector_only", "candidate_count": len(rows)},
+        source_diagnostics=diagnostics,
     )
 
 
@@ -383,19 +411,25 @@ def _run_hybrid_baseline(
     vector_index: InMemoryVectorCandidateIndex,
     config: RLMGraphTraversalConfig,
 ) -> BaselineResult:
-    response = retrieve_hybrid(
-        conn,
-        HybridRetrievalQuery(
-            text=question.query,
-            vector=question.query_vector,
-            mode=HybridRetrievalMode.HYBRID,
-            limit=config.top_k,
-        ),
-        vector_index=vector_index,
-    )
-    rows = [dict(row, score=float(row.get("fusion_score") or 0.0)) for row in response.results]
-    diagnostics = _safe_diagnostics(response.diagnostics)
-    diagnostics["mode"] = "hybrid"
+    try:
+        response = retrieve_hybrid(
+            conn,
+            HybridRetrievalQuery(
+                text=question.query,
+                vector=question.query_vector,
+                mode=HybridRetrievalMode.HYBRID,
+                limit=config.top_k,
+            ),
+            vector_index=vector_index,
+        )
+        rows = [dict(row, score=float(row.get("fusion_score") or 0.0)) for row in response.results]
+        diagnostics = _safe_diagnostics(response.diagnostics)
+        diagnostics["mode"] = "hybrid"
+    except ValueError as exc:
+        rows = []
+        diagnostics = _typed_error_diagnostics("hybrid", exc)
+    if not rows and "empty_candidate_index" not in diagnostics:
+        diagnostics["empty_candidate_index"] = True
     return _baseline_from_rows(question, label="hybrid", rows=rows, source_diagnostics=diagnostics)
 
 
@@ -433,11 +467,22 @@ def _vector_rows(
     vector_index: InMemoryVectorCandidateIndex,
     config: RLMGraphTraversalConfig,
     evidence_by_chunk: Mapping[str, tuple[str, str]],
+    *,
+    diagnostics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     if question.query_vector is None:
+        if diagnostics is not None:
+            diagnostics["empty_vector_candidates"] = True
+            diagnostics["empty_candidate_index"] = True
         return []
     rows: list[dict[str, Any]] = []
-    for candidate in vector_index.search(question.query_vector, limit=config.top_k):
+    try:
+        vector_candidates = vector_index.search(question.query_vector, limit=config.top_k)
+    except ValueError as exc:
+        if diagnostics is not None:
+            diagnostics.update(_typed_error_diagnostics("vector", exc))
+        return []
+    for candidate in vector_candidates:
         evidence_path_id, page_index_node_id = evidence_by_chunk.get(
             candidate.semantic_chunk_id,
             (None, _page_index_node_id_from_chunk(candidate.semantic_chunk_id)),
@@ -451,6 +496,9 @@ def _vector_rows(
                 "source": "vector",
             }
         )
+    if diagnostics is not None and not rows:
+        diagnostics["empty_vector_candidates"] = True
+        diagnostics["empty_candidate_index"] = True
     return rows
 
 
@@ -518,6 +566,7 @@ def _build_traversal_result(
     visited: list[str],
     stop_reason: str,
     budget_exhausted: bool,
+    extra_diagnostics: Mapping[str, Any] | None = None,
 ) -> TraversalResult:
     rows = _candidate_rows(candidates)
     metrics = _metrics(question, rows)
@@ -532,6 +581,8 @@ def _build_traversal_result(
         "missing_expected_result_ids": metrics.missing_expected_result_ids,
         "missing_expected_evidence_path_ids": metrics.missing_expected_evidence_path_ids,
     }
+    if extra_diagnostics:
+        diagnostics.update(_safe_diagnostics(extra_diagnostics))
     return TraversalResult(
         question_id=question.name,
         policy_label=policy_label,
@@ -676,6 +727,26 @@ def _safe_diagnostics(diagnostics: Mapping[str, Any]) -> dict[str, Any]:
             continue
         safe[str(key)] = value
     return safe
+
+
+def _typed_error_diagnostics(mode: str, exc: ValueError) -> dict[str, Any]:
+    message = str(exc)
+    error_type = "invalid_query_vector" if "vector" in message else "retrieval_error"
+    return {
+        "mode": mode,
+        "status": "error",
+        "error_type": error_type,
+        "error_code": message.replace(" ", "_"),
+        "empty_candidate_index": True,
+    }
+
+
+class _NullGraphConnection:
+    """Read-only placeholder for S06 vector-only retrieval, which never queries graph rows."""
+
+    def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
+        del query, params
+        raise AssertionError("vector_only baseline must not execute graph queries")
 
 
 def _page_index_node_id_from_chunk(semantic_chunk_id: str) -> str:
