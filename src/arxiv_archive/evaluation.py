@@ -12,6 +12,14 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+import ladybug
+
+from arxiv_archive.hybrid_retrieval import (
+    HybridRetrievalMode,
+    HybridRetrievalQuery,
+    InMemoryVectorCandidateIndex,
+    retrieve_hybrid,
+)
 from arxiv_archive.ladybug_client import evidence_path_id
 from arxiv_archive.scientific_extraction import ExtractionPatch, validate_extraction_patch
 
@@ -22,9 +30,26 @@ class BenchmarkRetrievalQuestion:
 
     name: str
     query: str
+    query_vector: tuple[float, ...] | None = None
     expected_result_ids: set[str] = field(default_factory=set)
     expected_evidence_path_ids: set[str] = field(default_factory=set)
     retrieval_mode: str | None = None
+
+
+@dataclass(frozen=True)
+class RetrievalAblationResult:
+    """Per-mode retrieval benchmark metrics and text-safe diagnostics."""
+
+    question_id: str
+    mode: HybridRetrievalMode
+    top_k: int
+    returned_semantic_chunk_ids: list[str]
+    returned_evidence_path_ids: list[str]
+    evidence_path_hit_rate: float
+    retrieval_recall: float
+    missing_expected_evidence_path_ids: list[str]
+    missing_expected_result_ids: list[str]
+    s06_diagnostics: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -223,6 +248,57 @@ def evaluate_retrieval_recall(
     )
 
 
+def run_retrieval_ablations(
+    conn: ladybug.Connection,
+    questions: Iterable[BenchmarkRetrievalQuestion],
+    vector_index: InMemoryVectorCandidateIndex,
+    modes: Iterable[HybridRetrievalMode] = (
+        HybridRetrievalMode.VECTOR_ONLY,
+        HybridRetrievalMode.GRAPH_ONLY,
+        HybridRetrievalMode.HYBRID,
+    ),
+    top_k: int = 10,
+) -> list[RetrievalAblationResult]:
+    """Run deterministic S06 retrieval modes and score ID-only fixture metrics."""
+    results: list[RetrievalAblationResult] = []
+    for question in questions:
+        for mode in modes:
+            response = retrieve_hybrid(
+                conn,
+                HybridRetrievalQuery(
+                    text=question.query,
+                    vector=question.query_vector,
+                    mode=mode,
+                    limit=top_k,
+                ),
+                vector_index=vector_index,
+            )
+            hit_rate = calculate_evidence_path_hit_rate(
+                response.results,
+                question.expected_evidence_path_ids,
+            )
+            recall = calculate_retrieval_recall(
+                response.results,
+                question.expected_result_ids,
+                result_id_field="semantic_chunk_id",
+            )
+            results.append(
+                RetrievalAblationResult(
+                    question_id=question.name,
+                    mode=mode,
+                    top_k=top_k,
+                    returned_semantic_chunk_ids=recall.returned_result_ids,
+                    returned_evidence_path_ids=hit_rate.returned_evidence_path_ids,
+                    evidence_path_hit_rate=hit_rate.hit_rate,
+                    retrieval_recall=recall.recall,
+                    missing_expected_evidence_path_ids=hit_rate.missing_expected_evidence_path_ids,
+                    missing_expected_result_ids=recall.missing_expected_result_ids,
+                    s06_diagnostics=dict(response.diagnostics),
+                )
+            )
+    return results
+
+
 def _coerce_patch(value: ExtractionPatch | ExtractionBenchmarkFixture) -> ExtractionPatch:
     if isinstance(value, ExtractionBenchmarkFixture):
         return value.patch
@@ -275,6 +351,7 @@ __all__ = [
     "EvidencePathHitRateResult",
     "ExtractionBenchmarkFixture",
     "GroundednessProxyResult",
+    "RetrievalAblationResult",
     "RetrievalRecallResult",
     "SchemaValidityResult",
     "calculate_evidence_path_hit_rate",
@@ -283,4 +360,5 @@ __all__ = [
     "evaluate_groundedness_proxy",
     "evaluate_retrieval_recall",
     "evaluate_schema_validity",
+    "run_retrieval_ablations",
 ]
