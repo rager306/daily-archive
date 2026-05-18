@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
+import pytest
+
+from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
 from arxiv_archive.evidence import (
     EvidencePath,
     SemanticChunk,
@@ -12,10 +17,20 @@ from arxiv_archive.evidence import (
     build_semantic_chunks,
 )
 from arxiv_archive.full_text import FullTextSource, ingest_full_text
+from arxiv_archive.ladybug_client import evidence_path_id
 from arxiv_archive.page_index import PageIndexDocument, build_page_index
 from arxiv_archive.rlm_workflow import run_document_workflow
+from arxiv_archive.scientific_extraction import (
+    Claim,
+    ExtractionPatch,
+    ScientificEntity,
+    ScientificRelation,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
+SCHEMA_VERSION = "scientific_extraction.v1"
+EXTRACTOR_VERSION = "fixture-extractor.v1"
+RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 
 
 def build_document() -> PageIndexDocument:
@@ -36,6 +51,61 @@ def build_valid_inputs() -> tuple[PageIndexDocument, list[SemanticChunk], list[E
     return document, chunks, evidence_paths
 
 
+def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
+    claim = Claim(
+        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
+        paper_id="2605.12345",
+        text=RAW_FIXTURE_CLAIM_TEXT,
+        claim_type="method",
+        confidence=0.91,
+        evidence_path=evidence,
+        schema_version=SCHEMA_VERSION,
+        extractor_version=EXTRACTOR_VERSION,
+        validation_warnings=[],
+        provenance={"source": "fixture"},
+    )
+    entity = ScientificEntity(
+        id="entity:2605.12345:pageindex",
+        paper_id="2605.12345",
+        label="PageIndex",
+        entity_type="method",
+        confidence=0.88,
+        evidence_path=evidence,
+        schema_version=SCHEMA_VERSION,
+        extractor_version=EXTRACTOR_VERSION,
+        validation_warnings=[],
+        provenance={"source": "fixture"},
+    )
+    relation = ScientificRelation(
+        id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports",
+        paper_id="2605.12345",
+        relation_type="supports",
+        source_id=claim.id,
+        target_id=entity.id,
+        confidence=0.84,
+        evidence_path=evidence,
+        schema_version=SCHEMA_VERSION,
+        extractor_version=EXTRACTOR_VERSION,
+        validation_warnings=[],
+        provenance={"source": "fixture"},
+    )
+    return ExtractionPatch(
+        paper_id="2605.12345",
+        claims=[claim],
+        entities=[entity],
+        relations=[relation],
+        schema_version=SCHEMA_VERSION,
+        extractor_version=EXTRACTOR_VERSION,
+        validation_warnings=[],
+        provenance={"source": "fixture"},
+    )
+
+
+def method_evidence(chunks: list[SemanticChunk], evidence_paths: list[EvidencePath]) -> EvidencePath:
+    method_chunk = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method")
+    return next(path for path in evidence_paths if path.semantic_chunk_id == method_chunk.id)
+
+
 def test_valid_fixture_yields_ordered_text_safe_trajectory() -> None:
     document, chunks, evidence_paths = build_valid_inputs()
 
@@ -53,7 +123,7 @@ def test_valid_fixture_yields_ordered_text_safe_trajectory() -> None:
         "2605.12345:conclusion",
     )
     assert result.context.semantic_chunk_ids == tuple(chunk.id for chunk in chunks)
-    assert result.context.evidence_path_ids == tuple(path.semantic_chunk_id for path in evidence_paths)
+    assert result.context.evidence_path_ids == tuple(evidence_path_id(path) for path in evidence_paths)
     assert result.context.counts == (
         ("nodes", 5),
         ("chunks", 4),
@@ -78,6 +148,7 @@ def test_valid_fixture_yields_ordered_text_safe_trajectory() -> None:
         "draft",
     ]
     assert result.trajectory[1].path_node_ids == result.context.node_ids
+    assert result.trajectory[-1].counts[-1] == ("extractor_calls", 0)
     assert result.diagnostics == ()
 
     rendered = repr(result)
@@ -86,14 +157,73 @@ def test_valid_fixture_yields_ordered_text_safe_trajectory() -> None:
     assert "PageIndex from deterministic local markdown" not in rendered
 
 
-def test_invalid_navigation_blocks_downstream_phases() -> None:
+def test_valid_extraction_boundary_is_called_once_and_returns_hidden_patch() -> None:
+    document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+    patch = build_fixture_patch(evidence)
+    calls: list[DspyExtractionInput] = []
+
+    def extractor(boundary_input: DspyExtractionInput) -> ExtractionPatch:
+        calls.append(boundary_input)
+        return patch
+
+    result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(extractor),
+    )
+
+    assert len(calls) == 1
+    assert calls[0].paper_id == "2605.12345"
+    assert calls[0].expected_evidence_path_ids == frozenset({evidence_path_id(evidence)})
+    assert calls[0].baseline_context == {
+        "paper_id": "2605.12345",
+        "root_node_id": "2605.12345:root",
+        "page_index_node_ids": result.context.node_ids if result.context else (),
+        "semantic_chunk_ids": tuple(chunk.id for chunk in chunks),
+        "evidence_path_ids": (evidence_path_id(evidence),),
+        "counts": {"nodes": 5, "chunks": 4, "evidence_paths": 1, "diagnostics": 0},
+        "route_status": "navigation_validated",
+    }
+    assert result.status == "ok"
+    assert result.boundary_valid is True
+    assert result.draft is patch
+    assert result.boundary_output is not None
+    assert result.boundary_output.patch is patch
+    draft_step = result.trajectory[-1]
+    assert draft_step.phase == "draft"
+    assert draft_step.status == "ok"
+    assert draft_step.schema_valid is True
+    assert draft_step.groundedness_valid is True
+    assert draft_step.optimizer_enabled is False
+    assert ("extractor_calls", 1) in draft_step.counts
+    assert RAW_FIXTURE_CLAIM_TEXT in result.draft.claims[0].text
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(result)
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.trajectory)
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.diagnostics)
+
+
+def test_invalid_navigation_blocks_downstream_phases_and_does_not_call_extractor() -> None:
     document, chunks, evidence_paths = build_valid_inputs()
     method = document.find_by_title("Method")
     assert method is not None
     method.parent_id = "2605.12345:missing-parent"
+    calls = 0
 
-    result = run_document_workflow(document, chunks=chunks, evidence_paths=evidence_paths)
+    def extractor(boundary_input: DspyExtractionInput) -> ExtractionPatch:
+        nonlocal calls
+        calls += 1
+        return build_fixture_patch(evidence_paths[0])
 
+    result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=evidence_paths,
+        extractor=BaselineDspyExtractionModule(extractor),
+    )
+
+    assert calls == 0
     assert result.status == "blocked"
     assert result.navigation_valid is False
     assert result.boundary_valid is False
@@ -165,6 +295,105 @@ def test_invalid_chunk_and_evidence_references_return_id_only_diagnostics() -> N
     assert "raw text must not appear" not in rendered
 
 
+def test_boundary_exception_and_malformed_return_fail_closed_with_safe_diagnostics() -> None:
+    document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+
+    exception_result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(
+            lambda boundary_input: (_ for _ in ()).throw(RuntimeError("raw failure text"))
+        ),
+    )
+    assert exception_result.status == "warning"
+    assert exception_result.boundary_output is not None
+    assert exception_result.boundary_output.boundary_diagnostics == ["extractor_error:RuntimeError"]
+    assert [diagnostic.message for diagnostic in exception_result.diagnostics] == [
+        "schema_invalid",
+        "groundedness_invalid",
+        "boundary_invalid",
+        "extractor_error:RuntimeError",
+    ]
+    assert "raw failure text" not in repr(exception_result)
+
+    malformed_result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(lambda boundary_input: {"claim": RAW_FIXTURE_CLAIM_TEXT}),
+    )
+    assert malformed_result.status == "warning"
+    assert malformed_result.boundary_output is not None
+    assert malformed_result.boundary_output.boundary_diagnostics == ["invalid_extractor_output:dict"]
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(malformed_result)
+
+
+def test_wrong_expected_evidence_and_missing_draft_evidence_fail_closed() -> None:
+    document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+    abstract_evidence = next(
+        path for path in evidence_paths if path.page_index_node_id == "2605.12345:abstract"
+    )
+    wrong_evidence_patch = build_fixture_patch(abstract_evidence)
+
+    wrong_result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(lambda boundary_input: wrong_evidence_patch),
+    )
+
+    assert wrong_result.status == "warning"
+    assert wrong_result.boundary_valid is False
+    assert wrong_result.boundary_output is not None
+    assert wrong_result.boundary_output.schema_valid is True
+    assert wrong_result.boundary_output.groundedness_valid is False
+    assert wrong_result.boundary_output.groundedness_diagnostics[
+        "missing_expected_evidence_path_ids"
+    ] == [evidence_path_id(evidence)]
+    assert wrong_result.boundary_output.groundedness_diagnostics["unexpected_evidence_path_ids"] == [
+        evidence_path_id(abstract_evidence)
+    ]
+
+    missing_evidence_patch = replace(
+        build_fixture_patch(evidence),
+        claims=[replace(build_fixture_patch(evidence).claims[0], evidence_path=None)],
+    )
+    missing_result = run_document_workflow(
+        document,
+        chunks=chunks,
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(lambda boundary_input: missing_evidence_patch),
+    )
+
+    assert missing_result.status == "warning"
+    assert missing_result.boundary_valid is False
+    assert missing_result.boundary_output is not None
+    assert missing_result.boundary_output.schema_valid is False
+    assert missing_result.boundary_output.groundedness_valid is False
+    assert missing_result.boundary_output.groundedness_diagnostics[
+        "missing_evidence_path_draft_ids"
+    ] == [missing_evidence_patch.claims[0].id]
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(missing_result)
+
+
+def test_optimizer_request_rejection_is_not_suppressed() -> None:
+    document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+    patch = build_fixture_patch(evidence)
+
+    with pytest.raises(ValueError, match="optimizer runtime is disabled"):
+        run_document_workflow(
+            document,
+            chunks=chunks,
+            evidence_paths=[evidence],
+            extractor=BaselineDspyExtractionModule(lambda boundary_input: patch),
+            optimizer_config={"name": "MIPRO"},
+        )
+
+
 def test_harness_does_not_mutate_inputs() -> None:
     document, chunks, evidence_paths = build_valid_inputs()
     before_nodes = deepcopy(document.nodes)
@@ -180,17 +409,22 @@ def test_harness_does_not_mutate_inputs() -> None:
     assert evidence_paths == before_evidence_paths
 
 
-def test_future_draft_and_boundary_output_are_hidden_from_repr() -> None:
+def test_draft_and_boundary_output_are_hidden_from_repr() -> None:
     document, chunks, evidence_paths = build_valid_inputs()
+    evidence = method_evidence(chunks, evidence_paths)
+    patch = build_fixture_patch(evidence)
 
     result = run_document_workflow(
         document,
         chunks=chunks,
-        evidence_paths=evidence_paths,
-        draft={"claim_text": "secret future claim text"},
-        boundary_output={"prompt": "secret future prompt"},
+        evidence_paths=[evidence],
+        extractor=BaselineDspyExtractionModule(lambda boundary_input: patch),
     )
 
     rendered = repr(result)
-    assert "secret future claim text" not in rendered
-    assert "secret future prompt" not in rendered
+    assert result.draft is patch
+    assert result.boundary_output is not None
+    assert result.boundary_output.patch is patch
+    assert RAW_FIXTURE_CLAIM_TEXT not in rendered
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.boundary_output)
+    assert RAW_FIXTURE_CLAIM_TEXT not in repr(result.trajectory)
