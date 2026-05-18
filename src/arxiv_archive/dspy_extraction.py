@@ -105,7 +105,11 @@ class BaselineDspyExtractionModule:
         optimizer_name: str | None = None,
     ) -> DspyExtractionOutput:
         """Run a baseline extractor and evaluate schema/groundedness gates."""
-        if boundary_input.optimizer_config is not None or optimizer_config is not None or optimizer_name is not None:
+        if (
+            boundary_input.optimizer_config is not None
+            or optimizer_config is not None
+            or optimizer_name is not None
+        ):
             raise ValueError(_optimizer_rejection_reason(optimizer_name))
 
         try:

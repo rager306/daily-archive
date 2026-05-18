@@ -8,15 +8,16 @@ runtime, optimizers, live clients, embeddings, network calls, or storage writes.
 from __future__ import annotations
 
 import ast
+import importlib.util
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
 from arxiv_archive.ladybug_client import evidence_path_id
-from tests.test_ladybug_scientific_kg import build_fixture_payload
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 S08_FILES = (
@@ -63,21 +64,37 @@ FORBIDDEN_RUNTIME_REFERENCES = {
     "upsert_scientific_kg",
     "init_db",
 }
-ALLOWED_STRING_LITERAL_FRAGMENTS = FORBIDDEN_IMPORT_ROOTS | FORBIDDEN_RUNTIME_REFERENCES | {
-    "DSPy",
-    "optimizer",
-    "optimizers",
-    "live clients",
-    "storage writes",
-}
+ALLOWED_STRING_LITERAL_FRAGMENTS = (
+    FORBIDDEN_IMPORT_ROOTS
+    | FORBIDDEN_RUNTIME_REFERENCES
+    | {
+        "DSPy",
+        "optimizer",
+        "optimizers",
+        "live clients",
+        "storage writes",
+    }
+)
+BuildFixturePayload = Callable[[], tuple[Any, list[Any], list[Any], Any]]
 
 
 def _safe_text(value: Any) -> str:
     return repr(value)
 
 
+def _build_fixture_payload() -> tuple[Any, list[Any], list[Any], Any]:
+    fixture_module_path = Path(__file__).with_name("test_ladybug_scientific_kg.py")
+    spec = importlib.util.spec_from_file_location("_s08_ladybug_fixture", fixture_module_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    builder = cast(BuildFixturePayload, module.build_fixture_payload)
+    return builder()
+
+
 def _fixture_patch_contract() -> tuple[Any, frozenset[str]]:
-    _document, _chunks, evidence_paths, patch = build_fixture_payload()
+    _document, _chunks, evidence_paths, patch = _build_fixture_payload()
     return patch, frozenset(evidence_path_id(path) for path in evidence_paths)
 
 
@@ -132,7 +149,9 @@ def test_fail_closed_invalid_schema_and_wrong_expected_evidence_are_id_count_bas
     output = module.forward(
         DspyExtractionInput(
             paper_id=patch.paper_id,
-            expected_evidence_path_ids=frozenset({*expected_evidence_ids, "evidence:missing:expected"}),
+            expected_evidence_path_ids=frozenset(
+                {*expected_evidence_ids, "evidence:missing:expected"}
+            ),
         )
     )
 
@@ -148,7 +167,9 @@ def test_fail_closed_invalid_schema_and_wrong_expected_evidence_are_id_count_bas
         "evidence:missing:expected"
     ]
     assert output.groundedness_diagnostics["unexpected_evidence_path_ids"] == []
-    assert output.groundedness_diagnostics["derived_evidence_path_ids"] == sorted(expected_evidence_ids)
+    assert output.groundedness_diagnostics["derived_evidence_path_ids"] == sorted(
+        expected_evidence_ids
+    )
     assert output.boundary_valid is False
     assert RAW_FIXTURE_CLAIM_TEXT not in _safe_text(output.schema_diagnostics)
     assert RAW_FIXTURE_CLAIM_TEXT not in _safe_text(output.groundedness_diagnostics)
@@ -177,7 +198,9 @@ def test_missing_draft_evidence_is_reported_by_draft_id_not_claim_text() -> None
         patch.claims[0].id
     ]
     assert output.groundedness_diagnostics["missing_expected_evidence_path_ids"] == []
-    assert output.groundedness_diagnostics["derived_evidence_path_ids"] == sorted(expected_evidence_ids)
+    assert output.groundedness_diagnostics["derived_evidence_path_ids"] == sorted(
+        expected_evidence_ids
+    )
     assert RAW_FIXTURE_CLAIM_TEXT not in _safe_text(output)
     assert output.patch is missing_evidence_patch
     assert RAW_FIXTURE_CLAIM_TEXT in output.patch.claims[0].text
@@ -220,7 +243,9 @@ def test_boundary_output_repr_and_diagnostics_do_not_expose_fixture_claim_text()
     output = module.forward(
         DspyExtractionInput(
             paper_id=patch.paper_id,
-            expected_evidence_path_ids=frozenset({*expected_evidence_ids, "evidence:missing:expected"}),
+            expected_evidence_path_ids=frozenset(
+                {*expected_evidence_ids, "evidence:missing:expected"}
+            ),
         )
     )
 
