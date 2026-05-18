@@ -29,7 +29,7 @@
 - [x] **S05: LadybugDB SCI KG schema expansion** `risk:high` `depends:[S02,S03,S04]`
   > After this: After this: LadybugDB stores the expanded SCI KG fixture with Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, and relation edges idempotently.
 
-- [ ] **S06: Hybrid retrieval baseline** `risk:high` `depends:[S05]`
+- [ ] **S06: S06** `risk:high` `depends:[]`
   > After this: After this: a query over fixtures returns fused vector and graph results with evidence paths and score metadata.
 
 - [ ] **S07: Evaluation benchmark and ablations** `risk:medium` `depends:[S03,S04,S06]`
