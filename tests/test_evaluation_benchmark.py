@@ -33,7 +33,13 @@ def _single_fixture_contract() -> tuple[Any, list[str], list[str], list[str], se
     expected_entity_ids = [patch.entities[0].id]
     expected_relation_ids = [patch.relations[0].id]
     expected_evidence_ids = {evidence_path_id(path) for path in evidence_paths}
-    return patch, expected_claim_ids, expected_entity_ids, expected_relation_ids, expected_evidence_ids
+    return (
+        patch,
+        expected_claim_ids,
+        expected_entity_ids,
+        expected_relation_ids,
+        expected_evidence_ids,
+    )
 
 
 @dataclass(frozen=True)
@@ -218,7 +224,9 @@ def test_retrieval_recall_handles_duplicates_missing_ids_none_ids_and_empty_list
     assert result_map["duplicate_result_ids"] == ["chunk:a"]
 
     empty_expected = _as_mapping(
-        calculate_retrieval_recall([], expected_result_ids=set(), result_id_field="semantic_chunk_id")
+        calculate_retrieval_recall(
+            [], expected_result_ids=set(), result_id_field="semantic_chunk_id"
+        )
     )
     empty_results_with_expected = _as_mapping(
         calculate_retrieval_recall(

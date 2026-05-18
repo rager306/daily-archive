@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import ladybug
 
@@ -120,7 +120,9 @@ class RetrievalRecallResult:
     duplicate_result_ids: list[str]
 
 
-def evaluate_schema_validity(patch: ExtractionPatch | ExtractionBenchmarkFixture) -> SchemaValidityResult:
+def evaluate_schema_validity(
+    patch: ExtractionPatch | ExtractionBenchmarkFixture,
+) -> SchemaValidityResult:
     """Validate a patch or fixture using the S04 extraction schema validator."""
     extraction_patch = _coerce_patch(patch)
     diagnostics = validate_extraction_patch(extraction_patch)
@@ -328,7 +330,9 @@ def _draft_evidence_ids(drafts: Iterable[Any]) -> tuple[list[str], list[str]]:
     return evidence_ids, missing_draft_ids
 
 
-def _extract_non_null_ids(rows: Iterable[Mapping[str, Any] | object], field_name: str) -> tuple[list[str], int]:
+def _extract_non_null_ids(
+    rows: Iterable[Mapping[str, Any] | object], field_name: str
+) -> tuple[list[str], int]:
     ids: list[str] = []
     none_count = 0
     for row in rows:
@@ -342,7 +346,8 @@ def _extract_non_null_ids(rows: Iterable[Mapping[str, Any] | object], field_name
 
 def _row_value(row: Mapping[str, Any] | object, field_name: str) -> Any:
     if isinstance(row, Mapping):
-        return row.get(field_name)
+        mapping_row = cast(Mapping[str, Any], row)
+        return mapping_row.get(field_name)
     return getattr(row, field_name, None)
 
 
