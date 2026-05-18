@@ -303,7 +303,9 @@ def _draft_step(
     return RLMWorkflowStep(
         phase="draft",
         status="ok" if boundary_valid else "warning",
-        evidence_path_ids=tuple(boundary_output.groundedness_diagnostics.get("derived_evidence_path_ids", ())),
+        evidence_path_ids=tuple(
+            boundary_output.groundedness_diagnostics.get("derived_evidence_path_ids", ())
+        ),
         counts=(
             *context.counts,
             ("extractor_calls", 1),
@@ -311,11 +313,19 @@ def _draft_step(
             ("boundary_diagnostics", len(boundary_output.boundary_diagnostics)),
             (
                 "missing_expected_evidence_paths",
-                len(boundary_output.groundedness_diagnostics.get("missing_expected_evidence_path_ids", ())),
+                len(
+                    boundary_output.groundedness_diagnostics.get(
+                        "missing_expected_evidence_path_ids", ()
+                    )
+                ),
             ),
             (
                 "missing_evidence_path_drafts",
-                len(boundary_output.groundedness_diagnostics.get("missing_evidence_path_draft_ids", ())),
+                len(
+                    boundary_output.groundedness_diagnostics.get(
+                        "missing_evidence_path_draft_ids", ()
+                    )
+                ),
             ),
         ),
         diagnostics=draft_diagnostics,

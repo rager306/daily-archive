@@ -6,7 +6,7 @@ import ast
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import pytest
 
@@ -170,8 +170,12 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
     )
 
 
-def method_evidence(chunks: list[SemanticChunk], evidence_paths: list[EvidencePath]) -> EvidencePath:
-    method_chunk = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method")
+def method_evidence(
+    chunks: list[SemanticChunk], evidence_paths: list[EvidencePath]
+) -> EvidencePath:
+    method_chunk = next(
+        chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method"
+    )
     return next(path for path in evidence_paths if path.semantic_chunk_id == method_chunk.id)
 
 
@@ -192,7 +196,9 @@ def test_valid_fixture_yields_ordered_text_safe_trajectory() -> None:
         "2605.12345:conclusion",
     )
     assert result.context.semantic_chunk_ids == tuple(chunk.id for chunk in chunks)
-    assert result.context.evidence_path_ids == tuple(evidence_path_id(path) for path in evidence_paths)
+    assert result.context.evidence_path_ids == tuple(
+        evidence_path_id(path) for path in evidence_paths
+    )
     assert result.context.counts == (
         ("nodes", 5),
         ("chunks", 4),
@@ -391,11 +397,15 @@ def test_boundary_exception_and_malformed_return_fail_closed_with_safe_diagnosti
         document,
         chunks=chunks,
         evidence_paths=[evidence],
-        extractor=BaselineDspyExtractionModule(lambda boundary_input: {"claim": RAW_FIXTURE_CLAIM_TEXT}),
+        extractor=BaselineDspyExtractionModule(
+            lambda boundary_input: cast(ExtractionPatch, {"claim": RAW_FIXTURE_CLAIM_TEXT})
+        ),
     )
     assert malformed_result.status == "warning"
     assert malformed_result.boundary_output is not None
-    assert malformed_result.boundary_output.boundary_diagnostics == ["invalid_extractor_output:dict"]
+    assert malformed_result.boundary_output.boundary_diagnostics == [
+        "invalid_extractor_output:dict"
+    ]
     assert RAW_FIXTURE_CLAIM_TEXT not in repr(malformed_result)
 
 
@@ -422,9 +432,9 @@ def test_wrong_expected_evidence_and_missing_draft_evidence_fail_closed() -> Non
     assert wrong_result.boundary_output.groundedness_diagnostics[
         "missing_expected_evidence_path_ids"
     ] == [evidence_path_id(evidence)]
-    assert wrong_result.boundary_output.groundedness_diagnostics["unexpected_evidence_path_ids"] == [
-        evidence_path_id(abstract_evidence)
-    ]
+    assert wrong_result.boundary_output.groundedness_diagnostics[
+        "unexpected_evidence_path_ids"
+    ] == [evidence_path_id(abstract_evidence)]
 
     missing_evidence_patch = replace(
         build_fixture_patch(evidence),
