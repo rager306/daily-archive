@@ -25,7 +25,7 @@ Consumes S01 corpus manifest and availability diagnostics. Produces source acqui
 
 ## Tasks
 
-- [ ] **T01: Define bounded source acquisition plan** `est:small`
+- [x] **T01: Define bounded source acquisition plan** `est:small`
   Inspect existing full-text/download/conversion code paths and define a bounded acquisition plan for the 20 missing-Markdown papers. The plan should prefer already-supported project mechanisms and avoid unbounded Marker/LLM/optimizer behavior.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md && grep -q 'bounded' .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md
