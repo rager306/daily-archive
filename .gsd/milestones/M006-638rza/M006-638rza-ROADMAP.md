@@ -15,8 +15,8 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: After this slice, there is a 30-paper manifest with selection rationale, local source availability, and known risk tags.
 
-- [ ] **S02: Thirty paper dry run evidence** `risk:high` `depends:[S01]`
-  > After this: After this slice, current M005-style dry-run evidence exists for the 30-paper corpus with redacted per-paper diagnostics.
+- [ ] **S02: Bounded source acquisition for thirty paper scan** `risk:high` `depends:[S01]`
+  > After this: After this slice, the 20 missing-Markdown expansion papers have bounded acquisition/conversion attempts with redacted diagnostics, and the 30-paper corpus is either source-ready or explicitly blocked per paper.
 
 - [ ] **S03: Deviation and pattern analysis** `risk:medium` `depends:[S02]`
   > After this: After this slice, there is a deviation report comparing 30-paper behavior against M005 baseline and identifying new patterns/outliers.
