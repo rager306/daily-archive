@@ -27,7 +27,7 @@
 - [x] **S05: S05** `risk:high` `depends:[]`
   > After this: After this slice, source PDFs, normalized Markdown, extracted figures, tables, and image assets are preserved with redacted asset manifests for future multimodal retrieval.
 
-- [ ] **S06: S06** `risk:high` `depends:[]`
+- [x] **S06: S06** `risk:high` `depends:[]`
   > After this: After this slice, current, structure-aware, and selected real chunking candidates are compared on real papers, including asset-linkage quality, and reviewed independently.
 
 - [ ] **S07: Isolated import rehearsal** `risk:high` `depends:[S06]`
