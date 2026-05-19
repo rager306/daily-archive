@@ -35,7 +35,7 @@ Consumes S01 corpus manifest and availability diagnostics. Produces source acqui
   - Files: `src/arxiv_archive/thirty_paper_source_scan.py`, `tests/test_thirty_paper_source_scan.py`
   - Verify: uv run pytest tests/test_thirty_paper_source_scan.py -q && uv run ruff check src/arxiv_archive/thirty_paper_source_scan.py tests/test_thirty_paper_source_scan.py
 
-- [ ] **T03: Run source acquisition for missing papers** `est:large`
+- [x] **T03: Run source acquisition for missing papers** `est:large`
   Run the bounded acquisition/conversion helper over the 20 missing-Markdown expansion papers. Persist updated availability summary and diagnostics under S02 run-evidence.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisition-summary.json`, `.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisition-diagnostics.jsonl`
   - Verify: uv run python - <<'PY'

@@ -92,6 +92,8 @@ async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnost
     assert converter.closed is False
     assert summary["paper_count"] == 3
     assert summary["attempted_missing_markdown_count"] == 2
+    assert summary["originally_missing_markdown_count"] == 2
+    assert summary["preexisting_markdown_ready_from_original_missing_count"] == 0
     assert summary["acquired_markdown_count"] == 1
     assert summary["ready_for_markdown_scan_count"] == 2
     assert summary["still_missing_markdown_count"] == 1

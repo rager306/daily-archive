@@ -66,6 +66,7 @@ async def acquire_sources_for_manifest(
     output_dir: str | Path,
     paths: AcquisitionPaths | None = None,
     converter: MarkdownConverter | None = None,
+    fast_only: bool = False,
 ) -> dict[str, Path]:
     """Attempt bounded Markdown acquisition for papers missing Markdown.
 
@@ -97,7 +98,7 @@ async def acquire_sources_for_manifest(
             quality: dict[str, Any] | None = None
             output_markdown_path: str | None = None
             if attempted:
-                result = await converter.convert(paper_id)
+                result = await _convert_bounded(converter, paper_id, fast_only=fast_only)
                 conversion_method = result.method
                 if result.markdown is not None:
                     quality_report = assess_full_text_quality(result.markdown)
@@ -150,8 +151,29 @@ def acquire_sources_for_manifest_sync(**kwargs: Any) -> dict[str, Path]:
     return asyncio.run(acquire_sources_for_manifest(**kwargs))
 
 
+async def _convert_bounded(converter: MarkdownConverter, paper_id: str, *, fast_only: bool) -> ConversionResult:
+    """Run a bounded conversion attempt.
+
+    `MDConverter.convert()` may fall through to PDF/Docling conversion, which can
+    be too slow for a 20-paper discovery batch. In fast-only mode, use the
+    converter's arxiv2md path when available and record failures as diagnostics
+    instead of invoking PDF fallback.
+    """
+    if fast_only and hasattr(converter, "_try_arxiv2md"):
+        return await converter._try_arxiv2md(paper_id)  # type: ignore[attr-defined]
+    return await converter.convert(paper_id)
+
+
 def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
     attempted = [record for record in records if record["attempted"]]
+    originally_missing = [
+        record
+        for record in records
+        if _manifest_marked_missing_markdown(manifest=manifest, paper_id=str(record["paper_id"]))
+    ]
+    preexisting_ready = [
+        record for record in originally_missing if record["before"]["available_markdown"] and not record["attempted"]
+    ]
     succeeded = [record for record in attempted if record["outcome"] == "acquired_markdown"]
     still_missing = [record for record in records if not record["after"]["available_markdown"]]
     method_counts: dict[str, int] = {}
@@ -169,6 +191,8 @@ def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, A
         "m005_overlap_count": manifest.get("m005_overlap_count"),
         "expansion_count": manifest.get("expansion_count"),
         "attempted_missing_markdown_count": len(attempted),
+        "originally_missing_markdown_count": len(originally_missing),
+        "preexisting_markdown_ready_from_original_missing_count": len(preexisting_ready),
         "acquired_markdown_count": len(succeeded),
         "ready_for_markdown_scan_count": sum(1 for record in records if record["after"]["available_markdown"]),
         "still_missing_markdown_count": len(still_missing),
@@ -177,6 +201,15 @@ def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, A
         "outcome_counts": dict(sorted(outcome_counts.items())),
         **SAFETY_FLAGS,
     }
+
+
+def _manifest_marked_missing_markdown(*, manifest: dict[str, Any], paper_id: str) -> bool:
+    for paper in manifest.get("papers", []):
+        if not isinstance(paper, dict) or str(paper.get("paper_id")) != paper_id:
+            continue
+        availability = paper.get("availability")
+        return isinstance(availability, dict) and not bool(availability.get("available_markdown"))
+    return False
 
 
 def _availability_for(paper_id: str, paths: AcquisitionPaths) -> dict[str, Any]:
