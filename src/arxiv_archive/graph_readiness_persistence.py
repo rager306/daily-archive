@@ -195,6 +195,26 @@ def selection_to_dict(result: SelectionResult) -> dict[str, Any]:
     }
 
 
+def write_refusal_evidence(*, selection: SelectionResult, output_path: Path) -> dict[str, Any]:
+    """Write structured refusal evidence grouped by refusal reason."""
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    by_reason: dict[str, list[dict[str, Any]]] = {}
+    for refusal in selection.refusals:
+        by_reason.setdefault(refusal.reason, []).append(refusal.__dict__)
+    payload = {
+        "schema_version": "s06-persistence-refusals.v1",
+        "refused_count": len(selection.refusals),
+        "persisted_count": len(selection.trusted_claims),
+        "refusal_counts": {reason: len(items) for reason, items in sorted(by_reason.items())},
+        "refusals_by_reason": dict(sorted(by_reason.items())),
+        "raw_text_included": False,
+        "embeddings_included": False,
+    }
+    output_path.write_text(json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8")
+    return payload
+
+
 def _persistence_summary(
     *,
     selection: SelectionResult,
@@ -310,6 +330,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--extraction-summary", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
     parser.add_argument("--persist-output-dir", required=False, type=Path)
+    parser.add_argument("--refusals-output", required=False, type=Path)
     args = parser.parse_args(argv)
     if args.persist_output_dir is not None:
         persisted = persist_validation_subset(
@@ -322,6 +343,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     result = load_and_select(args.manifest, args.extraction_summary)
+    if args.refusals_output is not None:
+        refusal_payload = write_refusal_evidence(selection=result, output_path=args.refusals_output)
+        sys.stdout.write(json.dumps(to_redacted_dict(refusal_payload["refusal_counts"]), indent=2, sort_keys=True))
+        sys.stdout.write("\n")
+        return 0
+
     payload = to_redacted_dict(selection_to_dict(result))
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

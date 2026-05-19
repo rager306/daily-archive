@@ -7,6 +7,7 @@ from arxiv_archive.graph_readiness_persistence import (
     persist_validation_subset,
     select_trusted_candidate_claims,
     selection_to_dict,
+    write_refusal_evidence,
 )
 
 
@@ -218,3 +219,37 @@ def test_persist_validation_subset_records_refusal_counts(tmp_path: Path) -> Non
     assert result.summary["persisted_count"] == 1
     assert result.summary["refused_count"] == 1
     assert result.summary["refusal_counts"] == {"final_eligibility_repair_required": 1}
+
+
+def test_write_refusal_evidence_groups_negative_paths(tmp_path: Path) -> None:
+    selection = select_trusted_candidate_claims(
+        manifest=_manifest(
+            [
+                _manifest_entry(),
+                _manifest_entry(granularity="route", candidate_id=None, chunk_id=None),
+                _manifest_entry(final_eligibility="eligible_with_caveat", candidate_id="c-caveat", chunk_id="chunk-caveat"),
+                _manifest_entry(final_eligibility="repair_required", candidate_id="c-repair", chunk_id="chunk-repair"),
+                _manifest_entry(final_eligibility="route_excluded", candidate_id="c-excluded", chunk_id="chunk-excluded"),
+                _manifest_entry(final_eligibility="review_required", candidate_id="c-review", chunk_id="chunk-review"),
+                _manifest_entry(route="metadata_graph", granularity="route", candidate_id=None, chunk_id=None),
+            ]
+        ),
+        extraction_summary=_summary([_claim_draft()]),
+    )
+    output_path = tmp_path / "persistence-refusals.json"
+
+    payload = write_refusal_evidence(selection=selection, output_path=output_path)
+
+    assert output_path.exists()
+    assert payload["schema_version"] == "s06-persistence-refusals.v1"
+    assert payload["persisted_count"] == 1
+    assert payload["refused_count"] == 6
+    assert payload["raw_text_included"] is False
+    assert payload["embeddings_included"] is False
+    assert payload["refusal_counts"]["not_candidate_granularity"] == 2
+    assert payload["refusal_counts"]["final_eligibility_eligible_with_caveat"] == 1
+    assert payload["refusal_counts"]["final_eligibility_repair_required"] == 1
+    assert payload["refusal_counts"]["final_eligibility_route_excluded"] == 1
+    assert payload["refusal_counts"]["final_eligibility_review_required"] == 1
+    serialized = output_path.read_text(encoding="utf-8")
+    assert "Local markdown" not in serialized
