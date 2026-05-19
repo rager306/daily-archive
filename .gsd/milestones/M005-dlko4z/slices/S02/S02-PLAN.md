@@ -25,7 +25,7 @@ S02 consumes S01 contract, gold corpus, and validator. It produces baseline diag
 
 ## Tasks
 
-- [ ] **T01: Build baseline package validator** `est:1d`
+- [x] **T01: Build baseline package validator** `est:1d`
   Implement a read-only baseline package builder that maps current available paper/full-text/PageIndex chunk artifacts into S01 import-ready package dictionaries and runs `validate_import_ready_package`. It should be conservative: missing source spans, unresolved parents, missing artifacts, or current chunks without graph-grade metadata should become structured diagnostics rather than guessed fixes.
   - Files: `src/arxiv_archive/chunk_baseline_measurement.py`, `tests/test_chunk_baseline_measurement.py`
   - Verify: uv run pytest tests/test_chunk_baseline_measurement.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunk_baseline_measurement.py tests/test_chunk_baseline_measurement.py
