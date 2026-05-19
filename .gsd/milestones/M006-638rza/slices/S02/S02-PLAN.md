@@ -50,7 +50,7 @@ assert Path('.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisit
 print(summary)
 PY
 
-- [ ] **T04: Report source readiness delta** `est:small`
+- [x] **T04: Report source readiness delta** `est:small`
   Write a readiness delta report showing what changed after acquisition attempts, which papers are still blocked, and whether S03 can run a full 30-paper deviation analysis or must separate source blockers from chunking results.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/source-acquisition-report.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S02/source-acquisition-report.md && uv run python - <<'PY'
