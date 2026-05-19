@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: CLI contract and batch state model** `risk:medium` `depends:[]`
+- [ ] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, the project has a documented CLI contract, command names, state schema, fixture shape, and safety gates for iterative validation batches.
 
 - [ ] **S02: Batch initialization and source preflight** `risk:high` `depends:[S01]`
