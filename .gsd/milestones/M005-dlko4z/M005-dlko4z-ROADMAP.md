@@ -24,7 +24,7 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, chunks have deterministic sidecar annotations useful for routing and review, without becoming KG facts.
 
-- [ ] **S05: S05** `risk:high` `depends:[]`
+- [x] **S05: S05** `risk:high` `depends:[]`
   > After this: After this slice, source PDFs, normalized Markdown, extracted figures, tables, and image assets are preserved with redacted asset manifests for future multimodal retrieval.
 
 - [ ] **S06: Benchmark chunking methods and independent review** `risk:high` `depends:[S05]`
