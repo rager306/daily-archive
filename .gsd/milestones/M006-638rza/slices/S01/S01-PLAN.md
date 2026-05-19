@@ -25,7 +25,7 @@ Consumes the M005 10-paper manifest and local paper/cache artifacts. Produces th
 
 ## Tasks
 
-- [ ] **T01: Select thirty paper deviation corpus** `est:medium`
+- [x] **T01: Select thirty paper deviation corpus** `est:medium`
   Discover candidate paper ids from local artifacts, caches, and M005/M004 manifests. Also inspect local external artifact roots `/root/.research/papers` and `/root/.arxiv_cache` during execution, but record only redacted paths/status in outputs. Select 30 unique ids deterministically, preserving the M005 10-paper baseline overlap and adding 20 expansion papers from available local evidence. Record selection rationale and risk tags.
   - Files: `.gsd/milestones/M006-638rza/slices/S01/thirty-paper-corpus-manifest.json`, `.gsd/milestones/M006-638rza/slices/S01/thirty-paper-corpus-rationale.md`
   - Verify: uv run python - <<'PY'
