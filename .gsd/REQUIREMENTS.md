@@ -118,6 +118,16 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M005-dlko4z
 - Validation: A 30-paper dry-run report exists with redacted aggregate/per-paper diagnostics, deviation analysis against M005 10-paper evidence, new-pattern taxonomy, and explicit no-go/go recommendations for remediation.
 
+### R032 — Corpus validation must support an automated +10-paper iterative loop up to 100 papers, with resumable batch state, source acquisition, deviation analysis, remediation recommendations, and strict no-import/no-write safety gates.
+- Class: operability
+- Status: active
+- Description: Corpus validation must support an automated +10-paper iterative loop up to 100 papers, with resumable batch state, source acquisition, deviation analysis, remediation recommendations, and strict no-import/no-write safety gates.
+- Why it matters: Manually planning each 10-paper expansion will not scale to 100 papers. The workflow needs repeatable automation to discover deviations, improve source/chunking automation, and preserve evidence quality without unsafe KG import.
+- Source: user-directed M006 scale-loop request
+- Primary owning slice: future-validation-automation
+- Supporting slices: M006-638rza
+- Validation: A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -353,10 +363,11 @@ This file is the explicit capability and coverage contract for the project.
 | R029 | quality-attribute | active | M005-dlko4z | none | A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded. |
 | R030 | continuity | active | M005-dlko4z/S05 | none | A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs. |
 | R031 | quality-attribute | active | M006-638rza | M005-dlko4z | A 30-paper dry-run report exists with redacted aggregate/per-paper diagnostics, deviation analysis against M005 10-paper evidence, new-pattern taxonomy, and explicit no-go/go recommendations for remediation. |
+| R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
 
 ## Coverage Summary
 
-- Active requirements: 11
-- Mapped to slices: 11
+- Active requirements: 12
+- Mapped to slices: 12
 - Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0
