@@ -26,7 +26,7 @@ S06 consumes S02 baseline evidence, S03 structure-aware packages, S04 annotation
 
 ## Tasks
 
-- [ ] **T01: Define chunking benchmark contract** `est:medium`
+- [x] **T01: Define chunking benchmark contract** `est:medium`
   Define a benchmark result contract for chunking methods. Include method id, input corpus, per-paper metrics, aggregate metrics, route/type/state/refusal counts, source-span coverage, parent/reference coverage, annotation coverage, asset-linkage coverage, import eligibility counts, missing-source caveats, and redaction/no-write flags. Add tests for metric aggregation and redaction boundaries.
   - Files: `src/arxiv_archive/chunking_benchmark.py`, `tests/test_chunking_benchmark.py`
   - Verify: uv run pytest tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunking_benchmark.py tests/test_chunking_benchmark.py
