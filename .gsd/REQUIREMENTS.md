@@ -88,6 +88,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes.
 - Notes: The review should look at naked artifacts such as Markdown, chunk samples, quality reports, graph exports, and test assertions. It should explicitly flag empty tests, over-mocked tests, count-only validation, and outputs that pass schema checks but fail semantic usefulness.
 
+### R029 — Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.
+- Class: quality-attribute
+- Status: active
+- Description: Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.
+- Why it matters: Scientific KG import quality depends on chunk semantics and provenance. If chunking mixes claims, loses table/figure structure, or lacks source traceability, downstream extraction and graph import will create false KG facts.
+- Source: user-directed post-M004 chunking deepening
+- Primary owning slice: M005-dlko4z
+- Validation: A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded.
+- Notes: This extends R027 from graph-readiness research into implementation. The import model must not persist raw text or embeddings in machine logs and must not promote annotations into KG facts without extraction validation.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -320,10 +330,11 @@ This file is the explicit capability and coverage contract for the project.
 | R026 | quality-attribute | active | M004-ubh2pt/pipeline-debug | M004-ubh2pt/S01,S02 | A debug slice produces evidence for each pipeline stage, identifies/fixes zero-chunk conversion behavior or documents exclusions, creates real or explicitly baseline ExtractionPatch outputs, persists SCI KG records for eligible papers, and samples retrieval diagnostics before any 20-document run. |
 | R027 | quality-attribute | active | M004 | none | A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes. |
 | R028 | quality-attribute | active | M004 | none | S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes. |
+| R029 | quality-attribute | active | M005-dlko4z | none | A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded. |
 
 ## Coverage Summary
 
-- Active requirements: 8
-- Mapped to slices: 8
+- Active requirements: 9
+- Mapped to slices: 9
 - Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0
