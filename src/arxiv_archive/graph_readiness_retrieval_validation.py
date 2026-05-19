@@ -82,6 +82,15 @@ class RetrievalFixtureLoadResult:
         }
 
 
+@dataclass(frozen=True)
+class RetrievalValidationResult:
+    """Deterministic exact-ID retrieval validation result."""
+
+    records: list[RetrievalFixtureRecord]
+    events: list[dict[str, Any]]
+    summary: dict[str, Any]
+
+
 def load_retrieval_fixture(path: Path) -> RetrievalFixtureLoadResult:
     """Load S06 persisted candidate claims with strict redaction/provenance validation."""
     records: list[RetrievalFixtureRecord] = []
@@ -105,6 +114,32 @@ def load_retrieval_fixture(path: Path) -> RetrievalFixtureLoadResult:
     return RetrievalFixtureLoadResult(records=records, refusals=refusals)
 
 
+def run_retrieval_validation(claims_path: Path, *, output_dir: Path | None = None) -> RetrievalValidationResult:
+    """Run deterministic exact-ID retrieval validation over S06 trusted records."""
+    load_result = load_retrieval_fixture(claims_path)
+    if load_result.refusals:
+        summary = _retrieval_summary(records=[], events=[], load_refusals=len(load_result.refusals))
+        return RetrievalValidationResult(records=[], events=[], summary=summary)
+
+    records = load_result.records
+    events: list[dict[str, Any]] = []
+    for record in records:
+        events.extend(_query_events_for_record(record, records))
+    summary = _retrieval_summary(records=records, events=events, load_refusals=0)
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "retrieval-validation-results.json").write_text(
+            json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        (output_dir / "retrieval-validation-events.jsonl").write_text(
+            "".join(json.dumps(to_redacted_dict(event), sort_keys=True) + "\n" for event in events),
+            encoding="utf-8",
+        )
+    return RetrievalValidationResult(records=records, events=events, summary=summary)
+
+
 def fixture_load_to_dict(result: RetrievalFixtureLoadResult) -> dict[str, Any]:
     """Serialize loader diagnostics without raw text."""
     return {
@@ -114,6 +149,73 @@ def fixture_load_to_dict(result: RetrievalFixtureLoadResult) -> dict[str, Any]:
         "refusals": [refusal.__dict__ for refusal in result.refusals],
         "raw_text_included": False,
         "embeddings_included": False,
+    }
+
+
+def _query_events_for_record(record: RetrievalFixtureRecord, records: list[RetrievalFixtureRecord]) -> list[dict[str, Any]]:
+    return [
+        _query_event("paper_id", record.paper_id, [item for item in records if item.paper_id == record.paper_id]),
+        _query_event("candidate_id", record.candidate_id, [item for item in records if item.candidate_id == record.candidate_id]),
+        _query_event("chunk_id", record.chunk_id, [item for item in records if item.chunk_id == record.chunk_id]),
+        _query_event(
+            "source_artifact",
+            record.source_artifact,
+            [item for item in records if item.source_artifact == record.source_artifact],
+        ),
+    ]
+
+
+def _query_event(query_type: str, query_value: str, matches: list[RetrievalFixtureRecord]) -> dict[str, Any]:
+    return {
+        "event": "retrieval_validation.query",
+        "query_type": query_type,
+        "query_value": query_value,
+        "hit": bool(matches),
+        "hit_count": len(matches),
+        "returned_candidate_ids": [record.candidate_id for record in matches],
+        "returned_chunk_ids": [record.chunk_id for record in matches],
+        "returned_paper_ids": [record.paper_id for record in matches],
+        "raw_text_included": False,
+        "embeddings_included": False,
+    }
+
+
+def _retrieval_summary(
+    *,
+    records: list[RetrievalFixtureRecord],
+    events: list[dict[str, Any]],
+    load_refusals: int,
+) -> dict[str, Any]:
+    total_queries = len(events)
+    hits = sum(1 for event in events if event["hit"])
+    record_count = len(records)
+    unique_papers = len({record.paper_id for record in records})
+    unique_candidates = len({record.candidate_id for record in records})
+    unique_chunks = len({record.chunk_id for record in records})
+    unique_sources = len({record.source_artifact for record in records})
+    return {
+        "schema_version": "s07-retrieval-validation-results.v1",
+        "retrieval_scope": "s06_validation_subset_exact_id",
+        "record_count": record_count,
+        "load_refusals": load_refusals,
+        "query_count": total_queries,
+        "hit_count": hits,
+        "exact_match_rate": hits / total_queries if total_queries else 0.0,
+        "candidate_coverage": unique_candidates / record_count if record_count else 0.0,
+        "chunk_coverage": unique_chunks / record_count if record_count else 0.0,
+        "paper_coverage": unique_papers / record_count if record_count else 0.0,
+        "source_artifact_coverage": unique_sources / record_count if record_count else 0.0,
+        "raw_text_included": False,
+        "embeddings_included": False,
+        "llm_used": False,
+        "ladybugdb_used": False,
+        "dspy_used": False,
+        "limitations": [
+            "exact_id_metadata_retrieval_only",
+            "no_semantic_similarity",
+            "no_entity_or_relation_retrieval",
+            "no_broad_corpus_claim",
+        ],
     }
 
 
@@ -176,7 +278,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Load and validate S06 trusted-candidate retrieval fixture.")
     parser.add_argument("--claims", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
+    parser.add_argument("--validate-retrieval-output-dir", required=False, type=Path)
     args = parser.parse_args(argv)
+    if args.validate_retrieval_output_dir is not None:
+        validation = run_retrieval_validation(args.claims, output_dir=args.validate_retrieval_output_dir)
+        sys.stdout.write(json.dumps(to_redacted_dict(validation.summary), indent=2, sort_keys=True))
+        sys.stdout.write("\n")
+        return 0 if validation.summary["load_refusals"] == 0 else 1
+
     result = load_retrieval_fixture(args.claims)
     payload = to_redacted_dict(fixture_load_to_dict(result))
     if args.output is not None:

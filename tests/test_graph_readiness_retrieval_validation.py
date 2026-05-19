@@ -6,6 +6,7 @@ from pathlib import Path
 from arxiv_archive.graph_readiness_retrieval_validation import (
     fixture_load_to_dict,
     load_retrieval_fixture,
+    run_retrieval_validation,
 )
 
 
@@ -119,3 +120,56 @@ def test_fixture_load_serialization_is_redacted(tmp_path: Path) -> None:
     assert payload["embeddings_included"] is False
     assert "raw claim text" not in serialized
     assert payload["records"][0]["raw_text_included"] is False
+
+
+def test_run_retrieval_validation_exact_id_queries_cover_fixture_records(tmp_path: Path) -> None:
+    path = tmp_path / "persisted-candidate-claims.jsonl"
+    _write_jsonl(path, [_valid_record(), _valid_record(paper_id="p2", candidate_id="c2", chunk_id="chunk-2")])
+
+    result = run_retrieval_validation(path)
+
+    assert result.summary["record_count"] == 2
+    assert result.summary["query_count"] == 8
+    assert result.summary["hit_count"] == 8
+    assert result.summary["exact_match_rate"] == 1.0
+    assert result.summary["candidate_coverage"] == 1.0
+    assert result.summary["chunk_coverage"] == 1.0
+    assert result.summary["raw_text_included"] is False
+    assert result.summary["embeddings_included"] is False
+    assert result.summary["llm_used"] is False
+    assert result.summary["ladybugdb_used"] is False
+    assert {event["query_type"] for event in result.events} == {"paper_id", "candidate_id", "chunk_id", "source_artifact"}
+    assert all(event["hit"] for event in result.events)
+    assert all(event["raw_text_included"] is False for event in result.events)
+
+
+def test_run_retrieval_validation_writes_results_and_events(tmp_path: Path) -> None:
+    path = tmp_path / "persisted-candidate-claims.jsonl"
+    out = tmp_path / "out"
+    _write_jsonl(path, [_valid_record()])
+
+    result = run_retrieval_validation(path, output_dir=out)
+
+    assert result.summary["record_count"] == 1
+    results_path = out / "retrieval-validation-results.json"
+    events_path = out / "retrieval-validation-events.jsonl"
+    assert results_path.exists()
+    assert events_path.exists()
+    summary = json.loads(results_path.read_text(encoding="utf-8"))
+    assert summary["schema_version"] == "s07-retrieval-validation-results.v1"
+    events_text = events_path.read_text(encoding="utf-8")
+    assert "retrieval_validation.query" in events_text
+    assert "raw claim text" not in events_text
+
+
+def test_run_retrieval_validation_blocks_when_loader_refuses_records(tmp_path: Path) -> None:
+    path = tmp_path / "claims.jsonl"
+    _write_jsonl(path, [_valid_record(source_artifact="")])
+
+    result = run_retrieval_validation(path)
+
+    assert result.records == []
+    assert result.events == []
+    assert result.summary["record_count"] == 0
+    assert result.summary["load_refusals"] == 1
+    assert result.summary["exact_match_rate"] == 0.0
