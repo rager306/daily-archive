@@ -30,7 +30,7 @@ S01 consumes M004/S11 research and R029, then produces the authoritative contrac
   - Files: `.gsd/milestones/M005-dlko4z/slices/S01/import-ready-chunk-contract.md`
   - Verify: test -s .gsd/milestones/M005-dlko4z/slices/S01/import-ready-chunk-contract.md && rg "ImportReadyChunkPackage|GraphReadyChunk|ChunkAnnotation|GraphReadinessState" .gsd/milestones/M005-dlko4z/slices/S01/import-ready-chunk-contract.md
 
-- [ ] **T02: Select representative gold corpus** `est:0.5d`
+- [x] **T02: Select representative gold corpus** `est:0.5d`
   Select the representative gold corpus for chunking/import benchmarks from existing real-paper artifacts. Include target paper IDs, why each paper is selected, expected hard cases, and required artifact paths. Keep this as a manifest, not a broad corpus run.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S01/gold-corpus-manifest.json`, `.gsd/milestones/M005-dlko4z/slices/S01/gold-corpus-rationale.md`
   - Verify: uv run python - <<'PY'
