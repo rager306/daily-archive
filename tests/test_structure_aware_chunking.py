@@ -503,3 +503,79 @@ def test_measurement_records_include_annotation_diagnostics(tmp_path: Path) -> N
     assert record["annotation_counts_by_type"]["structural_type"] >= 1
     assert record["annotation_counts_by_type"]["review_blocker"] >= 1
     assert "Claim-like prose" not in json.dumps(record)
+
+
+def test_annotation_contract_rejects_unresolved_chunk_reference() -> None:
+    package = parse_markdown_structure(
+        "# Paper\n\n## Abstract\n\nClaim-like prose.\n",
+        paper_id="p7",
+        title="Annotation boundary",
+        source_artifact="normalized_markdown:p7",
+    ).to_contract()
+    package = json.loads(json.dumps(package))
+    package["annotations"][0]["chunk_id"] = "p7:missing-chunk"
+
+    validation = validate_import_ready_package(package)
+
+    assert validation.valid_package is False
+    assert "unresolved_annotation_chunk" in validation.refusal_counts
+    assert all("Claim-like prose" not in diagnostic.reason for diagnostic in validation.diagnostics)
+
+
+def test_annotation_contract_rejects_promoted_fact_sidecar() -> None:
+    package = parse_markdown_structure(
+        "# Paper\n\n## Method\n\nMethod prose.\n",
+        paper_id="p8",
+        title="Promoted annotation",
+        source_artifact="normalized_markdown:p8",
+    ).to_contract()
+    package = json.loads(json.dumps(package))
+    package["annotations"][0]["promoted_to_fact"] = True
+
+    validation = validate_import_ready_package(package)
+
+    assert validation.valid_package is False
+    assert validation.refusal_counts["annotation_promoted_to_fact"] == 1
+    assert validation.import_ready is False
+
+
+def test_annotation_contract_rejects_nested_raw_text_leakage() -> None:
+    leaked_value = "This raw sentence must never appear in diagnostics."
+    package = parse_markdown_structure(
+        "# Paper\n\n## Results\n\nResult prose.\n",
+        paper_id="p9",
+        title="Raw annotation",
+        source_artifact="normalized_markdown:p9",
+    ).to_contract()
+    package = json.loads(json.dumps(package))
+    package["annotations"][0]["values"]["raw_text"] = leaked_value
+
+    validation = validate_import_ready_package(package)
+
+    assert validation.valid_package is False
+    assert validation.refusal_counts["raw_text_leakage"] >= 1
+    serialized_diagnostics = json.dumps([diagnostic.__dict__ for diagnostic in validation.diagnostics])
+    assert leaked_value not in serialized_diagnostics
+
+
+def test_annotation_values_do_not_create_import_eligibility() -> None:
+    package = parse_markdown_structure(
+        "# Paper\n\n## Abstract\n\nClaim-like prose.\n",
+        paper_id="p10",
+        title="Annotation eligibility",
+        source_artifact="normalized_markdown:p10",
+    ).to_contract()
+    package = json.loads(json.dumps(package))
+    package["annotations"][0]["values"] = {
+        "route": "claim_extraction",
+        "state": "ok_for_graph",
+        "allowed_uses": ["trusted_kg_import"],
+        "note": "annotation metadata is not chunk authorization",
+    }
+
+    validation = validate_import_ready_package(package)
+
+    assert validation.valid_package is True
+    assert validation.import_eligible_chunk_count == 0
+    assert validation.import_ready is False
+    assert all("trusted_kg_import" not in chunk["allowed_uses"] for chunk in package["chunks"])

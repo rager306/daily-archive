@@ -36,7 +36,7 @@ S04 consumes S03 structure-aware chunk package outputs and emits annotation side
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T03: Validate annotation contract boundaries** `est:medium`
+- [x] **T03: Validate annotation contract boundaries** `est:medium`
   Validate that annotation sidecars satisfy the S01 contract: all chunk references resolve, redaction holds, `promoted_to_fact=false`, and no annotation creates import eligibility. Include negative tests for unresolved chunks, promoted facts, and raw text leakage.
   - Files: `tests/test_structure_aware_chunking.py`, `src/arxiv_archive/structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py

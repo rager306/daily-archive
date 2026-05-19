@@ -535,7 +535,70 @@ def _validate_redaction(payload: dict[str, Any], *, object_id: str | None, objec
             diagnostics.append(ContractDiagnostic(reason="vector_leakage", object_id=object_id, object_type=object_type))
         if redaction.get("secrets_included") is True:
             diagnostics.append(ContractDiagnostic(reason="secret_leakage", object_id=object_id, object_type=object_type))
+    diagnostics.extend(_validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=()))
     return diagnostics
+
+
+def _validate_nested_redaction(
+    value: Any,
+    *,
+    object_id: str | None,
+    object_type: str,
+    path: tuple[str, ...],
+) -> list[ContractDiagnostic]:
+    diagnostics: list[ContractDiagnostic] = []
+    if isinstance(value, dict):
+        forbidden_fields = (
+            FORBIDDEN_RAW_FIELDS
+            | FORBIDDEN_EMBEDDING_FIELDS
+            | FORBIDDEN_VECTOR_FIELDS
+            | FORBIDDEN_SECRET_FIELDS
+            | FORBIDDEN_OPTIMIZER_FIELDS
+        ) & set(value)
+        if path:
+            for field in sorted(forbidden_fields):
+                if field in FORBIDDEN_RAW_FIELDS:
+                    reason = "raw_text_leakage"
+                elif field in FORBIDDEN_EMBEDDING_FIELDS:
+                    reason = "embedding_leakage"
+                elif field in FORBIDDEN_VECTOR_FIELDS:
+                    reason = "vector_leakage"
+                elif field in FORBIDDEN_SECRET_FIELDS:
+                    reason = "secret_leakage"
+                else:
+                    reason = "optimizer_trace_leakage"
+                diagnostics.append(
+                    ContractDiagnostic(
+                        reason=reason,
+                        object_id=_redaction_path(object_id=object_id, object_type=object_type, path=(*path, str(field))),
+                        object_type=object_type,
+                    )
+                )
+        for key, nested_value in value.items():
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(key)),
+                )
+            )
+    elif isinstance(value, list):
+        for index, nested_value in enumerate(value):
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(index)),
+                )
+            )
+    return diagnostics
+
+
+def _redaction_path(*, object_id: str | None, object_type: str, path: tuple[str, ...]) -> str:
+    prefix = object_id or object_type
+    return f"{prefix}:{'.'.join(path)}"
 
 
 def _required_fields(
