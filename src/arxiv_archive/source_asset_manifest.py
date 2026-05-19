@@ -9,7 +9,11 @@ facts.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from hashlib import sha256
+from pathlib import Path
+from shutil import copy2
 from typing import Any, Literal
 
 SCHEMA_VERSION = "m005-source-asset-manifest.v1"
@@ -50,6 +54,24 @@ def _redaction_flags() -> dict[str, bool]:
         "secrets_included": False,
         "optimizer_traces_included": False,
     }
+
+
+@dataclass(frozen=True)
+class SourceAssetRunResult:
+    """Run-level result for deterministic source artifact preservation."""
+
+    manifests: tuple[dict[str, Any], ...]
+    summary: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class SourceArtifactCandidate:
+    """One candidate source path resolved from a gold-corpus paper entry."""
+
+    source_role: SourceRole
+    path: Path | None
+    original_reference: str
+    missing_code: str | None = None
 
 
 @dataclass(frozen=True)
@@ -251,6 +273,93 @@ class SourceAssetManifest:
         }
 
 
+def preserve_source_assets_for_paper(
+    paper: dict[str, Any],
+    *,
+    workspace_root: Path,
+    run_id: str = "m005-s05-source-assets",
+) -> SourceAssetManifest:
+    """Copy one paper's source PDF/Markdown artifacts into a deterministic workspace."""
+    paper_id = str(paper["paper_id"])
+    paper_workspace = Path(workspace_root) / "papers" / paper_id
+    source_workspace = paper_workspace / "source"
+    source_workspace.mkdir(parents=True, exist_ok=True)
+    preserved: list[PreservedSourceFile] = []
+    warnings: list[str] = []
+    for candidate in _source_candidates_for_paper(paper):
+        if candidate.path is None:
+            if candidate.missing_code is not None:
+                warnings.append(candidate.missing_code)
+            continue
+        stable_name = _stable_source_name(source_role=candidate.source_role, source_path=candidate.path)
+        workspace_path = source_workspace / stable_name
+        copy2(candidate.path, workspace_path)
+        preserved.append(
+            PreservedSourceFile(
+                source_file_id=f"{paper_id}:source:{candidate.source_role}",
+                paper_id=paper_id,
+                source_role=candidate.source_role,
+                original_path=str(candidate.path),
+                workspace_path=str(workspace_path),
+                sha256=_sha256_file(workspace_path),
+                byte_size=workspace_path.stat().st_size,
+                media_type=_media_type_for_path(workspace_path),
+                provenance={
+                    "source": "gold_manifest_required_path",
+                    "original_reference": candidate.original_reference,
+                    "preservation_method": "copy2",
+                },
+            )
+        )
+    return SourceAssetManifest(
+        paper_id=paper_id,
+        workspace_root=str(paper_workspace),
+        source_files=tuple(preserved),
+        assets=(),
+        run_id=run_id,
+        warnings=tuple(sorted(set(warnings))),
+    )
+
+
+def preserve_source_assets_manifest(
+    manifest_path: Path,
+    *,
+    output_dir: Path,
+    run_id: str = "m005-s05-source-assets",
+) -> SourceAssetRunResult:
+    """Preserve source artifacts for all papers in a gold-corpus manifest."""
+    manifest = _load_json(manifest_path)
+    output_dir = Path(output_dir)
+    manifests = tuple(
+        preserve_source_assets_for_paper(paper, workspace_root=output_dir, run_id=run_id).to_contract()
+        for paper in manifest.get("papers", [])
+        if isinstance(paper, dict)
+    )
+    return SourceAssetRunResult(manifests=manifests, summary=_summary_for_manifests(manifests, source_manifest=manifest_path))
+
+
+def write_source_asset_run(result: SourceAssetRunResult, output_dir: Path) -> None:
+    """Write redacted source preservation run artifacts."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "source-preservation-summary.json").write_text(
+        _json_dumps(result.summary),
+        encoding="utf-8",
+    )
+    (output_dir / "source-asset-summary.json").write_text(
+        _json_dumps(result.summary),
+        encoding="utf-8",
+    )
+    (output_dir / "source-asset-package-diagnostics.jsonl").write_text(
+        "".join(json.dumps(_manifest_to_record(manifest), sort_keys=True) + "\n" for manifest in result.manifests),
+        encoding="utf-8",
+    )
+    manifests_dir = output_dir / "manifests"
+    manifests_dir.mkdir(parents=True, exist_ok=True)
+    for manifest in result.manifests:
+        (manifests_dir / f"{manifest['paper_id']}-source-assets.json").write_text(_json_dumps(manifest), encoding="utf-8")
+
+
 def validate_source_asset_manifest(manifest: dict[str, Any]) -> AssetValidationResult:
     """Validate a redacted source asset manifest without reading referenced files."""
     diagnostics: list[AssetDiagnostic] = []
@@ -405,6 +514,152 @@ def _diagnostics_for_manifest(
         "ladybugdb_written": False,
         "production_import_attempted": False,
     }
+
+
+def _source_candidates_for_paper(paper: dict[str, Any]) -> tuple[SourceArtifactCandidate, ...]:
+    paper_id = str(paper["paper_id"])
+    explicit_paths = [Path(str(path)) for path in paper.get("required_paths", [])]
+    markdown_path = _first_existing(
+        [
+            path if path.name in {"full_text.md", f"{paper_id}.md"} else path / "full_text.md"
+            for path in explicit_paths
+        ]
+        + [Path("/root/.research/papers") / paper_id / "full_text.md", Path("/root/.arxiv_cache") / f"{paper_id}.md"]
+    )
+    pdf_path = _first_existing(
+        [path if path.suffix.lower() == ".pdf" else path / f"{paper_id}.pdf" for path in explicit_paths]
+        + [Path("/root/.arxiv_cache") / f"{paper_id}.pdf"]
+    )
+    return (
+        SourceArtifactCandidate(
+            source_role="normalized_markdown",
+            path=markdown_path,
+            original_reference=str(markdown_path) if markdown_path is not None else f"normalized_markdown:{paper_id}",
+            missing_code=None if markdown_path is not None else "missing_normalized_markdown",
+        ),
+        SourceArtifactCandidate(
+            source_role="original_pdf",
+            path=pdf_path,
+            original_reference=str(pdf_path) if pdf_path is not None else f"original_pdf:{paper_id}",
+            missing_code=None if pdf_path is not None else "missing_original_pdf",
+        ),
+    )
+
+
+def _first_existing(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if path.is_file():
+            return path
+    return None
+
+
+def _stable_source_name(*, source_role: SourceRole, source_path: Path) -> str:
+    if source_role == "original_pdf":
+        return "original.pdf"
+    if source_role == "normalized_markdown":
+        return "normalized.md"
+    suffix = source_path.suffix or ".bin"
+    return f"derived{suffix}"
+
+
+def _sha256_file(path: Path) -> str:
+    digest = sha256()
+    with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _media_type_for_path(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return "application/pdf"
+    if suffix in {".md", ".markdown"}:
+        return "text/markdown"
+    if suffix == ".json":
+        return "application/json"
+    return "application/octet-stream"
+
+
+def _summary_for_manifests(manifests: tuple[dict[str, Any], ...], *, source_manifest: Path) -> dict[str, Any]:
+    source_file_count = sum(len(manifest.get("source_files", [])) for manifest in manifests)
+    missing_counts: dict[str, int] = {}
+    media_type_counts: dict[str, int] = {}
+    hash_count = 0
+    for manifest in manifests:
+        for warning in manifest.get("warnings", []):
+            if isinstance(warning, dict):
+                key = str(warning.get("code"))
+                missing_counts[key] = missing_counts.get(key, 0) + 1
+        for source_file in manifest.get("source_files", []):
+            if not isinstance(source_file, dict):
+                continue
+            media_type = str(source_file.get("media_type"))
+            media_type_counts[media_type] = media_type_counts.get(media_type, 0) + 1
+            if _valid_sha256(source_file.get("sha256")):
+                hash_count += 1
+    return {
+        "schema_version": "m005-source-preservation-run.v1",
+        "source_manifest": str(source_manifest),
+        "paper_count": len(manifests),
+        "valid_manifest_count": sum(1 for manifest in manifests if validate_source_asset_manifest(manifest).valid_manifest),
+        "source_file_count": source_file_count,
+        "hash_coverage_rate": hash_count / source_file_count if source_file_count else 0.0,
+        "media_type_counts": dict(sorted(media_type_counts.items())),
+        "missing_counts": dict(sorted(missing_counts.items())),
+        "raw_text_included": False,
+        "chunk_text_included": False,
+        "raw_binary_included": False,
+        "base64_included": False,
+        "embeddings_included": False,
+        "vectors_included": False,
+        "secrets_included": False,
+        "ladybugdb_written": False,
+        "production_import_attempted": False,
+    }
+
+
+def _manifest_to_record(manifest: dict[str, Any]) -> dict[str, Any]:
+    validation = validate_source_asset_manifest(manifest)
+    diagnostics = manifest.get("diagnostics", {})
+    return {
+        "schema_version": "m005-source-asset-package-diagnostic.v1",
+        "paper_id": manifest.get("paper_id"),
+        "valid_manifest": validation.valid_manifest,
+        "source_file_count": len(manifest.get("source_files", [])),
+        "asset_count": len(manifest.get("assets", [])),
+        "hash_coverage_rate": diagnostics.get("hash_coverage_rate"),
+        "source_files": [
+            {
+                "source_file_id": source_file.get("source_file_id"),
+                "source_role": source_file.get("source_role"),
+                "workspace_path": source_file.get("workspace_path"),
+                "sha256": source_file.get("sha256"),
+                "byte_size": source_file.get("byte_size"),
+                "media_type": source_file.get("media_type"),
+            }
+            for source_file in manifest.get("source_files", [])
+            if isinstance(source_file, dict)
+        ],
+        "warning_counts": diagnostics.get("warning_counts", {}),
+        "raw_text_included": False,
+        "chunk_text_included": False,
+        "raw_binary_included": False,
+        "base64_included": False,
+        "embeddings_included": False,
+        "vectors_included": False,
+        "secrets_included": False,
+        "ladybugdb_written": False,
+        "production_import_attempted": False,
+    }
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _json_dumps(value: Any) -> str:
+    return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
 def _validate_redaction(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[AssetDiagnostic]:

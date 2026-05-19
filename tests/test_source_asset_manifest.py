@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from arxiv_archive.source_asset_manifest import (
     AssetRecord,
     PreservedSourceFile,
     SourceAssetManifest,
     SourceSpan,
+    preserve_source_assets_for_paper,
+    preserve_source_assets_manifest,
     validate_source_asset_manifest,
+    write_source_asset_run,
 )
 
 VALID_SHA = "a" * 64
@@ -193,3 +197,82 @@ def test_manifest_rejects_unsafe_diagnostic_flags() -> None:
     assert validation.valid_manifest is False
     assert validation.refusal_counts["unsafe_base64_included"] == 1
     assert validation.refusal_counts["unsafe_raw_binary_included"] == 1
+
+
+def test_preserve_source_assets_for_paper_copies_markdown_and_pdf(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "paper"
+    paper_dir.mkdir()
+    markdown = paper_dir / "full_text.md"
+    pdf = paper_dir / "p1.pdf"
+    markdown.write_text("# Paper\n\nBody text stays in copied file only.\n", encoding="utf-8")
+    pdf.write_bytes(b"%PDF-1.4\nfixture\n")
+
+    manifest = preserve_source_assets_for_paper(
+        {"paper_id": "p1", "required_paths": [str(paper_dir)]},
+        workspace_root=tmp_path / "out",
+    ).to_contract()
+    validation = validate_source_asset_manifest(manifest)
+
+    assert validation.valid_manifest is True
+    assert manifest["diagnostics"]["source_file_count"] == 2
+    assert manifest["diagnostics"]["hash_coverage_rate"] == 1.0
+    roles = {source_file["source_role"] for source_file in manifest["source_files"]}
+    assert roles == {"original_pdf", "normalized_markdown"}
+    for source_file in manifest["source_files"]:
+        preserved_path = Path(source_file["workspace_path"])
+        assert preserved_path.exists()
+        assert len(source_file["sha256"]) == 64
+        assert source_file["byte_size"] == preserved_path.stat().st_size
+    serialized = json.dumps(manifest)
+    assert "Body text stays" not in serialized
+    assert "%PDF" not in serialized
+
+
+def test_preserve_source_assets_for_paper_records_missing_sources(tmp_path: Path) -> None:
+    manifest = preserve_source_assets_for_paper(
+        {"paper_id": "missing", "required_paths": [str(tmp_path / "does-not-exist")]},
+        workspace_root=tmp_path / "out",
+    ).to_contract()
+    validation = validate_source_asset_manifest(manifest)
+
+    assert validation.valid_manifest is True
+    assert manifest["source_files"] == []
+    assert manifest["diagnostics"]["source_file_count"] == 0
+    assert manifest["diagnostics"]["hash_coverage_rate"] == 0.0
+    assert manifest["diagnostics"]["warning_counts"] == {
+        "missing_normalized_markdown": 1,
+        "missing_original_pdf": 1,
+    }
+
+
+def test_preserve_source_assets_manifest_writes_redacted_run_artifacts(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "paper"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\nRaw markdown content.\n", encoding="utf-8")
+    (paper_dir / "p2.pdf").write_bytes(b"%PDF fixture")
+    manifest_path = tmp_path / "gold.json"
+    manifest_path.write_text(
+        json.dumps({"papers": [{"paper_id": "p2", "required_paths": [str(paper_dir)]}]}),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    result = preserve_source_assets_manifest(manifest_path, output_dir=out)
+    write_source_asset_run(result, out)
+
+    summary = json.loads((out / "source-preservation-summary.json").read_text(encoding="utf-8"))
+    diagnostics = [json.loads(line) for line in (out / "source-asset-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    per_paper_manifest = json.loads((out / "manifests" / "p2-source-assets.json").read_text(encoding="utf-8"))
+    assert summary["paper_count"] == 1
+    assert summary["valid_manifest_count"] == 1
+    assert summary["source_file_count"] == 2
+    assert summary["hash_coverage_rate"] == 1.0
+    assert diagnostics[0]["valid_manifest"] is True
+    assert diagnostics[0]["source_file_count"] == 2
+    assert validate_source_asset_manifest(per_paper_manifest).valid_manifest is True
+    serialized = json.dumps({"summary": summary, "diagnostics": diagnostics, "manifest": per_paper_manifest})
+    assert "Raw markdown content" not in serialized
+    assert "%PDF fixture" not in serialized
+    assert summary["raw_binary_included"] is False
+    assert summary["base64_included"] is False
+    assert summary["production_import_attempted"] is False
