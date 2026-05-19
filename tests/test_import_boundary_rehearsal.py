@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from arxiv_archive.import_boundary_rehearsal import (
@@ -8,6 +9,7 @@ from arxiv_archive.import_boundary_rehearsal import (
     ImportCandidate,
     build_import_boundary_rehearsal_from_benchmark,
     validate_import_boundary_rehearsal,
+    write_import_boundary_rehearsal_run,
 )
 
 
@@ -171,6 +173,31 @@ def test_build_import_boundary_rehearsal_preserves_missing_source_caveats() -> N
     assert "missing_original_pdf:16" in contract["caveats"]
 
 
+
+def test_write_import_boundary_rehearsal_run_writes_summary_and_diagnostics(tmp_path: Path) -> None:
+    paths = write_import_boundary_rehearsal_run(
+        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
+        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+        output_dir=tmp_path,
+    )
+
+    summary = json.loads(paths["summary_path"].read_text(encoding="utf-8"))
+    diagnostics = [json.loads(line) for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()]
+
+    assert paths["summary_path"].name == "import-boundary-summary.json"
+    assert paths["diagnostics_path"].name == "import-boundary-diagnostics.jsonl"
+    assert "candidates" not in summary
+    assert summary["candidate_count"] == 2471
+    assert summary["accepted_count"] == 0
+    assert summary["rejected_count"] == 2471
+    assert summary["production_import_attempted"] is False
+    assert summary["ladybugdb_written"] is False
+    assert len(diagnostics) == 2471
+    assert diagnostics[0]["accepted"] is False
+    assert diagnostics[0]["rejected"] is True
+    assert diagnostics[0]["raw_text_included"] is False
+
+
 def test_validate_import_boundary_rehearsal_requires_rejected_candidate_refusal_reason() -> None:
     contract = _rehearsal(_candidate(refusal_reasons=()))
 
@@ -178,4 +205,5 @@ def test_validate_import_boundary_rehearsal_requires_rejected_candidate_refusal_
 
     assert validation.valid_rehearsal is False
     assert validation.refusal_counts["rejected_candidate_missing_refusal"] == 1
+
 

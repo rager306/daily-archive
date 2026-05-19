@@ -35,7 +35,7 @@ S07 consumes S06 benchmark evidence plus S03/S04/S05 package/annotation/asset ar
   - Files: `src/arxiv_archive/import_boundary_rehearsal.py`, `tests/test_import_boundary_rehearsal.py`
   - Verify: uv run pytest tests/test_import_boundary_rehearsal.py tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/import_boundary_rehearsal.py tests/test_import_boundary_rehearsal.py
 
-- [ ] **T03: Run negative import boundary rehearsal** `est:medium`
+- [x] **T03: Run negative import boundary rehearsal** `est:medium`
   Run the negative isolated import rehearsal over current M005 artifacts and write redacted run summary plus rejection diagnostics. Confirm accepted imports are zero, rejected candidates match benchmark counts, and all no-write safety flags remain false.
   - Files: `src/arxiv_archive/import_boundary_rehearsal.py`, `.gsd/milestones/M005-dlko4z/slices/S07/run-evidence/import-boundary-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S07/run-evidence/import-boundary-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_import_boundary_rehearsal.py tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S07/run-evidence/import-boundary-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S07/run-evidence/import-boundary-diagnostics.jsonl

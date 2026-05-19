@@ -189,6 +189,35 @@ def build_import_boundary_rehearsal_from_benchmark(
     return rehearsal
 
 
+def write_import_boundary_rehearsal_run(
+    *,
+    summary_path: str | Path,
+    diagnostics_path: str | Path,
+    output_dir: str | Path,
+    rehearsal_id: str = "m005-s07-negative-import-boundary",
+) -> dict[str, Path]:
+    """Write redacted negative import-boundary summary and candidate diagnostics."""
+    rehearsal = build_import_boundary_rehearsal_from_benchmark(
+        summary_path=summary_path,
+        diagnostics_path=diagnostics_path,
+        rehearsal_id=rehearsal_id,
+    )
+    validation = validate_import_boundary_rehearsal(rehearsal)
+    if not validation.valid_rehearsal:
+        reasons = ", ".join(validation.refusal_counts)
+        raise ValueError(f"Invalid import-boundary rehearsal artifact: {reasons}")
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    summary_record = {key: value for key, value in rehearsal.items() if key != "candidates"}
+    summary_file = destination / "import-boundary-summary.json"
+    diagnostics_file = destination / "import-boundary-diagnostics.jsonl"
+    summary_file.write_text(json.dumps(summary_record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with diagnostics_file.open("w", encoding="utf-8") as handle:
+        for candidate in rehearsal["candidates"]:
+            handle.write(json.dumps(candidate, sort_keys=True, separators=(",", ":")) + "\n")
+    return {"summary_path": summary_file, "diagnostics_path": diagnostics_file}
+
+
 def validate_import_boundary_rehearsal(rehearsal: dict[str, Any]) -> RehearsalValidationResult:
     """Validate negative import-boundary evidence and redaction/no-write invariants."""
     diagnostics: list[RehearsalDiagnostic] = []
