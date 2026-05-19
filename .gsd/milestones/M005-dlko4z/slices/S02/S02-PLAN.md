@@ -35,7 +35,7 @@ S02 consumes S01 contract, gold corpus, and validator. It produces baseline diag
   - Files: `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-package-diagnostics.jsonl`, `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-summary.json`
   - Verify: uv run python -m arxiv_archive.chunk_baseline_measurement --manifest .gsd/milestones/M005-dlko4z/slices/S01/gold-corpus-manifest.json --output-dir .gsd/milestones/M005-dlko4z/slices/S02/run-evidence && test -s .gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-package-diagnostics.jsonl
 
-- [ ] **T03: Create baseline review samples** `est:0.5d`
+- [x] **T03: Create baseline review samples** `est:0.5d`
   Generate bounded review samples for the six-paper inner review minimum where artifacts are available, and explicit blocker records where they are not. Review samples may include bounded snippets only in markdown review artifacts; machine JSON/JSONL diagnostics must remain redacted.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S02/review/baseline-review-samples.md`, `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/review-sample-index.json`
   - Verify: test -s .gsd/milestones/M005-dlko4z/slices/S02/review/baseline-review-samples.md && uv run python - <<'PY'

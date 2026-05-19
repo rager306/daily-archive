@@ -7,6 +7,7 @@ from arxiv_archive.chunk_baseline_measurement import (
     build_baseline_package,
     measure_manifest,
     write_baseline_run,
+    write_review_samples,
 )
 from arxiv_archive.chunk_import_contract import validate_import_ready_package
 
@@ -118,3 +119,30 @@ def test_write_baseline_run_outputs_summary_and_jsonl(tmp_path: Path) -> None:
     assert record["embeddings_included"] is False
     assert record["refusal_counts"] == {"baseline_retrieval_only_not_import_ready": 1}
     assert "Substantive body" not in json.dumps(record)
+
+
+def test_write_review_samples_separates_markdown_snippets_from_machine_index(tmp_path: Path) -> None:
+    paper = _paper(
+        tmp_path,
+        paper_id="p1",
+        full_text="# Title\n\n## Body\n\nThis bounded snippet should appear only in markdown review samples.",
+    )
+    manifest = _manifest(tmp_path, [paper])
+    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+    manifest_payload["inner_review_minimum"] = ["p1", "p2"]
+    manifest.write_text(json.dumps(manifest_payload), encoding="utf-8")
+    result = measure_manifest(manifest)
+    review_path = tmp_path / "review.md"
+    index_path = tmp_path / "index.json"
+
+    write_review_samples(result, manifest, review_path=review_path, index_path=index_path)
+
+    review_text = review_path.read_text(encoding="utf-8")
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    serialized_index = json.dumps(index)
+    assert "This bounded snippet" in review_text
+    assert "This bounded snippet" not in serialized_index
+    assert index["schema_version"] == "m005-baseline-review-sample-index.v1"
+    assert index["raw_text_in_machine_logs"] is False
+    assert index["records"][0]["status"] == "sampled"
+    assert index["records"][1]["status"] == "blocked"
