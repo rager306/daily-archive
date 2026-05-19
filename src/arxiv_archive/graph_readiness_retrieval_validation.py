@@ -140,6 +140,52 @@ def run_retrieval_validation(claims_path: Path, *, output_dir: Path | None = Non
     return RetrievalValidationResult(records=records, events=events, summary=summary)
 
 
+def run_exclusion_checks(
+    *,
+    claims_path: Path,
+    refusals_path: Path,
+    output_path: Path | None = None,
+) -> dict[str, Any]:
+    """Verify refused entries are absent from the retrieval fixture records."""
+    load_result = load_retrieval_fixture(claims_path)
+    persisted_candidate_ids = {record.candidate_id for record in load_result.records}
+    persisted_entry_ids = {record.entry_id for record in load_result.records}
+    persisted_chunk_ids = {record.chunk_id for record in load_result.records}
+    refused = _load_refused_entries(refusals_path)
+    forbidden_hits = []
+    for item in refused:
+        entry_id = item.get("entry_id")
+        candidate_id = item.get("candidate_id")
+        chunk_id = item.get("chunk_id")
+        if entry_id and entry_id in persisted_entry_ids:
+            forbidden_hits.append({"match_type": "entry_id", **item})
+        if candidate_id and candidate_id in persisted_candidate_ids:
+            forbidden_hits.append({"match_type": "candidate_id", **item})
+        if not candidate_id and chunk_id and chunk_id in persisted_chunk_ids:
+            forbidden_hits.append({"match_type": "chunk_id", **item})
+    by_reason: dict[str, int] = {}
+    for item in refused:
+        reason = str(item.get("reason", "unknown"))
+        by_reason[reason] = by_reason.get(reason, 0) + 1
+    payload = {
+        "schema_version": "s07-retrieval-exclusion-checks.v1",
+        "retrieval_scope": "s06_validation_subset_exact_id",
+        "persisted_record_count": len(load_result.records),
+        "refused_entry_count": len(refused),
+        "refusal_counts": by_reason,
+        "forbidden_hit_count": len(forbidden_hits),
+        "forbidden_hits": forbidden_hits,
+        "passed": not forbidden_hits and not load_result.refusals,
+        "raw_text_included": False,
+        "embeddings_included": False,
+    }
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8")
+    return payload
+
+
 def fixture_load_to_dict(result: RetrievalFixtureLoadResult) -> dict[str, Any]:
     """Serialize loader diagnostics without raw text."""
     return {
@@ -219,6 +265,22 @@ def _retrieval_summary(
     }
 
 
+def _load_refused_entries(refusals_path: Path) -> list[dict[str, Any]]:
+    payload = json.loads(Path(refusals_path).read_text(encoding="utf-8"))
+    grouped = payload.get("refusals_by_reason", {})
+    entries: list[dict[str, Any]] = []
+    if isinstance(grouped, dict):
+        for reason, items in grouped.items():
+            if not isinstance(items, list):
+                continue
+            for raw_item in items:
+                if isinstance(raw_item, dict):
+                    item = dict(raw_item)
+                    item.setdefault("reason", reason)
+                    entries.append(item)
+    return entries
+
+
 def _record_refusal_reason(payload: dict[str, Any]) -> str | None:
     forbidden_present = FORBIDDEN_RAW_TEXT_FIELDS & set(payload)
     if forbidden_present:
@@ -279,7 +341,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--claims", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
     parser.add_argument("--validate-retrieval-output-dir", required=False, type=Path)
+    parser.add_argument("--refusals", required=False, type=Path)
+    parser.add_argument("--exclusion-output", required=False, type=Path)
     args = parser.parse_args(argv)
+    if args.exclusion_output is not None:
+        if args.refusals is None:
+            parser.error("--refusals is required with --exclusion-output")
+        exclusions = run_exclusion_checks(
+            claims_path=args.claims,
+            refusals_path=args.refusals,
+            output_path=args.exclusion_output,
+        )
+        sys.stdout.write(json.dumps(to_redacted_dict({"passed": exclusions["passed"], "forbidden_hit_count": exclusions["forbidden_hit_count"]}), indent=2, sort_keys=True))
+        sys.stdout.write("\n")
+        return 0 if exclusions["passed"] else 1
     if args.validate_retrieval_output_dir is not None:
         validation = run_retrieval_validation(args.claims, output_dir=args.validate_retrieval_output_dir)
         sys.stdout.write(json.dumps(to_redacted_dict(validation.summary), indent=2, sort_keys=True))

@@ -6,6 +6,7 @@ from pathlib import Path
 from arxiv_archive.graph_readiness_retrieval_validation import (
     fixture_load_to_dict,
     load_retrieval_fixture,
+    run_exclusion_checks,
     run_retrieval_validation,
 )
 
@@ -173,3 +174,81 @@ def test_run_retrieval_validation_blocks_when_loader_refuses_records(tmp_path: P
     assert result.summary["record_count"] == 0
     assert result.summary["load_refusals"] == 1
     assert result.summary["exact_match_rate"] == 0.0
+
+
+def _write_refusals(path: Path, refusals_by_reason: dict[str, list[dict[str, object]]]) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "s06-persistence-refusals.v1",
+                "refusals_by_reason": refusals_by_reason,
+                "raw_text_included": False,
+                "embeddings_included": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_run_exclusion_checks_pass_when_refused_entries_are_absent(tmp_path: Path) -> None:
+    claims_path = tmp_path / "claims.jsonl"
+    refusals_path = tmp_path / "refusals.json"
+    output_path = tmp_path / "exclusions.json"
+    _write_jsonl(claims_path, [_valid_record(candidate_id="allowed", chunk_id="allowed-chunk")])
+    _write_refusals(
+        refusals_path,
+        {
+            "final_eligibility_repair_required": [
+                {"paper_id": "p1", "candidate_id": "blocked", "chunk_id": "blocked-chunk"}
+            ]
+        },
+    )
+
+    payload = run_exclusion_checks(claims_path=claims_path, refusals_path=refusals_path, output_path=output_path)
+
+    assert output_path.exists()
+    assert payload["passed"] is True
+    assert payload["forbidden_hit_count"] == 0
+    assert payload["persisted_record_count"] == 1
+    assert payload["refused_entry_count"] == 1
+    assert payload["refusal_counts"] == {"final_eligibility_repair_required": 1}
+    assert payload["raw_text_included"] is False
+
+
+def test_run_exclusion_checks_fails_when_refused_candidate_is_persisted(tmp_path: Path) -> None:
+    claims_path = tmp_path / "claims.jsonl"
+    refusals_path = tmp_path / "refusals.json"
+    _write_jsonl(claims_path, [_valid_record(candidate_id="blocked", chunk_id="allowed-chunk")])
+    _write_refusals(
+        refusals_path,
+        {
+            "final_eligibility_repair_required": [
+                {"paper_id": "p1", "candidate_id": "blocked", "chunk_id": "blocked-chunk"}
+            ]
+        },
+    )
+
+    payload = run_exclusion_checks(claims_path=claims_path, refusals_path=refusals_path)
+
+    assert payload["passed"] is False
+    assert payload["forbidden_hit_count"] == 1
+    assert payload["forbidden_hits"][0]["match_type"] == "candidate_id"
+
+
+def test_run_exclusion_checks_allows_refused_sibling_candidate_from_same_chunk(tmp_path: Path) -> None:
+    claims_path = tmp_path / "claims.jsonl"
+    refusals_path = tmp_path / "refusals.json"
+    _write_jsonl(claims_path, [_valid_record(candidate_id="allowed", chunk_id="shared-chunk")])
+    _write_refusals(
+        refusals_path,
+        {
+            "final_eligibility_repair_required": [
+                {"paper_id": "p1", "candidate_id": "blocked", "chunk_id": "shared-chunk"}
+            ]
+        },
+    )
+
+    payload = run_exclusion_checks(claims_path=claims_path, refusals_path=refusals_path)
+
+    assert payload["passed"] is True
+    assert payload["forbidden_hit_count"] == 0
