@@ -9,15 +9,21 @@ not emitted.
 
 from __future__ import annotations
 
+import argparse
+import json
 import re
+import sys
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from arxiv_archive.chunk_import_contract import (
     EXPECTED_CONTRACT_VERSION,
     EXPECTED_SCHEMA_VERSION,
     RETRIEVAL_ONLY_STATE,
+    validate_import_ready_package,
+    validation_to_dict,
 )
 
 CoordinateSpace = Literal["normalized_markdown"]
@@ -55,6 +61,23 @@ _TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?
 _FIGURE_RE = re.compile(r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE)
 _EQUATION_RE = re.compile(r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)")
 _REFERENCE_HEADING_RE = re.compile(r"^(references|bibliography|works cited)$", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class StructureAwareMeasurement:
+    """One paper's structure-aware package and validation result."""
+
+    paper_id: str
+    package: dict[str, Any]
+    validation: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class StructureAwareRunResult:
+    """Aggregate dry-run result for structure-aware packages."""
+
+    measurements: tuple[StructureAwareMeasurement, ...]
+    summary: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -170,6 +193,7 @@ class StructureAwarePackage:
     paper_id: str
     title: str | None
     source_artifact: str
+    categories: tuple[str, ...] = ()
     elements: tuple[StructuralElement, ...] = field(default_factory=tuple)
     chunks: tuple[StructureAwareChunk, ...] = field(default_factory=tuple)
     run_id: str = "m005-s03-structure-aware"
@@ -189,7 +213,7 @@ class StructureAwarePackage:
             "paper": {
                 "paper_id": self.paper_id,
                 "title": self.title,
-                "categories": [],
+                "categories": list(self.categories),
                 "source_artifacts": [self.source_artifact],
             },
             "conversion": {
@@ -216,6 +240,7 @@ def parse_markdown_structure(
     paper_id: str,
     title: str | None,
     source_artifact: str,
+    categories: tuple[str, ...] = (),
     run_id: str = "m005-s03-structure-aware",
 ) -> StructureAwarePackage:
     """Parse canonical normalized Markdown into structural elements with absolute spans.
@@ -295,6 +320,7 @@ def parse_markdown_structure(
         paper_id=paper_id,
         title=title,
         source_artifact=source_artifact,
+        categories=categories,
         elements=tuple(elements),
         chunks=tuple(_chunk_from_element(element, source_artifact=source_artifact) for element in elements if element.element_type != "document"),
         run_id=run_id,
@@ -349,6 +375,7 @@ def empty_structure_aware_package(
     title: str | None,
     markdown_length: int,
     source_artifact: str,
+    categories: tuple[str, ...] = (),
     run_id: str = "m005-s03-structure-aware",
 ) -> StructureAwarePackage:
     """Create a redacted package skeleton anchored to normalized Markdown length."""
@@ -366,10 +393,171 @@ def empty_structure_aware_package(
         paper_id=paper_id,
         title=title,
         source_artifact=source_artifact,
+        categories=categories,
         elements=(root,),
         chunks=(),
         run_id=run_id,
     )
+
+
+def measure_structure_aware_manifest(manifest_path: Path) -> StructureAwareRunResult:
+    """Build and validate redacted structure-aware packages for a gold manifest."""
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    run_id = f"m005-s03-structure-aware:{manifest.get('milestone', 'unknown')}"
+    measurements: list[StructureAwareMeasurement] = []
+    for paper in manifest.get("papers", []):
+        if not isinstance(paper, dict):
+            continue
+        package = build_structure_aware_package_for_paper(paper, run_id=run_id).to_contract()
+        validation = validation_to_dict(validate_import_ready_package(package))
+        measurements.append(StructureAwareMeasurement(paper_id=str(package["paper_id"]), package=package, validation=validation))
+    return StructureAwareRunResult(measurements=tuple(measurements), summary=_summary_for_measurements(measurements))
+
+
+def build_structure_aware_package_for_paper(paper: dict[str, Any], *, run_id: str) -> StructureAwarePackage:
+    """Build a structure-aware package for one manifest paper without leaking text."""
+    paper_id = str(paper["paper_id"])
+    source_path = _select_full_text_path(paper)
+    source_artifact = _source_artifact_for_paper(paper, source_path=source_path)
+    categories = tuple(str(category) for category in paper.get("categories", []) if isinstance(category, str))
+    if source_path is None:
+        return empty_structure_aware_package(
+            paper_id=paper_id,
+            title=_string_or_none(paper.get("title")),
+            markdown_length=0,
+            source_artifact=source_artifact,
+            categories=categories,
+            run_id=run_id,
+        )
+    markdown = source_path.read_text(encoding="utf-8")
+    return parse_markdown_structure(
+        markdown,
+        paper_id=paper_id,
+        title=_string_or_none(paper.get("title")),
+        source_artifact=source_artifact,
+        categories=categories,
+        run_id=run_id,
+    )
+
+
+def write_structure_aware_run(result: StructureAwareRunResult, output_dir: Path) -> None:
+    """Write redacted structure-aware summary and package diagnostics."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "structure-aware-summary.json").write_text(
+        json.dumps(result.summary, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    (output_dir / "structure-aware-package-diagnostics.jsonl").write_text(
+        "".join(json.dumps(_measurement_to_record(measurement), sort_keys=True) + "\n" for measurement in result.measurements),
+        encoding="utf-8",
+    )
+
+
+def _measurement_to_record(measurement: StructureAwareMeasurement) -> dict[str, Any]:
+    package = measurement.package
+    diagnostics = package["diagnostics"]
+    return {
+        "schema_version": "m005-structure-aware-package-diagnostic.v1",
+        "paper_id": measurement.paper_id,
+        "valid_package": measurement.validation["valid_package"],
+        "import_ready": measurement.validation["import_ready"],
+        "import_eligible_chunk_count": measurement.validation["import_eligible_chunk_count"],
+        "refused_chunk_count": measurement.validation["refused_chunk_count"],
+        "element_count": len(package["elements"]),
+        "chunk_count": len(package["chunks"]),
+        "counts_by_state": diagnostics["counts_by_state"],
+        "counts_by_route": diagnostics["counts_by_route"],
+        "counts_by_chunk_type": diagnostics["counts_by_chunk_type"],
+        "refusal_counts": diagnostics["refusal_counts"],
+        "source_span_coverage": diagnostics["source_span_coverage"],
+        "parent_reference_resolution_rate": diagnostics["parent_reference_resolution_rate"],
+        "raw_text_included": False,
+        "embeddings_included": False,
+        "ladybugdb_written": False,
+        "production_import_attempted": False,
+    }
+
+
+def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> dict[str, Any]:
+    counts_by_state: dict[str, int] = {}
+    counts_by_route: dict[str, int] = {}
+    counts_by_chunk_type: dict[str, int] = {}
+    refusal_counts: dict[str, int] = {}
+    for measurement in measurements:
+        diagnostics = measurement.package["diagnostics"]
+        _merge_counts(counts_by_state, diagnostics.get("counts_by_state", {}))
+        _merge_counts(counts_by_route, diagnostics.get("counts_by_route", {}))
+        _merge_counts(counts_by_chunk_type, diagnostics.get("counts_by_chunk_type", {}))
+        _merge_counts(refusal_counts, diagnostics.get("refusal_counts", {}))
+    return {
+        "schema_version": "m005-structure-aware-run.v1",
+        "paper_count": len(measurements),
+        "valid_package_count": sum(1 for measurement in measurements if measurement.validation["valid_package"]),
+        "import_ready_count": sum(1 for measurement in measurements if measurement.validation["import_ready"]),
+        "import_eligible_chunk_count": sum(int(measurement.validation["import_eligible_chunk_count"]) for measurement in measurements),
+        "refused_chunk_count": sum(int(measurement.validation["refused_chunk_count"]) for measurement in measurements),
+        "element_count": sum(len(measurement.package["elements"]) for measurement in measurements),
+        "chunk_count": sum(len(measurement.package["chunks"]) for measurement in measurements),
+        "counts_by_state": dict(sorted(counts_by_state.items())),
+        "counts_by_route": dict(sorted(counts_by_route.items())),
+        "counts_by_chunk_type": dict(sorted(counts_by_chunk_type.items())),
+        "refusal_counts": dict(sorted(refusal_counts.items())),
+        "raw_text_included": False,
+        "embeddings_included": False,
+        "ladybugdb_written": False,
+        "production_import_attempted": False,
+        "claims": [
+            "structure_aware_dry_run_only",
+            "current_structure_aware_chunks_are_not_claimed_import_ready",
+            "production_kg_writes_remain_blocked",
+        ],
+    }
+
+
+def _select_full_text_path(paper: dict[str, Any]) -> Path | None:
+    for raw_path in paper.get("required_paths", []):
+        path = Path(str(raw_path))
+        if path.name == "full_text.md" and path.exists():
+            return path
+        full_text_path = path / "full_text.md"
+        if path.is_dir() and full_text_path.exists():
+            return full_text_path
+    fallback = Path("/root/.research/papers") / str(paper["paper_id"]) / "full_text.md"
+    return fallback if fallback.exists() else None
+
+
+def _source_artifact_for_paper(paper: dict[str, Any], *, source_path: Path | None) -> str:
+    if source_path is not None:
+        return str(source_path)
+    artifacts = paper.get("source_artifacts")
+    if isinstance(artifacts, list) and artifacts:
+        return str(artifacts[0])
+    return f"normalized_markdown:{paper['paper_id']}"
+
+
+def _merge_counts(target: dict[str, int], source: Any) -> None:
+    if not isinstance(source, dict):
+        return
+    for key, value in source.items():
+        target[str(key)] = target.get(str(key), 0) + int(value)
+
+
+def _string_or_none(value: Any) -> str | None:
+    return str(value) if value is not None else None
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for redacted structure-aware dry runs."""
+    parser = argparse.ArgumentParser(description="Validate structure-aware chunks against the M005 import-ready contract.")
+    parser.add_argument("--manifest", required=True, type=Path)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    args = parser.parse_args(argv)
+    result = measure_structure_aware_manifest(args.manifest)
+    write_structure_aware_run(result, args.output_dir)
+    sys.stdout.write(json.dumps(result.summary, indent=2, sort_keys=True))
+    sys.stdout.write("\n")
+    return 0
 
 
 @dataclass(frozen=True)
@@ -480,3 +668,5 @@ def _counts(values: Any) -> dict[str, int]:
 
 def _now_iso() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
+if __name__ == "__main__":
+    raise SystemExit(main())

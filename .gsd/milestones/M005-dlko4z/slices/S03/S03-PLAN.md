@@ -41,7 +41,7 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T04: Validate structure aware packages on gold corpus** `est:large`
+- [x] **T04: Validate structure aware packages on gold corpus** `est:large`
   Build S01 contract-shaped packages from structure-aware chunks and validate them with the existing import contract validator. Add a CLI or callable dry-run path that writes redacted structure-aware package diagnostics for the gold corpus without writing production KG data.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl

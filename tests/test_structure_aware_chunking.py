@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package
 from arxiv_archive.structure_aware_chunking import (
@@ -9,7 +10,9 @@ from arxiv_archive.structure_aware_chunking import (
     StructuralElement,
     StructureAwareChunk,
     empty_structure_aware_package,
+    measure_structure_aware_manifest,
     parse_markdown_structure,
+    write_structure_aware_run,
 )
 
 
@@ -245,3 +248,48 @@ def test_parse_markdown_structure_routes_tables_and_administrative_metadata_with
     assert contract["diagnostics"]["refusal_counts"]["table_route_requires_review"] == 1
     assert contract["diagnostics"]["refusal_counts"]["administrative_metadata_requires_review"] == 1
     assert validate_import_ready_package(contract).valid_package is True
+
+
+def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostics(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "p1"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "m005-gold-corpus-manifest.v1",
+                "milestone": "M005-test",
+                "papers": [
+                    {
+                        "paper_id": "p1",
+                        "title": "Paper",
+                        "categories": ["cs.AI"],
+                        "source_artifacts": ["normalized_markdown:p1"],
+                        "required_paths": [str(paper_dir)],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    result = measure_structure_aware_manifest(manifest)
+    write_structure_aware_run(result, out)
+
+    summary = json.loads((out / "structure-aware-summary.json").read_text(encoding="utf-8"))
+    records = (out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    record = json.loads(records[0])
+    assert summary["schema_version"] == "m005-structure-aware-run.v1"
+    assert summary["paper_count"] == 1
+    assert summary["valid_package_count"] == 1
+    assert summary["import_ready_count"] == 0
+    assert summary["raw_text_included"] is False
+    assert summary["embeddings_included"] is False
+    assert summary["ladybugdb_written"] is False
+    assert summary["production_import_attempted"] is False
+    assert record["schema_version"] == "m005-structure-aware-package-diagnostic.v1"
+    assert record["counts_by_route"]["claim_extraction"] >= 1
+    assert "Claim-like prose" not in json.dumps(summary)
+    assert "Claim-like prose" not in json.dumps(record)
