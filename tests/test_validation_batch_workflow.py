@@ -97,6 +97,25 @@ def test_source_readiness_for_paper_detects_markdown_and_missing_pdf(tmp_path: P
     assert readiness.unavailable_source is False
 
 
+def test_source_readiness_for_paper_uses_deterministic_fallback_paths(tmp_path: Path) -> None:
+    fallback_root = tmp_path / "research"
+    cache_root = tmp_path / "cache"
+    paper_dir = fallback_root / "2605.00020v1"
+    paper_dir.mkdir(parents=True)
+    (paper_dir / "full_text.md").write_text("content", encoding="utf-8")
+    cache_root.mkdir()
+    (cache_root / "2605.00020v1.pdf").write_bytes(b"%PDF-1.4")
+    paper = SelectedPaper(paper_id="2605.00020v1", selection_role="deterministic_expansion")
+
+    readiness = source_readiness_for_paper(paper, fallback_root=fallback_root, cache_root=cache_root)
+
+    assert readiness.markdown_present is True
+    assert readiness.markdown_quality_accepted is True
+    assert readiness.pdf_present is True
+    assert readiness.pdf_missing is False
+    assert readiness.ready_for_markdown_scan is True
+
+
 def test_preflight_validation_batch_adds_contradiction_diagnostics(tmp_path: Path) -> None:
     full_text = tmp_path / "full_text.md"
     full_text.write_text("content", encoding="utf-8")

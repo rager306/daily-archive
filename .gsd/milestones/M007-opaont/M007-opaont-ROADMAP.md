@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, the project has a documented CLI contract, command names, state schema, fixture shape, and safety gates for iterative validation batches.
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, a batch can be initialized and source-preflighted with redacted readiness/contradiction artifacts, without production writes or unbounded repair.
 
 - [ ] **S03: Automated scan delta and outlier gates** `risk:high` `depends:[S02]`

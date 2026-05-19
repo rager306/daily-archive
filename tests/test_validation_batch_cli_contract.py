@@ -39,8 +39,8 @@ def test_validation_batch_contract_json_is_safe() -> None:
     assert "No production KG import" in payload["boundary"]
 
 
-def test_validation_batch_init_stub_is_nonzero_and_safe() -> None:
-    result = _run_cli("validation-batch", "init", "--batch-id", "fixture-b001", "--json")
+def test_validation_batch_review_stub_is_nonzero_and_safe() -> None:
+    result = _run_cli("validation-batch", "review", "--batch-id", "fixture-b001", "--json")
 
     assert result.returncode == 1
     payload = json.loads(result.stdout)

@@ -26,7 +26,16 @@ from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.embedder import Embedder  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
-from arxiv_archive.validation_batch_state import build_contract_response  # noqa: E402
+from arxiv_archive.validation_batch_state import (  # noqa: E402
+    build_contract_response,
+    read_batch_state,
+)
+from arxiv_archive.validation_batch_workflow import (  # noqa: E402
+    initialize_validation_batch,
+    preflight_validation_batch,
+    validation_batch_state_preview,
+    write_source_preflight_run,
+)
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
@@ -110,7 +119,7 @@ def _echo_validation_batch_response(response: dict[str, Any], *, as_json: bool) 
             [
                 f"status: {response['status']}",
                 f"command: {response['command']}",
-                str(response["boundary"]),
+                str(response.get("boundary", "No production KG import; validation-batch commands are operational diagnostics only.")),
             ]
         )
     )
@@ -143,19 +152,66 @@ def _validation_batch_stub(command: str, *, batch_id: str, as_json: bool) -> Non
 @validation_batch_app.command("init")
 def validation_batch_init(
     batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    manifest_path: Annotated[
+        Path,
+        typer.Option("--manifest-path", help="Input validation manifest JSON."),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Directory where batch artifacts will be written."),
+    ],
+    limit: Annotated[int | None, typer.Option("--limit", help="Optional maximum papers to select.")] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
-    """Contract-only stub for future batch initialization."""
-    _validation_batch_stub("init", batch_id=batch_id, as_json=json_output)
+    """Initialize a validation batch state and selection manifest."""
+    result = initialize_validation_batch(
+        manifest_path=manifest_path,
+        batch_id=batch_id,
+        output_dir=output_dir,
+        limit=limit,
+    )
+    response = validation_batch_state_preview(result["state"])
+    response.update(
+        {
+            "status": "initialized",
+            "state_path": str(result["state_path"]),
+            "selection_manifest_path": str(result["selection_manifest_path"]),
+            "real_source_acquisition_performed": False,
+            "real_scan_performed": False,
+        }
+    )
+    _echo_validation_batch_response(response, as_json=json_output)
 
 
 @validation_batch_app.command("preflight")
 def validation_batch_preflight(
-    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    state_path: Annotated[
+        Path,
+        typer.Option("--state-path", help="Existing validation batch-state.json path."),
+    ],
+    output_dir: Annotated[
+        Path | None,
+        typer.Option("--output-dir", help="Directory where preflight artifacts will be written."),
+    ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
-    """Contract-only stub for future source preflight."""
-    _validation_batch_stub("preflight", batch_id=batch_id, as_json=json_output)
+    """Run source preflight over an initialized validation batch state."""
+    state = read_batch_state(state_path)
+    preflighted = preflight_validation_batch(state)
+    target_dir = output_dir if output_dir is not None else state_path.parent
+    paths = write_source_preflight_run(preflighted, target_dir)
+    response = validation_batch_state_preview(preflighted)
+    response.update(
+        {
+            "status": "preflighted",
+            "state_path": str(paths["state_path"]),
+            "summary_path": str(paths["summary_path"]),
+            "diagnostics_path": str(paths["diagnostics_path"]),
+            "real_source_acquisition_performed": False,
+            "real_scan_performed": False,
+        }
+    )
+    _echo_validation_batch_response(response, as_json=json_output)
 
 
 @validation_batch_app.command("scan")

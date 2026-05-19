@@ -31,12 +31,12 @@ Consumes S01 contract/state helpers and prepares batch artifacts that S03 scan a
   - Files: `src/arxiv_archive/validation_batch_workflow.py`, `tests/test_validation_batch_workflow.py`
   - Verify: uv run pytest tests/test_validation_batch_workflow.py tests/test_validation_batch_state.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py src/arxiv_archive/validation_batch_state.py tests/test_validation_batch_workflow.py tests/test_validation_batch_state.py
 
-- [ ] **T02: Wire batch init and preflight CLI** `est:medium`
+- [x] **T02: Wire batch init and preflight CLI** `est:medium`
   Wire `validation-batch init` and `validation-batch preflight` to the new workflow helpers. `init` should create batch-state and selection manifest. `preflight` should update source readiness and diagnostics. Leave scan/review/resume as non-zero stubs.
   - Files: `src/arxiv_archive/cli.py`, `tests/test_validation_batch_cli_preflight.py`
   - Verify: uv run pytest tests/test_validation_batch_workflow.py tests/test_validation_batch_cli_contract.py tests/test_validation_batch_cli_preflight.py tests/test_analysis.py -q && uv run ruff check src/arxiv_archive/cli.py src/arxiv_archive/validation_batch_workflow.py src/arxiv_archive/validation_batch_state.py tests/test_validation_batch_workflow.py tests/test_validation_batch_cli_contract.py tests/test_validation_batch_cli_preflight.py
 
-- [ ] **T03: Run bounded source preflight dry run** `est:medium`
+- [x] **T03: Run bounded source preflight dry run** `est:medium`
   Run a bounded dry-run batch using the existing M006 30-paper corpus manifest into M007 batch artifacts. Verify 30 selected papers, source-preflight summary, diagnostics, and no scan/import/write flags.
   - Files: `.gsd/milestones/M007-opaont/slices/S02/run-evidence/batch-state.json`, `.gsd/milestones/M007-opaont/slices/S02/run-evidence/source-preflight-summary.json`, `.gsd/milestones/M007-opaont/slices/S02/run-evidence/source-preflight-diagnostics.jsonl`, `.gsd/milestones/M007-opaont/slices/S02/source-preflight-report.md`
   - Verify: test -s .gsd/milestones/M007-opaont/slices/S02/run-evidence/source-preflight-summary.json && uv run python - <<'PY'

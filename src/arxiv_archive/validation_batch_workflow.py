@@ -115,12 +115,21 @@ def initialize_validation_batch(
     }
 
 
-def source_readiness_for_paper(paper: SelectedPaper) -> SourceReadiness:
+def source_readiness_for_paper(paper: SelectedPaper, *, fallback_root: str | Path = "/root/.research/papers", cache_root: str | Path = "/root/.arxiv_cache") -> SourceReadiness:
+    fallback_root_path = Path(fallback_root)
+    cache_root_path = Path(cache_root)
     markdown_path = _first_existing_path(
         paper.source_paths.get("research_full_text_md"),
         paper.source_paths.get("cache_markdown"),
+        str(fallback_root_path / paper.paper_id / "full_text.md"),
+        str(cache_root_path / f"{paper.paper_id}.md"),
     )
-    pdf_path = _first_existing_path(paper.source_paths.get("cache_pdf"), paper.source_paths.get("research_pdf"))
+    pdf_path = _first_existing_path(
+        paper.source_paths.get("cache_pdf"),
+        paper.source_paths.get("research_pdf"),
+        str(cache_root_path / f"{paper.paper_id}.pdf"),
+        str(fallback_root_path / paper.paper_id / "paper.pdf"),
+    )
     markdown_present = markdown_path is not None
     markdown_quality_accepted = _markdown_quality_accepted(markdown_path)
     pdf_present = pdf_path is not None
