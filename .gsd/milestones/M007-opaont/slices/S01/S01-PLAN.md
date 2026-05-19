@@ -35,7 +35,7 @@ Consumes M006 S04 recommendation and produces contract helpers that S02/S03 will
   - Files: `src/arxiv_archive/validation_batch_state.py`, `tests/test_validation_batch_state.py`
   - Verify: uv run pytest tests/test_validation_batch_state.py -q && uv run ruff check src/arxiv_archive/validation_batch_state.py tests/test_validation_batch_state.py
 
-- [ ] **T03: Expose validation batch CLI contract stub** `est:medium`
+- [x] **T03: Expose validation batch CLI contract stub** `est:medium`
   Add a narrow CLI contract stub or help surface for future validation batch commands without running real batch work. The command should expose intended subcommands and return a safe not-implemented/contract response where appropriate.
   - Files: `src/arxiv_archive/cli.py`, `tests/test_validation_batch_cli_contract.py`
   - Verify: uv run pytest tests/test_validation_batch_state.py tests/test_validation_batch_cli_contract.py -q && uv run ruff check src/arxiv_archive/cli.py src/arxiv_archive/validation_batch_state.py tests/test_validation_batch_state.py tests/test_validation_batch_cli_contract.py

@@ -26,6 +26,7 @@ from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.embedder import Embedder  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
+from arxiv_archive.validation_batch_state import build_contract_response  # noqa: E402
 
 PREFERENCES_PATH = Path.home() / ".research" / "self" / "preferences.json"
 SESSIONS_DIR = Path.home() / ".research" / "ops" / "sessions"
@@ -90,6 +91,125 @@ app = typer.Typer(
     help=AGENT_CONTRACT_HELP,
     no_args_is_help=True,
 )
+
+validation_batch_app = typer.Typer(
+    add_completion=False,
+    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120},
+    help="Contract-only validation batch commands for M007.",
+    no_args_is_help=True,
+)
+app.add_typer(validation_batch_app, name="validation-batch")
+
+
+def _echo_validation_batch_response(response: dict[str, Any], *, as_json: bool) -> None:
+    if as_json:
+        typer.echo(json.dumps(response, indent=2, sort_keys=True))
+        return
+    typer.echo(
+        " | ".join(
+            [
+                f"status: {response['status']}",
+                f"command: {response['command']}",
+                str(response["boundary"]),
+            ]
+        )
+    )
+
+
+@validation_batch_app.command("contract")
+def validation_batch_contract(
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print the validation-batch contract response as JSON.",
+        ),
+    ] = False,
+) -> None:
+    """Print the M007 validation-batch contract response without doing work."""
+    _echo_validation_batch_response(
+        build_contract_response("validation-batch contract", status="contract_only"),
+        as_json=json_output,
+    )
+
+
+def _validation_batch_stub(command: str, *, batch_id: str, as_json: bool) -> None:
+    response = build_contract_response(f"validation-batch {command}", status="not_implemented")
+    response["batch_id"] = batch_id
+    _echo_validation_batch_response(response, as_json=as_json)
+    raise typer.Exit(1)
+
+
+@validation_batch_app.command("init")
+def validation_batch_init(
+    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Contract-only stub for future batch initialization."""
+    _validation_batch_stub("init", batch_id=batch_id, as_json=json_output)
+
+
+@validation_batch_app.command("preflight")
+def validation_batch_preflight(
+    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Contract-only stub for future source preflight."""
+    _validation_batch_stub("preflight", batch_id=batch_id, as_json=json_output)
+
+
+@validation_batch_app.command("scan")
+def validation_batch_scan(
+    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Contract-only stub for future redacted scan execution."""
+    _validation_batch_stub("scan", batch_id=batch_id, as_json=json_output)
+
+
+@validation_batch_app.command("review")
+def validation_batch_review(
+    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Contract-only stub for future review handoff."""
+    _validation_batch_stub("review", batch_id=batch_id, as_json=json_output)
+
+
+@validation_batch_app.command("resume")
+def validation_batch_resume(
+    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Contract-only stub for future resumable batch execution."""
+    _validation_batch_stub("resume", batch_id=batch_id, as_json=json_output)
+
+
+@app.callback(invoke_without_command=True)
+def root_callback(
+    ctx: typer.Context,
+    run_date: Annotated[
+        str | None,
+        typer.Option(
+            "--date",
+            help="Run date in YYYY-MM-DD format.",
+        ),
+    ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Write Hermes-readable session JSON and daily analysis artifacts after analysis succeeds.",
+        ),
+    ] = False,
+) -> None:
+    """Preserve the legacy root --date entrypoint while supporting subcommands."""
+    if ctx.invoked_subcommand is not None:
+        return
+    if run_date is None:
+        typer.echo(ctx.get_help())
+        raise typer.Exit()
+    run(run_date=run_date, json_output=json_output)
 
 
 def load_preferences() -> dict:
