@@ -39,6 +39,7 @@ class ExtractionGateResult:
     caveated_entries: list[dict[str, Any]]
     excluded_entries: list[dict[str, Any]]
     skipped_entries: list[dict[str, Any]]
+    claim_drafts: list[dict[str, Any]]
 
 
 def run_extraction_gate(
@@ -66,6 +67,8 @@ def run_extraction_gate(
         _append_event(events_path, {"event": "extraction_gate.excluded_route", **_entry_event(entry)})
     for entry in result.skipped_entries:
         _append_event(events_path, {"event": "extraction_gate.skipped_route", **_entry_event(entry)})
+    for draft in result.claim_drafts:
+        _append_event(events_path, {"event": "extraction_gate.claim_draft", **draft, "raw_text_included": False})
     return summary
 
 
@@ -75,6 +78,7 @@ def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True)
     caveated_entries: list[dict[str, Any]] = []
     excluded_entries: list[dict[str, Any]] = []
     skipped_entries: list[dict[str, Any]] = []
+    claim_drafts: list[dict[str, Any]] = []
     for raw_entry in manifest.get("entries", []):
         entry = dict(raw_entry)
         route = str(entry.get("route"))
@@ -83,6 +87,8 @@ def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True)
             excluded_entries.append(entry)
         elif route in EXTRACTION_ROUTES and final_eligibility == TRUSTED_ELIGIBILITY:
             trusted_entries.append(entry)
+            if _is_trusted_claim_candidate(entry):
+                claim_drafts.append(_claim_draft(entry))
         elif route in EXTRACTION_ROUTES and final_eligibility == CAVEATED_ELIGIBILITY:
             caveated_entries.append(entry)
         else:
@@ -96,6 +102,7 @@ def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True)
             caveated_entries=caveated_entries,
             excluded_entries=excluded_entries,
             skipped_entries=skipped_entries,
+            claim_drafts=claim_drafts,
         )
     if caveated_entries and not require_trusted:
         return ExtractionGateResult(
@@ -105,6 +112,7 @@ def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True)
             caveated_entries=caveated_entries,
             excluded_entries=excluded_entries,
             skipped_entries=skipped_entries,
+            claim_drafts=claim_drafts,
         )
     return ExtractionGateResult(
         extraction_attempted=False,
@@ -113,6 +121,7 @@ def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True)
         caveated_entries=caveated_entries,
         excluded_entries=excluded_entries,
         skipped_entries=skipped_entries,
+        claim_drafts=claim_drafts,
     )
 
 
@@ -125,20 +134,23 @@ def _summary_payload(manifest: dict[str, Any], result: ExtractionGateResult) -> 
         "blocked_reason": result.blocked_reason,
         "counts": {
             "trusted_routes": len(result.trusted_entries),
+            "trusted_candidates": sum(1 for entry in result.trusted_entries if entry.get("granularity") == "candidate"),
             "caveated_routes": len(result.caveated_entries),
             "excluded_routes": len(result.excluded_entries),
             "skipped_routes": len(result.skipped_entries),
-            "claims": 0,
+            "claims": len(result.claim_drafts),
             "entities": 0,
             "relations": 0,
         },
         "eligible_routes": [_safe_entry(entry) for entry in result.trusted_entries],
+        "claim_drafts": list(result.claim_drafts),
         "caveated_routes": [_safe_entry(entry) for entry in result.caveated_entries],
         "excluded_routes": [_safe_entry(entry) for entry in result.excluded_entries],
         "skipped_routes": [_safe_entry(entry) for entry in result.skipped_entries],
         "safety_note": (
-            "No scientific facts are emitted unless at least one route has final_eligibility=eligible. "
-            "eligible_with_caveat routes remain diagnostic until an extractor-specific validation gate is added."
+            "No scientific facts are emitted unless at least one route or candidate has final_eligibility=eligible. "
+            "eligible_with_caveat routes remain diagnostic. Candidate claim drafts are redacted source-spanned "
+            "drafts only and are not persisted KG facts."
         ),
     }
 
@@ -147,11 +159,40 @@ def _safe_entry(entry: dict[str, Any]) -> dict[str, Any]:
     return {
         "paper_id": entry.get("paper_id"),
         "route": entry.get("route"),
+        "granularity": entry.get("granularity", "route"),
+        "entry_id": entry.get("entry_id"),
+        "chunk_id": entry.get("chunk_id"),
+        "candidate_id": entry.get("candidate_id"),
+        "parent_route": entry.get("parent_route"),
+        "source_artifact": entry.get("source_artifact"),
         "final_eligibility": entry.get("final_eligibility"),
         "independent_review_verdict": entry.get("independent_review_verdict"),
         "finding_codes": list(entry.get("finding_codes", [])),
         "caveats": list(entry.get("caveats", [])),
         "required_repairs": list(entry.get("required_repairs", [])),
+    }
+
+
+def _is_trusted_claim_candidate(entry: dict[str, Any]) -> bool:
+    return (
+        entry.get("granularity") == "candidate"
+        and entry.get("route") == "claim_extraction"
+        and entry.get("final_eligibility") == TRUSTED_ELIGIBILITY
+    )
+
+
+def _claim_draft(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "paper_id": entry.get("paper_id"),
+        "route": entry.get("route"),
+        "chunk_id": entry.get("chunk_id"),
+        "candidate_id": entry.get("candidate_id"),
+        "entry_id": entry.get("entry_id"),
+        "source_artifact": entry.get("source_artifact"),
+        "source_span_traceable": True,
+        "finding_codes": list(entry.get("finding_codes", [])),
+        "claim_text_included": False,
+        "persisted": False,
     }
 
 

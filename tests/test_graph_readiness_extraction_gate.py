@@ -95,6 +95,7 @@ def test_run_extraction_gate_writes_redacted_summary_and_events(tmp_path: Path) 
     assert summary["extraction_attempted"] is False
     assert summary["counts"] == {
         "trusted_routes": 0,
+        "trusted_candidates": 0,
         "caveated_routes": 1,
         "excluded_routes": 1,
         "skipped_routes": 1,
@@ -105,3 +106,48 @@ def test_run_extraction_gate_writes_redacted_summary_and_events(tmp_path: Path) 
     events_text = events_path.read_text(encoding="utf-8")
     assert "raw_text_included" in events_text
     assert "route-level caveat" in events_text
+
+
+def test_candidate_level_claim_eligibility_emits_redacted_claim_draft() -> None:
+    manifest = _manifest(
+        [
+            {
+                **_entry("p1", "claim_extraction", "eligible"),
+                "granularity": "candidate",
+                "entry_id": "candidate:p1:claim_extraction:c1",
+                "chunk_id": "chunk-1:split-0001",
+                "candidate_id": "c1",
+                "parent_route": "claim_extraction",
+                "source_artifact": "normalized/p1.md",
+                "finding_codes": ["reviewed_claim_candidate_eligible"],
+            },
+            _entry("p1", "claim_extraction", "eligible_with_caveat"),
+        ]
+    )
+
+    result = decide_extraction(manifest)
+
+    assert result.extraction_attempted is True
+    assert len(result.trusted_entries) == 1
+    assert len(result.claim_drafts) == 1
+    assert result.claim_drafts[0] == {
+        "paper_id": "p1",
+        "route": "claim_extraction",
+        "chunk_id": "chunk-1:split-0001",
+        "candidate_id": "c1",
+        "entry_id": "candidate:p1:claim_extraction:c1",
+        "source_artifact": "normalized/p1.md",
+        "source_span_traceable": True,
+        "finding_codes": ["reviewed_claim_candidate_eligible"],
+        "claim_text_included": False,
+        "persisted": False,
+    }
+
+
+def test_route_level_eligible_metadata_does_not_emit_claim_draft() -> None:
+    manifest = _manifest([_entry("p1", "metadata_graph", "eligible")])
+
+    result = decide_extraction(manifest)
+
+    assert result.extraction_attempted is True
+    assert result.claim_drafts == []
