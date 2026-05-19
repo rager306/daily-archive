@@ -46,7 +46,7 @@ S05 consumes S04 annotation sidecars and the S01 gold corpus. It produces per-pa
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `.gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-package-diagnostics.jsonl
 
-- [ ] **T05: Review source asset preservation artifacts** `est:medium`
+- [x] **T05: Review source asset preservation artifacts** `est:medium`
   Review the S05 manifests and diagnostics independently for semantic usefulness, source/hash coverage, missing-source clarity, redaction, and non-fact boundaries. Write a slice report that states what is preserved, what remains linked-but-not-extracted, and whether S06 benchmarking can safely consume the manifests.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S05/source-asset-preservation-report.md`, `.gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-review-summary.md`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S05/source-asset-preservation-report.md && test -s .gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-review-summary.md
