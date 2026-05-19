@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After this slice, there is a deviation report comparing 30-paper behavior against M005 baseline and identifying new patterns/outliers.
 
-- [ ] **S04: Review and recommendation** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, independent review confirms whether the 30-paper scan meaningfully identifies deviations and what next remediation should be.
 
 ## Boundary Map
