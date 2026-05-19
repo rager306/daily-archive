@@ -25,7 +25,7 @@ Consumes S01/S02 corpus and source-readiness artifacts plus M005 S06/S07 baselin
 
 ## Tasks
 
-- [ ] **T01: Implement thirty paper deviation scanner** `est:large`
+- [x] **T01: Implement thirty paper deviation scanner** `est:large`
   Implement a deterministic 30-paper deviation analysis helper that consumes the M006 manifest and available Markdown sources, reuses structure-aware chunking/package diagnostics where possible, and writes redacted per-paper metrics. The helper must not serialize raw Markdown/chunk text.
   - Files: `src/arxiv_archive/thirty_paper_deviation_scan.py`, `tests/test_thirty_paper_deviation_scan.py`
   - Verify: uv run pytest tests/test_thirty_paper_deviation_scan.py tests/test_structure_aware_chunking.py tests/test_chunking_benchmark.py -q && uv run ruff check src/arxiv_archive/thirty_paper_deviation_scan.py tests/test_thirty_paper_deviation_scan.py
