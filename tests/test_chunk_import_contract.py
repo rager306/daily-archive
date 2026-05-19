@@ -233,6 +233,10 @@ def test_retrieval_only_package_can_be_valid_but_not_import_ready() -> None:
     chunk["excluded_uses"] = ["trusted_kg_import"]
     chunk["evidence_path_id"] = None
     package["chunks"] = [chunk]
+    diagnostics = deepcopy(package["diagnostics"])
+    diagnostics["import_eligible_chunk_count"] = 0
+    diagnostics["refused_chunk_count"] = 1
+    package["diagnostics"] = diagnostics
 
     result = validate_import_ready_package(package)
 
@@ -250,3 +254,131 @@ def test_validation_serialization_is_redacted() -> None:
     assert payload["embeddings_included"] is False
     assert payload["ladybugdb_written"] is False
     assert payload["production_import_attempted"] is False
+
+
+def test_nested_required_fields_are_validated() -> None:
+    package = _valid_package()
+    package["paper"] = {"paper_id": "wrong", "source_artifacts": ["normalized_markdown:p1"]}
+    conversion = deepcopy(package["conversion"])
+    conversion.pop("converter")
+    package["conversion"] = conversion
+    element = deepcopy(package["elements"])[0]
+    element.pop("element_type")
+    package["elements"] = [element]
+    chunk = deepcopy(package["chunks"])[0]
+    chunk.pop("order_index")
+    package["chunks"] = [chunk]
+    annotation = deepcopy(package["annotations"])[0]
+    annotation.pop("method")
+    package["annotations"] = [annotation]
+    evidence_path = deepcopy(package["evidence_paths"])[0]
+    evidence_path.pop("provenance_chain")
+    package["evidence_paths"] = [evidence_path]
+
+    reasons = _single_reason(package)
+
+    assert "paper_id_mismatch" in reasons
+    assert "missing_converter" in reasons
+    assert "missing_element_type" in reasons
+    assert "missing_order_index" in reasons
+    assert "missing_method" in reasons
+    assert "missing_provenance_chain" in reasons
+
+
+def test_conversion_and_diagnostics_redaction_flags_are_validated() -> None:
+    package = _valid_package()
+    conversion = deepcopy(package["conversion"])
+    conversion["raw_text_included"] = True
+    conversion["embeddings_included"] = True
+    package["conversion"] = conversion
+    diagnostics = deepcopy(package["diagnostics"])
+    diagnostics["raw_text_included"] = True
+    diagnostics["embeddings_included"] = True
+    diagnostics["ladybugdb_written"] = True
+    diagnostics["production_import_attempted"] = True
+    package["diagnostics"] = diagnostics
+
+    reasons = _single_reason(package)
+
+    assert "raw_text_leakage" in reasons
+    assert "embedding_leakage" in reasons
+    assert "production_write_attempted" in reasons
+    assert "production_import_attempted" in reasons
+
+
+def test_diagnostics_counts_must_match_computed_counts() -> None:
+    package = _valid_package()
+    diagnostics = deepcopy(package["diagnostics"])
+    diagnostics["import_eligible_chunk_count"] = 999
+    diagnostics["refused_chunk_count"] = 999
+    package["diagnostics"] = diagnostics
+
+    reasons = _single_reason(package)
+
+    assert "diagnostics_import_count_mismatch" in reasons
+    assert "diagnostics_refusal_count_mismatch" in reasons
+
+
+def test_unresolved_annotation_chunk_has_precise_reason() -> None:
+    package = _valid_package()
+    annotation = deepcopy(package["annotations"])[0]
+    annotation["chunk_id"] = "missing-chunk"
+    package["annotations"] = [annotation]
+
+    assert "unresolved_annotation_chunk" in _single_reason(package)
+
+
+def test_graph_ready_retrieval_only_route_is_not_import_eligible() -> None:
+    package = _valid_package()
+    chunk = deepcopy(package["chunks"])[0]
+    chunk["route"] = "retrieval_only"
+    chunk["allowed_uses"] = ["trusted_kg_import", "retrieval_diagnostics"]
+    package["chunks"] = [chunk]
+
+    result = validate_import_ready_package(package)
+
+    assert "retrieval_only_not_importable" in result.refusal_counts
+    assert result.import_eligible_chunk_count == 0
+
+
+def test_invalid_route_is_rejected_and_not_counted_import_eligible() -> None:
+    package = _valid_package()
+    chunk = deepcopy(package["chunks"])[0]
+    chunk["route"] = "not_a_route"
+    package["chunks"] = [chunk]
+
+    result = validate_import_ready_package(package)
+
+    assert "invalid_route" in result.refusal_counts
+    assert result.import_eligible_chunk_count == 0
+
+
+def test_incompatible_route_and_chunk_type_is_rejected() -> None:
+    package = _valid_package()
+    chunk = deepcopy(package["chunks"])[0]
+    chunk["route"] = "table_extraction"
+    chunk["chunk_type"] = "claim_candidate"
+    package["chunks"] = [chunk]
+
+    result = validate_import_ready_package(package)
+
+    assert "route_chunk_type_mismatch" in result.refusal_counts
+    assert result.import_eligible_chunk_count == 0
+
+
+def test_evidence_path_span_must_contain_chunk_span() -> None:
+    package = _valid_package()
+    evidence_path = deepcopy(package["evidence_paths"])[0]
+    evidence_path["source_span"] = {
+        "coordinate_space": "canonical_normalized_markdown",
+        "char_start": 1000,
+        "char_end": 1100,
+        "page_start": None,
+        "page_end": None,
+    }
+    package["evidence_paths"] = [evidence_path]
+
+    result = validate_import_ready_package(package)
+
+    assert "invalid_source_span" in result.refusal_counts
+    assert result.import_eligible_chunk_count == 0

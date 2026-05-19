@@ -49,7 +49,7 @@ PY
   - Files: `src/arxiv_archive/chunk_import_contract.py`, `tests/test_chunk_import_contract.py`
   - Verify: uv run pytest tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunk_import_contract.py tests/test_chunk_import_contract.py
 
-- [ ] **T04: Review import model contract** `est:0.5d`
+- [x] **T04: Review import model contract** `est:0.5d`
   Write the S01 review rubric and run an independent review of the contract, corpus manifest, and validator tests. The review must check for missing import fields, overbroad claims, count-only validation, raw-text leakage risk, and whether the corpus covers hard chunking cases.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S01/import-model-review-rubric.md`, `.gsd/milestones/M005-dlko4z/slices/S01/run-evidence/contract-review-summary.md`
   - Verify: uv run pytest tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S01/run-evidence/contract-review-summary.md
