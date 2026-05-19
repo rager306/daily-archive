@@ -26,7 +26,7 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
 
 ## Tasks
 
-- [ ] **T01: Define structure aware chunking model** `est:medium`
+- [x] **T01: Define structure aware chunking model** `est:medium`
   Define the S03 structure-aware chunking module interface and core dataclasses for structural elements, chunks, source spans, hierarchy links, route eligibility, and package output. Keep the API deterministic and independent of LLM calls or production KG writes.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
