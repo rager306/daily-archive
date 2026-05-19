@@ -41,7 +41,7 @@ assert manifest['raw_text_included'] is False
 print({'paper_count': len(ids), 'm005_overlap_count': manifest['m005_overlap_count']})
 PY
 
-- [ ] **T02: Audit source availability for thirty papers** `est:medium`
+- [x] **T02: Audit source availability for thirty papers** `est:medium`
   Audit local availability for the 30 selected papers: normalized Markdown, original PDF, research workspace, and known derived artifacts. Summarize missing-source patterns separately from chunking/import-model issues. External filesystem roots may be inspected during execution but only redacted status/path metadata is written.
   - Files: `.gsd/milestones/M006-638rza/slices/S01/run-evidence/thirty-paper-availability-summary.json`, `.gsd/milestones/M006-638rza/slices/S01/run-evidence/thirty-paper-availability-diagnostics.jsonl`
   - Verify: uv run python - <<'PY'
