@@ -54,6 +54,14 @@ ChunkType = Literal[
     "administrative",
     "retrieval_context",
 ]
+AnnotationType = Literal[
+    "section_role",
+    "route_hint",
+    "structural_type",
+    "review_blocker",
+    "asset_link_hint",
+]
+ConfidenceClass = Literal["deterministic", "heuristic", "requires_review"]
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _TABLE_RE = re.compile(r"^\s*\|.*\|\s*$")
@@ -187,6 +195,42 @@ class StructureAwareChunk:
 
 
 @dataclass(frozen=True)
+class ChunkAnnotationSidecar:
+    """Deterministic annotation sidecar attached to a chunk, never a KG fact."""
+
+    annotation_id: str
+    paper_id: str
+    chunk_id: str
+    method: str
+    annotation_type: AnnotationType
+    values: dict[str, Any]
+    confidence_class: ConfidenceClass
+    warning_codes: tuple[str, ...] = ()
+    promoted_to_fact: bool = False
+
+    def to_contract(self) -> dict[str, Any]:
+        """Serialize a contract annotation without raw text, embeddings, or fact promotion."""
+        return {
+            "annotation_id": self.annotation_id,
+            "paper_id": self.paper_id,
+            "chunk_id": self.chunk_id,
+            "method": self.method,
+            "annotation_type": self.annotation_type,
+            "values": self.values,
+            "confidence_class": self.confidence_class,
+            "promoted_to_fact": False,
+            "warnings": [_warning(code=code, object_id=self.annotation_id, severity="warn") for code in self.warning_codes],
+            "redaction": {
+                "raw_text_included": False,
+                "chunk_text_included": False,
+                "embeddings_included": False,
+                "vectors_included": False,
+                "secrets_included": False,
+            },
+        }
+
+
+@dataclass(frozen=True)
 class StructureAwarePackage:
     """Redacted package data ready for contract validation."""
 
@@ -196,6 +240,7 @@ class StructureAwarePackage:
     categories: tuple[str, ...] = ()
     elements: tuple[StructuralElement, ...] = field(default_factory=tuple)
     chunks: tuple[StructureAwareChunk, ...] = field(default_factory=tuple)
+    annotations: tuple[ChunkAnnotationSidecar, ...] = field(default_factory=tuple)
     run_id: str = "m005-s03-structure-aware"
     created_at: str = field(default_factory=lambda: _now_iso())
 
@@ -203,6 +248,7 @@ class StructureAwarePackage:
         """Serialize the S01 import-ready package shape without raw content."""
         element_records = [element.to_contract() for element in self.elements]
         chunk_records = [chunk.to_contract() for chunk in self.chunks]
+        annotation_records = [annotation.to_contract() for annotation in self.annotations]
         diagnostics = _diagnostics_for_package(element_records=element_records, chunks=chunk_records)
         return {
             "schema_version": EXPECTED_SCHEMA_VERSION,
@@ -228,7 +274,7 @@ class StructureAwarePackage:
             },
             "elements": element_records,
             "chunks": chunk_records,
-            "annotations": [],
+            "annotations": annotation_records,
             "evidence_paths": [],
             "diagnostics": diagnostics,
         }

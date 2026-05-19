@@ -5,10 +5,12 @@ from pathlib import Path
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package
 from arxiv_archive.structure_aware_chunking import (
+    ChunkAnnotationSidecar,
     RouteEligibility,
     SourceSpan,
     StructuralElement,
     StructureAwareChunk,
+    StructureAwarePackage,
     empty_structure_aware_package,
     measure_structure_aware_manifest,
     parse_markdown_structure,
@@ -343,3 +345,88 @@ def test_written_structure_aware_diagnostics_include_redacted_chunk_level_eviden
     assert "Method prose" not in serialized
     assert "[0.1, 0.2]" not in serialized
     assert record["embeddings_included"] is False
+
+
+def test_chunk_annotation_sidecar_serializes_redacted_non_fact_annotation() -> None:
+    annotation = ChunkAnnotationSidecar(
+        annotation_id="p1:ann:route:0001",
+        paper_id="p1",
+        chunk_id="p1:chunk-0001",
+        method="deterministic_structure_metadata_v1",
+        annotation_type="route_hint",
+        values={"route": "claim_extraction", "source": "section_path"},
+        confidence_class="deterministic",
+        warning_codes=("review_required_before_import",),
+    )
+
+    record = annotation.to_contract()
+
+    assert record["annotation_id"] == "p1:ann:route:0001"
+    assert record["chunk_id"] == "p1:chunk-0001"
+    assert record["promoted_to_fact"] is False
+    assert record["redaction"] == {
+        "raw_text_included": False,
+        "chunk_text_included": False,
+        "embeddings_included": False,
+        "vectors_included": False,
+        "secrets_included": False,
+    }
+    assert record["warnings"][0]["code"] == "review_required_before_import"
+    serialized = json.dumps(record)
+    assert "raw_text" in serialized
+    assert "This is the paper body" not in serialized
+    assert "[0.1, 0.2]" not in serialized
+
+
+def test_structure_aware_package_includes_annotation_sidecars_without_import_readiness() -> None:
+    chunk = StructureAwareChunk(
+        chunk_id="p1:chunk-0001",
+        paper_id="p1",
+        chunk_type="claim_candidate",
+        parent_element_ids=("p1:el-0001",),
+        section_path=("Abstract",),
+        order_index=1,
+        source_span=SourceSpan(char_start=0, char_end=42),
+        source_artifact="normalized_markdown:p1",
+        route_eligibility=RouteEligibility(
+            route="claim_extraction",
+            state="repair_required",
+            allowed_uses=("routing_diagnostics", "review_only"),
+            excluded_uses=("trusted_kg_import", "production_ladybugdb_write"),
+            refusal_reasons=("claim_route_requires_review",),
+        ),
+        warning_codes=("claim_route_requires_review",),
+    )
+    element = StructuralElement(
+        element_id="p1:el-0001",
+        paper_id="p1",
+        element_type="paragraph",
+        section_path=("Abstract",),
+        order_index=1,
+        source_span=SourceSpan(char_start=0, char_end=42),
+    )
+    annotation = ChunkAnnotationSidecar(
+        annotation_id="p1:ann:structural-type:0001",
+        paper_id="p1",
+        chunk_id=chunk.chunk_id,
+        method="deterministic_structure_metadata_v1",
+        annotation_type="structural_type",
+        values={"chunk_type": "claim_candidate", "element_type": "paragraph"},
+        confidence_class="deterministic",
+    )
+
+    package = StructureAwarePackage(
+        paper_id="p1",
+        title="Example",
+        source_artifact="normalized_markdown:p1",
+        elements=(element,),
+        chunks=(chunk,),
+        annotations=(annotation,),
+    ).to_contract()
+    validation = validate_import_ready_package(package)
+
+    assert package["annotations"][0]["promoted_to_fact"] is False
+    assert package["annotations"][0]["redaction"]["raw_text_included"] is False
+    assert validation.valid_package is True
+    assert validation.import_ready is False
+    assert validation.import_eligible_chunk_count == 0

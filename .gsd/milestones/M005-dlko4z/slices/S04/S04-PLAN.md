@@ -26,7 +26,7 @@ S04 consumes S03 structure-aware chunk package outputs and emits annotation side
 
 ## Tasks
 
-- [ ] **T01: Define deterministic annotation sidecars** `est:medium`
+- [x] **T01: Define deterministic annotation sidecars** `est:medium`
   Define annotation sidecar dataclasses and contract serialization for deterministic chunk annotations. Include annotation id, paper id, chunk id, method, annotation type, values, confidence class, warnings, and `promoted_to_fact=false`.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
