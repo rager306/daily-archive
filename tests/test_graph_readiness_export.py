@@ -85,6 +85,27 @@ SPLITTABLE_PROSE_TEXT = """# Splittable Fixture
     " ".join(f"gamma{i}" for i in range(75)),
 )
 
+ADMINISTRATIVE_ROADMAP_TEXT = """# Roadmap Fixture
+
+## Results
+
+The paper is organized as follows. In Section 2 we introduce notation. In Section 3 we present experiments and in Section 4 we conclude.
+"""
+
+BACKGROUND_RELATED_WORK_TEXT = """# Background Fixture
+
+## Related Work
+
+Previous work by Smith et al. (2020) and Jones et al. (2021) has been studied in many settings. Prior studies describe similar systems but this passage does not yet establish a new author claim.
+"""
+
+MULTI_CLAIM_BUNDLE_TEXT = """# Contribution Fixture
+
+## Results
+
+Our contributions are threefold: we propose a graph-ready validation gate; we demonstrate a source-span audit; we introduce a conservative extraction blocker for noisy claim routes.
+"""
+
 
 def _paper_dir(tmp_path: Path, paper_id: str, text: str | None, *, method: str | None = None) -> Path:
     paper_dir = tmp_path / "papers" / paper_id
@@ -300,3 +321,63 @@ def test_table_and_reference_routes_are_retrieval_only_without_lineage(tmp_path:
     assert all(ChunkRoute.TABLE_EXTRACTION in chunk.excluded_routes for chunk in table_chunks)
     assert all(ChunkRoute.CITATION_GRAPH not in chunk.routes for chunk in reference_chunks)
     assert all(ChunkRoute.CITATION_GRAPH in chunk.excluded_routes for chunk in reference_chunks)
+
+
+def test_administrative_roadmap_is_excluded_from_claim_extraction(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.roadmapv1", ADMINISTRATIVE_ROADMAP_TEXT, method="docling")
+
+    package = build_package_from_manifest_document(
+        _manifest_doc(paper_dir, "2605.roadmapv1"),
+        run_id="test-run",
+        created_at="2026-05-18T00:00:00Z",
+    )
+
+    roadmap_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "administrative_roadmap_not_claim_evidence" for warning in chunk.validation_warnings)
+    ]
+    assert roadmap_chunks
+    assert all(ChunkRoute.CLAIM_EXTRACTION not in chunk.routes for chunk in roadmap_chunks)
+    assert all(ChunkRoute.CLAIM_EXTRACTION in chunk.excluded_routes for chunk in roadmap_chunks)
+    assert all(chunk.routes == [ChunkRoute.RETRIEVAL_ONLY] for chunk in roadmap_chunks)
+    assert all(chunk.quality_state == GraphReadinessState.OK_FOR_RETRIEVAL_ONLY for chunk in roadmap_chunks)
+
+
+def test_related_work_candidate_gets_claim_caveat_without_deleting_text(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.backgroundv1", BACKGROUND_RELATED_WORK_TEXT, method="docling")
+
+    package = build_package_from_manifest_document(
+        _manifest_doc(paper_dir, "2605.backgroundv1"),
+        run_id="test-run",
+        created_at="2026-05-18T00:00:00Z",
+    )
+
+    related_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "background_related_work_claim_caveat" for warning in chunk.validation_warnings)
+    ]
+    assert related_chunks
+    assert all(ChunkRoute.CLAIM_EXTRACTION in chunk.routes for chunk in related_chunks)
+    assert all(chunk.quality_state == GraphReadinessState.OK_FOR_GRAPH for chunk in related_chunks)
+    assert all(chunk.char_count > 0 for chunk in related_chunks)
+
+
+def test_multi_claim_bundle_is_marked_repair_required_before_extraction(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.multiclaimv1", MULTI_CLAIM_BUNDLE_TEXT, method="docling")
+
+    package = build_package_from_manifest_document(
+        _manifest_doc(paper_dir, "2605.multiclaimv1"),
+        run_id="test-run",
+        created_at="2026-05-18T00:00:00Z",
+    )
+
+    multi_claim_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "multi_claim_candidate_requires_atomic_split" for warning in chunk.validation_warnings)
+    ]
+    assert multi_claim_chunks
+    assert all(ChunkRoute.CLAIM_EXTRACTION in chunk.routes for chunk in multi_claim_chunks)
+    assert all(chunk.quality_state == GraphReadinessState.REPAIR_REQUIRED for chunk in multi_claim_chunks)

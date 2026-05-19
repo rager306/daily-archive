@@ -64,6 +64,22 @@ METADATA_SIGNAL_TERMS = (
     "author information",
     "email",
 )
+ADMINISTRATIVE_ROADMAP_TERMS = (
+    "paper is organized as follows",
+    "paper is structured as follows",
+    "remainder of this paper",
+    "rest of this paper",
+    "the rest of the paper",
+    "in section ",
+)
+BACKGROUND_SECTION_TERMS = ("background", "related work", "prior work", "literature review")
+BACKGROUND_BODY_TERMS = ("previous work", "prior studies", "has been studied", "existing work")
+MULTI_CLAIM_SIGNAL_TERMS = (
+    "our contributions are",
+    "we make the following contributions",
+    "main contributions",
+    "we contribute",
+)
 
 
 @dataclass(frozen=True)
@@ -232,12 +248,24 @@ def _graph_ready_chunks(
         )
         if split_candidates:
             for split_candidate in split_candidates:
+                split_chunk_id = f"{semantic_chunk.id}:split-{split_candidate.order:04d}"
                 split_routes, split_excluded, split_warnings = _repair_route_quality(
-                    chunk_id=f"{semantic_chunk.id}:split-{split_candidate.order:04d}",
+                    chunk_id=split_chunk_id,
                     chunk_type=chunk_type,
                     routes=routes,
                     excluded_routes=excluded_routes,
                     token_count=len(split_candidate.text.split()),
+                )
+                candidate_warnings = _candidate_quality_warnings(
+                    chunk_id=split_chunk_id,
+                    node=node,
+                    text=split_candidate.text,
+                    routes=split_routes,
+                )
+                split_routes, split_excluded = _apply_candidate_route_classification(
+                    routes=split_routes,
+                    excluded_routes=split_excluded,
+                    warnings=candidate_warnings,
                 )
                 chunks.append(
                     _graph_ready_chunk(
@@ -256,7 +284,7 @@ def _graph_ready_chunks(
                         quality_state=_chunk_quality_state(
                             traceable=split_candidate.source_span.is_graph_traceable(),
                             routes=split_routes,
-                            route_warnings=split_warnings,
+                            route_warnings=[*split_warnings, *candidate_warnings],
                         ),
                         validation_warnings=[
                             QualityWarning(
@@ -269,6 +297,7 @@ def _graph_ready_chunks(
                                 evidence={"parent_chunk_id": semantic_chunk.id},
                             ),
                             *split_warnings,
+                            *candidate_warnings,
                         ],
                         provenance={**dict(semantic_chunk.provenance), "split_from_chunk_id": semantic_chunk.id},
                         parent_chunk_id=semantic_chunk.id,
@@ -282,8 +311,23 @@ def _graph_ready_chunks(
             excluded_routes=excluded_routes,
             token_count=token_count,
         )
+        candidate_warnings = _candidate_quality_warnings(
+            chunk_id=semantic_chunk.id,
+            node=node,
+            text=semantic_chunk.text,
+            routes=routes,
+        )
+        routes, excluded_routes = _apply_candidate_route_classification(
+            routes=routes,
+            excluded_routes=excluded_routes,
+            warnings=candidate_warnings,
+        )
         traceable = source_span.is_graph_traceable()
-        quality_state = _chunk_quality_state(traceable=traceable, routes=routes, route_warnings=route_warnings)
+        quality_state = _chunk_quality_state(
+            traceable=traceable,
+            routes=routes,
+            route_warnings=[*route_warnings, *candidate_warnings],
+        )
         validation_warnings = [
             _warning_from_text(
                 code="semantic_chunk_warning",
@@ -295,7 +339,7 @@ def _graph_ready_chunks(
             )
             for warning in semantic_chunk.validation_warnings
         ]
-        validation_warnings.extend(route_warnings)
+        validation_warnings.extend([*route_warnings, *candidate_warnings])
         chunks.append(
             GraphReadyChunk(
                 chunk_id=semantic_chunk.id,
@@ -613,6 +657,98 @@ def _repair_route_quality(
             )
         )
     return _dedupe_routes(repaired_routes), _dedupe_routes(repaired_excluded), warnings
+
+
+def _candidate_quality_warnings(
+    *,
+    chunk_id: str,
+    node: PageIndexNode,
+    text: str,
+    routes: list[ChunkRoute],
+) -> list[QualityWarning]:
+    """Attach deterministic candidate-level scientific KG warnings without deleting text."""
+    if ChunkRoute.CLAIM_EXTRACTION not in routes:
+        return []
+
+    warnings: list[QualityWarning] = []
+    title = node.title.casefold()
+    body = text.casefold()
+    if _is_administrative_roadmap(body):
+        warnings.append(
+            QualityWarning(
+                code="administrative_roadmap_not_claim_evidence",
+                severity=WarningSeverity.REPAIR_REQUIRED,
+                message="Candidate describes paper organization and must not be promoted as a scientific claim.",
+                object_type="GraphReadyChunk",
+                object_id=chunk_id,
+                route_impact=[ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RETRIEVAL_ONLY],
+                repair_hint="Exclude this candidate from claim extraction while preserving it for retrieval context.",
+            )
+        )
+    if _is_background_or_related_work(title=title, body=body):
+        warnings.append(
+            QualityWarning(
+                code="background_related_work_claim_caveat",
+                severity=WarningSeverity.WARN,
+                message="Candidate appears to summarize background or related work; do not treat it as an author claim without review.",
+                object_type="GraphReadyChunk",
+                object_id=chunk_id,
+                route_impact=[ChunkRoute.CLAIM_EXTRACTION],
+                repair_hint="Require reviewer confirmation that the claim is made by the paper, not by cited prior work.",
+            )
+        )
+    if _is_multi_claim_bundle(body):
+        warnings.append(
+            QualityWarning(
+                code="multi_claim_candidate_requires_atomic_split",
+                severity=WarningSeverity.REPAIR_REQUIRED,
+                message="Candidate appears to bundle multiple contribution/result claims and needs atomic decomposition.",
+                object_type="GraphReadyChunk",
+                object_id=chunk_id,
+                route_impact=[ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION],
+                repair_hint="Split into one source-spanned claim candidate per contribution or result before extraction.",
+            )
+        )
+    return warnings
+
+
+def _apply_candidate_route_classification(
+    *,
+    routes: list[ChunkRoute],
+    excluded_routes: list[ChunkRoute],
+    warnings: list[QualityWarning],
+) -> tuple[list[ChunkRoute], list[ChunkRoute]]:
+    """Apply candidate-level exclusions while keeping retrieval evidence available."""
+    if not any(warning.code == "administrative_roadmap_not_claim_evidence" for warning in warnings):
+        return routes, excluded_routes
+    repaired_routes = [
+        route
+        for route in routes
+        if route not in {ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION}
+    ]
+    if ChunkRoute.RETRIEVAL_ONLY not in repaired_routes:
+        repaired_routes.append(ChunkRoute.RETRIEVAL_ONLY)
+    repaired_excluded = _dedupe_routes([*excluded_routes, ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION])
+    return _dedupe_routes(repaired_routes), repaired_excluded
+
+
+def _is_administrative_roadmap(body: str) -> bool:
+    return any(term in body for term in ADMINISTRATIVE_ROADMAP_TERMS)
+
+
+def _is_background_or_related_work(*, title: str, body: str) -> bool:
+    if any(term in title for term in BACKGROUND_SECTION_TERMS):
+        return True
+    citation_markers = body.count(" et al") + body.count("[") + body.count("(")
+    return any(term in body for term in BACKGROUND_BODY_TERMS) and citation_markers >= 2
+
+
+def _is_multi_claim_bundle(body: str) -> bool:
+    if any(term in body for term in MULTI_CLAIM_SIGNAL_TERMS):
+        return True
+    bullet_markers = body.count("\n-") + body.count("\n*") + body.count("; ")
+    result_verbs = sum(body.count(term) for term in ("we show", "we prove", "we introduce", "we propose", "we demonstrate"))
+    return bullet_markers >= 2 or result_verbs >= 2
 
 
 def _chunk_quality_state(
