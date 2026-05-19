@@ -198,6 +198,8 @@ def render_review_bundle(
             [
                 f"### {chunk.chunk_id}",
                 "",
+                f"- candidate_id: `{chunk.chunk_id}`",
+                f"- parent_chunk_id: `{chunk.parent_chunk_id or 'none'}`",
                 f"- type: `{chunk.chunk_type.value}`",
                 f"- routes: {', '.join(f'`{route.value}`' for route in chunk.routes)}",
                 f"- excluded_routes: {', '.join(f'`{route.value}`' for route in chunk.excluded_routes) or 'none'}",
@@ -205,6 +207,7 @@ def render_review_bundle(
                 f"- char_count: {chunk.char_count}",
                 f"- source_span: `{chunk.source_span.coordinate_space.value}:{chunk.source_span.char_start}-{chunk.source_span.char_end}`",
                 f"- quality_state: `{chunk.quality_state.value}`",
+                f"- warnings: {_chunk_warning_summary(chunk)}",
                 "",
                 "```text",
                 snippet,
@@ -240,6 +243,7 @@ def render_review_bundle(
             "repair_required:",
             "  - paper_id: <paper_id>",
             "    chunk_id: <chunk_id or route>",
+            "    candidate_id: <candidate chunk_id when reviewing a specific candidate, otherwise null>",
             "    route: <route>",
             "    finding_code: <stable_snake_case_code>",
             "    finding: <what is semantically wrong>",
@@ -312,6 +316,7 @@ def validate_review_artifacts(
         "<paper_id>",
         "<route>",
         "<chunk_id or route>",
+        "<candidate chunk_id when reviewing a specific candidate, otherwise null>",
         "<stable_snake_case_code>",
     )
     for path in review_paths:
@@ -399,8 +404,20 @@ def _sample_chunks(package: NormalizedPaperPackage) -> list[Any]:
         "retrieval_only",
     ]
     seen_ids: set[str] = set()
+    atomic_split_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "atomic_claim_candidate_split" for warning in chunk.validation_warnings)
+    ]
+    repair_candidate_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "multi_claim_candidate_requires_atomic_split" for warning in chunk.validation_warnings)
+    ]
     split_chunks = [chunk for chunk in package.chunks if chunk.parent_chunk_id or ":split-" in chunk.chunk_id]
-    for chunk in split_chunks[:4]:
+    for chunk in [*atomic_split_chunks[:6], *repair_candidate_chunks[:3], *split_chunks[:4]]:
+        if chunk.chunk_id in seen_ids:
+            continue
         selected.append(chunk)
         seen_ids.add(chunk.chunk_id)
     for route_name in preferred_routes:
@@ -418,6 +435,16 @@ def _sample_chunks(package: NormalizedPaperPackage) -> list[Any]:
             selected.append(chunk)
             seen_ids.add(chunk.chunk_id)
     return selected
+
+
+def _chunk_warning_summary(chunk: Any) -> str:
+    warnings = list(getattr(chunk, "validation_warnings", []))
+    if not warnings:
+        return "none"
+    return "; ".join(
+        f"`{warning.severity.value}` `{warning.code}` — {warning.message}"
+        for warning in warnings[:5]
+    )
 
 
 def _snippet_for_chunk(text: str, start: int | None, end: int | None, limit: int) -> str:

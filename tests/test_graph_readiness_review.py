@@ -54,6 +54,13 @@ SPLIT_REVIEW_TEXT = """# Split Review Paper
     " ".join(f"gamma{i}" for i in range(75)),
 )
 
+ATOMIC_REVIEW_TEXT = """# Atomic Review Paper
+
+## Results
+
+Our contributions are threefold: we propose a graph-ready validation gate; we demonstrate a source-span audit; we introduce a conservative extraction blocker for noisy claim routes.
+"""
+
 
 def _paper_dir(tmp_path: Path, paper_id: str, text: str) -> Path:
     paper_dir = tmp_path / "papers" / paper_id
@@ -124,9 +131,25 @@ def test_render_review_bundle_prioritizes_split_candidates(tmp_path: Path) -> No
 
     assert ":split-0001" in rendered
     assert ":split-0002" in rendered
+    assert "candidate_id" in rendered
+    assert "parent_chunk_id" in rendered
+    assert "warnings" in rendered
     assert "alpha0" in rendered
     assert "beta0" in rendered
 
+
+def test_render_review_bundle_prioritizes_atomic_claim_candidates(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.atomicv1", ATOMIC_REVIEW_TEXT)
+    doc = _manifest_doc(paper_dir, "2605.atomicv1", title="Atomic Fixture")
+    package = build_package_from_manifest_document(doc, run_id="test-run")
+
+    rendered = render_review_bundle(package, doc, snippet_chars=160)
+
+    assert "atomic_claim_candidate_split" in rendered
+    assert "candidate_id: `2605.atomicv1:results:chunk-0001:split-0001`" in rendered
+    assert "parent_chunk_id: `2605.atomicv1:results:chunk-0001`" in rendered
+    assert "we propose a graph-ready validation gate" in rendered
+    assert "candidate_id: <candidate chunk_id when reviewing a specific candidate" in rendered
 
 def test_generate_review_bundles_writes_summary_reviews_and_events(tmp_path: Path) -> None:
     docs = []
