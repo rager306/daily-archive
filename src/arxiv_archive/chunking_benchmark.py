@@ -7,7 +7,9 @@ state. It is a dry-run artifact model only.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "m005-chunking-benchmark.v1"
@@ -167,6 +169,128 @@ class ChunkingBenchmark:
         }
 
 
+def method_from_baseline_summary(summary: dict[str, Any]) -> MethodMetrics:
+    """Create benchmark metrics from the S02 baseline summary."""
+    chunk_count = _int(summary.get("refused_chunk_count")) or _int(summary.get("chunk_count"))
+    return MethodMetrics(
+        method_id="baseline_pageindex_semanticchunk",
+        paper_count=_int(summary.get("paper_count")),
+        chunk_count=chunk_count,
+        import_eligible_chunk_count=_int(summary.get("import_eligible_chunk_count")),
+        refused_chunk_count=_int(summary.get("refused_chunk_count")),
+        counts_by_route=_dict_ints(summary.get("counts_by_route")),
+        counts_by_chunk_type=_dict_ints(summary.get("counts_by_chunk_type")),
+        counts_by_state=_dict_ints(summary.get("counts_by_state")),
+        refusal_counts=_dict_ints(summary.get("refusal_counts")),
+        source_span_coverage=0.0,
+        parent_reference_resolution_rate=0.0,
+        annotation_coverage_rate=0.0,
+        asset_linkage_coverage_rate=0.0,
+        caveats=("baseline_retrieval_only_not_import_ready", "no_annotation_or_asset_linkage"),
+    )
+
+
+def method_from_structure_aware_summary(
+    summary: dict[str, Any],
+    *,
+    annotation_summary: dict[str, Any] | None = None,
+    source_asset_summary: dict[str, Any] | None = None,
+) -> MethodMetrics:
+    """Create benchmark metrics from S03/S04/S05 structure-aware evidence."""
+    chunk_count = _int(summary.get("chunk_count"))
+    annotation_count = _int((annotation_summary or {}).get("annotated_chunk_count"))
+    asset_count = _int((source_asset_summary or {}).get("asset_count"))
+    return MethodMetrics(
+        method_id="structure_aware_control",
+        paper_count=_int(summary.get("paper_count")),
+        chunk_count=chunk_count,
+        import_eligible_chunk_count=_int(summary.get("import_eligible_chunk_count")),
+        refused_chunk_count=_int(summary.get("refused_chunk_count")),
+        counts_by_route=_dict_ints(summary.get("counts_by_route")),
+        counts_by_chunk_type=_dict_ints(summary.get("counts_by_chunk_type")),
+        counts_by_state=_dict_ints(summary.get("counts_by_state")),
+        refusal_counts=_dict_ints(summary.get("refusal_counts")),
+        source_span_coverage=1.0 if chunk_count else 0.0,
+        parent_reference_resolution_rate=1.0 if chunk_count else 0.0,
+        annotation_coverage_rate=annotation_count / chunk_count if chunk_count else 0.0,
+        asset_linkage_coverage_rate=asset_count / chunk_count if chunk_count else 0.0,
+        missing_source_counts=_dict_ints((source_asset_summary or {}).get("missing_counts")),
+        caveats=("control_chunker_not_final_algorithm", "all_chunks_remain_import_blocked"),
+    )
+
+
+def method_from_simple_section_window(source_asset_summary: dict[str, Any]) -> MethodMetrics:
+    """Create a bounded deterministic candidate estimate from S05 source/asset manifests."""
+    asset_counts = _dict_ints(source_asset_summary.get("asset_counts_by_type"))
+    source_file_count = _int(source_asset_summary.get("source_file_count"))
+    asset_count = sum(asset_counts.values())
+    chunk_count = asset_count + source_file_count
+    counts_by_route = {
+        "retrieval_only": source_file_count,
+        "table_extraction": asset_counts.get("table", 0),
+        "citation_graph": asset_counts.get("reference", 0),
+        "metadata_graph": asset_counts.get("metadata", 0),
+    }
+    figure_equation_count = asset_counts.get("figure", 0) + asset_counts.get("equation", 0)
+    if figure_equation_count:
+        counts_by_route["retrieval_only"] = counts_by_route.get("retrieval_only", 0) + figure_equation_count
+    return MethodMetrics(
+        method_id="simple_section_window_estimate",
+        paper_count=_int(source_asset_summary.get("paper_count")),
+        chunk_count=chunk_count,
+        import_eligible_chunk_count=0,
+        refused_chunk_count=chunk_count,
+        counts_by_route={key: value for key, value in counts_by_route.items() if value},
+        counts_by_chunk_type={
+            "retrieval_context": source_file_count + figure_equation_count,
+            "table_context": asset_counts.get("table", 0),
+            "reference_entry": asset_counts.get("reference", 0),
+            "metadata": asset_counts.get("metadata", 0),
+        },
+        counts_by_state={"repair_required": asset_count, "ok_for_retrieval_only": source_file_count},
+        refusal_counts={"estimated_candidate_requires_review": chunk_count},
+        source_span_coverage=1.0 if chunk_count else 0.0,
+        parent_reference_resolution_rate=0.0,
+        annotation_coverage_rate=0.0,
+        asset_linkage_coverage_rate=asset_count / chunk_count if chunk_count else 0.0,
+        missing_source_counts=_dict_ints(source_asset_summary.get("missing_counts")),
+        caveats=(
+            "estimated_candidate_not_real_chunker",
+            "uses_s05_asset_links_without_raw_text_serialization",
+            "chonkie_llamaindex_langchain_not_executed",
+        ),
+    )
+
+
+def build_benchmark_from_artifacts(
+    *,
+    input_corpus: str,
+    baseline_summary_path: Path,
+    structure_summary_path: Path,
+    annotation_summary_path: Path,
+    source_asset_summary_path: Path,
+) -> ChunkingBenchmark:
+    """Build a benchmark object from prior redacted run summaries."""
+    baseline_summary = _load_json(baseline_summary_path)
+    structure_summary = _load_json(structure_summary_path)
+    annotation_summary = _load_json(annotation_summary_path)
+    source_asset_summary = _load_json(source_asset_summary_path)
+    return ChunkingBenchmark(
+        input_corpus=input_corpus,
+        methods=(
+            method_from_baseline_summary(baseline_summary),
+            method_from_structure_aware_summary(
+                structure_summary,
+                annotation_summary=annotation_summary,
+                source_asset_summary=source_asset_summary,
+            ),
+            method_from_simple_section_window(source_asset_summary),
+        ),
+        recommendation_status="review_required",
+        caveats=("dry_run_only", "real_library_candidates_not_executed", "production_import_blocked"),
+    )
+
+
 def aggregate_method_metrics(method_records: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate method metrics for a run-level summary."""
     chunk_count = sum(_int(record.get("chunk_count")) for record in method_records)
@@ -311,6 +435,17 @@ def _merge_counts(sources: Any) -> dict[str, int]:
         for key, value in source.items():
             counts[str(key)] = counts.get(str(key), 0) + _int(value)
     return dict(sorted(counts.items()))
+
+
+def _dict_ints(value: Any) -> dict[str, int]:
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): _int(raw_value) for key, raw_value in sorted(value.items())}
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    return value if isinstance(value, dict) else {}
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
