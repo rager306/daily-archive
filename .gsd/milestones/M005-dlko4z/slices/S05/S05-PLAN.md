@@ -26,7 +26,7 @@ S05 consumes S04 annotation sidecars and the S01 gold corpus. It produces per-pa
 
 ## Tasks
 
-- [ ] **T01: Define source asset manifest contract** `est:medium`
+- [x] **T01: Define source asset manifest contract** `est:medium`
   Define dataclasses and validators for source artifacts, preserved files, asset records, and per-paper multimodal manifests. Include stable ids, source paths, workspace-relative paths, sha256, byte size, media type, provenance, source spans/chunk ids, extraction state, and redaction/no-import flags. Add tests for redaction, required fields, hash metadata, and assets-not-KG-facts boundaries.
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `tests/test_source_asset_manifest.py`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/source_asset_manifest.py tests/test_source_asset_manifest.py
