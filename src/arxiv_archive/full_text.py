@@ -12,9 +12,30 @@ from pathlib import Path
 from typing import Literal
 
 FullTextSourceType = Literal["markdown", "text"]
-ExtractionMode = Literal["structured_markdown", "plain_text", "missing_source", "empty_source"]
+ExtractionMode = Literal[
+    "structured_markdown",
+    "plain_text",
+    "missing_source",
+    "empty_source",
+    "low_quality_source",
+]
+FullTextQualityStatus = Literal["ok", "missing_source", "empty_source", "no_substantive_body"]
 
 SUPPORTED_SOURCE_TYPES = {"markdown", "text"}
+MIN_SUBSTANTIVE_BODY_LINES = 1
+
+
+@dataclass(frozen=True)
+class FullTextQualityReport:
+    """Machine-readable quality signal for local full-text artifacts."""
+
+    status: str
+    char_count: int
+    line_count: int
+    heading_count: int
+    non_heading_nonempty_line_count: int
+    warnings: list[str]
+    fallback_reason: str | None
 
 
 @dataclass(frozen=True)
@@ -40,6 +61,7 @@ class FullTextIngestionResult:
     extraction_mode: str
     warnings: list[str]
     fallback_reason: str | None
+    quality: FullTextQualityReport
     provenance: dict[str, str]
 
 
@@ -80,23 +102,54 @@ def ingest_full_text(source: FullTextSource) -> FullTextIngestionResult:
         raise ValueError(f"unsupported full-text source type: {source.source_type}")
 
     if not source.source_path.exists():
+        quality = FullTextQualityReport(
+            status="missing_source",
+            char_count=0,
+            line_count=0,
+            heading_count=0,
+            non_heading_nonempty_line_count=0,
+            warnings=[f"source path does not exist: {source.source_path}"],
+            fallback_reason="source_missing",
+        )
         return _result(
             source=source,
             text="",
             extraction_mode="missing_source",
-            warnings=[f"source path does not exist: {source.source_path}"],
-            fallback_reason="source_missing",
+            warnings=quality.warnings,
+            fallback_reason=quality.fallback_reason,
+            quality=quality,
         )
 
     raw_text = source.source_path.read_text(encoding="utf-8")
     text = raw_text.strip()
     if not text:
+        quality = FullTextQualityReport(
+            status="empty_source",
+            char_count=0,
+            line_count=0,
+            heading_count=0,
+            non_heading_nonempty_line_count=0,
+            warnings=["source file is empty after trimming whitespace"],
+            fallback_reason="source_empty",
+        )
         return _result(
             source=source,
             text="",
             extraction_mode="empty_source",
-            warnings=["source file is empty after trimming whitespace"],
-            fallback_reason="source_empty",
+            warnings=quality.warnings,
+            fallback_reason=quality.fallback_reason,
+            quality=quality,
+        )
+
+    quality = assess_full_text_quality(text)
+    if quality.status == "no_substantive_body":
+        return _result(
+            source=source,
+            text=text,
+            extraction_mode="low_quality_source",
+            warnings=quality.warnings,
+            fallback_reason=quality.fallback_reason,
+            quality=quality,
         )
 
     if source.source_type == "markdown" and _has_markdown_section_structure(text):
@@ -106,6 +159,7 @@ def ingest_full_text(source: FullTextSource) -> FullTextIngestionResult:
             extraction_mode="structured_markdown",
             warnings=[],
             fallback_reason=None,
+            quality=quality,
         )
 
     return _result(
@@ -114,6 +168,55 @@ def ingest_full_text(source: FullTextSource) -> FullTextIngestionResult:
         extraction_mode="plain_text",
         warnings=["source has no markdown section structure"],
         fallback_reason="unstructured_text",
+        quality=quality,
+    )
+
+
+def assess_full_text_quality(text: str) -> FullTextQualityReport:
+    """Classify whether converted full text has substantive body content.
+
+    arxiv2md can return arXiv abstract-page navigation as markdown with headings
+    but no paper body. That shape must not be treated as PageIndex-ready full
+    text because it produces heading nodes with empty text and zero chunks.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return FullTextQualityReport(
+            status="empty_source",
+            char_count=0,
+            line_count=0,
+            heading_count=0,
+            non_heading_nonempty_line_count=0,
+            warnings=["source file is empty after trimming whitespace"],
+            fallback_reason="source_empty",
+        )
+
+    lines = stripped.splitlines()
+    heading_count = sum(1 for line in lines if line.lstrip().startswith("#"))
+    non_heading_nonempty_line_count = sum(
+        1 for line in lines if line.strip() and not line.lstrip().startswith("#")
+    )
+    if non_heading_nonempty_line_count < MIN_SUBSTANTIVE_BODY_LINES:
+        return FullTextQualityReport(
+            status="no_substantive_body",
+            char_count=len(stripped),
+            line_count=len(lines),
+            heading_count=heading_count,
+            non_heading_nonempty_line_count=non_heading_nonempty_line_count,
+            warnings=[
+                "source has markdown headings but no substantive non-heading body text; likely arXiv landing/navigation page"
+            ],
+            fallback_reason="no_substantive_body",
+        )
+
+    return FullTextQualityReport(
+        status="ok",
+        char_count=len(stripped),
+        line_count=len(lines),
+        heading_count=heading_count,
+        non_heading_nonempty_line_count=non_heading_nonempty_line_count,
+        warnings=[],
+        fallback_reason=None,
     )
 
 
@@ -129,6 +232,7 @@ def _result(
     extraction_mode: str,
     warnings: list[str],
     fallback_reason: str | None,
+    quality: FullTextQualityReport,
 ) -> FullTextIngestionResult:
     provenance = {
         "paper_id": source.paper_id,
@@ -147,6 +251,7 @@ def _result(
         extraction_mode=extraction_mode,
         warnings=warnings,
         fallback_reason=fallback_reason,
+        quality=quality,
         provenance=provenance,
     )
 
@@ -154,8 +259,11 @@ def _result(
 __all__ = [
     "ExtractionMode",
     "FullTextIngestionResult",
+    "FullTextQualityReport",
+    "FullTextQualityStatus",
     "FullTextSource",
     "FullTextSourceType",
+    "assess_full_text_quality",
     "full_text_source_for_paper",
     "ingest_full_text",
 ]

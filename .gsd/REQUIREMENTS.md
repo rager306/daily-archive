@@ -15,28 +15,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Pending S06 retrieval and ablation tests comparing vector-only, graph expansion, and fused retrieval over fixtures.
 - Notes: Restores planned M003 hybrid retrieval requirement from the missing historical R026-R035 range using current GSD auto-assigned IDs.
 
-### R020 — Evaluation fixtures and metrics must exist before scale, optimizer, DSPy, RLM, or retrieval-quality claims are made.
-- Class: quality-attribute
-- Status: active
-- Description: Evaluation fixtures and metrics must exist before scale, optimizer, DSPy, RLM, or retrieval-quality claims are made.
-- Why it matters: Without metrics and benchmark fixtures, DSPy/RLM or hybrid retrieval changes would create unverifiable quality claims.
-- Source: M003 requirements restoration after S03 and D001
-- Primary owning slice: M003-km5fty/S07
-- Supporting slices: S03,S04,S06,S08,S09,S10
-- Validation: Pending S07 benchmark tests covering expected claims, entities, evidence paths, retrieval questions, evidence-path hit rate, retrieval recall, schema validity, and groundedness proxy metrics.
-- Notes: Restores planned M003 evaluation requirement and captures the user decision that DSPy must wait for verified metrics.
-
-### R021 — DSPy extraction boundaries must remain disabled or non-optimizing until evaluation metrics and benchmark fixtures are verified.
-- Class: constraint
-- Status: active
-- Description: DSPy extraction boundaries must remain disabled or non-optimizing until evaluation metrics and benchmark fixtures are verified.
-- Why it matters: DSPy optimizers or LM modules without verified metrics would create false confidence and couple extraction quality to unmeasured prompts.
-- Source: D001 and M003 requirements restoration after S03
-- Primary owning slice: M003-km5fty/S08
-- Supporting slices: S04,S07
-- Validation: Pending S08 contract tests after S07 metrics exist; no GEPA/MIPROv2 or optimizer claims before benchmark evidence.
-- Notes: Implements D001: DSPy remains gated until S07 proves metrics and ablations. Optimizer use is explicitly out of scope before benchmark evidence exists.
-
 ### R022 — RLM document navigation and workflow-in-code prototypes must be read-only, bounded, and return typed draft outputs plus trajectories validated by deterministic code.
 - Class: core-capability
 - Status: active
@@ -58,6 +36,57 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: S05,S06,S07,S09
 - Validation: Pending S10 comparative benchmark with traversal path, tool usage, cost/latency, candidate set, and evidence recall metrics.
 - Notes: Restores planned M003 adaptive graph traversal requirement from the missing historical R026-R035 range using current GSD auto-assigned IDs.
+
+### R024 — Before expanding beyond M003, the system must validate current scientific KG behavior on staged real article batches of 10 documents, 20 documents, and then a one-week corpus, with analysis of graph quality at each stage.
+- Class: quality-attribute
+- Status: active
+- Description: Before expanding beyond M003, the system must validate current scientific KG behavior on staged real article batches of 10 documents, 20 documents, and then a one-week corpus, with analysis of graph quality at each stage.
+- Why it matters: Fixture-level passing tests do not prove that the knowledge graph captures useful claims, entities, relations, evidence paths, and retrieval behavior on real articles. Staged validation is needed before further architecture or optimizer work.
+- Source: user-directed post-M003 validation plan
+- Primary owning slice: future-validation-milestone
+- Supporting slices: M003-km5fty/S01-S10
+- Validation: A validation report exists for the 10-document batch and 20-document batch before any one-week full run; each report summarizes graph node/edge counts, claim/entity/relation quality, evidence-path coverage, retrieval behavior, diagnostics/failures, and go/no-go recommendations.
+
+### R025 — Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
+- Class: operability
+- Status: active
+- Description: Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
+- Why it matters: The first real-data validation stopped at missing full-text inputs. Before adding the full-text bridge, future agents need reliable logs to understand per-paper acquisition/conversion decisions and failures.
+- Source: user-directed M004 follow-up after S01 validation
+- Primary owning slice: M004-ubh2pt/full-text-bridge
+- Supporting slices: M004-ubh2pt/S01
+- Validation: A rerun over the same 10-paper corpus produces machine-readable Loguru logs/diagnostics recording paper id, phase, decision, source path, conversion outcome, warnings/errors, and redacted failure details; missing full text or conversion failures are visible without rerunning with extra debug flags.
+- Notes: User clarified to use `loguru` instead of unresolved `rulog`. Prefer project-managed dependency (`uv add loguru`) rather than an ad hoc environment-only pip install.
+
+### R026 — Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
+- Class: quality-attribute
+- Status: active
+- Description: Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
+- Why it matters: The current validation has proven full-text/chunk/evidence readiness but not claim/entity/relation extraction, graph persistence, or retrieval quality. Scaling before debugging would produce ambiguous graph quality results.
+- Source: user-directed M004 pipeline debugging gate
+- Primary owning slice: M004-ubh2pt/pipeline-debug
+- Supporting slices: M004-ubh2pt/S01,S02
+- Validation: A debug slice produces evidence for each pipeline stage, identifies/fixes zero-chunk conversion behavior or documents exclusions, creates real or explicitly baseline ExtractionPatch outputs, persists SCI KG records for eligible papers, and samples retrieval diagnostics before any 20-document run.
+
+### R027 — Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
+- Class: quality-attribute
+- Status: active
+- Description: Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
+- Why it matters: Poorly normalized conversion/chunk data will poison Claim/Entity/Relation extraction and make graph-quality results meaningless.
+- Source: user-feedback-after-S10-chunk-review
+- Primary owning slice: M004
+- Validation: A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes.
+- Notes: This requirement gates M004/S05 and later validation. Non-zero chunks are not sufficient evidence of graph readiness.
+
+### R028 — Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
+- Class: quality-attribute
+- Status: active
+- Description: Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
+- Why it matters: Passing tests can create false confidence when tests only verify plumbing, mocks, or counts. Scientific KG validation needs human-readable artifact quality checks to catch semantic failures.
+- Source: user-feedback-after-S10-quality-review
+- Primary owning slice: M004
+- Validation: S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes.
+- Notes: The review should look at naked artifacts such as Markdown, chunk samples, quality reports, graph exports, and test assertions. It should explicitly flag empty tests, over-mocked tests, count-only validation, and outputs that pass schema checks but fail semantic usefulness.
 
 ## Validated
 
@@ -233,6 +262,28 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M003-km5fty S05 post-review verification: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 42 tests; Ruff passed on touched files; Pyrefly reported 0 errors; Ty passed on `src/` plus S05 test; CLI help smoke exited 0; LSP diagnostics were clean; GitNexus detect_changes was reviewed with expected high scope for the uncommitted S05 persistence expansion.
 - Notes: S05 added post-review regression coverage requiring patch-embedded claim/entity/relation EvidencePath references to be present in the persisted evidence_paths list before any write transaction opens.
 
+### R020 — Evaluation fixtures and metrics must exist before scale, optimizer, DSPy, RLM, or retrieval-quality claims are made.
+- Class: quality-attribute
+- Status: validated
+- Description: Evaluation fixtures and metrics must exist before scale, optimizer, DSPy, RLM, or retrieval-quality claims are made.
+- Why it matters: Without metrics and benchmark fixtures, DSPy/RLM or hybrid retrieval changes would create unverifiable quality claims.
+- Source: M003 requirements restoration after S03 and D001
+- Primary owning slice: M003-km5fty/S07
+- Supporting slices: S03,S04,S06,S08,S09,S10
+- Validation: Validated by M003-km5fty/S07: focused closeout verification passed with `uv run pytest tests/test_evaluation_benchmark.py tests/test_hybrid_retrieval.py tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q` => 34 passed; Ruff lint and format checks passed; `ty`, `pyrefly`, and CLI help smoke passed. S07 added typed evaluation contracts and fixture-backed benchmark tests for schema validity, groundedness proxy counts, evidence-path hit rate, retrieval recall, and vector-only/graph-only/hybrid ablation metrics over deterministic local fixtures before DSPy/RLM/optimizer claims.
+- Notes: Validated by M003-km5fty/S07. Diagnostics are intentionally text-safe and local-only: benchmark outputs expose IDs, counts, modes, query text, metric values, and existing S06 diagnostics without full paper/chunk body text, embeddings, live services, DSPy, RLM traversal, or optimizer behavior.
+
+### R021 — DSPy extraction boundaries must remain disabled or non-optimizing until evaluation metrics and benchmark fixtures are verified.
+- Class: constraint
+- Status: validated
+- Description: DSPy extraction boundaries must remain disabled or non-optimizing until evaluation metrics and benchmark fixtures are verified.
+- Why it matters: DSPy optimizers or LM modules without verified metrics would create false confidence and couple extraction quality to unmeasured prompts.
+- Source: D001 and M003 requirements restoration after S03
+- Primary owning slice: M003-km5fty/S08
+- Supporting slices: S04,S07
+- Validation: Validated by M003-km5fty/S08 closeout: `uv run python -c "from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput, DspyExtractionOutput"` exited 0; focused verification passed with `uv run pytest tests/test_dspy_extraction_boundary.py tests/test_evaluation_benchmark.py tests/test_scientific_extraction_contracts.py -q` => 23 passed; Ruff lint and format checks passed; `ty` passed; `pyrefly` reported 0 errors; CLI help smoke exited 0; `gitnexus detect-changes --repo daily-archive` reported no changes detected. S08 added a deterministic DSPy-compatible `forward()` boundary around existing `ExtractionPatch` callables, reusing S04 extraction contracts and S07 schema/groundedness metric gates while keeping optimizer/runtime behavior disabled and diagnostics text-safe.
+- Notes: Validated by M003-km5fty/S08. The boundary is dependency-light and does not import DSPy on the normal runtime path, does not modify storage schema, rejects requested optimizer configuration, and exposes ID/count/status diagnostics plus explicit non-optimizer metadata for downstream S09 read-only RLM workflow use.
+
 ## Deferred
 
 ## Out of Scope
@@ -260,14 +311,19 @@ This file is the explicit capability and coverage contract for the project.
 | R017 | core-capability | validated | M003-km5fty/S04 | S03,S05,S07,S08 | S04 verification passed: `uv run pytest tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_analysis.py tests/test_cli_contract.py -q` => 50 passed; Ruff all checks passed; CLI help smoke exit 0; LSP diagnostics clean; Pyrefly 0 errors; Ty all checks passed. |
 | R018 | integration | validated | M003-km5fty/S05 | S02,S03,S04,S06,S10 | Validated by M003-km5fty S05 post-review verification: `uv run pytest tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py tests/test_page_index.py tests/test_full_text_ingestion.py tests/test_ladybug_client_property.py tests/test_scientific_kg_e2e.py tests/test_cli_contract.py -q` passed with 42 tests; Ruff passed on touched files; Pyrefly reported 0 errors; Ty passed on `src/` plus S05 test; CLI help smoke exited 0; LSP diagnostics were clean; GitNexus detect_changes was reviewed with expected high scope for the uncommitted S05 persistence expansion. |
 | R019 | core-capability | active | M003-km5fty/S06 | S03,S05,S07,S10 | Pending S06 retrieval and ablation tests comparing vector-only, graph expansion, and fused retrieval over fixtures. |
-| R020 | quality-attribute | active | M003-km5fty/S07 | S03,S04,S06,S08,S09,S10 | Pending S07 benchmark tests covering expected claims, entities, evidence paths, retrieval questions, evidence-path hit rate, retrieval recall, schema validity, and groundedness proxy metrics. |
-| R021 | constraint | active | M003-km5fty/S08 | S04,S07 | Pending S08 contract tests after S07 metrics exist; no GEPA/MIPROv2 or optimizer claims before benchmark evidence. |
+| R020 | quality-attribute | validated | M003-km5fty/S07 | S03,S04,S06,S08,S09,S10 | Validated by M003-km5fty/S07: focused closeout verification passed with `uv run pytest tests/test_evaluation_benchmark.py tests/test_hybrid_retrieval.py tests/test_ladybug_scientific_kg.py tests/test_scientific_extraction_contracts.py tests/test_evidence_paths.py -q` => 34 passed; Ruff lint and format checks passed; `ty`, `pyrefly`, and CLI help smoke passed. S07 added typed evaluation contracts and fixture-backed benchmark tests for schema validity, groundedness proxy counts, evidence-path hit rate, retrieval recall, and vector-only/graph-only/hybrid ablation metrics over deterministic local fixtures before DSPy/RLM/optimizer claims. |
+| R021 | constraint | validated | M003-km5fty/S08 | S04,S07 | Validated by M003-km5fty/S08 closeout: `uv run python -c "from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput, DspyExtractionOutput"` exited 0; focused verification passed with `uv run pytest tests/test_dspy_extraction_boundary.py tests/test_evaluation_benchmark.py tests/test_scientific_extraction_contracts.py -q` => 23 passed; Ruff lint and format checks passed; `ty` passed; `pyrefly` reported 0 errors; CLI help smoke exited 0; `gitnexus detect-changes --repo daily-archive` reported no changes detected. S08 added a deterministic DSPy-compatible `forward()` boundary around existing `ExtractionPatch` callables, reusing S04 extraction contracts and S07 schema/groundedness metric gates while keeping optimizer/runtime behavior disabled and diagnostics text-safe. |
 | R022 | core-capability | active | M003-km5fty/S09 | S02,S03,S04,S08 | Pending S09 fixture tests or mocked-interpreter tests for bounded tools, typed draft patch output, trajectory capture, and deterministic validation. |
 | R023 | differentiator | active | M003-km5fty/S10 | S05,S06,S07,S09 | Pending S10 comparative benchmark with traversal path, tool usage, cost/latency, candidate set, and evidence recall metrics. |
+| R024 | quality-attribute | active | future-validation-milestone | M003-km5fty/S01-S10 | A validation report exists for the 10-document batch and 20-document batch before any one-week full run; each report summarizes graph node/edge counts, claim/entity/relation quality, evidence-path coverage, retrieval behavior, diagnostics/failures, and go/no-go recommendations. |
+| R025 | operability | active | M004-ubh2pt/full-text-bridge | M004-ubh2pt/S01 | A rerun over the same 10-paper corpus produces machine-readable Loguru logs/diagnostics recording paper id, phase, decision, source path, conversion outcome, warnings/errors, and redacted failure details; missing full text or conversion failures are visible without rerunning with extra debug flags. |
+| R026 | quality-attribute | active | M004-ubh2pt/pipeline-debug | M004-ubh2pt/S01,S02 | A debug slice produces evidence for each pipeline stage, identifies/fixes zero-chunk conversion behavior or documents exclusions, creates real or explicitly baseline ExtractionPatch outputs, persists SCI KG records for eligible papers, and samples retrieval diagnostics before any 20-document run. |
+| R027 | quality-attribute | active | M004 | none | A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes. |
+| R028 | quality-attribute | active | M004 | none | S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes. |
 
 ## Coverage Summary
 
-- Active requirements: 5
-- Mapped to slices: 5
-- Validated: 18 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018)
+- Active requirements: 8
+- Mapped to slices: 8
+- Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0

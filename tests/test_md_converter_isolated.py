@@ -22,11 +22,11 @@ async def test_cache_hit(temp_cache):
 
     # Create fake cache
     temp_cache.mkdir(parents=True, exist_ok=True)
-    (temp_cache / "2101.12345.md").write_text("# Cached content")
+    (temp_cache / "2101.12345.md").write_text("# Cached content\n\nCached paper body")
     (temp_cache / "2101.12345.method").write_text("arxiv2md")
 
     result = await converter.convert("2101.12345")
-    assert result.markdown == "# Cached content"
+    assert result.markdown == "# Cached content\n\nCached paper body"
     assert result.method == "arxiv2md"
 
 @pytest.mark.asyncio
@@ -35,7 +35,8 @@ async def test_arxiv2md_success(temp_cache, monkeypatch):
 
     class MockResponse:
         status_code = 200
-        text = "# From API"
+        text = "# From API\n\nConverted paper body"
+
 
     class MockClient:
         async def get(self, url, params):
@@ -50,11 +51,13 @@ async def test_arxiv2md_success(temp_cache, monkeypatch):
     monkeypatch.setattr(converter, "_get_http_client", get_client)
 
     result = await converter.convert("2101.12345")
-    assert result.markdown == "# From API"
+    assert result.markdown == "# From API\n\nConverted paper body"
+
     assert result.method == "arxiv2md"
 
     # Check it was cached
-    assert (temp_cache / "2101.12345.md").read_text() == "# From API"
+    assert (temp_cache / "2101.12345.md").read_text() == "# From API\n\nConverted paper body"
+
 
 @pytest.mark.asyncio
 async def test_arxiv2md_404(temp_cache, monkeypatch):
@@ -73,6 +76,12 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
 
     monkeypatch.setattr(converter, "_get_http_client", get_client)
     monkeypatch.setattr(converter, "_needs_marker_fallback", lambda x: False)
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("offline")
+
+    converter._pdf_downloader = FailingDownloader()
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -93,6 +102,12 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
 
     monkeypatch.setattr(converter, "_get_http_client", get_client)
     monkeypatch.setattr(converter, "_needs_marker_fallback", lambda x: False)
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("offline")
+
+    converter._pdf_downloader = FailingDownloader()
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -144,28 +159,138 @@ async def test_arxiv2md_fails_and_fallback_to_marker(temp_cache, home_dir, monke
     assert result.method == "marker"
 
 @pytest.mark.asyncio
-async def test_marker_missing_pdf(temp_cache, monkeypatch):
+async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(temp_cache, home_dir, monkeypatch):
     converter = MDConverter()
+
+    class MockClient:
+        async def get(self, url, params):
+            class MockResp:
+                status_code = 200
+                text = "# Title: navigation shell\n\n## Submission history\n\n## Access Paper:"
+            return MockResp()
+        async def aclose(self): pass
+
+    async def get_client():
+        return MockClient()
+
+    monkeypatch.setattr(converter, "_get_http_client", get_client)
+
+    pdf_path = temp_cache / "2605.14259v1.pdf"
+    temp_cache.mkdir(parents=True, exist_ok=True)
+    pdf_path.write_bytes(b"%PDF-1.4")
+
+    class MockProcess:
+        returncode = 0
+        async def communicate(self):
+            out_dir = temp_cache / "marker_2605.14259v1"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            (out_dir / "output.md").write_text("# From Marker\n\nRecovered paper body")
+            return b"stdout", b"stderr"
+        async def wait(self): pass
+        def kill(self): pass
+
+    async def mock_exec(*args, **kwargs):
+        return MockProcess()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", mock_exec)
+    monkeypatch.setattr("shutil.which", lambda x: "/usr/bin/marker")
+
+    result = await converter.convert("2605.14259v1")
+
+    assert "Recovered paper body" in result.markdown
+    assert result.method in {"marker", "docling"}
+    assert not (temp_cache / "2605.14259v1.md").read_text().startswith("# Title: navigation")
+
+
+def test_low_quality_cached_markdown_is_ignored(temp_cache):
+    converter = MDConverter()
+    temp_cache.mkdir(parents=True, exist_ok=True)
+    (temp_cache / "2605.14517v1.md").write_text(
+        "# Computer Science > Computation and Language\n\n## Submission history\n\n## Access Paper:",
+        encoding="utf-8",
+    )
+    (temp_cache / "2605.14517v1.method").write_text("arxiv2md", encoding="utf-8")
+
+    assert converter._get_cached("2605.14517v1") is None
+
+
+def test_deprecated_pymupdf_cached_markdown_is_ignored(temp_cache):
+    converter = MDConverter()
+    temp_cache.mkdir(parents=True, exist_ok=True)
+    (temp_cache / "2605.14259v1.md").write_text(
+        "# Converted from PDF\n\nRecovered body text", encoding="utf-8"
+    )
+    (temp_cache / "2605.14259v1.method").write_text("pymupdf", encoding="utf-8")
+
+    assert converter._get_cached("2605.14259v1") is None
+
+
+@pytest.mark.asyncio
+async def test_marker_missing_pdf_reports_download_failure(temp_cache, monkeypatch):
+    converter = MDConverter()
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("network unavailable")
+
+    converter._pdf_downloader = FailingDownloader()
+    monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
+
     result = await converter._try_marker("2101.12345")
     assert result.markdown is None
     assert result.error is not None
-    assert "PDF not found" in result.error
+    assert "PDF download failed" in result.error
+
 
 @pytest.mark.asyncio
-async def test_marker_cli_not_found(temp_cache, monkeypatch):
+async def test_marker_downloads_pdf_when_missing_and_marker_unavailable(temp_cache, monkeypatch):
+    converter = MDConverter()
+    downloaded_pdf = temp_cache / "2101.12345.pdf"
+
+    class FakeDownloader:
+        def download(self, arxiv_id, pdf_url):
+            downloaded_pdf.write_bytes(b"%PDF")
+            return downloaded_pdf
+
+    converter._pdf_downloader = FakeDownloader()
+    monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
+    monkeypatch.setattr("shutil.which", lambda x: None)
+    monkeypatch.setattr(
+        converter,
+        "_try_docling",
+        lambda arxiv_id, pdf_path: ConversionResult(
+            markdown="# From PDF\n\nRecovered body", method="docling", error=None
+        ),
+    )
+
+    result = await converter._try_marker("2101.12345")
+
+    assert result.markdown == "# From PDF\n\nRecovered body"
+    assert result.method == "docling"
+
+
+@pytest.mark.asyncio
+async def test_marker_cli_not_found_falls_back_to_docling(temp_cache, monkeypatch):
     converter = MDConverter()
 
     # create fake pdf
     temp_cache.mkdir(parents=True, exist_ok=True)
-    (temp_cache / "2101.12345.pdf").write_bytes(b"%PDF")
+    pdf_path = temp_cache / "2101.12345.pdf"
+    pdf_path.write_bytes(b"%PDF")
 
-    monkeypatch.setattr(converter, "_get_pdf_path", lambda x: temp_cache / "2101.12345.pdf")
+    monkeypatch.setattr(converter, "_get_pdf_path", lambda x: pdf_path)
     monkeypatch.setattr("shutil.which", lambda x: None)
+    monkeypatch.setattr(
+        converter,
+        "_try_docling",
+        lambda arxiv_id, pdf_path: ConversionResult(
+            markdown="# From Docling\n\nRecovered body", method="docling", error=None
+        ),
+    )
 
     result = await converter._try_marker("2101.12345")
-    assert result.markdown is None
-    assert result.error is not None
-    assert "Marker CLI not found" in result.error
+    assert result.markdown == "# From Docling\n\nRecovered body"
+    assert result.method == "docling"
 
 def test_convert_sync(monkeypatch):
     converter = MDConverter()
@@ -210,6 +335,12 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
 
     monkeypatch.setattr(converter, "_get_http_client", get_client)
     monkeypatch.setattr(converter, "_needs_marker_fallback", lambda x: False)
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("offline")
+
+    converter._pdf_downloader = FailingDownloader()
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -275,7 +406,7 @@ def test_cache_read_exception(temp_cache, monkeypatch):
     md_path = temp_cache / "2101.12345.md"
     method_path = temp_cache / "2101.12345.method"
 
-    md_path.write_text("# Cached")
+    md_path.write_text("# Cached\n\nCached body")
     method_path.write_text("arxiv2md")
 
     # Mock read_text to throw

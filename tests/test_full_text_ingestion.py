@@ -10,7 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.full_text import FullTextSource, full_text_source_for_paper, ingest_full_text
+from arxiv_archive.full_text import (
+    FullTextSource,
+    assess_full_text_quality,
+    full_text_source_for_paper,
+    ingest_full_text,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "full_text"
 
@@ -102,6 +107,37 @@ def test_empty_or_malformed_source_returns_explicit_warning(tmp_path: Path) -> N
     assert result.provenance["source_path"] == str(empty_path)
     assert result.provenance["fallback_reason"] == "source_empty"
 
+
+def test_low_quality_arxiv_landing_markdown_is_formalized() -> None:
+    source_path = FIXTURES_DIR / "arxiv_landing_only.md"
+    source = FullTextSource(
+        paper_id="2605.14259v1",
+        source_type="markdown",
+        source_path=source_path,
+    )
+
+    result = ingest_full_text(source)
+
+    assert result.extraction_mode == "low_quality_source"
+    assert result.fallback_reason == "no_substantive_body"
+    assert result.quality.status == "no_substantive_body"
+    assert result.quality.heading_count == 13
+    assert result.quality.non_heading_nonempty_line_count == 0
+    assert result.warnings == [
+        "source has markdown headings but no substantive non-heading body text; likely arXiv landing/navigation page"
+    ]
+    assert result.provenance["fallback_reason"] == "no_substantive_body"
+
+
+def test_assess_full_text_quality_accepts_structured_body() -> None:
+    text = (FIXTURES_DIR / "structured_paper.md").read_text(encoding="utf-8")
+
+    quality = assess_full_text_quality(text)
+
+    assert quality.status == "ok"
+    assert quality.heading_count > 0
+    assert quality.non_heading_nonempty_line_count > 0
+    assert quality.warnings == []
 
 def test_stored_paper_artifact_path_ingests_pageindex_ready_payload(tmp_path: Path) -> None:
     """Stored paper ids map to local full-text sources for S02 PageIndex consumers."""

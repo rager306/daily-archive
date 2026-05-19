@@ -14,6 +14,9 @@ from pathlib import Path
 
 import httpx
 
+from arxiv_archive.full_text import assess_full_text_quality
+from arxiv_archive.pdf_downloader import PDFDownloader, arxiv_pdf_url
+
 ARXIV2MD_URL = "https://arxiv2md.org/api/markdown"
 HTML_CUTOFF_YEAR = 2020
 CACHE_DIR = Path.home() / ".arxiv_cache"
@@ -30,10 +33,11 @@ class ConversionResult:
 
 
 class MDConverter:
-    """Converts arXiv papers to markdown using arxiv2md REST + Marker fallback."""
+    """Converts arXiv papers to markdown using arxiv2md REST + PDF fallback."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, pdf_downloader: PDFDownloader | None = None) -> None:
         self._http_client: httpx.AsyncClient | None = None
+        self._pdf_downloader = pdf_downloader or PDFDownloader(cache_dir=CACHE_DIR)
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         if self._http_client is None:
@@ -91,6 +95,16 @@ class MDConverter:
         try:
             response = await client.get(ARXIV2MD_URL, params={"url": arxiv_id})
             if response.status_code == 200:
+                quality = assess_full_text_quality(response.text)
+                if quality.status != "ok":
+                    return ConversionResult(
+                        markdown=None,
+                        method="arxiv2md",
+                        error=(
+                            f"arxiv2md returned low-quality markdown for {arxiv_id}: "
+                            f"{quality.fallback_reason}"
+                        ),
+                    )
                 return ConversionResult(
                     markdown=response.text,
                     method="arxiv2md",
@@ -122,7 +136,7 @@ class MDConverter:
             )
 
     async def _try_marker(self, arxiv_id: str) -> ConversionResult:
-        """Run Marker CLI to convert PDF to markdown (fallback for old papers).
+        """Run Marker CLI to convert PDF to markdown, downloading the PDF if needed.
 
         Args:
             arxiv_id: ArXiv paper ID.
@@ -132,20 +146,19 @@ class MDConverter:
         """
         pdf_path = self._get_pdf_path(arxiv_id)
         if pdf_path is None or not pdf_path.exists():
-            return ConversionResult(
-                markdown=None,
-                method="marker",
-                error=f"PDF not found for {arxiv_id}",
-            )
+            try:
+                pdf_path = self._pdf_downloader.download(arxiv_id, arxiv_pdf_url(arxiv_id))
+            except Exception as exc:
+                return ConversionResult(
+                    markdown=None,
+                    method="pdf",
+                    error=f"PDF download failed for {arxiv_id}: {exc}",
+                )
 
         # Check marker is available
         marker_cmd = shutil.which("marker")
         if marker_cmd is None:
-            return ConversionResult(
-                markdown=None,
-                method="marker",
-                error="Marker CLI not found in PATH",
-            )
+            return self._try_docling(arxiv_id, pdf_path)
 
         output_dir = CACHE_DIR / f"marker_{arxiv_id}"
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -190,6 +203,39 @@ class MDConverter:
                 markdown=None,
                 method="marker",
                 error=f"Marker failed with code {proc.returncode}: {stderr_text[:200]}",
+            )
+
+    def _try_docling(self, arxiv_id: str, pdf_path: Path) -> ConversionResult:
+        """Convert a local PDF to Markdown with Docling when Marker is unavailable."""
+        try:
+            from docling.document_converter import DocumentConverter
+        except ImportError:
+            return ConversionResult(
+                markdown=None,
+                method="docling",
+                error="Marker CLI not found in PATH and Docling is not installed",
+            )
+
+        try:
+            converter = DocumentConverter()
+            result = converter.convert(pdf_path)
+            markdown = result.document.export_to_markdown()
+            quality = assess_full_text_quality(markdown)
+            if quality.status != "ok":
+                return ConversionResult(
+                    markdown=None,
+                    method="docling",
+                    error=(
+                        f"Docling extracted low-quality markdown for {arxiv_id}: "
+                        f"{quality.fallback_reason}"
+                    ),
+                )
+            return ConversionResult(markdown=markdown, method="docling", error=None)
+        except Exception as exc:
+            return ConversionResult(
+                markdown=None,
+                method="docling",
+                error=f"Docling PDF conversion failed for {arxiv_id}: {exc}",
             )
 
     def _needs_marker_fallback(self, arxiv_id: str) -> bool:
@@ -275,6 +321,10 @@ class MDConverter:
         try:
             markdown = md_path.read_text(encoding="utf-8")
             method = method_path.read_text(encoding="utf-8").strip()
+            if method == "pymupdf":
+                return None
+            if assess_full_text_quality(markdown).status != "ok":
+                return None
             return ConversionResult(markdown=markdown, method=method, error=None)
         except Exception:
             return None
@@ -296,14 +346,20 @@ class MDConverter:
         md_path.write_text(result.markdown, encoding="utf-8")
         method_path.write_text(result.method, encoding="utf-8")
 
+    async def _convert_and_close(self, arxiv_id: str) -> ConversionResult:
+        try:
+            return await self.convert(arxiv_id)
+        finally:
+            await self.close()
+
     # Sync wrapper for backwards compatibility
     def convert_sync(self, arxiv_id: str) -> ConversionResult:
         """Synchronous wrapper for convert()."""
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            # No running loop — create one
-            return asyncio.run(self.convert(arxiv_id))
+            # No running loop — create one and close the async HTTP client bound to it.
+            return asyncio.run(self._convert_and_close(arxiv_id))
         else:
             # Already in async context — schedule and block
             future = asyncio.ensure_future(self.convert(arxiv_id))

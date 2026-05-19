@@ -29,19 +29,19 @@
 - [x] **S05: LadybugDB SCI KG schema expansion** `risk:high` `depends:[S02,S03,S04]`
   > After this: After this: LadybugDB stores the expanded SCI KG fixture with Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, EvidencePath, and relation edges idempotently.
 
-- [ ] **S06: S06** `risk:high` `depends:[]`
+- [x] **S06: S06** `risk:high` `depends:[]`
   > After this: After this: a query over fixtures returns fused vector and graph results with evidence paths and score metadata.
 
-- [ ] **S07: Evaluation benchmark and ablations** `risk:medium` `depends:[S03,S04,S06]`
+- [x] **S07: S07** `risk:medium` `depends:[]`
   > After this: After this: benchmark fixtures define expected claims, entities, evidence paths, and retrieval questions with metric calculations.
 
-- [ ] **S08: DSPy extraction boundary** `risk:medium` `depends:[S04,S07]`
+- [x] **S08: S08** `risk:medium` `depends:[]`
   > After this: After this: baseline extraction functions are wrapped in DSPy-compatible typed modules without changing storage schema or requiring optimizers.
 
-- [ ] **S09: RLM document and workflow harness** `risk:high` `depends:[S02,S03,S04,S08]`
+- [x] **S09: S09** `risk:high` `depends:[]`
   > After this: After this: RLM can navigate a fixture PageIndex tree and run a read-only workflow-in-code extraction loop, returning a typed draft plus trajectory.
 
-- [ ] **S10: RLM graph traversal spike** `risk:high` `depends:[S05,S06,S07,S09]`
+- [x] **S10: S10** `risk:high` `depends:[]`
   > After this: After this: RLM graph traversal is compared against vector-only, one-hop graph expansion, and heuristic BFS on scattered-evidence fixture questions.
 
 ## Boundary Map
