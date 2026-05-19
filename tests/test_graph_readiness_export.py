@@ -106,6 +106,13 @@ MULTI_CLAIM_BUNDLE_TEXT = """# Contribution Fixture
 Our contributions are threefold: we propose a graph-ready validation gate; we demonstrate a source-span audit; we introduce a conservative extraction blocker for noisy claim routes.
 """
 
+UNSPLITTABLE_MULTI_CLAIM_TEXT = """# Unsplit Fixture
+
+## Results
+
+Our contributions are intertwined because we propose a graph-ready validation gate and demonstrate a source-span audit while introducing a conservative extraction blocker in one dependent sentence.
+"""
+
 
 def _paper_dir(tmp_path: Path, paper_id: str, text: str | None, *, method: str | None = None) -> Path:
     paper_dir = tmp_path / "papers" / paper_id
@@ -364,11 +371,11 @@ def test_related_work_candidate_gets_claim_caveat_without_deleting_text(tmp_path
     assert all(chunk.char_count > 0 for chunk in related_chunks)
 
 
-def test_multi_claim_bundle_is_marked_repair_required_before_extraction(tmp_path: Path) -> None:
-    paper_dir = _paper_dir(tmp_path, "2605.multiclaimv1", MULTI_CLAIM_BUNDLE_TEXT, method="docling")
+def test_unsplittable_multi_claim_bundle_is_marked_repair_required_before_extraction(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.unsplitv1", UNSPLITTABLE_MULTI_CLAIM_TEXT, method="docling")
 
     package = build_package_from_manifest_document(
-        _manifest_doc(paper_dir, "2605.multiclaimv1"),
+        _manifest_doc(paper_dir, "2605.unsplitv1"),
         run_id="test-run",
         created_at="2026-05-18T00:00:00Z",
     )
@@ -381,3 +388,53 @@ def test_multi_claim_bundle_is_marked_repair_required_before_extraction(tmp_path
     assert multi_claim_chunks
     assert all(ChunkRoute.CLAIM_EXTRACTION in chunk.routes for chunk in multi_claim_chunks)
     assert all(chunk.quality_state == GraphReadinessState.REPAIR_REQUIRED for chunk in multi_claim_chunks)
+
+
+def test_semicolon_contribution_bundle_splits_into_atomic_claim_candidates(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(tmp_path, "2605.atomicv1", MULTI_CLAIM_BUNDLE_TEXT, method="docling")
+
+    package = build_package_from_manifest_document(
+        _manifest_doc(paper_dir, "2605.atomicv1"),
+        run_id="test-run",
+        created_at="2026-05-18T00:00:00Z",
+    )
+
+    atomic_chunks = [
+        chunk
+        for chunk in package.chunks
+        if any(warning.code == "atomic_claim_candidate_split" for warning in chunk.validation_warnings)
+    ]
+    assert len(atomic_chunks) == 3
+    assert all(ChunkRoute.CLAIM_EXTRACTION in chunk.routes for chunk in atomic_chunks)
+    assert all(chunk.quality_state == GraphReadinessState.OK_FOR_GRAPH for chunk in atomic_chunks)
+    assert all(chunk.parent_chunk_id for chunk in atomic_chunks)
+    assert all(chunk.source_span.char_start is not None for chunk in atomic_chunks)
+    assert all(chunk.source_span.char_end is not None for chunk in atomic_chunks)
+    assert [chunk.order for chunk in atomic_chunks] == sorted(chunk.order for chunk in atomic_chunks)
+
+
+def test_single_claim_prose_is_not_over_split(tmp_path: Path) -> None:
+    paper_dir = _paper_dir(
+        tmp_path,
+        "2605.singleclaimv1",
+        """# Single Claim Fixture
+
+## Results
+
+We demonstrate that the graph-readiness gate preserves source spans for one measured extraction result.
+""",
+        method="docling",
+    )
+
+    package = build_package_from_manifest_document(
+        _manifest_doc(paper_dir, "2605.singleclaimv1"),
+        run_id="test-run",
+        created_at="2026-05-18T00:00:00Z",
+    )
+
+    assert len(package.chunks) == 1
+    assert not any(
+        warning.code in {"atomic_claim_candidate_split", "multi_claim_candidate_requires_atomic_split"}
+        for chunk in package.chunks
+        for warning in chunk.validation_warnings
+    )

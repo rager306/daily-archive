@@ -99,6 +99,7 @@ class SplitCandidate:
     text: str
     source_span: SourceSpan
     order: int
+    split_kind: str = "prose"
 
 
 def export_corpus(corpus_path: Path, output_dir: Path, *, run_id: str | None = None) -> ExportResult:
@@ -288,13 +289,21 @@ def _graph_ready_chunks(
                         ),
                         validation_warnings=[
                             QualityWarning(
-                                code="prose_candidate_split",
+                                code=(
+                                    "atomic_claim_candidate_split"
+                                    if split_candidate.split_kind == "atomic_claim"
+                                    else "prose_candidate_split"
+                                ),
                                 severity=WarningSeverity.INFO,
-                                message="Oversized prose chunk was split into a narrower source-span-preserving candidate.",
+                                message=(
+                                    "Multi-claim prose was split into a narrower source-span-preserving atomic claim candidate."
+                                    if split_candidate.split_kind == "atomic_claim"
+                                    else "Oversized prose chunk was split into a narrower source-span-preserving candidate."
+                                ),
                                 object_type="GraphReadyChunk",
                                 object_id=f"{semantic_chunk.id}:split-{split_candidate.order:04d}",
                                 route_impact=split_routes,
-                                evidence={"parent_chunk_id": semantic_chunk.id},
+                                evidence={"parent_chunk_id": semantic_chunk.id, "split_kind": split_candidate.split_kind},
                             ),
                             *split_warnings,
                             *candidate_warnings,
@@ -421,9 +430,14 @@ def _split_prose_candidates(
         return []
     if chunk_type in {ChunkType.METADATA, ChunkType.REFERENCE_ENTRY, ChunkType.TABLE_CONTEXT, ChunkType.FIGURE_CAPTION_CONTEXT}:
         return []
-    if token_count <= CLAIM_EXTRACTION_TOKEN_LIMIT:
-        return []
     if not base_span.is_graph_traceable() or base_span.char_start is None:
+        return []
+
+    atomic_candidates = _atomic_claim_candidates(ingestion=ingestion, node=node, base_span=base_span)
+    if len(atomic_candidates) > 1:
+        return atomic_candidates
+
+    if token_count <= CLAIM_EXTRACTION_TOKEN_LIMIT:
         return []
 
     paragraphs = [paragraph.strip() for paragraph in node.text.split("\n\n") if paragraph.strip()]
@@ -456,6 +470,69 @@ def _split_prose_candidates(
     if len(candidates) <= 1:
         return []
     return candidates
+
+
+def _atomic_claim_candidates(
+    *,
+    ingestion: FullTextIngestionResult,
+    node: PageIndexNode,
+    base_span: SourceSpan,
+) -> list[SplitCandidate]:
+    """Split obvious contribution/result bundles into source-spanned atomic candidates."""
+    text = node.text.strip()
+    if not _is_multi_claim_bundle(text.casefold()):
+        return []
+
+    parts = _atomic_claim_parts(text)
+    if len(parts) <= 1:
+        return []
+
+    candidates: list[SplitCandidate] = []
+    search_start = base_span.char_start or 0
+    for part in parts:
+        token_count = len(part.split())
+        if token_count < 4 or token_count > MAX_SPLIT_TOKEN_COUNT:
+            continue
+        char_start = ingestion.text.find(part, search_start)
+        if char_start < 0:
+            char_start = ingestion.text.find(part)
+        if char_start < 0:
+            continue
+        char_end = char_start + len(part)
+        candidates.append(
+            SplitCandidate(
+                text=part,
+                source_span=SourceSpan(
+                    source_path=str(ingestion.source_path),
+                    coordinate_space=CoordinateSpace.NORMALIZED_MARKDOWN_CHAR,
+                    char_start=char_start,
+                    char_end=char_end,
+                    span_confidence=1.0,
+                ),
+                order=len(candidates) + 1,
+                split_kind="atomic_claim",
+            )
+        )
+        search_start = char_end
+    return candidates if len(candidates) > 1 else []
+
+
+def _atomic_claim_parts(text: str) -> list[str]:
+    bullet_parts = [line.strip().lstrip("-*• ").strip() for line in text.splitlines() if line.strip().startswith(("-", "*", "•"))]
+    if len(bullet_parts) > 1:
+        return [part for part in bullet_parts if part]
+
+    normalized = " ".join(text.split())
+    for prefix in MULTI_CLAIM_SIGNAL_TERMS:
+        marker_index = normalized.casefold().find(prefix)
+        if marker_index >= 0:
+            normalized = normalized[marker_index + len(prefix) :].lstrip(":;,. ")
+            break
+    semicolon_parts = [part.strip(" .;") for part in normalized.split(";")]
+    semicolon_parts = [part for part in semicolon_parts if part]
+    if len(semicolon_parts) > 1:
+        return semicolon_parts
+    return []
 
 
 def _evidence_path_refs(
