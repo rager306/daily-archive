@@ -9,6 +9,7 @@ from arxiv_archive.structure_aware_chunking import (
     StructuralElement,
     StructureAwareChunk,
     empty_structure_aware_package,
+    parse_markdown_structure,
 )
 
 
@@ -107,3 +108,78 @@ def test_structural_element_preserves_hierarchy_without_text() -> None:
     serialized = json.dumps(record)
     assert "text" not in serialized
     assert "embedding" not in serialized
+
+
+def test_parse_markdown_structure_preserves_absolute_spans_and_hierarchy() -> None:
+    markdown = "# Title\n\n## Method\n\nThe method paragraph keeps provenance.\n\n## References\n\n[1] Example citation.\n"
+
+    package = parse_markdown_structure(
+        markdown,
+        paper_id="p1",
+        title="Example",
+        source_artifact="normalized_markdown:p1",
+    )
+    contract = package.to_contract()
+    elements = contract["elements"]
+    method = next(element for element in elements if element["section_path"] == ["Title", "Method"] and element["element_type"] == "section")
+    paragraph = next(element for element in elements if element["element_type"] == "paragraph")
+    reference = next(element for element in elements if element["element_type"] == "reference_entry")
+
+    assert contract["paper"]["source_artifacts"] == ["normalized_markdown:p1"]
+    assert method["parent_element_id"].startswith("p1:0001:section:title")
+    assert paragraph["parent_element_id"] == method["element_id"]
+    assert markdown[paragraph["source_span"]["char_start"] : paragraph["source_span"]["char_end"]].strip() == (
+        "The method paragraph keeps provenance."
+    )
+    assert reference["section_path"] == ["Title", "References"]
+    assert reference["source_span"]["coordinate_space"] == "normalized_markdown"
+    assert validate_import_ready_package(contract).valid_package is True
+    serialized = json.dumps(contract)
+    assert "The method paragraph keeps provenance" not in serialized
+    assert "Example citation" not in serialized
+
+
+def test_parse_markdown_structure_detects_tables_figures_equations_and_administrative_blocks() -> None:
+    markdown = (
+        "# Paper\n\n"
+        "ORCID: 0000-0000-0000-0000\n\n"
+        "## Results\n\n"
+        "| Model | Score |\n|---|---|\n| A | 1.0 |\n\n"
+        "Figure 1: Accuracy by model.\n\n"
+        "x = y + z\n"
+    )
+
+    package = parse_markdown_structure(
+        markdown,
+        paper_id="p2",
+        title="Kinds",
+        source_artifact="normalized_markdown:p2",
+    )
+    elements = package.to_contract()["elements"]
+    types = [element["element_type"] for element in elements]
+
+    assert "administrative" in types
+    assert "table" in types
+    assert "figure_caption" in types
+    assert "equation" in types
+    for element in elements:
+        span = element["source_span"]
+        assert 0 <= span["char_start"] <= span["char_end"] <= len(markdown)
+    assert "ORCID" not in json.dumps(package.to_contract())
+
+
+def test_parse_landing_markdown_keeps_navigation_as_administrative_or_sections() -> None:
+    markdown = "# Computer Science > Artificial Intelligence\n\n## Submission history\n\n## Access Paper:\n"
+
+    package = parse_markdown_structure(
+        markdown,
+        paper_id="p3",
+        title="Landing",
+        source_artifact="normalized_markdown:p3",
+    )
+    elements = package.to_contract()["elements"]
+
+    assert elements[0]["element_type"] == "document"
+    assert [element["element_type"] for element in elements].count("administrative") == 3
+    assert all(element["source_span"]["coordinate_space"] == "normalized_markdown" for element in elements)
+    assert all("Access Paper" not in element["section_path"] for element in elements)

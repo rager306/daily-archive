@@ -1,13 +1,15 @@
 """Deterministic structure-aware chunk model for M005/S03.
 
 This module starts the structure-aware chunking path that will replace the
-retrieval-only PageIndex/SemanticChunk baseline for import rehearsal. The first
-slice task defines stable data shapes and a redacted package builder only; later
-S03 tasks fill in Markdown parsing, route assignment, and gold-corpus runs.
+retrieval-only PageIndex/SemanticChunk baseline for import rehearsal. It keeps
+all machine-facing outputs redacted: structural spans and identifiers are stored,
+but raw paper text, chunk text, embeddings, vectors, and production KG writes are
+not emitted.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -46,6 +48,13 @@ ChunkType = Literal[
     "administrative",
     "retrieval_context",
 ]
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+_TABLE_RE = re.compile(r"^\s*\|.*\|\s*$")
+_TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$")
+_FIGURE_RE = re.compile(r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE)
+_EQUATION_RE = re.compile(r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)")
+_REFERENCE_HEADING_RE = re.compile(r"^(references|bibliography|works cited)$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -201,6 +210,97 @@ class StructureAwarePackage:
         }
 
 
+def parse_markdown_structure(
+    markdown: str,
+    *,
+    paper_id: str,
+    title: str | None,
+    source_artifact: str,
+    run_id: str = "m005-s03-structure-aware",
+) -> StructureAwarePackage:
+    """Parse canonical normalized Markdown into structural elements with absolute spans.
+
+    The parser is intentionally deterministic and conservative. It emits only
+    hierarchy, element classes, and source spans; it does not include raw text in
+    the returned package.
+    """
+    root = StructuralElement(
+        element_id=f"{paper_id}:document",
+        paper_id=paper_id,
+        element_type="document",
+        section_path=(),
+        order_index=0,
+        source_span=SourceSpan(char_start=0, char_end=len(markdown)),
+    )
+    blocks = _markdown_blocks(markdown)
+    elements: list[StructuralElement] = [root]
+    heading_stack: list[tuple[int, str, str]] = []
+    order_index = 1
+    for block in blocks:
+        heading_match = _HEADING_RE.match(block.text.strip())
+        if heading_match:
+            level = len(heading_match.group(1))
+            heading_text = heading_match.group(2).strip()
+            if _looks_administrative(heading_text):
+                section_path = tuple(item[2] for item in heading_stack)
+                parent_id = heading_stack[-1][1] if heading_stack else root.element_id
+                elements.append(
+                    StructuralElement(
+                        element_id=_element_id(paper_id, order_index, "administrative", heading_text),
+                        paper_id=paper_id,
+                        element_type="administrative",
+                        parent_element_id=parent_id,
+                        section_path=section_path,
+                        order_index=order_index,
+                        source_span=SourceSpan(char_start=block.start, char_end=block.end),
+                    )
+                )
+                order_index += 1
+                continue
+            while heading_stack and heading_stack[-1][0] >= level:
+                heading_stack.pop()
+            section_path = tuple([item[2] for item in heading_stack] + [heading_text])
+            parent_id = heading_stack[-1][1] if heading_stack else root.element_id
+            element_id = _element_id(paper_id, order_index, "section", heading_text)
+            element = StructuralElement(
+                element_id=element_id,
+                paper_id=paper_id,
+                element_type="section",
+                parent_element_id=parent_id,
+                section_path=section_path,
+                order_index=order_index,
+                source_span=SourceSpan(char_start=block.start, char_end=block.end),
+            )
+            elements.append(element)
+            heading_stack.append((level, element_id, heading_text))
+            order_index += 1
+            continue
+
+        section_path = tuple(item[2] for item in heading_stack)
+        parent_id = heading_stack[-1][1] if heading_stack else root.element_id
+        element_type = _classify_block(block.text, section_path=section_path)
+        elements.append(
+            StructuralElement(
+                element_id=_element_id(paper_id, order_index, element_type, section_path[-1] if section_path else element_type),
+                paper_id=paper_id,
+                element_type=element_type,
+                parent_element_id=parent_id,
+                section_path=section_path,
+                order_index=order_index,
+                source_span=SourceSpan(char_start=block.start, char_end=block.end),
+            )
+        )
+        order_index += 1
+    return StructureAwarePackage(
+        paper_id=paper_id,
+        title=title,
+        source_artifact=source_artifact,
+        elements=tuple(elements),
+        chunks=(),
+        run_id=run_id,
+    )
+
+
 def empty_structure_aware_package(
     *,
     paper_id: str,
@@ -228,6 +328,67 @@ def empty_structure_aware_package(
         chunks=(),
         run_id=run_id,
     )
+
+
+@dataclass(frozen=True)
+class _MarkdownBlock:
+    text: str
+    start: int
+    end: int
+
+
+def _markdown_blocks(markdown: str) -> list[_MarkdownBlock]:
+    blocks: list[_MarkdownBlock] = []
+    block_start: int | None = None
+    block_lines: list[str] = []
+    position = 0
+    for line in markdown.splitlines(keepends=True):
+        line_start = position
+        line_end = position + len(line)
+        position = line_end
+        if line.strip():
+            if block_start is None:
+                block_start = line_start
+            block_lines.append(line)
+            continue
+        if block_start is not None:
+            blocks.append(_MarkdownBlock(text="".join(block_lines), start=block_start, end=line_start))
+            block_start = None
+            block_lines = []
+    if block_start is not None:
+        blocks.append(_MarkdownBlock(text="".join(block_lines), start=block_start, end=len(markdown)))
+    return blocks
+
+
+def _classify_block(text: str, *, section_path: tuple[str, ...]) -> str:
+    stripped = text.strip()
+    section_name = section_path[-1] if section_path else ""
+    if _REFERENCE_HEADING_RE.match(section_name) or re.match(r"^\s*\[?\d+\]?\s*[.)]?\s+", stripped):
+        return "reference_entry"
+    if any(_TABLE_RE.match(line) for line in stripped.splitlines()) or any(_TABLE_SEPARATOR_RE.match(line) for line in stripped.splitlines()):
+        return "table"
+    if _FIGURE_RE.match(stripped):
+        return "figure_caption"
+    if _EQUATION_RE.match(stripped):
+        return "equation"
+    if _looks_administrative(stripped):
+        return "administrative"
+    return "paragraph"
+
+
+def _looks_administrative(text: str) -> bool:
+    lowered = text.lower()
+    administrative_markers = ("orcid", "correspondence:", "submission history", "access paper", "bookmark", "bibtex", "computer science >")
+    return any(marker in lowered for marker in administrative_markers)
+
+
+def _element_id(paper_id: str, order_index: int, element_type: str, label: str) -> str:
+    return f"{paper_id}:{order_index:04d}:{_slug(element_type)}:{_slug(label)}"
+
+
+def _slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "item"
 
 
 def _diagnostics_for_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:

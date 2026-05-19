@@ -31,7 +31,7 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T02: Parse markdown structure with canonical spans** `est:large`
+- [x] **T02: Parse markdown structure with canonical spans** `est:large`
   Implement deterministic parsing from canonical normalized Markdown into structural elements with absolute character spans and parent-child hierarchy. Cover headings, paragraphs, references, tables, figures/captions, and equation-like blocks where detectable without LLMs.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
