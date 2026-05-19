@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: After this slice, there is a 30-paper manifest with selection rationale, local source availability, and known risk tags.
 
 - [ ] **S02: Thirty paper dry run evidence** `risk:high` `depends:[S01]`

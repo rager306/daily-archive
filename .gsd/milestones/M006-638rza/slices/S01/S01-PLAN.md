@@ -55,7 +55,7 @@ assert Path('.gsd/milestones/M006-638rza/slices/S01/run-evidence/thirty-paper-av
 print(summary)
 PY
 
-- [ ] **T03: Report thirty paper corpus readiness** `est:small`
+- [x] **T03: Report thirty paper corpus readiness** `est:small`
   Write the S01 availability/rationale report, highlighting whether 30 papers are viable for S02, which missing-source gaps are expected blockers, and what deviation categories are likely to be interesting.
   - Files: `.gsd/milestones/M006-638rza/slices/S01/thirty-paper-availability-report.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S01/thirty-paper-availability-report.md && uv run python - <<'PY'
