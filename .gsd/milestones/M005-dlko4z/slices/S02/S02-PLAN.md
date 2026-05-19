@@ -47,7 +47,7 @@ assert data['schema_version']=='m005-baseline-review-sample-index.v1'
 assert data['raw_text_in_machine_logs'] is False
 PY
 
-- [ ] **T04: Report baseline chunk quality** `est:0.5d`
+- [x] **T04: Report baseline chunk quality** `est:0.5d`
   Write the S02 baseline report and run independent review. The report must state current chunking import-readiness failures, missing-artifact blockers, route/state/refusal distributions, and explicit non-claims: no improved chunking yet, no production import, no final import readiness, no broad corpus scaling.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S02/baseline-chunk-quality-report.md`, `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-review-summary.md`
   - Verify: uv run pytest tests/test_chunk_baseline_measurement.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S02/baseline-chunk-quality-report.md && test -s .gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-review-summary.md
