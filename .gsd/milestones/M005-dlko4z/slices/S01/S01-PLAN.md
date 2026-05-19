@@ -44,7 +44,7 @@ assert all('paper_id' in paper and 'hard_case_tags' in paper for paper in data['
 assert data['broad_corpus_run'] is False
 PY
 
-- [ ] **T03: Implement contract validator fixtures** `est:1d`
+- [x] **T03: Implement contract validator fixtures** `est:1d`
   Add a small contract validator module and tests for package invariants. The validator should reject raw text/embedding leakage, missing stable IDs, missing source spans for graph-eligible chunks, unresolved parent/source references, and invalid import states. It should validate synthetic fixtures only in S01.
   - Files: `src/arxiv_archive/chunk_import_contract.py`, `tests/test_chunk_import_contract.py`
   - Verify: uv run pytest tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunk_import_contract.py tests/test_chunk_import_contract.py
