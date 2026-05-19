@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -79,6 +79,16 @@ class SelectionResult:
             "refusals": len(self.refusals),
             **{f"refused_{reason}": count for reason, count in sorted(by_reason.items())},
         }
+
+
+@dataclass(frozen=True)
+class PersistenceArtifactResult:
+    """Files and summary produced by isolated validation persistence."""
+
+    selection: SelectionResult
+    claims_path: Path
+    summary_path: Path
+    summary: dict[str, Any]
 
 
 def select_trusted_candidate_claims(
@@ -151,6 +161,29 @@ def load_and_select(manifest_path: Path, extraction_summary_path: Path) -> Selec
     return select_trusted_candidate_claims(manifest=manifest, extraction_summary=extraction_summary)
 
 
+def persist_validation_subset(
+    *,
+    manifest_path: Path,
+    extraction_summary_path: Path,
+    output_dir: Path,
+) -> PersistenceArtifactResult:
+    """Write isolated validation persistence artifacts for trusted candidate claims."""
+    selection = load_and_select(manifest_path, extraction_summary_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    claims_path = output_dir / "persisted-candidate-claims.jsonl"
+    summary_path = output_dir / "persistence-summary.json"
+
+    persisted_claims = [replace(claim, persisted=True) for claim in selection.trusted_claims]
+    claims_path.write_text(
+        "".join(json.dumps(to_redacted_dict(_persisted_claim_payload(claim)), sort_keys=True) + "\n" for claim in persisted_claims),
+        encoding="utf-8",
+    )
+    summary = _persistence_summary(selection=selection, persisted_claims=persisted_claims, claims_path=claims_path)
+    summary_path.write_text(json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8")
+    return PersistenceArtifactResult(selection=selection, claims_path=claims_path, summary_path=summary_path, summary=summary)
+
+
 def selection_to_dict(result: SelectionResult) -> dict[str, Any]:
     """Serialize selection result without raw text."""
     return {
@@ -159,6 +192,53 @@ def selection_to_dict(result: SelectionResult) -> dict[str, Any]:
         "trusted_claims": [claim.__dict__ for claim in result.trusted_claims],
         "refusals": [refusal.__dict__ for refusal in result.refusals],
         "raw_text_included": False,
+    }
+
+
+def _persistence_summary(
+    *,
+    selection: SelectionResult,
+    persisted_claims: list[TrustedCandidateClaim],
+    claims_path: Path,
+) -> dict[str, Any]:
+    refusal_counts: dict[str, int] = {}
+    for refusal in selection.refusals:
+        refusal_counts[refusal.reason] = refusal_counts.get(refusal.reason, 0) + 1
+    return {
+        "schema_version": "s06-validation-persistence-summary.v1",
+        "persisted_scope": "validation_subset",
+        "persisted_count": len(persisted_claims),
+        "selected_count": len(selection.trusted_claims),
+        "refused_count": len(selection.refusals),
+        "refusal_counts": refusal_counts,
+        "claims_path": str(claims_path),
+        "raw_text_included": False,
+        "embeddings_included": False,
+        "kg_persistence_attempted": False,
+        "ladybugdb_written": False,
+        "allowed_entry_rule": "granularity=candidate route=claim_extraction final_eligibility=eligible matching_claim_draft explicit_trusted_review_finding",
+    }
+
+
+def _persisted_claim_payload(claim: TrustedCandidateClaim) -> dict[str, Any]:
+    return {
+        "schema_version": "s06-persisted-candidate-claim.v1",
+        "persisted_scope": "validation_subset",
+        "paper_id": claim.paper_id,
+        "route": claim.route,
+        "candidate_id": claim.candidate_id,
+        "chunk_id": claim.chunk_id,
+        "entry_id": claim.entry_id,
+        "source_artifact": claim.source_artifact,
+        "finding_codes": list(claim.finding_codes),
+        "independent_review_verdict": claim.independent_review_verdict,
+        "final_eligibility": claim.final_eligibility,
+        "claim_draft_id": claim.claim_draft_id,
+        "persisted": claim.persisted,
+        "raw_text_included": False,
+        "claim_text_included": False,
+        "embeddings_included": False,
+        "provenance": dict(claim.provenance),
     }
 
 
@@ -229,7 +309,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--extraction-summary", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
+    parser.add_argument("--persist-output-dir", required=False, type=Path)
     args = parser.parse_args(argv)
+    if args.persist_output_dir is not None:
+        persisted = persist_validation_subset(
+            manifest_path=args.manifest,
+            extraction_summary_path=args.extraction_summary,
+            output_dir=args.persist_output_dir,
+        )
+        sys.stdout.write(json.dumps(to_redacted_dict(persisted.summary), indent=2, sort_keys=True))
+        sys.stdout.write("\n")
+        return 0
+
     result = load_and_select(args.manifest, args.extraction_summary)
     payload = to_redacted_dict(selection_to_dict(result))
     if args.output is not None:
