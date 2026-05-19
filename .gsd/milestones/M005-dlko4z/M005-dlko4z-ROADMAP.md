@@ -30,7 +30,7 @@
 - [x] **S06: S06** `risk:high` `depends:[]`
   > After this: After this slice, current, structure-aware, and selected real chunking candidates are compared on real papers, including asset-linkage quality, and reviewed independently.
 
-- [ ] **S07: Negative isolated import boundary rehearsal** `risk:high` `depends:[S06]`
+- [ ] **S07: S07** `risk:high` `depends:[]`
   > After this: After this slice, an isolated import boundary rehearsal proves current packages are rejected safely with no production KG writes, and documents what remediation is required before any positive import path.
 
 ## Boundary Map

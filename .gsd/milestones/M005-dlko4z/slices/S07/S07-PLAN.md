@@ -25,7 +25,7 @@ S07 consumes S06 benchmark evidence plus S03/S04/S05 package/annotation/asset ar
 
 ## Tasks
 
-- [ ] **T01: Define negative import rehearsal contract** `est:medium`
+- [x] **T01: Define negative import rehearsal contract** `est:medium`
   Define an isolated import rehearsal contract and validator for negative import boundary evidence. Include accepted/rejected counts, refusal reasons, package/method ids, no-write flags, redaction flags, and remediation hints. Add tests showing import-ineligible chunks/assets are rejected and raw/embedding/write leakage is blocked.
   - Files: `src/arxiv_archive/import_boundary_rehearsal.py`, `tests/test_import_boundary_rehearsal.py`
   - Verify: uv run pytest tests/test_import_boundary_rehearsal.py tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/import_boundary_rehearsal.py tests/test_import_boundary_rehearsal.py
