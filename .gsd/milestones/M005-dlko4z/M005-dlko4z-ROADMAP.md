@@ -24,11 +24,14 @@
 - [ ] **S04: Chunk annotation sidecars** `risk:medium` `depends:[S03]`
   > After this: After this slice, chunks have deterministic sidecar annotations useful for routing and review, without becoming KG facts.
 
-- [ ] **S05: Benchmark and independent review gate** `risk:high` `depends:[S04]`
-  > After this: After this slice, current and improved chunking are compared on real papers and reviewed independently.
+- [ ] **S05: Source asset preservation and multimodal manifest** `risk:high` `depends:[S04]`
+  > After this: After this slice, source PDFs, normalized Markdown, extracted figures, tables, and image assets are preserved with redacted asset manifests for future multimodal retrieval.
 
-- [ ] **S06: Isolated import rehearsal** `risk:high` `depends:[S05]`
-  > After this: After this slice, an isolated import rehearsal proves the chunk package can be validated and loaded without production KG writes.
+- [ ] **S06: Benchmark chunking methods and independent review** `risk:high` `depends:[S05]`
+  > After this: After this slice, current, structure-aware, and selected real chunking candidates are compared on real papers, including asset-linkage quality, and reviewed independently.
+
+- [ ] **S07: Isolated import rehearsal** `risk:high` `depends:[S06]`
+  > After this: After this slice, an isolated import rehearsal proves approved package records can be validated and loaded without production KG writes.
 
 ## Boundary Map
 

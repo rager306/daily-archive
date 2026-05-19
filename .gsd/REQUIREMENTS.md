@@ -98,6 +98,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded.
 - Notes: This extends R027 from graph-readiness research into implementation. The import model must not persist raw text or embeddings in machine logs and must not promote annotations into KG facts without extraction validation.
 
+### R030 — Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
+- Class: continuity
+- Status: active
+- Description: Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
+- Why it matters: Scientific papers often contain figures, plots, tables, and diagrams that are necessary for future multimodal search and evidence review. Losing raw source artifacts during ingestion would make later multimodal KG and retrieval work incomplete or non-reproducible.
+- Source: user-direction
+- Primary owning slice: M005-dlko4z/S05
+- Validation: A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs.
+- Notes: Raw binary/image assets must be stored as files referenced by path/hash/provenance manifests, not embedded in machine JSON/JSONL logs. Assets are not KG facts and do not authorize production import, embeddings, or multimodal claims until later review gates pass.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -331,10 +341,11 @@ This file is the explicit capability and coverage contract for the project.
 | R027 | quality-attribute | active | M004 | none | A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes. |
 | R028 | quality-attribute | active | M004 | none | S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes. |
 | R029 | quality-attribute | active | M005-dlko4z | none | A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded. |
+| R030 | continuity | active | M005-dlko4z/S05 | none | A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs. |
 
 ## Coverage Summary
 
-- Active requirements: 9
-- Mapped to slices: 9
+- Active requirements: 10
+- Mapped to slices: 10
 - Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0
