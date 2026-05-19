@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from arxiv_archive.import_boundary_rehearsal import (
     SCHEMA_VERSION,
     ImportBoundaryRehearsal,
     ImportCandidate,
+    build_import_boundary_rehearsal_from_benchmark,
     validate_import_boundary_rehearsal,
 )
 
@@ -126,6 +129,48 @@ def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_with
     assert all("do not expose me" not in (diagnostic.object_id or "") for diagnostic in validation.diagnostics)
 
 
+
+def test_build_import_boundary_rehearsal_from_current_benchmark_artifacts() -> None:
+    contract = build_import_boundary_rehearsal_from_benchmark(
+        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
+        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+    )
+
+    validation = validate_import_boundary_rehearsal(contract)
+
+    assert validation.valid_rehearsal is True
+    assert contract["candidate_count"] == 2471
+    assert contract["accepted_count"] == 0
+    assert contract["rejected_count"] == 2471
+    assert contract["source_benchmark_summary"]["total_chunk_count"] == 2471
+    assert contract["source_benchmark_summary"]["total_import_eligible_chunk_count"] == 0
+    assert contract["source_benchmark_summary"]["recommendation_status"] == "review_required"
+    assert set(contract["refusal_counts"]) == {
+        "administrative_metadata_requires_review",
+        "baseline_retrieval_only_not_import_ready",
+        "citation_route_requires_review",
+        "claim_route_requires_review",
+        "equation_route_not_import_ready",
+        "estimated_candidate_requires_review",
+        "figure_route_not_import_ready",
+        "method_route_requires_review",
+        "retrieval_only_not_import_ready",
+        "table_route_requires_review",
+    }
+    assert all(candidate["accepted"] is False for candidate in contract["candidates"])
+    assert all(candidate["production_import_attempted"] is False for candidate in contract["candidates"])
+    assert all("trusted_kg_import" in candidate["excluded_uses"] for candidate in contract["candidates"])
+
+
+def test_build_import_boundary_rehearsal_preserves_missing_source_caveats() -> None:
+    contract = build_import_boundary_rehearsal_from_benchmark(
+        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
+        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+    )
+
+    assert "missing_original_pdf:16" in contract["caveats"]
+
+
 def test_validate_import_boundary_rehearsal_requires_rejected_candidate_refusal_reason() -> None:
     contract = _rehearsal(_candidate(refusal_reasons=()))
 
@@ -133,3 +178,4 @@ def test_validate_import_boundary_rehearsal_requires_rejected_candidate_refusal_
 
     assert validation.valid_rehearsal is False
     assert validation.refusal_counts["rejected_candidate_missing_refusal"] == 1
+

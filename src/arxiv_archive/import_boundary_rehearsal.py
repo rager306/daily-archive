@@ -8,7 +8,9 @@ write state are allowed.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "m005-negative-import-boundary-rehearsal.v1"
@@ -128,6 +130,63 @@ class ImportBoundaryRehearsal:
             "caveats": list(self.caveats),
             **_safety_flags(),
         }
+
+
+def build_import_boundary_rehearsal_from_benchmark(
+    *,
+    summary_path: str | Path,
+    diagnostics_path: str | Path,
+    rehearsal_id: str = "m005-s07-negative-import-boundary",
+) -> dict[str, Any]:
+    """Build negative rehearsal evidence from S06 benchmark artifacts.
+
+    S06 diagnostics are intentionally aggregate and redacted. This adapter
+    expands aggregate refusal counts into synthetic candidate identities so the
+    import boundary can prove that every benchmarked candidate is rejected
+    without reading raw paper files or attempting any graph writes.
+    """
+    summary = _read_json_object(Path(summary_path))
+    diagnostics = _read_jsonl_objects(Path(diagnostics_path))
+    candidates: list[ImportCandidate] = []
+    for method_record in diagnostics:
+        method_id = str(method_record.get("method_id") or "unknown_method")
+        state = _single_key_or_none(method_record.get("counts_by_state"))
+        route = _single_key_or_none(method_record.get("counts_by_route"))
+        candidate_type = _single_key_or_none(method_record.get("counts_by_chunk_type")) or "benchmark_candidate"
+        for reason, count in sorted(_int_counts(method_record.get("refusal_counts")).items()):
+            for index in range(count):
+                candidates.append(
+                    ImportCandidate(
+                        candidate_id=f"{method_id}:{reason}:{index + 1:06d}",
+                        method_id=method_id,
+                        package_id=f"benchmark-method:{method_id}",
+                        candidate_type=candidate_type,
+                        route=route,
+                        state=state,
+                        import_eligible=False,
+                        refusal_reasons=(reason,),
+                        remediation_hints=(_remediation_hint(reason),),
+                    )
+                )
+    rehearsal = ImportBoundaryRehearsal(
+        rehearsal_id=rehearsal_id,
+        source_benchmark_id=str(summary.get("input_corpus") or "m005-s06-chunking-benchmark"),
+        candidates=tuple(candidates),
+        remediation_hints=(
+            "create_reviewed_import_eligible_subset",
+            "complete_positive_import_review_before_trusted_kg_import",
+        ),
+        caveats=tuple(_string_list(summary.get("caveats")))
+        + tuple(_missing_source_caveats(summary.get("aggregate", {}).get("missing_source_counts"))),
+    ).to_contract()
+    rehearsal["source_benchmark_summary"] = {
+        "method_count": summary.get("method_count"),
+        "total_chunk_count": summary.get("aggregate", {}).get("total_chunk_count"),
+        "total_refused_chunk_count": summary.get("aggregate", {}).get("total_refused_chunk_count"),
+        "total_import_eligible_chunk_count": summary.get("aggregate", {}).get("total_import_eligible_chunk_count"),
+        "recommendation_status": summary.get("recommendation_status"),
+    }
+    return rehearsal
 
 
 def validate_import_boundary_rehearsal(rehearsal: dict[str, Any]) -> RehearsalValidationResult:
@@ -292,6 +351,63 @@ def _required_fields(
         if field_name not in payload or payload.get(field_name) is None:
             diagnostics.append(RehearsalDiagnostic(reason=f"missing_{field_name}", object_id=object_id, object_type=object_type))
     return diagnostics
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"Expected JSON object at {path}")
+    return value
+
+
+def _read_jsonl_objects(path: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            value = json.loads(stripped)
+            if not isinstance(value, dict):
+                raise ValueError(f"Expected JSON object at {path}:{line_number}")
+            records.append(value)
+    return records
+
+
+def _int_counts(value: Any) -> dict[str, int]:
+    if not isinstance(value, dict):
+        return {}
+    counts: dict[str, int] = {}
+    for key, count in value.items():
+        if count is None:
+            continue
+        integer_count = int(count)
+        if integer_count > 0:
+            counts[str(key)] = integer_count
+    return counts
+
+
+def _single_key_or_none(value: Any) -> str | None:
+    counts = _int_counts(value)
+    if len(counts) == 1:
+        return next(iter(counts))
+    return None
+
+
+def _missing_source_caveats(value: Any) -> list[str]:
+    return [f"{reason}:{count}" for reason, count in _int_counts(value).items()]
+
+
+def _remediation_hint(reason: str) -> str:
+    if "baseline" in reason:
+        return "replace_baseline_with_reviewed_structure_aware_candidate"
+    if "estimated" in reason:
+        return "run_real_chunker_and_review_output"
+    if "source" in reason or "pdf" in reason:
+        return "repair_missing_source_artifact"
+    if "route" in reason or "requires_review" in reason:
+        return "complete_route_specific_review"
+    return "create_reviewed_import_eligible_subset"
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

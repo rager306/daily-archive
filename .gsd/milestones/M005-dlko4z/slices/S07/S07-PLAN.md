@@ -30,7 +30,7 @@ S07 consumes S06 benchmark evidence plus S03/S04/S05 package/annotation/asset ar
   - Files: `src/arxiv_archive/import_boundary_rehearsal.py`, `tests/test_import_boundary_rehearsal.py`
   - Verify: uv run pytest tests/test_import_boundary_rehearsal.py tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/import_boundary_rehearsal.py tests/test_import_boundary_rehearsal.py
 
-- [ ] **T02: Build rehearsal candidates from benchmark artifacts** `est:large`
+- [x] **T02: Build rehearsal candidates from benchmark artifacts** `est:large`
   Implement adapters that read current S06 benchmark diagnostics and S05/S04/S03 package artifacts to create isolated import rehearsal candidates. The adapter should preserve method/package identity and refusal context but never load raw source files or attempt graph writes.
   - Files: `src/arxiv_archive/import_boundary_rehearsal.py`, `tests/test_import_boundary_rehearsal.py`
   - Verify: uv run pytest tests/test_import_boundary_rehearsal.py tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/import_boundary_rehearsal.py tests/test_import_boundary_rehearsal.py
