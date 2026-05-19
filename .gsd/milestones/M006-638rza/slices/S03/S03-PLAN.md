@@ -30,7 +30,7 @@ Consumes S01/S02 corpus and source-readiness artifacts plus M005 S06/S07 baselin
   - Files: `src/arxiv_archive/thirty_paper_deviation_scan.py`, `tests/test_thirty_paper_deviation_scan.py`
   - Verify: uv run pytest tests/test_thirty_paper_deviation_scan.py tests/test_structure_aware_chunking.py tests/test_chunking_benchmark.py -q && uv run ruff check src/arxiv_archive/thirty_paper_deviation_scan.py tests/test_thirty_paper_deviation_scan.py
 
-- [ ] **T02: Run thirty paper deviation scan** `est:medium`
+- [x] **T02: Run thirty paper deviation scan** `est:medium`
   Run the 30-paper deviation scanner and persist summary plus per-paper diagnostics under S03 run-evidence. Confirm all 30 Markdown-ready papers are represented and no safety flags are enabled.
   - Files: `.gsd/milestones/M006-638rza/slices/S03/run-evidence/thirty-paper-deviation-summary.json`, `.gsd/milestones/M006-638rza/slices/S03/run-evidence/thirty-paper-deviation-diagnostics.jsonl`
   - Verify: uv run python - <<'PY'

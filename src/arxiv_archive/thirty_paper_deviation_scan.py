@@ -45,9 +45,10 @@ def build_thirty_paper_deviation_scan(
         if not isinstance(paper, dict):
             continue
         normalized = _normalize_paper_record(paper)
+        source_path = _selected_source_path(normalized)
         package = build_structure_aware_package_for_paper(normalized, run_id=run_id).to_contract()
         validation = validation_to_dict(validate_import_ready_package(package))
-        records.append(_paper_diagnostic(package=package, validation=validation, manifest_paper=paper))
+        records.append(_paper_diagnostic(package=package, validation=validation, manifest_paper=paper, source_path=source_path))
     return {
         "schema_version": "m006-thirty-paper-deviation-summary.v1",
         "milestone": "M006-638rza",
@@ -79,10 +80,15 @@ def write_thirty_paper_deviation_run(scan: dict[str, Any], output_dir: str | Pat
     return {"summary_path": summary_path, "diagnostics_path": diagnostics_path}
 
 
-def _paper_diagnostic(*, package: dict[str, Any], validation: dict[str, Any], manifest_paper: dict[str, Any]) -> dict[str, Any]:
+def _paper_diagnostic(
+    *,
+    package: dict[str, Any],
+    validation: dict[str, Any],
+    manifest_paper: dict[str, Any],
+    source_path: Path | None,
+) -> dict[str, Any]:
     diagnostics = package.get("diagnostics", {})
-    source_path = Path(str(package.get("source_artifact", "")))
-    markdown_char_count = source_path.stat().st_size if source_path.exists() and source_path.is_file() else 0
+    markdown_char_count = source_path.stat().st_size if source_path is not None and source_path.exists() and source_path.is_file() else 0
     chunk_count = len(package.get("chunks", []))
     return {
         "schema_version": "m006-thirty-paper-deviation-diagnostic.v1",
@@ -203,6 +209,17 @@ def _normalize_paper_record(paper: dict[str, Any]) -> dict[str, Any]:
         "required_paths": list(dict.fromkeys(normalized_paths)),
         "source_artifacts": paper.get("source_artifacts", []),
     }
+
+
+def _selected_source_path(paper: dict[str, Any]) -> Path | None:
+    for raw_path in paper.get("required_paths", []):
+        path = Path(str(raw_path))
+        if path.name == "full_text.md" and path.exists():
+            return path
+        full_text_path = path / "full_text.md"
+        if path.is_dir() and full_text_path.exists():
+            return full_text_path
+    return None
 
 
 def _source_readiness(source_summary: dict[str, Any] | None) -> dict[str, Any]:

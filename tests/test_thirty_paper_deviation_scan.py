@@ -72,6 +72,7 @@ def test_build_thirty_paper_deviation_scan_emits_redacted_metrics(tmp_path: Path
     assert scan["source_readiness"]["ready_for_markdown_scan_count"] == 2
     assert scan["aggregate"]["paper_count"] == 2
     assert scan["aggregate"]["chunk_count"] > 0
+    assert scan["aggregate"]["markdown_byte_size_total"] > 0
     assert scan["aggregate"]["import_eligible_chunk_count"] == 0
     assert scan["raw_text_included"] is False
     assert scan["production_import_attempted"] is False
