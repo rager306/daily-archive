@@ -20,6 +20,7 @@ def _manifest_entry(
     candidate_id: str | None = "c1",
     chunk_id: str | None = "chunk-1:split-0001",
     finding_codes: list[str] | None = None,
+    source_artifact: str | None = "normalized/p1.md",
 ) -> dict[str, object]:
     entry: dict[str, object] = {
         "paper_id": paper_id,
@@ -30,7 +31,7 @@ def _manifest_entry(
         "final_eligibility": final_eligibility,
         "independent_review_verdict": "PASS" if final_eligibility == "eligible" else "REPAIR",
         "finding_codes": finding_codes or ["reviewed_claim_candidate_eligible"],
-        "source_artifact": f"normalized/{paper_id}.md",
+        "source_artifact": source_artifact,
         "required_repairs": [],
         "caveats": [],
     }
@@ -47,6 +48,7 @@ def _claim_draft(
     route: str = "claim_extraction",
     candidate_id: str = "c1",
     chunk_id: str = "chunk-1:split-0001",
+    source_artifact: str | None = "normalized/p1.md",
 ) -> dict[str, object]:
     return {
         "paper_id": paper_id,
@@ -54,7 +56,7 @@ def _claim_draft(
         "candidate_id": candidate_id,
         "chunk_id": chunk_id,
         "entry_id": f"candidate:{paper_id}:{route}:{candidate_id}",
-        "source_artifact": f"normalized/{paper_id}.md",
+        "source_artifact": source_artifact,
         "claim_text_included": False,
         "persisted": False,
         "finding_codes": ["reviewed_claim_candidate_eligible"],
@@ -253,3 +255,12 @@ def test_write_refusal_evidence_groups_negative_paths(tmp_path: Path) -> None:
     assert payload["refusal_counts"]["final_eligibility_review_required"] == 1
     serialized = output_path.read_text(encoding="utf-8")
     assert "Local markdown" not in serialized
+
+
+def test_select_trusted_candidate_claims_backfills_redacted_source_artifact() -> None:
+    result = select_trusted_candidate_claims(
+        manifest=_manifest([_manifest_entry(source_artifact=None)]),
+        extraction_summary=_summary([_claim_draft(source_artifact=None)]),
+    )
+
+    assert result.trusted_claims[0].source_artifact == "normalized_markdown:p1"

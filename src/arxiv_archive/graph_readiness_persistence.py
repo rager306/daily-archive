@@ -123,7 +123,11 @@ def select_trusted_candidate_claims(
                 candidate_id=str(entry.get("candidate_id") or entry.get("chunk_id")),
                 chunk_id=str(entry.get("chunk_id") or entry.get("candidate_id")),
                 entry_id=str(entry.get("entry_id") or draft.get("entry_id") or ":".join(key)),
-                source_artifact=_string_or_none(entry.get("source_artifact") or draft.get("source_artifact")),
+                source_artifact=_source_artifact_for_claim(
+                    entry=entry,
+                    draft=draft,
+                    paper_id=str(entry["paper_id"]),
+                ),
                 finding_codes=finding_codes,
                 independent_review_verdict=str(entry.get("independent_review_verdict", "PASS")),
                 final_eligibility=str(entry.get("final_eligibility")),
@@ -260,6 +264,14 @@ def _persisted_claim_payload(claim: TrustedCandidateClaim) -> dict[str, Any]:
         "embeddings_included": False,
         "provenance": dict(claim.provenance),
     }
+
+
+def _source_artifact_for_claim(*, entry: dict[str, Any], draft: dict[str, Any], paper_id: str) -> str:
+    """Return a redacted deterministic source artifact identifier without reading raw text."""
+    explicit = _string_or_none(entry.get("source_artifact") or draft.get("source_artifact"))
+    if explicit is not None:
+        return explicit
+    return f"normalized_markdown:{paper_id}"
 
 
 def _entry_refusal_reason(entry: dict[str, Any]) -> str | None:
