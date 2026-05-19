@@ -183,3 +183,65 @@ def test_parse_landing_markdown_keeps_navigation_as_administrative_or_sections()
     assert [element["element_type"] for element in elements].count("administrative") == 3
     assert all(element["source_span"]["coordinate_space"] == "normalized_markdown" for element in elements)
     assert all("Access Paper" not in element["section_path"] for element in elements)
+
+
+def test_parse_markdown_structure_assigns_conservative_routes_states_and_refusals() -> None:
+    markdown = (
+        "# Paper\n\n"
+        "## Abstract\n\n"
+        "Claim-like abstract prose.\n\n"
+        "## Method\n\n"
+        "Method prose.\n\n"
+        "## References\n\n"
+        "[1] Example.\n"
+    )
+
+    contract = parse_markdown_structure(
+        markdown,
+        paper_id="p4",
+        title="Routes",
+        source_artifact="normalized_markdown:p4",
+    ).to_contract()
+    chunks = contract["chunks"]
+    diagnostics = contract["diagnostics"]
+
+    assert any(chunk["route"] == "claim_extraction" and chunk["chunk_type"] == "claim_candidate" for chunk in chunks)
+    assert any(chunk["route"] == "method_extraction" and chunk["chunk_type"] == "method_candidate" for chunk in chunks)
+    assert any(chunk["route"] == "citation_graph" and chunk["chunk_type"] == "reference_entry" for chunk in chunks)
+    assert all("trusted_kg_import" in chunk["excluded_uses"] for chunk in chunks)
+    assert diagnostics["import_eligible_chunk_count"] == 0
+    assert diagnostics["refused_chunk_count"] == len(chunks)
+    assert diagnostics["counts_by_route"]["claim_extraction"] >= 1
+    assert diagnostics["counts_by_route"]["method_extraction"] >= 1
+    assert diagnostics["counts_by_route"]["citation_graph"] >= 1
+    assert diagnostics["refusal_counts"]["claim_route_requires_review"] >= 1
+    assert diagnostics["refusal_counts"]["method_route_requires_review"] >= 1
+    assert diagnostics["refusal_counts"]["citation_route_requires_review"] >= 1
+    validation = validate_import_ready_package(contract)
+    assert validation.valid_package is True
+    assert validation.import_ready is False
+
+
+def test_parse_markdown_structure_routes_tables_and_administrative_metadata_without_import_permission() -> None:
+    markdown = (
+        "# Paper\n\n"
+        "ORCID: 0000-0000-0000-0000\n\n"
+        "## Results\n\n"
+        "| Model | Score |\n|---|---|\n| A | 1.0 |\n"
+    )
+
+    contract = parse_markdown_structure(
+        markdown,
+        paper_id="p5",
+        title="Tables",
+        source_artifact="normalized_markdown:p5",
+    ).to_contract()
+    chunks = contract["chunks"]
+
+    assert any(chunk["route"] == "table_extraction" and chunk["chunk_type"] == "table_context" for chunk in chunks)
+    assert any(chunk["route"] == "metadata_graph" and chunk["chunk_type"] == "metadata" for chunk in chunks)
+    assert all(chunk["state"] in {"repair_required", "ok_for_retrieval_only"} for chunk in chunks)
+    assert all("trusted_kg_import" not in chunk["allowed_uses"] for chunk in chunks)
+    assert contract["diagnostics"]["refusal_counts"]["table_route_requires_review"] == 1
+    assert contract["diagnostics"]["refusal_counts"]["administrative_metadata_requires_review"] == 1
+    assert validate_import_ready_package(contract).valid_package is True

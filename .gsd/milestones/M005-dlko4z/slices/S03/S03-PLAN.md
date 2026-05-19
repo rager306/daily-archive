@@ -36,7 +36,7 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T03: Assign routes states and refusal reasons** `est:large`
+- [x] **T03: Assign routes states and refusal reasons** `est:large`
   Assign deterministic chunk types, routes, quality states, allowed/excluded uses, and refusal reasons from structural element classes. Ensure references, administrative/front-matter, tables, figures, equations, method sections, and retrieval-only prose are routed conservatively.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py

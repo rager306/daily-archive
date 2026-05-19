@@ -296,9 +296,51 @@ def parse_markdown_structure(
         title=title,
         source_artifact=source_artifact,
         elements=tuple(elements),
-        chunks=(),
+        chunks=tuple(_chunk_from_element(element, source_artifact=source_artifact) for element in elements if element.element_type != "document"),
         run_id=run_id,
     )
+
+
+def _chunk_from_element(element: StructuralElement, *, source_artifact: str) -> StructureAwareChunk:
+    chunk_type, route, state, refusal_reason = _route_for_element(element)
+    return StructureAwareChunk(
+        chunk_id=element.element_id.replace(":section:", ":chunk:").replace(":paragraph:", ":chunk:"),
+        paper_id=element.paper_id,
+        chunk_type=chunk_type,
+        parent_element_ids=(element.element_id,),
+        section_path=element.section_path,
+        order_index=element.order_index,
+        source_span=element.source_span,
+        source_artifact=source_artifact,
+        route_eligibility=RouteEligibility(
+            route=route,
+            state=state,
+            allowed_uses=("routing_diagnostics", "review_only"),
+            excluded_uses=("trusted_kg_import", "production_ladybugdb_write"),
+            refusal_reasons=(refusal_reason,),
+        ),
+        warning_codes=(refusal_reason,),
+    )
+
+
+def _route_for_element(element: StructuralElement) -> tuple[ChunkType, ChunkRoute, GraphReadinessState, str]:
+    element_type = element.element_type
+    section_label = " ".join(element.section_path).lower()
+    if element_type == "reference_entry":
+        return "reference_entry", "citation_graph", "repair_required", "citation_route_requires_review"
+    if element_type == "table":
+        return "table_context", "table_extraction", "repair_required", "table_route_requires_review"
+    if element_type == "figure_caption":
+        return "figure_caption_context", "retrieval_only", "repair_required", "figure_route_not_import_ready"
+    if element_type == "equation":
+        return "equation_context", "retrieval_only", "repair_required", "equation_route_not_import_ready"
+    if element_type == "administrative":
+        return "metadata", "metadata_graph", "repair_required", "administrative_metadata_requires_review"
+    if "method" in section_label or "approach" in section_label:
+        return "method_candidate", "method_extraction", "repair_required", "method_route_requires_review"
+    if any(marker in section_label for marker in ("abstract", "result", "conclusion", "introduction")):
+        return "claim_candidate", "claim_extraction", "repair_required", "claim_route_requires_review"
+    return "retrieval_context", "retrieval_only", "ok_for_retrieval_only", "retrieval_only_not_import_ready"
 
 
 def empty_structure_aware_package(
@@ -394,6 +436,11 @@ def _slug(value: str) -> str:
 def _diagnostics_for_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:
     import_eligible_count = sum(1 for chunk in chunks if chunk["state"] == "ok_for_graph" and "trusted_kg_import" in chunk["allowed_uses"])
     refused_count = len(chunks) - import_eligible_count
+    refusal_counts: dict[str, int] = {}
+    for chunk in chunks:
+        for warning in chunk.get("quality_warnings", []):
+            reason = str(warning.get("code", "unspecified_refusal"))
+            refusal_counts[reason] = refusal_counts.get(reason, 0) + 1
     return {
         "package_state": RETRIEVAL_ONLY_STATE,
         "valid_package": True,
@@ -402,7 +449,7 @@ def _diagnostics_for_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:
         "counts_by_state": _counts(chunk["state"] for chunk in chunks),
         "counts_by_route": _counts(chunk["route"] for chunk in chunks),
         "counts_by_chunk_type": _counts(chunk["chunk_type"] for chunk in chunks),
-        "refusal_counts": {},
+        "refusal_counts": dict(sorted(refusal_counts.items())),
         "source_span_coverage": 1.0 if chunks else 0.0,
         "parent_reference_resolution_rate": 1.0 if chunks else 0.0,
         "evidence_path_resolution_rate": 0.0,
