@@ -36,7 +36,7 @@ S05 consumes S04 annotation sidecars and the S01 gold corpus. It produces per-pa
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `tests/test_source_asset_manifest.py`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/source_asset_manifest.py tests/test_source_asset_manifest.py
 
-- [ ] **T03: Link annotation sidecars to asset records** `est:large`
+- [x] **T03: Link annotation sidecars to asset records** `est:large`
   Use S04 annotation sidecar diagnostics to create redacted asset-link records for table, figure, equation, reference, and metadata-related chunks. Link each asset candidate to paper id, chunk id, route/type/state, source span, source artifact, and extraction state. Do not create KG facts, embeddings, base64 payloads, or raw table/figure text.
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `tests/test_source_asset_manifest.py`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/source_asset_manifest.py tests/test_source_asset_manifest.py

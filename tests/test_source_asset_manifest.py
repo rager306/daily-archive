@@ -8,6 +8,7 @@ from arxiv_archive.source_asset_manifest import (
     PreservedSourceFile,
     SourceAssetManifest,
     SourceSpan,
+    attach_annotation_asset_links,
     preserve_source_assets_for_paper,
     preserve_source_assets_manifest,
     validate_source_asset_manifest,
@@ -276,3 +277,131 @@ def test_preserve_source_assets_manifest_writes_redacted_run_artifacts(tmp_path:
     assert summary["raw_binary_included"] is False
     assert summary["base64_included"] is False
     assert summary["production_import_attempted"] is False
+
+
+def test_attach_annotation_asset_links_creates_redacted_assets(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "paper"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\nTable text stays in source only.\n", encoding="utf-8")
+    manifest = preserve_source_assets_for_paper(
+        {"paper_id": "p3", "required_paths": [str(paper_dir)]},
+        workspace_root=tmp_path / "out",
+    ).to_contract()
+    annotation_path = tmp_path / "annotations.jsonl"
+    annotation_path.write_text(
+        json.dumps(
+            {
+                "paper_id": "p3",
+                "chunk_annotation_coverage": [
+                    {
+                        "chunk_id": "p3:chunk-table",
+                        "chunk_type": "table_context",
+                        "route": "table_extraction",
+                        "state": "repair_required",
+                        "annotation_types": ["route_hint", "structural_type", "asset_link_hint"],
+                        "confidence_classes": ["deterministic", "heuristic"],
+                        "warning_codes": ["asset_manifest_required", "table_route_requires_review"],
+                    },
+                    {
+                        "chunk_id": "p3:chunk-figure",
+                        "chunk_type": "figure_caption_context",
+                        "route": "retrieval_only",
+                        "state": "ok_for_retrieval_only",
+                        "annotation_types": ["structural_type", "asset_link_hint"],
+                        "confidence_classes": ["deterministic", "heuristic"],
+                        "warning_codes": ["asset_manifest_required", "figure_route_not_import_ready"],
+                    },
+                    {
+                        "chunk_id": "p3:chunk-prose",
+                        "chunk_type": "claim_candidate",
+                        "route": "claim_extraction",
+                        "state": "repair_required",
+                        "annotation_types": ["route_hint"],
+                        "confidence_classes": ["deterministic"],
+                        "warning_codes": ["claim_route_requires_review"],
+                    },
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    structure_path = tmp_path / "structure.jsonl"
+    structure_path.write_text(
+        json.dumps(
+            {
+                "paper_id": "p3",
+                "chunk_diagnostics": [
+                    {
+                        "chunk_id": "p3:chunk-table",
+                        "source_span": {
+                            "coordinate_space": "normalized_markdown",
+                            "char_start": 1,
+                            "char_end": 10,
+                            "page_start": None,
+                            "page_end": None,
+                        },
+                    },
+                    {
+                        "chunk_id": "p3:chunk-figure",
+                        "source_span": {
+                            "coordinate_space": "normalized_markdown",
+                            "char_start": 11,
+                            "char_end": 20,
+                            "page_start": None,
+                            "page_end": None,
+                        },
+                    },
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    linked = attach_annotation_asset_links(
+        (manifest,),
+        annotation_diagnostics_path=annotation_path,
+        structure_diagnostics_path=structure_path,
+    )[0]
+    validation = validate_source_asset_manifest(linked)
+
+    assert validation.valid_manifest is True
+    assert linked["diagnostics"]["asset_count"] == 2
+    assert linked["diagnostics"]["asset_counts_by_type"] == {"figure": 1, "table": 1}
+    assert linked["diagnostics"]["extraction_state_counts"] == {"linked_not_extracted": 2}
+    assert {asset["asset_type"] for asset in linked["assets"]} == {"table", "figure"}
+    assert all(asset["promoted_to_fact"] is False for asset in linked["assets"])
+    assert all("trusted_kg_import" in asset["excluded_uses"] for asset in linked["assets"])
+    assert all(asset["source_span"]["coordinate_space"] == "normalized_markdown" for asset in linked["assets"])
+    serialized = json.dumps(linked)
+    assert "Table text stays" not in serialized
+    assert "base64" in serialized
+
+
+def test_attach_annotation_asset_links_counts_reference_equation_and_metadata(tmp_path: Path) -> None:
+    manifest = SourceAssetManifest(paper_id="p4", workspace_root=str(tmp_path / "papers" / "p4")).to_contract()
+    annotation_path = tmp_path / "annotations.jsonl"
+    annotation_path.write_text(
+        json.dumps(
+            {
+                "paper_id": "p4",
+                "chunk_annotation_coverage": [
+                    {"chunk_id": "p4:eq", "chunk_type": "equation_context", "route": "retrieval_only", "state": "ok_for_retrieval_only", "warning_codes": []},
+                    {"chunk_id": "p4:ref", "chunk_type": "reference_entry", "route": "citation_graph", "state": "repair_required", "warning_codes": []},
+                    {"chunk_id": "p4:meta", "chunk_type": "metadata", "route": "metadata_graph", "state": "repair_required", "warning_codes": []},
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    linked = attach_annotation_asset_links((manifest,), annotation_diagnostics_path=annotation_path)[0]
+
+    assert validate_source_asset_manifest(linked).valid_manifest is True
+    assert linked["diagnostics"]["asset_counts_by_type"] == {"equation": 1, "metadata": 1, "reference": 1}
+    assert linked["diagnostics"]["extraction_state_counts"] == {"linked_not_extracted": 3}
+    assert all(asset["source_span"] is None for asset in linked["assets"])
+    assert all(any(warning["code"] == "missing_source_span" for warning in asset["warnings"]) for asset in linked["assets"])
+    assert all(any(warning["code"] == "missing_preserved_source_file" for warning in asset["warnings"]) for asset in linked["assets"])

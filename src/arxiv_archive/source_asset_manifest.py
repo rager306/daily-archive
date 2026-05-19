@@ -338,6 +338,40 @@ def preserve_source_assets_manifest(
     return SourceAssetRunResult(manifests=manifests, summary=_summary_for_manifests(manifests, source_manifest=manifest_path))
 
 
+def attach_annotation_asset_links(
+    manifests: tuple[dict[str, Any], ...],
+    *,
+    annotation_diagnostics_path: Path,
+    structure_diagnostics_path: Path | None = None,
+) -> tuple[dict[str, Any], ...]:
+    """Attach redacted asset-link records derived from S04 annotation diagnostics."""
+    annotation_records = _load_jsonl(annotation_diagnostics_path)
+    structure_spans = _chunk_source_spans_by_paper(structure_diagnostics_path) if structure_diagnostics_path is not None else {}
+    assets_by_paper = _asset_records_from_annotation_diagnostics(
+        annotation_records=annotation_records,
+        structure_spans=structure_spans,
+    )
+    linked_manifests: list[dict[str, Any]] = []
+    for manifest in manifests:
+        paper_id = str(manifest["paper_id"])
+        source_files = _list_of_dicts(manifest.get("source_files"))
+        source_file_by_role = {str(source_file.get("source_role")): source_file for source_file in source_files}
+        existing_assets = _list_of_dicts(manifest.get("assets"))
+        generated_assets = [
+            _asset_record_with_source_file(asset, source_file_by_role=source_file_by_role).to_contract()
+            for asset in assets_by_paper.get(paper_id, ())
+        ]
+        updated = dict(manifest)
+        updated["assets"] = existing_assets + generated_assets
+        updated["diagnostics"] = _diagnostics_for_manifest(
+            source_files=source_files,
+            assets=updated["assets"],
+            manifest_warnings=tuple(str(warning.get("code")) for warning in manifest.get("warnings", []) if isinstance(warning, dict)),
+        )
+        linked_manifests.append(updated)
+    return tuple(linked_manifests)
+
+
 def write_source_asset_run(result: SourceAssetRunResult, output_dir: Path) -> None:
     """Write redacted source preservation run artifacts."""
     output_dir = Path(output_dir)
@@ -516,6 +550,133 @@ def _diagnostics_for_manifest(
     }
 
 
+ASSET_CHUNK_TYPES: dict[str, AssetType] = {
+    "table_context": "table",
+    "table_row_group": "table",
+    "figure_caption_context": "figure",
+    "equation_context": "equation",
+    "reference_entry": "reference",
+    "citation_context": "reference",
+    "metadata": "metadata",
+    "administrative": "metadata",
+}
+
+
+def _asset_records_from_annotation_diagnostics(
+    *,
+    annotation_records: list[dict[str, Any]],
+    structure_spans: dict[str, dict[str, dict[str, Any]]],
+) -> dict[str, tuple[AssetRecord, ...]]:
+    assets_by_paper: dict[str, list[AssetRecord]] = {}
+    for paper_record in annotation_records:
+        paper_id = str(paper_record.get("paper_id"))
+        chunk_records = paper_record.get("chunk_annotation_coverage", [])
+        if not isinstance(chunk_records, list):
+            continue
+        for chunk_record in chunk_records:
+            if not isinstance(chunk_record, dict):
+                continue
+            asset_type = _asset_type_for_chunk(chunk_record)
+            if asset_type is None:
+                continue
+            chunk_id = str(chunk_record.get("chunk_id"))
+            span_record = structure_spans.get(paper_id, {}).get(chunk_id)
+            warning_codes = {str(code) for code in chunk_record.get("warning_codes", []) if code is not None}
+            warning_codes.add("linked_not_extracted")
+            if span_record is None:
+                warning_codes.add("missing_source_span")
+            assets_by_paper.setdefault(paper_id, []).append(
+                AssetRecord(
+                    asset_id=f"{paper_id}:asset-link:{asset_type}:{len(assets_by_paper.get(paper_id, [])) + 1:04d}",
+                    paper_id=paper_id,
+                    asset_type=asset_type,
+                    extraction_state="linked_not_extracted",
+                    chunk_id=chunk_id,
+                    source_artifact=f"normalized_markdown:{paper_id}",
+                    source_span=_span_from_record(span_record) if span_record is not None else None,
+                    provenance={
+                        "created_from": "s04_annotation_sidecar_diagnostics",
+                        "chunk_type": chunk_record.get("chunk_type"),
+                        "route": chunk_record.get("route"),
+                        "state": chunk_record.get("state"),
+                        "annotation_types": list(chunk_record.get("annotation_types", [])),
+                        "confidence_classes": list(chunk_record.get("confidence_classes", [])),
+                    },
+                    warning_codes=tuple(sorted(warning_codes)),
+                )
+            )
+    return {paper_id: tuple(assets) for paper_id, assets in sorted(assets_by_paper.items())}
+
+
+def _asset_type_for_chunk(chunk_record: dict[str, Any]) -> AssetType | None:
+    chunk_type = str(chunk_record.get("chunk_type"))
+    route = str(chunk_record.get("route"))
+    if chunk_type in ASSET_CHUNK_TYPES:
+        return ASSET_CHUNK_TYPES[chunk_type]
+    if route == "citation_graph":
+        return "reference"
+    if route == "metadata_graph":
+        return "metadata"
+    return None
+
+
+def _asset_record_with_source_file(asset: AssetRecord, *, source_file_by_role: dict[str, dict[str, Any]]) -> AssetRecord:
+    source_file = source_file_by_role.get("normalized_markdown") or source_file_by_role.get("original_pdf")
+    warning_codes = set(asset.warning_codes)
+    source_file_id = None
+    source_artifact = asset.source_artifact
+    if source_file is None:
+        warning_codes.add("missing_preserved_source_file")
+    else:
+        source_file_id = _string_or_none(source_file.get("source_file_id"))
+        source_artifact = str(source_file.get("workspace_path"))
+    return AssetRecord(
+        asset_id=asset.asset_id,
+        paper_id=asset.paper_id,
+        asset_type=asset.asset_type,
+        extraction_state=asset.extraction_state,
+        source_file_id=source_file_id,
+        chunk_id=asset.chunk_id,
+        source_artifact=source_artifact,
+        source_span=asset.source_span,
+        workspace_path=asset.workspace_path,
+        sha256=asset.sha256,
+        byte_size=asset.byte_size,
+        media_type=asset.media_type,
+        provenance=asset.provenance,
+        warning_codes=tuple(sorted(warning_codes)),
+    )
+
+
+def _chunk_source_spans_by_paper(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
+    by_paper: dict[str, dict[str, dict[str, Any]]] = {}
+    for record in _load_jsonl(path):
+        paper_id = str(record.get("paper_id"))
+        chunks = record.get("chunk_diagnostics", [])
+        if not isinstance(chunks, list):
+            continue
+        for chunk in chunks:
+            if not isinstance(chunk, dict):
+                continue
+            chunk_id = _string_or_none(chunk.get("chunk_id"))
+            span = chunk.get("source_span")
+            if chunk_id is not None and isinstance(span, dict):
+                by_paper.setdefault(paper_id, {})[chunk_id] = span
+    return by_paper
+
+
+def _span_from_record(record: dict[str, Any]) -> SourceSpan:
+    bbox = record.get("bbox")
+    return SourceSpan(
+        coordinate_space=str(record["coordinate_space"]),
+        char_start=int(record["char_start"]),
+        char_end=int(record["char_end"]),
+        page_start=int(record["page_start"]) if record.get("page_start") is not None else None,
+        page_end=int(record["page_end"]) if record.get("page_end") is not None else None,
+        bbox=tuple(float(value) for value in bbox) if isinstance(bbox, list) and len(bbox) == 4 else None,
+    )
+
+
 def _source_candidates_for_paper(paper: dict[str, Any]) -> tuple[SourceArtifactCandidate, ...]:
     paper_id = str(paper["paper_id"])
     explicit_paths = [Path(str(path)) for path in paper.get("required_paths", [])]
@@ -583,8 +744,11 @@ def _media_type_for_path(path: Path) -> str:
 
 def _summary_for_manifests(manifests: tuple[dict[str, Any], ...], *, source_manifest: Path) -> dict[str, Any]:
     source_file_count = sum(len(manifest.get("source_files", [])) for manifest in manifests)
+    asset_count = sum(len(manifest.get("assets", [])) for manifest in manifests)
     missing_counts: dict[str, int] = {}
     media_type_counts: dict[str, int] = {}
+    asset_counts_by_type: dict[str, int] = {}
+    extraction_state_counts: dict[str, int] = {}
     hash_count = 0
     for manifest in manifests:
         for warning in manifest.get("warnings", []):
@@ -598,14 +762,24 @@ def _summary_for_manifests(manifests: tuple[dict[str, Any], ...], *, source_mani
             media_type_counts[media_type] = media_type_counts.get(media_type, 0) + 1
             if _valid_sha256(source_file.get("sha256")):
                 hash_count += 1
+        for asset in manifest.get("assets", []):
+            if not isinstance(asset, dict):
+                continue
+            asset_type = str(asset.get("asset_type"))
+            state = str(asset.get("extraction_state"))
+            asset_counts_by_type[asset_type] = asset_counts_by_type.get(asset_type, 0) + 1
+            extraction_state_counts[state] = extraction_state_counts.get(state, 0) + 1
     return {
         "schema_version": "m005-source-preservation-run.v1",
         "source_manifest": str(source_manifest),
         "paper_count": len(manifests),
         "valid_manifest_count": sum(1 for manifest in manifests if validate_source_asset_manifest(manifest).valid_manifest),
         "source_file_count": source_file_count,
+        "asset_count": asset_count,
         "hash_coverage_rate": hash_count / source_file_count if source_file_count else 0.0,
         "media_type_counts": dict(sorted(media_type_counts.items())),
+        "asset_counts_by_type": dict(sorted(asset_counts_by_type.items())),
+        "extraction_state_counts": dict(sorted(extraction_state_counts.items())),
         "missing_counts": dict(sorted(missing_counts.items())),
         "raw_text_included": False,
         "chunk_text_included": False,
@@ -656,6 +830,17 @@ def _manifest_to_record(manifest: dict[str, Any]) -> dict[str, Any]:
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        value = json.loads(line)
+        if isinstance(value, dict):
+            records.append(value)
+    return records
 
 
 def _json_dumps(value: Any) -> str:
