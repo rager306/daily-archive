@@ -1,4 +1,4 @@
-"""Tests for md_converter module — arxiv2md REST + Marker fallback."""
+"""Tests for md_converter module — arxiv2md REST + quality fallback."""
 
 
 import pytest
@@ -7,8 +7,8 @@ from arxiv_archive.md_converter import ConversionResult, MDConverter
 
 
 @pytest.mark.asyncio
-async def test_arxiv2md_fallback_to_marker():
-    """arxiv2md for modern papers, Marker for papers < 2020."""
+async def test_arxiv2md_fallback_to_quality_backend():
+    """arxiv2md for modern papers, quality fallback for papers without usable HTML."""
     converter = MDConverter()
 
     # Modern paper (has HTML on ar5iv) — should use arxiv2md
@@ -17,9 +17,9 @@ async def test_arxiv2md_fallback_to_marker():
     assert result.method == "arxiv2md"
     assert len(result.markdown) > 100
 
-    # Old paper (pre-2020, no HTML) — should fallback to Marker
+    # Old paper (pre-2020, no usable HTML) should use an accepted quality fallback.
     result_old = await converter.convert("1701.00001")
-    assert result_old.method in ("arxiv2md", "marker")  # either works
+    assert result_old.method in ("arxiv2md", "docling", "marker")
 
 
 def test_conversion_result_dataclass():
@@ -34,8 +34,8 @@ def test_conversion_result_dataclass():
     assert result_err.error == "timeout"
 
 
-def test_needs_marker_fallback():
-    """Papers before 2020 need Marker fallback."""
+def test_needs_quality_fallback():
+    """Papers before 2020 need the configured quality fallback path."""
     converter = MDConverter()
     # Pre-2020 papers
     assert converter._needs_marker_fallback("1701.00001") is True
