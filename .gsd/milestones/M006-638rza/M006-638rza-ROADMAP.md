@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, the 20 missing-Markdown expansion papers have bounded acquisition/conversion attempts with redacted diagnostics, and the 30-paper corpus is either source-ready or explicitly blocked per paper.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After this slice, there is a deviation report comparing 30-paper behavior against M005 baseline and identifying new patterns/outliers.
 
 - [ ] **S04: Review and recommendation** `risk:medium` `depends:[S03]`
