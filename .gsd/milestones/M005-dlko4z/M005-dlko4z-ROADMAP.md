@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, a structure-aware chunk model emits typed parent-child chunks with provenance and route eligibility.
 
-- [ ] **S04: S04** `risk:medium` `depends:[]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, chunks have deterministic sidecar annotations useful for routing and review, without becoming KG facts.
 
 - [ ] **S05: Source asset preservation and multimodal manifest** `risk:high` `depends:[S04]`
