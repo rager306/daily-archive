@@ -30,7 +30,7 @@ Consumes S01 corpus manifest and availability diagnostics. Produces source acqui
   - Files: `.gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md && grep -q 'bounded' .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md
 
-- [ ] **T02: Implement bounded source acquisition helper** `est:large`
+- [x] **T02: Implement bounded source acquisition helper** `est:large`
   Implement a reusable 30-paper source acquisition/audit helper or script that attempts Markdown/PDF acquisition for missing papers using bounded project mechanisms. It must write per-paper redacted diagnostics and avoid raw text in JSON/JSONL.
   - Files: `src/arxiv_archive/thirty_paper_source_scan.py`, `tests/test_thirty_paper_source_scan.py`
   - Verify: uv run pytest tests/test_thirty_paper_source_scan.py -q && uv run ruff check src/arxiv_archive/thirty_paper_source_scan.py tests/test_thirty_paper_source_scan.py
