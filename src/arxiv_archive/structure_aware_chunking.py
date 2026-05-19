@@ -203,7 +203,7 @@ class StructureAwarePackage:
         """Serialize the S01 import-ready package shape without raw content."""
         element_records = [element.to_contract() for element in self.elements]
         chunk_records = [chunk.to_contract() for chunk in self.chunks]
-        diagnostics = _diagnostics_for_chunks(chunk_records)
+        diagnostics = _diagnostics_for_package(element_records=element_records, chunks=chunk_records)
         return {
             "schema_version": EXPECTED_SCHEMA_VERSION,
             "contract_version": EXPECTED_CONTRACT_VERSION,
@@ -470,6 +470,7 @@ def _measurement_to_record(measurement: StructureAwareMeasurement) -> dict[str, 
         "counts_by_route": diagnostics["counts_by_route"],
         "counts_by_chunk_type": diagnostics["counts_by_chunk_type"],
         "refusal_counts": diagnostics["refusal_counts"],
+        "chunk_diagnostics": _redacted_chunk_diagnostics(package),
         "source_span_coverage": diagnostics["source_span_coverage"],
         "parent_reference_resolution_rate": diagnostics["parent_reference_resolution_rate"],
         "raw_text_included": False,
@@ -477,6 +478,27 @@ def _measurement_to_record(measurement: StructureAwareMeasurement) -> dict[str, 
         "ladybugdb_written": False,
         "production_import_attempted": False,
     }
+
+
+def _redacted_chunk_diagnostics(package: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return chunk-level machine evidence without raw text or embeddings."""
+    records: list[dict[str, Any]] = []
+    for chunk in package.get("chunks", []):
+        if not isinstance(chunk, dict):
+            continue
+        records.append(
+            {
+                "chunk_id": chunk.get("chunk_id"),
+                "chunk_type": chunk.get("chunk_type"),
+                "route": chunk.get("route"),
+                "state": chunk.get("state"),
+                "source_span": chunk.get("source_span"),
+                "parent_element_ids": list(chunk.get("parent_element_ids", [])),
+                "section_path": list(chunk.get("section_path", [])),
+                "refusal_reasons": [str(warning.get("code")) for warning in chunk.get("quality_warnings", []) if isinstance(warning, dict)],
+            }
+        )
+    return records
 
 
 def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> dict[str, Any]:
@@ -621,7 +643,14 @@ def _slug(value: str) -> str:
     return slug or "item"
 
 
-def _diagnostics_for_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def _diagnostics_for_package(*, element_records: list[dict[str, Any]], chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    element_ids = {str(element.get("element_id")) for element in element_records if element.get("element_id") is not None}
+    source_span_count = sum(1 for chunk in chunks if _valid_source_span(chunk.get("source_span")))
+    parent_resolved_count = sum(
+        1
+        for chunk in chunks
+        if chunk.get("parent_element_ids") and all(str(parent_id) in element_ids for parent_id in chunk.get("parent_element_ids", []))
+    )
     import_eligible_count = sum(1 for chunk in chunks if chunk["state"] == "ok_for_graph" and "trusted_kg_import" in chunk["allowed_uses"])
     refused_count = len(chunks) - import_eligible_count
     refusal_counts: dict[str, int] = {}
@@ -638,14 +667,24 @@ def _diagnostics_for_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:
         "counts_by_route": _counts(chunk["route"] for chunk in chunks),
         "counts_by_chunk_type": _counts(chunk["chunk_type"] for chunk in chunks),
         "refusal_counts": dict(sorted(refusal_counts.items())),
-        "source_span_coverage": 1.0 if chunks else 0.0,
-        "parent_reference_resolution_rate": 1.0 if chunks else 0.0,
+        "source_span_coverage": source_span_count / len(chunks) if chunks else 0.0,
+        "parent_reference_resolution_rate": parent_resolved_count / len(chunks) if chunks else 0.0,
         "evidence_path_resolution_rate": 0.0,
         "raw_text_included": False,
         "embeddings_included": False,
         "ladybugdb_written": False,
         "production_import_attempted": False,
     }
+
+
+def _valid_source_span(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and value.get("coordinate_space") == "normalized_markdown"
+        and isinstance(value.get("char_start"), int)
+        and isinstance(value.get("char_end"), int)
+        and value["char_start"] <= value["char_end"]
+    )
 
 
 def _warning(*, code: str, object_id: str, severity: str) -> dict[str, Any]:

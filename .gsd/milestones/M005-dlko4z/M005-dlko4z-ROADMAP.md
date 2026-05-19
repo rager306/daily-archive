@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, current chunking has measured import-readiness failures and a baseline report.
 
-- [ ] **S03: S03** `risk:high` `depends:[]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, a structure-aware chunk model emits typed parent-child chunks with provenance and route eligibility.
 
 - [ ] **S04: Chunk annotation sidecars** `risk:medium` `depends:[S03]`

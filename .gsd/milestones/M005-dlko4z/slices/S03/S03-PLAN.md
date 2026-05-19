@@ -46,7 +46,7 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl
 
-- [ ] **T05: Report and review structure aware implementation** `est:medium`
+- [x] **T05: Report and review structure aware implementation** `est:medium`
   Write the S03 implementation report and run independent review over the structure-aware package outputs. The report must compare against the S02 baseline boundary without claiming final KG import readiness or production persistence.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S03/structure-aware-implementation-report.md`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-review-summary.md`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S03/structure-aware-implementation-report.md && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-review-summary.md

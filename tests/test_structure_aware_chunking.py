@@ -293,3 +293,53 @@ def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostic
     assert record["counts_by_route"]["claim_extraction"] >= 1
     assert "Claim-like prose" not in json.dumps(summary)
     assert "Claim-like prose" not in json.dumps(record)
+
+
+def test_written_structure_aware_diagnostics_include_redacted_chunk_level_evidence(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "p2"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\n## Method\n\nMethod prose.\n", encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "m005-gold-corpus-manifest.v1",
+                "milestone": "M005-test",
+                "papers": [
+                    {
+                        "paper_id": "p2",
+                        "title": "Paper",
+                        "categories": ["cs.AI"],
+                        "source_artifacts": ["normalized_markdown:p2"],
+                        "required_paths": [str(paper_dir / "full_text.md")],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    write_structure_aware_run(measure_structure_aware_manifest(manifest), out)
+
+    record = json.loads((out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    chunk = record["chunk_diagnostics"][0]
+    assert set(chunk) == {
+        "chunk_id",
+        "chunk_type",
+        "route",
+        "state",
+        "source_span",
+        "parent_element_ids",
+        "section_path",
+        "refusal_reasons",
+    }
+    assert chunk["source_span"]["coordinate_space"] == "normalized_markdown"
+    assert chunk["parent_element_ids"]
+    assert chunk["refusal_reasons"]
+    assert record["source_span_coverage"] == 1.0
+    assert record["parent_reference_resolution_rate"] == 1.0
+    serialized = json.dumps(record)
+    assert "Method prose" not in serialized
+    assert "[0.1, 0.2]" not in serialized
+    assert record["embeddings_included"] is False
