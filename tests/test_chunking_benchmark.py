@@ -13,6 +13,7 @@ from arxiv_archive.chunking_benchmark import (
     method_from_simple_section_window,
     method_from_structure_aware_summary,
     validate_chunking_benchmark,
+    write_chunking_benchmark_run,
 )
 
 
@@ -299,3 +300,25 @@ def test_build_benchmark_from_artifacts_reads_redacted_summaries(tmp_path: Path)
     ]
     assert benchmark["recommendation_status"] == "review_required"
     assert "real_library_candidates_not_executed" in benchmark["caveats"]
+
+
+def test_write_chunking_benchmark_run_writes_redacted_summary_and_diagnostics(tmp_path: Path) -> None:
+    benchmark = ChunkingBenchmark(
+        input_corpus="gold",
+        methods=(_method("baseline"), _method("structure_aware")),
+        caveats=("dry_run_only",),
+    )
+
+    summary = write_chunking_benchmark_run(benchmark, tmp_path)
+
+    summary_file = json.loads((tmp_path / "chunking-benchmark-summary.json").read_text(encoding="utf-8"))
+    records = [json.loads(line) for line in (tmp_path / "chunking-benchmark-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert summary == summary_file
+    assert summary_file["method_count"] == 2
+    assert "methods" not in summary_file
+    assert len(records) == 2
+    assert records[0]["schema_version"] == "m005-chunking-benchmark-method-diagnostic.v1"
+    assert records[0]["raw_text_included"] is False
+    assert records[0]["embeddings_included"] is False
+    serialized = json.dumps({"summary": summary_file, "records": records})
+    assert "raw chunk text" not in serialized

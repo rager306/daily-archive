@@ -36,7 +36,7 @@ S06 consumes S02 baseline evidence, S03 structure-aware packages, S04 annotation
   - Files: `src/arxiv_archive/chunking_benchmark.py`, `tests/test_chunking_benchmark.py`
   - Verify: uv run pytest tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunking_benchmark.py tests/test_chunking_benchmark.py
 
-- [ ] **T03: Run chunking benchmark dry run** `est:medium`
+- [x] **T03: Run chunking benchmark dry run** `est:medium`
   Run the benchmark over the 10-paper gold corpus and write redacted aggregate summary plus per-paper/method diagnostics. Confirm all import/no-write flags remain false and no raw text/chunk text/embeddings are serialized.
   - Files: `src/arxiv_archive/chunking_benchmark.py`, `.gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_chunking_benchmark.py tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl

@@ -169,6 +169,50 @@ class ChunkingBenchmark:
         }
 
 
+def write_chunking_benchmark_run(benchmark: ChunkingBenchmark, output_dir: Path) -> dict[str, Any]:
+    """Write redacted benchmark summary and method diagnostics."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    contract = benchmark.to_contract()
+    summary = {
+        key: value
+        for key, value in contract.items()
+        if key not in {"methods", "per_paper"}
+    }
+    (output_dir / "chunking-benchmark-summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    records = [_method_diagnostic_record(method) for method in contract["methods"]]
+    (output_dir / "chunking-benchmark-diagnostics.jsonl").write_text(
+        "".join(json.dumps(record, sort_keys=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    return summary
+
+
+def _method_diagnostic_record(method: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": "m005-chunking-benchmark-method-diagnostic.v1",
+        "method_id": method.get("method_id"),
+        "paper_count": method.get("paper_count"),
+        "chunk_count": method.get("chunk_count"),
+        "import_eligible_chunk_count": method.get("import_eligible_chunk_count"),
+        "refused_chunk_count": method.get("refused_chunk_count"),
+        "counts_by_route": method.get("counts_by_route", {}),
+        "counts_by_chunk_type": method.get("counts_by_chunk_type", {}),
+        "counts_by_state": method.get("counts_by_state", {}),
+        "refusal_counts": method.get("refusal_counts", {}),
+        "source_span_coverage": method.get("source_span_coverage"),
+        "parent_reference_resolution_rate": method.get("parent_reference_resolution_rate"),
+        "annotation_coverage_rate": method.get("annotation_coverage_rate"),
+        "asset_linkage_coverage_rate": method.get("asset_linkage_coverage_rate"),
+        "missing_source_counts": method.get("missing_source_counts", {}),
+        "caveats": method.get("caveats", []),
+        **_safety_flags(),
+    }
+
+
 def method_from_baseline_summary(summary: dict[str, Any]) -> MethodMetrics:
     """Create benchmark metrics from the S02 baseline summary."""
     chunk_count = _int(summary.get("refused_chunk_count")) or _int(summary.get("chunk_count"))
