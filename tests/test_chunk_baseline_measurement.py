@@ -58,6 +58,7 @@ def test_build_baseline_package_marks_current_chunks_retrieval_only(tmp_path: Pa
     assert validation.refused_chunk_count == 2
     assert package["diagnostics"]["package_state"] == "ok_for_retrieval_only"
     assert package["diagnostics"]["counts_by_route"] == {"retrieval_only": 2}
+    assert package["diagnostics"]["refusal_counts"] == {"baseline_retrieval_only_not_import_ready": 2}
     assert all(chunk["route"] == "retrieval_only" for chunk in package["chunks"])
     assert all(chunk["redaction"]["chunk_text_included"] is False for chunk in package["chunks"])
 
@@ -96,6 +97,8 @@ def test_measure_manifest_aggregates_redacted_baseline(tmp_path: Path) -> None:
     assert result.summary["ladybugdb_written"] is False
     assert result.summary["production_import_attempted"] is False
     assert "missing_full_text_artifact" in result.summary["refusal_counts"]
+    assert "baseline_retrieval_only_not_import_ready" in result.summary["refusal_counts"]
+    assert result.summary["counts_by_route"] == {"retrieval_only": 1}
 
 
 def test_write_baseline_run_outputs_summary_and_jsonl(tmp_path: Path) -> None:
@@ -113,4 +116,5 @@ def test_write_baseline_run_outputs_summary_and_jsonl(tmp_path: Path) -> None:
     assert record["schema_version"] == "m005-baseline-package-diagnostic.v1"
     assert record["raw_text_included"] is False
     assert record["embeddings_included"] is False
+    assert record["refusal_counts"] == {"baseline_retrieval_only_not_import_ready": 1}
     assert "Substantive body" not in json.dumps(record)

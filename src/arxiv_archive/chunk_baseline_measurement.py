@@ -129,7 +129,10 @@ def _measurement_to_record(measurement: BaselineMeasurement) -> dict[str, Any]:
         "import_ready": measurement.validation["import_ready"],
         "import_eligible_chunk_count": measurement.validation["import_eligible_chunk_count"],
         "refused_chunk_count": measurement.validation["refused_chunk_count"],
-        "refusal_counts": measurement.validation["refusal_counts"],
+        "refusal_counts": _merged_refusal_counts(
+            package["diagnostics"].get("refusal_counts", {}),
+            measurement.validation["refusal_counts"],
+        ),
         "counts_by_state": package["diagnostics"]["counts_by_state"],
         "counts_by_route": package["diagnostics"]["counts_by_route"],
         "counts_by_chunk_type": package["diagnostics"]["counts_by_chunk_type"],
@@ -143,10 +146,16 @@ def _measurement_to_record(measurement: BaselineMeasurement) -> dict[str, Any]:
 
 def _summary_for_measurements(measurements: list[BaselineMeasurement]) -> dict[str, Any]:
     refusal_counts: dict[str, int] = {}
+    counts_by_state: dict[str, int] = {}
+    counts_by_route: dict[str, int] = {}
+    counts_by_chunk_type: dict[str, int] = {}
     for measurement in measurements:
         package_refusals = measurement.package["diagnostics"].get("refusal_counts", {})
-        for reason, count in {**package_refusals, **measurement.validation["refusal_counts"]}.items():
+        for reason, count in _merged_refusal_counts(package_refusals, measurement.validation["refusal_counts"]).items():
             refusal_counts[reason] = refusal_counts.get(reason, 0) + int(count)
+        _merge_counts(counts_by_state, measurement.package["diagnostics"].get("counts_by_state", {}))
+        _merge_counts(counts_by_route, measurement.package["diagnostics"].get("counts_by_route", {}))
+        _merge_counts(counts_by_chunk_type, measurement.package["diagnostics"].get("counts_by_chunk_type", {}))
     return {
         "schema_version": BASELINE_RUN_SCHEMA,
         "paper_count": len(measurements),
@@ -155,6 +164,9 @@ def _summary_for_measurements(measurements: list[BaselineMeasurement]) -> dict[s
         "import_eligible_chunk_count": sum(int(item.validation["import_eligible_chunk_count"]) for item in measurements),
         "refused_chunk_count": sum(int(item.validation["refused_chunk_count"]) for item in measurements),
         "refusal_counts": dict(sorted(refusal_counts.items())),
+        "counts_by_state": dict(sorted(counts_by_state.items())),
+        "counts_by_route": dict(sorted(counts_by_route.items())),
+        "counts_by_chunk_type": dict(sorted(counts_by_chunk_type.items())),
         "raw_text_included": False,
         "embeddings_included": False,
         "ladybugdb_written": False,
@@ -291,7 +303,7 @@ def _diagnostics_for_chunks(*, chunks: list[dict[str, Any]], package_state: str)
         "counts_by_state": counts_by_state,
         "counts_by_route": counts_by_route,
         "counts_by_chunk_type": counts_by_chunk_type,
-        "refusal_counts": {},
+        "refusal_counts": {"baseline_retrieval_only_not_import_ready": len(chunks)} if chunks else {},
         "source_span_coverage": 1.0 if chunks else 0.0,
         "parent_reference_resolution_rate": 1.0 if chunks else 0.0,
         "evidence_path_resolution_rate": 0.0,
@@ -337,6 +349,23 @@ def _source_artifact_for_paper(paper: dict[str, Any], *, source_path: Path | Non
     if isinstance(artifacts, list) and artifacts:
         return str(artifacts[0])
     return f"normalized_markdown:{paper['paper_id']}"
+
+
+def _merged_refusal_counts(*refusal_maps: Any) -> dict[str, int]:
+    merged: dict[str, int] = {}
+    for refusal_map in refusal_maps:
+        if not isinstance(refusal_map, dict):
+            continue
+        for reason, count in refusal_map.items():
+            merged[str(reason)] = merged.get(str(reason), 0) + int(count)
+    return dict(sorted(merged.items()))
+
+
+def _merge_counts(target: dict[str, int], source: Any) -> None:
+    if not isinstance(source, dict):
+        return
+    for key, value in source.items():
+        target[str(key)] = target.get(str(key), 0) + int(value)
 
 
 def _counts(values: Any) -> dict[str, int]:

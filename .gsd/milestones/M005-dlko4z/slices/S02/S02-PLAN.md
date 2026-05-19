@@ -30,7 +30,7 @@ S02 consumes S01 contract, gold corpus, and validator. It produces baseline diag
   - Files: `src/arxiv_archive/chunk_baseline_measurement.py`, `tests/test_chunk_baseline_measurement.py`
   - Verify: uv run pytest tests/test_chunk_baseline_measurement.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/chunk_baseline_measurement.py tests/test_chunk_baseline_measurement.py
 
-- [ ] **T02: Run baseline over gold corpus** `est:0.5d`
+- [x] **T02: Run baseline over gold corpus** `est:0.5d`
   Run the baseline package builder over the S01 gold corpus manifest. Emit JSON diagnostics for each paper and aggregate summary. The run must record missing artifact blockers, not silently skip papers; it must keep `raw_text_included=false`, `embeddings_included=false`, `production_import_attempted=false`, and `ladybugdb_written=false`.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-package-diagnostics.jsonl`, `.gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-summary.json`
   - Verify: uv run python -m arxiv_archive.chunk_baseline_measurement --manifest .gsd/milestones/M005-dlko4z/slices/S01/gold-corpus-manifest.json --output-dir .gsd/milestones/M005-dlko4z/slices/S02/run-evidence && test -s .gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S02/run-evidence/baseline-package-diagnostics.jsonl
