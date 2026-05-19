@@ -321,6 +321,26 @@ def preserve_source_assets_for_paper(
     )
 
 
+def build_source_asset_run(
+    manifest_path: Path,
+    *,
+    output_dir: Path,
+    annotation_diagnostics_path: Path | None = None,
+    structure_diagnostics_path: Path | None = None,
+    run_id: str = "m005-s05-source-assets",
+) -> SourceAssetRunResult:
+    """Build a full source-asset run with optional annotation-derived asset links."""
+    result = preserve_source_assets_manifest(manifest_path, output_dir=output_dir, run_id=run_id)
+    manifests = result.manifests
+    if annotation_diagnostics_path is not None:
+        manifests = attach_annotation_asset_links(
+            manifests,
+            annotation_diagnostics_path=annotation_diagnostics_path,
+            structure_diagnostics_path=structure_diagnostics_path,
+        )
+    return SourceAssetRunResult(manifests=manifests, summary=_summary_for_manifests(manifests, source_manifest=manifest_path))
+
+
 def preserve_source_assets_manifest(
     manifest_path: Path,
     *,

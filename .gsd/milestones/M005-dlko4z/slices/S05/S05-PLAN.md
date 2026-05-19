@@ -41,7 +41,7 @@ S05 consumes S04 annotation sidecars and the S01 gold corpus. It produces per-pa
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `tests/test_source_asset_manifest.py`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/source_asset_manifest.py tests/test_source_asset_manifest.py
 
-- [ ] **T04: Run source asset preservation dry run** `est:medium`
+- [x] **T04: Run source asset preservation dry run** `est:medium`
   Run the source asset preservation and multimodal manifest dry-run over the 10-paper gold corpus. Write per-paper manifests, a redacted run summary, and JSONL diagnostics under S05 run evidence. Confirm all machine artifacts contain only paths/hashes/provenance/linkage/safety flags, not raw content.
   - Files: `src/arxiv_archive/source_asset_manifest.py`, `.gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_source_asset_manifest.py tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S05/run-evidence/source-asset-package-diagnostics.jsonl

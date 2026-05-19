@@ -9,6 +9,7 @@ from arxiv_archive.source_asset_manifest import (
     SourceAssetManifest,
     SourceSpan,
     attach_annotation_asset_links,
+    build_source_asset_run,
     preserve_source_assets_for_paper,
     preserve_source_assets_manifest,
     validate_source_asset_manifest,
@@ -405,3 +406,76 @@ def test_attach_annotation_asset_links_counts_reference_equation_and_metadata(tm
     assert all(asset["source_span"] is None for asset in linked["assets"])
     assert all(any(warning["code"] == "missing_source_span" for warning in asset["warnings"]) for asset in linked["assets"])
     assert all(any(warning["code"] == "missing_preserved_source_file" for warning in asset["warnings"]) for asset in linked["assets"])
+
+
+def test_build_source_asset_run_combines_preservation_and_annotation_links(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "paper"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\nFigure caption raw content.\n", encoding="utf-8")
+    manifest_path = tmp_path / "gold.json"
+    manifest_path.write_text(
+        json.dumps({"papers": [{"paper_id": "p5", "required_paths": [str(paper_dir)]}]}),
+        encoding="utf-8",
+    )
+    annotation_path = tmp_path / "annotations.jsonl"
+    annotation_path.write_text(
+        json.dumps(
+            {
+                "paper_id": "p5",
+                "chunk_annotation_coverage": [
+                    {
+                        "chunk_id": "p5:fig",
+                        "chunk_type": "figure_caption_context",
+                        "route": "retrieval_only",
+                        "state": "ok_for_retrieval_only",
+                        "annotation_types": ["structural_type", "asset_link_hint"],
+                        "confidence_classes": ["deterministic", "heuristic"],
+                        "warning_codes": ["asset_manifest_required"],
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    structure_path = tmp_path / "structure.jsonl"
+    structure_path.write_text(
+        json.dumps(
+            {
+                "paper_id": "p5",
+                "chunk_diagnostics": [
+                    {
+                        "chunk_id": "p5:fig",
+                        "source_span": {
+                            "coordinate_space": "normalized_markdown",
+                            "char_start": 0,
+                            "char_end": 12,
+                            "page_start": None,
+                            "page_end": None,
+                        },
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = build_source_asset_run(
+        manifest_path,
+        output_dir=tmp_path / "out",
+        annotation_diagnostics_path=annotation_path,
+        structure_diagnostics_path=structure_path,
+    )
+
+    assert result.summary["paper_count"] == 1
+    assert result.summary["source_file_count"] == 1
+    assert result.summary["asset_count"] == 1
+    assert result.summary["asset_counts_by_type"] == {"figure": 1}
+    assert result.summary["extraction_state_counts"] == {"linked_not_extracted": 1}
+    manifest = result.manifests[0]
+    assert validate_source_asset_manifest(manifest).valid_manifest is True
+    assert manifest["assets"][0]["source_file_id"] == "p5:source:normalized_markdown"
+    assert manifest["assets"][0]["promoted_to_fact"] is False
+    serialized = json.dumps(result.summary) + json.dumps(manifest)
+    assert "Figure caption raw content" not in serialized
