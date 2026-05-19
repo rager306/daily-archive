@@ -31,7 +31,7 @@ S04 consumes S03 structure-aware chunk package outputs and emits annotation side
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T02: Generate sidecars from chunk metadata** `est:large`
+- [x] **T02: Generate sidecars from chunk metadata** `est:large`
   Generate deterministic sidecar annotations from structural chunk metadata, including section role, route hint, structural type, table/figure/equation/reference flags, and review blockers. Do not inspect or persist raw chunk text.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py

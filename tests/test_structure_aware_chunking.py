@@ -430,3 +430,76 @@ def test_structure_aware_package_includes_annotation_sidecars_without_import_rea
     assert validation.valid_package is True
     assert validation.import_ready is False
     assert validation.import_eligible_chunk_count == 0
+
+
+def test_parse_markdown_structure_generates_sidecars_from_chunk_metadata() -> None:
+    markdown = (
+        "# Paper\n\n"
+        "## Results\n\n"
+        "| Model | Score |\n|---|---|\n| A | 1.0 |\n\n"
+        "Figure 1: Accuracy by model.\n"
+    )
+
+    contract = parse_markdown_structure(
+        markdown,
+        paper_id="p6",
+        title="Annotations",
+        source_artifact="normalized_markdown:p6",
+    ).to_contract()
+    annotations = contract["annotations"]
+    diagnostics = contract["diagnostics"]
+
+    assert annotations
+    assert all(annotation["promoted_to_fact"] is False for annotation in annotations)
+    assert all(annotation["redaction"]["raw_text_included"] is False for annotation in annotations)
+    assert {annotation["annotation_type"] for annotation in annotations} >= {
+        "section_role",
+        "route_hint",
+        "structural_type",
+        "review_blocker",
+        "asset_link_hint",
+    }
+    assert diagnostics["annotation_counts_by_type"]["section_role"] == len(contract["chunks"])
+    assert diagnostics["annotation_counts_by_type"]["route_hint"] == len(contract["chunks"])
+    assert diagnostics["annotation_counts_by_confidence"]["deterministic"] >= len(contract["chunks"])
+    assert diagnostics["annotation_warning_counts"]["asset_manifest_required"] == 2
+    serialized = json.dumps(annotations)
+    assert "Figure 1" not in serialized
+    assert "Model" not in serialized
+
+
+def test_measurement_records_include_annotation_diagnostics(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "p3"
+    paper_dir.mkdir()
+    (paper_dir / "full_text.md").write_text("# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "m005-gold-corpus-manifest.v1",
+                "milestone": "M005-test",
+                "papers": [
+                    {
+                        "paper_id": "p3",
+                        "title": "Paper",
+                        "categories": ["cs.AI"],
+                        "source_artifacts": ["normalized_markdown:p3"],
+                        "required_paths": [str(paper_dir / "full_text.md")],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    write_structure_aware_run(measure_structure_aware_manifest(manifest), out)
+
+    summary = json.loads((out / "structure-aware-summary.json").read_text(encoding="utf-8"))
+    record = json.loads((out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    assert summary["annotation_count"] == record["annotation_count"]
+    assert record["annotation_counts_by_type"]["section_role"] >= 1
+    assert record["annotation_counts_by_type"]["route_hint"] >= 1
+    assert record["annotation_counts_by_type"]["structural_type"] >= 1
+    assert record["annotation_counts_by_type"]["review_blocker"] >= 1
+    assert "Claim-like prose" not in json.dumps(record)

@@ -249,7 +249,7 @@ class StructureAwarePackage:
         element_records = [element.to_contract() for element in self.elements]
         chunk_records = [chunk.to_contract() for chunk in self.chunks]
         annotation_records = [annotation.to_contract() for annotation in self.annotations]
-        diagnostics = _diagnostics_for_package(element_records=element_records, chunks=chunk_records)
+        diagnostics = _diagnostics_for_package(element_records=element_records, chunks=chunk_records, annotations=annotation_records)
         return {
             "schema_version": EXPECTED_SCHEMA_VERSION,
             "contract_version": EXPECTED_CONTRACT_VERSION,
@@ -362,15 +362,111 @@ def parse_markdown_structure(
             )
         )
         order_index += 1
+    chunks = tuple(_chunk_from_element(element, source_artifact=source_artifact) for element in elements if element.element_type != "document")
     return StructureAwarePackage(
         paper_id=paper_id,
         title=title,
         source_artifact=source_artifact,
         categories=categories,
         elements=tuple(elements),
-        chunks=tuple(_chunk_from_element(element, source_artifact=source_artifact) for element in elements if element.element_type != "document"),
+        chunks=chunks,
+        annotations=tuple(_annotations_for_chunks(chunks)),
         run_id=run_id,
     )
+
+
+def _annotations_for_chunks(chunks: tuple[StructureAwareChunk, ...]) -> list[ChunkAnnotationSidecar]:
+    annotations: list[ChunkAnnotationSidecar] = []
+    for chunk in chunks:
+        annotations.extend(_annotations_for_chunk(chunk))
+    return annotations
+
+
+def _annotations_for_chunk(chunk: StructureAwareChunk) -> list[ChunkAnnotationSidecar]:
+    method = "deterministic_structure_metadata_v1"
+    section_role = _section_role(chunk.section_path)
+    annotations = [
+        ChunkAnnotationSidecar(
+            annotation_id=f"{chunk.chunk_id}:annotation:section-role",
+            paper_id=chunk.paper_id,
+            chunk_id=chunk.chunk_id,
+            method=method,
+            annotation_type="section_role",
+            values={"section_role": section_role, "section_depth": len(chunk.section_path)},
+            confidence_class="deterministic",
+        ),
+        ChunkAnnotationSidecar(
+            annotation_id=f"{chunk.chunk_id}:annotation:route-hint",
+            paper_id=chunk.paper_id,
+            chunk_id=chunk.chunk_id,
+            method=method,
+            annotation_type="route_hint",
+            values={"route": chunk.route_eligibility.route, "state": chunk.route_eligibility.state},
+            confidence_class="deterministic",
+            warning_codes=chunk.route_eligibility.refusal_reasons,
+        ),
+        ChunkAnnotationSidecar(
+            annotation_id=f"{chunk.chunk_id}:annotation:structural-type",
+            paper_id=chunk.paper_id,
+            chunk_id=chunk.chunk_id,
+            method=method,
+            annotation_type="structural_type",
+            values={
+                "chunk_type": chunk.chunk_type,
+                "has_table": chunk.chunk_type in {"table_context", "table_row_group"},
+                "has_figure": chunk.chunk_type == "figure_caption_context",
+                "has_equation": chunk.chunk_type == "equation_context",
+                "has_reference": chunk.chunk_type == "reference_entry",
+            },
+            confidence_class="deterministic",
+        ),
+    ]
+    if chunk.route_eligibility.refusal_reasons:
+        annotations.append(
+            ChunkAnnotationSidecar(
+                annotation_id=f"{chunk.chunk_id}:annotation:review-blocker",
+                paper_id=chunk.paper_id,
+                chunk_id=chunk.chunk_id,
+                method=method,
+                annotation_type="review_blocker",
+                values={"reasons": list(chunk.route_eligibility.refusal_reasons), "blocks_trusted_import": True},
+                confidence_class="requires_review",
+                warning_codes=chunk.route_eligibility.refusal_reasons,
+            )
+        )
+    if chunk.chunk_type in {"table_context", "figure_caption_context"}:
+        annotations.append(
+            ChunkAnnotationSidecar(
+                annotation_id=f"{chunk.chunk_id}:annotation:asset-link-hint",
+                paper_id=chunk.paper_id,
+                chunk_id=chunk.chunk_id,
+                method=method,
+                annotation_type="asset_link_hint",
+                values={"asset_role": "table" if chunk.chunk_type == "table_context" else "figure", "requires_asset_manifest": True},
+                confidence_class="heuristic",
+                warning_codes=("asset_manifest_required",),
+            )
+        )
+    return annotations
+
+
+def _section_role(section_path: tuple[str, ...]) -> str:
+    if not section_path:
+        return "document"
+    label = " ".join(section_path).lower()
+    if "abstract" in label:
+        return "abstract"
+    if "method" in label or "approach" in label:
+        return "method"
+    if "result" in label or "evaluation" in label:
+        return "results"
+    if "reference" in label or "bibliography" in label:
+        return "references"
+    if "introduction" in label:
+        return "introduction"
+    if "conclusion" in label:
+        return "conclusion"
+    return "body"
 
 
 def _chunk_from_element(element: StructuralElement, *, source_artifact: str) -> StructureAwareChunk:
@@ -516,6 +612,10 @@ def _measurement_to_record(measurement: StructureAwareMeasurement) -> dict[str, 
         "counts_by_route": diagnostics["counts_by_route"],
         "counts_by_chunk_type": diagnostics["counts_by_chunk_type"],
         "refusal_counts": diagnostics["refusal_counts"],
+        "annotation_count": len(package["annotations"]),
+        "annotation_counts_by_type": diagnostics["annotation_counts_by_type"],
+        "annotation_counts_by_confidence": diagnostics["annotation_counts_by_confidence"],
+        "annotation_warning_counts": diagnostics["annotation_warning_counts"],
         "chunk_diagnostics": _redacted_chunk_diagnostics(package),
         "source_span_coverage": diagnostics["source_span_coverage"],
         "parent_reference_resolution_rate": diagnostics["parent_reference_resolution_rate"],
@@ -552,12 +652,18 @@ def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> 
     counts_by_route: dict[str, int] = {}
     counts_by_chunk_type: dict[str, int] = {}
     refusal_counts: dict[str, int] = {}
+    annotation_counts_by_type: dict[str, int] = {}
+    annotation_counts_by_confidence: dict[str, int] = {}
+    annotation_warning_counts: dict[str, int] = {}
     for measurement in measurements:
         diagnostics = measurement.package["diagnostics"]
         _merge_counts(counts_by_state, diagnostics.get("counts_by_state", {}))
         _merge_counts(counts_by_route, diagnostics.get("counts_by_route", {}))
         _merge_counts(counts_by_chunk_type, diagnostics.get("counts_by_chunk_type", {}))
         _merge_counts(refusal_counts, diagnostics.get("refusal_counts", {}))
+        _merge_counts(annotation_counts_by_type, diagnostics.get("annotation_counts_by_type", {}))
+        _merge_counts(annotation_counts_by_confidence, diagnostics.get("annotation_counts_by_confidence", {}))
+        _merge_counts(annotation_warning_counts, diagnostics.get("annotation_warning_counts", {}))
     return {
         "schema_version": "m005-structure-aware-run.v1",
         "paper_count": len(measurements),
@@ -571,6 +677,10 @@ def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> 
         "counts_by_route": dict(sorted(counts_by_route.items())),
         "counts_by_chunk_type": dict(sorted(counts_by_chunk_type.items())),
         "refusal_counts": dict(sorted(refusal_counts.items())),
+        "annotation_count": sum(len(measurement.package["annotations"]) for measurement in measurements),
+        "annotation_counts_by_type": dict(sorted(annotation_counts_by_type.items())),
+        "annotation_counts_by_confidence": dict(sorted(annotation_counts_by_confidence.items())),
+        "annotation_warning_counts": dict(sorted(annotation_warning_counts.items())),
         "raw_text_included": False,
         "embeddings_included": False,
         "ladybugdb_written": False,
@@ -689,7 +799,12 @@ def _slug(value: str) -> str:
     return slug or "item"
 
 
-def _diagnostics_for_package(*, element_records: list[dict[str, Any]], chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def _diagnostics_for_package(
+    *,
+    element_records: list[dict[str, Any]],
+    chunks: list[dict[str, Any]],
+    annotations: list[dict[str, Any]],
+) -> dict[str, Any]:
     element_ids = {str(element.get("element_id")) for element in element_records if element.get("element_id") is not None}
     source_span_count = sum(1 for chunk in chunks if _valid_source_span(chunk.get("source_span")))
     parent_resolved_count = sum(
@@ -704,6 +819,11 @@ def _diagnostics_for_package(*, element_records: list[dict[str, Any]], chunks: l
         for warning in chunk.get("quality_warnings", []):
             reason = str(warning.get("code", "unspecified_refusal"))
             refusal_counts[reason] = refusal_counts.get(reason, 0) + 1
+    annotation_warning_counts: dict[str, int] = {}
+    for annotation in annotations:
+        for warning in annotation.get("warnings", []):
+            reason = str(warning.get("code", "unspecified_annotation_warning"))
+            annotation_warning_counts[reason] = annotation_warning_counts.get(reason, 0) + 1
     return {
         "package_state": RETRIEVAL_ONLY_STATE,
         "valid_package": True,
@@ -713,6 +833,9 @@ def _diagnostics_for_package(*, element_records: list[dict[str, Any]], chunks: l
         "counts_by_route": _counts(chunk["route"] for chunk in chunks),
         "counts_by_chunk_type": _counts(chunk["chunk_type"] for chunk in chunks),
         "refusal_counts": dict(sorted(refusal_counts.items())),
+        "annotation_counts_by_type": _counts(annotation["annotation_type"] for annotation in annotations),
+        "annotation_counts_by_confidence": _counts(annotation["confidence_class"] for annotation in annotations),
+        "annotation_warning_counts": dict(sorted(annotation_warning_counts.items())),
         "source_span_coverage": source_span_count / len(chunks) if chunks else 0.0,
         "parent_reference_resolution_rate": parent_resolved_count / len(chunks) if chunks else 0.0,
         "evidence_path_resolution_rate": 0.0,
