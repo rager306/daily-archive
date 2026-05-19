@@ -41,7 +41,7 @@ S04 consumes S03 structure-aware chunk package outputs and emits annotation side
   - Files: `tests/test_structure_aware_chunking.py`, `src/arxiv_archive/structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [ ] **T04: Run annotation dry run on gold corpus** `est:medium`
+- [x] **T04: Run annotation dry run on gold corpus** `est:medium`
   Run the annotation sidecar dry-run over the gold corpus and write redacted annotation summary plus package diagnostics. Confirm annotation counts and warnings are present while all import/no-write safety flags remain false.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`, `.gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-package-diagnostics.jsonl
