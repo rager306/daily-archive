@@ -147,8 +147,8 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user feedback during M008 after S02
 - Primary owning slice: M008-c9zb94
 - Supporting slices: M008/S03,M008/S04
-- Validation: Partial evidence: M008/S03 quota-fill summary proves target_count=10, accepted_ready_count=10, shortage_count=0, scan_allowed=true for the current batch. Missing evidence: bounded replacement/top-up behavior when accepted_ready_count < target_count.
-- Notes: M008 added success-path quota-fill gate evidence and tests. Shortage/top-up automation remains required before another +10 batch, so this requirement stays active rather than validated.
+- Validation: Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements.
+- Notes: M009/S04 implemented bounded top-up planning with pass and blocked shortage artifacts. Replacement materialization and preflight remain required during the next batch runbook before scan.
 
 ### R036 — Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
 - Class: failure-visibility
@@ -157,7 +157,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Current validation artifacts can be checked for consistency, but they do not fully prove that each artifact was freshly produced by a specific CLI run. Provenance is required to detect stale artifacts and metadata mismatches such as an M008 artifact carrying M006 milestone metadata.
 - Source: user feedback after M008 completion
 - Primary owning slice: next validation hardening milestone
-- Validation: A validation-batch run writes cli-run-log.jsonl entries with command, cwd, git commit, started/completed timestamps, duration, exit code, stdout/stderr paths, input/output sha256 hashes, and redacted safety metadata. A verifier fails if artifact hashes, freshness, or milestone/batch lineage do not match.
+- Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
+- Notes: M009 implemented provenance/freshness primitives, `validation-batch verify-artifacts`, active lineage metadata checks, and pass/stale/mismatch sample evidence. Automatic provenance emission from init/preflight/scan remains future work, so R036 stays active until real runs produce provenance without manual wrapper steps.
 
 ## Validated
 
@@ -408,8 +409,8 @@ This file is the explicit capability and coverage contract for the project.
 | R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
 | R034 | primary-user-loop | validated | M008-c9zb94 | M008/S01,S02,S03,S04 | M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate. |
-| R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial evidence: M008/S03 quota-fill summary proves target_count=10, accepted_ready_count=10, shortage_count=0, scan_allowed=true for the current batch. Missing evidence: bounded replacement/top-up behavior when accepted_ready_count < target_count. |
-| R036 | failure-visibility | active | next validation hardening milestone | none | A validation-batch run writes cli-run-log.jsonl entries with command, cwd, git commit, started/completed timestamps, duration, exit code, stdout/stderr paths, input/output sha256 hashes, and redacted safety metadata. A verifier fails if artifact hashes, freshness, or milestone/batch lineage do not match. |
+| R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements. |
+| R036 | failure-visibility | active | next validation hardening milestone | none | Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands. |
 
 ## Coverage Summary
 

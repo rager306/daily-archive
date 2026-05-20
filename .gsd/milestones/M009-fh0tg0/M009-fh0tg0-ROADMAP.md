@@ -24,7 +24,7 @@
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: After this slice, an underfilled validation batch deterministically draws replacements up to a bounded limit or blocks scan with a shortage report.
 
-- [ ] **S05: Review hardening and next batch gate** `risk:medium` `depends:[S04]`
+- [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: After this slice, review says whether provenance and top-up hardening are sufficient to run the next reviewed +10 batch.
 
 ## Boundary Map
