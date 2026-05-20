@@ -22,7 +22,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, the new +10 batch has a quota-fill gate artifact proving accepted_ready_count=10 before scan, then scan/delta/outlier artifacts, or a clear blocker if quota cannot be filled.
 
-- [ ] **S04: Review quota-filled first new plus ten batch** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, independent review says whether the quota-filled first new +10 batch is good enough to continue another +10, needs fixes, or blocks progression.
 
 ## Boundary Map
