@@ -139,6 +139,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes.
 - Notes: The CLI must automate operational evidence collection and review gating only. It must not promote trusted KG facts, write production LadybugDB data, or enable embeddings/vector retrieval claims.
 
+### R034 — Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
+- Class: primary-user-loop
+- Status: active
+- Description: Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
+- Why it matters: M007 proved the workflow over the existing 30-paper corpus. The next risk is whether the workflow handles newly selected papers with real source availability, readiness contradictions, scan deltas, and review gates.
+- Source: M007-opaont S04 final recommendation
+- Primary owning slice: M008-c9zb94
+- Supporting slices: M008/S01,S02,S03,S04
+- Validation: A deterministic new +10 selection is initialized, preflighted, scanned, reviewed, and summarized with redacted artifacts; positive KG import and production writes remain blocked.
+- Notes: This is one reviewed +10 batch, not unattended scaling to 100.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -376,10 +387,11 @@ This file is the explicit capability and coverage contract for the project.
 | R031 | quality-attribute | active | M006-638rza | M005-dlko4z | A 30-paper dry-run report exists with redacted aggregate/per-paper diagnostics, deviation analysis against M005 10-paper evidence, new-pattern taxonomy, and explicit no-go/go recommendations for remediation. |
 | R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
+| R034 | primary-user-loop | active | M008-c9zb94 | M008/S01,S02,S03,S04 | A deterministic new +10 selection is initialized, preflighted, scanned, reviewed, and summarized with redacted artifacts; positive KG import and production writes remain blocked. |
 
 ## Coverage Summary
 
-- Active requirements: 13
-- Mapped to slices: 13
+- Active requirements: 14
+- Mapped to slices: 14
 - Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0
