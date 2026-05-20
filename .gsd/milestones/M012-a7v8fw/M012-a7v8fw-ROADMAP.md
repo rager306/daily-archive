@@ -18,10 +18,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: A MiniMax compatibility report exists with API/auth/model/modalities, structured output feasibility, adapter options, and bounded call policy.
 
-- [ ] **S03: Integration boundary matrix** `risk:medium` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: A combined integration matrix shows where DSPy and MiniMax could fit, what each requires, and which gates must pass before activation.
 
-- [ ] **S04: Compatibility synthesis and recommendation** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Final recommendation states whether DSPy and MiniMax are compatible enough for future milestones, which probes passed/blocked, and exactly what to build next.
 
 ## Boundary Map
