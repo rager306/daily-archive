@@ -52,8 +52,8 @@ def test_validation_batch_review_stub_is_nonzero_and_safe() -> None:
     assert payload["ladybugdb_written"] is False
 
 
-def test_validation_batch_scan_stub_does_not_claim_work() -> None:
-    result = _run_cli("validation-batch", "scan", "--batch-id", "fixture-b001", "--json")
+def test_validation_batch_resume_stub_does_not_claim_work() -> None:
+    result = _run_cli("validation-batch", "resume", "--batch-id", "fixture-b001", "--json")
 
     assert result.returncode == 1
     payload = json.loads(result.stdout)

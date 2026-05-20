@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, a batch can be initialized and source-preflighted with redacted readiness/contradiction artifacts, without production writes or unbounded repair.
 
-- [ ] **S03: Automated scan delta and outlier gates** `risk:high` `depends:[S02]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, a batch can run the existing deviation scanner and produce redacted delta/outlier reports against previous, cumulative, and M005 baselines.
 
 - [ ] **S04: Workflow review and next batch recommendation** `risk:medium` `depends:[S03]`

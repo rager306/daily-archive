@@ -9,6 +9,7 @@ from arxiv_archive.validation_batch_state import (
     ValidationBatchState,
 )
 from arxiv_archive.validation_batch_workflow import (
+    _mixed_benchmark_context,
     build_delta_report,
     build_outlier_report,
     run_validation_batch_scan,
@@ -155,7 +156,14 @@ def test_build_delta_and_outlier_reports_are_safe() -> None:
     delta = build_delta_report(scan)
     outliers = build_outlier_report(scan)
 
+    mixed = _mixed_benchmark_context(
+        {"chunk_count": 10, "import_eligible_chunk_count": 0},
+        {"aggregate": {"total_chunk_count": 7, "total_import_eligible_chunk_count": 0}},
+    )
+
     assert delta["raw_text_included"] is False
     assert delta["structure_aware_baseline"]["available"] is False
+    assert mixed["benchmark_chunk_count"] == 7
+    assert mixed["chunk_count_delta"] == 3
     assert outliers["outliers"][0]["chunks_per_10k_bytes"] == 4.2
     assert outliers["production_import_attempted"] is False

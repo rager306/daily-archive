@@ -428,7 +428,8 @@ def _baseline_delta(current: dict[str, Any], baseline: dict[str, Any] | None) ->
 def _mixed_benchmark_context(current: dict[str, Any], benchmark: dict[str, Any] | None) -> dict[str, Any]:
     if not benchmark:
         return {"available": False}
-    benchmark_chunk_count = int(benchmark.get("total_chunk_count", benchmark.get("chunk_count", 0)) or 0)
+    benchmark_aggregate = benchmark.get("aggregate", benchmark)
+    benchmark_chunk_count = int(benchmark_aggregate.get("total_chunk_count", benchmark_aggregate.get("chunk_count", 0)) or 0)
     current_chunk_count = int(current.get("chunk_count", 0) or 0)
     return {
         "available": True,
@@ -437,7 +438,11 @@ def _mixed_benchmark_context(current: dict[str, Any], benchmark: dict[str, Any] 
         "current_chunk_count": current_chunk_count,
         "chunk_count_delta": current_chunk_count - benchmark_chunk_count,
         "benchmark_import_eligible_chunk_count": int(
-            benchmark.get("total_import_eligible_chunk_count", benchmark.get("import_eligible_chunk_count", 0)) or 0
+            benchmark_aggregate.get(
+                "total_import_eligible_chunk_count",
+                benchmark_aggregate.get("import_eligible_chunk_count", 0),
+            )
+            or 0
         ),
         "current_import_eligible_chunk_count": int(current.get("import_eligible_chunk_count", 0) or 0),
     }

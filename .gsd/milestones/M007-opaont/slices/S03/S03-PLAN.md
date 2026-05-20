@@ -26,17 +26,17 @@ Consumes S02 batch-state/source-preflight artifacts and existing M006 deviation 
 
 ## Tasks
 
-- [ ] **T01: Implement batch scan workflow helpers** `est:medium`
+- [x] **T01: Implement batch scan workflow helpers** `est:medium`
   Extend workflow helpers with scan orchestration around the existing thirty-paper deviation scanner. The helper should build scan inputs from batch state, call redacted scanner logic, write validation-scan artifacts, and update batch phase without importing KG facts or writing LadybugDB.
   - Files: `src/arxiv_archive/validation_batch_workflow.py`, `tests/test_validation_batch_scan_workflow.py`
   - Verify: uv run pytest tests/test_validation_batch_scan_workflow.py tests/test_validation_batch_workflow.py tests/test_thirty_paper_deviation_scan.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py tests/test_validation_batch_scan_workflow.py
 
-- [ ] **T02: Wire validation batch scan CLI** `est:medium`
+- [x] **T02: Wire validation batch scan CLI** `est:medium`
   Wire `validation-batch scan` to the scan workflow helper. It should require a source-ready state path, write scan/delta/outlier artifacts, and keep review/resume as non-zero stubs.
   - Files: `src/arxiv_archive/cli.py`, `tests/test_validation_batch_cli_scan.py`
   - Verify: uv run pytest tests/test_validation_batch_cli_scan.py tests/test_validation_batch_cli_preflight.py tests/test_validation_batch_cli_contract.py tests/test_analysis.py -q && uv run ruff check src/arxiv_archive/cli.py src/arxiv_archive/validation_batch_workflow.py tests/test_validation_batch_cli_scan.py
 
-- [ ] **T03: Run bounded validation scan dry run** `est:medium`
+- [x] **T03: Run bounded validation scan dry run** `est:medium`
   Run bounded scan dry run over the S02 30-paper batch state and write M007 scan/delta/outlier artifacts plus a short report. Verify zero import eligibility, no production writes, and expected 4,289 chunks.
   - Files: `.gsd/milestones/M007-opaont/slices/S03/run-evidence/validation-scan-summary.json`, `.gsd/milestones/M007-opaont/slices/S03/run-evidence/validation-scan-diagnostics.jsonl`, `.gsd/milestones/M007-opaont/slices/S03/run-evidence/delta-report.json`, `.gsd/milestones/M007-opaont/slices/S03/run-evidence/outlier-report.json`, `.gsd/milestones/M007-opaont/slices/S03/validation-scan-report.md`
   - Verify: test -s .gsd/milestones/M007-opaont/slices/S03/run-evidence/validation-scan-summary.json && uv run python - <<'PY'

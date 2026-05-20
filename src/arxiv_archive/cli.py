@@ -33,6 +33,7 @@ from arxiv_archive.validation_batch_state import (  # noqa: E402
 from arxiv_archive.validation_batch_workflow import (  # noqa: E402
     initialize_validation_batch,
     preflight_validation_batch,
+    run_validation_batch_scan,
     validation_batch_state_preview,
     write_source_preflight_run,
 )
@@ -118,7 +119,7 @@ def _echo_validation_batch_response(response: dict[str, Any], *, as_json: bool) 
         " | ".join(
             [
                 f"status: {response['status']}",
-                f"command: {response['command']}",
+                f"command: {response.get('command', 'validation-batch')}",
                 str(response.get("boundary", "No production KG import; validation-batch commands are operational diagnostics only.")),
             ]
         )
@@ -216,11 +217,48 @@ def validation_batch_preflight(
 
 @validation_batch_app.command("scan")
 def validation_batch_scan(
-    batch_id: Annotated[str, typer.Option("--batch-id", help="Validation batch identifier.")],
+    state_path: Annotated[
+        Path,
+        typer.Option("--state-path", help="Source-ready validation batch-state.json path."),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Directory where scan artifacts will be written."),
+    ],
+    structure_baseline_path: Annotated[
+        Path | None,
+        typer.Option("--structure-baseline-path", help="M005/S03 structure-aware baseline JSON."),
+    ] = None,
+    mixed_benchmark_path: Annotated[
+        Path | None,
+        typer.Option("--mixed-benchmark-path", help="M005/S06 mixed benchmark JSON for context only."),
+    ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
-    """Contract-only stub for future redacted scan execution."""
-    _validation_batch_stub("scan", batch_id=batch_id, as_json=json_output)
+    """Run a redacted validation-batch scan over a source-ready batch."""
+    state = read_batch_state(state_path)
+    result = run_validation_batch_scan(
+        state,
+        output_dir,
+        structure_baseline_path=structure_baseline_path,
+        mixed_benchmark_path=mixed_benchmark_path,
+    )
+    response = validation_batch_state_preview(result["state"])
+    response.update(
+        {
+            "status": "scanned",
+            "state_path": str(result["state_path"]),
+            "summary_path": str(result["summary_path"]),
+            "diagnostics_path": str(result["diagnostics_path"]),
+            "delta_report_path": str(result["delta_report_path"]),
+            "outlier_report_path": str(result["outlier_report_path"]),
+            "real_source_acquisition_performed": False,
+            "real_scan_performed": True,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        }
+    )
+    _echo_validation_batch_response(response, as_json=json_output)
 
 
 @validation_batch_app.command("review")
