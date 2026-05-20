@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: A MiniMax synthetic smoke-test artifact records whether a live synthetic call was run or intentionally deferred, with exact auth/header/schema findings if run.
 
-- [ ] **S04: DSPy MiniMax adoption recommendation** `risk:medium` `depends:[S01,S02,S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Final recommendation states the exact next safe step for DSPy and MiniMax, and whether any work can proceed in parallel with chunk-span packet work.
 
 ## Boundary Map
