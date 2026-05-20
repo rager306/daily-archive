@@ -16,7 +16,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, there is a deterministic next-10 manifest that excludes all M006 papers and explains why each paper was selected.
 
-- [ ] **S02: Initialize and preflight new plus ten batch** `risk:high` `depends:[S01]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, the new +10 batch has M007 batch-state/source-preflight artifacts and any missing Markdown blockers are either repaired with bounded steps or explicitly block scan.
 
 - [ ] **S03: Scan new plus ten batch** `risk:high` `depends:[S02]`
