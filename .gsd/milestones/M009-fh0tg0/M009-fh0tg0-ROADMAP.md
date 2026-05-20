@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After this slice, validation scan summaries identify M009/M008-style active milestone and batch context instead of stale M006 metadata.
 
-- [ ] **S04: Bounded quota top-up automation** `risk:high` `depends:[S02,S03]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: After this slice, an underfilled validation batch deterministically draws replacements up to a bounded limit or blocks scan with a shortage report.
 
 - [ ] **S05: Review hardening and next batch gate** `risk:medium` `depends:[S04]`

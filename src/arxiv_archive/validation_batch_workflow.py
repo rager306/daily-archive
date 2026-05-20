@@ -470,6 +470,105 @@ def write_quota_fill_run(report: dict[str, Any], output_dir: str | Path) -> dict
     return {"summary_path": summary_path, "diagnostics_path": diagnostics_path}
 
 
+def build_bounded_top_up_report(
+    state: ValidationBatchState,
+    *,
+    target_count: int,
+    candidate_inventory: dict[str, Any],
+    max_candidates_to_consider: int,
+) -> dict[str, Any]:
+    """Plan deterministic bounded top-up replacements for an underfilled batch.
+
+    This is a planning/reporting helper only: it does not fetch or convert
+    sources. Candidate readiness is inferred from redacted inventory metadata.
+    """
+    quota = build_quota_fill_report(state, target_count=target_count, candidate_inventory=candidate_inventory)
+    accepted_ready_count = int(quota["accepted_ready_count"])
+    shortage_count = int(quota["shortage_count"])
+    selected_ids = {paper.paper_id for paper in state.selected_papers}
+    replacements: list[dict[str, Any]] = []
+    rejected_candidates: list[dict[str, Any]] = []
+    considered_count = 0
+    for candidate in candidate_inventory.get("candidates", []):
+        if considered_count >= max_candidates_to_consider or len(replacements) >= shortage_count:
+            break
+        if not isinstance(candidate, dict):
+            continue
+        paper_id = str(candidate.get("paper_id"))
+        if paper_id in selected_ids:
+            continue
+        considered_count += 1
+        record = _top_up_candidate_record(candidate)
+        if record["ready_for_markdown_scan"]:
+            replacements.append(record)
+        else:
+            rejected_candidates.append(record)
+    final_accepted_ready_count = accepted_ready_count + len(replacements)
+    remaining_shortage_count = max(target_count - final_accepted_ready_count, 0)
+    scan_allowed = final_accepted_ready_count == target_count and remaining_shortage_count == 0
+    return {
+        "schema_version": "m009-bounded-top-up-summary.v1",
+        "batch_id": state.batch_id,
+        "target_count": target_count,
+        "initial_accepted_ready_count": accepted_ready_count,
+        "initial_shortage_count": shortage_count,
+        "max_candidates_to_consider": max_candidates_to_consider,
+        "considered_replacement_count": considered_count,
+        "accepted_replacement_count": len(replacements),
+        "rejected_replacement_count": len(rejected_candidates),
+        "final_accepted_ready_count": final_accepted_ready_count,
+        "remaining_shortage_count": remaining_shortage_count,
+        "scan_allowed": scan_allowed,
+        "blocker_count": 0 if scan_allowed else 1,
+        "accepted_replacements": replacements,
+        "rejected_candidates": rejected_candidates,
+        **default_safety_flags(),
+    }
+
+
+def write_bounded_top_up_run(report: dict[str, Any], output_dir: str | Path, *, prefix: str = "top-up") -> dict[str, Path]:
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    summary_path = output / f"{prefix}-summary.json"
+    diagnostics_path = output / f"{prefix}-diagnostics.jsonl"
+    summary_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with diagnostics_path.open("w", encoding="utf-8") as handle:
+        for record in report.get("rejected_candidates", []):
+            handle.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+        if int(report.get("remaining_shortage_count", 0)) > 0:
+            handle.write(
+                json.dumps(
+                    {
+                        "severity": "blocker",
+                        "code": "bounded_top_up_shortage",
+                        "message": f"Top-up could not fill target quota within {report.get('max_candidates_to_consider')} candidates.",
+                        "recommended_action": "Increase bounded candidate pool, repair sources, or block scan explicitly.",
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+    return {"summary_path": summary_path, "diagnostics_path": diagnostics_path}
+
+
+def _top_up_candidate_record(candidate: dict[str, Any]) -> dict[str, Any]:
+    availability = candidate.get("availability", {}) if isinstance(candidate.get("availability", {}), dict) else {}
+    ready = bool(
+        availability.get("ready_for_markdown_scan")
+        or (availability.get("markdown_present") and availability.get("markdown_quality_accepted", True))
+    )
+    outcome = "accepted_replacement_ready" if ready else "rejected_replacement_not_source_ready"
+    return {
+        "paper_id": str(candidate.get("paper_id")),
+        "ready_for_markdown_scan": ready,
+        "outcome": outcome,
+        "availability": availability,
+        "risk_tags": list(candidate.get("risk_tags", [])),
+        **default_safety_flags(),
+    }
+
+
 def _quota_fill_record(paper: SelectedPaper, readiness: SourceReadiness | None) -> dict[str, Any]:
     if readiness is None:
         outcome = "rejected_no_preflight"
