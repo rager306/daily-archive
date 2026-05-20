@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: An independent reviewer has evaluated the rubric and redacted judgments and produced a PASS or FLAG verdict with concrete blockers and limits.
 
-- [ ] **S04: Final semantic import readiness recommendation** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: A final recommendation states whether positive import remains blocked and what exact next milestone is justified by the semantic evidence.
 
 ## Boundary Map
