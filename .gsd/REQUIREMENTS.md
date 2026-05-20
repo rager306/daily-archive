@@ -160,16 +160,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
 - Notes: M009 implemented provenance/freshness primitives, `validation-batch verify-artifacts`, active lineage metadata checks, and pass/stale/mismatch sample evidence. Automatic provenance emission from init/preflight/scan remains future work, so R036 stays active until real runs produce provenance without manual wrapper steps.
 
-### R037 — Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.
-- Class: core-capability
-- Status: active
-- Description: Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.
-- Why it matters: M009 allows exactly one next +10 only under explicit gates. This validates whether the hardening works on a real batch rather than only synthetic evidence.
-- Source: post-M009 user approval
-- Primary owning slice: next reviewed +10 milestone
-- Validation: A new +10 batch is selected without overlap with prior M006/M008 corpora, source-ready quota is filled or explicitly blocked, scan uses active --milestone-id, real provenance log verifies fresh with expected milestone_id/batch_id metadata, review completes, and import/write flags remain false.
-- Notes: No unattended run-to-100, no positive KG import, and no production LadybugDB writes.
-
 ## Validated
 
 ### R001 — CLI help info
@@ -377,6 +367,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate.
 - Notes: Validated by M008: one genuinely new +10 batch was selected, source-ready, quota-gated, scanned, and independently reviewed. The review requires bounded top-up automation before another +10, but R034's one-batch goal is satisfied.
 
+### R037 — Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.
+- Class: core-capability
+- Status: validated
+- Description: Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.
+- Why it matters: M009 allows exactly one next +10 only under explicit gates. This validates whether the hardening works on a real batch rather than only synthetic evidence.
+- Source: post-M009 user approval
+- Primary owning slice: next reviewed +10 milestone
+- Validation: M010 final guard: review_verdict=PASS; selected_count=10; prior_overlap_count=0; quota_ready_count=10; paper_count=10; chunk_count=1477; freshness_verdict=fresh; import_eligible_chunk_count=0; positive_import_blocked=true; production_writes_blocked=true; unattended_scaling_blocked=true.
+- Notes: Validated by M010-06v9ke: one reviewed next +10 batch was selected with prior_overlap_count=0, source quota was materialized to 10/10 after bounded replacements, scan used active M010 lineage, real provenance/freshness returned fresh for run_id=m010-s03-scan-002, independent review verdict PASS, and import/write/scaling gates remained blocked.
+
 ## Deferred
 
 ## Out of Scope
@@ -421,11 +421,11 @@ This file is the explicit capability and coverage contract for the project.
 | R034 | primary-user-loop | validated | M008-c9zb94 | M008/S01,S02,S03,S04 | M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate. |
 | R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements. |
 | R036 | failure-visibility | active | next validation hardening milestone | none | Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands. |
-| R037 | core-capability | active | next reviewed +10 milestone | none | A new +10 batch is selected without overlap with prior M006/M008 corpora, source-ready quota is filled or explicitly blocked, scan uses active --milestone-id, real provenance log verifies fresh with expected milestone_id/batch_id metadata, review completes, and import/write flags remain false. |
+| R037 | core-capability | validated | next reviewed +10 milestone | none | M010 final guard: review_verdict=PASS; selected_count=10; prior_overlap_count=0; quota_ready_count=10; paper_count=10; chunk_count=1477; freshness_verdict=fresh; import_eligible_chunk_count=0; positive_import_blocked=true; production_writes_blocked=true; unattended_scaling_blocked=true. |
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
-- Validated: 21 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034)
+- Active requirements: 15
+- Mapped to slices: 15
+- Validated: 22 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037)
 - Unmapped active requirements: 0

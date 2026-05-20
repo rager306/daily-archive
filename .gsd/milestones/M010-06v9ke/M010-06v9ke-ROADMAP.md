@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, the next +10 scan artifacts are active-lineage stamped and verified fresh by provenance.
 
-- [ ] **S04: Review gated next plus ten evidence** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, independent review decides whether evidence permits another gated batch, requires hardening, or blocks progression.
 
 ## Boundary Map
