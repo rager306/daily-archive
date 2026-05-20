@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After S01, we know where and how to inspect Token Plan quotas/limits and current operational rules.
 
-- [ ] **S02: MiniMax real bounded helper probes** `risk:medium` `depends:[S01]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: After S02, MiniMax has been exercised with real bounded helper-style API calls and sanitized evidence.
 
 - [ ] **S03: MiniMax real-test recommendation** `risk:medium` `depends:[S01,S02]`
