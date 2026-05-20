@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, a validation-batch run can emit a commit-safe provenance log entry tying command execution to input and output hashes.
 
-- [ ] **S02: Artifact freshness verifier** `risk:high` `depends:[S01]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, a verifier can prove whether an artifact set matches a recorded CLI run or fail on stale/mismatched outputs.
 
 - [ ] **S03: Active scan lineage metadata** `risk:medium` `depends:[S01,S02]`

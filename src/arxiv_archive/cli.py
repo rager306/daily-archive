@@ -26,6 +26,12 @@ from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.embedder import Embedder  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
+from arxiv_archive.validation_batch_provenance import (  # noqa: E402
+    build_artifact_freshness_report,
+    read_validation_cli_provenance_log,
+    select_provenance_entry,
+    write_artifact_freshness_report,
+)
 from arxiv_archive.validation_batch_state import (  # noqa: E402
     build_contract_response,
     read_batch_state,
@@ -259,6 +265,44 @@ def validation_batch_scan(
         }
     )
     _echo_validation_batch_response(response, as_json=json_output)
+
+
+@validation_batch_app.command("verify-artifacts")
+def validation_batch_verify_artifacts(
+    provenance_log: Annotated[
+        Path,
+        typer.Option("--provenance-log", help="Validation CLI provenance JSONL log."),
+    ],
+    run_id: Annotated[str | None, typer.Option("--run-id", help="Specific provenance run id to verify.")] = None,
+    batch_id: Annotated[str | None, typer.Option("--batch-id", help="Batch id used to select the newest matching run.")] = None,
+    command: Annotated[str | None, typer.Option("--command", help="Command label used to select the newest matching run.")] = None,
+    report_path: Annotated[
+        Path | None,
+        typer.Option("--report-path", help="Optional path where the freshness report JSON should be written."),
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Verify that recorded validation-batch artifacts still match provenance hashes."""
+    try:
+        entries = read_validation_cli_provenance_log(provenance_log)
+        entry = select_provenance_entry(entries, run_id=run_id, batch_id=batch_id, command=command)
+        report = build_artifact_freshness_report(entry)
+        if report_path is not None:
+            write_artifact_freshness_report(report, report_path)
+            report["report_path"] = str(report_path)
+    except (OSError, ValueError) as exc:
+        response = {
+            "status": "invalid_provenance",
+            "verdict": "invalid_provenance",
+            "error": str(exc),
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        }
+        _echo_validation_batch_response(response, as_json=json_output)
+        raise typer.Exit(1) from exc
+    _echo_validation_batch_response(report, as_json=json_output)
+    if report.get("verdict") != "fresh":
+        raise typer.Exit(1)
 
 
 @validation_batch_app.command("review")
