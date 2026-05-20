@@ -13,7 +13,7 @@
 
 ## Slices
 
-- [ ] **S01: Select first new plus ten corpus** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, there is a deterministic next-10 manifest that excludes all M006 papers and explains why each paper was selected.
 
 - [ ] **S02: Initialize and preflight new plus ten batch** `risk:high` `depends:[S01]`
