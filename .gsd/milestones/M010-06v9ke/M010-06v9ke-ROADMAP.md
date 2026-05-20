@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After this slice, a new +10 manifest exists with no overlap against M006 or M008 and a redacted availability report.
 
-- [ ] **S02: Preflight and bounded top up source quota** `risk:high` `depends:[S01]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, the selected batch has source-ready quota 10/10 or an explicit bounded shortage blocker.
 
 - [ ] **S03: Run provenance verified next plus ten scan** `risk:high` `depends:[S02]`
