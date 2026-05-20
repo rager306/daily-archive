@@ -150,6 +150,15 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial evidence: M008/S03 quota-fill summary proves target_count=10, accepted_ready_count=10, shortage_count=0, scan_allowed=true for the current batch. Missing evidence: bounded replacement/top-up behavior when accepted_ready_count < target_count.
 - Notes: M008 added success-path quota-fill gate evidence and tests. Shortage/top-up automation remains required before another +10 batch, so this requirement stays active rather than validated.
 
+### R036 — Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
+- Class: failure-visibility
+- Status: active
+- Description: Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
+- Why it matters: Current validation artifacts can be checked for consistency, but they do not fully prove that each artifact was freshly produced by a specific CLI run. Provenance is required to detect stale artifacts and metadata mismatches such as an M008 artifact carrying M006 milestone metadata.
+- Source: user feedback after M008 completion
+- Primary owning slice: next validation hardening milestone
+- Validation: A validation-batch run writes cli-run-log.jsonl entries with command, cwd, git commit, started/completed timestamps, duration, exit code, stdout/stderr paths, input/output sha256 hashes, and redacted safety metadata. A verifier fails if artifact hashes, freshness, or milestone/batch lineage do not match.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -400,10 +409,11 @@ This file is the explicit capability and coverage contract for the project.
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
 | R034 | primary-user-loop | validated | M008-c9zb94 | M008/S01,S02,S03,S04 | M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate. |
 | R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial evidence: M008/S03 quota-fill summary proves target_count=10, accepted_ready_count=10, shortage_count=0, scan_allowed=true for the current batch. Missing evidence: bounded replacement/top-up behavior when accepted_ready_count < target_count. |
+| R036 | failure-visibility | active | next validation hardening milestone | none | A validation-batch run writes cli-run-log.jsonl entries with command, cwd, git commit, started/completed timestamps, duration, exit code, stdout/stderr paths, input/output sha256 hashes, and redacted safety metadata. A verifier fails if artifact hashes, freshness, or milestone/batch lineage do not match. |
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 14
+- Active requirements: 15
+- Mapped to slices: 15
 - Validated: 21 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034)
 - Unmapped active requirements: 0
