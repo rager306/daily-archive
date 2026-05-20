@@ -169,16 +169,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
-### R042 — MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
-- Class: integration
-- Status: active
-- Description: MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
-- Why it matters: The project needs MiniMax callability and limit-operability evidence before any helper integration can be safely considered.
-- Source: user-request
-- Primary owning slice: M014-65dlgp
-- Validation: M014 final guard should show real API calls completed, Token Plan remains endpoint/page documented, no secrets/raw content persisted, and production KG import/write remains blocked.
-- Notes: User stated budget is not a blocking constraint due to subscription; still preserve bounded concurrency, evidence hygiene, no raw paper/chunk payload persistence, and no MiniMax source-of-truth/orchestrator role.
-
 ## Validated
 
 ### R001 — CLI help info
@@ -426,6 +416,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M013 final guard: review_verdict=PASS; dspy_dependency_verdict=pass_isolated_optional_dev_probe_ready; dspy_install_succeeded=true; dspy_import_succeeded=true; dspy_predict_failed_closed_without_lm=true; dspy_evaluate_static_program_succeeded=true; dspy_possible_dev_optimizers=[KNNFewShot,LabeledFewShot]; dspy_optimizer_execution_allowed=false; minimax_smoke_verdict=pass_synthetic_callability_only; minimax_http_status=200; minimax_orchestrator_allowed=false; production_import_allowed=false.
 - Notes: Validated by M013: DSPy installed/imported in isolated temp venv; Predict without LM failed closed; static Evaluate succeeded; project deps were not modified; optimizer inventory/applicability catalog completed with KNNFewShot and LabeledFewShot as possible-dev future first candidates and advanced optimizers future-only/blocked; MiniMax synthetic OpenAI-compatible smoke test returned HTTP 200; raw MiniMax response/model content was removed from persisted artifacts; independent review PASS after evidence-hygiene fixes. Production import, production writes, DSPy optimizer execution, DSPy production runtime adoption, MiniMax orchestration/source-of-truth, and raw paper/PDF/chunk text calls remain blocked.
 
+### R042 — MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
+- Class: integration
+- Status: validated
+- Description: MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
+- Why it matters: The project needs MiniMax callability and limit-operability evidence before any helper integration can be safely considered.
+- Source: user-request
+- Primary owning slice: M014-65dlgp
+- Validation: M014 final guard: review_verdict=PASS; subscription_budget_non_blocking=true; platform_limits_still_apply=true; weekly_usage_quota_documented=10x the 5-hour quota; live_call_count=4; successful_http_count=4; redacted_helper_success_count=1; raw_response_persisted=false; raw_model_content_persisted=false; secrets_logged=false; production_import_allowed=false; ladybugdb_written=false; minimax_orchestrator_allowed=false; source_of_truth_allowed=false.
+- Notes: Validated by M014: MiniMax Token Plan usage visibility documented from official docs; subscription budget recorded as non-blocking per user instruction; platform limits still apply, including request windows, RPM/TPM, daily quotas, dynamic peak-hour traffic guidance, and weekly usage quota of 10x 5-hour quota where applicable. Remains endpoint was probed safely but returned HTTP 403 with current key, likely not authorized/not Token Plan key; no raw body or credential persisted. Four real MiniMax live calls completed over synthetic/redacted metadata only; all HTTP 200; strict JSON passed; one redacted helper attempt truncated, high-budget retry parsed; edge failure recorded. Production import/write/source-of-truth/orchestrator/unattended use remain blocked.
+
 ## Deferred
 
 ## Out of Scope
@@ -475,11 +475,11 @@ This file is the explicit capability and coverage contract for the project.
 | R039 | constraint | validated | M012 | none | M012 final guard: review_verdict=PASS; dspy_verdict=conditional_go_optional_dev_probe_only; minimax_verdict=conditional_go_optional_helper_probe_only; production_import_allowed=false; dspy_optimizer_allowed=false; minimax_orchestrator_allowed=false; next_safe_options=[dspy_optional_dev_dependency_no_lm_probe, minimax_explicit_synthetic_auth_smoke_test, chunk_span_provenance_candidate_locator_packet]. |
 | R040 | constraint | active | project | none | Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation. |
 | R041 | constraint | validated | M013 | none | M013 final guard: review_verdict=PASS; dspy_dependency_verdict=pass_isolated_optional_dev_probe_ready; dspy_install_succeeded=true; dspy_import_succeeded=true; dspy_predict_failed_closed_without_lm=true; dspy_evaluate_static_program_succeeded=true; dspy_possible_dev_optimizers=[KNNFewShot,LabeledFewShot]; dspy_optimizer_execution_allowed=false; minimax_smoke_verdict=pass_synthetic_callability_only; minimax_http_status=200; minimax_orchestrator_allowed=false; production_import_allowed=false. |
-| R042 | integration | active | M014-65dlgp | none | M014 final guard should show real API calls completed, Token Plan remains endpoint/page documented, no secrets/raw content persisted, and production KG import/write remains blocked. |
+| R042 | integration | validated | M014-65dlgp | none | M014 final guard: review_verdict=PASS; subscription_budget_non_blocking=true; platform_limits_still_apply=true; weekly_usage_quota_documented=10x the 5-hour quota; live_call_count=4; successful_http_count=4; redacted_helper_success_count=1; raw_response_persisted=false; raw_model_content_persisted=false; secrets_logged=false; production_import_allowed=false; ladybugdb_written=false; minimax_orchestrator_allowed=false; source_of_truth_allowed=false. |
 
 ## Coverage Summary
 
-- Active requirements: 17
-- Mapped to slices: 17
-- Validated: 25 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041)
+- Active requirements: 16
+- Mapped to slices: 16
+- Validated: 26 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042)
 - Unmapped active requirements: 0

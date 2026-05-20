@@ -94,6 +94,18 @@ MiniMax Token Plan FAQ says Token Plan is designed for individual, interactive d
 
 MiniMax documents dynamic rate limiting during peak hours, especially for high-concurrency automated batch tasks or multi-user sharing patterns. The docs mention peak periods may be dynamically adjusted and that account-level traffic may be controlled to preserve stability.
 
+Documented FAQ details checked in M014:
+
+- Peak traffic hours are dynamically adjusted based on cluster load; the FAQ gives a typical weekday window of `15:00–17:30`.
+- Approximate continuous-agent guidance during peak traffic:
+  - Starter / Plus: about `1` continuous agent.
+  - Max: about `2` continuous agents.
+  - Ultra: about `4` continuous agents.
+- Weekly usage quota is documented as `10 × the 5-hour quota`.
+- The FAQ says users who purchased before `2026-03-22 23:59:59` are not subject to weekly quota limits, while purchases from `2026-03-23 00:00:00` onward are subject to weekly quota limits.
+
+M014 does not know the purchase timestamp or active plan tier for the current key, so it treats this as an operational constraint to check in account UI/API before any sustained use.
+
 ## M014 operating posture
 
 - Subscription budget is **not** the current blocker for MiniMax real tests.

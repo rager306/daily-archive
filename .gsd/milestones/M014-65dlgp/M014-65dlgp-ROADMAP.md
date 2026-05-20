@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: After S02, MiniMax has been exercised with real bounded helper-style API calls and sanitized evidence.
 
-- [ ] **S03: MiniMax real-test recommendation** `risk:medium` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After S03, the project has a reviewed go/no-go recommendation for the next MiniMax helper integration step.
 
 ## Boundary Map
