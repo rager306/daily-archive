@@ -12,10 +12,10 @@
 
 ## Slices
 
-- [ ] **S01: DSPy compatibility spike** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: A DSPy compatibility report exists with package/API requirements, minimal invocation path, fail-closed optimizer policy, and exact blockers/preconditions.
 
-- [ ] **S02: MiniMax compatibility spike** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: A MiniMax compatibility report exists with API/auth/model/modalities, structured output feasibility, adapter options, and bounded call policy.
 
 - [ ] **S03: Integration boundary matrix** `risk:medium` `depends:[S01,S02]`
