@@ -169,6 +169,16 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
+### R042 — MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
+- Class: integration
+- Status: active
+- Description: MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.
+- Why it matters: The project needs MiniMax callability and limit-operability evidence before any helper integration can be safely considered.
+- Source: user-request
+- Primary owning slice: M014-65dlgp
+- Validation: M014 final guard should show real API calls completed, Token Plan remains endpoint/page documented, no secrets/raw content persisted, and production KG import/write remains blocked.
+- Notes: User stated budget is not a blocking constraint due to subscription; still preserve bounded concurrency, evidence hygiene, no raw paper/chunk payload persistence, and no MiniMax source-of-truth/orchestrator role.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -465,10 +475,11 @@ This file is the explicit capability and coverage contract for the project.
 | R039 | constraint | validated | M012 | none | M012 final guard: review_verdict=PASS; dspy_verdict=conditional_go_optional_dev_probe_only; minimax_verdict=conditional_go_optional_helper_probe_only; production_import_allowed=false; dspy_optimizer_allowed=false; minimax_orchestrator_allowed=false; next_safe_options=[dspy_optional_dev_dependency_no_lm_probe, minimax_explicit_synthetic_auth_smoke_test, chunk_span_provenance_candidate_locator_packet]. |
 | R040 | constraint | active | project | none | Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation. |
 | R041 | constraint | validated | M013 | none | M013 final guard: review_verdict=PASS; dspy_dependency_verdict=pass_isolated_optional_dev_probe_ready; dspy_install_succeeded=true; dspy_import_succeeded=true; dspy_predict_failed_closed_without_lm=true; dspy_evaluate_static_program_succeeded=true; dspy_possible_dev_optimizers=[KNNFewShot,LabeledFewShot]; dspy_optimizer_execution_allowed=false; minimax_smoke_verdict=pass_synthetic_callability_only; minimax_http_status=200; minimax_orchestrator_allowed=false; production_import_allowed=false. |
+| R042 | integration | active | M014-65dlgp | none | M014 final guard should show real API calls completed, Token Plan remains endpoint/page documented, no secrets/raw content persisted, and production KG import/write remains blocked. |
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
+- Active requirements: 17
+- Mapped to slices: 17
 - Validated: 25 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041)
 - Unmapped active requirements: 0
