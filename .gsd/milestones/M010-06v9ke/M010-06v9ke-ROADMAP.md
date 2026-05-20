@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, the selected batch has source-ready quota 10/10 or an explicit bounded shortage blocker.
 
-- [ ] **S03: Run provenance verified next plus ten scan** `risk:high` `depends:[S02]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, the next +10 scan artifacts are active-lineage stamped and verified fresh by provenance.
 
 - [ ] **S04: Review gated next plus ten evidence** `risk:medium` `depends:[S03]`
