@@ -239,6 +239,10 @@ def validation_batch_scan(
         Path | None,
         typer.Option("--mixed-benchmark-path", help="M005/S06 mixed benchmark JSON for context only."),
     ] = None,
+    milestone_id: Annotated[
+        str | None,
+        typer.Option("--milestone-id", help="Active milestone id to stamp into validation scan artifacts."),
+    ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
     """Run a redacted validation-batch scan over a source-ready batch."""
@@ -248,6 +252,7 @@ def validation_batch_scan(
         output_dir,
         structure_baseline_path=structure_baseline_path,
         mixed_benchmark_path=mixed_benchmark_path,
+        milestone_id=milestone_id,
     )
     response = validation_batch_state_preview(result["state"])
     response.update(

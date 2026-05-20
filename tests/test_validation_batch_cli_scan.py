@@ -92,6 +92,8 @@ def test_validation_batch_scan_cli_writes_scan_delta_and_outlier_artifacts(tmp_p
         str(tmp_path / "scan"),
         "--structure-baseline-path",
         str(baseline_path),
+        "--milestone-id",
+        "M009-fh0tg0",
         "--json",
     )
 
@@ -109,9 +111,16 @@ def test_validation_batch_scan_cli_writes_scan_delta_and_outlier_artifacts(tmp_p
     delta = json.loads(delta_path.read_text(encoding="utf-8"))
     outliers = json.loads(outlier_path.read_text(encoding="utf-8"))
     assert summary["schema_version"] == "m007-validation-scan-summary.v1"
+    assert summary["milestone"] == "M009-fh0tg0"
+    assert summary["milestone_id"] == "M009-fh0tg0"
+    assert summary["batch_id"] == "fixture-bscan"
     assert summary["paper_count"] == 1
     assert summary["aggregate"]["import_eligible_chunk_count"] == 0
+    assert delta["milestone_id"] == "M009-fh0tg0"
+    assert delta["batch_id"] == "fixture-bscan"
     assert delta["structure_aware_baseline"]["available"] is True
+    assert outliers["milestone_id"] == "M009-fh0tg0"
+    assert outliers["batch_id"] == "fixture-bscan"
     assert outliers["schema_version"] == "m007-validation-outlier-report.v1"
 
 

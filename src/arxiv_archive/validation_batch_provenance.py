@@ -113,6 +113,7 @@ def build_validation_cli_provenance_entry(
     stderr_path: str | Path | None = None,
     real_source_acquisition_performed: bool = False,
     real_scan_performed: bool = False,
+    expected_artifact_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     started = _isoformat_utc(started_at)
     completed = _isoformat_utc(completed_at)
@@ -138,6 +139,7 @@ def build_validation_cli_provenance_entry(
         "stderr_path": str(stderr_path) if stderr_path is not None else None,
         "real_source_acquisition_performed": real_source_acquisition_performed,
         "real_scan_performed": real_scan_performed,
+        "expected_artifact_metadata": dict(expected_artifact_metadata or {}),
         **default_safety_flags(),
     }
     return entry
@@ -196,8 +198,13 @@ def build_artifact_freshness_report(entry: dict[str, Any]) -> dict[str, Any]:
     output_current, output_diagnostics = _verify_fingerprints(entry.get("outputs", []), role="output")
     diagnostics.extend(input_diagnostics)
     diagnostics.extend(output_diagnostics)
+    diagnostics.extend(_verify_expected_artifact_metadata(entry.get("outputs", []), entry.get("expected_artifact_metadata", {})))
     missing_count = sum(1 for item in diagnostics if item["code"].startswith("missing_"))
-    mismatch_count = sum(1 for item in diagnostics if item["code"].endswith("_changed"))
+    mismatch_count = sum(
+        1
+        for item in diagnostics
+        if item["code"].endswith("_changed") or item["code"] == "artifact_metadata_mismatch"
+    )
     if any(item["code"] in {"invalid_provenance", "unsafe_safety_flag"} for item in diagnostics):
         verdict = "invalid_provenance"
     elif missing_count:
@@ -248,6 +255,53 @@ def _verify_fingerprints(expected: Sequence[dict[str, Any]], *, role: str) -> tu
             diagnostics.append(_diagnostic("blocker", f"{role}_size_changed", f"Recorded {role} size no longer matches current file size.", "Re-run the producing command or investigate manual artifact mutation.", path))
     return current, diagnostics
 
+
+def _verify_expected_artifact_metadata(
+    outputs: Sequence[dict[str, Any]], expected_metadata: dict[str, Any]
+) -> list[dict[str, Any]]:
+    if not expected_metadata:
+        return []
+    diagnostics: list[dict[str, Any]] = []
+    for output in outputs:
+        path = output.get("path")
+        if not path or not Path(path).exists():
+            continue
+        try:
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    "artifact_metadata_unreadable",
+                    "Recorded output is not readable JSON for metadata verification.",
+                    "Regenerate the output artifact or remove metadata expectations for non-JSON outputs.",
+                    path,
+                )
+            )
+            continue
+        if not isinstance(payload, dict):
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    "artifact_metadata_unreadable",
+                    "Recorded output JSON is not an object for metadata verification.",
+                    "Regenerate the output artifact or remove metadata expectations for non-object outputs.",
+                    path,
+                )
+            )
+            continue
+        for key, expected_value in expected_metadata.items():
+            if payload.get(key) != expected_value:
+                diagnostics.append(
+                    _diagnostic(
+                        "blocker",
+                        "artifact_metadata_mismatch",
+                        f"Recorded output metadata {key!r} does not match expected value.",
+                        "Re-run the producing command with active lineage metadata or investigate stale artifacts.",
+                        path,
+                    )
+                )
+    return diagnostics
 
 def _validate_entry_shape(entry: dict[str, Any]) -> list[dict[str, Any]]:
     required = ("schema_version", "run_id", "batch_id", "command", "inputs", "outputs", "exit_code")

@@ -219,29 +219,34 @@ def run_validation_batch_scan(
     structure_baseline_path: str | Path | None = None,
     mixed_benchmark_path: str | Path | None = None,
     run_id: str | None = None,
+    milestone_id: str | None = None,
 ) -> dict[str, Any]:
     """Run the redacted structure-aware deviation scan for a preflighted batch."""
     if state.phase not in {"source_ready", "scan_ready", "scanned", "review_required"}:
         raise ValueError(f"batch must be source_ready or scan_ready before scan, got {state.phase}")
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    manifest_path = write_validation_scan_manifest(state, output / "validation-scan-manifest.json")
-    source_summary_path = write_validation_scan_source_readiness(state, output / "validation-scan-source-readiness.json")
+    lineage = _scan_lineage(state, milestone_id=milestone_id)
+    manifest_path = write_validation_scan_manifest(state, output / "validation-scan-manifest.json", lineage=lineage)
+    source_summary_path = write_validation_scan_source_readiness(
+        state, output / "validation-scan-source-readiness.json", lineage=lineage
+    )
     scan = build_thirty_paper_deviation_scan(
         manifest_path=manifest_path,
         source_acquisition_summary_path=source_summary_path,
         baseline_summary_path=mixed_benchmark_path,
         run_id=run_id or f"{state.batch_id}-validation-scan",
     )
-    summary_path, diagnostics_path = write_validation_scan_artifacts(scan, output)
+    summary_path, diagnostics_path = write_validation_scan_artifacts(scan, output, lineage=lineage)
     delta_path = output / "delta-report.json"
     outlier_path = output / "outlier-report.json"
     delta_report = build_delta_report(
         scan,
         structure_baseline_path=structure_baseline_path,
         mixed_benchmark_path=mixed_benchmark_path,
+        lineage=lineage,
     )
-    outlier_report = build_outlier_report(scan)
+    outlier_report = build_outlier_report(scan, lineage=lineage)
     delta_path.write_text(json.dumps(delta_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     outlier_path.write_text(json.dumps(outlier_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     scan_diagnostics = tuple(scan_import_gate_diagnostics(scan))
@@ -271,7 +276,9 @@ def run_validation_batch_scan(
     }
 
 
-def write_validation_scan_manifest(state: ValidationBatchState, path: str | Path) -> Path:
+def write_validation_scan_manifest(
+    state: ValidationBatchState, path: str | Path, *, lineage: dict[str, str | None] | None = None
+) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     papers = [_paper_manifest_record(paper) for paper in state.selected_papers]
@@ -282,13 +289,16 @@ def write_validation_scan_manifest(state: ValidationBatchState, path: str | Path
         "m005_overlap_count": sum(1 for paper in papers if paper.get("selection_role") == "m005_baseline_overlap"),
         "expansion_count": sum(1 for paper in papers if paper.get("selection_role") == "deterministic_expansion"),
         "papers": papers,
+        **_lineage_payload(lineage),
         **default_safety_flags(),
     }
     output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return output_path
 
 
-def write_validation_scan_source_readiness(state: ValidationBatchState, path: str | Path) -> Path:
+def write_validation_scan_source_readiness(
+    state: ValidationBatchState, path: str | Path, *, lineage: dict[str, str | None] | None = None
+) -> Path:
     output_path = Path(path)
     readiness_values = list(state.source_readiness_by_paper.values())
     payload = {
@@ -298,15 +308,21 @@ def write_validation_scan_source_readiness(state: ValidationBatchState, path: st
         "ready_for_markdown_scan_count": sum(1 for item in readiness_values if item.ready_for_markdown_scan),
         "still_missing_markdown_count": sum(1 for item in readiness_values if not item.ready_for_markdown_scan),
         "available_pdf_count": sum(1 for item in readiness_values if item.pdf_present),
+        **_lineage_payload(lineage),
         **default_safety_flags(),
     }
     output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return output_path
 
 
-def write_validation_scan_artifacts(scan: dict[str, Any], output_dir: str | Path) -> tuple[Path, Path]:
+def write_validation_scan_artifacts(
+    scan: dict[str, Any], output_dir: str | Path, *, lineage: dict[str, str | None] | None = None
+) -> tuple[Path, Path]:
     output = Path(output_dir)
     summary = {key: value for key, value in scan.items() if key != "records"}
+    summary.update(_lineage_payload(lineage))
+    if lineage and lineage.get("milestone_id"):
+        summary["milestone"] = lineage["milestone_id"]
     summary["schema_version"] = "m007-validation-scan-summary.v1"
     summary_path = output / "validation-scan-summary.json"
     diagnostics_path = output / "validation-scan-diagnostics.jsonl"
@@ -322,6 +338,7 @@ def build_delta_report(
     *,
     structure_baseline_path: str | Path | None = None,
     mixed_benchmark_path: str | Path | None = None,
+    lineage: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
     aggregate = scan.get("aggregate", {})
     structure_baseline = _read_optional_json(structure_baseline_path)
@@ -335,11 +352,12 @@ def build_delta_report(
         "mixed_benchmark_context": _mixed_benchmark_context(aggregate, mixed_benchmark),
         "route_share_delta": _share_delta(aggregate.get("counts_by_route", {}), (structure_baseline or {}).get("counts_by_route", {})),
         "refusal_share_delta": _share_delta(aggregate.get("refusal_counts", {}), (structure_baseline or {}).get("refusal_counts", {})),
+        **_lineage_payload(lineage),
         **default_safety_flags(),
     }
 
 
-def build_outlier_report(scan: dict[str, Any]) -> dict[str, Any]:
+def build_outlier_report(scan: dict[str, Any], *, lineage: dict[str, str | None] | None = None) -> dict[str, Any]:
     records = scan.get("records", [])
     outliers = scan.get("outliers", [])
     density_by_paper = {
@@ -363,8 +381,19 @@ def build_outlier_report(scan: dict[str, Any]) -> dict[str, Any]:
             "unexpected_import_eligible_chunks": "import_eligible_chunk_count > 0",
         },
         "outliers": enriched_outliers,
+        **_lineage_payload(lineage),
         **default_safety_flags(),
     }
+
+
+def _scan_lineage(state: ValidationBatchState, *, milestone_id: str | None = None) -> dict[str, str | None]:
+    return {"milestone_id": milestone_id, "batch_id": state.batch_id}
+
+
+def _lineage_payload(lineage: dict[str, str | None] | None) -> dict[str, str]:
+    if not lineage:
+        return {}
+    return {key: value for key, value in lineage.items() if value is not None}
 
 
 def scan_import_gate_diagnostics(scan: dict[str, Any]) -> list[dict[str, str]]:

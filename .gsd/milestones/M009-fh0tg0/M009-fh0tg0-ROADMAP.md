@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, a verifier can prove whether an artifact set matches a recorded CLI run or fail on stale/mismatched outputs.
 
-- [ ] **S03: Active scan lineage metadata** `risk:medium` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After this slice, validation scan summaries identify M009/M008-style active milestone and batch context instead of stale M006 metadata.
 
 - [ ] **S04: Bounded quota top-up automation** `risk:high` `depends:[S02,S03]`

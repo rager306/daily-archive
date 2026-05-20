@@ -95,6 +95,7 @@ def test_run_validation_batch_scan_writes_redacted_artifacts(tmp_path: Path) -> 
         _state(tmp_path),
         tmp_path / "out",
         structure_baseline_path=baseline_path,
+        milestone_id="M009-fh0tg0",
     )
 
     summary = json.loads(result["summary_path"].read_text(encoding="utf-8"))
@@ -105,10 +106,17 @@ def test_run_validation_batch_scan_writes_redacted_artifacts(tmp_path: Path) -> 
     assert state.phase == "scanned"
     assert state.artifact_paths.aggregate_summary_json == str(result["summary_path"])
     assert summary["schema_version"] == "m007-validation-scan-summary.v1"
+    assert summary["milestone"] == "M009-fh0tg0"
+    assert summary["milestone_id"] == "M009-fh0tg0"
+    assert summary["batch_id"] == "fixture-b001"
     assert summary["paper_count"] == 1
     assert summary["aggregate"]["chunk_count"] > 0
     assert summary["aggregate"]["import_eligible_chunk_count"] == 0
+    assert delta["milestone_id"] == "M009-fh0tg0"
+    assert delta["batch_id"] == "fixture-b001"
     assert delta["structure_aware_baseline"]["available"] is True
+    assert outliers["milestone_id"] == "M009-fh0tg0"
+    assert outliers["batch_id"] == "fixture-b001"
     assert outliers["schema_version"] == "m007-validation-outlier-report.v1"
     assert diagnostics
     assert "This paper proposes" not in diagnostics

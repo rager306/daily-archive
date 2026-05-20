@@ -148,6 +148,33 @@ def test_freshness_report_rejects_unsafe_provenance_flags(tmp_path: Path) -> Non
     assert "unsafe_safety_flag" in {diagnostic["code"] for diagnostic in report["diagnostics"]}
 
 
+def test_freshness_report_checks_expected_artifact_metadata(tmp_path: Path) -> None:
+    input_path = tmp_path / "state.json"
+    output_path = tmp_path / "summary.json"
+    input_path.write_text('{"state":"ready"}\n', encoding="utf-8")
+    output_path.write_text('{"milestone_id":"M009-fh0tg0","batch_id":"batch-1"}\n', encoding="utf-8")
+    started = datetime(2026, 5, 20, 4, 0, 0, tzinfo=UTC)
+    entry = build_validation_cli_provenance_entry(
+        command="validation-batch scan",
+        argv=["validation-batch", "scan"],
+        batch_id="batch-1",
+        input_paths=[input_path],
+        output_paths=[output_path],
+        status="scanned",
+        started_at=started,
+        completed_at=started + timedelta(seconds=1),
+        expected_artifact_metadata={"milestone_id": "M009-fh0tg0", "batch_id": "batch-1"},
+    )
+
+    assert build_artifact_freshness_report(entry)["verdict"] == "fresh"
+    output_path.write_text('{"milestone_id":"M006-638rza","batch_id":"batch-1"}\n', encoding="utf-8")
+    entry["outputs"] = [fingerprint_file(output_path)]
+    report = build_artifact_freshness_report(entry)
+
+    assert report["verdict"] == "stale"
+    assert "artifact_metadata_mismatch" in {diagnostic["code"] for diagnostic in report["diagnostics"]}
+
+
 def test_freshness_report_can_be_written_without_raw_content(tmp_path: Path) -> None:
     entry, _input_path, _output_path = _entry(tmp_path)
     report = build_artifact_freshness_report(entry)
