@@ -1,0 +1,64 @@
+{
+  "schema_version": "m016-9router-minimax-usage-summary.v1",
+  "milestone_id": "M016-9819d1",
+  "gitnexus_repo": "9router",
+  "vendor_path": "/root/vendor-source/9router",
+  "vendor_commit": "9dde485",
+  "source_files": [
+    "/root/vendor-source/9router/open-sse/services/usage.js",
+    "/root/vendor-source/9router/tests/unit/minimax-usage.test.js"
+  ],
+  "endpoint_order": {
+    "minimax": [
+      "https://www.minimax.io/v1/token_plan/remains",
+      "https://api.minimax.io/v1/api/openplatform/coding_plan/remains"
+    ],
+    "minimax-cn": [
+      "https://www.minimaxi.com/v1/api/openplatform/coding_plan/remains",
+      "https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "headers": [
+      "Authorization: Bearer <apiKey>",
+      "Accept: application/json",
+      "Content-Type: application/json"
+    ],
+    "uses_x_api_key": false
+  },
+  "fallback_behavior": {
+    "fallback_on_http_status": [404, 405, ">=500"],
+    "auth_like_stops_fallback": true,
+    "auth_like_conditions": [
+      "http_status_401_or_403",
+      "base_resp_status_code_1004",
+      "message_matches_token_or_coding_plan_invalid_unauthorized_inactive"
+    ]
+  },
+  "success_requires_base_resp_status_zero": true,
+  "success_requires_model_remains": true,
+  "success_requires_quota_rows": true,
+  "parsed_response_fields": {
+    "model_array": ["model_remains", "modelRemains"],
+    "model_name": ["model_name", "modelName"],
+    "session_total": ["current_interval_total_count", "currentIntervalTotalCount"],
+    "session_count": ["current_interval_usage_count", "currentIntervalUsageCount"],
+    "weekly_total": ["current_weekly_total_count", "currentWeeklyTotalCount"],
+    "weekly_count": ["current_weekly_usage_count", "currentWeeklyUsageCount"],
+    "reset_fields": ["remains_time", "remainsTime", "end_time", "endTime", "weekly_remains_time", "weeklyRemainsTime", "weekly_end_time", "weeklyEndTime"]
+  },
+  "count_semantics": {
+    "token_plan_remains": "count_means_used",
+    "coding_plan_remains": "count_means_remaining"
+  },
+  "m015_correction": {
+    "missed_global_fallback_endpoint": "https://api.minimax.io/v1/api/openplatform/coding_plan/remains",
+    "http_200_not_enough": true,
+    "must_check_provider_status_and_model_remains": true
+  },
+  "artifact_hygiene": {
+    "raw_source_response_persisted": false,
+    "secrets_included": false
+  }
+}

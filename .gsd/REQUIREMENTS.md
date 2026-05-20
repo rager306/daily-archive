@@ -436,6 +436,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M015 final guard: review_verdict=PASS; structured_output_verdict=tool_call_recommended; recommended_structured_interfaces=[anthropic_forced_tool_call,openai_response_format_json_schema,openai_response_format_json_object]; anthropic_forced_tool_schema_validated=true; schema_validated_count=1; token_plan_limit_check_verdict=ui_only_or_session_required; token_plan_api_remains_verified=false; true_remains_success_count=0; raw_response_persisted=false; secrets_logged=false; production_import_allowed=false; source_of_truth_allowed=false.
 - Notes: Validated by M015 remediation. Corrected M014: MiniMax structured JSON should not be judged from prompt-only OpenAI JSON. Anthropic-compatible forced tool calls with input_schema succeeded and schema-validated; OpenAI response_format json_schema/json_object also parsed in the live matrix. Corrected Token Plan limits: API remains access was tested through a 32-row matrix; no true remains success occurred because available MINIMAX_TOKEN_PLAN_KEY matched MINIMAX_API_KEY and base_resp-only HTTP 200 responses had non-zero status codes. Reliable current limit check is Billing > Token Plan UI; programmatic remains requires a distinct authorized Token Plan Key or session-supported endpoint. Production import/write/source-of-truth/orchestration remain blocked.
 
+### R044 — MiniMax limit checking must follow the 9router endpoint/fallback/parsing algorithm before declaring Token Plan remains unresolved.
+- Class: integration
+- Status: validated
+- Description: MiniMax limit checking must follow the 9router endpoint/fallback/parsing algorithm before declaring Token Plan remains unresolved.
+- Why it matters: Previous M015 matrix missed at least one 9router global fallback endpoint and did not derive the full parsing semantics from known working implementation.
+- Source: user-correction-9router
+- Primary owning slice: M016-9819d1
+- Validation: M016 final guard: limit_check_verdict=api_remains_verified; used_9router_algorithm=true; m015_limit_verdict_overturned=true; working_endpoint=https://api.minimax.io/v1/api/openplatform/coding_plan/remains; count_means_remaining=true; true_success_count=1; quota_row_count_total=8; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false.
+- Notes: Validated by M016. 9router was cloned to /root/vendor-source/9router and indexed as GitNexus repo `9router`. Its MiniMax usage implementation showed the correct global fallback endpoint `https://api.minimax.io/v1/api/openplatform/coding_plan/remains`, GET with Authorization Bearer, and parser rules requiring base_resp.status_code=0 plus model_remains quota rows. The corrected live probe verified API remains for global MiniMax via that fallback: true_success_count=1, model_remains_count=11, quota_row_count_total=8. Raw response, exact quota values, and credential values were not persisted. M015 limit verdict is overturned for global MiniMax; CN endpoints remain unverified with the current global key.
+
 ## Deferred
 
 ## Out of Scope
@@ -487,10 +497,11 @@ This file is the explicit capability and coverage contract for the project.
 | R041 | constraint | validated | M013 | none | M013 final guard: review_verdict=PASS; dspy_dependency_verdict=pass_isolated_optional_dev_probe_ready; dspy_install_succeeded=true; dspy_import_succeeded=true; dspy_predict_failed_closed_without_lm=true; dspy_evaluate_static_program_succeeded=true; dspy_possible_dev_optimizers=[KNNFewShot,LabeledFewShot]; dspy_optimizer_execution_allowed=false; minimax_smoke_verdict=pass_synthetic_callability_only; minimax_http_status=200; minimax_orchestrator_allowed=false; production_import_allowed=false. |
 | R042 | integration | validated | M014-65dlgp | none | M014 final guard: review_verdict=PASS; subscription_budget_non_blocking=true; platform_limits_still_apply=true; weekly_usage_quota_documented=10x the 5-hour quota; live_call_count=4; successful_http_count=4; redacted_helper_success_count=1; raw_response_persisted=false; raw_model_content_persisted=false; secrets_logged=false; production_import_allowed=false; ladybugdb_written=false; minimax_orchestrator_allowed=false; source_of_truth_allowed=false. |
 | R043 | integration | validated | M015-ktorc7 | none | M015 final guard: review_verdict=PASS; structured_output_verdict=tool_call_recommended; recommended_structured_interfaces=[anthropic_forced_tool_call,openai_response_format_json_schema,openai_response_format_json_object]; anthropic_forced_tool_schema_validated=true; schema_validated_count=1; token_plan_limit_check_verdict=ui_only_or_session_required; token_plan_api_remains_verified=false; true_remains_success_count=0; raw_response_persisted=false; secrets_logged=false; production_import_allowed=false; source_of_truth_allowed=false. |
+| R044 | integration | validated | M016-9819d1 | none | M016 final guard: limit_check_verdict=api_remains_verified; used_9router_algorithm=true; m015_limit_verdict_overturned=true; working_endpoint=https://api.minimax.io/v1/api/openplatform/coding_plan/remains; count_means_remaining=true; true_success_count=1; quota_row_count_total=8; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false. |
 
 ## Coverage Summary
 
 - Active requirements: 16
 - Mapped to slices: 16
-- Validated: 27 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043)
+- Validated: 28 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044)
 - Unmapped active requirements: 0
