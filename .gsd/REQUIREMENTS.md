@@ -150,6 +150,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: A deterministic new +10 selection is initialized, preflighted, scanned, reviewed, and summarized with redacted artifacts; positive KG import and production writes remain blocked.
 - Notes: This is one reviewed +10 batch, not unattended scaling to 100.
 
+### R035 — Validation batches must fill the target accepted-paper quota by drawing deterministic replacement candidates when selected papers cannot become source-ready within bounded acquisition rules.
+- Class: quality-attribute
+- Status: active
+- Description: Validation batches must fill the target accepted-paper quota by drawing deterministic replacement candidates when selected papers cannot become source-ready within bounded acquisition rules.
+- Why it matters: A +10 batch is only useful if it actually reaches 10 accepted scan-ready papers or produces an explicit shortage blocker after bounded attempts; stopping at an underfilled first selection would silently weaken validation coverage.
+- Source: user feedback during M008 after S02
+- Primary owning slice: M008-c9zb94
+- Supporting slices: M008/S03,M008/S04
+- Validation: Before scan, artifacts show target_count, attempted_count, accepted_count, rejected_count, shortage_count, and accepted_ready_count. Scan may proceed only when accepted_ready_count equals target_count and shortage_count is zero, or it must block explicitly.
+- Notes: Current M008 batch happens to be 10/10 ready after acquisition, so no replacement is needed, but the workflow must still emit quota-fill artifacts proving this.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -388,10 +399,11 @@ This file is the explicit capability and coverage contract for the project.
 | R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
 | R034 | primary-user-loop | active | M008-c9zb94 | M008/S01,S02,S03,S04 | A deterministic new +10 selection is initialized, preflighted, scanned, reviewed, and summarized with redacted artifacts; positive KG import and production writes remain blocked. |
+| R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Before scan, artifacts show target_count, attempted_count, accepted_count, rejected_count, shortage_count, and accepted_ready_count. Scan may proceed only when accepted_ready_count equals target_count and shortage_count is zero, or it must block explicitly. |
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 14
+- Active requirements: 15
+- Mapped to slices: 15
 - Validated: 20 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021)
 - Unmapped active requirements: 0

@@ -381,6 +381,113 @@ def scan_import_gate_diagnostics(scan: dict[str, Any]) -> list[dict[str, str]]:
     ]
 
 
+def build_quota_fill_report(
+    state: ValidationBatchState,
+    *,
+    target_count: int,
+    candidate_inventory: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a redacted quota-fill report for a validation batch."""
+    selected_ids = {paper.paper_id for paper in state.selected_papers}
+    records = [_quota_fill_record(paper, state.source_readiness_by_paper.get(paper.paper_id)) for paper in state.selected_papers]
+    accepted = [record for record in records if record["outcome"] == "accepted_ready"]
+    rejected = [record for record in records if record["outcome"] != "accepted_ready"]
+    shortage_count = max(target_count - len(accepted), 0)
+    replacement_candidates = _replacement_candidates(candidate_inventory, selected_ids, limit=shortage_count)
+    return {
+        "schema_version": "m008-quota-fill-summary.v1",
+        "batch_id": state.batch_id,
+        "target_count": target_count,
+        "attempted_count": len(records),
+        "accepted_count": len(accepted),
+        "accepted_ready_count": len(accepted),
+        "rejected_count": len(rejected),
+        "shortage_count": shortage_count,
+        "replacement_candidate_count": len(replacement_candidates),
+        "scan_allowed": len(accepted) == target_count and shortage_count == 0,
+        "records": records,
+        "replacement_candidates": replacement_candidates,
+        **default_safety_flags(),
+    }
+
+
+def write_quota_fill_run(report: dict[str, Any], output_dir: str | Path) -> dict[str, Path]:
+    """Write quota-fill summary and diagnostics JSONL."""
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    summary_path = output / "quota-fill-summary.json"
+    diagnostics_path = output / "quota-fill-diagnostics.jsonl"
+    summary = {key: value for key, value in report.items() if key not in {"records", "replacement_candidates"}}
+    summary["replacement_candidates"] = report.get("replacement_candidates", [])
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with diagnostics_path.open("w", encoding="utf-8") as handle:
+        for record in report.get("records", []):
+            if record.get("outcome") != "accepted_ready":
+                handle.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+        if int(report.get("shortage_count", 0)) > 0:
+            handle.write(
+                json.dumps(
+                    {
+                        "severity": "blocker",
+                        "code": "quota_shortage",
+                        "message": f"Accepted ready papers {report.get('accepted_ready_count')} below target {report.get('target_count')}.",
+                        "recommended_action": "Draw deterministic replacements from replacement_candidates or block scan.",
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+    return {"summary_path": summary_path, "diagnostics_path": diagnostics_path}
+
+
+def _quota_fill_record(paper: SelectedPaper, readiness: SourceReadiness | None) -> dict[str, Any]:
+    if readiness is None:
+        outcome = "rejected_no_preflight"
+        ready = False
+        reason = "No source readiness record exists for this paper."
+    elif readiness.ready_for_markdown_scan:
+        outcome = "accepted_ready"
+        ready = True
+        reason = "Markdown is present and accepted for scan."
+    else:
+        outcome = "rejected_not_source_ready"
+        ready = False
+        reason = "Paper is not ready for Markdown scan."
+    return {
+        "paper_id": paper.paper_id,
+        "rank": paper.rank,
+        "selection_role": paper.selection_role,
+        "ready_for_markdown_scan": ready,
+        "outcome": outcome,
+        "reason": reason,
+        "risk_tags": list(paper.risk_tags),
+        **default_safety_flags(),
+    }
+
+
+def _replacement_candidates(candidate_inventory: dict[str, Any] | None, selected_ids: set[str], *, limit: int) -> list[dict[str, Any]]:
+    if not candidate_inventory or limit <= 0:
+        return []
+    replacements: list[dict[str, Any]] = []
+    for candidate in candidate_inventory.get("candidates", []):
+        if not isinstance(candidate, dict):
+            continue
+        paper_id = str(candidate.get("paper_id"))
+        if paper_id in selected_ids:
+            continue
+        replacements.append(
+            {
+                "paper_id": paper_id,
+                "availability": candidate.get("availability", {}),
+                "risk_tags": candidate.get("risk_tags", []),
+            }
+        )
+        if len(replacements) >= limit:
+            break
+    return replacements
+
+
 def _paper_manifest_record(paper: SelectedPaper) -> dict[str, Any]:
     selection_role = "m005_baseline_overlap" if paper.selection_role == "baseline_overlap" else paper.selection_role
     source_paths = dict(paper.source_paths)

@@ -19,11 +19,11 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After this slice, the new +10 batch has M007 batch-state/source-preflight artifacts and any missing Markdown blockers are either repaired with bounded steps or explicitly block scan.
 
-- [ ] **S03: Scan new plus ten batch** `risk:high` `depends:[S02]`
-  > After this: After this slice, the source-ready new +10 batch has scan, delta, outlier, and import-gate artifacts, or a clear blocker if scan is unsafe.
+- [x] **S03: S03** `risk:high` `depends:[]`
+  > After this: After this slice, the new +10 batch has a quota-fill gate artifact proving accepted_ready_count=10 before scan, then scan/delta/outlier artifacts, or a clear blocker if quota cannot be filled.
 
-- [ ] **S04: Review first new plus ten batch** `risk:medium` `depends:[S03]`
-  > After this: After this slice, independent review says whether the first new +10 batch is good enough to continue another +10, needs fixes, or blocks progression.
+- [ ] **S04: Review quota-filled first new plus ten batch** `risk:medium` `depends:[S03]`
+  > After this: After this slice, independent review says whether the quota-filled first new +10 batch is good enough to continue another +10, needs fixes, or blocks progression.
 
 ## Boundary Map
 
