@@ -160,6 +160,15 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
 - Notes: M009 implemented provenance/freshness primitives, `validation-batch verify-artifacts`, active lineage metadata checks, and pass/stale/mismatch sample evidence. Automatic provenance emission from init/preflight/scan remains future work, so R036 stays active until real runs produce provenance without manual wrapper steps.
 
+### R038 — Before any positive KG import, a reviewed semantic evidence gate must evaluate a small subset of scanned chunks/outliers for factual extraction readiness without writing to production LadybugDB.
+- Class: quality-attribute
+- Status: active
+- Description: Before any positive KG import, a reviewed semantic evidence gate must evaluate a small subset of scanned chunks/outliers for factual extraction readiness without writing to production LadybugDB.
+- Why it matters: Operational scan counts and zero import-eligible chunks do not prove semantic KG quality. The project needs human/reviewer-visible evidence about whether chunks can support trusted scientific claims before import work resumes.
+- Source: M010 final recommendation
+- Primary owning slice: M011
+- Validation: A GSD milestone produces redacted semantic review packets, independent review verdict, and an import-readiness recommendation that either keeps import blocked or defines exact criteria for a future positive import rehearsal.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -422,10 +431,11 @@ This file is the explicit capability and coverage contract for the project.
 | R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements. |
 | R036 | failure-visibility | active | next validation hardening milestone | none | Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands. |
 | R037 | core-capability | validated | next reviewed +10 milestone | none | M010 final guard: review_verdict=PASS; selected_count=10; prior_overlap_count=0; quota_ready_count=10; paper_count=10; chunk_count=1477; freshness_verdict=fresh; import_eligible_chunk_count=0; positive_import_blocked=true; production_writes_blocked=true; unattended_scaling_blocked=true. |
+| R038 | quality-attribute | active | M011 | none | A GSD milestone produces redacted semantic review packets, independent review verdict, and an import-readiness recommendation that either keeps import blocked or defines exact criteria for a future positive import rehearsal. |
 
 ## Coverage Summary
 
-- Active requirements: 15
-- Mapped to slices: 15
+- Active requirements: 16
+- Mapped to slices: 16
 - Validated: 22 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037)
 - Unmapped active requirements: 0
