@@ -169,6 +169,16 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
+### R043 — MiniMax remediation must prove Token Plan limit-check access and structured JSON behavior using the correct API surfaces before any helper verdict is accepted.
+- Class: integration
+- Status: active
+- Description: MiniMax remediation must prove Token Plan limit-check access and structured JSON behavior using the correct API surfaces before any helper verdict is accepted.
+- Why it matters: A single remains 403 and prompt-only JSON parse failures are insufficient evidence; incorrect API surface or key type can produce false negative conclusions.
+- Source: user-correction
+- Primary owning slice: M015-ktorc7
+- Validation: M015 final guard must show limit-check access matrix results, structured-output matrix results, sanitized artifacts, independent review, and a corrected verdict that distinguishes MiniMax prompt JSON vs tool-call/schema behavior.
+- Notes: This requirement corrects the too-early M014 interpretation. It must test Token Plan Key/remains access matrix and MiniMax structured output via Anthropic-compatible API/tool calls and OpenAI-compatible reasoning split/response_format attempts. Production import/write/source-of-truth remain blocked.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -476,10 +486,11 @@ This file is the explicit capability and coverage contract for the project.
 | R040 | constraint | active | project | none | Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation. |
 | R041 | constraint | validated | M013 | none | M013 final guard: review_verdict=PASS; dspy_dependency_verdict=pass_isolated_optional_dev_probe_ready; dspy_install_succeeded=true; dspy_import_succeeded=true; dspy_predict_failed_closed_without_lm=true; dspy_evaluate_static_program_succeeded=true; dspy_possible_dev_optimizers=[KNNFewShot,LabeledFewShot]; dspy_optimizer_execution_allowed=false; minimax_smoke_verdict=pass_synthetic_callability_only; minimax_http_status=200; minimax_orchestrator_allowed=false; production_import_allowed=false. |
 | R042 | integration | validated | M014-65dlgp | none | M014 final guard: review_verdict=PASS; subscription_budget_non_blocking=true; platform_limits_still_apply=true; weekly_usage_quota_documented=10x the 5-hour quota; live_call_count=4; successful_http_count=4; redacted_helper_success_count=1; raw_response_persisted=false; raw_model_content_persisted=false; secrets_logged=false; production_import_allowed=false; ladybugdb_written=false; minimax_orchestrator_allowed=false; source_of_truth_allowed=false. |
+| R043 | integration | active | M015-ktorc7 | none | M015 final guard must show limit-check access matrix results, structured-output matrix results, sanitized artifacts, independent review, and a corrected verdict that distinguishes MiniMax prompt JSON vs tool-call/schema behavior. |
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
+- Active requirements: 17
+- Mapped to slices: 17
 - Validated: 26 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042)
 - Unmapped active requirements: 0
