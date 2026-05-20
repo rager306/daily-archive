@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: A redacted semantic review corpus manifest exists, pointing to source files by path/hash/span and M010 scan evidence by artifact path, with leakage guard passing.
 
-- [ ] **S02: Semantic rubric and redacted judgments** `risk:high` `depends:[S01]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: A review rubric and redacted judgment packet are available for the selected targets, with decisions expressed as categories and source references rather than raw text.
 
 - [ ] **S03: Independent semantic gate review** `risk:high` `depends:[S02]`
