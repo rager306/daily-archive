@@ -1,0 +1,265 @@
+{
+  "chunk_text_included": false,
+  "ladybugdb_written": false,
+  "optimizer_count": 19,
+  "optimizer_executed": false,
+  "optimizers": [
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "AvatarOptimizer",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/avatar_optimizer.py"
+    },
+    {
+      "algorithm_family": "multi_strategy_optimizer_orchestrating_multiple_optimizers",
+      "applicability_rating": "blocked",
+      "blocked_in_production_now": true,
+      "name": "BetterTogether",
+      "optimizer_executed": false,
+      "project_rationale": "Too broad/high-risk for current project; would combine optimizers before individual safety is proven.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/bettertogether.py"
+    },
+    {
+      "algorithm_family": "bootstrap_demos_from_teacher_student_traces",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "BootstrapFewShot",
+      "optimizer_executed": false,
+      "project_rationale": "Potentially useful after a trusted metric/devset exists, but it runs programs to create traces and can leak raw content if not redacted.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/bootstrap.py"
+    },
+    {
+      "algorithm_family": "finetuning_from_bootstrapped_data",
+      "applicability_rating": "blocked",
+      "blocked_in_production_now": true,
+      "name": "BootstrapFinetune",
+      "optimizer_executed": false,
+      "project_rationale": "Finetuning is out of scope before trusted labeled data, data policy, and model governance.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/bootstrap_finetune.py"
+    },
+    {
+      "algorithm_family": "instruction_prompt_optimization",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "COPRO",
+      "optimizer_executed": false,
+      "project_rationale": "Could tune instructions but needs metric/devset and risks prompt overfit; no current use without span metrics.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/copro_optimizer.py"
+    },
+    {
+      "algorithm_family": "ensemble_program_outputs",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "Ensemble",
+      "optimizer_executed": false,
+      "project_rationale": "Might combine multiple safe programs later, but no validated candidate programs exist yet.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/ensemble.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "GEPAFeedbackMetric",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/gepa/gepa.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "DspyGEPAResult",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/gepa/gepa.py"
+    },
+    {
+      "algorithm_family": "reflective_prompt_evolution",
+      "applicability_rating": "blocked",
+      "blocked_in_production_now": true,
+      "name": "GEPA",
+      "optimizer_executed": false,
+      "project_rationale": "Experimental/trace-heavy reflective optimizer; inappropriate until redaction/tracing policy and metrics are mature.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/gepa/gepa.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "GRPO",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/grpo.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "InferRules",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/infer_rules.py"
+    },
+    {
+      "algorithm_family": "retrieval_based_demo_selection",
+      "applicability_rating": "possible-dev",
+      "blocked_in_production_now": true,
+      "name": "KNNFewShot",
+      "optimizer_executed": false,
+      "project_rationale": "Most plausible early option after labeled examples exist; can select examples without compiling prompts, but still must avoid raw text leakage.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/knn_fewshot.py"
+    },
+    {
+      "algorithm_family": "bayesian_optimization_of_instructions_and_demos",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "MIPROv2",
+      "optimizer_executed": false,
+      "project_rationale": "Potentially relevant for extraction prompts after strong metrics; high LM-call/cost/trace risk; not first optimizer.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/mipro_optimizer_v2.py"
+    },
+    {
+      "algorithm_family": "random_search_over_bootstrapped_demos",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "BootstrapFewShotWithRandomSearch",
+      "optimizer_executed": false,
+      "project_rationale": "Could optimize demo selection but cost/trace risk is higher; needs budget caps and redacted devset.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/random_search.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "SignatureOptimizer",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/signature_opt.py"
+    },
+    {
+      "algorithm_family": "stochastic_instruction_demo_optimization",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "SIMBA",
+      "optimizer_executed": false,
+      "project_rationale": "Could be explored later for prompt/demo improvement; requires devset, metrics, budget caps.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/simba.py"
+    },
+    {
+      "algorithm_family": "support_or_internal_class",
+      "applicability_rating": "not-applicable-now",
+      "blocked_in_production_now": true,
+      "name": "Teleprompter",
+      "optimizer_executed": false,
+      "project_rationale": "Internal/support class or not directly applicable as a project optimizer.",
+      "required_before_use": [],
+      "source_path": "dspy/teleprompt/teleprompt.py"
+    },
+    {
+      "algorithm_family": "optuna_search_over_bootstrapped_demos",
+      "applicability_rating": "future-only",
+      "blocked_in_production_now": true,
+      "name": "BootstrapFewShotWithOptuna",
+      "optimizer_executed": false,
+      "project_rationale": "Search-heavy; only after deterministic metrics and isolated dev environment.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/teleprompt_optuna.py"
+    },
+    {
+      "algorithm_family": "demo_selection_from_labeled_examples",
+      "applicability_rating": "possible-dev",
+      "blocked_in_production_now": true,
+      "name": "LabeledFewShot",
+      "optimizer_executed": false,
+      "project_rationale": "Could select fixed labeled demonstrations after chunk-span/candidate locator fixtures exist; low optimizer risk but still needs devset/metrics.",
+      "required_before_use": [
+        "chunk_span_provenance",
+        "candidate_fact_locators",
+        "redacted_devset",
+        "project_owned_metrics",
+        "budget_caps",
+        "trace_redaction_guard"
+      ],
+      "source_path": "dspy/teleprompt/vanilla.py"
+    }
+  ],
+  "production_import_allowed": false,
+  "production_import_attempted": false,
+  "rating_counts": {
+    "blocked": 3,
+    "future-only": 6,
+    "not-applicable-now": 8,
+    "possible-dev": 2
+  },
+  "raw_text_included": false,
+  "schema_version": "m013-dspy-optimizer-applicability.v1",
+  "secrets_included": false
+}

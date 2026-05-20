@@ -169,6 +169,15 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
+### R041 — Before any DSPy optimizer or MiniMax helper is used in the Scientific KG process, the project must prove detailed optimizer applicability, dependency/install feasibility, bounded invocation, and explicit blocked/allowed scopes.
+- Class: constraint
+- Status: active
+- Description: Before any DSPy optimizer or MiniMax helper is used in the Scientific KG process, the project must prove detailed optimizer applicability, dependency/install feasibility, bounded invocation, and explicit blocked/allowed scopes.
+- Why it matters: M012 proved only high-level compatibility. The user needs concrete DSPy optimizer details, dependency proof, and next-step MiniMax callability boundaries before adoption decisions can be safe.
+- Source: post-M012 user request
+- Primary owning slice: M013
+- Validation: A GSD milestone produces a DSPy optimizer catalog with project applicability ratings, an isolated DSPy dependency/no-LM probe, MiniMax synthetic smoke-test decision/probe artifact, and final go/no-go recommendations preserving no-import/no-write boundaries.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -454,10 +463,11 @@ This file is the explicit capability and coverage contract for the project.
 | R038 | quality-attribute | validated | M011 | none | M011 final guard: review_verdict=PASS; gate_result=pass_negative_readiness_gate; target_count=10; source_hash_missing_count=0; repair_required_count=7; retrieval_only_count=3; import_candidate_count=0; raw_payload_key_count=0; positive_import_blocked=true; production_writes_blocked=true; chunk_span_provenance_required_next=true. |
 | R039 | constraint | validated | M012 | none | M012 final guard: review_verdict=PASS; dspy_verdict=conditional_go_optional_dev_probe_only; minimax_verdict=conditional_go_optional_helper_probe_only; production_import_allowed=false; dspy_optimizer_allowed=false; minimax_orchestrator_allowed=false; next_safe_options=[dspy_optional_dev_dependency_no_lm_probe, minimax_explicit_synthetic_auth_smoke_test, chunk_span_provenance_candidate_locator_packet]. |
 | R040 | constraint | active | project | none | Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation. |
+| R041 | constraint | active | M013 | none | A GSD milestone produces a DSPy optimizer catalog with project applicability ratings, an isolated DSPy dependency/no-LM probe, MiniMax synthetic smoke-test decision/probe artifact, and final go/no-go recommendations preserving no-import/no-write boundaries. |
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
+- Active requirements: 17
+- Mapped to slices: 17
 - Validated: 24 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039)
 - Unmapped active requirements: 0
