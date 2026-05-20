@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: A review rubric and redacted judgment packet are available for the selected targets, with decisions expressed as categories and source references rather than raw text.
 
-- [ ] **S03: Independent semantic gate review** `risk:high` `depends:[S02]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: An independent reviewer has evaluated the rubric and redacted judgments and produced a PASS or FLAG verdict with concrete blockers and limits.
 
 - [ ] **S04: Final semantic import readiness recommendation** `risk:medium` `depends:[S03]`
