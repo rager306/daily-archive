@@ -13,6 +13,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Any
 
+from arxiv_archive.thirty_paper_deviation_scan import build_thirty_paper_deviation_scan
 from arxiv_archive.validation_batch_state import (
     ScanArtifactPaths,
     SelectedPaper,
@@ -208,6 +209,255 @@ def validation_batch_state_preview(state: ValidationBatchState) -> dict[str, Any
         "paper_count": len(payload["selected_papers"]),
         "diagnostic_count": len(payload["diagnostics"]),
         **default_safety_flags(),
+    }
+
+
+def run_validation_batch_scan(
+    state: ValidationBatchState,
+    output_dir: str | Path,
+    *,
+    structure_baseline_path: str | Path | None = None,
+    mixed_benchmark_path: str | Path | None = None,
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    """Run the redacted structure-aware deviation scan for a preflighted batch."""
+    if state.phase not in {"source_ready", "scan_ready", "scanned", "review_required"}:
+        raise ValueError(f"batch must be source_ready or scan_ready before scan, got {state.phase}")
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    manifest_path = write_validation_scan_manifest(state, output / "validation-scan-manifest.json")
+    source_summary_path = write_validation_scan_source_readiness(state, output / "validation-scan-source-readiness.json")
+    scan = build_thirty_paper_deviation_scan(
+        manifest_path=manifest_path,
+        source_acquisition_summary_path=source_summary_path,
+        baseline_summary_path=mixed_benchmark_path,
+        run_id=run_id or f"{state.batch_id}-validation-scan",
+    )
+    summary_path, diagnostics_path = write_validation_scan_artifacts(scan, output)
+    delta_path = output / "delta-report.json"
+    outlier_path = output / "outlier-report.json"
+    delta_report = build_delta_report(
+        scan,
+        structure_baseline_path=structure_baseline_path,
+        mixed_benchmark_path=mixed_benchmark_path,
+    )
+    outlier_report = build_outlier_report(scan)
+    delta_path.write_text(json.dumps(delta_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    outlier_path.write_text(json.dumps(outlier_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    scan_diagnostics = tuple(scan_import_gate_diagnostics(scan))
+    artifact_paths = ScanArtifactPaths(
+        aggregate_summary_json=str(summary_path),
+        per_paper_diagnostics_jsonl=str(diagnostics_path),
+        delta_report_json=str(delta_path),
+        outlier_report_json=str(outlier_path),
+        review_summary_md=state.artifact_paths.review_summary_md,
+    )
+    updated = replace(
+        state,
+        phase="review_required" if scan_diagnostics else "scanned",
+        artifact_paths=artifact_paths,
+        diagnostics=tuple(state.diagnostics) + scan_diagnostics,
+    )
+    state_path = write_batch_state(updated, output / "batch-state.json")
+    return {
+        "state": updated,
+        "state_path": state_path,
+        "manifest_path": manifest_path,
+        "source_readiness_path": source_summary_path,
+        "summary_path": summary_path,
+        "diagnostics_path": diagnostics_path,
+        "delta_report_path": delta_path,
+        "outlier_report_path": outlier_path,
+    }
+
+
+def write_validation_scan_manifest(state: ValidationBatchState, path: str | Path) -> Path:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    papers = [_paper_manifest_record(paper) for paper in state.selected_papers]
+    payload = {
+        "schema_version": "m007-validation-scan-manifest.v1",
+        "batch_id": state.batch_id,
+        "paper_count": len(papers),
+        "m005_overlap_count": sum(1 for paper in papers if paper.get("selection_role") == "m005_baseline_overlap"),
+        "expansion_count": sum(1 for paper in papers if paper.get("selection_role") == "deterministic_expansion"),
+        "papers": papers,
+        **default_safety_flags(),
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return output_path
+
+
+def write_validation_scan_source_readiness(state: ValidationBatchState, path: str | Path) -> Path:
+    output_path = Path(path)
+    readiness_values = list(state.source_readiness_by_paper.values())
+    payload = {
+        "schema_version": "m007-validation-scan-source-readiness.v1",
+        "batch_id": state.batch_id,
+        "paper_count": len(state.selected_papers),
+        "ready_for_markdown_scan_count": sum(1 for item in readiness_values if item.ready_for_markdown_scan),
+        "still_missing_markdown_count": sum(1 for item in readiness_values if not item.ready_for_markdown_scan),
+        "available_pdf_count": sum(1 for item in readiness_values if item.pdf_present),
+        **default_safety_flags(),
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return output_path
+
+
+def write_validation_scan_artifacts(scan: dict[str, Any], output_dir: str | Path) -> tuple[Path, Path]:
+    output = Path(output_dir)
+    summary = {key: value for key, value in scan.items() if key != "records"}
+    summary["schema_version"] = "m007-validation-scan-summary.v1"
+    summary_path = output / "validation-scan-summary.json"
+    diagnostics_path = output / "validation-scan-diagnostics.jsonl"
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with diagnostics_path.open("w", encoding="utf-8") as handle:
+        for record in scan.get("records", []):
+            handle.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+    return summary_path, diagnostics_path
+
+
+def build_delta_report(
+    scan: dict[str, Any],
+    *,
+    structure_baseline_path: str | Path | None = None,
+    mixed_benchmark_path: str | Path | None = None,
+) -> dict[str, Any]:
+    aggregate = scan.get("aggregate", {})
+    structure_baseline = _read_optional_json(structure_baseline_path)
+    mixed_benchmark = _read_optional_json(mixed_benchmark_path)
+    return {
+        "schema_version": "m007-validation-delta-report.v1",
+        "paper_count": scan.get("paper_count"),
+        "current_chunk_count": aggregate.get("chunk_count", 0),
+        "current_import_eligible_chunk_count": aggregate.get("import_eligible_chunk_count", 0),
+        "structure_aware_baseline": _baseline_delta(aggregate, structure_baseline),
+        "mixed_benchmark_context": _mixed_benchmark_context(aggregate, mixed_benchmark),
+        "route_share_delta": _share_delta(aggregate.get("counts_by_route", {}), (structure_baseline or {}).get("counts_by_route", {})),
+        "refusal_share_delta": _share_delta(aggregate.get("refusal_counts", {}), (structure_baseline or {}).get("refusal_counts", {})),
+        **default_safety_flags(),
+    }
+
+
+def build_outlier_report(scan: dict[str, Any]) -> dict[str, Any]:
+    records = scan.get("records", [])
+    outliers = scan.get("outliers", [])
+    density_by_paper = {
+        str(record.get("paper_id")): record.get("chunks_per_10k_bytes", 0.0)
+        for record in records
+        if isinstance(record, dict)
+    }
+    enriched_outliers = []
+    for outlier in outliers:
+        paper_id = str(outlier.get("paper_id"))
+        enriched = dict(outlier)
+        enriched["chunks_per_10k_bytes"] = density_by_paper.get(paper_id, 0.0)
+        enriched_outliers.append(enriched)
+    return {
+        "schema_version": "m007-validation-outlier-report.v1",
+        "outlier_count": len(enriched_outliers),
+        "thresholds": {
+            "high_chunk_count": "chunk_count >= max(2 * median_chunk_count, median_chunk_count + 25)",
+            "claim_candidate_heavy": "claim_extraction route count >= 25",
+            "table_heavy": "table_extraction route count >= 10",
+            "unexpected_import_eligible_chunks": "import_eligible_chunk_count > 0",
+        },
+        "outliers": enriched_outliers,
+        **default_safety_flags(),
+    }
+
+
+def scan_import_gate_diagnostics(scan: dict[str, Any]) -> list[dict[str, str]]:
+    import_eligible = int(scan.get("aggregate", {}).get("import_eligible_chunk_count", 0) or 0)
+    if import_eligible == 0:
+        return []
+    return [
+        {
+            "severity": "blocker",
+            "code": "unexpected_import_eligible_chunks",
+            "message": f"Validation scan produced {import_eligible} import-eligible chunks outside a reviewed promotion path.",
+            "recommended_action": "Stop automation and run independent review before any KG import work.",
+        }
+    ]
+
+
+def _paper_manifest_record(paper: SelectedPaper) -> dict[str, Any]:
+    selection_role = "m005_baseline_overlap" if paper.selection_role == "baseline_overlap" else paper.selection_role
+    source_paths = dict(paper.source_paths)
+    source_paths.setdefault("research_workspace", str(Path("/root/.research/papers") / paper.paper_id))
+    source_paths.setdefault("research_full_text_md", str(Path("/root/.research/papers") / paper.paper_id / "full_text.md"))
+    source_paths.setdefault("cache_markdown", str(Path("/root/.arxiv_cache") / f"{paper.paper_id}.md"))
+    source_paths.setdefault("cache_pdf", str(Path("/root/.arxiv_cache") / f"{paper.paper_id}.pdf"))
+    return {
+        "paper_id": paper.paper_id,
+        "rank": paper.rank,
+        "selection_role": selection_role,
+        "risk_tags": list(paper.risk_tags),
+        "source_paths": source_paths,
+        "required_paths": list(dict.fromkeys(source_paths.values())),
+    }
+
+
+def _read_optional_json(path: str | Path | None) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"expected JSON object at {path}")
+    return payload
+
+
+def _baseline_delta(current: dict[str, Any], baseline: dict[str, Any] | None) -> dict[str, Any]:
+    if not baseline:
+        return {"available": False}
+    baseline_chunk_count = int(baseline.get("chunk_count", 0) or 0)
+    current_chunk_count = int(current.get("chunk_count", 0) or 0)
+    return {
+        "available": True,
+        "baseline_name": "M005/S03 structure-aware baseline",
+        "baseline_paper_count": baseline.get("paper_count"),
+        "current_paper_count": current.get("paper_count"),
+        "baseline_chunk_count": baseline_chunk_count,
+        "current_chunk_count": current_chunk_count,
+        "chunk_count_delta": current_chunk_count - baseline_chunk_count,
+        "baseline_import_eligible_chunk_count": int(baseline.get("import_eligible_chunk_count", 0) or 0),
+        "current_import_eligible_chunk_count": int(current.get("import_eligible_chunk_count", 0) or 0),
+    }
+
+
+def _mixed_benchmark_context(current: dict[str, Any], benchmark: dict[str, Any] | None) -> dict[str, Any]:
+    if not benchmark:
+        return {"available": False}
+    benchmark_chunk_count = int(benchmark.get("total_chunk_count", benchmark.get("chunk_count", 0)) or 0)
+    current_chunk_count = int(current.get("chunk_count", 0) or 0)
+    return {
+        "available": True,
+        "baseline_name": "M005/S06 mixed benchmark context only",
+        "benchmark_chunk_count": benchmark_chunk_count,
+        "current_chunk_count": current_chunk_count,
+        "chunk_count_delta": current_chunk_count - benchmark_chunk_count,
+        "benchmark_import_eligible_chunk_count": int(
+            benchmark.get("total_import_eligible_chunk_count", benchmark.get("import_eligible_chunk_count", 0)) or 0
+        ),
+        "current_import_eligible_chunk_count": int(current.get("import_eligible_chunk_count", 0) or 0),
+    }
+
+
+def _share_delta(current_counts: dict[str, Any], baseline_counts: dict[str, Any]) -> dict[str, dict[str, float]]:
+    current_total = sum(int(value) for value in current_counts.values())
+    baseline_total = sum(int(value) for value in baseline_counts.values())
+    keys = sorted(set(current_counts) | set(baseline_counts))
+    return {
+        str(key): {
+            "baseline_share": round((int(baseline_counts.get(key, 0)) / baseline_total), 4) if baseline_total else 0.0,
+            "current_share": round((int(current_counts.get(key, 0)) / current_total), 4) if current_total else 0.0,
+            "delta": round(
+                ((int(current_counts.get(key, 0)) / current_total) if current_total else 0.0)
+                - ((int(baseline_counts.get(key, 0)) / baseline_total) if baseline_total else 0.0),
+                4,
+            ),
+        }
+        for key in keys
     }
 
 
