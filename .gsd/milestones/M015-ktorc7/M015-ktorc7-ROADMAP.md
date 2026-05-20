@@ -18,7 +18,7 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: After S02, we know whether MiniMax supports structured output reliably via prompt JSON, reasoning split, response_format, or tool calls.
 
-- [ ] **S03: Corrected MiniMax verdict** `risk:medium` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After S03, M015 gives corrected recommendations and updates R043.
 
 ## Boundary Map
