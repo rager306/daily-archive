@@ -160,6 +160,25 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
 - Notes: M009 implemented provenance/freshness primitives, `validation-batch verify-artifacts`, active lineage metadata checks, and pass/stale/mismatch sample evidence. Automatic provenance emission from init/preflight/scan remains future work, so R036 stays active until real runs produce provenance without manual wrapper steps.
 
+### R039 — Before enabling DSPy or MiniMax in the Scientific KG pipeline, the project must complete parallel compatibility research proving version/API requirements, minimal invocation paths, failure modes, artifact boundaries, and no-import/no-write safety constraints.
+- Class: constraint
+- Status: active
+- Description: Before enabling DSPy or MiniMax in the Scientific KG pipeline, the project must complete parallel compatibility research proving version/API requirements, minimal invocation paths, failure modes, artifact boundaries, and no-import/no-write safety constraints.
+- Why it matters: DSPy and MiniMax could be valuable, but enabling them without compatibility probes risks discovering API, dependency, cost, modality, or safety incompatibilities during the critical import-readiness path.
+- Source: post-M011 planning
+- Primary owning slice: M012
+- Validation: A GSD milestone produces separate DSPy and MiniMax research artifacts, minimal non-production invocation/probe evidence where possible, an integration matrix, and a final go/no-go recommendation that keeps production import and optimizer behavior disabled.
+- Notes: Additional DSPy source scope from user: DSPy docs/repository are available at `/vendor/source/dspy`. DSPy research must not be limited to that repository; it should also study current 2026 best practices for applying DSPy in production/agentic extraction workflows.
+
+### R040 — New infrastructure must be researched, compatibility-probed, and safety-wrapped before it is enabled in the main Scientific KG process.
+- Class: constraint
+- Status: active
+- Description: New infrastructure must be researched, compatibility-probed, and safety-wrapped before it is enabled in the main Scientific KG process.
+- Why it matters: The pipeline depends on strict provenance, redaction, no-import/no-write safety, and reproducibility. Unprepared infrastructure can introduce hidden incompatibilities, secret handling risks, cost/rate failures, optimizer side effects, or false semantic readiness.
+- Source: user principle during M012 planning
+- Primary owning slice: project
+- Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -433,10 +452,12 @@ This file is the explicit capability and coverage contract for the project.
 | R036 | failure-visibility | active | next validation hardening milestone | none | Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands. |
 | R037 | core-capability | validated | next reviewed +10 milestone | none | M010 final guard: review_verdict=PASS; selected_count=10; prior_overlap_count=0; quota_ready_count=10; paper_count=10; chunk_count=1477; freshness_verdict=fresh; import_eligible_chunk_count=0; positive_import_blocked=true; production_writes_blocked=true; unattended_scaling_blocked=true. |
 | R038 | quality-attribute | validated | M011 | none | M011 final guard: review_verdict=PASS; gate_result=pass_negative_readiness_gate; target_count=10; source_hash_missing_count=0; repair_required_count=7; retrieval_only_count=3; import_candidate_count=0; raw_payload_key_count=0; positive_import_blocked=true; production_writes_blocked=true; chunk_span_provenance_required_next=true. |
+| R039 | constraint | active | M012 | none | A GSD milestone produces separate DSPy and MiniMax research artifacts, minimal non-production invocation/probe evidence where possible, an integration matrix, and a final go/no-go recommendation that keeps production import and optimizer behavior disabled. |
+| R040 | constraint | active | project | none | Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation. |
 
 ## Coverage Summary
 
-- Active requirements: 15
-- Mapped to slices: 15
+- Active requirements: 17
+- Mapped to slices: 17
 - Validated: 23 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038)
 - Unmapped active requirements: 0
