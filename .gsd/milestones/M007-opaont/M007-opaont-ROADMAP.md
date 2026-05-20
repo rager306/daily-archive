@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: After this slice, a batch can run the existing deviation scanner and produce redacted delta/outlier reports against previous, cumulative, and M005 baselines.
 
-- [ ] **S04: Workflow review and next batch recommendation** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this slice, independent review confirms whether the CLI workflow is useful and M007 closes with a tested recommendation for continuing toward 100 papers.
 
 ## Boundary Map
