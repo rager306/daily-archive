@@ -476,6 +476,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M019 final guard: all four targets source_found=true and profile_complete=true; primary_positive_pattern_source=prismAId; secondary_pattern_source=GPT Researcher; primary_cautionary_examples=[The AI Scientist, AI-Researcher]; next_milestone=KG Candidate Locator and Chunk-Span Provenance Protocol; adopt_external_code_now=false; adopt_new_dependencies_now=false; enable_production_kg_import=false; enable_ladybugdb_writes=false; enable_autonomous_scientist_behavior=false; independent_recommendation_review=PASS.
 - Notes: Validated by M019. S01 identified authoritative sources for GPT Researcher, AI-Researcher, The AI Scientist, and Open-and-Sustainable/prismAId, including disambiguating prismAId from Prismer. S02 created evidence-backed profiles for all four systems. S03 synthesized a comparative matrix and independent review PASS. Final recommendation: use prismAId as the primary positive pattern source for protocol-bound review workflows, GPT Researcher as a secondary source for bounded orchestration/source tracking, and AI-Researcher/The AI Scientist as cautionary examples for autonomy non-goals. Next recommended milestone: KG Candidate Locator and Chunk-Span Provenance Protocol. No code/dependency adoption, production KG import, LadybugDB writes, or autonomous scientist behavior was enabled.
 
+### R048 — Define and validate KG candidate locators with chunk-span provenance before any positive Scientific KG import is allowed.
+- Class: core-capability
+- Status: validated
+- Description: Define and validate KG candidate locators with chunk-span provenance before any positive Scientific KG import is allowed.
+- Why it matters: M011 blocked semantic import until chunk-level spans and candidate locators exist. M019 recommended a protocol-bound source-ledger/review-gated approach before returning to KG readiness.
+- Source: M011 negative semantic gate and M019 comparative spike recommendation
+- Primary owning slice: M020-uh5kvt
+- Validation: Validated by M020 S01-S04 artifacts: candidate locator protocol/schema/guard, one-paper fixture and guard, 10-paper small-batch rehearsal with 35 locators, final guard m020-s04-final-guard-ok, and independent semantic review. Evidence supports candidate-locator protocol continuation but explicitly defers positive import-gate work.
+- Notes: M020 validated the protocol and bounded rehearsal evidence. Independent review returned FLAG for positive import readiness because 27/35 locators were ambiguous, so next work should implement deterministic locator generation plus ambiguity diagnostics. Positive KG import and LadybugDB writes remain blocked.
+
 ## Deferred
 
 ## Out of Scope
@@ -531,10 +541,11 @@ This file is the explicit capability and coverage contract for the project.
 | R045 | integration | validated | M017-cf3fd0 | none | M017 final guard: tests_passed=9; ruff_passed=true; reviewer_verdict=PASS; security_final_verdict=PASS_WITH_NOTED_DEPENDENCY_DEBT; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false; raw_corpus_payload_allowed=false; raw_model_content_persisted=false; production_import_allowed=false; ladybugdb_write_allowed=false; minimax_source_of_truth=false; live_call_performed=false. |
 | R046 | compliance/security | validated | M018-gyff0h | none | M018 final guard: vulnerable_dependency_count=2; total_vulnerability_count=19; direct_torch_imports_in_project_source=0; direct_transformers_imports_in_project_source=0; source_acquisition_helper_exposure_found=true; active_cli_exposure_found=false; immediate_hotfix_required=false; broad_dependency_upgrade_now=false; next_milestone=Docling fallback safety gate; independent_security_review=PASS; dependencies_changed=false; raw_audit_json_persisted=false; secrets_logged=false; raw_corpus_payload_logged=false. |
 | R047 | core-capability | validated | M019-221lb7 | none | M019 final guard: all four targets source_found=true and profile_complete=true; primary_positive_pattern_source=prismAId; secondary_pattern_source=GPT Researcher; primary_cautionary_examples=[The AI Scientist, AI-Researcher]; next_milestone=KG Candidate Locator and Chunk-Span Provenance Protocol; adopt_external_code_now=false; adopt_new_dependencies_now=false; enable_production_kg_import=false; enable_ladybugdb_writes=false; enable_autonomous_scientist_behavior=false; independent_recommendation_review=PASS. |
+| R048 | core-capability | validated | M020-uh5kvt | none | Validated by M020 S01-S04 artifacts: candidate locator protocol/schema/guard, one-paper fixture and guard, 10-paper small-batch rehearsal with 35 locators, final guard m020-s04-final-guard-ok, and independent semantic review. Evidence supports candidate-locator protocol continuation but explicitly defers positive import-gate work. |
 
 ## Coverage Summary
 
 - Active requirements: 16
 - Mapped to slices: 16
-- Validated: 31 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047)
+- Validated: 32 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048)
 - Unmapped active requirements: 0
