@@ -44,9 +44,7 @@ Papers are converted to Markdown using:
 
 ## Development
 
-### Project-local skills
-
-- `minimax-safe-helper` — durable MiniMax findings and safety rules from M012-M016. Use before changing MiniMax helper behavior, structured output, Token Plan, or usage/remains checks.
+MiniMax integration guidance is maintained as the global `minimax-safe-helper` skill in `~/.agents/skills/`. Use it before changing MiniMax helper behavior, structured output, Token Plan, or usage/remains checks.
 
 ```bash
 # Run tests
