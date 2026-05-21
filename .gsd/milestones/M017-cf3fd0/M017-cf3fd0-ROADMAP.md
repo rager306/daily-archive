@@ -21,7 +21,7 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After S03, structured MiniMax helper output has a safe local wrapper contract.
 
-- [ ] **S04: MiniMax helper safety review** `risk:low` `depends:[S02,S03]`
+- [x] **S04: S04** `risk:low` `depends:[]`
   > After this: After S04, M017 has a final guard and go/no-go recommendation for future KG work.
 
 ## Boundary Map

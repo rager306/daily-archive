@@ -96,6 +96,7 @@ def test_build_usage_requests_uses_canonical_key_without_leaking_secret() -> Non
     assert "sk-test-secret" not in dumped
     assert "Bearer" in dumped
     assert "X-Api-Key" not in dumped
+    assert "sk-test-secret" not in repr(requests[0])
 
 
 def test_resolve_minimax_api_key_prefers_canonical_and_reports_aliases_safely() -> None:

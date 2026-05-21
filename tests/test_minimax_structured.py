@@ -101,6 +101,15 @@ def test_rejects_raw_corpus_payloads_and_invalid_temperature() -> None:
             payload_class="raw_corpus",
         )
 
+    with pytest.raises(ValueError, match="raw corpus"):
+        build_minimax_structured_request(
+            prompt="RAW PAPER TEXT: full article body",
+            tool_name="record_review",
+            tool_description="Record a bounded review verdict.",
+            input_schema=_schema(),
+            payload_class="redacted",
+        )
+
     with pytest.raises(ValueError, match="temperature"):
         build_minimax_structured_request(
             prompt="Review this redacted candidate packet.",
@@ -110,3 +119,16 @@ def test_rejects_raw_corpus_payloads_and_invalid_temperature() -> None:
             payload_class="redacted",
             temperature=0,
         )
+
+
+def test_structured_request_repr_does_not_expose_prompt() -> None:
+    request = build_minimax_structured_request(
+        prompt="Review this redacted candidate packet with sentinel SECRET_PROMPT_TEXT.",
+        tool_name="record_review",
+        tool_description="Record a bounded review verdict.",
+        input_schema=_schema(),
+        payload_class="redacted",
+    )
+
+    assert "SECRET_PROMPT_TEXT" not in repr(request)
+    assert "SECRET_PROMPT_TEXT" not in json.dumps(request.to_sanitized_dict())

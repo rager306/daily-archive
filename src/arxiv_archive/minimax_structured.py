@@ -7,9 +7,21 @@ MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT = "https://api.minimax.io/anthropic/v1/messa
 DEFAULT_MINIMAX_MODEL = "MiniMax-M2.7-highspeed"
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_TEMPERATURE = 0.2
+RAW_CORPUS_MARKERS: tuple[str, ...] = (
+    "RAW PAPER TEXT",
+    "RAW CHUNK TEXT",
+    "FULL ARTICLE BODY",
+    "BEGIN PDF",
+    "BASE64",
+)
 
 
-@dataclass(frozen=True)
+def _looks_like_raw_corpus_payload(prompt: str) -> bool:
+    normalized = prompt.upper()
+    return any(marker in normalized for marker in RAW_CORPUS_MARKERS)
+
+
+@dataclass(frozen=True, repr=False)
 class MiniMaxStructuredRequest:
     """Prepared Anthropic-compatible forced-tool request metadata."""
 
@@ -71,6 +83,8 @@ def build_minimax_structured_request(
 
     if payload_class not in {"synthetic", "redacted"}:
         raise ValueError("MiniMax structured helper only accepts synthetic or redacted payloads")
+    if _looks_like_raw_corpus_payload(prompt):
+        raise ValueError("MiniMax structured helper refuses raw corpus payload markers")
     if temperature <= 0 or temperature > 1:
         raise ValueError("MiniMax temperature must be in (0.0, 1.0]")
     body = {

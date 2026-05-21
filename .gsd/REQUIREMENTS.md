@@ -169,16 +169,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
-### R045 — MiniMax helper implementation must turn the verified MiniMax findings into dev-only, tested code before MiniMax is used in any Scientific KG workflow.
-- Class: integration
-- Status: active
-- Description: MiniMax helper implementation must turn the verified MiniMax findings into dev-only, tested code before MiniMax is used in any Scientific KG workflow.
-- Why it matters: The MiniMax endpoint/auth/thinking/limit behavior is now proven and documented, but still needs a reusable project implementation to prevent future agents from reintroducing M014/M015 errors.
-- Source: post-M016 planning
-- Primary owning slice: M017-cf3fd0
-- Validation: M017 final guard should show tested limit helper, structured helper, safety guard, sanitized fixtures, and no production KG/LadybugDB write paths enabled.
-- Notes: Must use global `minimax-safe-helper`; preserve canonical key mapping; implement sanitized usage/remains parsing and structured-output helper behavior without raw response, exact quota, raw paper/chunk, or secret persistence. MiniMax remains non-authoritative.
-
 ## Validated
 
 ### R001 — CLI help info
@@ -456,6 +446,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M016 final guard: limit_check_verdict=api_remains_verified; used_9router_algorithm=true; m015_limit_verdict_overturned=true; working_endpoint=https://api.minimax.io/v1/api/openplatform/coding_plan/remains; count_means_remaining=true; true_success_count=1; quota_row_count_total=8; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false.
 - Notes: Validated by M016. 9router was cloned to /root/vendor-source/9router and indexed as GitNexus repo `9router`. Its MiniMax usage implementation showed the correct global fallback endpoint `https://api.minimax.io/v1/api/openplatform/coding_plan/remains`, GET with Authorization Bearer, and parser rules requiring base_resp.status_code=0 plus model_remains quota rows. The corrected live probe verified API remains for global MiniMax via that fallback: true_success_count=1, model_remains_count=11, quota_row_count_total=8. Raw response, exact quota values, and credential values were not persisted. M015 limit verdict is overturned for global MiniMax; CN endpoints remain unverified with the current global key.
 
+### R045 — MiniMax helper implementation must turn the verified MiniMax findings into dev-only, tested code before MiniMax is used in any Scientific KG workflow.
+- Class: integration
+- Status: validated
+- Description: MiniMax helper implementation must turn the verified MiniMax findings into dev-only, tested code before MiniMax is used in any Scientific KG workflow.
+- Why it matters: The MiniMax endpoint/auth/thinking/limit behavior is now proven and documented, but still needs a reusable project implementation to prevent future agents from reintroducing M014/M015 errors.
+- Source: post-M016 planning
+- Primary owning slice: M017-cf3fd0
+- Validation: M017 final guard: tests_passed=9; ruff_passed=true; reviewer_verdict=PASS; security_final_verdict=PASS_WITH_NOTED_DEPENDENCY_DEBT; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false; raw_corpus_payload_allowed=false; raw_model_content_persisted=false; production_import_allowed=false; ladybugdb_write_allowed=false; minimax_source_of_truth=false; live_call_performed=false.
+- Notes: Validated by M017. S01 attempted requested Manus/Jina research and recorded it as not currently extractable, so implementation proceeded from global minimax-safe-helper, official docs, M015, and M016. S02 implemented `arxiv_archive.minimax_usage` with canonical key alias resolution, 9router endpoint order, provider status/model_remains checks, token_plan/coding_plan count semantics, and sanitized diagnostics. S03 implemented `arxiv_archive.minimax_structured` with Anthropic-compatible forced tool request building, local schema validation, prompt-only JSON rejection, raw corpus blocking, temperature fail-closed behavior, and non-authoritative helper results. S04 review found and remediated repr leakage/raw-corpus marker risks; dependency audit debt was noted as broader out-of-scope project debt. Final guard preserves production_import_allowed=false, ladybugdb_write_allowed=false, minimax_source_of_truth=false, and raw/secret persistence blocks.
+
 ## Deferred
 
 ## Out of Scope
@@ -508,11 +508,11 @@ This file is the explicit capability and coverage contract for the project.
 | R042 | integration | validated | M014-65dlgp | none | M014 final guard: review_verdict=PASS; subscription_budget_non_blocking=true; platform_limits_still_apply=true; weekly_usage_quota_documented=10x the 5-hour quota; live_call_count=4; successful_http_count=4; redacted_helper_success_count=1; raw_response_persisted=false; raw_model_content_persisted=false; secrets_logged=false; production_import_allowed=false; ladybugdb_written=false; minimax_orchestrator_allowed=false; source_of_truth_allowed=false. |
 | R043 | integration | validated | M015-ktorc7 | none | M015 final guard: review_verdict=PASS; structured_output_verdict=tool_call_recommended; recommended_structured_interfaces=[anthropic_forced_tool_call,openai_response_format_json_schema,openai_response_format_json_object]; anthropic_forced_tool_schema_validated=true; schema_validated_count=1; token_plan_limit_check_verdict=ui_only_or_session_required; token_plan_api_remains_verified=false; true_remains_success_count=0; raw_response_persisted=false; secrets_logged=false; production_import_allowed=false; source_of_truth_allowed=false. |
 | R044 | integration | validated | M016-9819d1 | none | M016 final guard: limit_check_verdict=api_remains_verified; used_9router_algorithm=true; m015_limit_verdict_overturned=true; working_endpoint=https://api.minimax.io/v1/api/openplatform/coding_plan/remains; count_means_remaining=true; true_success_count=1; quota_row_count_total=8; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false. |
-| R045 | integration | active | M017-cf3fd0 | none | M017 final guard should show tested limit helper, structured helper, safety guard, sanitized fixtures, and no production KG/LadybugDB write paths enabled. |
+| R045 | integration | validated | M017-cf3fd0 | none | M017 final guard: tests_passed=9; ruff_passed=true; reviewer_verdict=PASS; security_final_verdict=PASS_WITH_NOTED_DEPENDENCY_DEBT; raw_response_persisted=false; exact_quota_values_persisted=false; credential_values_logged=false; raw_corpus_payload_allowed=false; raw_model_content_persisted=false; production_import_allowed=false; ladybugdb_write_allowed=false; minimax_source_of_truth=false; live_call_performed=false. |
 
 ## Coverage Summary
 
-- Active requirements: 17
-- Mapped to slices: 17
-- Validated: 28 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044)
+- Active requirements: 16
+- Mapped to slices: 16
+- Validated: 29 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045)
 - Unmapped active requirements: 0

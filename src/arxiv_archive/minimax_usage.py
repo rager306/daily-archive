@@ -36,7 +36,7 @@ class MiniMaxApiKeyResolution:
         }
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class MiniMaxUsageRequest:
     """Prepared MiniMax usage request; raw headers may contain secrets."""
 
