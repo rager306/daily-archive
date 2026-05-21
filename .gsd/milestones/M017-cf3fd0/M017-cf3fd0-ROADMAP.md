@@ -15,7 +15,7 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: After S01, M017 has an evidence-backed design adjusted for Manus findings without bypassing local gates.
 
-- [ ] **S02: MiniMax usage limit helper** `risk:medium` `depends:[S01]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: After S02, the project has a tested dev-only MiniMax limit helper contract.
 
 - [ ] **S03: MiniMax structured helper boundary** `risk:medium` `depends:[S01]`
