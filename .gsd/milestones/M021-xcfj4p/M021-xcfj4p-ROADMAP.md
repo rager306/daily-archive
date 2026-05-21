@@ -17,10 +17,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: After S02, unit-tested code can build candidate locator artifacts for source-backed targets with no import/write/raw payload behavior.
 
-- [ ] **S03: Bounded batch implementation rehearsal** `risk:medium` `depends:[S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: After S03, a bounded batch run uses the implemented module to reproduce M020-style artifacts and richer ambiguity diagnostics.
 
-- [ ] **S04: Review and final recommendation** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After S04, independent review decides whether deterministic locators are useful enough for reviewer packets/chunk repair next, still not positive import.
 
 ## Boundary Map

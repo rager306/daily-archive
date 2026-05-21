@@ -11,6 +11,7 @@ from arxiv_archive.candidate_locators import (
     DEFAULT_ROUTE_SPECS,
     LocatorSource,
     build_candidate_locator_artifact,
+    build_candidate_locator_batch_from_targets,
     find_forbidden_payload_keys,
     validate_candidate_locator_artifact,
     write_candidate_locator_artifact,
@@ -170,3 +171,110 @@ def test_writer_persists_safe_json_without_forbidden_payload_keys(tmp_path: Path
 def test_writer_refuses_invalid_artifact(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="candidate locator artifact failed validation"):
         write_candidate_locator_artifact({"schema_version": "bad", "text": "unsafe"}, tmp_path / "bad.json")
+
+
+def test_builds_batch_from_m011_style_targets(tmp_path: Path) -> None:
+    source_one, digest_one = _write_source(tmp_path, "Abstract\n" + "method result claim\n" * 12)
+    source_two = tmp_path / "paper-two.md"
+    source_two.write_text("No matching terms here.\n", encoding="utf-8")
+    digest_two = hashlib.sha256(source_two.read_bytes()).hexdigest()
+    targets = [
+        {
+            "paper_id": "paper-1",
+            "target_id": "target-1",
+            "source": {"path": str(source_one), "sha256": digest_one},
+            "review_metadata": {"counts_by_route": {"claim_extraction": 1, "method_extraction": 1}},
+        },
+        {
+            "paper_id": "paper-2",
+            "target_id": "target-2",
+            "source": {"path": str(source_two), "sha256": digest_two},
+            "review_metadata": {"counts_by_route": {"claim_extraction": 1}},
+        },
+    ]
+
+    batch = build_candidate_locator_batch_from_targets(
+        run_id="batch-test",
+        targets=targets,
+        route_specs=DEFAULT_ROUTE_SPECS[:2],
+        broad_match_threshold=3,
+    )
+
+    assert batch["schema_version"] == CANDIDATE_LOCATOR_PROTOCOL_VERSION
+    assert batch["paper_id"] == "bounded-target-batch"
+    assert batch["summary"]["paper_count"] == 2
+    assert batch["summary"]["source_count"] == 2
+    assert batch["summary"]["locator_count"] == 3
+    assert batch["summary"]["ambiguous_span_count"] >= 1
+    assert batch["summary"]["missing_span_count"] >= 1
+    assert batch["summary"]["import_eligible_count"] == 0
+    assert batch["summary"]["promoted_to_fact_count"] == 0
+    assert len(batch["per_paper_summary"]) == 2
+    assert find_forbidden_payload_keys(batch) == []
+    assert validate_candidate_locator_artifact(batch) == []
+
+
+def test_batch_routes_follow_m011_route_metadata(tmp_path: Path) -> None:
+    source_path, digest = _write_source(tmp_path, "Abstract\nmethod result claim\n")
+    targets = [
+        {
+            "paper_id": "paper-1",
+            "source": {"path": str(source_path), "sha256": digest},
+            "review_metadata": {"counts_by_route": {"method_extraction": 1}},
+        }
+    ]
+
+    batch = build_candidate_locator_batch_from_targets(
+        run_id="batch-routes",
+        targets=targets,
+        route_specs=DEFAULT_ROUTE_SPECS[:2],
+    )
+
+    assert batch["summary"]["locator_count"] == 1
+    assert batch["locators"][0]["route"] == "method_location"
+    assert batch["locators"][0]["candidate_type"] == "method_candidate"
+
+
+def test_span_hash_is_stable_across_source_paths(tmp_path: Path) -> None:
+    content = "Abstract\nA method produces a result.\n"
+    first_dir = tmp_path / "first"
+    second_dir = tmp_path / "second"
+    first_dir.mkdir()
+    second_dir.mkdir()
+    first_path = first_dir / "paper.md"
+    second_path = second_dir / "paper.md"
+    first_path.write_text(content, encoding="utf-8")
+    second_path.write_text(content, encoding="utf-8")
+    digest = hashlib.sha256(first_path.read_bytes()).hexdigest()
+
+    first = build_candidate_locator_artifact(
+        run_id="stable-one",
+        paper_id="paper-1",
+        sources=[LocatorSource(source_id="stable-source", paper_id="paper-1", source_path=first_path, expected_sha256=digest)],
+        route_specs=(DEFAULT_ROUTE_SPECS[1],),
+    )
+    second = build_candidate_locator_artifact(
+        run_id="stable-two",
+        paper_id="paper-1",
+        sources=[LocatorSource(source_id="stable-source", paper_id="paper-1", source_path=second_path, expected_sha256=digest)],
+        route_specs=(DEFAULT_ROUTE_SPECS[1],),
+    )
+
+    assert first["locators"][0]["source_spans"][0]["span_hash"] == second["locators"][0]["source_spans"][0]["span_hash"]
+
+
+def test_overlapping_signal_windows_are_diagnosed(tmp_path: Path) -> None:
+    source_path, digest = _write_source(tmp_path, "Abstract\nA method result appears in one compact sentence.\n")
+
+    artifact = build_candidate_locator_artifact(
+        run_id="overlap",
+        paper_id="paper-1",
+        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        route_specs=DEFAULT_ROUTE_SPECS[:2],
+    )
+
+    assert artifact["summary"]["ambiguous_span_count"] == 2
+    for locator in artifact["locators"]:
+        assert locator["state"] == "ambiguous_span"
+        assert "overlapping_signal_window" in locator["diagnostic_codes"]
+        assert "overlapping_signal_window" in locator["source_spans"][0]["ambiguity_diagnostics"]

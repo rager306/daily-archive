@@ -169,15 +169,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
 
-### R049 — Implement deterministic candidate locator generation with schema validation, source hash checks, coordinate validation, safety guards, and ambiguity diagnostics while keeping KG import disabled.
-- Class: core-capability
-- Status: active
-- Description: Implement deterministic candidate locator generation with schema validation, source hash checks, coordinate validation, safety guards, and ambiguity diagnostics while keeping KG import disabled.
-- Why it matters: M020 validated the locator protocol but independent review flagged 27/35 ambiguous spans and recommended deterministic implementation plus diagnostics before any positive import gate.
-- Source: M020-uh5kvt final recommendation and independent semantic review
-- Primary owning slice: M021-xcfj4p
-- Validation: A code module and tests generate protocol-conformant candidate locator artifacts from redacted target metadata and local source files, report ambiguity diagnostics, reject unsafe/raw payloads, and preserve import_eligible=false, promoted_to_fact=false, ladybugdb_written=false, and production_import_attempted=false.
-
 ## Validated
 
 ### R001 — CLI help info
@@ -495,6 +486,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M020 S01-S04 artifacts: candidate locator protocol/schema/guard, one-paper fixture and guard, 10-paper small-batch rehearsal with 35 locators, final guard m020-s04-final-guard-ok, and independent semantic review. Evidence supports candidate-locator protocol continuation but explicitly defers positive import-gate work.
 - Notes: M020 validated the protocol and bounded rehearsal evidence. Independent review returned FLAG for positive import readiness because 27/35 locators were ambiguous, so next work should implement deterministic locator generation plus ambiguity diagnostics. Positive KG import and LadybugDB writes remain blocked.
 
+### R049 — Implement deterministic candidate locator generation with schema validation, source hash checks, coordinate validation, safety guards, and ambiguity diagnostics while keeping KG import disabled.
+- Class: core-capability
+- Status: validated
+- Description: Implement deterministic candidate locator generation with schema validation, source hash checks, coordinate validation, safety guards, and ambiguity diagnostics while keeping KG import disabled.
+- Why it matters: M020 validated the locator protocol but independent review flagged 27/35 ambiguous spans and recommended deterministic implementation plus diagnostics before any positive import gate.
+- Source: M020-uh5kvt final recommendation and independent semantic review
+- Primary owning slice: M021-xcfj4p
+- Validation: Validated by src/arxiv_archive/candidate_locators.py, tests/test_candidate_locators.py (12 focused tests), S02 module guard, S03 deterministic 10-paper batch guard, independent review, remediation verification, and final guard m021-final-guard-ok. Final batch: 10 papers, 26 locators, 20 ambiguous spans, 10 overlap diagnostics, 0 import-eligible locators, 0 fact promotions.
+- Notes: M021 implemented deterministic candidate locator generation and bounded batch rehearsal. Independent review initially flagged path-dependent span hashes and missing overlap diagnostics; both were remediated before final closeout. Positive KG import and LadybugDB writes remain blocked.
+
 ## Deferred
 
 ## Out of Scope
@@ -551,11 +552,11 @@ This file is the explicit capability and coverage contract for the project.
 | R046 | compliance/security | validated | M018-gyff0h | none | M018 final guard: vulnerable_dependency_count=2; total_vulnerability_count=19; direct_torch_imports_in_project_source=0; direct_transformers_imports_in_project_source=0; source_acquisition_helper_exposure_found=true; active_cli_exposure_found=false; immediate_hotfix_required=false; broad_dependency_upgrade_now=false; next_milestone=Docling fallback safety gate; independent_security_review=PASS; dependencies_changed=false; raw_audit_json_persisted=false; secrets_logged=false; raw_corpus_payload_logged=false. |
 | R047 | core-capability | validated | M019-221lb7 | none | M019 final guard: all four targets source_found=true and profile_complete=true; primary_positive_pattern_source=prismAId; secondary_pattern_source=GPT Researcher; primary_cautionary_examples=[The AI Scientist, AI-Researcher]; next_milestone=KG Candidate Locator and Chunk-Span Provenance Protocol; adopt_external_code_now=false; adopt_new_dependencies_now=false; enable_production_kg_import=false; enable_ladybugdb_writes=false; enable_autonomous_scientist_behavior=false; independent_recommendation_review=PASS. |
 | R048 | core-capability | validated | M020-uh5kvt | none | Validated by M020 S01-S04 artifacts: candidate locator protocol/schema/guard, one-paper fixture and guard, 10-paper small-batch rehearsal with 35 locators, final guard m020-s04-final-guard-ok, and independent semantic review. Evidence supports candidate-locator protocol continuation but explicitly defers positive import-gate work. |
-| R049 | core-capability | active | M021-xcfj4p | none | A code module and tests generate protocol-conformant candidate locator artifacts from redacted target metadata and local source files, report ambiguity diagnostics, reject unsafe/raw payloads, and preserve import_eligible=false, promoted_to_fact=false, ladybugdb_written=false, and production_import_attempted=false. |
+| R049 | core-capability | validated | M021-xcfj4p | none | Validated by src/arxiv_archive/candidate_locators.py, tests/test_candidate_locators.py (12 focused tests), S02 module guard, S03 deterministic 10-paper batch guard, independent review, remediation verification, and final guard m021-final-guard-ok. Final batch: 10 papers, 26 locators, 20 ambiguous spans, 10 overlap diagnostics, 0 import-eligible locators, 0 fact promotions. |
 
 ## Coverage Summary
 
-- Active requirements: 17
-- Mapped to slices: 17
-- Validated: 32 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048)
+- Active requirements: 16
+- Mapped to slices: 16
+- Validated: 33 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
 - Unmapped active requirements: 0

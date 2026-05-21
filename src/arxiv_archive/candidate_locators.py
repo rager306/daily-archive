@@ -210,8 +210,9 @@ def build_candidate_locator_artifact(
 
     for result in read_results:
         line_starts = _line_starts(result.content)
+        source_locators: list[dict[str, Any]] = []
         for spec in route_specs:
-            locators.append(
+            source_locators.append(
                 _build_locator(
                     paper_id=paper_id,
                     result=result,
@@ -222,6 +223,8 @@ def build_candidate_locator_artifact(
                     window_after=window_after,
                 )
             )
+        _annotate_overlapping_signal_windows(source_locators)
+        locators.extend(source_locators)
 
     summary = _summary(source_ledger, locators)
     return {
@@ -233,6 +236,75 @@ def build_candidate_locator_artifact(
         "summary": summary,
         "safety_flags": default_safety_flags(),
         "recommendation": "candidate_locator_review_only__positive_import_blocked",
+    }
+
+
+def build_candidate_locator_batch_from_targets(
+    *,
+    run_id: str,
+    targets: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+    route_specs: list[LocatorRouteSpec] | tuple[LocatorRouteSpec, ...] = DEFAULT_ROUTE_SPECS,
+    broad_match_threshold: int = 8,
+    batch_paper_id: str = "bounded-target-batch",
+) -> dict[str, Any]:
+    """Build a deterministic locator batch from M011-style target records.
+
+    Only target metadata, source paths, hashes, coordinates, and diagnostics are
+    serialized. Source text is read transiently by ``build_candidate_locator_artifact``
+    and is not embedded in the returned batch.
+    """
+    route_specs_by_m011_name = _route_specs_by_m011_name(route_specs)
+    source_ledger: list[dict[str, Any]] = []
+    locators: list[dict[str, Any]] = []
+    per_paper_summary: list[dict[str, Any]] = []
+
+    for target in targets:
+        paper_id = str(target["paper_id"])
+        target_source = target.get("source") or {}
+        source = LocatorSource(
+            source_id=f"source-{paper_id}-full-text",
+            paper_id=paper_id,
+            source_path=Path(str(target_source.get("path", "missing"))),
+            expected_sha256=target_source.get("sha256"),
+        )
+        selected_specs = _route_specs_for_target(target, route_specs_by_m011_name)
+        if not selected_specs:
+            selected_specs = tuple(route_specs)
+        paper_artifact = build_candidate_locator_artifact(
+            run_id=f"{run_id}:{paper_id}",
+            paper_id=paper_id,
+            sources=(source,),
+            route_specs=selected_specs,
+            broad_match_threshold=broad_match_threshold,
+        )
+        source_ledger.extend(paper_artifact["source_ledger"])
+        locators.extend(paper_artifact["locators"])
+        per_paper_summary.append(
+            {
+                "paper_id": paper_id,
+                "target_id": target.get("target_id"),
+                "locator_count": paper_artifact["summary"]["locator_count"],
+                "missing_span_count": paper_artifact["summary"]["missing_span_count"],
+                "ambiguous_span_count": paper_artifact["summary"]["ambiguous_span_count"],
+                "review_required_count": paper_artifact["summary"]["review_required_count"],
+                "retrieval_only_count": paper_artifact["summary"]["retrieval_only_count"],
+                "import_eligible_count": paper_artifact["summary"]["import_eligible_count"],
+                "promoted_to_fact_count": paper_artifact["summary"]["promoted_to_fact_count"],
+            }
+        )
+
+    summary = _summary(source_ledger, locators)
+    summary["paper_count"] = len(targets)
+    return {
+        "schema_version": CANDIDATE_LOCATOR_PROTOCOL_VERSION,
+        "run_id": run_id,
+        "paper_id": batch_paper_id,
+        "source_ledger": source_ledger,
+        "locators": locators,
+        "per_paper_summary": per_paper_summary,
+        "summary": summary,
+        "safety_flags": default_safety_flags(),
+        "recommendation": "candidate_locator_batch_review_only__positive_import_blocked",
     }
 
 
@@ -428,7 +500,7 @@ def _build_span(
         "char_end": char_end,
         "line_start": _line_for(line_starts, char_start),
         "line_end": _line_for(line_starts, char_end),
-        "span_hash": _span_hash(result.source_path, char_start, char_end, spec.route_name),
+        "span_hash": _span_hash(result.source.source_id, result.source_hash, char_start, char_end, spec.route_name),
         "raw_text_embedded": False,
         "ambiguity_diagnostics": diagnostics,
         "match_count_class": "many" if len(matches) > broad_match_threshold else "one_to_several",
@@ -570,6 +642,72 @@ def _validate_span(locator_id: str, span: dict[str, Any]) -> list[str]:
     return diagnostics
 
 
+def _annotate_overlapping_signal_windows(locators: list[dict[str, Any]]) -> None:
+    coordinate_locators = [
+        locator
+        for locator in locators
+        if locator.get("source_spans")
+        and locator["source_spans"][0].get("coordinate_space") != "artifact_record"
+        and isinstance(locator["source_spans"][0].get("char_start"), int)
+        and isinstance(locator["source_spans"][0].get("char_end"), int)
+    ]
+    overlapped_ids: set[str] = set()
+    for index, left in enumerate(coordinate_locators):
+        left_span = left["source_spans"][0]
+        for right in coordinate_locators[index + 1 :]:
+            right_span = right["source_spans"][0]
+            if left_span.get("source_id") != right_span.get("source_id"):
+                continue
+            if _ranges_overlap(
+                left_span["char_start"],
+                left_span["char_end"],
+                right_span["char_start"],
+                right_span["char_end"],
+            ):
+                overlapped_ids.add(str(left["locator_id"]))
+                overlapped_ids.add(str(right["locator_id"]))
+    for locator in coordinate_locators:
+        if locator["locator_id"] not in overlapped_ids:
+            continue
+        _append_unique(locator["diagnostic_codes"], "overlapping_signal_window")
+        _append_unique(locator["source_spans"][0]["ambiguity_diagnostics"], "overlapping_signal_window")
+        if locator["state"] not in {"missing_span", "repair_required"}:
+            locator["state"] = "ambiguous_span"
+            locator["support_level"] = "nearby_context"
+            locator["uncertainty_label"] = "high"
+            locator["review_queue_reason"] = "span_ambiguous"
+
+
+def _ranges_overlap(left_start: int, left_end: int, right_start: int, right_end: int) -> bool:
+    return left_start < right_end and right_start < left_end
+
+
+def _append_unique(values: list[str], value: str) -> None:
+    if value not in values:
+        values.append(value)
+
+
+def _route_specs_by_m011_name(route_specs: list[LocatorRouteSpec] | tuple[LocatorRouteSpec, ...]) -> dict[str, LocatorRouteSpec]:
+    by_route_name = {spec.route_name: spec for spec in route_specs}
+    mapping: dict[str, LocatorRouteSpec] = {}
+    if "claim" in by_route_name:
+        mapping["claim_extraction"] = by_route_name["claim"]
+    if "method" in by_route_name:
+        mapping["method_extraction"] = by_route_name["method"]
+    if "retrieval" in by_route_name:
+        mapping["retrieval_only"] = by_route_name["retrieval"]
+    return mapping
+
+
+def _route_specs_for_target(target: dict[str, Any], route_specs_by_m011_name: dict[str, LocatorRouteSpec]) -> tuple[LocatorRouteSpec, ...]:
+    route_counts = ((target.get("review_metadata") or {}).get("counts_by_route") or {})
+    selected: list[LocatorRouteSpec] = []
+    for m011_route_name, spec in route_specs_by_m011_name.items():
+        if route_counts.get(m011_route_name, 0) > 0:
+            selected.append(spec)
+    return tuple(selected)
+
+
 def _compile_route_pattern(spec: LocatorRouteSpec) -> re.Pattern[str]:
     escaped = [re.escape(pattern) for pattern in spec.signal_patterns]
     return re.compile("|".join(escaped), re.IGNORECASE)
@@ -594,8 +732,16 @@ def _line_for(line_starts: list[int], offset: int) -> int:
     return current
 
 
-def _span_hash(source_path: Path, char_start: int, char_end: int, route_name: str) -> str:
-    return hashlib.sha256(f"{source_path}:{char_start}:{char_end}:{route_name}".encode()).hexdigest()
+def _span_hash(source_id: str, source_hash: str, char_start: int, char_end: int, route_name: str) -> str:
+    packet = {
+        "source_id": source_id,
+        "source_hash": source_hash,
+        "coordinate_space": "normalized_markdown_char",
+        "char_start": char_start,
+        "char_end": char_end,
+        "route_name": route_name,
+    }
+    return hashlib.sha256(json.dumps(packet, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 __all__ = [
@@ -605,6 +751,7 @@ __all__ = [
     "LocatorRouteSpec",
     "LocatorSource",
     "build_candidate_locator_artifact",
+    "build_candidate_locator_batch_from_targets",
     "default_safety_flags",
     "find_forbidden_payload_keys",
     "validate_candidate_locator_artifact",
