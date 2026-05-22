@@ -244,7 +244,7 @@ def _lineage_subset_findings(prototype: dict[str, Any], repair_prototype: dict[s
 
 def _known_s02_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     stable = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
-    paper_ids = _string_set(stable.get("paper_ids"))
+    paper_ids = _string_set(stable.get("paper_ids")) | _string_set(expected_audit_from_contract(contract).get("paper_ids"))
     if contract.get("paper_id"):
         paper_ids.add(str(contract["paper_id"]))
     source_ids = _string_set(stable.get("source_ids"))
@@ -304,9 +304,9 @@ def _string_set(value: Any) -> set[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json", type=Path, required=True, help="Generated reviewer packet JSON")
-    parser.add_argument("--markdown", type=Path, required=True, help="Generated reviewer packet Markdown")
-    parser.add_argument("--assessment-json", type=Path, required=True, help="Generated standalone assessment JSON")
+    parser.add_argument("--json", "--packets", dest="json", type=Path, required=True, help="Generated reviewer packet JSON")
+    parser.add_argument("--markdown", "--packets-markdown", dest="markdown", type=Path, required=True, help="Generated reviewer packet Markdown")
+    parser.add_argument("--assessment-json", "--assessment", dest="assessment_json", type=Path, required=True, help="Generated standalone assessment JSON")
     parser.add_argument("--assessment-markdown", type=Path, required=True, help="Generated standalone assessment Markdown")
     parser.add_argument("--repair-prototype", type=Path, required=True, help="S03 bounded repair prototype JSON")
     parser.add_argument("--s02-contract", type=Path, required=True, help="S02 chunk-repair-contract JSON with stable IDs")

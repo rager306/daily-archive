@@ -15,7 +15,6 @@ from typing import Any
 
 from arxiv_archive.chunk_repair_contract import (
     EXCLUDED_USES,
-    MARKDOWN_FORBIDDEN_PATTERNS,
     REQUIRED_FALSE_SAFETY_FIELDS,
     expected_audit_from_contract,
     scan_forbidden_payload_keys,

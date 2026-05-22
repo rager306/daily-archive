@@ -266,6 +266,20 @@ def _cli_output_paths(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     )
 
 
+def test_verifier_accepts_source_id_derived_paper_ids_when_contract_paper_id_is_batch(tmp_path: Path) -> None:
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    s02_contract = json.loads(s02_path.read_text(encoding="utf-8"))
+    s02_contract["paper_id"] = "synthetic-audit-batch"
+    s02_path.write_text(json.dumps(s02_contract, indent=2), encoding="utf-8")
+    outputs = _cli_output_paths(tmp_path)
+
+    render_cli_files(repair_path, s02_path, *outputs)
+    summary = verify_cli_files(outputs[0], outputs[1], outputs[2], outputs[3], repair_path, s02_path)
+
+    assert summary["passed"] is True
+    assert not summary["findings"]
+
+
 def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_them(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
     json_output, markdown_output, assessment_json_output, assessment_markdown_output = _cli_output_paths(tmp_path)
@@ -320,6 +334,28 @@ def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_the
     assert "packets=3" in verify_out.out
     assert "review_status={'pending_review': 3}" in verify_out.out
     assert "unsafe_counters_zero=True" in verify_out.out
+
+    alias_verify_code = verify_cli_main(
+        [
+            "--packets",
+            str(json_output),
+            "--packets-markdown",
+            str(markdown_output),
+            "--assessment",
+            str(assessment_json_output),
+            "--assessment-markdown",
+            str(assessment_markdown_output),
+            "--repair-prototype",
+            str(repair_path),
+            "--s02-contract",
+            str(s02_path),
+        ]
+    )
+    alias_verify_out = capsys.readouterr()
+
+    assert alias_verify_code == 0
+    assert "reviewer packet prototype verified:" in alias_verify_out.out
+    assert "packets=3" in alias_verify_out.out
 
 
 def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
