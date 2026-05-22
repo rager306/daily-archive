@@ -17,6 +17,10 @@ from arxiv_archive.reviewer_packet_prototype import (
     render_reviewer_packet_markdown,
     summarize_reviewer_packet_prototype,
 )
+from scripts.render_reviewer_packet_prototype import main as render_cli_main
+from scripts.render_reviewer_packet_prototype import render_prototype_files as render_cli_files
+from scripts.verify_reviewer_packet_prototype import main as verify_cli_main
+from scripts.verify_reviewer_packet_prototype import verify_files as verify_cli_files
 
 CONTRACT_FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
 LOCATOR_FIXTURE = Path("tests/fixtures/bounded_locator_batch.json")
@@ -243,3 +247,196 @@ def test_input_payload_is_not_mutated() -> None:
     build_reviewer_packet_prototype(payload, s02_contract=_s02_contract())
 
     assert payload == original
+
+
+def _write_cli_inputs(tmp_path: Path) -> tuple[Path, Path]:
+    repair_path = tmp_path / "repair.json"
+    s02_path = tmp_path / "s02.json"
+    repair_path.write_text(json.dumps(_s03_payload(), indent=2), encoding="utf-8")
+    s02_path.write_text(json.dumps(_s02_contract(), indent=2), encoding="utf-8")
+    return repair_path, s02_path
+
+
+def _cli_output_paths(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    return (
+        tmp_path / "reviewer-packet.json",
+        tmp_path / "reviewer-packet.md",
+        tmp_path / "reviewer-assessment.json",
+        tmp_path / "reviewer-assessment.md",
+    )
+
+
+def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_them(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    json_output, markdown_output, assessment_json_output, assessment_markdown_output = _cli_output_paths(tmp_path)
+
+    render_code = render_cli_main(
+        [
+            "--repair-prototype",
+            str(repair_path),
+            "--s02-contract",
+            str(s02_path),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+            "--assessment-json-output",
+            str(assessment_json_output),
+            "--assessment-markdown-output",
+            str(assessment_markdown_output),
+        ]
+    )
+    render_out = capsys.readouterr()
+
+    assert render_code == 0
+    assert "reviewer packet prototype rendered:" in render_out.out
+    assert "packets=3" in render_out.out
+    assert "assessment_verdict=blocked_pending_semantic_acceptance" in render_out.out
+    assert "unsafe_counters_zero=True" in render_out.out
+    assert all(path.exists() for path in (json_output, markdown_output, assessment_json_output, assessment_markdown_output))
+    assert "```" not in markdown_output.read_text(encoding="utf-8")
+    assert "```" not in assessment_markdown_output.read_text(encoding="utf-8")
+
+    verify_code = verify_cli_main(
+        [
+            "--json",
+            str(json_output),
+            "--markdown",
+            str(markdown_output),
+            "--assessment-json",
+            str(assessment_json_output),
+            "--assessment-markdown",
+            str(assessment_markdown_output),
+            "--repair-prototype",
+            str(repair_path),
+            "--s02-contract",
+            str(s02_path),
+        ]
+    )
+    verify_out = capsys.readouterr()
+
+    assert verify_code == 0
+    assert "reviewer packet prototype verified:" in verify_out.out
+    assert "packets=3" in verify_out.out
+    assert "review_status={'pending_review': 3}" in verify_out.out
+    assert "unsafe_counters_zero=True" in verify_out.out
+
+
+def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.render_reviewer_packet_prototype as renderer
+
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    outputs = _cli_output_paths(tmp_path)
+    monkeypatch.setattr(renderer, "render_reviewer_packet_markdown", lambda _prototype: "```raw marker```\n")
+
+    with pytest.raises(ValueError) as exc_info:
+        render_cli_files(repair_path, s02_path, *outputs)
+
+    assert "forbidden code fence" in str(exc_info.value)
+    assert not any(path.exists() for path in outputs)
+
+
+def test_renderer_missing_and_malformed_inputs_return_exit_2_with_redacted_diagnostics(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    json_output, markdown_output, assessment_json_output, assessment_markdown_output = _cli_output_paths(tmp_path)
+
+    missing_code = render_cli_main(
+        [
+            "--repair-prototype",
+            str(tmp_path / "missing.json"),
+            "--s02-contract",
+            str(s02_path),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+            "--assessment-json-output",
+            str(assessment_json_output),
+            "--assessment-markdown-output",
+            str(assessment_markdown_output),
+        ]
+    )
+    missing_out = capsys.readouterr()
+
+    assert missing_code == 2
+    assert "repair prototype file not found" in missing_out.err
+
+    repair_path.write_text('{"broken": ', encoding="utf-8")
+    malformed_code = render_cli_main(
+        [
+            "--repair-prototype",
+            str(repair_path),
+            "--s02-contract",
+            str(s02_path),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+            "--assessment-json-output",
+            str(assessment_json_output),
+            "--assessment-markdown-output",
+            str(assessment_markdown_output),
+        ]
+    )
+    malformed_out = capsys.readouterr()
+
+    assert malformed_code == 2
+    assert "JSON is malformed at line 1 column" in malformed_out.err
+    assert "broken" not in malformed_out.err
+
+
+def test_verifier_rejects_unsafe_assessment_without_printing_payload_values(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    outputs = _cli_output_paths(tmp_path)
+    render_cli_files(repair_path, s02_path, *outputs)
+    assessment_json_output = outputs[2]
+    assessment = json.loads(assessment_json_output.read_text(encoding="utf-8"))
+    assessment["verdict"] = "import_ready"
+    assessment["unsafe_counters"]["semantic_ready_count"] = 1
+    assessment["unsafe_counters"]["note"] = "NEVER LEAK"
+    assessment_json_output.write_text(json.dumps(assessment), encoding="utf-8")
+
+    code = verify_cli_main(
+        [
+            "--json",
+            str(outputs[0]),
+            "--markdown",
+            str(outputs[1]),
+            "--assessment-json",
+            str(outputs[2]),
+            "--assessment-markdown",
+            str(outputs[3]),
+            "--repair-prototype",
+            str(repair_path),
+            "--s02-contract",
+            str(s02_path),
+        ]
+    )
+    out = capsys.readouterr()
+
+    assert code == 2
+    assert "assessment_unsafe_verdict" in out.err
+    assert "/unsafe_counters/semantic_ready_count" in out.err
+    assert "NEVER LEAK" not in out.err
+
+
+def test_verifier_rejects_packet_review_status_markdown_fence_and_unknown_stable_id(tmp_path: Path) -> None:
+    repair_path, s02_path = _write_cli_inputs(tmp_path)
+    outputs = _cli_output_paths(tmp_path)
+    render_cli_files(repair_path, s02_path, *outputs)
+    packet_json_output, packet_markdown_output, assessment_json_output, assessment_markdown_output = outputs
+
+    packet_payload = json.loads(packet_json_output.read_text(encoding="utf-8"))
+    packet_payload["packets"][0]["review_status"] = "accepted"
+    packet_payload["packets"][0]["locator_id"] = "unknown-stable-id"
+    packet_json_output.write_text(json.dumps(packet_payload), encoding="utf-8")
+    packet_markdown_output.write_text(packet_markdown_output.read_text(encoding="utf-8") + "\n```leak fence```\n", encoding="utf-8")
+
+    summary = verify_cli_files(packet_json_output, packet_markdown_output, assessment_json_output, assessment_markdown_output, repair_path, s02_path)
+
+    assert summary["passed"] is False
+    codes = {finding["code"] for finding in summary["findings"]}
+    assert "packet_not_pending_review" in codes
+    assert "markdown_code_fence" in codes
+    assert "locator_id_not_in_s02_stable_ids" in codes
+    assert "locator_id_not_in_repair_prototype" in codes
