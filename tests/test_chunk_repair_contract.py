@@ -6,16 +6,64 @@ from pathlib import Path
 
 from arxiv_archive.chunk_repair_contract import (
     CHUNK_REPAIR_CONTRACT_VERSION,
+    build_chunk_repair_contract_from_audit,
+    expected_audit_from_contract,
+    render_chunk_repair_contract_markdown,
     scan_forbidden_payload_keys,
     validate_chunk_repair_contract,
+    validate_chunk_repair_contract_markdown,
+    validate_locator_evidence_audit_for_repair_contract,
     validation_to_dict,
 )
+from scripts.render_chunk_repair_contract import main as render_contract_main
 
 FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
 
 
 def _fixture() -> dict[str, object]:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def _audit_fixture() -> dict[str, object]:
+    return {
+        "schema_version": "locator_evidence_audit.v1",
+        "input_schema_version": "candidate_locator_protocol.v1",
+        "strict": True,
+        "input_path": "tests/fixtures/synthetic-locator-batch.json",
+        "first_proof_invariants": {
+            "schema_version": "candidate_locator_protocol.v1",
+            "paper_count": 1,
+            "source_count": 1,
+            "locator_count": 2,
+            "located_count": 2,
+            "review_required_count": 0,
+            "missing_span_count": 0,
+            "ambiguous_span_count": 1,
+            "conflicting_evidence_count": 0,
+            "retrieval_only_count": 1,
+            "repair_required_count": 0,
+            "import_eligible_count": 0,
+            "promoted_to_fact_count": 0,
+        },
+        "stable_ids": {
+            "source_ids": ["source-synthetic-paper-1-full-text"],
+            "locator_ids": ["m021-synthetic-paper-1-claim-001", "m021-synthetic-paper-1-retrieval-001"],
+            "span_ids": ["m021-synthetic-paper-1-claim-001-span-001", "m021-synthetic-paper-1-retrieval-001-span-001"],
+        },
+        "distributions": {},
+        "diagnostic_code_classes": {},
+        "source_span_coverage": {},
+        "source_ledger_safety": {},
+        "repair_context_gaps": {},
+        "safety_blockers": {
+            "validator_diagnostics": [],
+            "forbidden_payload_key_paths": [],
+            "unsafe_safety_flag_paths": [],
+            "summary_drift": [],
+            "invariant_drift": [],
+            "no_import_blocker_intact": True,
+        },
+    }
 
 
 def _reasons(payload: dict[str, object]) -> set[str]:
@@ -197,3 +245,83 @@ def test_diagnostics_count_drift_is_rejected() -> None:
 
     assert "diagnostics_target_count_mismatch" in reasons
     assert "diagnostics_import_count_mismatch" in reasons
+
+
+def test_build_contract_from_audit_is_review_only_and_validator_clean() -> None:
+    contract = build_chunk_repair_contract_from_audit(_audit_fixture(), source_audit_path="tests/fixtures/audit.json")
+    result = validate_chunk_repair_contract(contract, expected_audit=expected_audit_from_contract(contract))
+    markdown = render_chunk_repair_contract_markdown(contract)
+
+    assert contract["schema_version"] == CHUNK_REPAIR_CONTRACT_VERSION
+    assert contract["repair_targets"] == []
+    assert contract["stable_id_counts"]["locator_count"] == 2
+    assert contract["safety_boundary"]["import_eligible"] is False
+    assert contract["safety_boundary"]["production_write_attempted"] is False
+    assert result.passed is True
+    assert validate_chunk_repair_contract_markdown(markdown) == []
+    assert "```" not in markdown
+    assert "raw_text" not in markdown
+    assert "chunk_text" not in markdown
+
+
+def test_audit_preflight_rejects_unsafe_or_drifted_audit_by_code_only() -> None:
+    audit = _audit_fixture()
+    audit["safety_blockers"]["invariant_drift"] = ["/locator_count:expected=2:observed=3"]
+    audit["source_ledger_safety"] = {"raw_text": "DO NOT LEAK"}
+
+    diagnostics = validate_locator_evidence_audit_for_repair_contract(audit)
+    rendered = json.dumps([diagnostic.__dict__ for diagnostic in diagnostics])
+
+    assert "audit_invariant_drift_present" in {diagnostic.code for diagnostic in diagnostics}
+    assert "raw_text_leakage" in {diagnostic.code for diagnostic in diagnostics}
+    assert "DO NOT LEAK" not in rendered
+
+
+def test_renderer_cli_writes_temp_artifacts_that_validate(tmp_path: Path) -> None:
+    audit_path = tmp_path / "audit.json"
+    json_output = tmp_path / "chunk-repair-contract.json"
+    markdown_output = tmp_path / "chunk-repair-contract.md"
+    audit_path.write_text(json.dumps(_audit_fixture()), encoding="utf-8")
+
+    exit_code = render_contract_main(
+        [
+            "--audit",
+            str(audit_path),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+        ]
+    )
+
+    contract = json.loads(json_output.read_text(encoding="utf-8"))
+    markdown = markdown_output.read_text(encoding="utf-8")
+    assert exit_code == 0
+    assert validate_chunk_repair_contract(contract, expected_audit=expected_audit_from_contract(contract)).passed is True
+    assert validate_chunk_repair_contract_markdown(markdown) == []
+    assert contract["diagnostics"]["production_import_attempted"] is False
+    assert "No repair target is created" in markdown
+
+
+def test_renderer_cli_rejects_invalid_audit_without_partial_writes(tmp_path: Path) -> None:
+    audit_path = tmp_path / "bad-audit.json"
+    json_output = tmp_path / "chunk-repair-contract.json"
+    markdown_output = tmp_path / "chunk-repair-contract.md"
+    bad_audit = _audit_fixture()
+    bad_audit["first_proof_invariants"]["locator_count"] = 99
+    audit_path.write_text(json.dumps(bad_audit), encoding="utf-8")
+
+    exit_code = render_contract_main(
+        [
+            "--audit",
+            str(audit_path),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+        ]
+    )
+
+    assert exit_code == 2
+    assert not json_output.exists()
+    assert not markdown_output.exists()

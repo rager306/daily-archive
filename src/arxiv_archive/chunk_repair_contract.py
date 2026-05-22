@@ -86,6 +86,7 @@ ACCEPTED_REVIEWER_FIELDS = ("reviewer_id", "reviewed_at", "decision_summary", "e
 RETRIEVAL_ONLY_ROUTES = frozenset({"retrieval_context"})
 REPAIR_ROUTES = frozenset({"repair_context"})
 SAFE_HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+MARKDOWN_FORBIDDEN_PATTERNS = ("```", "raw_text", "chunk_text", "paper_text", "claim_text", "embedding=", "vector=", "api_key", "token=")
 
 
 @dataclass(frozen=True)
@@ -240,6 +241,297 @@ def validation_to_dict(result: ChunkRepairValidationResult) -> dict[str, Any]:
     }
 
 
+def build_chunk_repair_contract_from_audit(audit: dict[str, Any], *, source_audit_path: str) -> dict[str, Any]:
+    """Build a review-only empty repair contract from one redacted S01 audit."""
+    audit_diagnostics = validate_locator_evidence_audit_for_repair_contract(audit)
+    if audit_diagnostics:
+        codes = ", ".join(diagnostic.code for diagnostic in audit_diagnostics)
+        raise ValueError(f"source audit is not eligible for chunk repair contract rendering: {codes}")
+
+    stable_ids = audit["stable_ids"]
+    invariants = audit["first_proof_invariants"]
+    source_ids = [str(source_id) for source_id in stable_ids["source_ids"]]
+    source_ledger = [
+        {
+            "source_id": source_id,
+            "paper_id": _paper_id_from_source_id(source_id),
+            "source_hash_present": True,
+            "source_hash_algorithm": "sha256",
+            "source_payload_embedded": False,
+            "source_binary_embedded": False,
+        }
+        for source_id in source_ids
+    ]
+    diagnostics = {
+        "target_count": 0,
+        "pending_review_count": 0,
+        "accepted_count": 0,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+        "production_write_count": 0,
+        "semantic_ready_count": 0,
+        "raw_text_included": False,
+        "chunk_text_included": False,
+        "embeddings_included": False,
+        "vectors_included": False,
+        "secrets_included": False,
+        "ladybugdb_written": False,
+        "production_import_attempted": False,
+    }
+    return {
+        "schema_version": CHUNK_REPAIR_CONTRACT_VERSION,
+        "contract_version": CHUNK_REPAIR_CONTRACT_VERSION,
+        "run_id": "m022-s02-chunk-repair-contract-from-s01-audit",
+        "created_at": "not-recorded",
+        "paper_id": "m021-s01-audit-batch",
+        "source_audit": {
+            "schema_version": audit["schema_version"],
+            "input_schema_version": audit["input_schema_version"],
+            "strict": audit["strict"],
+            "audit_path": source_audit_path,
+            "locator_input_path": audit.get("input_path"),
+            "redacted": True,
+        },
+        "expected_invariants": dict(sorted(invariants.items())),
+        "stable_id_counts": {
+            "paper_count": invariants["paper_count"],
+            "source_count": len(source_ids),
+            "locator_count": len(stable_ids["locator_ids"]),
+            "span_count": len(stable_ids["span_ids"]),
+            "ambiguous_span_count": invariants["ambiguous_span_count"],
+            "retrieval_only_count": invariants["retrieval_only_count"],
+        },
+        "stable_ids": {
+            "source_ids": source_ids,
+            "locator_ids": [str(locator_id) for locator_id in stable_ids["locator_ids"]],
+            "span_ids": [str(span_id) for span_id in stable_ids["span_ids"]],
+        },
+        "source_ledger": source_ledger,
+        "safety_boundary": {
+            "review_only": True,
+            "repair_targets_created": False,
+            "import_eligible": False,
+            "promoted_to_fact": False,
+            "trusted_kg_import_allowed": False,
+            "production_write_attempted": False,
+            "ladybugdb_written": False,
+            "semantic_ready_for_kg": False,
+            "source_payloads_included": False,
+            "embeddings_included": False,
+            "vectors_included": False,
+            "secrets_included": False,
+        },
+        "allowed_vocabularies": {
+            "repair_kinds": sorted(ALLOWED_REPAIR_KINDS),
+            "review_statuses": sorted(ALLOWED_REVIEW_STATUSES),
+            "candidate_types": sorted(ALLOWED_CANDIDATE_TYPES),
+            "routes": sorted(ALLOWED_ROUTES),
+            "states": sorted(ALLOWED_STATES),
+            "coordinate_spaces": sorted(ALLOWED_COORDINATE_SPACES),
+            "allowed_uses": list(ALLOWED_USES),
+            "excluded_uses": list(EXCLUDED_USES),
+        },
+        "target_field_requirements": {
+            "required_target_fields": list(REQUIRED_TARGET_FIELDS),
+            "required_span_fields": list(REQUIRED_SPAN_FIELDS),
+            "required_false_safety_fields": list(REQUIRED_FALSE_SAFETY_FIELDS),
+            "accepted_reviewer_fields": list(ACCEPTED_REVIEWER_FIELDS),
+        },
+        "reviewer_output_requirements": [
+            "Use stable source, locator, and span identifiers from this contract only.",
+            "Record review status using the allowed review vocabulary.",
+            "Record section paths as labels or headings, not source snippets.",
+            "Keep every import, fact promotion, semantic readiness, and production write flag false.",
+            "Reference evidence by stable IDs, coordinate spans, and hashes only.",
+        ],
+        "explicit_blockers": [
+            "No repair target is created by this renderer.",
+            "KG import eligibility remains false for every future repair target.",
+            "Fact promotion and semantic KG readiness remain blocked.",
+            "Production LadybugDB writes are not allowed from this contract.",
+            "Corpus snippets, model payloads, embeddings, vectors, and secrets are not allowed in artifacts.",
+        ],
+        "repair_targets": [],
+        "diagnostics": diagnostics,
+    }
+
+
+def validate_locator_evidence_audit_for_repair_contract(audit: dict[str, Any]) -> list[ChunkRepairDiagnostic]:
+    """Validate that one redacted S01 audit can seed the S02 repair contract."""
+    diagnostics: list[ChunkRepairDiagnostic] = []
+    if not isinstance(audit, dict):
+        return [ChunkRepairDiagnostic(code="audit_not_object", path="/", object_type="source_audit")]
+    if audit.get("schema_version") != "locator_evidence_audit.v1":
+        diagnostics.append(ChunkRepairDiagnostic(code="audit_schema_version_mismatch", path="/schema_version", object_type="source_audit"))
+    if audit.get("strict") is not True:
+        diagnostics.append(ChunkRepairDiagnostic(code="audit_not_strict", path="/strict", object_type="source_audit"))
+    invariants = audit.get("first_proof_invariants")
+    if not isinstance(invariants, dict):
+        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_invariants", path="/first_proof_invariants", object_type="source_audit"))
+        invariants = {}
+    stable_ids = audit.get("stable_ids")
+    if not isinstance(stable_ids, dict):
+        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_stable_ids", path="/stable_ids", object_type="source_audit"))
+        stable_ids = {}
+    for field in ("source_ids", "locator_ids", "span_ids"):
+        value = stable_ids.get(field)
+        if not isinstance(value, list) or any(not _string_or_none(item) for item in value):
+            diagnostics.append(ChunkRepairDiagnostic(code=f"malformed_audit_{field}", path=f"/stable_ids/{field}", object_type="source_audit"))
+    count_checks = {
+        "source_count": len(stable_ids.get("source_ids", [])) if isinstance(stable_ids.get("source_ids"), list) else None,
+        "locator_count": len(stable_ids.get("locator_ids", [])) if isinstance(stable_ids.get("locator_ids"), list) else None,
+    }
+    for field, observed in count_checks.items():
+        if observed is not None and invariants.get(field) != observed:
+            diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_drift", path=f"/first_proof_invariants/{field}", object_type="source_audit"))
+    for field in ("import_eligible_count", "promoted_to_fact_count", "repair_required_count", "missing_span_count", "conflicting_evidence_count"):
+        if invariants.get(field) != 0:
+            diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_nonzero", path=f"/first_proof_invariants/{field}", object_type="source_audit"))
+    blockers = audit.get("safety_blockers")
+    if not isinstance(blockers, dict):
+        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_safety_blockers", path="/safety_blockers", object_type="source_audit"))
+    else:
+        for field in ("validator_diagnostics", "forbidden_payload_key_paths", "unsafe_safety_flag_paths", "summary_drift", "invariant_drift"):
+            if blockers.get(field) != []:
+                diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_present", path=f"/safety_blockers/{field}", object_type="source_audit"))
+        if blockers.get("no_import_blocker_intact") is not True:
+            diagnostics.append(ChunkRepairDiagnostic(code="audit_no_import_blocker_not_intact", path="/safety_blockers/no_import_blocker_intact", object_type="source_audit"))
+    diagnostics.extend(_diagnostics_from_forbidden_keys(scan_forbidden_payload_keys(audit)))
+    return diagnostics
+
+
+def render_chunk_repair_contract_markdown(contract: dict[str, Any]) -> str:
+    """Render a reviewer-facing Markdown contract without snippets or code fences."""
+    invariants = contract["expected_invariants"]
+    counts = contract["stable_id_counts"]
+    safety = contract["safety_boundary"]
+    vocab = contract["allowed_vocabularies"]
+    fields = contract["target_field_requirements"]
+    lines = [
+        "# S02 Chunk Repair Contract",
+        "",
+        "This artifact translates the S01 locator audit into a reviewer-facing contract. It contains counts, stable identifiers, allowed vocabularies, field requirements, and explicit blockers only. It does not create repair claims or authorize KG writes.",
+        "",
+        "## Source Audit",
+        "",
+        f"- Contract schema: {contract['schema_version']}",
+        f"- Audit schema: {contract['source_audit']['schema_version']}",
+        f"- Locator input schema: {contract['source_audit']['input_schema_version']}",
+        f"- Strict audit: {contract['source_audit']['strict']}",
+        f"- Audit path: {contract['source_audit']['audit_path']}",
+        "- Audit redacted: true",
+        "",
+        "## Expected Invariants",
+        "",
+        "| Invariant | Value |",
+        "|---|---:|",
+    ]
+    for key, value in invariants.items():
+        lines.append(f"| {key} | {value} |")
+    lines.extend([
+        "",
+        "## Stable ID Counts",
+        "",
+        f"- Papers: {counts['paper_count']}",
+        f"- Sources: {counts['source_count']}",
+        f"- Locators: {counts['locator_count']}",
+        f"- Spans: {counts['span_count']}",
+        f"- Ambiguous spans: {counts['ambiguous_span_count']}",
+        f"- Retrieval-only contexts: {counts['retrieval_only_count']}",
+        "",
+        "## Safety Boundary",
+        "",
+    ])
+    lines.extend(f"- {_markdown_safe_field_name(key)}: {str(value).lower()}" for key, value in safety.items())
+    lines.extend([
+        "",
+        "## Allowed Review Vocabulary",
+        "",
+        f"- Repair kinds: {', '.join(vocab['repair_kinds'])}",
+        f"- Review statuses: {', '.join(vocab['review_statuses'])}",
+        f"- Routes: {', '.join(vocab['routes'])}",
+        f"- States: {', '.join(vocab['states'])}",
+        f"- Coordinate spaces: {', '.join(vocab['coordinate_spaces'])}",
+        "",
+        "## Target Field Contract",
+        "",
+        f"- Required target fields: {', '.join(fields['required_target_fields'])}",
+        f"- Required span fields: {', '.join(fields['required_span_fields'])}",
+        f"- Required false safety fields: {', '.join(_markdown_safe_field_names(fields['required_false_safety_fields']))}",
+        f"- Accepted-review reviewer fields: {', '.join(fields['accepted_reviewer_fields'])}",
+        "",
+        "## Reviewer Questions",
+        "",
+    ])
+    lines.extend(f"- {requirement}" for requirement in contract["reviewer_output_requirements"])
+    lines.extend(["", "## Explicit No-Go Constraints", ""])
+    lines.extend(f"- {blocker}" for blocker in contract["explicit_blockers"])
+    lines.append("")
+    markdown = "\n".join(lines)
+    markdown_diagnostics = validate_chunk_repair_contract_markdown(markdown)
+    if markdown_diagnostics:
+        codes = ", ".join(diagnostic.code for diagnostic in markdown_diagnostics)
+        raise ValueError(f"chunk repair contract Markdown is not safe to render: {codes}")
+    return markdown
+
+
+def validate_chunk_repair_contract_markdown(markdown: str) -> list[ChunkRepairDiagnostic]:
+    """Return redacted Markdown leakage diagnostics for the contract renderer."""
+    diagnostics: list[ChunkRepairDiagnostic] = []
+    for pattern in MARKDOWN_FORBIDDEN_PATTERNS:
+        if pattern in markdown:
+            diagnostics.append(ChunkRepairDiagnostic(code="markdown_forbidden_pattern", path="/markdown", object_id=pattern, object_type="markdown"))
+    unsafe_true_markers = (
+        "import_eligible: true",
+        "promoted_to_fact: true",
+        "trusted_kg_import_allowed: true",
+        "production_write_attempted: true",
+        "ladybugdb_written: true",
+        "semantic_ready_for_kg: true",
+        "embeddings_included: true",
+        "vectors_included: true",
+        "secrets_included: true",
+    )
+    lowered = markdown.lower()
+    if any(marker in lowered for marker in unsafe_true_markers):
+        diagnostics.append(ChunkRepairDiagnostic(code="markdown_true_safety_flag", path="/markdown", object_type="markdown"))
+    return diagnostics
+
+
+def _markdown_safe_field_names(fields: list[str]) -> list[str]:
+    return [_markdown_safe_field_name(field) for field in fields]
+
+
+def _markdown_safe_field_name(field: str) -> str:
+    replacements = {
+        "raw_text_included": "source payload included",
+        "chunk_text_included": "chunk payload included",
+        "embeddings_included": "model embedding payloads included",
+        "vectors_included": "model vector payloads included",
+        "secrets_included": "secret values included",
+        "import_eligible": "import eligibility",
+        "promoted_to_fact": "fact promotion",
+        "trusted_kg_import_allowed": "trusted KG import allowed",
+        "production_write_attempted": "production write attempted",
+        "ladybugdb_written": "LadybugDB write attempted",
+        "semantic_ready_for_kg": "semantic KG readiness",
+        "repair_targets_created": "repair targets created",
+        "review_only": "review only",
+        "source_payloads_included": "source payloads included",
+    }
+    return replacements.get(field, field)
+
+
+def expected_audit_from_contract(contract: dict[str, Any]) -> dict[str, Any]:
+    """Return validator expected-audit sets from a rendered contract."""
+    stable_ids = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
+    return {
+        "source_ids": stable_ids.get("source_ids", []),
+        "locator_ids": stable_ids.get("locator_ids", []),
+        "paper_ids": [_paper_id_from_source_id(source_id) for source_id in stable_ids.get("source_ids", [])],
+    }
+
+
 def scan_forbidden_payload_keys(value: Any, *, path: str = "") -> list[ForbiddenPayloadKeyFinding]:
     """Return redacted recursive forbidden-key findings for JSON-like values."""
     findings: list[ForbiddenPayloadKeyFinding] = []
@@ -253,6 +545,13 @@ def scan_forbidden_payload_keys(value: Any, *, path: str = "") -> list[Forbidden
         for index, item in enumerate(value):
             findings.extend(scan_forbidden_payload_keys(item, path=f"{path}/{index}"))
     return findings
+
+
+def _paper_id_from_source_id(source_id: Any) -> str:
+    text = str(source_id)
+    if text.startswith("source-") and text.endswith("-full-text"):
+        return text.removeprefix("source-").removesuffix("-full-text")
+    return text
 
 
 def _validate_header(payload: dict[str, Any]) -> list[ChunkRepairDiagnostic]:
