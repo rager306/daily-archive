@@ -100,6 +100,38 @@ def test_cli_non_strict_is_documented_entrypoint(tmp_path: Path) -> None:
     assert persisted["first_proof_invariants"]["locator_count"] == 3
 
 
+def test_cli_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
+    json_output = tmp_path / "audit.json"
+    markdown_output = tmp_path / "audit.md"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/audit_locator_evidence.py",
+            str(FIXTURE),
+            "--json-output",
+            str(json_output),
+            "--markdown-output",
+            str(markdown_output),
+            "--non-strict",
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0
+    persisted = json.loads(json_output.read_text(encoding="utf-8"))
+    markdown = markdown_output.read_text(encoding="utf-8")
+    assert persisted["input_path"] == str(FIXTURE)
+    assert persisted["strict"] is False
+    assert "# S01 Locator Evidence Audit" in markdown
+    assert "Expected First-Proof Invariants" in markdown
+    assert "Explicit No-Go Constraints" in markdown
+    assert "raw_text" not in markdown
+    assert "source_path" not in markdown
+
+
 def test_missing_input_fails_with_clear_path_error(tmp_path: Path) -> None:
     missing = tmp_path / "missing.json"
 

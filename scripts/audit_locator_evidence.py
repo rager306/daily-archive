@@ -169,18 +169,145 @@ def audit_locator_evidence_file(
     input_path: str | Path,
     *,
     output_path: str | Path | None = None,
+    json_output_path: str | Path | None = None,
+    markdown_output_path: str | Path | None = None,
     strict: bool = True,
     expected_invariants: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Load, audit, and optionally write sorted JSON after all checks pass."""
+    """Load, audit, and optionally write sorted JSON/Markdown after all checks pass."""
     audit = audit_locator_evidence(
         load_locator_artifact(input_path), strict=strict, expected_invariants=expected_invariants
     )
-    if output_path is not None:
-        destination = Path(output_path)
+    audit = {"input_path": str(Path(input_path)), **audit}
+    json_destination = json_output_path if json_output_path is not None else output_path
+    if json_destination is not None:
+        destination = Path(json_destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if markdown_output_path is not None:
+        destination = Path(markdown_output_path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(render_locator_evidence_audit_markdown(audit), encoding="utf-8")
     return audit
+
+
+def render_locator_evidence_audit_markdown(audit: dict[str, Any]) -> str:
+    """Render a reviewer-facing Markdown audit without source snippets or payload text."""
+    invariants = audit["first_proof_invariants"]
+    distributions = audit["distributions"]
+    coverage = audit["source_span_coverage"]
+    ledger = audit["source_ledger_safety"]
+    gaps = audit["repair_context_gaps"]
+    blockers = audit["safety_blockers"]
+    explicit_blockers = [
+        "Positive KG import is blocked: import_eligible_count=0 and promoted_to_fact_count=0.",
+        "Production LadybugDB writes are blocked by candidate locator safety flags.",
+        "Semantic readiness claims are blocked; this audit records locator evidence only.",
+        "Embeddings and vectors are blocked; no vector payloads are imported or serialized.",
+        "Source snippets, chunk payloads, and corpus text are blocked from this audit surface.",
+        "DSPy, MiniMax, converter, and optimizer activation are blocked for this slice.",
+        "Broad scaling is blocked until S02 repair-context contracts consume this bounded set.",
+    ]
+    lines: list[str] = [
+        "# S01 Locator Evidence Audit",
+        "",
+        "This reviewer-facing audit summarizes the bounded M021 deterministic locator evidence set. It reports stable IDs, counts, distributions, span coverage, lineage gaps, and safety blockers only; it does not include snippets or source payload text.",
+        "",
+        "## Pinned Input",
+        "",
+        f"- Input path: `{audit['input_path']}`",
+        f"- Audit schema version: `{audit['schema_version']}`",
+        f"- Locator input schema version: `{audit['input_schema_version']}`",
+        f"- Strict mode: `{audit['strict']}`",
+        "",
+        "## Expected First-Proof Invariants",
+        "",
+        "| Invariant | Observed |",
+        "|---|---:|",
+    ]
+    for key, value in invariants.items():
+        lines.append(f"| `{key}` | `{value}` |")
+    lines.extend([
+        "",
+        "## Per-Target Summary",
+        "",
+        f"- Papers: `{invariants['paper_count']}`",
+        f"- Sources: `{invariants['source_count']}`",
+        f"- Locators: `{invariants['locator_count']}`",
+        f"- Located locators: `{invariants['located_count']}`",
+        f"- Review-required locators: `{invariants['review_required_count']}`",
+        f"- Retrieval-only locators: `{invariants['retrieval_only_count']}`",
+        f"- Ambiguous-span locators: `{invariants['ambiguous_span_count']}`",
+        f"- Import-eligible locators: `{invariants['import_eligible_count']}`",
+        "",
+        "## Ambiguity Taxonomy",
+        "",
+        "### Routes",
+        *(_bullet_counts(distributions["routes"])),
+        "",
+        "### States",
+        *(_bullet_counts(distributions["states"])),
+        "",
+        "### Diagnostic Code Classes",
+        *(_bullet_counts(audit["diagnostic_code_classes"])),
+        "",
+        "### Diagnostic Codes",
+        *(_bullet_counts(distributions["diagnostic_codes"])),
+        "",
+        "## Source-Span Coordinate and Hash Coverage",
+        "",
+        f"- Locator count: `{coverage['locator_count']}`",
+        f"- Locators with source spans: `{coverage['locators_with_source_spans']}`",
+        f"- Locators without source spans: `{coverage['locators_without_source_spans']}`",
+        f"- Span count: `{coverage['span_count']}`",
+        f"- Spans with hashes: `{coverage['spans_with_hash']}`",
+        f"- Coordinate spans with character bounds: `{coverage['coordinate_spans_with_char_bounds']}`",
+        f"- Coordinate spans with line bounds: `{coverage['coordinate_spans_with_line_bounds']}`",
+        f"- Artifact-record span count: `{coverage['artifact_record_span_count']}`",
+        "",
+        "### Coordinate Spaces",
+        *(_bullet_counts(coverage["coordinate_space_distribution"])),
+        "",
+        "## Source Ledger Safety Summary",
+        "",
+        f"- Source ledger entries: `{ledger['source_count']}`",
+        f"- Sources with hashes: `{ledger['sources_with_hash']}`",
+        f"- Source text embedded non-false paths: `{len(ledger['source_text_embedded_nonfalse_paths'])}`",
+        f"- Source binary embedded non-false paths: `{len(ledger['source_binary_embedded_nonfalse_paths'])}`",
+        "",
+        "### Conversion Statuses",
+        *(_bullet_counts(ledger["conversion_status_distribution"])),
+        "",
+        "### Source Hash Algorithms",
+        *(_bullet_counts(ledger["source_hash_algorithm_distribution"])),
+        "",
+        "## S02 Repair-Context Gaps",
+        "",
+        f"- Missing-span locator IDs: `{len(gaps['missing_span_locator_ids'])}`",
+        f"- Repair-required locator IDs: `{len(gaps['repair_required_locator_ids'])}`",
+        f"- Conflicting-evidence locator IDs: `{len(gaps['conflicting_evidence_locator_ids'])}`",
+        f"- Artifact-record span IDs: `{len(gaps['artifact_record_span_ids'])}`",
+        "",
+        "## Safety Blockers",
+        "",
+        f"- Validator diagnostics: `{len(blockers['validator_diagnostics'])}`",
+        f"- Forbidden payload key paths: `{len(blockers['forbidden_payload_key_paths'])}`",
+        f"- Unsafe safety flag paths: `{len(blockers['unsafe_safety_flag_paths'])}`",
+        f"- Summary drift entries: `{len(blockers['summary_drift'])}`",
+        f"- Invariant drift entries: `{len(blockers['invariant_drift'])}`",
+        f"- No-import blocker intact: `{blockers['no_import_blocker_intact']}`",
+        "",
+        "### Explicit No-Go Constraints",
+    ])
+    lines.extend(f"- {blocker}" for blocker in explicit_blockers)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _bullet_counts(values: dict[str, int]) -> list[str]:
+    if not values:
+        return ["- None: `0`"]
+    return [f"- `{key}`: `{value}`" for key, value in sorted(values.items())]
 
 
 def _require_list(artifact: dict[str, Any], key: str) -> list[dict[str, Any]]:
@@ -356,20 +483,39 @@ def _assert_audit_is_redacted(value: Any, path: str = "") -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path, help="Candidate locator artifact JSON to audit")
-    parser.add_argument("--output", type=Path, help="Optional path for the redacted audit JSON")
-    parser.add_argument(
+    parser.add_argument("input", nargs="?", type=Path, help="Candidate locator artifact JSON to audit")
+    parser.add_argument("--input", dest="input_option", type=Path, help="Candidate locator artifact JSON to audit")
+    parser.add_argument("--output", type=Path, help="Legacy alias for --json-output")
+    parser.add_argument("--json-output", type=Path, help="Optional path for the redacted audit JSON")
+    parser.add_argument("--markdown-output", type=Path, help="Optional path for the reviewer-facing Markdown audit")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--strict",
+        action="store_true",
+        default=True,
+        help="Enforce M021 invariant comparisons while preserving schema/safety validation (default)",
+    )
+    mode.add_argument(
         "--non-strict",
         action="store_true",
         help="Skip M021 invariant comparisons while preserving schema/safety validation",
     )
     args = parser.parse_args(argv)
+    input_path = args.input_option if args.input_option is not None else args.input
+    if input_path is None:
+        parser.error("locator evidence input path is required")
     try:
-        audit = audit_locator_evidence_file(args.input, output_path=args.output, strict=not args.non_strict)
+        audit = audit_locator_evidence_file(
+            input_path,
+            output_path=args.output,
+            json_output_path=args.json_output,
+            markdown_output_path=args.markdown_output,
+            strict=not args.non_strict,
+        )
     except (FileNotFoundError, LocatorEvidenceAuditError) as exc:
         print(f"locator evidence audit failed: {exc}", file=sys.stderr)
         return 2
-    if args.output is None:
+    if args.output is None and args.json_output is None:
         print(json.dumps(audit, indent=2, sort_keys=True))
     return 0
 
