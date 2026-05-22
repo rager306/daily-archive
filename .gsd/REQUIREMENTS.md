@@ -45,8 +45,8 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-directed post-M003 validation plan
 - Primary owning slice: future-validation-milestone
 - Supporting slices: M003-km5fty/S01-S10
-- Validation: Partially satisfied by M004 staged validation: the 10-document/small-corpus validation path produced evidence, exposed full-text/conversion/extraction blockers, and correctly prevented unsafe 20-document/week-scale escalation. Literal 20-document and one-week validation stages remain intentionally blocked until chunk/section repair, locator/reviewer packet work, and independent review justify scaling.
-- Notes: Re-scoped after review: R024 should not be marked fully validated as originally written because 20-document and one-week runs did not execute. The correct outcome was a safety gate: 10-document evidence showed scaling would be unsafe, so broader validation remains gated behind M021/M022-style chunk structure repair, reviewer packets, and positive import blockers.
+- Validation: Re-scoped boundary preserved by M022 S05 final gate: packet_count=6, import_allowed=false, semantic_ready_for_kg=false, production_import_attempted=false, ladybugdb_written=false, recommendation=human_semantic_review_or_bounded_repair_only. M022 advances the safety/review gate only; it does not validate 20-document or one-week staged KG graph quality.
+- Notes: M022 validation scope clarification: R024 is advanced by the no-import/no-readiness final gate and remains active for future staged real-article KG validation. It must not be counted as fully validated by M022, and unrelated staged-scaling deliverables remain outside M022 scope.
 
 ### R027 — Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
 - Class: quality-attribute
@@ -55,18 +55,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Poorly normalized conversion/chunk data will poison Claim/Entity/Relation extraction and make graph-quality results meaningless.
 - Source: user-feedback-after-S10-chunk-review
 - Primary owning slice: M004
-- Validation: A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes.
-- Notes: This requirement gates M004/S05 and later validation. Non-zero chunks are not sufficient evidence of graph readiness.
-
-### R028 — Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
-- Class: quality-attribute
-- Status: active
-- Description: Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
-- Why it matters: Passing tests can create false confidence when tests only verify plumbing, mocks, or counts. Scientific KG validation needs human-readable artifact quality checks to catch semantic failures.
-- Source: user-feedback-after-S10-quality-review
-- Primary owning slice: M004
-- Validation: S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes.
-- Notes: The review should look at naked artifacts such as Markdown, chunk samples, quality reports, graph exports, and test assertions. It should explicitly flag empty tests, over-mocked tests, count-only validation, and outputs that pass schema checks but fail semantic usefulness.
+- Validation: Partial bounded advancement in M022: S01-S05 produced stable source/locator/span IDs, source-hash coverage, route/review/repair diagnostics, reviewer packet artifacts, and final no-import guard with import_allowed=false and semantic_ready_for_kg=false. Full validation still requires a dedicated graph-readiness quality benchmark/acceptance pass before KG validation or scaling resumes.
+- Notes: M022 validation scope clarification: M022 advanced R027 by producing auditable locator evidence, a typed repair contract, bounded repair diagnostics, reviewer packets, and a final no-import gate. It did not validate positive graph readiness or semantic KG import readiness; R027 remains active and blocked on later human semantic review plus dedicated graph-readiness acceptance evidence.
 
 ### R029 — Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.
 - Class: quality-attribute
@@ -75,8 +65,8 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Scientific KG import quality depends on chunk semantics and provenance. If chunking mixes claims, loses table/figure structure, or lacks source traceability, downstream extraction and graph import will create false KG facts.
 - Source: user-directed post-M004 chunking deepening
 - Primary owning slice: M005-dlko4z
-- Validation: A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded.
-- Notes: This extends R027 from graph-readiness research into implementation. The import model must not persist raw text or embeddings in machine logs and must not promote annotations into KG facts without extraction validation.
+- Validation: Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation.
+- Notes: M022 validation scope clarification: M022 validates a review-only typed packet handoff and final no-import safety gate, not a positive import-ready KG package. R029 remains active/blocked for KG import until human semantic review accepts packets and a later gate proves import readiness. Unrelated corpus-scaling requirements are outside M022 scope.
 
 ### R030 — Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
 - Class: continuity
@@ -367,6 +357,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated narrowly as an end-to-end real-data pipeline debug/plumbing gate by M004-ubh2pt/S03 and M004 validation. S03 exercised converted full text through PageIndex, SemanticChunk, EvidencePath, explicitly labeled debug-baseline ExtractionPatch generation, SCI KG persistence plumbing for eligible papers, and retrieval diagnostics, while documenting conversion/extraction blockers and preventing 20-document scaling.
 - Notes: Validated only as a debug-before-scaling gate, not as proof of real semantic KG quality, production persistence readiness, broad retrieval quality, or corpus scaling. M004 explicitly kept broader KG readiness, semantic/vector retrieval, entity/relation extraction, and production LadybugDB persistence blocked.
 
+### R028 — Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
+- Class: quality-attribute
+- Status: validated
+- Description: Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.
+- Why it matters: Passing tests can create false confidence when tests only verify plumbing, mocks, or counts. Scientific KG validation needs human-readable artifact quality checks to catch semantic failures.
+- Source: user-feedback-after-S10-quality-review
+- Primary owning slice: M004
+- Validation: M022 S04/S05 produced and verified six bounded reviewer packets plus an independent assessment and final no-import gate. Evidence: reviewer packet verifier reported packets=6, pending_review=6, assessment_verdict=blocked_pending_semantic_acceptance, unsafe_counters_zero=True; final recommendation maps R028 as validated for bounded artifact review.
+- Notes: Validated for the bounded M022 reviewer surface. This does not authorize KG import, semantic acceptance, broad scaling, embeddings/vectors, or production LadybugDB writes.
+
 ### R034 — Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
 - Class: primary-user-loop
 - Status: validated
@@ -529,12 +529,12 @@ This file is the explicit capability and coverage contract for the project.
 | R021 | constraint | validated | M003-km5fty/S08 | S04,S07 | Validated by M003-km5fty/S08 closeout: `uv run python -c "from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput, DspyExtractionOutput"` exited 0; focused verification passed with `uv run pytest tests/test_dspy_extraction_boundary.py tests/test_evaluation_benchmark.py tests/test_scientific_extraction_contracts.py -q` => 23 passed; Ruff lint and format checks passed; `ty` passed; `pyrefly` reported 0 errors; CLI help smoke exited 0; `gitnexus detect-changes --repo daily-archive` reported no changes detected. S08 added a deterministic DSPy-compatible `forward()` boundary around existing `ExtractionPatch` callables, reusing S04 extraction contracts and S07 schema/groundedness metric gates while keeping optimizer/runtime behavior disabled and diagnostics text-safe. |
 | R022 | core-capability | active | M003-km5fty/S09 | S02,S03,S04,S08 | Pending S09 fixture tests or mocked-interpreter tests for bounded tools, typed draft patch output, trajectory capture, and deterministic validation. |
 | R023 | differentiator | active | M003-km5fty/S10 | S05,S06,S07,S09 | Pending S10 comparative benchmark with traversal path, tool usage, cost/latency, candidate set, and evidence recall metrics. |
-| R024 | quality-attribute | active | future-validation-milestone | M003-km5fty/S01-S10 | Partially satisfied by M004 staged validation: the 10-document/small-corpus validation path produced evidence, exposed full-text/conversion/extraction blockers, and correctly prevented unsafe 20-document/week-scale escalation. Literal 20-document and one-week validation stages remain intentionally blocked until chunk/section repair, locator/reviewer packet work, and independent review justify scaling. |
+| R024 | quality-attribute | active | future-validation-milestone | M003-km5fty/S01-S10 | Re-scoped boundary preserved by M022 S05 final gate: packet_count=6, import_allowed=false, semantic_ready_for_kg=false, production_import_attempted=false, ladybugdb_written=false, recommendation=human_semantic_review_or_bounded_repair_only. M022 advances the safety/review gate only; it does not validate 20-document or one-week staged KG graph quality. |
 | R025 | operability | validated | M004-ubh2pt/full-text-bridge | M004-ubh2pt/S01 | Validated by M004-ubh2pt/S02. S02 implemented and verified Loguru-based structured diagnostics via a narrow ValidationLogger/JSONL event stream, used it during the selected ten-paper full-text bridge, and reran the 10-document structural validation with per-paper outcomes and redacted failure details recorded. Evidence: S02-SUMMARY.md and S02-UAT.md explicitly prove R025. |
 | R026 | quality-attribute | validated | M004-ubh2pt/pipeline-debug | M004-ubh2pt/S01,S02 | Validated narrowly as an end-to-end real-data pipeline debug/plumbing gate by M004-ubh2pt/S03 and M004 validation. S03 exercised converted full text through PageIndex, SemanticChunk, EvidencePath, explicitly labeled debug-baseline ExtractionPatch generation, SCI KG persistence plumbing for eligible papers, and retrieval diagnostics, while documenting conversion/extraction blockers and preventing 20-document scaling. |
-| R027 | quality-attribute | active | M004 | none | A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes. |
-| R028 | quality-attribute | active | M004 | none | S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes. |
-| R029 | quality-attribute | active | M005-dlko4z | none | A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded. |
+| R027 | quality-attribute | active | M004 | none | Partial bounded advancement in M022: S01-S05 produced stable source/locator/span IDs, source-hash coverage, route/review/repair diagnostics, reviewer packet artifacts, and final no-import guard with import_allowed=false and semantic_ready_for_kg=false. Full validation still requires a dedicated graph-readiness quality benchmark/acceptance pass before KG validation or scaling resumes. |
+| R028 | quality-attribute | validated | M004 | none | M022 S04/S05 produced and verified six bounded reviewer packets plus an independent assessment and final no-import gate. Evidence: reviewer packet verifier reported packets=6, pending_review=6, assessment_verdict=blocked_pending_semantic_acceptance, unsafe_counters_zero=True; final recommendation maps R028 as validated for bounded artifact review. |
+| R029 | quality-attribute | active | M005-dlko4z | none | Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation. |
 | R030 | continuity | active | M005-dlko4z/S05 | none | A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs. |
 | R031 | quality-attribute | active | M006-638rza | M005-dlko4z | A 30-paper dry-run report exists with redacted aggregate/per-paper diagnostics, deviation analysis against M005 10-paper evidence, new-pattern taxonomy, and explicit no-go/go recommendations for remediation. |
 | R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
@@ -558,7 +558,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 14
-- Validated: 35 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
+- Active requirements: 13
+- Mapped to slices: 13
+- Validated: 36 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
 - Unmapped active requirements: 0
