@@ -45,28 +45,8 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-directed post-M003 validation plan
 - Primary owning slice: future-validation-milestone
 - Supporting slices: M003-km5fty/S01-S10
-- Validation: A validation report exists for the 10-document batch and 20-document batch before any one-week full run; each report summarizes graph node/edge counts, claim/entity/relation quality, evidence-path coverage, retrieval behavior, diagnostics/failures, and go/no-go recommendations.
-
-### R025 — Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
-- Class: operability
-- Status: active
-- Description: Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
-- Why it matters: The first real-data validation stopped at missing full-text inputs. Before adding the full-text bridge, future agents need reliable logs to understand per-paper acquisition/conversion decisions and failures.
-- Source: user-directed M004 follow-up after S01 validation
-- Primary owning slice: M004-ubh2pt/full-text-bridge
-- Supporting slices: M004-ubh2pt/S01
-- Validation: A rerun over the same 10-paper corpus produces machine-readable Loguru logs/diagnostics recording paper id, phase, decision, source path, conversion outcome, warnings/errors, and redacted failure details; missing full text or conversion failures are visible without rerunning with extra debug flags.
-- Notes: User clarified to use `loguru` instead of unresolved `rulog`. Prefer project-managed dependency (`uv add loguru`) rather than an ad hoc environment-only pip install.
-
-### R026 — Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
-- Class: quality-attribute
-- Status: active
-- Description: Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
-- Why it matters: The current validation has proven full-text/chunk/evidence readiness but not claim/entity/relation extraction, graph persistence, or retrieval quality. Scaling before debugging would produce ambiguous graph quality results.
-- Source: user-directed M004 pipeline debugging gate
-- Primary owning slice: M004-ubh2pt/pipeline-debug
-- Supporting slices: M004-ubh2pt/S01,S02
-- Validation: A debug slice produces evidence for each pipeline stage, identifies/fixes zero-chunk conversion behavior or documents exclusions, creates real or explicitly baseline ExtractionPatch outputs, persists SCI KG records for eligible papers, and samples retrieval diagnostics before any 20-document run.
+- Validation: Partially satisfied by M004 staged validation: the 10-document/small-corpus validation path produced evidence, exposed full-text/conversion/extraction blockers, and correctly prevented unsafe 20-document/week-scale escalation. Literal 20-document and one-week validation stages remain intentionally blocked until chunk/section repair, locator/reviewer packet work, and independent review justify scaling.
+- Notes: Re-scoped after review: R024 should not be marked fully validated as originally written because 20-document and one-week runs did not execute. The correct outcome was a safety gate: 10-document evidence showed scaling would be unsafe, so broader validation remains gated behind M021/M022-style chunk structure repair, reviewer packets, and positive import blockers.
 
 ### R027 — Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
 - Class: quality-attribute
@@ -365,6 +345,28 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M003-km5fty/S08 closeout: `uv run python -c "from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput, DspyExtractionOutput"` exited 0; focused verification passed with `uv run pytest tests/test_dspy_extraction_boundary.py tests/test_evaluation_benchmark.py tests/test_scientific_extraction_contracts.py -q` => 23 passed; Ruff lint and format checks passed; `ty` passed; `pyrefly` reported 0 errors; CLI help smoke exited 0; `gitnexus detect-changes --repo daily-archive` reported no changes detected. S08 added a deterministic DSPy-compatible `forward()` boundary around existing `ExtractionPatch` callables, reusing S04 extraction contracts and S07 schema/groundedness metric gates while keeping optimizer/runtime behavior disabled and diagnostics text-safe.
 - Notes: Validated by M003-km5fty/S08. The boundary is dependency-light and does not import DSPy on the normal runtime path, does not modify storage schema, rejects requested optimizer configuration, and exposes ID/count/status diagnostics plus explicit non-optimizer metadata for downstream S09 read-only RLM workflow use.
 
+### R025 — Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
+- Class: operability
+- Status: validated
+- Description: Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.
+- Why it matters: The first real-data validation stopped at missing full-text inputs. Before adding the full-text bridge, future agents need reliable logs to understand per-paper acquisition/conversion decisions and failures.
+- Source: user-directed M004 follow-up after S01 validation
+- Primary owning slice: M004-ubh2pt/full-text-bridge
+- Supporting slices: M004-ubh2pt/S01
+- Validation: Validated by M004-ubh2pt/S02. S02 implemented and verified Loguru-based structured diagnostics via a narrow ValidationLogger/JSONL event stream, used it during the selected ten-paper full-text bridge, and reran the 10-document structural validation with per-paper outcomes and redacted failure details recorded. Evidence: S02-SUMMARY.md and S02-UAT.md explicitly prove R025.
+- Notes: Validated as the observability bridge for rerunning the selected 10-document validation. This does not imply broad graph quality or semantic KG readiness; it proves structured Loguru diagnostics existed and were used for the full-text bridge/rerun.
+
+### R026 — Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
+- Class: quality-attribute
+- Status: validated
+- Description: Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.
+- Why it matters: The current validation has proven full-text/chunk/evidence readiness but not claim/entity/relation extraction, graph persistence, or retrieval quality. Scaling before debugging would produce ambiguous graph quality results.
+- Source: user-directed M004 pipeline debugging gate
+- Primary owning slice: M004-ubh2pt/pipeline-debug
+- Supporting slices: M004-ubh2pt/S01,S02
+- Validation: Validated narrowly as an end-to-end real-data pipeline debug/plumbing gate by M004-ubh2pt/S03 and M004 validation. S03 exercised converted full text through PageIndex, SemanticChunk, EvidencePath, explicitly labeled debug-baseline ExtractionPatch generation, SCI KG persistence plumbing for eligible papers, and retrieval diagnostics, while documenting conversion/extraction blockers and preventing 20-document scaling.
+- Notes: Validated only as a debug-before-scaling gate, not as proof of real semantic KG quality, production persistence readiness, broad retrieval quality, or corpus scaling. M004 explicitly kept broader KG readiness, semantic/vector retrieval, entity/relation extraction, and production LadybugDB persistence blocked.
+
 ### R034 — Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
 - Class: primary-user-loop
 - Status: validated
@@ -527,9 +529,9 @@ This file is the explicit capability and coverage contract for the project.
 | R021 | constraint | validated | M003-km5fty/S08 | S04,S07 | Validated by M003-km5fty/S08 closeout: `uv run python -c "from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput, DspyExtractionOutput"` exited 0; focused verification passed with `uv run pytest tests/test_dspy_extraction_boundary.py tests/test_evaluation_benchmark.py tests/test_scientific_extraction_contracts.py -q` => 23 passed; Ruff lint and format checks passed; `ty` passed; `pyrefly` reported 0 errors; CLI help smoke exited 0; `gitnexus detect-changes --repo daily-archive` reported no changes detected. S08 added a deterministic DSPy-compatible `forward()` boundary around existing `ExtractionPatch` callables, reusing S04 extraction contracts and S07 schema/groundedness metric gates while keeping optimizer/runtime behavior disabled and diagnostics text-safe. |
 | R022 | core-capability | active | M003-km5fty/S09 | S02,S03,S04,S08 | Pending S09 fixture tests or mocked-interpreter tests for bounded tools, typed draft patch output, trajectory capture, and deterministic validation. |
 | R023 | differentiator | active | M003-km5fty/S10 | S05,S06,S07,S09 | Pending S10 comparative benchmark with traversal path, tool usage, cost/latency, candidate set, and evidence recall metrics. |
-| R024 | quality-attribute | active | future-validation-milestone | M003-km5fty/S01-S10 | A validation report exists for the 10-document batch and 20-document batch before any one-week full run; each report summarizes graph node/edge counts, claim/entity/relation quality, evidence-path coverage, retrieval behavior, diagnostics/failures, and go/no-go recommendations. |
-| R025 | operability | active | M004-ubh2pt/full-text-bridge | M004-ubh2pt/S01 | A rerun over the same 10-paper corpus produces machine-readable Loguru logs/diagnostics recording paper id, phase, decision, source path, conversion outcome, warnings/errors, and redacted failure details; missing full text or conversion failures are visible without rerunning with extra debug flags. |
-| R026 | quality-attribute | active | M004-ubh2pt/pipeline-debug | M004-ubh2pt/S01,S02 | A debug slice produces evidence for each pipeline stage, identifies/fixes zero-chunk conversion behavior or documents exclusions, creates real or explicitly baseline ExtractionPatch outputs, persists SCI KG records for eligible papers, and samples retrieval diagnostics before any 20-document run. |
+| R024 | quality-attribute | active | future-validation-milestone | M003-km5fty/S01-S10 | Partially satisfied by M004 staged validation: the 10-document/small-corpus validation path produced evidence, exposed full-text/conversion/extraction blockers, and correctly prevented unsafe 20-document/week-scale escalation. Literal 20-document and one-week validation stages remain intentionally blocked until chunk/section repair, locator/reviewer packet work, and independent review justify scaling. |
+| R025 | operability | validated | M004-ubh2pt/full-text-bridge | M004-ubh2pt/S01 | Validated by M004-ubh2pt/S02. S02 implemented and verified Loguru-based structured diagnostics via a narrow ValidationLogger/JSONL event stream, used it during the selected ten-paper full-text bridge, and reran the 10-document structural validation with per-paper outcomes and redacted failure details recorded. Evidence: S02-SUMMARY.md and S02-UAT.md explicitly prove R025. |
+| R026 | quality-attribute | validated | M004-ubh2pt/pipeline-debug | M004-ubh2pt/S01,S02 | Validated narrowly as an end-to-end real-data pipeline debug/plumbing gate by M004-ubh2pt/S03 and M004 validation. S03 exercised converted full text through PageIndex, SemanticChunk, EvidencePath, explicitly labeled debug-baseline ExtractionPatch generation, SCI KG persistence plumbing for eligible papers, and retrieval diagnostics, while documenting conversion/extraction blockers and preventing 20-document scaling. |
 | R027 | quality-attribute | active | M004 | none | A dedicated research/benchmark slice defines metrics and acceptance thresholds, then evaluates a small representative corpus before KG validation resumes. |
 | R028 | quality-attribute | active | M004 | none | S11 defines a reusable independent-review rubric and applies it to the conversion/chunking benchmark artifacts before S05 resumes. |
 | R029 | quality-attribute | active | M005-dlko4z | none | A milestone produces a versioned import-ready chunk package contract, runs it over representative real papers, benchmarks current vs improved chunking, passes independent artifact review, and blocks KG import for chunks that are retrieval-only, repair-required, rejected, or route-excluded. |
@@ -556,7 +558,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
-- Validated: 33 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
+- Active requirements: 14
+- Mapped to slices: 14
+- Validated: 35 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
 - Unmapped active requirements: 0
