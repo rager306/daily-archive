@@ -24,6 +24,7 @@ from arxiv_archive.chunk_repair_contract import (
     expected_audit_from_contract,
     scan_forbidden_payload_keys,
     validate_chunk_repair_contract,
+    validate_chunk_repair_contract_markdown,
 )
 
 DEFAULT_MAX_TARGET_COUNT = 6
@@ -124,6 +125,105 @@ def summarize_bounded_chunk_repair_contract(payload: dict[str, Any]) -> dict[str
             "production_import_attempted": diagnostics.get("production_import_attempted"),
         },
     }
+
+
+def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
+    """Render a reviewer-facing S03 bounded repair prototype summary.
+
+    The Markdown contains only stable IDs, counts, diagnostic codes, and boolean
+    safety assertions. It intentionally avoids code fences and forbidden payload
+    marker strings enforced by the S02 Markdown validator.
+    """
+    validation = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+    if not validation.passed:
+        codes = ", ".join(sorted(validation.refusal_counts))
+        raise BoundedChunkRepairError(code=f"contract_validation_failed:{codes}", path="/", object_type="contract")
+
+    summary = summarize_bounded_chunk_repair_contract(payload)
+    targets = _list_of_dicts(payload.get("repair_targets"))
+    diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    source_audit = payload.get("source_audit") if isinstance(payload.get("source_audit"), dict) else {}
+    stable_counts = payload.get("stable_id_counts") if isinstance(payload.get("stable_id_counts"), dict) else {}
+    lines = [
+        "# S03 Bounded Repair Prototype",
+        "",
+        "This artifact is review-only evidence for selected bounded repair targets. It contains stable IDs, counts, classifications, and redacted diagnostic codes only. It does not authorize KG import, fact promotion, semantic readiness, production writes, source payload copying, model payloads, or secret material.",
+        "",
+        "## Prototype Summary",
+        "",
+        f"- Contract schema: {payload['schema_version']}",
+        f"- Selected target count: {summary['target_count']}",
+        f"- Source count: {stable_counts.get('source_count', 0)}",
+        f"- Locator count: {stable_counts.get('locator_count', 0)}",
+        f"- Span count: {stable_counts.get('span_count', 0)}",
+        f"- Source audit schema: {source_audit.get('schema_version', 'not-recorded')}",
+        f"- Source audit path: {source_audit.get('audit_path', 'not-recorded')}",
+        "- Source audit redacted: true",
+        "",
+        "## Repair State Counts",
+        "",
+        "| Repair state | Count |",
+        "|---|---:|",
+    ]
+    for state, count in summary["repair_state_counts"].items():
+        lines.append(f"| {state} | {count} |")
+    lines.extend(["", "## Route Quality Counts", "", "| Route quality | Count |", "|---|---:|"])
+    for state, count in summary["route_quality_state_counts"].items():
+        lines.append(f"| {state} | {count} |")
+    lines.extend([
+        "",
+        "## Safety Boundary Counts",
+        "",
+        f"- Import eligibility count: {diagnostics.get('import_eligible_count')}",
+        f"- Fact promotion count: {diagnostics.get('promoted_to_fact_count')}",
+        f"- Production write count: {diagnostics.get('production_write_count')}",
+        f"- Semantic readiness count: {diagnostics.get('semantic_ready_count')}",
+        f"- Source payload included: {str(diagnostics.get('raw_text_included')).lower()}",
+        f"- Chunk payload included: {str(diagnostics.get('chunk_text_included')).lower()}",
+        f"- Model embedding payloads included: {str(diagnostics.get('embeddings_included')).lower()}",
+        f"- Model vector payloads included: {str(diagnostics.get('vectors_included')).lower()}",
+        f"- Secret values included: {str(diagnostics.get('secrets_included')).lower()}",
+        f"- LadybugDB write attempted: {str(diagnostics.get('ladybugdb_written')).lower()}",
+        f"- Production import attempted: {str(diagnostics.get('production_import_attempted')).lower()}",
+        "",
+        "## Target Classifications",
+        "",
+    ])
+    for target in targets:
+        before = target.get("before_diagnostics") if isinstance(target.get("before_diagnostics"), dict) else {}
+        after = target.get("after_diagnostics") if isinstance(target.get("after_diagnostics"), dict) else {}
+        before_codes = ", ".join(str(code) for code in before.get("codes", [])) or "none"
+        after_codes = ", ".join(str(code) for code in after.get("codes", [])) or "none"
+        span_ids = ", ".join(str(span.get("span_id")) for span in _list_of_dicts(target.get("source_spans")))
+        source_ids = ", ".join(str(source_id) for source_id in target.get("source_artifact_refs", []))
+        lines.extend([
+            f"### {target['target_id']}",
+            "",
+            f"- Locator ID: {target['locator_id']}",
+            f"- Source IDs: {source_ids}",
+            f"- Span IDs: {span_ids}",
+            f"- Repair state: {target.get('repair_state')}",
+            f"- Route quality: {target.get('route_quality_state')}",
+            f"- Review status: {target.get('review_status')}",
+            f"- Repair kind: {target.get('repair_kind')}",
+            f"- Before diagnostic codes: {before_codes}",
+            f"- After diagnostic codes: {after_codes}",
+            f"- After safe to import: {str(after.get('safe_to_import')).lower()}",
+            f"- Section lineage status: {target.get('section_lineage', {}).get('status', 'unresolved') if isinstance(target.get('section_lineage'), dict) else 'unresolved'}",
+            "- Classification: explicit needs-review or non-repairable until a human reviewer accepts evidence outside this prototype",
+            "",
+        ])
+    markdown = "\n".join(lines)
+    markdown_diagnostics = validate_chunk_repair_contract_markdown(markdown)
+    if markdown_diagnostics:
+        first = markdown_diagnostics[0]
+        raise BoundedChunkRepairError(
+            code=f"markdown_validation_failed:{first.code}",
+            path=first.path,
+            object_id=first.object_id,
+            object_type=first.object_type,
+        )
+    return markdown
 
 
 def _validate_builder_inputs(contract: dict[str, Any], locator_batch: dict[str, Any], *, max_target_count: int) -> None:
@@ -390,5 +490,6 @@ def _span_ids_from_contract(contract: dict[str, Any]) -> set[str]:
 __all__ = [
     "BoundedChunkRepairError",
     "build_bounded_chunk_repair_contract",
+    "render_bounded_chunk_repair_markdown",
     "summarize_bounded_chunk_repair_contract",
 ]

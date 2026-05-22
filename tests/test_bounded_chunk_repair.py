@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -9,9 +11,11 @@ import pytest
 from arxiv_archive.bounded_chunk_repair import (
     BoundedChunkRepairError,
     build_bounded_chunk_repair_contract,
+    render_bounded_chunk_repair_markdown,
     summarize_bounded_chunk_repair_contract,
 )
 from arxiv_archive.chunk_repair_contract import (
+    MARKDOWN_FORBIDDEN_PATTERNS,
     expected_audit_from_contract,
     scan_forbidden_payload_keys,
     validate_chunk_repair_contract,
@@ -19,6 +23,8 @@ from arxiv_archive.chunk_repair_contract import (
 
 CONTRACT_FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
 LOCATOR_FIXTURE = Path("tests/fixtures/bounded_locator_batch.json")
+RENDER_SCRIPT = Path("scripts/render_bounded_repair_prototype.py")
+VERIFY_SCRIPT = Path("scripts/verify_bounded_repair_prototype.py")
 FORBIDDEN_KEYS = {
     "raw_text",
     "chunk_text",
@@ -29,6 +35,16 @@ FORBIDDEN_KEYS = {
     "token",
     "api_key",
 }
+
+
+def _load_script(path: Path, module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def _locator_batch() -> dict[str, object]:
@@ -227,3 +243,114 @@ def test_input_contract_is_not_mutated() -> None:
     build_bounded_chunk_repair_contract(contract, _locator_batch())
 
     assert contract == original
+
+
+def test_markdown_renderer_reports_counts_classifications_and_redacted_safety() -> None:
+    markdown = render_bounded_chunk_repair_markdown(_build())
+
+    assert "# S03 Bounded Repair Prototype" in markdown
+    assert "Selected target count: 3" in markdown
+    assert "Repair State Counts" in markdown
+    assert "Route Quality Counts" in markdown
+    assert "Before diagnostic codes:" in markdown
+    assert "After diagnostic codes:" in markdown
+    assert "Classification: explicit needs-review or non-repairable" in markdown
+    assert "Source payload included: false" in markdown
+    assert all(pattern not in markdown for pattern in MARKDOWN_FORBIDDEN_PATTERNS)
+
+
+def test_render_cli_writes_only_after_json_and_markdown_validation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_test")
+    contract_path = tmp_path / "contract.json"
+    contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
+    json_output = tmp_path / "prototype.json"
+    markdown_output = tmp_path / "prototype.md"
+
+    summary = renderer.render_prototype_files(
+        contract_path,
+        LOCATOR_FIXTURE,
+        json_output,
+        markdown_output,
+        max_target_count=6,
+    )
+
+    assert summary["target_count"] == 3
+    assert json_output.exists()
+    assert markdown_output.exists()
+
+    bad_json_output = tmp_path / "bad.json"
+    bad_markdown_output = tmp_path / "bad.md"
+    monkeypatch.setattr(renderer, "render_bounded_chunk_repair_markdown", lambda payload: "```unsafe```")
+
+    with pytest.raises(renderer.BoundedRepairPrototypeRenderError):
+        renderer.render_prototype_files(
+            contract_path,
+            LOCATOR_FIXTURE,
+            bad_json_output,
+            bad_markdown_output,
+            max_target_count=6,
+        )
+
+    assert not bad_json_output.exists()
+    assert not bad_markdown_output.exists()
+
+
+def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved_targets(tmp_path: Path) -> None:
+    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_verify_test")
+    verifier = _load_script(VERIFY_SCRIPT, "verify_bounded_repair_prototype_for_test")
+    contract_path = tmp_path / "contract.json"
+    contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
+    json_output = tmp_path / "prototype.json"
+    markdown_output = tmp_path / "prototype.md"
+    renderer.render_prototype_files(
+        contract_path,
+        LOCATOR_FIXTURE,
+        json_output,
+        markdown_output,
+        max_target_count=6,
+    )
+
+    summary = verifier.verify_files(json_output, markdown_output, contract_path)
+
+    assert summary["passed"] is True
+    assert summary["target_count"] == 3
+    assert summary["unsafe_counters_zero"] is True
+
+    unsafe_payload = json.loads(json_output.read_text(encoding="utf-8"))
+    unsafe_payload["repair_targets"][0]["safety_boundaries"]["import_eligible"] = True
+    unsafe_payload["diagnostics"]["import_eligible_count"] = 1
+    unsafe_payload["repair_targets"][0]["locator_id"] = "not-in-s02"
+    unsafe_payload_path = tmp_path / "unsafe.json"
+    unsafe_payload_path.write_text(json.dumps(unsafe_payload), encoding="utf-8")
+    unsafe_markdown_path = tmp_path / "unsafe.md"
+    unsafe_markdown_path.write_text(markdown_output.read_text(encoding="utf-8") + "\n```\n", encoding="utf-8")
+
+    unsafe_summary = verifier.verify_files(unsafe_payload_path, unsafe_markdown_path, contract_path)
+    codes = {finding["code"] for finding in unsafe_summary["findings"]}
+
+    assert unsafe_summary["passed"] is False
+    assert "unsafe_target_safety_flag" in codes
+    assert "locator_id_not_in_s02_stable_ids" in codes
+    assert "markdown_validation_failed:markdown_forbidden_pattern" in codes
+
+
+def test_render_cli_rejects_malformed_locator_batch_before_write(tmp_path: Path) -> None:
+    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_malformed_test")
+    contract_path = tmp_path / "contract.json"
+    contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
+    malformed = tmp_path / "malformed.json"
+    malformed.write_text("{not-json", encoding="utf-8")
+    json_output = tmp_path / "prototype.json"
+    markdown_output = tmp_path / "prototype.md"
+
+    with pytest.raises(renderer.BoundedRepairPrototypeRenderError):
+        renderer.render_prototype_files(
+            contract_path,
+            malformed,
+            json_output,
+            markdown_output,
+            max_target_count=6,
+        )
+
+    assert not json_output.exists()
+    assert not markdown_output.exists()
