@@ -70,6 +70,18 @@ def _reasons(payload: dict[str, object]) -> set[str]:
     return set(validate_chunk_repair_contract(payload).refusal_counts)
 
 
+def _single_target_batch_contract() -> dict[str, object]:
+    contract = build_chunk_repair_contract_from_audit(_audit_fixture(), source_audit_path="tests/fixtures/audit.json")
+    target = deepcopy(_fixture()["repair_targets"])[0]
+    contract["repair_targets"] = [target]
+    contract["diagnostics"] = {
+        **contract["diagnostics"],
+        "target_count": 1,
+        "pending_review_count": 1,
+    }
+    return contract
+
+
 def test_synthetic_fixture_passes_and_preserves_false_safety_flags() -> None:
     result = validate_chunk_repair_contract(_fixture())
     serialized = validation_to_dict(result)
@@ -135,6 +147,35 @@ def test_expected_audit_rejects_unresolved_stable_references() -> None:
 
     assert "unresolved_locator_id" in result.refusal_counts
     assert "unresolved_source_id" in result.refusal_counts
+
+
+def test_batch_contract_accepts_target_paper_from_expected_audit() -> None:
+    payload = _single_target_batch_contract()
+
+    result = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+
+    assert result.passed is True
+    assert "paper_id_mismatch" not in result.refusal_counts
+    assert "unresolved_paper_id" not in result.refusal_counts
+
+
+def test_batch_contract_rejects_unknown_target_paper_id() -> None:
+    payload = _single_target_batch_contract()
+    payload["repair_targets"][0]["paper_id"] = "unknown-paper"
+
+    result = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+
+    assert result.passed is False
+    assert "unresolved_paper_id" in result.refusal_counts
+
+
+def test_missing_expected_audit_still_enforces_package_paper_id() -> None:
+    payload = _single_target_batch_contract()
+
+    result = validate_chunk_repair_contract(payload)
+
+    assert result.passed is False
+    assert "paper_id_mismatch" in result.refusal_counts
 
 
 def test_forbidden_payload_key_injection_reports_path_not_value() -> None:

@@ -584,10 +584,12 @@ def _validate_target(
             diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"{path}/{field}", object_id=target_id, object_type="repair_target", route=route))
     if target_id is None:
         diagnostics.append(ChunkRepairDiagnostic(code="missing_target_id", path=f"{path}/target_id", object_type="repair_target", route=route))
-    if _string_or_none(target.get("paper_id")) != package_paper_id:
-        diagnostics.append(ChunkRepairDiagnostic(code="paper_id_mismatch", path=f"{path}/paper_id", object_id=target_id, object_type="repair_target", route=route))
-    if expected_paper_ids is not None and _string_or_none(target.get("paper_id")) not in expected_paper_ids:
+    target_paper_id = _string_or_none(target.get("paper_id"))
+    paper_id_known = expected_paper_ids is not None and target_paper_id in expected_paper_ids
+    if expected_paper_ids is not None and not paper_id_known:
         diagnostics.append(ChunkRepairDiagnostic(code="unresolved_paper_id", path=f"{path}/paper_id", object_id=target_id, object_type="repair_target", route=route))
+    if not paper_id_known and target_paper_id != package_paper_id:
+        diagnostics.append(ChunkRepairDiagnostic(code="paper_id_mismatch", path=f"{path}/paper_id", object_id=target_id, object_type="repair_target", route=route))
     locator_id = _string_or_none(target.get("locator_id"))
     if locator_id is None:
         diagnostics.append(ChunkRepairDiagnostic(code="missing_locator_id", path=f"{path}/locator_id", object_id=target_id, object_type="repair_target", route=route))
