@@ -513,10 +513,10 @@ def main(argv: list[str] | None = None) -> int:
             strict=not args.non_strict,
         )
     except (FileNotFoundError, LocatorEvidenceAuditError) as exc:
-        print(f"locator evidence audit failed: {exc}", file=sys.stderr)
+        sys.stderr.write(f"locator evidence audit failed: {exc}\n")
         return 2
     if args.output is None and args.json_output is None:
-        print(json.dumps(audit, indent=2, sort_keys=True))
+        sys.stdout.write(f"{json.dumps(audit, indent=2, sort_keys=True)}\n")
     return 0
 
 
