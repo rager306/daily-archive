@@ -109,6 +109,16 @@ FORBIDDEN_PAYLOAD_KEYS = frozenset(
     }
 )
 
+FORBIDDEN_SOURCE_OF_TRUTH_KEYS = frozenset(
+    {
+        "source_of_truth",
+        "source_of_truth_claim",
+        "truth_source",
+        "canonical_source",
+        "minimax_source_of_truth",
+    }
+)
+
 
 def default_safety_flags() -> dict[str, bool]:
     """Return required false safety flags for pre-KG artifact records."""
@@ -377,6 +387,7 @@ def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[st
         diagnostics.append(_diagnostic("invalid_schema_version", "/schema_version"))
     diagnostics.extend(_required(manifest, ("schema_version", "run_id", "paper_id", "artifacts", "summary", "diagnostics", "safety_flags"), ""))
     diagnostics.extend(_validate_forbidden_keys(manifest))
+    diagnostics.extend(_validate_source_of_truth_markers(manifest))
     diagnostics.extend(_validate_safety_flags(manifest.get("safety_flags"), "/safety_flags"))
     if manifest.get("production_import_attempted") is not False:
         diagnostics.append(_diagnostic("production_import_attempted", "/production_import_attempted"))
@@ -388,9 +399,13 @@ def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[st
         diagnostics.append(_diagnostic("import_eligible_count_nonzero", "/import_eligible_count"))
 
     artifacts = _list_of_dicts(manifest.get("artifacts"))
+    manifest_sources = _list_of_dicts(manifest.get("source_refs"))
+    known_source_ids = {source.get("source_id") for source in manifest_sources if isinstance(source.get("source_id"), str)}
+    diagnostics.extend(_validate_duplicate_ids(artifacts, "artifact_id", "/artifacts", "duplicate_artifact_id"))
+    diagnostics.extend(_validate_duplicate_ids(manifest_sources, "source_id", "/source_refs", "duplicate_source_id"))
     for index, artifact in enumerate(artifacts):
-        diagnostics.extend(_validate_artifact(artifact, f"/artifacts[{index}]", manifest.get("paper_id")))
-    for index, source in enumerate(_list_of_dicts(manifest.get("source_refs"))):
+        diagnostics.extend(_validate_artifact(artifact, f"/artifacts[{index}]", manifest.get("paper_id"), known_source_ids))
+    for index, source in enumerate(manifest_sources):
         diagnostics.extend(_validate_source_ref(source, f"/source_refs[{index}]", manifest.get("paper_id")))
     for index, diagnostic_record in enumerate(_list_of_dicts(manifest.get("diagnostics"))):
         diagnostics.extend(_validate_diagnostic_record(diagnostic_record, f"/diagnostics[{index}]"))
@@ -403,10 +418,13 @@ def to_json(value: dict[str, Any]) -> str:
     return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
-def _validate_artifact(artifact: dict[str, Any], path: str, paper_id: Any) -> list[ArticleArtifactDiagnostic]:
+def _validate_artifact(
+    artifact: dict[str, Any], path: str, paper_id: Any, known_source_ids: set[str]
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     artifact_id = _string_or_none(artifact.get("artifact_id"))
     diagnostics.extend(_required(artifact, ("artifact_id", "paper_id", "artifact_type", "review_state", "safety_flags", "allowed_uses", "excluded_uses"), path))
+    diagnostics.extend(_validate_non_empty_ids(artifact, ("artifact_id", "paper_id"), path, artifact_id))
     if artifact.get("paper_id") != paper_id:
         diagnostics.append(_diagnostic("paper_id_mismatch", f"{path}/paper_id", artifact_id))
     if artifact.get("artifact_type") not in ALLOWED_ARTIFACT_TYPES:
@@ -422,19 +440,24 @@ def _validate_artifact(artifact: dict[str, Any], path: str, paper_id: Any) -> li
     for index, source in enumerate(_list_of_dicts(artifact.get("source_refs"))):
         diagnostics.extend(_validate_source_ref(source, f"{path}/source_refs[{index}]", paper_id))
     for index, span in enumerate(_list_of_dicts(artifact.get("source_spans"))):
-        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", artifact_id))
+        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", artifact_id, known_source_ids))
     lineage = artifact.get("section_lineage")
     if isinstance(lineage, dict) and isinstance(lineage.get("source_span"), dict):
-        diagnostics.extend(_validate_span(lineage["source_span"], f"{path}/section_lineage/source_span", artifact_id))
+        diagnostics.extend(_validate_span(lineage["source_span"], f"{path}/section_lineage/source_span", artifact_id, known_source_ids))
     for index, link in enumerate(_list_of_dicts(artifact.get("candidate_links"))):
-        diagnostics.extend(_validate_candidate_link(link, f"{path}/candidate_links[{index}]", artifact_id))
+        diagnostics.extend(_validate_candidate_link(link, f"{path}/candidate_links[{index}]", artifact_id, known_source_ids))
+    diagnostics.extend(_validate_duplicate_ids(_list_of_dicts(artifact.get("candidate_links")), "link_id", f"{path}/candidate_links", "duplicate_candidate_link_id"))
+    diagnostics.extend(_validate_duplicate_ids(_list_of_dicts(artifact.get("source_spans")), "span_id", f"{path}/source_spans", "duplicate_source_span_id"))
     return diagnostics
 
 
-def _validate_candidate_link(link: dict[str, Any], path: str, artifact_id: str | None) -> list[ArticleArtifactDiagnostic]:
+def _validate_candidate_link(
+    link: dict[str, Any], path: str, artifact_id: str | None, known_source_ids: set[str]
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     link_id = _string_or_none(link.get("link_id"))
     diagnostics.extend(_required(link, ("link_id", "source_artifact_id", "target_ref", "link_type", "review_state", "allowed_uses", "excluded_uses"), path))
+    diagnostics.extend(_validate_non_empty_ids(link, ("link_id", "source_artifact_id", "target_ref"), path, link_id))
     if link.get("source_artifact_id") != artifact_id:
         diagnostics.append(_diagnostic("candidate_link_source_mismatch", f"{path}/source_artifact_id", link_id))
     if link.get("link_type") not in ALLOWED_CANDIDATE_LINK_TYPES:
@@ -447,13 +470,14 @@ def _validate_candidate_link(link: dict[str, Any], path: str, artifact_id: str |
         diagnostics.append(_diagnostic("candidate_link_import_eligible", f"{path}/import_eligible", link_id))
     diagnostics.extend(_validate_uses(link, path, link_id))
     for index, span in enumerate(_list_of_dicts(link.get("source_spans"))):
-        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", link_id))
+        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", link_id, known_source_ids))
     return diagnostics
 
 
 def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> list[ArticleArtifactDiagnostic]:
     diagnostics = _required(source, ("source_id", "paper_id", "source_role", "raw_text_embedded", "raw_binary_embedded"), path)
     source_id = _string_or_none(source.get("source_id"))
+    diagnostics.extend(_validate_non_empty_ids(source, ("source_id", "paper_id", "source_role"), path, source_id))
     if source.get("paper_id") != paper_id:
         diagnostics.append(_diagnostic("source_ref_paper_id_mismatch", f"{path}/paper_id", source_id))
     if source.get("raw_text_embedded") is not False:
@@ -466,8 +490,13 @@ def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> li
     return diagnostics
 
 
-def _validate_span(span: dict[str, Any], path: str, object_id: str | None) -> list[ArticleArtifactDiagnostic]:
+def _validate_span(
+    span: dict[str, Any], path: str, object_id: str | None, known_source_ids: set[str]
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics = _required(span, ("span_id", "source_id", "coordinate_space", "raw_text_embedded"), path)
+    diagnostics.extend(_validate_non_empty_ids(span, ("span_id", "source_id"), path, object_id))
+    if isinstance(span.get("source_id"), str) and span.get("source_id") not in known_source_ids:
+        diagnostics.append(_diagnostic("unknown_source_id", f"{path}/source_id", object_id))
     if span.get("coordinate_space") not in ALLOWED_COORDINATE_SPACES:
         diagnostics.append(_diagnostic("invalid_coordinate_space", f"{path}/coordinate_space", object_id))
     if span.get("raw_text_embedded") is not False:
@@ -539,6 +568,49 @@ def _validate_forbidden_keys(value: Any, path: str = "") -> list[ArticleArtifact
     elif isinstance(value, list):
         for index, child in enumerate(value):
             diagnostics.extend(_validate_forbidden_keys(child, f"{path}[{index}]"))
+    return diagnostics
+
+
+def _validate_non_empty_ids(
+    value: dict[str, Any], fields: tuple[str, ...], path: str, object_id: str | None
+) -> list[ArticleArtifactDiagnostic]:
+    diagnostics: list[ArticleArtifactDiagnostic] = []
+    for field_name in fields:
+        if field_name in value and isinstance(value.get(field_name), str) and not value[field_name].strip():
+            diagnostics.append(_diagnostic(f"empty_{field_name}", f"{path}/{field_name}", object_id))
+    return diagnostics
+
+
+def _validate_duplicate_ids(
+    values: list[dict[str, Any]], field_name: str, path: str, code: str
+) -> list[ArticleArtifactDiagnostic]:
+    diagnostics: list[ArticleArtifactDiagnostic] = []
+    seen: set[str] = set()
+    for index, value in enumerate(values):
+        identifier = value.get(field_name)
+        if not isinstance(identifier, str) or not identifier:
+            continue
+        if identifier in seen:
+            diagnostics.append(_diagnostic(code, f"{path}[{index}]/{field_name}", identifier))
+        else:
+            seen.add(identifier)
+    return diagnostics
+
+
+def _validate_source_of_truth_markers(value: Any, path: str = "") -> list[ArticleArtifactDiagnostic]:
+    diagnostics: list[ArticleArtifactDiagnostic] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}/{key}" if path else f"/{key}"
+            normalized_key = key.lower()
+            if normalized_key in FORBIDDEN_SOURCE_OF_TRUTH_KEYS:
+                diagnostics.append(_diagnostic("source_of_truth_claim", child_path))
+                if isinstance(child, str) and "minimax" in child.lower():
+                    diagnostics.append(_diagnostic("minimax_source_of_truth", child_path))
+            diagnostics.extend(_validate_source_of_truth_markers(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            diagnostics.extend(_validate_source_of_truth_markers(child, f"{path}[{index}]"))
     return diagnostics
 
 

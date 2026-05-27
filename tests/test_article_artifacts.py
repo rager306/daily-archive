@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 
 from arxiv_archive.article_artifacts import (
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
@@ -171,6 +172,80 @@ def test_validation_reports_stable_codes_and_json_paths_without_leaked_values() 
     assert "/artifacts[0]/safety_flags/raw_text_included" in paths
     assert "/artifacts[0]/candidate_links[0]/link_type" in paths
     assert leaked not in serialized
+
+
+def test_validation_rejects_missing_ids_and_invalid_vocabularies() -> None:
+    manifest = _manifest()
+    del manifest["artifacts"][0]["artifact_id"]
+    manifest["artifacts"][0]["artifact_type"] = "paragraph"
+    manifest["artifacts"][0]["review_state"] = "approved"
+    manifest["artifacts"][0]["candidate_links"][0]["link_id"] = ""
+    manifest["artifacts"][0]["candidate_links"][0]["review_state"] = "needs-human"
+
+    diagnostics = validate_article_artifact_manifest(manifest)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+    paths = {diagnostic["json_path"] for diagnostic in diagnostics}
+
+    assert "missing_artifact_id" in codes
+    assert "invalid_artifact_type" in codes
+    assert "invalid_review_state" in codes
+    assert "empty_link_id" in codes
+    assert "invalid_candidate_link_review_state" in codes
+    assert "/artifacts[0]/artifact_id" in paths
+    assert "/artifacts[0]/artifact_type" in paths
+    assert "/artifacts[0]/review_state" in paths
+    assert "/artifacts[0]/candidate_links[0]/link_id" in paths
+    assert "/artifacts[0]/candidate_links[0]/review_state" in paths
+
+
+def test_validation_rejects_minimax_source_of_truth_and_broken_source_refs() -> None:
+    manifest = _manifest()
+    manifest["artifacts"][0]["metadata"]["source_of_truth"] = "MiniMax extraction"
+    manifest["artifacts"][0]["source_spans"][0]["source_id"] = "missing-source"
+    manifest["artifacts"][0]["section_lineage"]["source_span"]["coordinate_space"] = "normalized_markdown_char"
+    manifest["artifacts"][0]["section_lineage"]["source_span"]["char_start"] = None
+    manifest["artifacts"][0]["section_lineage"]["source_span"]["char_end"] = None
+
+    diagnostics = validate_article_artifact_manifest(manifest)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+    paths = {diagnostic["json_path"] for diagnostic in diagnostics}
+    serialized = json.dumps(diagnostics)
+
+    assert "source_of_truth_claim" in codes
+    assert "minimax_source_of_truth" in codes
+    assert "unknown_source_id" in codes
+    assert "invalid_source_span_coordinates" in codes
+    assert "/artifacts[0]/metadata/source_of_truth" in paths
+    assert "/artifacts[0]/source_spans[0]/source_id" in paths
+    assert "/artifacts[0]/section_lineage/source_span" in paths
+    assert "MiniMax extraction" not in serialized
+
+
+def test_validation_rejects_duplicate_ids() -> None:
+    manifest = _manifest()
+    duplicate_artifact = deepcopy(manifest["artifacts"][0])
+    duplicate_source = deepcopy(manifest["source_refs"][0])
+    duplicate_span = deepcopy(manifest["artifacts"][0]["source_spans"][0])
+    duplicate_link = deepcopy(manifest["artifacts"][0]["candidate_links"][0])
+    manifest["artifacts"].append(duplicate_artifact)
+    manifest["source_refs"].append(duplicate_source)
+    manifest["artifacts"][0]["source_spans"].append(duplicate_span)
+    manifest["artifacts"][0]["candidate_links"].append(duplicate_link)
+    manifest["summary"]["artifact_count"] = 2
+    manifest["summary"]["candidate_link_count"] = 3
+
+    diagnostics = validate_article_artifact_manifest(manifest)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+    paths = {diagnostic["json_path"] for diagnostic in diagnostics}
+
+    assert "duplicate_artifact_id" in codes
+    assert "duplicate_source_id" in codes
+    assert "duplicate_source_span_id" in codes
+    assert "duplicate_candidate_link_id" in codes
+    assert "/artifacts[1]/artifact_id" in paths
+    assert "/source_refs[1]/source_id" in paths
+    assert "/artifacts[0]/source_spans[1]/span_id" in paths
+    assert "/artifacts[0]/candidate_links[1]/link_id" in paths
 
 
 def test_validation_rejects_import_eligible_and_promoted_records() -> None:
