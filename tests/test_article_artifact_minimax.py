@@ -35,6 +35,19 @@ def _valid_tool_input(input_sha256: str) -> dict:
                 "confidence_label": "needs_review",
                 "evidence_span_ids": ["fixture-paper-0001:span:section-methods"],
                 "diagnostic_codes": ["suggested_by_redacted_structure_summary"],
+                "candidate_links": [
+                    {
+                        "link_id": "fixture-paper-0001:link:helper-0001",
+                        "source_artifact_id": "fixture-paper-0001:artifact:dataset:helper-0001",
+                        "target_ref": "fixture-paper-0001:artifact:figure:0001",
+                        "link_type": "supports",
+                        "review_state": "review_required",
+                        "evidence_span_ids": ["fixture-paper-0001:span:section-methods"],
+                        "diagnostic_codes": ["suggested_candidate_link"],
+                        "promoted_to_fact": False,
+                        "import_eligible": False,
+                    }
+                ],
             }
         ],
         "minimax_source_of_truth": False,
@@ -104,6 +117,9 @@ def test_validates_tool_response_and_merges_only_review_required_helper_candidat
     assert result.candidates[0]["promoted_to_fact"] is False
     assert result.candidates[0]["import_eligible"] is False
     assert result.candidates[0]["raw_model_content_persisted"] is False
+    assert result.candidates[0]["candidate_links"][0]["review_state"] == "review_required"
+    assert result.candidates[0]["candidate_links"][0]["target_ref_hash"]
+    assert "fixture-paper-0001:artifact:figure:0001" not in dumped
     assert "do not persist" not in dumped
     assert "source_of_truth" in dumped
     assert '"minimax_source_of_truth": true' not in dumped
@@ -149,7 +165,99 @@ def test_rejects_prompt_only_or_refusal_responses_without_raw_response_persisten
     assert refusal.diagnostics["raw_response_persisted"] is False
 
 
-def test_rejects_raw_payload_keys_before_building_request() -> None:
+def test_rejects_unsafe_artifact_id_collisions_and_duplicate_helper_ids() -> None:
+    structure = _structure()
+    input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
+    tool_input = _valid_tool_input(input_sha256)
+    tool_input["artifact_hints"][0]["artifact_id"] = "fixture-paper-0001:artifact:figure:0001"
+    duplicate = deepcopy(tool_input["artifact_hints"][0])
+    tool_input["artifact_hints"].append(duplicate)
+
+    result = validate_article_artifact_minimax_response(
+        [{"type": "tool_use", "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME, "input": tool_input}],
+        structure=structure,
+    )
+
+    assert result.candidates == ()
+    assert result.diagnostics["response_validation_status"] == "invalid"
+    assert "unsafe_artifact_id_collision:$.artifact_hints[0].artifact_id" in result.diagnostics["diagnostic_codes"]
+    assert "duplicate_helper_artifact_id:$.artifact_hints[1].artifact_id" in result.diagnostics["diagnostic_codes"]
+    assert result.diagnostics["raw_response_persisted"] is False
+
+
+def test_rejects_invalid_candidate_links_and_unknown_spans_without_merging() -> None:
+    structure = _structure()
+    input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
+    tool_input = _valid_tool_input(input_sha256)
+    link = tool_input["artifact_hints"][0]["candidate_links"][0]
+    link["source_artifact_id"] = "fixture-paper-0001:artifact:dataset:other"
+    link["target_ref"] = "fixture-paper-0001:artifact:missing:0001"
+    link["evidence_span_ids"] = ["fixture-paper-0001:span:missing"]
+
+    result = validate_article_artifact_minimax_response(
+        [{"type": "tool_use", "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME, "input": tool_input}],
+        structure=structure,
+    )
+
+    assert result.candidates == ()
+    assert result.diagnostics["response_validation_status"] == "invalid"
+    assert "invalid_candidate_link_source:$.artifact_hints[0].candidate_links[0].source_artifact_id" in result.diagnostics[
+        "diagnostic_codes"
+    ]
+    assert "invalid_candidate_link_target:$.artifact_hints[0].candidate_links[0].target_ref" in result.diagnostics[
+        "diagnostic_codes"
+    ]
+    assert "unknown_candidate_link_span_id:$.artifact_hints[0].candidate_links[0].evidence_span_ids[0]" in result.diagnostics[
+        "diagnostic_codes"
+    ]
+
+
+def test_rejects_raw_payload_markers_and_unsafe_import_or_write_flags() -> None:
+    structure = _structure()
+    input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
+    tool_input = _valid_tool_input(input_sha256)
+    tool_input["raw_minimax_response"] = "RAW PAPER TEXT: do not retain"
+    tool_input["kg_import_allowed"] = True
+    tool_input["trusted_kg_import_allowed"] = True
+    tool_input["production_import_attempted"] = True
+    tool_input["ladybugdb_written"] = True
+    tool_input["allowed_uses"] = ["trusted_kg_import"]
+
+    result = validate_article_artifact_minimax_response(
+        [{"type": "tool_use", "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME, "input": tool_input}],
+        structure=structure,
+    )
+
+    dumped = json.dumps(result.to_sanitized_dict())
+    assert result.candidates == ()
+    assert result.diagnostics["response_validation_status"] == "invalid"
+    assert "forbidden_payload_key:$.raw_minimax_response" in result.diagnostics["diagnostic_codes"]
+    assert "raw_payload_marker:$.raw_minimax_response" in result.diagnostics["diagnostic_codes"]
+    assert "kg_import_allowed_true:$.kg_import_allowed" in result.diagnostics["diagnostic_codes"]
+    assert "trusted_kg_import_allowed_true:$.trusted_kg_import_allowed" in result.diagnostics["diagnostic_codes"]
+    assert "production_write_flag_true:$.production_import_attempted" in result.diagnostics["diagnostic_codes"]
+    assert "production_write_flag_true:$.ladybugdb_written" in result.diagnostics["diagnostic_codes"]
+    assert "trusted_import_allowed:$.allowed_uses" in result.diagnostics["diagnostic_codes"]
+    assert "RAW PAPER TEXT" not in dumped
+
+
+def test_rejects_mismatched_input_hash_and_helper_limit() -> None:
+    structure = _structure()
+    input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
+    tool_input = _valid_tool_input(input_sha256)
+    tool_input["input_sha256"] = "b" * 64
+    tool_input["helper_limit"] = 99
+
+    result = validate_article_artifact_minimax_response(
+        [{"type": "tool_use", "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME, "input": tool_input}],
+        structure=structure,
+    )
+
+    assert result.candidates == ()
+    assert result.diagnostics["response_validation_status"] == "invalid"
+    assert "input_sha256_mismatch:$.input_sha256" in result.diagnostics["diagnostic_codes"]
+    assert "helper_limit_mismatch:$.helper_limit" in result.diagnostics["diagnostic_codes"]
+
     structure = deepcopy(_structure())
     structure["artifact_placeholders"][0]["caption_text"] = "forbidden raw caption"
 

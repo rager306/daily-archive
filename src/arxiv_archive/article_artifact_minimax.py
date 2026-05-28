@@ -15,9 +15,13 @@ from typing import Any
 
 from arxiv_archive.article_artifacts import (
     ALLOWED_ARTIFACT_TYPES,
+    ALLOWED_CANDIDATE_LINK_TYPES,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,
     EXCLUDED_USES,
+    FORBIDDEN_PAYLOAD_KEYS,
+    FORBIDDEN_SOURCE_OF_TRUTH_KEYS,
     REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION,
+    TRUSTED_IMPORT_USE,
     build_article_artifact_manifest_from_structure,
 )
 from arxiv_archive.minimax_structured import (
@@ -142,6 +146,26 @@ def validate_article_artifact_minimax_response(
         )
 
     tool_input = _first_tool_input(content_blocks)
+    semantic_diagnostics = _validate_tool_input_semantics(
+        tool_input,
+        structure=structure,
+        input_sha256=input_sha256,
+        max_candidates=max_candidates,
+    )
+    diagnostic_codes.extend(semantic_diagnostics)
+    if semantic_diagnostics:
+        return MiniMaxArtifactHelperResult(
+            candidates=(),
+            diagnostics=_base_diagnostics(
+                input_sha256=input_sha256,
+                summary_sha256=summary_sha256,
+                max_candidates=max_candidates,
+                response_validation_status="invalid",
+                diagnostic_codes=tuple(diagnostic_codes),
+                refusal_codes=tuple(refusal_codes),
+            ),
+        )
+
     candidates = tuple(_sanitize_candidate(candidate) for candidate in tool_input.get("artifact_hints", []))
     diagnostics = _base_diagnostics(
         input_sha256=input_sha256,
@@ -185,6 +209,34 @@ def article_artifact_minimax_hint_schema(*, max_candidates: int = 24) -> dict[st
                         },
                         "evidence_span_ids": {"type": "array", "items": {"type": "string"}},
                         "diagnostic_codes": {"type": "array", "items": {"type": "string"}},
+                        "candidate_links": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "link_id": {"type": "string"},
+                                    "source_artifact_id": {"type": "string"},
+                                    "target_ref": {"type": "string"},
+                                    "link_type": {"type": "string", "enum": sorted(ALLOWED_CANDIDATE_LINK_TYPES)},
+                                    "review_state": {"type": "string", "enum": ["review_required"]},
+                                    "evidence_span_ids": {"type": "array", "items": {"type": "string"}},
+                                    "diagnostic_codes": {"type": "array", "items": {"type": "string"}},
+                                    "promoted_to_fact": {"type": "boolean", "enum": [False]},
+                                    "import_eligible": {"type": "boolean", "enum": [False]},
+                                },
+                                "required": [
+                                    "link_id",
+                                    "source_artifact_id",
+                                    "target_ref",
+                                    "link_type",
+                                    "review_state",
+                                    "evidence_span_ids",
+                                    "diagnostic_codes",
+                                    "promoted_to_fact",
+                                    "import_eligible",
+                                ],
+                            },
+                        },
                     },
                     "required": [
                         "artifact_id",
@@ -291,7 +343,7 @@ def _summarize_redacted_structure(structure: dict[str, Any], *, max_candidates: 
 
 
 def _sanitize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
-    return {
+    sanitized = {
         "artifact_id": str(candidate["artifact_id"]),
         "artifact_type": str(candidate["artifact_type"]),
         "review_state": "review_required",
@@ -307,6 +359,149 @@ def _sanitize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
         "import_eligible": False,
         "raw_model_content_persisted": False,
     }
+    candidate_links = candidate.get("candidate_links")
+    if isinstance(candidate_links, list):
+        sanitized["candidate_links"] = [
+            {
+                "link_id": str(link["link_id"]),
+                "source_artifact_id": str(link["source_artifact_id"]),
+                "target_ref_hash": _stable_hash(str(link["target_ref"])),
+                "link_type": str(link["link_type"]),
+                "review_state": "review_required",
+                "evidence_span_ids": [str(value) for value in link.get("evidence_span_ids", [])],
+                "diagnostic_codes": [
+                    "minimax_helper_link_review_required",
+                    *[str(value) for value in link.get("diagnostic_codes", [])],
+                ],
+                "helper_evidence_only": True,
+                "promoted_to_fact": False,
+                "import_eligible": False,
+            }
+            for link in candidate_links
+        ]
+    return sanitized
+
+
+def _validate_tool_input_semantics(
+    tool_input: dict[str, Any], *, structure: dict[str, Any], input_sha256: str, max_candidates: int
+) -> tuple[str, ...]:
+    diagnostics: list[str] = []
+    diagnostics.extend(_find_forbidden_tool_payload(tool_input))
+    if tool_input.get("input_sha256") != input_sha256:
+        diagnostics.append("input_sha256_mismatch:$.input_sha256")
+    if tool_input.get("helper_limit") != max_candidates:
+        diagnostics.append("helper_limit_mismatch:$.helper_limit")
+    if tool_input.get("kg_import_allowed") is True:
+        diagnostics.append("kg_import_allowed_true:$.kg_import_allowed")
+    if tool_input.get("trusted_kg_import_allowed") is True:
+        diagnostics.append("trusted_kg_import_allowed_true:$.trusted_kg_import_allowed")
+    if TRUSTED_IMPORT_USE in _string_list(tool_input.get("allowed_uses")):
+        diagnostics.append("trusted_import_allowed:$.allowed_uses")
+    for key in ("production_import_attempted", "ladybugdb_written", "production_write_attempted"):
+        if tool_input.get(key) is True:
+            diagnostics.append(f"production_write_flag_true:$.{key}")
+
+    artifact_hints = _list_of_dicts(tool_input.get("artifact_hints"))
+    if len(artifact_hints) > max_candidates:
+        diagnostics.append("too_many_artifact_hints:$.artifact_hints")
+    existing_artifact_ids = _structure_artifact_ids(structure)
+    seen_artifact_ids: set[str] = set()
+    safe_span_ids = _structure_safe_span_ids(structure)
+    helper_artifact_ids = {str(candidate.get("artifact_id")) for candidate in artifact_hints}
+    for index, candidate in enumerate(artifact_hints):
+        path = f"$.artifact_hints[{index}]"
+        artifact_id = _string_or_none(candidate.get("artifact_id"))
+        if artifact_id is None:
+            continue
+        if artifact_id in seen_artifact_ids:
+            diagnostics.append(f"duplicate_helper_artifact_id:{path}.artifact_id")
+        seen_artifact_ids.add(artifact_id)
+        if artifact_id in existing_artifact_ids:
+            diagnostics.append(f"unsafe_artifact_id_collision:{path}.artifact_id")
+        if TRUSTED_IMPORT_USE in _string_list(candidate.get("allowed_uses")):
+            diagnostics.append(f"trusted_import_allowed:{path}.allowed_uses")
+        for key in ("kg_import_allowed", "trusted_kg_import_allowed", "production_import_attempted", "ladybugdb_written"):
+            if candidate.get(key) is True:
+                diagnostics.append(f"unsafe_helper_flag_true:{path}.{key}")
+        for span_index, span_id in enumerate(_string_list(candidate.get("evidence_span_ids"))):
+            if span_id not in safe_span_ids:
+                diagnostics.append(f"unknown_evidence_span_id:{path}.evidence_span_ids[{span_index}]")
+        for link_index, link in enumerate(_list_of_dicts(candidate.get("candidate_links"))):
+            link_path = f"{path}.candidate_links[{link_index}]"
+            source_artifact_id = _string_or_none(link.get("source_artifact_id"))
+            if source_artifact_id != artifact_id:
+                diagnostics.append(f"invalid_candidate_link_source:{link_path}.source_artifact_id")
+            target_ref = _string_or_none(link.get("target_ref"))
+            if target_ref is None or (target_ref not in helper_artifact_ids and target_ref not in existing_artifact_ids):
+                diagnostics.append(f"invalid_candidate_link_target:{link_path}.target_ref")
+            if link.get("link_type") not in ALLOWED_CANDIDATE_LINK_TYPES:
+                diagnostics.append(f"invalid_candidate_link_type:{link_path}.link_type")
+            if link.get("review_state") != "review_required":
+                diagnostics.append(f"invalid_candidate_link_review_state:{link_path}.review_state")
+            for key in ("promoted_to_fact", "import_eligible", "kg_import_allowed", "trusted_kg_import_allowed"):
+                if link.get(key) is True:
+                    diagnostics.append(f"unsafe_candidate_link_flag_true:{link_path}.{key}")
+            for span_index, span_id in enumerate(_string_list(link.get("evidence_span_ids"))):
+                if span_id not in safe_span_ids:
+                    diagnostics.append(f"unknown_candidate_link_span_id:{link_path}.evidence_span_ids[{span_index}]")
+    return tuple(diagnostics)
+
+
+def _find_forbidden_tool_payload(value: Any, path: str = "$") -> list[str]:
+    diagnostics: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            key_text = str(key)
+            child_path = f"{path}.{key_text}" if path != "$" else f"$.{key_text}"
+            normalized_key = key_text.lower()
+            if normalized_key in FORBIDDEN_PAYLOAD_KEYS:
+                diagnostics.append(f"forbidden_payload_key:{child_path}")
+            if normalized_key in FORBIDDEN_SOURCE_OF_TRUTH_KEYS and child is not False:
+                diagnostics.append(f"source_of_truth_claim:{child_path}")
+            diagnostics.extend(_find_forbidden_tool_payload(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            diagnostics.extend(_find_forbidden_tool_payload(child, f"{path}[{index}]"))
+    elif isinstance(value, str):
+        normalized_value = value.upper()
+        for marker in ("RAW PAPER TEXT", "RAW CHUNK TEXT", "FULL ARTICLE BODY", "BEGIN PDF", "BASE64"):
+            if marker in normalized_value:
+                diagnostics.append(f"raw_payload_marker:{path}")
+                break
+    return diagnostics
+
+
+def _structure_artifact_ids(structure: dict[str, Any]) -> set[str]:
+    artifact_ids: set[str] = set()
+    for key in ("artifact_placeholders", "structured_markers", "scientific_markers"):
+        for record in _list_of_dicts(structure.get(key)):
+            artifact_id = _string_or_none(record.get("artifact_id"))
+            if artifact_id is not None:
+                artifact_ids.add(artifact_id)
+    for section in _list_of_dicts(structure.get("sections")):
+        section_id = _string_or_none(section.get("section_id"))
+        section_type = _string_or_none(section.get("section_type")) or "section"
+        if section_id is not None:
+            artifact_ids.add(f"{structure.get('paper_id')}:artifact:{section_type}:{section_id.rsplit(':', 1)[-1]}")
+    return artifact_ids
+
+
+def _structure_safe_span_ids(structure: dict[str, Any]) -> set[str]:
+    return {
+        span_id
+        for span in _list_of_dicts(structure.get("safe_spans"))
+        if (span_id := _string_or_none(span.get("span_id"))) is not None
+    }
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _string_or_none(value: Any) -> str | None:
+    return value if isinstance(value, str) and value else None
 
 
 def _base_diagnostics(
