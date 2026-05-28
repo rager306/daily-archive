@@ -250,3 +250,142 @@ def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(tm
     assert payload["artifact_count"] == 5
     assert payload["candidate_link_count"] == 6
     assert Path(payload["manifest_path"]).exists()
+
+
+
+def _helper_tool_response(tmp_path: Path) -> Path:
+    from arxiv_archive.article_artifact_minimax import build_article_artifact_minimax_request
+
+    structure = json.loads(INPUT_STRUCTURE.read_text(encoding="utf-8"))
+    input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
+    response_path = tmp_path / "minimax_response.json"
+    response_path.write_text(
+        json.dumps(
+            [
+                {"type": "thinking", "thinking": "hidden reasoning must not persist"},
+                {
+                    "type": "tool_use",
+                    "name": "record_article_artifact_hints",
+                    "input": {
+                        "schema_version": "m023-minimax-artifact-helper.v1",
+                        "source_schema_version": "m023-redacted-article-structure.v1",
+                        "manifest_schema_version": "m023-article-artifacts.v1",
+                        "input_sha256": input_sha256,
+                        "helper_limit": 24,
+                        "artifact_hints": [
+                            {
+                                "artifact_id": "fixture-paper-0001:artifact:dataset:helper-0001",
+                                "artifact_type": "dataset",
+                                "review_state": "review_required",
+                                "confidence_label": "needs_review",
+                                "evidence_span_ids": ["fixture-paper-0001:span:section-methods"],
+                                "diagnostic_codes": ["suggested_by_redacted_structure_summary"],
+                                "candidate_links": [
+                                    {
+                                        "link_id": "fixture-paper-0001:link:helper-0001",
+                                        "source_artifact_id": "fixture-paper-0001:artifact:dataset:helper-0001",
+                                        "target_ref": "fixture-paper-0001:artifact:figure:0001",
+                                        "link_type": "supports",
+                                        "review_state": "review_required",
+                                        "evidence_span_ids": ["fixture-paper-0001:span:section-methods"],
+                                        "diagnostic_codes": ["suggested_candidate_link"],
+                                        "promoted_to_fact": False,
+                                        "import_eligible": False,
+                                    }
+                                ],
+                            }
+                        ],
+                        "minimax_source_of_truth": False,
+                        "promoted_to_fact": False,
+                        "import_eligible": False,
+                    },
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return response_path
+
+
+def test_article_artifacts_detect_default_mode_makes_no_minimax_request(tmp_path: Path) -> None:
+    result = _run_cli(
+        "article-artifacts",
+        "detect",
+        "--input-structure",
+        str(INPUT_STRUCTURE),
+        "--output-dir",
+        str(tmp_path),
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    diagnostics = json.loads(Path(payload["diagnostics_path"]).read_text(encoding="utf-8"))
+    assert payload["helper_mode"] == "deterministic"
+    assert payload["helper_request_attempted"] is False
+    assert payload["helper_validation_status"] == "not_requested"
+    assert payload["helper_merged_candidate_count"] == 0
+    assert diagnostics["helper_diagnostics"]["helper_request_attempted"] is False
+
+
+def test_article_artifacts_detect_minimax_mock_merges_review_required_candidates(tmp_path: Path) -> None:
+    helper_response = _helper_tool_response(tmp_path)
+    result = _run_cli(
+        "article-artifacts",
+        "detect",
+        "--input-structure",
+        str(INPUT_STRUCTURE),
+        "--output-dir",
+        str(tmp_path / "out"),
+        "--helper",
+        "minimax-mock",
+        "--helper-response",
+        str(helper_response),
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    manifest = json.loads(Path(payload["manifest_path"]).read_text(encoding="utf-8"))
+    diagnostics = json.loads(Path(payload["diagnostics_path"]).read_text(encoding="utf-8"))
+    summary = json.loads(Path(payload["run_summary_path"]).read_text(encoding="utf-8"))
+    helper_artifacts = [artifact for artifact in manifest["artifacts"] if artifact["detector"] == "minimax_artifact_helper_review_only"]
+
+    assert payload["helper_mode"] == "minimax-mock"
+    assert payload["helper_validation_status"] == "valid"
+    assert payload["helper_merged_candidate_count"] == 1
+    assert payload["artifact_count"] == 6
+    assert payload["candidate_link_count"] == 7
+    assert helper_artifacts and helper_artifacts[0]["review_state"] == "review_required"
+    assert helper_artifacts[0]["import_eligible"] is False
+    assert helper_artifacts[0]["promoted_to_fact"] is False
+    assert helper_artifacts[0]["candidate_links"][0]["target_ref"].startswith("sha256:")
+    assert helper_artifacts[0]["candidate_links"][0]["import_eligible"] is False
+    assert diagnostics["helper_diagnostics"]["helper_validation_status"] == "valid"
+    assert summary["helper_diagnostics"]["merged_candidate_count"] == 1
+    dumped = json.dumps({"manifest": manifest, "summary": summary, "diagnostics": diagnostics})
+    assert "hidden reasoning" not in dumped
+    assert "fixture-paper-0001:artifact:figure:0001" not in json.dumps(helper_artifacts)
+    assert '"trusted_kg_import_allowed": true' not in dumped
+
+
+def test_article_artifacts_detect_minimax_mock_rejects_malformed_helper_response(tmp_path: Path) -> None:
+    bad_response = tmp_path / "bad_response.json"
+    bad_response.write_text("{not json", encoding="utf-8")
+
+    result = _run_cli(
+        "article-artifacts",
+        "detect",
+        "--input-structure",
+        str(INPUT_STRUCTURE),
+        "--output-dir",
+        str(tmp_path / "out"),
+        "--helper",
+        "minimax-mock",
+        "--helper-response",
+        str(bad_response),
+        "--json",
+    )
+
+    assert result.returncode != 0
+    assert "helper response must be json" in result.stderr.lower()
