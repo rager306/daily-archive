@@ -145,10 +145,10 @@ This file is the explicit capability and coverage contract for the project.
 - Description: Provide a deterministic CLI for detecting article structure artifacts and candidate KG scaffold links from preserved paper sources without performing KG import.
 - Why it matters: The project needs an automated pre-KG layer that turns paper structure into typed, reviewable artifact candidates such as figures, tables, equations, datasets, methods, metrics, experiments, claims, citations, spans, and candidate relationships before any knowledge graph write is considered.
 - Source: user-directed post-M022 artifact detection plan
-- Primary owning slice: next-milestone
-- Supporting slices: R030,R032,R033,R036,R040
+- Primary owning slice: M023-vk5wb2/S02
+- Supporting slices: M023-vk5wb2/S01,M023-vk5wb2/S04,M023-vk5wb2/S05
 - Validation: A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false.
-- Notes: This requirement is explicitly pre-import. It creates ontology and KG scaffold candidates only; production LadybugDB writes, trusted fact promotion, embeddings/vector readiness, and unattended scaling remain blocked.
+- Notes: Traceability cleanup: M023-vk5wb2 is the planned milestone that implements the former next-milestone article artifact detection requirement. S02 owns the deterministic CLI; S01 supplies the contract, S04 supplies metrics, and S05 supplies the final no-import scaffold gate. This requirement remains explicitly pre-import: production LadybugDB writes, trusted fact promotion, embeddings/vector readiness, and unattended scaling remain blocked.
 
 ### R051 — MiniMax may assist article artifact detection only as a bounded structured helper with forced tool calls, local schema validation, redacted inputs, and non-authoritative outputs.
 - Class: integration
@@ -156,10 +156,10 @@ This file is the explicit capability and coverage contract for the project.
 - Description: MiniMax may assist article artifact detection only as a bounded structured helper with forced tool calls, local schema validation, redacted inputs, and non-authoritative outputs.
 - Why it matters: MiniMax can help classify and link structural artifacts at scale, but the project safety model requires it to remain a helper rather than a source of truth or writer.
 - Source: user-directed post-M022 artifact detection plan
-- Primary owning slice: next-milestone
-- Supporting slices: R040,R050
+- Primary owning slice: M023-vk5wb2/S03
+- Supporting slices: M023-vk5wb2/S01,M023-vk5wb2/S02,M023-vk5wb2/S05
 - Validation: A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization.
-- Notes: MiniMax output must set minimax_source_of_truth=false and review_state=pending_review or repair_required. Raw paper payloads, secrets, raw responses, production import, and production writes remain blocked.
+- Notes: Traceability cleanup: M023-vk5wb2/S03 owns bounded MiniMax helper integration. S01 supplies the artifact safety contract, S02 supplies the CLI surface, and S05 verifies MiniMax-derived candidates remain non-authoritative and non-importable. MiniMax output must set minimax_source_of_truth=false and review_state=pending_review or repair_required; raw paper payloads, secrets, raw responses, production import, and production writes remain blocked.
 
 ### R052 — DSPy prompt optimization for artifact detection must remain gated until benchmark fixtures, metrics, and baseline MiniMax or deterministic outputs exist.
 - Class: quality-attribute
@@ -167,10 +167,10 @@ This file is the explicit capability and coverage contract for the project.
 - Description: DSPy prompt optimization for artifact detection must remain gated until benchmark fixtures, metrics, and baseline MiniMax or deterministic outputs exist.
 - Why it matters: Self-improving prompts are only useful if the system can measure whether artifact detection is improving without leaking raw corpus text or promoting false KG facts.
 - Source: user-directed post-M022 artifact detection plan
-- Primary owning slice: next-milestone
-- Supporting slices: R040,R050,R051
+- Primary owning slice: M023-vk5wb2/S04
+- Supporting slices: M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05
 - Validation: A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation.
-- Notes: This preserves the existing project rule that DSPy or optimizer behavior must not be activated before evaluation fixtures and metrics exist. The milestone may produce a DSPy readiness gate, but not an unattended optimizer loop unless metrics prove it safe.
+- Notes: Traceability cleanup: M023-vk5wb2/S04 owns benchmark fixtures and metrics before any DSPy or optimizer recommendation. S02 and S03 provide deterministic and MiniMax-assisted outputs for comparison, and S05 consumes the metric evidence for a DSPy readiness/no-go gate. DSPy or optimizer behavior must not be activated before evaluation fixtures and metrics exist.
 
 ## Validated
 
@@ -588,9 +588,9 @@ This file is the explicit capability and coverage contract for the project.
 | R047 | core-capability | validated | M019-221lb7 | none | M019 final guard: all four targets source_found=true and profile_complete=true; primary_positive_pattern_source=prismAId; secondary_pattern_source=GPT Researcher; primary_cautionary_examples=[The AI Scientist, AI-Researcher]; next_milestone=KG Candidate Locator and Chunk-Span Provenance Protocol; adopt_external_code_now=false; adopt_new_dependencies_now=false; enable_production_kg_import=false; enable_ladybugdb_writes=false; enable_autonomous_scientist_behavior=false; independent_recommendation_review=PASS. |
 | R048 | core-capability | validated | M020-uh5kvt | none | Validated by M020 S01-S04 artifacts: candidate locator protocol/schema/guard, one-paper fixture and guard, 10-paper small-batch rehearsal with 35 locators, final guard m020-s04-final-guard-ok, and independent semantic review. Evidence supports candidate-locator protocol continuation but explicitly defers positive import-gate work. |
 | R049 | core-capability | validated | M021-xcfj4p | none | Validated by src/arxiv_archive/candidate_locators.py, tests/test_candidate_locators.py (12 focused tests), S02 module guard, S03 deterministic 10-paper batch guard, independent review, remediation verification, and final guard m021-final-guard-ok. Final batch: 10 papers, 26 locators, 20 ambiguous spans, 10 overlap diagnostics, 0 import-eligible locators, 0 fact promotions. |
-| R050 | core-capability | active | next-milestone | R030,R032,R033,R036,R040 | A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false. |
-| R051 | integration | active | next-milestone | R040,R050 | A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization. |
-| R052 | quality-attribute | active | next-milestone | R040,R050,R051 | A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation. |
+| R050 | core-capability | active | M023-vk5wb2/S02 | M023-vk5wb2/S01,M023-vk5wb2/S04,M023-vk5wb2/S05 | A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false. |
+| R051 | integration | active | M023-vk5wb2/S03 | M023-vk5wb2/S01,M023-vk5wb2/S02,M023-vk5wb2/S05 | A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization. |
+| R052 | quality-attribute | active | M023-vk5wb2/S04 | M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05 | A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation. |
 
 ## Coverage Summary
 
