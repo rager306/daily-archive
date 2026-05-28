@@ -459,7 +459,7 @@ def main(argv: list[str] | None = None) -> int:
         _write_json(args.output_json, gate)
         _write_text(args.output_markdown, markdown)
     except ArtifactScaffoldGateError as exc:
-        print(f"artifact scaffold gate failed: {exc}", file=sys.stderr)
+        sys.stderr.write(f"artifact scaffold gate failed: {exc}\n")
         return 1
 
     passed = gate["strict_validation"]["passed"]
@@ -472,7 +472,8 @@ def main(argv: list[str] | None = None) -> int:
         "production_import_attempted": False,
         "ladybugdb_written": False,
     }
-    print(json.dumps(response, indent=2, sort_keys=True))
+    sys.stdout.write(json.dumps(response, indent=2, sort_keys=True))
+    sys.stdout.write("\n")
     if args.strict and not passed:
         return 1
     return 0
