@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from pathlib import Path
 
 from arxiv_archive.article_artifacts import (
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
@@ -20,6 +21,11 @@ from arxiv_archive.article_artifacts import (
 )
 
 VALID_SHA = "a" * 64
+FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
+
+
+def _load_fixture(name: str) -> dict:
+    return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
 
 
 def _source_ref() -> SourceReference:
@@ -91,6 +97,62 @@ def _manifest() -> dict:
             ),
         ),
     ).to_redacted_dict()
+
+
+def test_redacted_article_structure_fixture_validates_expected_manifest() -> None:
+    structure = _load_fixture("basic_article_structure.json")
+    manifest = _load_fixture("basic_expected_manifest.json")
+
+    assert structure["schema_version"] == "m023-redacted-article-structure.v1"
+    assert structure["paper_id"] == manifest["paper_id"]
+    assert {source["source_id"] for source in structure["source_refs"]} == {
+        source["source_id"] for source in manifest["source_refs"]
+    }
+    assert {placeholder["artifact_id"] for placeholder in structure["artifact_placeholders"]}.issubset(
+        {artifact["artifact_id"] for artifact in manifest["artifacts"]}
+    )
+    assert {span["span_id"] for span in structure["safe_spans"]}.issuperset(
+        {
+            "fixture-paper-0001:span:caption-figure-0001",
+            "fixture-paper-0001:span:citation-0001",
+            "fixture-paper-0001:span:equation-0001",
+        }
+    )
+    assert validate_article_artifact_manifest(manifest) == []
+    assert manifest["summary"]["artifact_counts_by_type"] == {
+        "equation": 1,
+        "figure": 1,
+        "reference": 1,
+        "section": 1,
+    }
+    assert manifest["summary"]["candidate_link_type_counts"] == {
+        "cites": 1,
+        "contains": 2,
+        "located_in": 1,
+        "supports": 1,
+    }
+    assert manifest["import_eligible_count"] == 0
+    assert manifest["promoted_to_fact_count"] == 0
+
+    serialized = json.dumps({"structure": structure, "manifest": manifest})
+    forbidden_fragments = (
+        "raw paper text",
+        "raw_model_output",
+        "raw_minimax_response",
+        "\"text\":",
+        "\"caption_text\":",
+        "\"embedding\":",
+        "\"vector\":",
+        "\"secret\":",
+        "\"optimizer_trace\":",
+        "\"source_of_truth\":",
+        "trusted_kg_import_allowed\": true",
+        "ladybugdb_written\": true",
+        "production_import_attempted\": true",
+        "model_outputs_included\": true",
+    )
+    for fragment in forbidden_fragments:
+        assert fragment not in serialized
 
 
 def test_artifact_manifest_serializes_redacted_contract() -> None:
