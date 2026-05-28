@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from arxiv_archive.article_artifacts import (
@@ -20,6 +21,18 @@ from arxiv_archive.article_artifacts import (
 )
 
 ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION = "m023-article-artifact-metrics.v1"
+ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION = "m023-article-artifact-benchmark-report.v1"
+
+DSPY_READINESS_THRESHOLDS = {
+    "min_case_count": 3,
+    "artifact_precision": 0.8,
+    "artifact_recall": 0.8,
+    "source_span_coverage": 0.8,
+    "candidate_link_correctness": 0.75,
+    "section_lineage_correctness": 0.75,
+    "max_raw_leakage_count": 0,
+    "max_unsafe_authorization_count": 0,
+}
 
 
 @dataclass(frozen=True)
@@ -140,6 +153,139 @@ def calculate_benchmark_metrics(
     }
 
 
+def build_article_artifact_benchmark_report(
+    deterministic_cases: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    benchmark_gold: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    *,
+    minimax_cases: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+    thresholds: Mapping[str, float | int] | None = None,
+) -> dict[str, Any]:
+    """Build a stable benchmark report for deterministic and MiniMax-assisted runs.
+
+    The report evaluates local redacted fixtures only. It records quality deltas,
+    no-import safety counters, and an explicit DSPy readiness precheck without
+    importing or invoking DSPy optimizers.
+    """
+
+    effective_thresholds = {**DSPY_READINESS_THRESHOLDS, **dict(thresholds or {})}
+    deterministic_metrics = calculate_benchmark_metrics(deterministic_cases, benchmark_gold)
+    runs: dict[str, Any] = {"deterministic": deterministic_metrics}
+    if minimax_cases is not None:
+        runs["minimax_mock"] = calculate_benchmark_metrics(minimax_cases, benchmark_gold)
+
+    helper_delta = _helper_delta(runs.get("deterministic"), runs.get("minimax_mock"))
+    dspy_precheck = _dspy_readiness_precheck(runs, effective_thresholds)
+
+    return {
+        "schema_version": ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION,
+        "metrics_schema_version": ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION,
+        "report_mode": "local_redacted_fixture_benchmark",
+        "dspy_optimization_ran": False,
+        "dspy_status": "ready" if dspy_precheck["ready"] else "blocked",
+        "thresholds": effective_thresholds,
+        "runs": runs,
+        "helper_delta": helper_delta,
+        "dspy_precheck": dspy_precheck,
+        "observability": {
+            "baseline_quality_recorded": True,
+            "helper_deltas_recorded": minimax_cases is not None,
+            "blocked_dspy_status_recorded": not dspy_precheck["ready"],
+            "no_import_safety_counters": _no_import_safety_counters(runs),
+        },
+    }
+
+
+def render_article_artifact_benchmark_markdown(report: Mapping[str, Any]) -> str:
+    """Render a compact Markdown summary for a benchmark report."""
+
+    lines = [
+        "# Article Artifact Benchmark Report",
+        "",
+        f"- Schema: `{report.get('schema_version')}`",
+        f"- Mode: `{report.get('report_mode')}`",
+        f"- DSPy optimization ran: `{str(report.get('dspy_optimization_ran')).lower()}`",
+        f"- DSPy status: **{report.get('dspy_status')}**",
+        "",
+        "## Run Metrics",
+        "",
+        "| Run | Cases | Artifact Precision | Artifact Recall | Span Coverage | Link Correctness | Lineage Correctness | Raw Leaks | Unsafe Auth | Review Burden |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for run_name, metrics in dict(report.get("runs", {})).items():
+        macro = metrics.get("macro", {})
+        totals = metrics.get("totals", {})
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(run_name),
+                    str(metrics.get("case_count", 0)),
+                    _format_metric(macro.get("artifact_precision")),
+                    _format_metric(macro.get("artifact_recall")),
+                    _format_metric(macro.get("source_span_coverage")),
+                    _format_metric(macro.get("candidate_link_correctness")),
+                    _format_metric(macro.get("section_lineage_correctness")),
+                    str(totals.get("raw_leakage_count", 0)),
+                    str(totals.get("unsafe_authorization_count", 0)),
+                    str(totals.get("review_burden", 0)),
+                ]
+            )
+            + " |"
+        )
+
+    lines.extend(["", "## Helper Delta", ""])
+    delta = report.get("helper_delta")
+    if isinstance(delta, Mapping) and delta:
+        for key, value in delta.items():
+            lines.append(f"- `{key}`: {_format_metric(value)}")
+    else:
+        lines.append("- No MiniMax mock run supplied.")
+
+    lines.extend(["", "## DSPy Precheck", ""])
+    precheck = report.get("dspy_precheck", {})
+    lines.append(f"- Ready: `{str(precheck.get('ready')).lower()}`")
+    lines.append(f"- Selected run: `{precheck.get('selected_run')}`")
+    blockers = precheck.get("blockers", [])
+    if blockers:
+        lines.append("- Blockers:")
+        for blocker in blockers:
+            lines.append(f"  - {blocker}")
+    else:
+        lines.append("- Blockers: none")
+    lines.append("- DSPy was not imported or executed; this is a readiness gate only.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_article_artifact_benchmark_report(
+    output_dir: Path | str,
+    deterministic_cases: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    benchmark_gold: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    *,
+    minimax_cases: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+    thresholds: Mapping[str, float | int] | None = None,
+) -> dict[str, Any]:
+    """Write JSON and Markdown benchmark report artifacts and return paths."""
+
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    report = build_article_artifact_benchmark_report(
+        deterministic_cases,
+        benchmark_gold,
+        minimax_cases=minimax_cases,
+        thresholds=thresholds,
+    )
+    json_path = output_path / "article-artifact-benchmark-report.json"
+    markdown_path = output_path / "article-artifact-benchmark-report.md"
+    json_path.write_text(_json_dumps(report), encoding="utf-8")
+    markdown_path.write_text(render_article_artifact_benchmark_markdown(report), encoding="utf-8")
+    return {
+        "report": report,
+        "json_path": str(json_path),
+        "markdown_path": str(markdown_path),
+    }
+
+
 def count_raw_leakage(value: Any) -> int:
     """Count forbidden raw-payload key occurrences without returning values."""
 
@@ -202,6 +348,93 @@ def calculate_review_burden(manifest: Mapping[str, Any]) -> int:
     return burden
 
 
+def _helper_delta(deterministic: Mapping[str, Any] | None, minimax: Mapping[str, Any] | None) -> dict[str, float | int]:
+    if deterministic is None or minimax is None:
+        return {}
+    macro_keys = (
+        "artifact_precision",
+        "artifact_recall",
+        "candidate_link_correctness",
+        "candidate_link_recall",
+        "source_span_coverage",
+        "section_lineage_correctness",
+        "section_lineage_recall",
+        "raw_leakage_rate",
+    )
+    delta: dict[str, float | int] = {}
+    for key in macro_keys:
+        delta[f"macro_{key}"] = round(
+            float(minimax.get("macro", {}).get(key, 0.0)) - float(deterministic.get("macro", {}).get(key, 0.0)),
+            6,
+        )
+    for key in ("raw_leakage_count", "unsafe_authorization_count", "review_burden", "predicted_artifact_count"):
+        delta[f"total_{key}"] = int(minimax.get("totals", {}).get(key, 0)) - int(
+            deterministic.get("totals", {}).get(key, 0)
+        )
+    return delta
+
+
+def _dspy_readiness_precheck(runs: Mapping[str, Mapping[str, Any]], thresholds: Mapping[str, float | int]) -> dict[str, Any]:
+    selected_run = "minimax_mock" if "minimax_mock" in runs else "deterministic"
+    metrics = runs[selected_run]
+    macro = metrics.get("macro", {})
+    totals = metrics.get("totals", {})
+    all_raw_leaks = sum(int(run.get("totals", {}).get("raw_leakage_count", 0)) for run in runs.values())
+    all_unsafe_authorizations = sum(
+        int(run.get("totals", {}).get("unsafe_authorization_count", 0)) for run in runs.values()
+    )
+    checks = {
+        "case_count": int(metrics.get("case_count", 0)) >= int(thresholds["min_case_count"]),
+        "artifact_precision": float(macro.get("artifact_precision", 0.0)) >= float(thresholds["artifact_precision"]),
+        "artifact_recall": float(macro.get("artifact_recall", 0.0)) >= float(thresholds["artifact_recall"]),
+        "source_span_coverage": float(macro.get("source_span_coverage", 0.0))
+        >= float(thresholds["source_span_coverage"]),
+        "candidate_link_correctness": float(macro.get("candidate_link_correctness", 0.0))
+        >= float(thresholds["candidate_link_correctness"]),
+        "section_lineage_correctness": float(macro.get("section_lineage_correctness", 0.0))
+        >= float(thresholds["section_lineage_correctness"]),
+        "raw_leakage_count": int(totals.get("raw_leakage_count", 0)) <= int(thresholds["max_raw_leakage_count"]),
+        "unsafe_authorization_count": int(totals.get("unsafe_authorization_count", 0))
+        <= int(thresholds["max_unsafe_authorization_count"]),
+        "all_runs_raw_leakage_count": all_raw_leaks <= int(thresholds["max_raw_leakage_count"]),
+        "all_runs_unsafe_authorization_count": all_unsafe_authorizations
+        <= int(thresholds["max_unsafe_authorization_count"]),
+        "dspy_not_run": True,
+    }
+    blockers = [name for name, passed in checks.items() if not passed]
+    return {
+        "ready": not blockers,
+        "selected_run": selected_run,
+        "checks": checks,
+        "blockers": blockers,
+        "optimization_ran": False,
+    }
+
+
+def _no_import_safety_counters(runs: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, int]]:
+    return {
+        name: {
+            "raw_leakage_count": int(metrics.get("totals", {}).get("raw_leakage_count", 0)),
+            "unsafe_authorization_count": int(metrics.get("totals", {}).get("unsafe_authorization_count", 0)),
+        }
+        for name, metrics in runs.items()
+    }
+
+
+def _format_metric(value: Any) -> str:
+    if isinstance(value, float):
+        return f"{value:.6f}"
+    if isinstance(value, int):
+        return str(value)
+    return "0.000000"
+
+
+def _json_dumps(value: Mapping[str, Any]) -> str:
+    import json
+
+    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+
+
 def _macro_average(case_metrics: Sequence[Mapping[str, Any]]) -> dict[str, float]:
     keys = (
         "artifact_precision",
@@ -214,7 +447,7 @@ def _macro_average(case_metrics: Sequence[Mapping[str, Any]]) -> dict[str, float
         "raw_leakage_rate",
     )
     if not case_metrics:
-        return {key: 0.0 for key in keys}
+        return dict.fromkeys(keys, 0.0)
     return {key: round(sum(float(metric[key]) for metric in case_metrics) / len(case_metrics), 6) for key in keys}
 
 
@@ -332,11 +565,15 @@ def _dicts(value: Any) -> list[dict[str, Any]]:
 
 
 __all__ = [
+    "ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION",
     "ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION",
     "ArtifactMetricCounts",
     "calculate_article_artifact_metrics",
+    "build_article_artifact_benchmark_report",
     "calculate_benchmark_metrics",
     "calculate_review_burden",
+    "render_article_artifact_benchmark_markdown",
     "count_raw_leakage",
     "count_unsafe_authorizations",
+    "write_article_artifact_benchmark_report",
 ]

@@ -4,12 +4,16 @@ import json
 from pathlib import Path
 
 from arxiv_archive.article_artifact_metrics import (
+    ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION,
+    build_article_artifact_benchmark_report,
     calculate_article_artifact_metrics,
     calculate_benchmark_metrics,
     calculate_review_burden,
     count_raw_leakage,
     count_unsafe_authorizations,
+    render_article_artifact_benchmark_markdown,
+    write_article_artifact_benchmark_report,
 )
 from arxiv_archive.article_artifacts import validate_article_artifact_manifest
 
@@ -145,6 +149,73 @@ def test_benchmark_metrics_macro_and_totals_are_stable() -> None:
     }
     assert metrics["totals"]["raw_leakage_count"] == 2
     assert metrics["totals"]["unsafe_authorization_count"] >= 4
+
+
+def test_benchmark_report_compares_deterministic_and_minimax_mock_without_running_dspy() -> None:
+    cases = _load("benchmark_cases.json")
+    gold = _load("benchmark_gold.json")
+
+    report = build_article_artifact_benchmark_report(cases, gold, minimax_cases=gold["gold"])
+
+    assert report["schema_version"] == ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION
+    assert report["dspy_optimization_ran"] is False
+    assert report["dspy_status"] == "blocked"
+    assert set(report["runs"]) == {"deterministic", "minimax_mock"}
+    assert report["runs"]["deterministic"]["totals"]["raw_leakage_count"] == 2
+    assert report["runs"]["minimax_mock"]["macro"]["artifact_precision"] == 1.0
+    assert report["helper_delta"]["macro_artifact_recall"] > 0
+    assert report["helper_delta"]["total_raw_leakage_count"] == -2
+    assert report["observability"]["baseline_quality_recorded"] is True
+    assert report["observability"]["helper_deltas_recorded"] is True
+    assert report["observability"]["blocked_dspy_status_recorded"] is True
+    assert report["dspy_precheck"]["selected_run"] == "minimax_mock"
+    assert "all_runs_raw_leakage_count" in report["dspy_precheck"]["blockers"]
+    assert "all_runs_unsafe_authorization_count" in report["dspy_precheck"]["blockers"]
+
+    markdown = render_article_artifact_benchmark_markdown(report)
+    assert "# Article Artifact Benchmark Report" in markdown
+    assert "| deterministic | 3 |" in markdown
+    assert "| minimax_mock | 3 |" in markdown
+    assert "DSPy was not imported or executed" in markdown
+    assert "do not expose" not in json.dumps(report)
+    assert "do not expose" not in markdown
+
+
+def test_benchmark_report_writer_emits_json_and_markdown(tmp_path: Path) -> None:
+    written = write_article_artifact_benchmark_report(
+        tmp_path,
+        _load("benchmark_cases.json"),
+        _load("benchmark_gold.json"),
+        minimax_cases=_load("benchmark_gold.json")["gold"],
+    )
+
+    json_path = Path(written["json_path"])
+    markdown_path = Path(written["markdown_path"])
+    assert json_path.exists()
+    assert markdown_path.exists()
+    assert json.loads(json_path.read_text(encoding="utf-8"))["schema_version"] == ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION
+    assert markdown_path.read_text(encoding="utf-8").startswith("# Article Artifact Benchmark Report")
+
+
+def test_benchmark_metrics_reject_missing_gold_and_malformed_cases() -> None:
+    cases = _load("benchmark_cases.json")
+    gold = _load("benchmark_gold.json")
+
+    truncated_gold = {"gold": gold["gold"][:1]}
+    try:
+        calculate_benchmark_metrics(cases, truncated_gold)
+    except ValueError as exc:
+        assert "missing gold manifest" in str(exc)
+    else:  # pragma: no cover - documents the negative contract if exception behavior regresses
+        raise AssertionError("expected missing gold manifest error")
+
+    malformed_cases = {"cases": [{"case_id": gold["gold"][0]["case_id"]}]}
+    try:
+        calculate_benchmark_metrics(malformed_cases, gold)
+    except ValueError as exc:
+        assert "lacks manifest" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected malformed case error")
 
 
 def test_review_burden_counts_artifacts_links_and_blocking_diagnostics() -> None:
