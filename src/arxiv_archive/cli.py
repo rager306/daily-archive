@@ -22,6 +22,14 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
+from arxiv_archive.article_artifacts import (  # noqa: E402
+    ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
+    ARTICLE_ARTIFACT_SCHEMA_VERSION,
+    ArticleArtifactRunSummary,
+    default_safety_flags,
+    to_json,
+    validate_article_artifact_manifest,
+)
 from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.embedder import Embedder  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
@@ -115,6 +123,150 @@ validation_batch_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(validation_batch_app, name="validation-batch")
+
+ARTICLE_ARTIFACTS_HELP = """Deterministic article-artifacts commands for pre-KG review scaffolds.
+
+Boundary: fixture-only processing; no production KG import, no LadybugDB writes,
+no raw paper text, no binary payloads, no embeddings/vectors, and no model output.
+Generated manifests are review-only candidates and are never import eligible.
+"""
+
+article_artifacts_app = typer.Typer(
+    add_completion=False,
+    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120},
+    help=ARTICLE_ARTIFACTS_HELP,
+    no_args_is_help=True,
+)
+app.add_typer(article_artifacts_app, name="article-artifacts")
+
+
+def _echo_article_artifacts_response(response: dict[str, Any], *, as_json: bool) -> None:
+    if as_json:
+        typer.echo(json.dumps(response, indent=2, sort_keys=True))
+        return
+    typer.echo(
+        " | ".join(
+            [
+                f"status: {response['status']}",
+                f"schema: {response.get('schema_version', ARTICLE_ARTIFACT_SCHEMA_VERSION)}",
+                f"artifacts: {response.get('artifact_count', 0)}",
+                f"diagnostics: {response.get('diagnostic_count', 0)}",
+                "production import: false",
+                "ladybugdb written: false",
+            ]
+        )
+    )
+
+
+def _article_artifacts_boundary_payload(status: str) -> dict[str, Any]:
+    return {
+        "status": status,
+        "schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
+        "run_schema_version": ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
+        "boundary": ARTICLE_ARTIFACTS_HELP.strip(),
+        "detector_mode": "deterministic_fixture_only",
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "trusted_kg_import_allowed": False,
+        "raw_text_included": False,
+        "raw_binary_included": False,
+        "embeddings_included": False,
+        "vectors_included": False,
+        "model_outputs_included": False,
+        "safety_flags": default_safety_flags(),
+    }
+
+
+@article_artifacts_app.command("contract")
+def article_artifacts_contract(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print the article-artifacts contract response as JSON."),
+    ] = False,
+) -> None:
+    """Print the article-artifacts no-import boundary and schema versions."""
+    _echo_article_artifacts_response(_article_artifacts_boundary_payload("contract_only"), as_json=json_output)
+
+
+def _load_fixture_manifest(input_structure: Path) -> dict[str, Any]:
+    try:
+        structure = json.loads(input_structure.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise typer.BadParameter(f"input structure could not be read: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise typer.BadParameter(f"input structure must be JSON: {exc.msg}") from exc
+
+    if structure.get("schema_version") != "m023-redacted-article-structure.v1":
+        raise typer.BadParameter("input structure must use schema m023-redacted-article-structure.v1")
+    if not isinstance(structure.get("paper_id"), str) or not structure["paper_id"]:
+        raise typer.BadParameter("input structure must include a non-empty paper_id")
+
+    manifest_path = input_structure.with_name("basic_expected_manifest.json")
+    if not manifest_path.exists():
+        raise typer.BadParameter(
+            "deterministic fixture processing requires basic_expected_manifest.json next to the input structure"
+        )
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise typer.BadParameter(f"fixture manifest could not be read: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise typer.BadParameter(f"fixture manifest must be JSON: {exc.msg}") from exc
+
+    if manifest.get("paper_id") != structure["paper_id"]:
+        raise typer.BadParameter("fixture manifest paper_id does not match input structure")
+    diagnostics = validate_article_artifact_manifest(manifest)
+    if diagnostics:
+        raise typer.BadParameter(f"fixture manifest failed contract validation with {len(diagnostics)} diagnostics")
+    return manifest
+
+
+@article_artifacts_app.command("detect")
+def article_artifacts_detect(
+    input_structure: Annotated[
+        Path,
+        typer.Option("--input-structure", help="Redacted article structure fixture JSON."),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Directory where redacted article-artifact manifests will be written."),
+    ],
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Generate review-only article artifact manifests from deterministic fixtures."""
+    manifest = _load_fixture_manifest(input_structure)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest_path = output_dir / f"{manifest['paper_id']}-article-artifacts.json"
+    run_summary = ArticleArtifactRunSummary(run_id=str(manifest["run_id"]), manifests=(manifest,)).to_redacted_dict()
+    run_summary_path = output_dir / "article-artifacts-run-summary.json"
+    manifest_path.write_text(to_json(manifest), encoding="utf-8")
+    run_summary_path.write_text(to_json(run_summary), encoding="utf-8")
+
+    response = _article_artifacts_boundary_payload("detected")
+    response.update(
+        {
+            "input_structure_path": str(input_structure),
+            "manifest_path": str(manifest_path),
+            "run_summary_path": str(run_summary_path),
+            "run_id": manifest["run_id"],
+            "paper_id": manifest["paper_id"],
+            "artifact_count": manifest["summary"]["artifact_count"],
+            "candidate_link_count": manifest["summary"]["candidate_link_count"],
+            "diagnostic_count": len(manifest.get("diagnostics", [])),
+            "diagnostics": manifest.get("diagnostics", []),
+            "artifact_counts_by_type": manifest["summary"].get("artifact_counts_by_type", {}),
+            "review_state_counts": manifest["summary"].get("review_state_counts", {}),
+            "provenance_hints": {
+                "input_structure_path": str(input_structure),
+                "source_refs": manifest.get("source_refs", []),
+                "detector": "redacted_fixture_v1",
+            },
+            "import_eligible_count": 0,
+            "promoted_to_fact_count": 0,
+        }
+    )
+    _echo_article_artifacts_response(response, as_json=json_output)
 
 
 def _echo_validation_batch_response(response: dict[str, Any], *, as_json: bool) -> None:
