@@ -29,6 +29,7 @@ ArtifactType = Literal[
     "claim",
     "section",
     "scientific_term",
+    "experiment",
 ]
 CandidateLinkType = Literal[
     "supports",
@@ -380,6 +381,280 @@ def summarize_article_artifacts(artifacts: list[dict[str, Any]]) -> dict[str, An
     }
 
 
+
+REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION = "m023-redacted-article-structure.v1"
+DETERMINISTIC_FIXTURE_DETECTOR = "redacted_fixture_v1"
+DEFAULT_DETERMINISTIC_RUN_ID = "m023-s02-deterministic-fixture-run"
+
+
+def build_article_artifact_manifest_from_structure(
+    structure: dict[str, Any], *, run_id: str = DEFAULT_DETERMINISTIC_RUN_ID
+) -> dict[str, Any]:
+    """Generate review-only artifact candidates from a redacted structure fixture.
+
+    The detector only consumes explicit IDs, coordinates, hashes, section lineage,
+    caption/citation placeholders, and structured marker records already present
+    in the fixture. It never derives artifacts from raw prose or model output.
+    """
+    _validate_redacted_structure_boundary(structure)
+    paper_id = str(structure["paper_id"])
+    source_refs = tuple(_source_ref_from_structure(source, paper_id) for source in _list_of_dicts(structure.get("source_refs")))
+    spans = {_string_or_none(span.get("span_id")): _span_from_structure(span) for span in _list_of_dicts(structure.get("safe_spans"))}
+    spans.pop(None, None)
+    sections = _list_of_dicts(structure.get("sections"))
+    section_by_id = {section.get("section_id"): section for section in sections if isinstance(section.get("section_id"), str)}
+    placeholders = _list_of_dicts(structure.get("artifact_placeholders"))
+    markers = _list_of_dicts(structure.get("structured_markers")) + _list_of_dicts(structure.get("scientific_markers"))
+    all_placeholders = placeholders + markers
+    contained_by_section: dict[str, list[dict[str, Any]]] = {}
+    for placeholder in all_placeholders:
+        section_id = _string_or_none(placeholder.get("section_id"))
+        if section_id:
+            contained_by_section.setdefault(section_id, []).append(placeholder)
+
+    missing_span_count = 0
+    diagnostics: list[ArticleArtifactDiagnostic] = []
+    artifacts: list[ArticleArtifactRecord] = []
+
+    for section in sections:
+        if section.get("section_type") == "root":
+            continue
+        section_id = _string_or_none(section.get("section_id"))
+        if not section_id:
+            continue
+        section_span = spans.get(_string_or_none(section.get("span_id")))
+        if section.get("span_id") and section_span is None:
+            missing_span_count += 1
+            diagnostics.append(_missing_span_diagnostic(section.get("span_id"), section_id))
+        section_artifact_id = _section_artifact_id(paper_id, section_id)
+        candidate_links = tuple(
+            CandidateLink(
+                link_id=f"{paper_id}:link:{_artifact_slug(section_artifact_id)}:contains-{_artifact_slug(str(child.get('artifact_id', 'unknown')))}",
+                source_artifact_id=section_artifact_id,
+                target_ref=str(child.get("artifact_id")),
+                link_type="contains",
+                review_state="review_required",
+                source_spans=(section_span,) if section_span is not None else (),
+                confidence_label="deterministic_structure",
+            )
+            for child in contained_by_section.get(section_id, [])
+            if isinstance(child.get("artifact_id"), str) and child.get("artifact_id")
+        )
+        artifacts.append(
+            ArticleArtifactRecord(
+                artifact_id=section_artifact_id,
+                paper_id=paper_id,
+                artifact_type="section",
+                review_state="review_required",
+                source_spans=(section_span,) if section_span is not None else (),
+                section_lineage=_section_lineage(section, spans),
+                candidate_links=candidate_links,
+                confidence_label="deterministic_structure",
+                detector=DETERMINISTIC_FIXTURE_DETECTOR,
+                metadata={"fixture_role": "section_lineage_anchor"},
+            )
+        )
+
+    for placeholder in all_placeholders:
+        artifact_id = _string_or_none(placeholder.get("artifact_id"))
+        artifact_type = _string_or_none(placeholder.get("artifact_type"))
+        if not artifact_id or artifact_type not in ALLOWED_ARTIFACT_TYPES:
+            continue
+        artifact_span = spans.get(_string_or_none(placeholder.get("span_id")))
+        if placeholder.get("span_id") and artifact_span is None:
+            missing_span_count += 1
+            diagnostics.append(_missing_span_diagnostic(placeholder.get("span_id"), artifact_id))
+        section = section_by_id.get(placeholder.get("section_id"), {})
+        candidate_links = _placeholder_candidate_links(paper_id, placeholder, artifact_span, spans)
+        diagnostic_codes: tuple[str, ...] = ()
+        metadata: dict[str, Any] = {"fixture_role": _fixture_role_for_placeholder(artifact_type)}
+        if artifact_type in {"figure", "table"} and isinstance(placeholder.get("caption_span_id"), str):
+            metadata["caption_span_id"] = placeholder["caption_span_id"]
+            diagnostic_codes = ("caption_span_present",)
+        if artifact_type == "reference":
+            diagnostic_codes = ("needs_reference_review",)
+        artifacts.append(
+            ArticleArtifactRecord(
+                artifact_id=artifact_id,
+                paper_id=paper_id,
+                artifact_type=artifact_type,  # type: ignore[arg-type]
+                review_state="review_required",
+                source_spans=(artifact_span,) if artifact_span is not None else (),
+                section_lineage=_section_lineage(section, spans) if section else None,
+                candidate_links=candidate_links,
+                confidence_label="deterministic_structure",
+                detector=DETERMINISTIC_FIXTURE_DETECTOR,
+                diagnostic_codes=diagnostic_codes,
+                metadata=metadata,
+            )
+        )
+
+    manifest = ArticleArtifactManifest(
+        paper_id=paper_id,
+        run_id=str(structure.get("run_id") or run_id),
+        source_refs=source_refs,
+        artifacts=tuple(artifacts),
+        diagnostics=tuple(diagnostics),
+    ).to_redacted_dict()
+    manifest["summary"]["missing_span_count"] = missing_span_count
+    manifest["summary"]["diagnostic_summary"] = build_article_artifact_diagnostics_summary(manifest)
+    return manifest
+
+
+def build_article_artifact_diagnostics_summary(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Return observability counts for deterministic fixture detection."""
+    summary = manifest.get("summary", {}) if isinstance(manifest.get("summary"), dict) else {}
+    diagnostics = _list_of_dicts(manifest.get("diagnostics"))
+    return {
+        "artifact_counts_by_type": dict(summary.get("artifact_counts_by_type", {})),
+        "candidate_link_type_counts": dict(summary.get("candidate_link_type_counts", {})),
+        "review_state_counts": dict(summary.get("review_state_counts", {})),
+        "missing_span_count": int(summary.get("missing_span_count", 0) or 0),
+        "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
+    }
+
+
+def _validate_redacted_structure_boundary(structure: dict[str, Any]) -> None:
+    if structure.get("schema_version") != REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION:
+        raise ValueError(f"input structure must use schema {REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION}")
+    if not isinstance(structure.get("paper_id"), str) or not structure["paper_id"]:
+        raise ValueError("input structure must include a non-empty paper_id")
+    safety_flags = structure.get("safety_flags")
+    if not isinstance(safety_flags, dict):
+        raise ValueError("input structure must include safety_flags")
+    for key in default_safety_flags():
+        if safety_flags.get(key) is True:
+            raise ValueError(f"input structure safety flag must be false: {key}")
+    if _validate_forbidden_keys(structure):
+        raise ValueError("input structure contains forbidden raw payload keys")
+    if _validate_source_of_truth_markers(structure):
+        raise ValueError("input structure contains source-of-truth markers")
+
+
+def _source_ref_from_structure(source: dict[str, Any], paper_id: str) -> SourceReference:
+    return SourceReference(
+        source_id=str(source.get("source_id")),
+        paper_id=paper_id,
+        source_role="redacted_article_structure",
+        source_path=_string_or_none(source.get("source_path")),
+        sha256=_string_or_none(source.get("sha256")),
+        media_type=_string_or_none(source.get("media_type")),
+    )
+
+
+def _span_from_structure(span: dict[str, Any]) -> SourceSpan:
+    bbox = span.get("bbox")
+    return SourceSpan(
+        span_id=str(span.get("span_id")),
+        source_id=str(span.get("source_id")),
+        coordinate_space=str(span.get("coordinate_space")),  # type: ignore[arg-type]
+        char_start=span.get("char_start") if isinstance(span.get("char_start"), int) else None,
+        char_end=span.get("char_end") if isinstance(span.get("char_end"), int) else None,
+        page_start=span.get("page_start") if isinstance(span.get("page_start"), int) else None,
+        page_end=span.get("page_end") if isinstance(span.get("page_end"), int) else None,
+        bbox=tuple(float(value) for value in bbox) if isinstance(bbox, list) and len(bbox) == 4 else None,
+        span_hash=_string_or_none(span.get("span_hash")),
+    )
+
+
+def _section_lineage(section: dict[str, Any], spans: dict[str, SourceSpan]) -> SectionLineage:
+    ordinal = section.get("ordinal_path")
+    return SectionLineage(
+        section_id=str(section.get("section_id")),
+        parent_section_id=_string_or_none(section.get("parent_section_id")),
+        section_type=_string_or_none(section.get("section_type")),
+        ordinal_path=tuple(value for value in ordinal if isinstance(value, int)) if isinstance(ordinal, list) else (),
+        source_span=spans.get(_string_or_none(section.get("span_id"))),
+    )
+
+
+def _placeholder_candidate_links(
+    paper_id: str, placeholder: dict[str, Any], artifact_span: SourceSpan | None, spans: dict[str, SourceSpan]
+) -> tuple[CandidateLink, ...]:
+    artifact_id = str(placeholder.get("artifact_id"))
+    artifact_type = str(placeholder.get("artifact_type"))
+    links: list[CandidateLink] = []
+    link_span = spans.get(_string_or_none(placeholder.get("caption_span_id"))) or artifact_span
+    for target in _string_list(placeholder.get("candidate_link_targets")):
+        link_type: CandidateLinkType = "supports" if artifact_type in {"figure", "table"} else "candidate_for"
+        links.append(
+            CandidateLink(
+                link_id=f"{paper_id}:link:{_artifact_slug(artifact_id)}:{link_type}-{_artifact_slug(target)}",
+                source_artifact_id=artifact_id,
+                target_ref=target,
+                link_type=link_type,
+                review_state="review_required",
+                source_spans=(link_span,) if link_span is not None else (),
+                confidence_label="needs_semantic_review",
+                diagnostic_codes=("needs_semantic_review",),
+            )
+        )
+    if isinstance(placeholder.get("target_ref"), str):
+        links.append(
+            CandidateLink(
+                link_id=f"{paper_id}:link:{_artifact_slug(artifact_id)}:cites-external",
+                source_artifact_id=artifact_id,
+                target_ref=str(placeholder["target_ref"]),
+                link_type="cites",
+                review_state="review_required",
+                source_spans=(artifact_span,) if artifact_span is not None else (),
+                confidence_label="needs_reference_review",
+                diagnostic_codes=("needs_reference_review",),
+            )
+        )
+    elif artifact_type == "equation" and isinstance(placeholder.get("section_id"), str):
+        links.append(
+            CandidateLink(
+                link_id=f"{paper_id}:link:{_artifact_slug(artifact_id)}:located-in-{_section_slug(str(placeholder['section_id']))}",
+                source_artifact_id=artifact_id,
+                target_ref=str(placeholder["section_id"]),
+                link_type="located_in",
+                review_state="review_required",
+                source_spans=(artifact_span,) if artifact_span is not None else (),
+                confidence_label="deterministic_structure",
+            )
+        )
+    return tuple(links)
+
+
+def _section_artifact_id(paper_id: str, section_id: str) -> str:
+    return f"{paper_id}:artifact:section:{_section_slug(section_id)}"
+
+
+def _section_slug(section_id: str) -> str:
+    return section_id.rsplit(":", 1)[-1]
+
+
+def _artifact_slug(artifact_id: str) -> str:
+    if ":artifact:" in artifact_id:
+        artifact_id = artifact_id.split(":artifact:", 1)[1]
+    return artifact_id.replace(":", "-")
+
+
+def _fixture_role_for_placeholder(artifact_type: str) -> str:
+    roles = {
+        "figure": "captioned_figure_placeholder",
+        "table": "captioned_table_placeholder",
+        "equation": "equation_placeholder",
+        "reference": "citation_placeholder",
+        "dataset": "structured_dataset_marker",
+        "method": "structured_method_marker",
+        "metric": "structured_metric_marker",
+        "experiment": "structured_experiment_marker",
+    }
+    return roles.get(artifact_type, "structured_artifact_marker")
+
+
+def _missing_span_diagnostic(span_id: Any, object_id: str) -> ArticleArtifactDiagnostic:
+    return ArticleArtifactDiagnostic(
+        code="missing_span",
+        json_path="/safe_spans",
+        severity="warning",
+        object_id=object_id,
+        message="Fixture references a span ID that is not present in safe_spans; no raw content was inspected.",
+        blocks_import=True,
+    )
+
 def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     """Return redacted diagnostics with stable codes and JSON paths."""
     diagnostics: list[ArticleArtifactDiagnostic] = []
@@ -673,6 +948,11 @@ __all__ = [
     "ALLOWED_REVIEW_STATES",
     "ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION",
     "ARTICLE_ARTIFACT_SCHEMA_VERSION",
+    "build_article_artifact_diagnostics_summary",
+    "build_article_artifact_manifest_from_structure",
+    "DEFAULT_DETERMINISTIC_RUN_ID",
+    "DETERMINISTIC_FIXTURE_DETECTOR",
+    "REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION",
     "ArticleArtifactDiagnostic",
     "ArticleArtifactManifest",
     "ArticleArtifactRecord",

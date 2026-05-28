@@ -59,9 +59,16 @@ def test_article_artifacts_detect_writes_redacted_manifest_and_summary(tmp_path:
     payload = json.loads(result.stdout)
     assert payload["status"] == "detected"
     assert payload["paper_id"] == "fixture-paper-0001"
-    assert payload["artifact_count"] == 4
-    assert payload["candidate_link_count"] == 5
+    assert payload["artifact_count"] == 5
+    assert payload["candidate_link_count"] == 6
     assert payload["diagnostic_count"] == 0
+    assert payload["missing_span_count"] == 0
+    assert payload["diagnostic_summary"]["artifact_counts_by_type"] == {
+        "equation": 1,
+        "figure": 1,
+        "reference": 1,
+        "section": 2,
+    }
     assert payload["production_import_attempted"] is False
     assert payload["ladybugdb_written"] is False
     assert payload["trusted_kg_import_allowed"] is False
@@ -81,14 +88,21 @@ def test_article_artifacts_detect_writes_redacted_manifest_and_summary(tmp_path:
         "equation": 1,
         "figure": 1,
         "reference": 1,
-        "section": 1,
+        "section": 2,
     }
+    assert manifest["summary"]["candidate_link_type_counts"] == {
+        "cites": 1,
+        "contains": 3,
+        "located_in": 1,
+        "supports": 1,
+    }
+    assert manifest["summary"]["missing_span_count"] == 0
     assert manifest["safety_flags"]["raw_text_included"] is False
     assert manifest["safety_flags"]["model_outputs_included"] is False
     assert manifest["production_import_attempted"] is False
     assert manifest["ladybugdb_written"] is False
     assert summary["schema_version"] == "m023-article-artifact-run.v1"
-    assert summary["artifact_count"] == 4
+    assert summary["artifact_count"] == 5
 
     serialized = json.dumps({"manifest": manifest, "summary": summary})
     for forbidden_fragment in (
@@ -139,3 +153,25 @@ def test_article_artifacts_detect_rejects_non_fixture_schema(tmp_path: Path) -> 
 
     assert result.returncode != 0
     assert "m023-redacted-article-structure.v1" in result.stderr
+
+
+
+def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(tmp_path: Path) -> None:
+    standalone_input = tmp_path / "standalone_structure.json"
+    standalone_input.write_text(INPUT_STRUCTURE.read_text(encoding="utf-8"), encoding="utf-8")
+
+    result = _run_cli(
+        "article-artifacts",
+        "detect",
+        "--input-structure",
+        str(standalone_input),
+        "--output-dir",
+        str(tmp_path / "out"),
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["artifact_count"] == 5
+    assert payload["candidate_link_count"] == 6
+    assert Path(payload["manifest_path"]).exists()

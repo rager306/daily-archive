@@ -15,6 +15,7 @@ from arxiv_archive.article_artifacts import (
     SectionLineage,
     SourceReference,
     SourceSpan,
+    build_article_artifact_manifest_from_structure,
     default_safety_flags,
     to_json,
     validate_article_artifact_manifest,
@@ -154,6 +155,114 @@ def test_redacted_article_structure_fixture_validates_expected_manifest() -> Non
     for fragment in forbidden_fragments:
         assert fragment not in serialized
 
+
+
+
+def test_deterministic_fixture_detector_generates_candidates_from_structure() -> None:
+    structure = _load_fixture("basic_article_structure.json")
+    manifest = build_article_artifact_manifest_from_structure(structure)
+
+    assert validate_article_artifact_manifest(manifest) == []
+    assert manifest["paper_id"] == "fixture-paper-0001"
+    assert manifest["summary"]["artifact_counts_by_type"] == {
+        "equation": 1,
+        "figure": 1,
+        "reference": 1,
+        "section": 2,
+    }
+    assert manifest["summary"]["candidate_link_type_counts"] == {
+        "cites": 1,
+        "contains": 3,
+        "located_in": 1,
+        "supports": 1,
+    }
+    assert manifest["summary"]["missing_span_count"] == 0
+    assert manifest["summary"]["diagnostic_summary"]["review_state_counts"] == {"review_required": 5}
+    artifact_ids = {artifact["artifact_id"] for artifact in manifest["artifacts"]}
+    assert "fixture-paper-0001:artifact:section:methods" in artifact_ids
+    assert "fixture-paper-0001:artifact:section:results" in artifact_ids
+
+    serialized = json.dumps(manifest)
+    for forbidden_fragment in (
+        '"text":',
+        '"caption_text":',
+        '"raw_model_output":',
+        '"embedding":',
+        '"vector":',
+        '"secret":',
+        '"source_of_truth":',
+    ):
+        assert forbidden_fragment not in serialized
+
+
+def test_deterministic_fixture_detector_uses_explicit_structured_markers_only() -> None:
+    structure = _load_fixture("basic_article_structure.json")
+    structure["structured_markers"] = [
+        {
+            "artifact_id": "fixture-paper-0001:artifact:dataset:0001",
+            "artifact_type": "dataset",
+            "section_id": "fixture-paper-0001:section:methods",
+            "span_id": "fixture-paper-0001:span:section-methods",
+        },
+        {
+            "artifact_id": "fixture-paper-0001:artifact:method:0001",
+            "artifact_type": "method",
+            "section_id": "fixture-paper-0001:section:methods",
+            "span_id": "fixture-paper-0001:span:section-methods",
+        },
+        {
+            "artifact_id": "fixture-paper-0001:artifact:metric:0001",
+            "artifact_type": "metric",
+            "section_id": "fixture-paper-0001:section:results",
+            "span_id": "fixture-paper-0001:span:section-results",
+        },
+        {
+            "artifact_id": "fixture-paper-0001:artifact:experiment:0001",
+            "artifact_type": "experiment",
+            "section_id": "fixture-paper-0001:section:results",
+            "span_id": "fixture-paper-0001:span:section-results",
+        },
+    ]
+
+    manifest = build_article_artifact_manifest_from_structure(structure)
+
+    assert validate_article_artifact_manifest(manifest) == []
+    assert manifest["summary"]["artifact_counts_by_type"] == {
+        "dataset": 1,
+        "equation": 1,
+        "experiment": 1,
+        "figure": 1,
+        "method": 1,
+        "metric": 1,
+        "reference": 1,
+        "section": 2,
+    }
+    assert manifest["summary"]["candidate_link_type_counts"]["contains"] == 7
+
+
+def test_deterministic_fixture_detector_reports_missing_spans_without_raw_payloads() -> None:
+    structure = _load_fixture("basic_article_structure.json")
+    structure["artifact_placeholders"][0]["span_id"] = "fixture-paper-0001:span:missing"
+
+    manifest = build_article_artifact_manifest_from_structure(structure)
+
+    assert validate_article_artifact_manifest(manifest) == []
+    assert manifest["summary"]["missing_span_count"] == 1
+    assert manifest["summary"]["diagnostic_summary"]["diagnostic_counts_by_code"] == {"missing_span": 1}
+    assert manifest["diagnostics"][0]["code"] == "missing_span"
+    assert "raw paper text" not in json.dumps(manifest["diagnostics"])
+
+
+def test_deterministic_fixture_detector_rejects_raw_payload_markers() -> None:
+    structure = _load_fixture("basic_article_structure.json")
+    structure["artifact_placeholders"][0]["caption_text"] = "forbidden raw caption"
+
+    try:
+        build_article_artifact_manifest_from_structure(structure)
+    except ValueError as exc:
+        assert "forbidden raw payload keys" in str(exc)
+    else:  # pragma: no cover - defensive assertion branch
+        raise AssertionError("raw payload marker should be rejected")
 
 def test_artifact_manifest_serializes_redacted_contract() -> None:
     manifest = _manifest()

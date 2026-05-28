@@ -26,6 +26,8 @@ from arxiv_archive.article_artifacts import (  # noqa: E402
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,
     ArticleArtifactRunSummary,
+    build_article_artifact_diagnostics_summary,
+    build_article_artifact_manifest_from_structure,
     default_safety_flags,
     to_json,
     validate_article_artifact_manifest,
@@ -196,28 +198,13 @@ def _load_fixture_manifest(input_structure: Path) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise typer.BadParameter(f"input structure must be JSON: {exc.msg}") from exc
 
-    if structure.get("schema_version") != "m023-redacted-article-structure.v1":
-        raise typer.BadParameter("input structure must use schema m023-redacted-article-structure.v1")
-    if not isinstance(structure.get("paper_id"), str) or not structure["paper_id"]:
-        raise typer.BadParameter("input structure must include a non-empty paper_id")
-
-    manifest_path = input_structure.with_name("basic_expected_manifest.json")
-    if not manifest_path.exists():
-        raise typer.BadParameter(
-            "deterministic fixture processing requires basic_expected_manifest.json next to the input structure"
-        )
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise typer.BadParameter(f"fixture manifest could not be read: {exc}") from exc
-    except json.JSONDecodeError as exc:
-        raise typer.BadParameter(f"fixture manifest must be JSON: {exc.msg}") from exc
-
-    if manifest.get("paper_id") != structure["paper_id"]:
-        raise typer.BadParameter("fixture manifest paper_id does not match input structure")
+        manifest = build_article_artifact_manifest_from_structure(structure)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     diagnostics = validate_article_artifact_manifest(manifest)
     if diagnostics:
-        raise typer.BadParameter(f"fixture manifest failed contract validation with {len(diagnostics)} diagnostics")
+        raise typer.BadParameter(f"generated fixture manifest failed contract validation with {len(diagnostics)} diagnostics")
     return manifest
 
 
@@ -262,6 +249,8 @@ def article_artifacts_detect(
                 "source_refs": manifest.get("source_refs", []),
                 "detector": "redacted_fixture_v1",
             },
+            "diagnostic_summary": build_article_artifact_diagnostics_summary(manifest),
+            "missing_span_count": manifest.get("summary", {}).get("missing_span_count", 0),
             "import_eligible_count": 0,
             "promoted_to_fact_count": 0,
         }
