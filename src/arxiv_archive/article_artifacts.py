@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 ARTICLE_ARTIFACT_SCHEMA_VERSION = "m023-article-artifacts.v1"
 ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION = "m023-article-artifact-run.v1"
+ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION = "m023-article-artifact-diagnostics.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"
 
 ArtifactType = Literal[
@@ -344,23 +345,87 @@ class ArticleArtifactRunSummary:
 
     run_id: str
     manifests: tuple[dict[str, Any], ...]
+    input_hashes: dict[str, str] = field(default_factory=dict)
+    output_paths: dict[str, Any] = field(default_factory=dict)
 
     def to_redacted_dict(self) -> dict[str, Any]:
         artifact_count = sum(len(_list_of_dicts(manifest.get("artifacts"))) for manifest in self.manifests)
         diagnostic_count = sum(len(_list_of_dicts(manifest.get("diagnostics"))) for manifest in self.manifests)
+        diagnostic_codes = sorted(
+            {
+                str(diagnostic.get("code"))
+                for manifest in self.manifests
+                for diagnostic in _list_of_dicts(manifest.get("diagnostics"))
+                if isinstance(diagnostic.get("code"), str) and diagnostic.get("code")
+            }
+        )
         return {
             "schema_version": ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
+            "diagnostics_schema_version": ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
+            "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
             "run_id": self.run_id,
             "paper_count": len(self.manifests),
+            "paper_ids": [str(manifest.get("paper_id")) for manifest in self.manifests if manifest.get("paper_id")],
             "artifact_count": artifact_count,
             "diagnostic_count": diagnostic_count,
+            "diagnostic_codes": diagnostic_codes,
             "artifact_counts_by_type": _merge_counts(manifest.get("summary", {}).get("artifact_counts_by_type", {}) for manifest in self.manifests),
             "review_state_counts": _merge_counts(manifest.get("summary", {}).get("review_state_counts", {}) for manifest in self.manifests),
             "candidate_link_type_counts": _merge_counts(manifest.get("summary", {}).get("candidate_link_type_counts", {}) for manifest in self.manifests),
             "promoted_to_fact_count": 0,
             "import_eligible_count": 0,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+            "trusted_kg_import_allowed": False,
             "safety_flags": default_safety_flags(),
+            "input_hashes": dict(self.input_hashes),
+            "output_paths": dict(self.output_paths),
         }
+
+
+def build_article_artifact_run_diagnostics_artifact(
+    *,
+    run_id: str,
+    manifests: tuple[dict[str, Any], ...],
+    input_hashes: dict[str, str] | None = None,
+    output_paths: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a redacted diagnostics artifact for a deterministic detection run."""
+    diagnostics = [
+        dict(diagnostic)
+        for manifest in manifests
+        for diagnostic in _list_of_dicts(manifest.get("diagnostics"))
+    ]
+    return {
+        "schema_version": ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
+        "run_schema_version": ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
+        "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
+        "run_id": run_id,
+        "paper_ids": [str(manifest.get("paper_id")) for manifest in manifests if manifest.get("paper_id")],
+        "diagnostic_count": len(diagnostics),
+        "diagnostics": diagnostics,
+        "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
+        "diagnostic_codes": sorted(
+            {
+                str(diagnostic.get("code"))
+                for diagnostic in diagnostics
+                if isinstance(diagnostic.get("code"), str) and diagnostic.get("code")
+            }
+        ),
+        "manifest_diagnostic_summaries": {
+            str(manifest.get("paper_id")): build_article_artifact_diagnostics_summary(manifest)
+            for manifest in manifests
+            if manifest.get("paper_id")
+        },
+        "input_hashes": dict(input_hashes or {}),
+        "output_paths": dict(output_paths or {}),
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "trusted_kg_import_allowed": False,
+        "promoted_to_fact_count": 0,
+        "import_eligible_count": 0,
+        "safety_flags": default_safety_flags(),
+    }
 
 
 def summarize_article_artifacts(artifacts: list[dict[str, Any]]) -> dict[str, Any]:

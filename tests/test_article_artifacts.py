@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from arxiv_archive.article_artifacts import (
+    ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,
     ArticleArtifactDiagnostic,
@@ -16,6 +17,7 @@ from arxiv_archive.article_artifacts import (
     SourceReference,
     SourceSpan,
     build_article_artifact_manifest_from_structure,
+    build_article_artifact_run_diagnostics_artifact,
     default_safety_flags,
     to_json,
     validate_article_artifact_manifest,
@@ -439,18 +441,72 @@ def test_validation_rejects_import_eligible_and_promoted_records() -> None:
 
 def test_run_summary_merges_manifest_counts_without_payloads() -> None:
     manifest = _manifest()
-    summary = ArticleArtifactRunSummary(run_id="test-run", manifests=(manifest,)).to_redacted_dict()
+    summary = ArticleArtifactRunSummary(
+        run_id="test-run",
+        manifests=(manifest,),
+        input_hashes={"input_structure_sha256": VALID_SHA},
+        output_paths={"manifest": "out/p1-article-artifacts.json"},
+    ).to_redacted_dict()
 
     assert summary["schema_version"] == ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION
+    assert summary["diagnostics_schema_version"] == ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION
+    assert summary["manifest_schema_version"] == ARTICLE_ARTIFACT_SCHEMA_VERSION
     assert summary["paper_count"] == 1
+    assert summary["paper_ids"] == ["p1"]
     assert summary["artifact_count"] == 1
     assert summary["diagnostic_count"] == 1
+    assert summary["diagnostic_codes"] == ["review_required"]
     assert summary["artifact_counts_by_type"] == {"figure": 1}
     assert summary["review_state_counts"] == {"review_required": 1}
     assert summary["candidate_link_type_counts"] == {"supports": 1}
     assert summary["promoted_to_fact_count"] == 0
     assert summary["import_eligible_count"] == 0
+    assert summary["production_import_attempted"] is False
+    assert summary["ladybugdb_written"] is False
+    assert summary["trusted_kg_import_allowed"] is False
+    assert summary["input_hashes"] == {"input_structure_sha256": VALID_SHA}
+    assert summary["output_paths"] == {"manifest": "out/p1-article-artifacts.json"}
     assert summary["safety_flags"]["raw_binary_included"] is False
+
+
+def test_run_diagnostics_artifact_carries_stable_codes_and_no_import_flags() -> None:
+    manifest = _manifest()
+    diagnostics = build_article_artifact_run_diagnostics_artifact(
+        run_id="test-run",
+        manifests=(manifest,),
+        input_hashes={"input_structure_sha256": VALID_SHA},
+        output_paths={"diagnostics": "out/article-artifacts-diagnostics.json"},
+    )
+
+    assert diagnostics["schema_version"] == ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION
+    assert diagnostics["run_schema_version"] == ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION
+    assert diagnostics["manifest_schema_version"] == ARTICLE_ARTIFACT_SCHEMA_VERSION
+    assert diagnostics["paper_ids"] == ["p1"]
+    assert diagnostics["diagnostic_count"] == 1
+    assert diagnostics["diagnostic_codes"] == ["review_required"]
+    assert diagnostics["diagnostic_counts_by_code"] == {"review_required": 1}
+    assert diagnostics["manifest_diagnostic_summaries"]["p1"]["diagnostic_counts_by_code"] == {"review_required": 1}
+    assert diagnostics["production_import_attempted"] is False
+    assert diagnostics["ladybugdb_written"] is False
+    assert diagnostics["trusted_kg_import_allowed"] is False
+    assert diagnostics["promoted_to_fact_count"] == 0
+    assert diagnostics["import_eligible_count"] == 0
+    assert diagnostics["safety_flags"] == default_safety_flags()
+
+    serialized = json.dumps(diagnostics)
+    for forbidden_fragment in (
+        '"text":',
+        '"caption_text":',
+        '"raw_model_output":',
+        '"embedding":',
+        '"vector":',
+        '"secret":',
+        '"source_of_truth":',
+        '"trusted_kg_import_allowed": true',
+        '"ladybugdb_written": true',
+        '"production_import_attempted": true',
+    ):
+        assert forbidden_fragment not in serialized
 
 
 def test_to_json_is_sorted_and_contract_contains_no_forbidden_payload_keys() -> None:

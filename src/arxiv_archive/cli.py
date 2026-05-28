@@ -1,6 +1,7 @@
 """CLI for arxiv-archive."""
 
 import asyncio
+import hashlib
 import json
 import os
 from collections import Counter, defaultdict
@@ -28,6 +29,7 @@ from arxiv_archive.article_artifacts import (  # noqa: E402
     ArticleArtifactRunSummary,
     build_article_artifact_diagnostics_summary,
     build_article_artifact_manifest_from_structure,
+    build_article_artifact_run_diagnostics_artifact,
     default_safety_flags,
     to_json,
     validate_article_artifact_manifest,
@@ -208,6 +210,14 @@ def _load_fixture_manifest(input_structure: Path) -> dict[str, Any]:
     return manifest
 
 
+def _hash_file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 @article_artifacts_app.command("detect")
 def article_artifacts_detect(
     input_structure: Annotated[
@@ -225,10 +235,29 @@ def article_artifacts_detect(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = output_dir / f"{manifest['paper_id']}-article-artifacts.json"
-    run_summary = ArticleArtifactRunSummary(run_id=str(manifest["run_id"]), manifests=(manifest,)).to_redacted_dict()
     run_summary_path = output_dir / "article-artifacts-run-summary.json"
+    diagnostics_path = output_dir / "article-artifacts-diagnostics.json"
+    input_hashes = {"input_structure_sha256": _hash_file_sha256(input_structure)}
+    output_paths = {
+        "manifest": str(manifest_path),
+        "run_summary": str(run_summary_path),
+        "diagnostics": str(diagnostics_path),
+    }
+    run_summary = ArticleArtifactRunSummary(
+        run_id=str(manifest["run_id"]),
+        manifests=(manifest,),
+        input_hashes=input_hashes,
+        output_paths=output_paths,
+    ).to_redacted_dict()
+    diagnostics_artifact = build_article_artifact_run_diagnostics_artifact(
+        run_id=str(manifest["run_id"]),
+        manifests=(manifest,),
+        input_hashes=input_hashes,
+        output_paths=output_paths,
+    )
     manifest_path.write_text(to_json(manifest), encoding="utf-8")
     run_summary_path.write_text(to_json(run_summary), encoding="utf-8")
+    diagnostics_path.write_text(to_json(diagnostics_artifact), encoding="utf-8")
 
     response = _article_artifacts_boundary_payload("detected")
     response.update(
@@ -236,6 +265,9 @@ def article_artifacts_detect(
             "input_structure_path": str(input_structure),
             "manifest_path": str(manifest_path),
             "run_summary_path": str(run_summary_path),
+            "diagnostics_path": str(diagnostics_path),
+            "output_paths": output_paths,
+            "input_hashes": input_hashes,
             "run_id": manifest["run_id"],
             "paper_id": manifest["paper_id"],
             "artifact_count": manifest["summary"]["artifact_count"],
@@ -250,6 +282,7 @@ def article_artifacts_detect(
                 "detector": "redacted_fixture_v1",
             },
             "diagnostic_summary": build_article_artifact_diagnostics_summary(manifest),
+            "diagnostic_codes": diagnostics_artifact["diagnostic_codes"],
             "missing_span_count": manifest.get("summary", {}).get("missing_span_count", 0),
             "import_eligible_count": 0,
             "promoted_to_fact_count": 0,
