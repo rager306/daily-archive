@@ -14,8 +14,16 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.article_loader import classify_article_source, load_article_source
-from arxiv_archive.full_text import assess_full_text_quality
+from arxiv_archive.article_loader import (
+    ArticleLoadSource,
+    classify_article_source,
+    load_article_source,
+)
+from arxiv_archive.full_text import (
+    FullTextSource,
+    assess_full_text_quality,
+    ingest_full_text,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
 
@@ -244,20 +252,138 @@ def test_binary_bytes_under_text_extension_returns_decode_failure(tmp_path: Path
 
 def test_low_quality_markdown_reuses_full_text_quality_contract(tmp_path: Path) -> None:
     source_path = FIXTURES_DIR / "arxiv_landing_only.md"
+    expected_ingestion = ingest_full_text(
+        FullTextSource(paper_id="2605.14259v1", source_type="markdown", source_path=source_path)
+    )
     expected_quality = assess_full_text_quality(source_path.read_text(encoding="utf-8"))
 
     result = load_article_source(source_path, log_path=tmp_path / "low-quality.jsonl")
 
     _assert_common_metadata(result, source_path, "markdown", "text/markdown")
+    assert expected_ingestion.extraction_mode == "low_quality_source"
     assert expected_quality.status == "no_substantive_body"
     assert result.outcome == "failed"
-    assert result.failure_reason == expected_quality.fallback_reason == "no_substantive_body"
-    assert result.quality.status == expected_quality.status
-    assert result.quality.heading_count == expected_quality.heading_count
-    assert result.quality.non_heading_nonempty_line_count == expected_quality.non_heading_nonempty_line_count
+    assert result.failure_reason == expected_quality.fallback_reason == expected_ingestion.fallback_reason
+    assert result.quality.status == expected_ingestion.quality.status == expected_quality.status
+    assert result.quality.heading_count == expected_ingestion.quality.heading_count == expected_quality.heading_count
+    assert (
+        result.quality.non_heading_nonempty_line_count
+        == expected_ingestion.quality.non_heading_nonempty_line_count
+        == expected_quality.non_heading_nonempty_line_count
+    )
     assert result.text is None
     assert result.warning_count == 1
-    assert result.warnings == expected_quality.warnings
+    assert result.warnings == expected_ingestion.warnings == expected_quality.warnings
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "source_type", "expected_extraction_mode", "expected_fallback_reason"),
+    [
+        ("structured_paper.md", "markdown", "structured_markdown", None),
+        ("ocr_text.txt", "text", "plain_text", "unstructured_text"),
+        ("arxiv_landing_only.md", "markdown", "low_quality_source", "no_substantive_body"),
+    ],
+)
+def test_loader_text_quality_matches_full_text_ingestion_contract(
+    tmp_path: Path,
+    fixture_name: str,
+    source_type: str,
+    expected_extraction_mode: str,
+    expected_fallback_reason: str | None,
+) -> None:
+    source_path = FIXTURES_DIR / fixture_name
+    ingestion = ingest_full_text(FullTextSource("2605.compat", source_type, source_path))
+
+    result = load_article_source(
+        ArticleLoadSource(source_path, paper_id="2605.compat", source_type=source_type),
+        log_path=tmp_path / f"{fixture_name}.jsonl",
+    )
+
+    assert ingestion.extraction_mode == expected_extraction_mode
+    assert ingestion.fallback_reason == expected_fallback_reason
+    assert result.quality is not None
+    assert result.quality.status == ingestion.quality.status
+    assert result.quality.heading_count == ingestion.quality.heading_count
+    assert result.quality.non_heading_nonempty_line_count == ingestion.quality.non_heading_nonempty_line_count
+    assert result.quality.fallback_reason == ingestion.quality.fallback_reason
+    assert result.warnings == ([] if result.outcome == "loaded" else ingestion.warnings)
+    if ingestion.quality.status == "no_substantive_body":
+        assert result.outcome == "failed"
+        assert result.failure_reason == ingestion.fallback_reason
+        assert result.text is None
+    else:
+        assert result.outcome == "loaded"
+        assert result.failure_reason is None
+        assert result.text == ingestion.text
+
+
+def test_source_ids_are_stable_across_repeated_loads_and_log_paths(tmp_path: Path) -> None:
+    source_path = FIXTURES_DIR / "structured_paper.md"
+
+    first = load_article_source(source_path, log_path=tmp_path / "first" / "article-loader.jsonl")
+    second = load_article_source(source_path, log_path=tmp_path / "second" / "article-loader.jsonl")
+    classified = classify_article_source(source_path)
+
+    assert first.source_id == second.source_id == classified.source_id
+    assert first.sha256 == second.sha256 == classified.sha256
+    assert first.provenance["source_id"] == first.source_id
+    assert second.provenance["source_id"] == second.source_id
+
+
+def test_each_load_attempt_emits_exactly_one_terminal_event(tmp_path: Path) -> None:
+    log_path = tmp_path / "attempts.jsonl"
+
+    successful = load_article_source(FIXTURES_DIR / "structured_paper.md", log_path=log_path)
+    failed = load_article_source(tmp_path / "missing.md", log_path=log_path)
+
+    events = _read_events(log_path)
+    by_source_id = {successful.source_id: [], failed.source_id: []}
+    for event in events:
+        by_source_id[event["source_id"]].append(event["event"])
+
+    assert by_source_id[successful.source_id] == ["source.load_started", "source.load_completed"]
+    assert by_source_id[failed.source_id] == ["source.load_started", "source.load_failed"]
+    terminal_events = [event for event in events if event["event"] in {"source.load_completed", "source.load_failed"}]
+    assert len(terminal_events) == 2
+    assert all(event["outcome"] in {"loaded", "loaded_metadata_only", "failed"} for event in terminal_events)
+    _assert_safe_event_payload(events)
+
+
+def test_event_payloads_align_with_source_reference_provenance_fields(tmp_path: Path) -> None:
+    source_path = FIXTURES_DIR / "structured_paper.md"
+    log_path = tmp_path / "source-reference.jsonl"
+
+    result = load_article_source(
+        ArticleLoadSource(source_path, paper_id="2605.12345", source_type="markdown"),
+        log_path=log_path,
+    )
+
+    events = _read_events(log_path)
+    required_keys = {
+        "source_id",
+        "paper_id",
+        "source_path",
+        "sha256",
+        "media_type",
+        "source_type",
+        "parser_name",
+        "loader_name",
+        "outcome",
+    }
+    for event in events:
+        assert required_keys <= event.keys()
+        assert event["paper_id"] == "2605.12345"
+        assert event["source_id"] == result.source_id
+        assert event["source_path"] == str(source_path)
+        assert event["sha256"] == result.sha256
+        assert event["media_type"] == result.media_type
+        assert event["outcome"] in {"started", "loaded"}
+
+    for key in required_keys - {"outcome"}:
+        assert key in result.provenance
+    assert result.provenance["paper_id"] == "2605.12345"
+    assert result.outcome == "loaded"
+    _assert_safe_event_payload(events)
 
 
 def test_secret_like_source_text_is_available_to_result_but_redacted_from_logs(tmp_path: Path) -> None:

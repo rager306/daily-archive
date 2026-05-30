@@ -1,10 +1,20 @@
 """Local article source loading boundary with provenance-first diagnostics.
 
-The article loader is intentionally local-only.  It classifies existing source
-artifacts, reads text-like payloads when safe, computes deterministic provenance,
-and emits metadata-only JSONL events for downstream evidence-bundle work.  It
-never performs acquisition, conversion, graph imports, embeddings, vector-store
-writes, or network calls.
+The article loader is intentionally local-only.  It accepts existing Markdown,
+HTML, PDF, OCR/plain-text artifacts, reads text-like payloads when safe,
+computes deterministic provenance, and emits metadata-only JSONL events for
+downstream evidence-bundle work.  It never performs acquisition, conversion,
+graph imports, embeddings, vector-store writes, subprocess execution, or
+network calls.
+
+Outcome vocabulary is deliberately small and terminal: ``loaded`` means a
+text-like source passed UTF-8 decoding and full-text quality checks;
+``loaded_metadata_only`` means a PDF-like binary was checksummed/classified but
+no text payload was exposed; ``failed`` means the loader returned a typed
+``failure_reason`` such as ``source_missing``, ``source_empty``,
+``unsupported_type``, ``decode_failed``, or ``no_substantive_body``.  Logs carry
+only provenance and status metadata, never raw bytes, full text, base64,
+embeddings, vectors, tokens, or secret-like payloads.
 """
 
 from __future__ import annotations
@@ -79,7 +89,13 @@ class ArticleSourceMetadata:
 
 @dataclass(frozen=True)
 class ArticleLoadResult:
-    """Article loader result containing provenance and optional text payload."""
+    """Article loader result containing provenance, outcome, and optional text.
+
+    ``text`` is populated only for successfully loaded text-like artifacts.
+    Failures and metadata-only PDF probes keep payload text absent while
+    preserving source identity, checksums, status, warnings, and provenance for
+    downstream diagnostics.
+    """
 
     source_path: Path
     source_type: str
@@ -324,7 +340,7 @@ def _type_metadata(source_type: str) -> tuple[str, str]:
 
 def _source_id(*, source_path: Path, sha256: str | None, source_type: str) -> str:
     identity = sha256 if sha256 is not None else f"missing:{source_path}"
-    digest = hashlib.sha256(f"{source_type}:{source_path}:{identity}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{source_type}:{source_path}:{identity}".encode()).hexdigest()
     return f"article-source:{digest[:24]}"
 
 
