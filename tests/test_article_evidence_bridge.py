@@ -12,6 +12,7 @@ from arxiv_archive.article_evidence_bridge import (
     ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
     ArticleEvidenceReplayError,
+    attach_page_index_summary,
     build_article_evidence_bundle,
     build_article_evidence_bundle_from_load_events,
     build_article_evidence_run_summary,
@@ -24,8 +25,11 @@ from arxiv_archive.article_evidence_bridge import (
     validate_article_load_events,
 )
 from arxiv_archive.article_loader import ArticleLoadSource, load_article_source
+from arxiv_archive.article_page_index import build_article_page_index_from_structure
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
+ARTICLE_STRUCTURE_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
+PAGE_INDEX_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_page_index"
 
 FORBIDDEN_SNIPPETS = [
     "%PDF-1.4",
@@ -94,6 +98,51 @@ def _mixed_loader_results(tmp_path: Path):
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _load_structure_fixture(path: Path) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _basic_page_index() -> dict[str, object]:
+    return build_article_page_index_from_structure(
+        _load_structure_fixture(ARTICLE_STRUCTURE_FIXTURES_DIR / "basic_article_structure.json")
+    )
+
+
+def _fallback_page_index() -> dict[str, object]:
+    structure = _load_structure_fixture(ARTICLE_STRUCTURE_FIXTURES_DIR / "basic_article_structure.json")
+    structure["sections"] = []
+    structure["artifact_placeholders"] = []
+    structure["safe_spans"] = []
+    return build_article_page_index_from_structure(structure)
+
+
+def _blocked_page_index() -> dict[str, object]:
+    return build_article_page_index_from_structure(
+        _load_structure_fixture(PAGE_INDEX_FIXTURES_DIR / "malformed_structure.json")
+    )
+
+
+def _assert_no_forbidden_bridge_payload(payload: dict[str, object]) -> None:
+    serialized = json.dumps(payload, sort_keys=True)
+    for forbidden in FORBIDDEN_SNIPPETS:
+        assert forbidden not in serialized
+    assert not (set(_walk_keys(payload)) & FORBIDDEN_EXACT_KEYS)
+
+
+def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) -> dict[str, object]:
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-page-index-bridge-test",
+    )
+    return attach_page_index_summary(
+        bundle,
+        page_index,
+        manifest_path="artifacts/page-index-manifest.json",
+        manifest_sha256="a" * 64,
+    )
 
 
 def _combined_s01_log_events(tmp_path: Path):
@@ -311,6 +360,113 @@ def test_validation_reports_stable_diagnostics_for_unsafe_or_malformed_bundle(tm
     assert "forbidden_payload_key" in codes
     assert paths_by_code["forbidden_payload_key"] == "/text"
     assert all(diagnostic["blocks_import"] is True for diagnostic in diagnostics)
+
+
+def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(tmp_path: Path) -> None:
+    payload = _page_index_attached_payload(tmp_path, _basic_page_index())
+    subtree = payload["subtrees"]["page_index"]
+
+    assert subtree["status"] == "metadata_only"
+    assert subtree["review_only"] is True
+    assert subtree["record_count"] == 6
+    assert subtree["node_count"] == 6
+    assert subtree["anchor_count"] == 7
+    assert subtree["diagnostic_count"] == 0
+    assert subtree["diagnostic_counts_by_code"] == {}
+    assert subtree["blocker_count"] == 0
+    assert subtree["manifest"] == {
+        "path": "artifacts/page-index-manifest.json",
+        "sha256": "a" * 64,
+        "schema_version": "m024-article-page-index.v1",
+        "diagnostics_schema_version": "m024-article-page-index-diagnostics.v1",
+        "builder": "redacted_article_structure_page_index_v1",
+        "paper_id": "fixture-paper-0001",
+    }
+    assert subtree["source_provenance"]["source_count"] == 3
+    assert subtree["source_provenance"]["outcome_counts"] == {"failed": 1, "loaded": 1, "loaded_metadata_only": 1}
+    assert subtree["source_provenance"]["failure_counts"] == {"no_substantive_body": 1}
+    assert subtree["graph_import_claim"] is False
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["production_import_attempted"] is False
+    assert subtree["ladybugdb_written"] is False
+    assert subtree["import_eligible_count"] == 0
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_page_index_summary_attaches_fallback_manifest_as_review_only(tmp_path: Path) -> None:
+    payload = _page_index_attached_payload(tmp_path, _fallback_page_index())
+    subtree = payload["subtrees"]["page_index"]
+
+    assert subtree["status"] == "review_only"
+    assert subtree["record_count"] == 1
+    assert subtree["anchor_count"] == 0
+    assert subtree["fallback_count"] == 1
+    assert subtree["diagnostic_count"] == 1
+    assert subtree["diagnostic_counts_by_code"] == {"no_sections_fallback": 1}
+    assert subtree["blocker_count"] == 0
+    assert subtree["import_eligible_count"] == 0
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_page_index_summary_attaches_blocked_manifest_as_blocked_review_only(tmp_path: Path) -> None:
+    payload = _page_index_attached_payload(tmp_path, _blocked_page_index())
+    subtree = payload["subtrees"]["page_index"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["record_count"] > 0
+    assert subtree["missing_parent_count"] == 2
+    assert subtree["missing_span_count"] == 2
+    assert subtree["blocker_count"] >= 1
+    assert subtree["diagnostic_counts_by_code"]["missing_parent"] >= 1
+    assert subtree["diagnostic_counts_by_code"]["forbidden_payload_key"] >= 1
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["import_eligible_count"] == 0
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_page_index_summary_forces_unsafe_import_mutation_fail_closed(tmp_path: Path) -> None:
+    page_index = _basic_page_index()
+    page_index["import_eligible_count"] = 9
+    page_index["production_import_attempted"] = True
+    page_index["bridge_subtree"]["trusted_kg_import_allowed"] = True
+
+    payload = _page_index_attached_payload(tmp_path, page_index)
+    subtree = payload["subtrees"]["page_index"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["import_eligible_count"] == 0
+    assert subtree["production_import_attempted"] is False
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["diagnostic_counts_by_code"]["import_eligible_count_nonzero"] == 1
+    assert subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:production_import_attempted"] == 1
+    assert subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:trusted_kg_import_allowed"] == 1
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_page_index_summary_blocks_missing_source_path_or_hash_without_raw_payload(tmp_path: Path) -> None:
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-page-index-source-negative-test",
+    ).to_redacted_dict()
+    bundle["source_refs"][0]["source_path"] = ""
+    bundle["source_refs"][1]["sha256"] = None
+
+    payload = attach_page_index_summary(bundle, _basic_page_index())
+    subtree = payload["subtrees"]["page_index"]
+    bridge_codes = subtree["diagnostic_counts_by_code"]
+
+    assert subtree["status"] == "blocked"
+    assert bridge_codes["page_index_missing_source_path"] == 1
+    assert bridge_codes["page_index_missing_source_hash"] == 1
+    assert subtree["source_provenance"]["source_count"] == 3
+    assert "" not in subtree["source_provenance"]["source_paths"]
+    assert validate_article_evidence_bundle(payload)
+    _assert_no_forbidden_bridge_payload(payload)
 
 
 def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path: Path) -> None:

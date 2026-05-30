@@ -484,6 +484,76 @@ def to_redacted_dict(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | 
     return dict(value)
 
 
+def attach_page_index_summary(
+    bundle: ArticleEvidenceBundle | dict[str, Any],
+    page_index: dict[str, Any],
+    *,
+    manifest_path: str | Path | None = None,
+    manifest_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Return a redacted bundle dict with an updated ``subtrees["page_index"]`` summary.
+
+    The bridge stores PageIndex observability metadata only: status, counts,
+    diagnostics counters, manifest provenance, source provenance, and fail-closed
+    flags. It does not copy PageIndex nodes, anchors, source spans, normalized
+    text, graph-import claims, or payload-bearing diagnostics into the bridge.
+    """
+    payload = to_redacted_dict(bundle)
+    source_refs = _list_of_dicts(payload.get("source_refs"))
+    summary = page_index.get("summary") if isinstance(page_index.get("summary"), dict) else {}
+    manifest_diagnostics = _list_of_dicts(page_index.get("diagnostics"))
+    validation_diagnostics = _page_index_validation_diagnostics(page_index)
+    bridge_diagnostics = _page_index_bridge_diagnostics(source_refs)
+    diagnostics = manifest_diagnostics + validation_diagnostics + bridge_diagnostics
+    diagnostic_counts = _counts(diagnostic.get("code") for diagnostic in diagnostics)
+    blocker_count = sum(1 for diagnostic in diagnostics if diagnostic.get("blocks_import") is True)
+    fallback_count = _int_from_mapping(summary, "fallback_count")
+    status: BundleSubtreeStatus
+    if blocker_count:
+        status = "blocked"
+    elif fallback_count:
+        status = "review_only"
+    else:
+        status = "metadata_only"
+
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees["page_index"] = {
+        "status": status,
+        "review_only": True,
+        "record_count": _int_from_mapping(summary, "node_count"),
+        "node_count": _int_from_mapping(summary, "node_count"),
+        "anchor_count": _int_from_mapping(summary, "anchor_count"),
+        "missing_parent_count": _int_from_mapping(summary, "missing_parent_count"),
+        "missing_span_count": _int_from_mapping(summary, "missing_span_count"),
+        "fallback_count": fallback_count,
+        "blocker_count": blocker_count,
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_counts_by_code": diagnostic_counts,
+        "manifest": {
+            "path": str(manifest_path) if manifest_path is not None else None,
+            "sha256": manifest_sha256,
+            "schema_version": _string_or_none(page_index.get("schema_version")),
+            "diagnostics_schema_version": _string_or_none(page_index.get("diagnostics_schema_version")),
+            "builder": _string_or_none(page_index.get("builder")),
+            "paper_id": _string_or_none(page_index.get("paper_id")),
+        },
+        "source_provenance": _page_index_source_provenance(source_refs),
+        "graph_import_claim": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+    }
+    payload["subtrees"] = subtrees
+    payload["import_eligible_count"] = 0
+    payload["promoted_to_fact_count"] = 0
+    payload["production_import_attempted"] = False
+    payload["ladybugdb_written"] = False
+    payload["safety_flags"] = default_safety_flags()
+    return payload
+
+
 def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> str:
     """Serialize a bridge artifact deterministically."""
     return json.dumps(to_redacted_dict(value), indent=2, sort_keys=True) + "\n"
@@ -524,6 +594,46 @@ def build_article_evidence_run_summary_from_load_events(
         input_source_ids=replay_input_source_ids(event_list),
         input_hashes=replay_input_hashes(event_list),
     )
+
+
+def _page_index_validation_diagnostics(page_index: dict[str, Any]) -> list[dict[str, Any]]:
+    try:
+        from arxiv_archive.article_page_index import validate_article_page_index
+    except ImportError:
+        return [_diagnostic("page_index_validator_unavailable", "/subtrees/page_index").to_redacted_dict()]
+    return validate_article_page_index(page_index)
+
+
+def _page_index_bridge_diagnostics(source_refs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    if not source_refs:
+        diagnostics.append(_diagnostic("page_index_missing_source_refs", "/source_refs"))
+    for index, source in enumerate(source_refs):
+        object_id = _string_or_none(source.get("source_id"))
+        if not source.get("source_path"):
+            diagnostics.append(_diagnostic("page_index_missing_source_path", f"/source_refs[{index}]/source_path", object_id))
+        if source.get("load_outcome") in {"loaded", "loaded_metadata_only"} and not _valid_sha256(source.get("sha256")):
+            diagnostics.append(_diagnostic("page_index_missing_source_hash", f"/source_refs[{index}]/sha256", object_id))
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def _page_index_source_provenance(source_refs: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "source_count": len(source_refs),
+        "source_ids": sorted(str(source.get("source_id")) for source in source_refs if source.get("source_id")),
+        "source_paths": sorted(str(source.get("source_path")) for source in source_refs if source.get("source_path")),
+        "source_hashes": sorted(str(source.get("sha256")) for source in source_refs if source.get("sha256")),
+        "outcome_counts": _counts(source.get("load_outcome") for source in source_refs),
+        "failure_counts": _counts(source.get("failure_reason") for source in source_refs if source.get("failure_reason")),
+        "failed_source_present": any(source.get("load_outcome") == "failed" for source in source_refs),
+    }
+
+
+def _int_from_mapping(value: Any, key: str) -> int:
+    if not isinstance(value, dict):
+        return 0
+    item = value.get(key, 0)
+    return item if isinstance(item, int) else 0
 
 
 def _default_subtrees(source_refs: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -851,6 +961,7 @@ __all__ = [
     "ArticleEvidenceReplayError",
     "ArticleEvidenceRunSummary",
     "ArticleEvidenceSourceReference",
+    "attach_page_index_summary",
     "build_article_evidence_bundle",
     "build_article_evidence_bundle_from_load_events",
     "build_article_evidence_run_summary",
