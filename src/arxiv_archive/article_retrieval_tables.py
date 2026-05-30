@@ -371,7 +371,7 @@ def summarize_article_retrieval_tables(manifest: dict[str, Any]) -> dict[str, An
     table_candidates = [candidate for candidate in _as_list(manifest.get("table_candidates")) if isinstance(candidate, dict)]
     all_records = retrieval_units + table_candidates
     diagnostics = validate_article_retrieval_table_manifest(manifest)
-    diagnostic_counts = {key: 0 for key in DIAGNOSTIC_COUNTER_KEYS}
+    diagnostic_counts = dict.fromkeys(DIAGNOSTIC_COUNTER_KEYS, 0)
     code_to_counter = {
         "duplicate_id": "duplicate_id_count",
         "malformed_source_ref": "malformed_source_ref_count",

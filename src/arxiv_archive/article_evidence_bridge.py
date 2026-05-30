@@ -1119,7 +1119,9 @@ def _links_dedup_page_index_provenance(manifest: dict[str, Any]) -> dict[str, An
 
 def _retrieval_table_redacted_manifest(value: Any) -> dict[str, Any]:
     try:
-        from arxiv_archive.article_retrieval_tables import to_redacted_dict as retrieval_tables_to_redacted_dict
+        from arxiv_archive.article_retrieval_tables import (
+            to_redacted_dict as retrieval_tables_to_redacted_dict,
+        )
     except ImportError:
         return dict(value) if isinstance(value, dict) else {}
     if isinstance(value, dict) or hasattr(value, "to_redacted_dict"):

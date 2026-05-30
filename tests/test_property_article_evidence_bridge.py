@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 from adaptix import Retort
@@ -20,6 +21,7 @@ from arxiv_archive.article_evidence_bridge import (
     ArticleEvidenceDiagnostic,
     ArticleEvidenceRunSummary,
     ArticleEvidenceSourceReference,
+    attach_retrieval_table_benchmark_summary,
     build_article_evidence_run_summary,
     default_safety_flags,
     summarize_source_refs,
@@ -56,6 +58,7 @@ FORBIDDEN_PAYLOAD_KEYS = st.sampled_from(
     ]
 )
 REQUIRED_SUBTREES = ("raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics")
+RETRIEVAL_TABLES_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_retrieval_tables"
 
 
 def source_ref_strategy() -> st.SearchStrategy[ArticleEvidenceSourceReference]:
@@ -227,6 +230,79 @@ def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(bundle: Article
     assert restored["summary"]["promoted_to_fact_count"] == 0
     assert restored["summary"]["safety_flags"] == default_safety_flags()
     assert validate_article_evidence_bundle(restored) == []
+
+
+@settings(max_examples=40, deadline=None)
+@given(bundle=bundle_strategy(min_sources=1), include_manifest_provenance=st.booleans())
+def test_retrieval_table_attachment_preserves_required_subtrees_and_aggregate_only_contract(
+    bundle: ArticleEvidenceBundle, include_manifest_provenance: bool
+) -> None:
+    from arxiv_archive.article_retrieval_tables import build_article_retrieval_table_manifest
+
+    fixture = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    source_refs = [bundle.source_refs[0].to_redacted_dict()]
+    source_id = source_refs[0]["source_id"]
+    fixture["paper_id"] = bundle.paper_id
+    fixture["run_id"] = bundle.run_id
+    fixture["source_refs"] = source_refs
+    for unit in fixture["retrieval_units"]:
+        unit["source_ref_ids"] = [source_id]
+    for candidate in fixture["table_candidates"]:
+        candidate["source_ref_ids"] = [source_id]
+    manifest = build_article_retrieval_table_manifest(
+        paper_id=fixture["paper_id"],
+        run_id=fixture["run_id"],
+        source_refs=fixture["source_refs"],
+        page_index_refs=fixture["page_index_refs"],
+        asset_refs=fixture["asset_refs"],
+        links_dedup_refs=fixture["links_dedup_refs"],
+        retrieval_units=fixture["retrieval_units"],
+        table_candidates=fixture["table_candidates"],
+        manifest_path=fixture["manifest_path"],
+    )
+
+    if not include_manifest_provenance:
+        manifest.pop("manifest_path", None)
+        manifest.pop("manifest_sha256", None)
+
+    attached = attach_retrieval_table_benchmark_summary(
+        bundle,
+        manifest,
+        manifest_path=manifest.get("manifest_path") if include_manifest_provenance else None,
+        manifest_sha256=manifest.get("manifest_sha256") if include_manifest_provenance else None,
+    )
+    retrieval = attached["subtrees"]["retrieval"]
+    metrics = attached["subtrees"]["metrics"]["retrieval_table_benchmark"]
+
+    assert set(attached["subtrees"]) == set(REQUIRED_SUBTREES)
+    assert retrieval["record_count"] == 4
+    assert retrieval["retrieval_unit_count"] == 3
+    assert retrieval["table_candidate_count"] == 1
+    assert retrieval["ranking_tie_count"] == 1
+    assert retrieval["import_eligible_count"] == 0
+    assert retrieval["promoted_to_fact_count"] == 0
+    assert retrieval["production_import_attempted"] is False
+    assert retrieval["ladybugdb_written"] is False
+    assert retrieval["trusted_kg_import_allowed"] is False
+    assert metrics["record_count"] == retrieval["record_count"]
+    assert metrics["import_eligible_count"] == 0
+    assert metrics["production_import_attempted"] is False
+    assert "retrieval_units" not in retrieval
+    assert "table_candidates" not in retrieval
+    assert attached["import_eligible_count"] == 0
+    assert attached["promoted_to_fact_count"] == 0
+    if include_manifest_provenance and retrieval["diagnostic_count"] == 0:
+        assert retrieval["status"] == "review_only"
+        assert metrics["status"] == "review_only"
+        assert validate_article_evidence_bundle(attached) == []
+    else:
+        assert retrieval["status"] == "blocked"
+        assert metrics["status"] == "blocked"
+        if not include_manifest_provenance:
+            assert retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_path"] == 1
+            assert retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_sha256"] == 1
+        assert validate_article_evidence_bundle(attached) == []
+    assert_redacted_bridge_payload(attached)
 
 
 @settings(max_examples=50)
