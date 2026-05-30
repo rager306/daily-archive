@@ -13,6 +13,7 @@ from arxiv_archive.article_evidence_bridge import (
     ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
     ArticleEvidenceReplayError,
     attach_assets_summary,
+    attach_links_dedup_summary,
     attach_page_index_summary,
     build_article_evidence_bundle,
     build_article_evidence_bundle_from_load_events,
@@ -32,6 +33,7 @@ from arxiv_archive.article_page_index import build_article_page_index_from_struc
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
 ARTICLE_STRUCTURE_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
 PAGE_INDEX_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_page_index"
+LINKS_DEDUP_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_links_dedup"
 
 FORBIDDEN_SNIPPETS = [
     "%PDF-1.4",
@@ -145,6 +147,43 @@ def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) 
         manifest_path="artifacts/page-index-manifest.json",
         manifest_sha256="a" * 64,
     )
+
+
+def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
+    from arxiv_archive.article_links_dedup import build_article_links_dedup_manifest
+
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-links-dedup-bridge-test",
+    ).to_redacted_dict()
+    source_ref = dict(bundle["source_refs"][0])
+    source_id = str(source_ref["source_id"])
+    manifest = json.loads((LINKS_DEDUP_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    manifest["paper_id"] = "2605.bridge"
+    manifest["run_id"] = "m024-links-dedup-bridge-test"
+    manifest["source_refs"] = [source_ref]
+    manifest["page_index_refs"] = {
+        "schema_version": "m024-article-page-index.v1",
+        "manifest_path": "artifacts/page-index-manifest.json",
+        "manifest_sha256": "a" * 64,
+        "node_ids": ["2605.bridge:page-index:section:results"],
+        "anchor_ids": ["2605.bridge:page-index-anchor:citation-0001"],
+    }
+    for link in manifest["citation_links"] + manifest["structural_links"]:
+        link["source_page_index_anchor_id"] = "2605.bridge:page-index-anchor:citation-0001"
+        link["source_span_ids"] = ["2605.bridge:span:citation-0001"]
+    for signal in manifest["metadata_signals"]:
+        signal["source_page_index_anchor_id"] = "2605.bridge:page-index-anchor:citation-0001"
+        signal["source_span_id"] = "2605.bridge:span:citation-0001"
+    if unsafe:
+        manifest["source_refs"][0]["source_path"] = ""
+        manifest["source_refs"][0]["sha256"] = "not-a-sha"
+        manifest["paper_id"] = "wrong-paper"
+        manifest["citation_links"][0]["raw_text"] = "FORBIDDEN_LINK_PAYLOAD"
+        manifest["import_eligible_count"] = 7
+        manifest["safety_flags"]["trusted_kg_import_allowed"] = True
+    return bundle, build_article_links_dedup_manifest(manifest)
 
 
 def _asset_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
@@ -275,11 +314,22 @@ def test_builds_valid_mixed_outcome_bundle_from_loader_metadata_only(tmp_path: P
     assert payload["summary"]["production_import_attempted"] is False
     assert payload["summary"]["ladybugdb_written"] is False
 
-    assert set(payload["subtrees"]) == {"raw", "normalized", "page_index", "assets", "retrieval", "staging", "metrics"}
+    assert set(payload["subtrees"]) == {"raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics"}
     assert payload["subtrees"]["raw"]["status"] == "metadata_only"
     assert payload["subtrees"]["normalized"]["status"] == "review_only"
     assert payload["subtrees"]["page_index"]["status"] == "not_attempted"
     assert payload["subtrees"]["assets"]["status"] == "not_attempted"
+    assert payload["subtrees"]["links_dedup"] == {
+        "status": "not_attempted",
+        "record_count": 0,
+        "citation_link_count": 0,
+        "structural_link_count": 0,
+        "metadata_signal_count": 0,
+        "dedup_candidate_count": 0,
+        "import_eligible_count": 0,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+    }
     assert payload["subtrees"]["retrieval"]["embedding_generation_attempted"] is False
     assert payload["subtrees"]["staging"]["status"] == "blocked"
     assert payload["subtrees"]["metrics"]["ladybugdb_written"] is False
@@ -648,6 +698,124 @@ def test_assets_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_path:
 
     assert "forbidden_payload_key" in codes
     assert "subtree_import_eligible_count_nonzero" in codes
+
+
+def test_links_dedup_summary_attaches_review_only_aggregate_counts(tmp_path: Path) -> None:
+    bundle, manifest = _links_dedup_manifest_for_bridge(tmp_path)
+
+    payload = attach_links_dedup_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-links-dedup-manifest.json",
+        manifest_sha256="c" * 64,
+    )
+    subtree = payload["subtrees"]["links_dedup"]
+
+    assert subtree["status"] == "review_only"
+    assert subtree["review_only"] is True
+    assert subtree["record_count"] == 7
+    assert subtree["citation_link_count"] == 1
+    assert subtree["structural_link_count"] == 1
+    assert subtree["metadata_signal_count"] == 4
+    assert subtree["dedup_candidate_count"] == 1
+    assert subtree["link_family_counts"] == {
+        "citation": 1,
+        "structural": 1,
+        "metadata_signal": 4,
+        "dedup_candidate": 1,
+    }
+    assert subtree["metadata_signal_counts"] == {
+        "arxiv_id": 1,
+        "content_hash": 1,
+        "doi": 1,
+        "url": 1,
+    }
+    assert subtree["dedup_decision_counts"] == {"candidate_same_work_review_required": 1}
+    assert subtree["blocker_count"] == 0
+    assert subtree["diagnostic_count"] == 0
+    assert subtree["manifest"] == {
+        "path": "artifacts/article-links-dedup-manifest.json",
+        "sha256": "c" * 64,
+        "schema_version": "m024-article-links-dedup.v1",
+        "paper_id": "2605.bridge",
+        "run_id": "m024-links-dedup-bridge-test",
+    }
+    assert subtree["source_provenance"]["bundle_source_count"] == 3
+    assert subtree["source_provenance"]["manifest_source_count"] == 1
+    assert subtree["page_index_provenance"]["anchor_ref_count"] == 1
+    assert subtree["graph_import_claim"] is False
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["production_import_attempted"] is False
+    assert subtree["ladybugdb_written"] is False
+    assert subtree["import_eligible_count"] == 0
+    assert "citation_links" not in subtree
+    assert "metadata_signals" not in subtree
+    assert "dedup_candidates" not in subtree
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_links_dedup_summary_blocks_unsafe_or_mismatched_manifest_without_copying_payloads(tmp_path: Path) -> None:
+    bundle, manifest = _links_dedup_manifest_for_bridge(tmp_path, unsafe=True)
+
+    payload = attach_links_dedup_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-links-dedup-manifest.json",
+        manifest_sha256="c" * 64,
+    )
+    subtree = payload["subtrees"]["links_dedup"]
+    codes = subtree["diagnostic_counts_by_code"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["blocker_count"] > 0
+    assert codes["forbidden_payload_detection_count"] == 1
+    assert codes["malformed_source_ref_count"] == 1
+    assert codes["links_dedup_paper_id_mismatch"] == 1
+    assert codes["links_dedup_missing_source_path"] == 1
+    assert codes["links_dedup_missing_source_hash"] == 1
+    assert subtree["forbidden_payload_detection_count"] == 1
+    assert subtree["unsafe_authorization_count"] >= 1
+    assert subtree["import_eligible_count"] == 0
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert "FORBIDDEN_LINK_PAYLOAD" not in json.dumps(subtree, sort_keys=True)
+    assert "raw_text" not in json.dumps(subtree, sort_keys=True)
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_links_dedup_summary_blocks_missing_manifest_provenance(tmp_path: Path) -> None:
+    bundle, manifest = _links_dedup_manifest_for_bridge(tmp_path)
+
+    payload = attach_links_dedup_summary(bundle, manifest)
+    subtree = payload["subtrees"]["links_dedup"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["manifest"]["path"] is None
+    assert subtree["manifest"]["sha256"] is None
+    assert subtree["diagnostic_counts_by_code"]["links_dedup_missing_manifest_path"] == 1
+    assert subtree["diagnostic_counts_by_code"]["links_dedup_missing_manifest_sha256"] == 1
+    assert validate_article_evidence_bundle(payload) == []
+
+
+def test_links_dedup_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_path: Path) -> None:
+    bundle, manifest = _links_dedup_manifest_for_bridge(tmp_path)
+    payload = attach_links_dedup_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-links-dedup-manifest.json",
+        manifest_sha256="c" * 64,
+    )
+    payload["subtrees"]["links_dedup"]["raw_text"] = "raw link payload must not enter bridge"
+    payload["subtrees"]["links_dedup"]["import_eligible_count"] = 1
+    payload["subtrees"]["links_dedup"]["source_provenance"]["manifest_source_ids"] = ["not-in-bundle"]
+
+    diagnostics = validate_article_evidence_bundle(payload)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+
+    assert "forbidden_payload_key" in codes
+    assert "subtree_import_eligible_count_nonzero" in codes
+    assert "links_dedup_source_ref_not_in_bundle" in codes
 
 
 def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path: Path) -> None:

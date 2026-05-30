@@ -642,6 +642,95 @@ def attach_assets_summary(
     return payload
 
 
+def attach_links_dedup_summary(
+    bundle: ArticleEvidenceBundle | dict[str, Any],
+    links_dedup_manifest: Any,
+    *,
+    manifest_path: str | Path | None = None,
+    manifest_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Return a redacted bundle dict with ``subtrees["links_dedup"]`` summary attached.
+
+    The bridge stores constant-size link/dedup observability only: manifest
+    provenance, source/PageIndex coverage counters, family/signal/decision
+    counts, diagnostics, and fail-closed import counters. It never embeds link
+    records, raw references, metadata values, model output, vectors, graph-write
+    claims, or import authorization from the manifest.
+    """
+    payload = to_redacted_dict(bundle)
+    bundle_source_refs = _list_of_dicts(payload.get("source_refs"))
+    manifest = _links_dedup_redacted_manifest(links_dedup_manifest)
+    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    family_counts = summary.get("link_family_counts") if isinstance(summary.get("link_family_counts"), dict) else {}
+    metadata_signal_counts = summary.get("metadata_signal_counts") if isinstance(summary.get("metadata_signal_counts"), dict) else {}
+    dedup_decision_counts = summary.get("dedup_decision_counts") if isinstance(summary.get("dedup_decision_counts"), dict) else {}
+    diagnostic_counts = dict(summary.get("diagnostic_counts", {})) if isinstance(summary.get("diagnostic_counts"), dict) else {}
+    manifest_diagnostics = _list_of_dicts(manifest.get("diagnostics"))
+    validation_diagnostics = _links_dedup_validation_diagnostics(manifest)
+    bridge_diagnostics = _links_dedup_bridge_diagnostics(
+        manifest,
+        bundle_source_refs,
+        manifest_path=manifest_path,
+        manifest_sha256=manifest_sha256,
+        bundle_paper_id=_string_or_none(payload.get("paper_id")),
+    )
+    diagnostics = manifest_diagnostics + validation_diagnostics + bridge_diagnostics
+    bridge_diagnostic_counts = _counts(diagnostic.get("code") for diagnostic in diagnostics)
+    for key, count in bridge_diagnostic_counts.items():
+        diagnostic_counts[key] = int(diagnostic_counts.get(key, 0) or 0) + count
+    blocker_count = sum(1 for diagnostic in diagnostics if diagnostic.get("blocks_import") is not False)
+
+    record_count = sum(_int_from_mapping(family_counts, key) for key in ("citation", "structural", "metadata_signal", "dedup_candidate"))
+    status: BundleSubtreeStatus = "blocked" if blocker_count else "review_only"
+    page_index_coverage = summary.get("page_index_anchor_coverage") if isinstance(summary.get("page_index_anchor_coverage"), dict) else {}
+    source_span_coverage = summary.get("source_span_coverage") if isinstance(summary.get("source_span_coverage"), dict) else {}
+
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees["links_dedup"] = {
+        "status": status,
+        "review_only": True,
+        "record_count": record_count,
+        "citation_link_count": _int_from_mapping(family_counts, "citation"),
+        "structural_link_count": _int_from_mapping(family_counts, "structural"),
+        "metadata_signal_count": _int_from_mapping(family_counts, "metadata_signal"),
+        "dedup_candidate_count": _int_from_mapping(family_counts, "dedup_candidate"),
+        "link_family_counts": dict(family_counts),
+        "page_index_anchor_coverage": dict(page_index_coverage),
+        "source_span_coverage": dict(source_span_coverage),
+        "metadata_signal_counts": dict(metadata_signal_counts),
+        "dedup_decision_counts": dict(dedup_decision_counts),
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_counts_by_code": dict(sorted(diagnostic_counts.items())),
+        "blocker_count": blocker_count,
+        "conflict_count": int(diagnostic_counts.get("conflict_count", 0) or 0),
+        "insufficient_metadata_count": int(diagnostic_counts.get("insufficient_metadata_count", 0) or 0),
+        "forbidden_payload_detection_count": int(diagnostic_counts.get("forbidden_payload_detection_count", 0) or 0),
+        "unsafe_authorization_count": int(diagnostic_counts.get("unsafe_authorization_count", 0) or 0),
+        "manifest": {
+            "path": str(manifest_path) if manifest_path is not None else None,
+            "sha256": manifest_sha256,
+            "schema_version": _string_or_none(manifest.get("schema_version")),
+            "paper_id": _string_or_none(manifest.get("paper_id")),
+            "run_id": _string_or_none(manifest.get("run_id")),
+        },
+        "source_provenance": _links_dedup_source_provenance(bundle_source_refs, _list_of_dicts(manifest.get("source_refs"))),
+        "page_index_provenance": _links_dedup_page_index_provenance(manifest),
+        "graph_import_claim": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+    }
+    payload["subtrees"] = subtrees
+    payload["import_eligible_count"] = 0
+    payload["promoted_to_fact_count"] = 0
+    payload["production_import_attempted"] = False
+    payload["ladybugdb_written"] = False
+    payload["safety_flags"] = default_safety_flags()
+    return payload
+
+
 def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> str:
     """Serialize a bridge artifact deterministically."""
     return json.dumps(to_redacted_dict(value), indent=2, sort_keys=True) + "\n"
@@ -800,6 +889,104 @@ def _asset_page_index_provenance(assets: list[dict[str, Any]], asset_manifest: d
     }
 
 
+def _links_dedup_redacted_manifest(value: Any) -> dict[str, Any]:
+    try:
+        from arxiv_archive.article_links_dedup import to_redacted_dict as links_dedup_to_redacted_dict
+    except ImportError:
+        return dict(value) if isinstance(value, dict) else {}
+    if isinstance(value, dict) or hasattr(value, "to_redacted_dict"):
+        try:
+            return links_dedup_to_redacted_dict(value)
+        except (TypeError, ValueError, AttributeError):
+            return dict(value) if isinstance(value, dict) else {}
+    return {}
+
+
+def _links_dedup_validation_diagnostics(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    try:
+        from arxiv_archive.article_links_dedup import validate_article_links_dedup_manifest
+    except ImportError:
+        return [_diagnostic("links_dedup_validator_unavailable", "/subtrees/links_dedup").to_redacted_dict()]
+    return validate_article_links_dedup_manifest(manifest)
+
+
+def _links_dedup_bridge_diagnostics(
+    manifest: dict[str, Any],
+    bundle_source_refs: list[dict[str, Any]],
+    *,
+    manifest_path: str | Path | None,
+    manifest_sha256: str | None,
+    bundle_paper_id: str | None,
+) -> list[dict[str, Any]]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    if manifest_path is None or not str(manifest_path).strip():
+        diagnostics.append(_diagnostic("links_dedup_missing_manifest_path", "/subtrees/links_dedup/manifest/path"))
+    if not _valid_sha256(manifest_sha256):
+        diagnostics.append(_diagnostic("links_dedup_missing_manifest_sha256", "/subtrees/links_dedup/manifest/sha256"))
+    if manifest.get("schema_version") != "m024-article-links-dedup.v1":
+        diagnostics.append(_diagnostic("links_dedup_invalid_manifest_schema", "/links_dedup_manifest/schema_version"))
+    manifest_paper_id = _string_or_none(manifest.get("paper_id"))
+    if bundle_paper_id and manifest_paper_id and manifest_paper_id != bundle_paper_id:
+        diagnostics.append(_diagnostic("links_dedup_paper_id_mismatch", "/links_dedup_manifest/paper_id", manifest_paper_id))
+    manifest_source_refs = _list_of_dicts(manifest.get("source_refs"))
+    if not bundle_source_refs:
+        diagnostics.append(_diagnostic("links_dedup_missing_bundle_source_refs", "/source_refs"))
+    if not manifest_source_refs:
+        diagnostics.append(_diagnostic("links_dedup_missing_manifest_source_refs", "/links_dedup_manifest/source_refs"))
+
+    bundle_source_ids = {str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id")}
+    bundle_source_hashes = {str(source.get("sha256")) for source in bundle_source_refs if _valid_sha256(source.get("sha256"))}
+    for index, source in enumerate(manifest_source_refs):
+        object_id = _string_or_none(source.get("source_id"))
+        if not source.get("source_path"):
+            diagnostics.append(_diagnostic("links_dedup_missing_source_path", f"/links_dedup_manifest/source_refs[{index}]/source_path", object_id))
+        sha = source.get("sha256")
+        if not _valid_sha256(sha):
+            diagnostics.append(_diagnostic("links_dedup_missing_source_hash", f"/links_dedup_manifest/source_refs[{index}]/sha256", object_id))
+        if object_id and bundle_source_ids and object_id not in bundle_source_ids:
+            diagnostics.append(_diagnostic("links_dedup_source_ref_not_in_bundle", f"/links_dedup_manifest/source_refs[{index}]/source_id", object_id))
+        if _valid_sha256(sha) and bundle_source_hashes and str(sha) not in bundle_source_hashes:
+            diagnostics.append(_diagnostic("links_dedup_source_hash_not_in_bundle", f"/links_dedup_manifest/source_refs[{index}]/sha256", object_id))
+
+    for field_name in ("import_eligible_count", "promoted_to_fact_count"):
+        if manifest.get(field_name) != 0:
+            diagnostics.append(_diagnostic(f"links_dedup_{field_name}_nonzero", f"/links_dedup_manifest/{field_name}"))
+    for field_name in ("production_import_attempted", "ladybugdb_written", "trusted_kg_import_allowed"):
+        if manifest.get(field_name) is True:
+            diagnostics.append(_diagnostic(f"links_dedup_{field_name}_true", f"/links_dedup_manifest/{field_name}"))
+    safety_flags = manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
+    for field_name in ("production_import_attempted", "ladybugdb_written", "trusted_kg_import_allowed", "raw_payloads_included", "model_outputs_included"):
+        if safety_flags.get(field_name) is True:
+            diagnostics.append(_diagnostic(f"links_dedup_safety_flag_true:{field_name}", f"/links_dedup_manifest/safety_flags/{field_name}"))
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def _links_dedup_source_provenance(bundle_source_refs: list[dict[str, Any]], manifest_source_refs: list[dict[str, Any]]) -> dict[str, Any]:
+    bundle_ids = sorted(str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id"))
+    manifest_ids = sorted(str(source.get("source_id")) for source in manifest_source_refs if source.get("source_id"))
+    hashes = sorted(str(source.get("sha256")) for source in manifest_source_refs if _valid_sha256(source.get("sha256")))
+    return {
+        "bundle_source_count": len(bundle_source_refs),
+        "manifest_source_count": len(manifest_source_refs),
+        "bundle_source_ids": bundle_ids,
+        "manifest_source_ids": manifest_ids,
+        "source_hash_count": len(hashes),
+        "source_hash_coverage_rate": len(hashes) / len(manifest_source_refs) if manifest_source_refs else 0.0,
+        "source_paths": sorted(str(source.get("source_path")) for source in manifest_source_refs if source.get("source_path")),
+    }
+
+
+def _links_dedup_page_index_provenance(manifest: dict[str, Any]) -> dict[str, Any]:
+    refs = manifest.get("page_index_refs") if isinstance(manifest.get("page_index_refs"), dict) else {}
+    return {
+        "manifest_path": _string_or_none(refs.get("manifest_path")),
+        "manifest_sha256": _string_or_none(refs.get("manifest_sha256")),
+        "manifest_schema_version": _string_or_none(refs.get("schema_version")),
+        "node_ref_count": len(_string_list(refs.get("node_ids"))),
+        "anchor_ref_count": len(_string_list(refs.get("anchor_ids"))),
+    }
+
+
 def _float_from_mapping(value: Any, key: str) -> float:
     if not isinstance(value, dict):
         return 0.0
@@ -838,6 +1025,17 @@ def _default_subtrees(source_refs: list[dict[str, Any]], summary: dict[str, Any]
         },
         "page_index": {"status": downstream_status, "record_count": 0, "import_eligible_count": 0},
         "assets": {"status": downstream_status, "record_count": 0, "import_eligible_count": 0},
+        "links_dedup": {
+            "status": downstream_status,
+            "record_count": 0,
+            "citation_link_count": 0,
+            "structural_link_count": 0,
+            "metadata_signal_count": 0,
+            "dedup_candidate_count": 0,
+            "import_eligible_count": 0,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        },
         "retrieval": {"status": downstream_status, "record_count": 0, "embedding_generation_attempted": False},
         "staging": {"status": "blocked" if has_failed else downstream_status, "record_count": 0, "production_import_attempted": False},
         "metrics": {
@@ -927,7 +1125,7 @@ def _validate_subtrees(value: Any, source_refs: list[dict[str, Any]]) -> list[Ar
     if not isinstance(value, dict):
         return [_diagnostic("missing_subtrees", "/subtrees")]
     diagnostics: list[ArticleEvidenceDiagnostic] = []
-    for name in ("raw", "normalized", "page_index", "assets", "retrieval", "staging", "metrics"):
+    for name in ("raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics"):
         subtree = value.get(name)
         if not isinstance(subtree, dict):
             diagnostics.append(_diagnostic("missing_subtree", f"/subtrees/{name}"))
@@ -943,8 +1141,29 @@ def _validate_subtrees(value: Any, source_refs: list[dict[str, Any]]) -> list[Ar
             diagnostics.append(_diagnostic("subtree_production_import_attempted", f"/subtrees/{name}/production_import_attempted"))
         if subtree.get("ladybugdb_written", False) is not False:
             diagnostics.append(_diagnostic("subtree_ladybugdb_written", f"/subtrees/{name}/ladybugdb_written"))
+    links_dedup = value.get("links_dedup")
+    if isinstance(links_dedup, dict):
+        diagnostics.extend(_validate_links_dedup_subtree(links_dedup, source_refs))
     if source_refs and value.get("raw", {}).get("status") == "absent":
         diagnostics.append(_diagnostic("raw_subtree_absent_with_sources", "/subtrees/raw/status"))
+    return diagnostics
+
+
+def _validate_links_dedup_subtree(subtree: dict[str, Any], source_refs: list[dict[str, Any]]) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    for field_name in ("graph_import_claim", "trusted_kg_import_allowed"):
+        if subtree.get(field_name, False) is not False:
+            diagnostics.append(_diagnostic(f"links_dedup_{field_name}_true", f"/subtrees/links_dedup/{field_name}"))
+    manifest = subtree.get("manifest") if isinstance(subtree.get("manifest"), dict) else {}
+    if manifest.get("path") is not None and not str(manifest.get("path", "")).strip():
+        diagnostics.append(_diagnostic("links_dedup_empty_manifest_path", "/subtrees/links_dedup/manifest/path"))
+    if manifest.get("sha256") is not None and not _valid_sha256(manifest.get("sha256")):
+        diagnostics.append(_diagnostic("links_dedup_invalid_manifest_sha256", "/subtrees/links_dedup/manifest/sha256"))
+    provenance = subtree.get("source_provenance") if isinstance(subtree.get("source_provenance"), dict) else {}
+    bundle_ids = {str(source.get("source_id")) for source in source_refs if source.get("source_id")}
+    for source_id in _string_list(provenance.get("manifest_source_ids")):
+        if bundle_ids and source_id not in bundle_ids:
+            diagnostics.append(_diagnostic("links_dedup_source_ref_not_in_bundle", "/subtrees/links_dedup/source_provenance/manifest_source_ids", source_id))
     return diagnostics
 
 
@@ -1140,6 +1359,7 @@ __all__ = [
     "ArticleEvidenceRunSummary",
     "ArticleEvidenceSourceReference",
     "attach_assets_summary",
+    "attach_links_dedup_summary",
     "attach_page_index_summary",
     "build_article_evidence_bundle",
     "build_article_evidence_bundle_from_load_events",
