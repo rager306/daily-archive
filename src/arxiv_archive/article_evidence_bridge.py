@@ -1,0 +1,646 @@
+"""Versioned article evidence bridge contract.
+
+This module bridges S01 article-loader outcomes into a redacted, deterministic
+per-article evidence bundle for later PageIndex, asset, link, retrieval,
+staging, and metrics work.  It consumes ``ArticleLoadResult`` metadata only and
+never serializes article text, binary payloads, embeddings, vectors, API keys,
+secrets, model output, or graph-write/readiness claims.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Iterable, Literal
+
+from arxiv_archive.article_loader import ArticleLoadResult
+
+ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION = "m024-article-evidence-bundle.v1"
+ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION = "m024-article-evidence-run.v1"
+ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION = "m024-article-evidence-diagnostics.v1"
+
+BundleSubtreeStatus = Literal["absent", "metadata_only", "review_only", "blocked", "not_attempted"]
+LoadOutcome = Literal["loaded", "loaded_metadata_only", "failed"]
+DiagnosticSeverity = Literal["info", "warning", "repair_required", "error"]
+
+ALLOWED_LOAD_OUTCOMES = frozenset({"loaded", "loaded_metadata_only", "failed"})
+ALLOWED_SUBTREE_STATUSES = frozenset({"absent", "metadata_only", "review_only", "blocked", "not_attempted"})
+ALLOWED_USES = ("source_provenance_review", "bridge_validation", "downstream_scaffolding")
+EXCLUDED_USES = (
+    "trusted_kg_import",
+    "production_ladybugdb_write",
+    "embedding_generation",
+    "vector_indexing",
+    "source_of_truth_claim",
+)
+
+FORBIDDEN_PAYLOAD_KEYS = frozenset(
+    {
+        "text",
+        "raw_text",
+        "chunk_text",
+        "paper_text",
+        "claim_text",
+        "section_text",
+        "caption_text",
+        "table_text",
+        "equation_text",
+        "model_output",
+        "raw_model_output",
+        "raw_minimax_response",
+        "base64",
+        "binary",
+        "bytes",
+        "image_bytes",
+        "payload",
+        "embedding",
+        "embeddings",
+        "vector",
+        "vectors",
+        "secret",
+        "secrets",
+        "token",
+        "tokens",
+        "api_key",
+        "credentials",
+        "optimizer_trace",
+        "optimizer_traces",
+    }
+)
+FORBIDDEN_SOURCE_OF_TRUTH_KEYS = frozenset(
+    {"source_of_truth", "source_of_truth_claim", "truth_source", "canonical_source", "minimax_source_of_truth"}
+)
+
+
+def default_safety_flags() -> dict[str, bool]:
+    """Return the required fail-closed bridge safety flags."""
+    return {
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "trusted_kg_import_allowed": False,
+        "raw_text_embedded": False,
+        "raw_binary_embedded": False,
+        "base64_embedded": False,
+        "embedding_generation_attempted": False,
+        "vector_indexing_attempted": False,
+        "model_output_embedded": False,
+        "credential_material_embedded": False,
+    }
+
+
+@dataclass(frozen=True)
+class ArticleEvidenceDiagnostic:
+    """One stable, redacted diagnostic for bundle validation."""
+
+    code: str
+    json_path: str
+    severity: DiagnosticSeverity = "repair_required"
+    object_id: str | None = None
+    message: str = "Article evidence bridge diagnostic; inspect code and JSON path, not source content."
+    blocks_import: bool = True
+
+    def to_redacted_dict(self) -> dict[str, Any]:
+        return {
+            "code": self.code,
+            "json_path": self.json_path,
+            "severity": self.severity,
+            "object_id": self.object_id,
+            "message": self.message,
+            "blocks_import": self.blocks_import,
+        }
+
+
+@dataclass(frozen=True)
+class ArticleEvidenceSourceReference:
+    """Deterministic metadata-only source reference from ``ArticleLoadResult``."""
+
+    source_id: str
+    paper_id: str
+    source_path: str
+    source_type: str
+    media_type: str
+    sha256: str | None
+    byte_size: int
+    parser_name: str
+    loader_name: str
+    load_outcome: str
+    failure_reason: str | None
+    warning_count: int
+
+    @classmethod
+    def from_load_result(cls, result: ArticleLoadResult, *, paper_id: str) -> ArticleEvidenceSourceReference:
+        return cls(
+            source_id=result.source_id,
+            paper_id=result.paper_id or paper_id,
+            source_path=str(result.source_path),
+            source_type=result.source_type,
+            media_type=result.media_type,
+            sha256=result.sha256,
+            byte_size=result.byte_size,
+            parser_name=result.parser_name,
+            loader_name=result.loader_name,
+            load_outcome=result.outcome,
+            failure_reason=result.failure_reason,
+            warning_count=result.warning_count,
+        )
+
+    def to_redacted_dict(self) -> dict[str, Any]:
+        return {
+            "source_id": self.source_id,
+            "paper_id": self.paper_id,
+            "source_path": self.source_path,
+            "source_type": self.source_type,
+            "media_type": self.media_type,
+            "sha256": self.sha256,
+            "byte_size": self.byte_size,
+            "parser_name": self.parser_name,
+            "loader_name": self.loader_name,
+            "load_outcome": self.load_outcome,
+            "failure_reason": self.failure_reason,
+            "warning_count": self.warning_count,
+            "raw_text_embedded": False,
+            "raw_binary_embedded": False,
+        }
+
+
+@dataclass(frozen=True)
+class ArticleEvidenceBundle:
+    """Per-article bridge bundle containing only redacted metadata and counts."""
+
+    paper_id: str
+    run_id: str
+    bundle_id: str
+    source_refs: tuple[ArticleEvidenceSourceReference, ...]
+    bundle_root: str | None = None
+    diagnostics: tuple[ArticleEvidenceDiagnostic, ...] = ()
+    subtrees: dict[str, dict[str, Any]] = field(default_factory=dict)
+    summary: dict[str, Any] = field(default_factory=dict)
+
+    def to_redacted_dict(self) -> dict[str, Any]:
+        source_refs = [source.to_redacted_dict() for source in self.source_refs]
+        summary = dict(self.summary) if self.summary else summarize_source_refs(source_refs)
+        subtrees = dict(self.subtrees) if self.subtrees else _default_subtrees(source_refs, summary)
+        return {
+            "schema_version": ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
+            "diagnostics_schema_version": ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
+            "bundle_id": self.bundle_id,
+            "run_id": self.run_id,
+            "paper_id": self.paper_id,
+            "bundle_root": self.bundle_root,
+            "source_refs": source_refs,
+            "subtrees": subtrees,
+            "summary": summary,
+            "diagnostics": [diagnostic.to_redacted_dict() for diagnostic in self.diagnostics],
+            "allowed_uses": list(ALLOWED_USES),
+            "excluded_uses": list(EXCLUDED_USES),
+            "safety_flags": default_safety_flags(),
+            "import_eligible_count": 0,
+            "promoted_to_fact_count": 0,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        }
+
+
+@dataclass(frozen=True)
+class ArticleEvidenceRunSummary:
+    """Run-level redacted summary across one or more evidence bundles."""
+
+    run_id: str
+    bundles: tuple[dict[str, Any], ...]
+    output_paths: dict[str, Any] = field(default_factory=dict)
+
+    def to_redacted_dict(self) -> dict[str, Any]:
+        summaries = [bundle.get("summary", {}) for bundle in self.bundles if isinstance(bundle.get("summary"), dict)]
+        diagnostics = [diagnostic for bundle in self.bundles for diagnostic in _list_of_dicts(bundle.get("diagnostics"))]
+        return {
+            "schema_version": ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
+            "bundle_schema_version": ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
+            "diagnostics_schema_version": ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
+            "run_id": self.run_id,
+            "paper_count": len({bundle.get("paper_id") for bundle in self.bundles if bundle.get("paper_id")}),
+            "bundle_count": len(self.bundles),
+            "source_count": sum(int(summary.get("source_count", 0) or 0) for summary in summaries),
+            "outcome_counts": _merge_counts(summary.get("outcome_counts", {}) for summary in summaries),
+            "failure_counts": _merge_counts(summary.get("failure_counts", {}) for summary in summaries),
+            "diagnostic_count": len(diagnostics),
+            "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
+            "import_eligible_count": 0,
+            "promoted_to_fact_count": 0,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+            "safety_flags": default_safety_flags(),
+            "output_paths": dict(self.output_paths),
+        }
+
+
+def build_article_evidence_bundle(
+    load_results: Iterable[ArticleLoadResult],
+    paper_id: str,
+    run_id: str,
+    bundle_root: str | Path | None = None,
+) -> ArticleEvidenceBundle:
+    """Build a deterministic metadata-only evidence bundle from loader results."""
+    source_refs = tuple(
+        sorted(
+            (ArticleEvidenceSourceReference.from_load_result(result, paper_id=paper_id) for result in load_results),
+            key=lambda source: (source.source_id, source.source_path, source.load_outcome),
+        )
+    )
+    source_dicts = [source.to_redacted_dict() for source in source_refs]
+    summary = summarize_source_refs(source_dicts)
+    bundle_id = _bundle_id(paper_id=paper_id, run_id=run_id, source_refs=source_dicts)
+    return ArticleEvidenceBundle(
+        paper_id=paper_id,
+        run_id=run_id,
+        bundle_id=bundle_id,
+        source_refs=source_refs,
+        bundle_root=str(bundle_root) if bundle_root is not None else None,
+        subtrees=_default_subtrees(source_dicts, summary),
+        summary=summary,
+    )
+
+
+def summarize_source_refs(source_refs: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return deterministic bridge observability counts for source refs."""
+    source_count = len(source_refs)
+    checksum_count = sum(1 for source in source_refs if _valid_sha256(source.get("sha256")))
+    failure_count = sum(1 for source in source_refs if source.get("load_outcome") == "failed")
+    warning_count = sum(int(source.get("warning_count", 0) or 0) for source in source_refs)
+    return {
+        "source_count": source_count,
+        "outcome_counts": _counts(source.get("load_outcome") for source in source_refs),
+        "source_type_counts": _counts(source.get("source_type") for source in source_refs),
+        "media_type_counts": _counts(source.get("media_type") for source in source_refs),
+        "failure_counts": _counts(source.get("failure_reason") for source in source_refs if source.get("failure_reason")),
+        "failure_count": failure_count,
+        "warning_count": warning_count,
+        "checksum_count": checksum_count,
+        "checksum_coverage_rate": checksum_count / source_count if source_count else 0.0,
+        "metadata_only_count": sum(1 for source in source_refs if source.get("load_outcome") == "loaded_metadata_only"),
+        "loaded_count": sum(1 for source in source_refs if source.get("load_outcome") == "loaded"),
+        "raw_text_embedded": False,
+        "raw_binary_embedded": False,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "safety_flags": default_safety_flags(),
+    }
+
+
+def validate_article_evidence_bundle(bundle: ArticleEvidenceBundle | dict[str, Any]) -> list[dict[str, Any]]:
+    """Return redacted diagnostics with stable codes and JSON paths."""
+    payload = bundle.to_redacted_dict() if hasattr(bundle, "to_redacted_dict") else dict(bundle)
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    diagnostics.extend(_required(payload, ("schema_version", "bundle_id", "run_id", "paper_id", "source_refs", "subtrees", "summary", "safety_flags"), ""))
+    if payload.get("schema_version") != ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION:
+        diagnostics.append(_diagnostic("invalid_schema_version", "/schema_version"))
+    if payload.get("diagnostics_schema_version") != ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION:
+        diagnostics.append(_diagnostic("invalid_diagnostics_schema_version", "/diagnostics_schema_version"))
+    diagnostics.extend(_validate_forbidden_keys(payload))
+    diagnostics.extend(_validate_source_of_truth_markers(payload))
+    diagnostics.extend(_validate_safety_flags(payload.get("safety_flags"), "/safety_flags"))
+    diagnostics.extend(_validate_uses(payload, ""))
+    for field_name in ("import_eligible_count", "promoted_to_fact_count"):
+        if payload.get(field_name) != 0:
+            diagnostics.append(_diagnostic(f"{field_name}_nonzero", f"/{field_name}"))
+    for field_name in ("production_import_attempted", "ladybugdb_written"):
+        if payload.get(field_name) is not False:
+            diagnostics.append(_diagnostic(f"{field_name}_true", f"/{field_name}"))
+
+    source_refs = _list_of_dicts(payload.get("source_refs"))
+    diagnostics.extend(_validate_duplicate_ids(source_refs, "source_id", "/source_refs", "duplicate_source_id"))
+    for index, source in enumerate(source_refs):
+        diagnostics.extend(_validate_source_ref(source, f"/source_refs[{index}]", payload.get("paper_id")))
+    diagnostics.extend(_validate_subtrees(payload.get("subtrees"), source_refs))
+    diagnostics.extend(_validate_summary(payload.get("summary"), source_refs))
+    for index, diagnostic_record in enumerate(_list_of_dicts(payload.get("diagnostics"))):
+        diagnostics.extend(_validate_diagnostic_record(diagnostic_record, f"/diagnostics[{index}]"))
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def to_redacted_dict(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> dict[str, Any]:
+    """Convert a bridge object or mapping to a redacted dictionary."""
+    if hasattr(value, "to_redacted_dict"):
+        return value.to_redacted_dict()  # type: ignore[no-any-return]
+    return dict(value)
+
+
+def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> str:
+    """Serialize a bridge artifact deterministically."""
+    return json.dumps(to_redacted_dict(value), indent=2, sort_keys=True) + "\n"
+
+
+def build_article_evidence_run_summary(
+    *, run_id: str, bundles: Iterable[ArticleEvidenceBundle | dict[str, Any]], output_paths: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Build a redacted run summary artifact for evidence bridge outputs."""
+    bundle_dicts = tuple(to_redacted_dict(bundle) for bundle in bundles)
+    return ArticleEvidenceRunSummary(run_id=run_id, bundles=bundle_dicts, output_paths=dict(output_paths or {})).to_redacted_dict()
+
+
+def _default_subtrees(source_refs: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    has_loaded = any(source.get("load_outcome") == "loaded" for source in source_refs)
+    has_metadata_only = any(source.get("load_outcome") == "loaded_metadata_only" for source in source_refs)
+    has_failed = any(source.get("load_outcome") == "failed" for source in source_refs)
+    raw_status: BundleSubtreeStatus = "metadata_only" if source_refs else "absent"
+    normalized_status: BundleSubtreeStatus = "review_only" if has_loaded else "blocked"
+    downstream_status: BundleSubtreeStatus = "not_attempted"
+    return {
+        "raw": {
+            "status": raw_status,
+            "source_count": summary["source_count"],
+            "checksum_count": summary["checksum_count"],
+            "checksum_coverage_rate": summary["checksum_coverage_rate"],
+            "raw_text_embedded": False,
+            "raw_binary_embedded": False,
+        },
+        "normalized": {
+            "status": normalized_status,
+            "source_count": sum(1 for source in source_refs if source.get("load_outcome") == "loaded"),
+            "review_only": True,
+            "raw_text_embedded": False,
+        },
+        "page_index": {"status": downstream_status, "record_count": 0, "import_eligible_count": 0},
+        "assets": {"status": downstream_status, "record_count": 0, "import_eligible_count": 0},
+        "retrieval": {"status": downstream_status, "record_count": 0, "embedding_generation_attempted": False},
+        "staging": {"status": "blocked" if has_failed else downstream_status, "record_count": 0, "production_import_attempted": False},
+        "metrics": {
+            "status": "review_only" if source_refs else "absent",
+            "outcome_counts": dict(summary["outcome_counts"]),
+            "failure_counts": dict(summary["failure_counts"]),
+            "metadata_only_present": has_metadata_only,
+            "failed_source_present": has_failed,
+            "promoted_to_fact_count": 0,
+            "ladybugdb_written": False,
+        },
+    }
+
+
+def _bundle_id(*, paper_id: str, run_id: str, source_refs: list[dict[str, Any]]) -> str:
+    digest_input = json.dumps(
+        {
+            "paper_id": paper_id,
+            "run_id": run_id,
+            "source_refs": [
+                {
+                    "source_id": source.get("source_id"),
+                    "sha256": source.get("sha256"),
+                    "load_outcome": source.get("load_outcome"),
+                    "failure_reason": source.get("failure_reason"),
+                }
+                for source in source_refs
+            ],
+        },
+        sort_keys=True,
+    )
+    return f"article-evidence-bundle:{hashlib.sha256(digest_input.encode()).hexdigest()[:24]}"
+
+
+def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    source_id = _string_or_none(source.get("source_id"))
+    diagnostics.extend(
+        _required(
+            source,
+            (
+                "source_id",
+                "paper_id",
+                "source_path",
+                "source_type",
+                "media_type",
+                "byte_size",
+                "parser_name",
+                "loader_name",
+                "load_outcome",
+                "warning_count",
+                "raw_text_embedded",
+                "raw_binary_embedded",
+            ),
+            path,
+        )
+    )
+    diagnostics.extend(_validate_non_empty_ids(source, ("source_id", "paper_id", "source_path", "source_type", "media_type", "parser_name", "loader_name"), path, source_id))
+    if source.get("paper_id") != paper_id:
+        diagnostics.append(_diagnostic("source_ref_paper_id_mismatch", f"{path}/paper_id", source_id))
+    if source.get("load_outcome") not in ALLOWED_LOAD_OUTCOMES:
+        diagnostics.append(_diagnostic("invalid_load_outcome", f"{path}/load_outcome", source_id))
+    if source.get("load_outcome") == "failed" and not source.get("failure_reason"):
+        diagnostics.append(_diagnostic("missing_failure_reason", f"{path}/failure_reason", source_id))
+    if source.get("load_outcome") != "failed" and source.get("failure_reason") is not None:
+        diagnostics.append(_diagnostic("unexpected_failure_reason", f"{path}/failure_reason", source_id))
+    if not isinstance(source.get("byte_size"), int) or int(source.get("byte_size", -1)) < 0:
+        diagnostics.append(_diagnostic("invalid_byte_size", f"{path}/byte_size", source_id))
+    if not isinstance(source.get("warning_count"), int) or int(source.get("warning_count", -1)) < 0:
+        diagnostics.append(_diagnostic("invalid_warning_count", f"{path}/warning_count", source_id))
+    sha = source.get("sha256")
+    if sha is not None and not _valid_sha256(sha):
+        diagnostics.append(_diagnostic("invalid_sha256", f"{path}/sha256", source_id))
+    if source.get("load_outcome") in {"loaded", "loaded_metadata_only"} and not _valid_sha256(sha):
+        diagnostics.append(_diagnostic("missing_checksum_for_loaded_source", f"{path}/sha256", source_id))
+    if source.get("raw_text_embedded") is not False:
+        diagnostics.append(_diagnostic("source_ref_raw_text_embedded", f"{path}/raw_text_embedded", source_id))
+    if source.get("raw_binary_embedded") is not False:
+        diagnostics.append(_diagnostic("source_ref_raw_binary_embedded", f"{path}/raw_binary_embedded", source_id))
+    return diagnostics
+
+
+def _validate_subtrees(value: Any, source_refs: list[dict[str, Any]]) -> list[ArticleEvidenceDiagnostic]:
+    if not isinstance(value, dict):
+        return [_diagnostic("missing_subtrees", "/subtrees")]
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    for name in ("raw", "normalized", "page_index", "assets", "retrieval", "staging", "metrics"):
+        subtree = value.get(name)
+        if not isinstance(subtree, dict):
+            diagnostics.append(_diagnostic("missing_subtree", f"/subtrees/{name}"))
+            continue
+        status = subtree.get("status")
+        if status not in ALLOWED_SUBTREE_STATUSES:
+            diagnostics.append(_diagnostic("invalid_subtree_status", f"/subtrees/{name}/status"))
+        if subtree.get("import_eligible_count", 0) != 0:
+            diagnostics.append(_diagnostic("subtree_import_eligible_count_nonzero", f"/subtrees/{name}/import_eligible_count"))
+        if subtree.get("promoted_to_fact_count", 0) != 0:
+            diagnostics.append(_diagnostic("subtree_promoted_to_fact_count_nonzero", f"/subtrees/{name}/promoted_to_fact_count"))
+        if subtree.get("production_import_attempted", False) is not False:
+            diagnostics.append(_diagnostic("subtree_production_import_attempted", f"/subtrees/{name}/production_import_attempted"))
+        if subtree.get("ladybugdb_written", False) is not False:
+            diagnostics.append(_diagnostic("subtree_ladybugdb_written", f"/subtrees/{name}/ladybugdb_written"))
+    if source_refs and value.get("raw", {}).get("status") == "absent":
+        diagnostics.append(_diagnostic("raw_subtree_absent_with_sources", "/subtrees/raw/status"))
+    return diagnostics
+
+
+def _validate_summary(value: Any, source_refs: list[dict[str, Any]]) -> list[ArticleEvidenceDiagnostic]:
+    if not isinstance(value, dict):
+        return [_diagnostic("missing_summary", "/summary")]
+    diagnostics = _required(value, ("source_count", "outcome_counts", "failure_counts", "checksum_count", "checksum_coverage_rate", "safety_flags"), "/summary")
+    if value.get("source_count") != len(source_refs):
+        diagnostics.append(_diagnostic("summary_source_count_mismatch", "/summary/source_count"))
+    if value.get("promoted_to_fact_count") != 0:
+        diagnostics.append(_diagnostic("summary_promoted_to_fact_count_nonzero", "/summary/promoted_to_fact_count"))
+    if value.get("import_eligible_count") != 0:
+        diagnostics.append(_diagnostic("summary_import_eligible_count_nonzero", "/summary/import_eligible_count"))
+    if value.get("production_import_attempted") is not False:
+        diagnostics.append(_diagnostic("summary_production_import_attempted", "/summary/production_import_attempted"))
+    if value.get("ladybugdb_written") is not False:
+        diagnostics.append(_diagnostic("summary_ladybugdb_written", "/summary/ladybugdb_written"))
+    diagnostics.extend(_validate_safety_flags(value.get("safety_flags"), "/summary/safety_flags"))
+    return diagnostics
+
+
+def _validate_diagnostic_record(record: dict[str, Any], path: str) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics = _required(record, ("code", "json_path", "severity", "blocks_import"), path)
+    if record.get("severity") not in {"info", "warning", "repair_required", "error"}:
+        diagnostics.append(_diagnostic("invalid_diagnostic_severity", f"{path}/severity", _string_or_none(record.get("object_id"))))
+    if not isinstance(record.get("json_path"), str) or not str(record.get("json_path", "")).startswith("/"):
+        diagnostics.append(_diagnostic("invalid_diagnostic_json_path", f"{path}/json_path", _string_or_none(record.get("object_id"))))
+    return diagnostics
+
+
+def _validate_uses(value: dict[str, Any], path: str) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    allowed_uses = set(_string_list(value.get("allowed_uses")))
+    excluded_uses = set(_string_list(value.get("excluded_uses")))
+    if "trusted_kg_import" in allowed_uses:
+        diagnostics.append(_diagnostic("trusted_import_allowed", f"{path}/allowed_uses" if path else "/allowed_uses"))
+    for use in EXCLUDED_USES:
+        if use not in excluded_uses:
+            diagnostics.append(_diagnostic("missing_excluded_use", f"{path}/excluded_uses" if path else "/excluded_uses"))
+    return diagnostics
+
+
+def _validate_safety_flags(value: Any, path: str) -> list[ArticleEvidenceDiagnostic]:
+    if not isinstance(value, dict):
+        return [_diagnostic("missing_safety_flags", path)]
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    for key, expected in default_safety_flags().items():
+        if value.get(key) is not expected:
+            code = f"safety_flag_true:{key}" if value.get(key) is True else f"safety_flag_invalid:{key}"
+            diagnostics.append(_diagnostic(code, f"{path}/{key}"))
+    return diagnostics
+
+
+def _validate_forbidden_keys(value: Any, path: str = "") -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}/{key}" if path else f"/{key}"
+            if key in FORBIDDEN_PAYLOAD_KEYS:
+                diagnostics.append(_diagnostic("forbidden_payload_key", child_path))
+            diagnostics.extend(_validate_forbidden_keys(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            diagnostics.extend(_validate_forbidden_keys(child, f"{path}[{index}]"))
+    return diagnostics
+
+
+def _validate_source_of_truth_markers(value: Any, path: str = "") -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}/{key}" if path else f"/{key}"
+            if key.lower() in FORBIDDEN_SOURCE_OF_TRUTH_KEYS:
+                diagnostics.append(_diagnostic("source_of_truth_claim", child_path))
+            diagnostics.extend(_validate_source_of_truth_markers(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            diagnostics.extend(_validate_source_of_truth_markers(child, f"{path}[{index}]"))
+    return diagnostics
+
+
+def _validate_non_empty_ids(value: dict[str, Any], fields: tuple[str, ...], path: str, object_id: str | None) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    for field_name in fields:
+        if field_name in value and isinstance(value.get(field_name), str) and not value[field_name].strip():
+            diagnostics.append(_diagnostic(f"empty_{field_name}", f"{path}/{field_name}", object_id))
+    return diagnostics
+
+
+def _validate_duplicate_ids(values: list[dict[str, Any]], field_name: str, path: str, code: str) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    seen: set[str] = set()
+    for index, value in enumerate(values):
+        identifier = value.get(field_name)
+        if not isinstance(identifier, str) or not identifier:
+            continue
+        if identifier in seen:
+            diagnostics.append(_diagnostic(code, f"{path}[{index}]/{field_name}", identifier))
+        else:
+            seen.add(identifier)
+    return diagnostics
+
+
+def _required(value: dict[str, Any], fields: tuple[str, ...], path: str) -> list[ArticleEvidenceDiagnostic]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    for field_name in fields:
+        if field_name not in value or value.get(field_name) is None:
+            diagnostics.append(_diagnostic(f"missing_{field_name}", f"{path}/{field_name}" if path else f"/{field_name}"))
+    return diagnostics
+
+
+def _diagnostic(code: str, json_path: str, object_id: str | None = None) -> ArticleEvidenceDiagnostic:
+    return ArticleEvidenceDiagnostic(code=code, json_path=json_path, object_id=object_id)
+
+
+def _valid_sha256(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+
+
+def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item is not None]
+
+
+def _string_or_none(value: Any) -> str | None:
+    return str(value) if value is not None else None
+
+
+def _counts(values: Any) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        if value is None:
+            continue
+        key = str(value)
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _merge_counts(values: Any) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        if not isinstance(value, dict):
+            continue
+        for key, count in value.items():
+            if isinstance(count, int):
+                counts[str(key)] = counts.get(str(key), 0) + count
+    return dict(sorted(counts.items()))
+
+
+__all__ = [
+    "ALLOWED_LOAD_OUTCOMES",
+    "ALLOWED_SUBTREE_STATUSES",
+    "ALLOWED_USES",
+    "ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION",
+    "ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION",
+    "ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION",
+    "ArticleEvidenceBundle",
+    "ArticleEvidenceDiagnostic",
+    "ArticleEvidenceRunSummary",
+    "ArticleEvidenceSourceReference",
+    "build_article_evidence_bundle",
+    "build_article_evidence_run_summary",
+    "default_safety_flags",
+    "summarize_source_refs",
+    "to_json",
+    "to_redacted_dict",
+    "validate_article_evidence_bundle",
+]
