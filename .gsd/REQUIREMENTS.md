@@ -68,16 +68,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation.
 - Notes: M022 validation scope clarification: M022 validates a review-only typed packet handoff and final no-import safety gate, not a positive import-ready KG package. R029 remains active/blocked for KG import until human semantic review accepts packets and a later gate proves import readiness. Unrelated corpus-scaling requirements are outside M022 scope.
 
-### R030 — Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
-- Class: continuity
-- Status: active
-- Description: Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
-- Why it matters: Scientific papers often contain figures, plots, tables, and diagrams that are necessary for future multimodal search and evidence review. Losing raw source artifacts during ingestion would make later multimodal KG and retrieval work incomplete or non-reproducible.
-- Source: user-direction
-- Primary owning slice: M005-dlko4z/S05
-- Validation: A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs.
-- Notes: Raw binary/image assets must be stored as files referenced by path/hash/provenance manifests, not embedded in machine JSON/JSONL logs. Assets are not KG facts and do not authorize production import, embeddings, or multimodal claims until later review gates pass.
-
 ### R031 — Before drawing broader chunking/import-readiness conclusions, validation must expand from the 10-paper gold corpus to a 30-paper deviation scan that compares distributions, outliers, missing-source rates, route/refusal patterns, and new failure modes without authorizing production KG import.
 - Class: quality-attribute
 - Status: active
@@ -400,6 +390,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M022 S04/S05 produced and verified six bounded reviewer packets plus an independent assessment and final no-import gate. Evidence: reviewer packet verifier reported packets=6, pending_review=6, assessment_verdict=blocked_pending_semantic_acceptance, unsafe_counters_zero=True; final recommendation maps R028 as validated for bounded artifact review.
 - Notes: Validated for the bounded M022 reviewer surface. This does not authorize KG import, semantic acceptance, broad scaling, embeddings/vectors, or production LadybugDB writes.
 
+### R030 — Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
+- Class: continuity
+- Status: validated
+- Description: Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.
+- Why it matters: Scientific papers often contain figures, plots, tables, and diagrams that are necessary for future multimodal search and evidence review. Losing raw source artifacts during ingestion would make later multimodal KG and retrieval work incomplete or non-reproducible.
+- Source: user-direction
+- Primary owning slice: M005-dlko4z/S05
+- Validation: M024 S04 closeout verified metadata-only asset preservation contract and bridge integration with fixture manifests for figures/tables/equation images, fail-closed forbidden-payload validation, stable IDs/provenance/status summaries, and full regression/property suite: `uv run pytest tests/test_article_loader.py tests/test_article_artifacts.py tests/test_source_asset_manifest.py tests/test_article_evidence_bridge.py tests/test_property_article_evidence_bridge.py tests/test_article_page_index.py tests/test_property_article_page_index.py tests/test_article_assets.py tests/test_property_article_assets.py -q` passed 132 tests.
+- Notes: Validated by S04 Assets Preservation. Bridge `subtrees["assets"]` remains aggregate-only/review-only and import-ineligible; raw text, image bytes, base64, embeddings, vectors, tokens, payloads, and graph-import readiness claims remain forbidden.
+
 ### R034 — Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
 - Class: primary-user-loop
 - Status: validated
@@ -568,7 +568,7 @@ This file is the explicit capability and coverage contract for the project.
 | R027 | quality-attribute | active | M004 | none | Partial bounded advancement in M022: S01-S05 produced stable source/locator/span IDs, source-hash coverage, route/review/repair diagnostics, reviewer packet artifacts, and final no-import guard with import_allowed=false and semantic_ready_for_kg=false. Full validation still requires a dedicated graph-readiness quality benchmark/acceptance pass before KG validation or scaling resumes. |
 | R028 | quality-attribute | validated | M004 | none | M022 S04/S05 produced and verified six bounded reviewer packets plus an independent assessment and final no-import gate. Evidence: reviewer packet verifier reported packets=6, pending_review=6, assessment_verdict=blocked_pending_semantic_acceptance, unsafe_counters_zero=True; final recommendation maps R028 as validated for bounded artifact review. |
 | R029 | quality-attribute | active | M005-dlko4z | none | Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation. |
-| R030 | continuity | active | M005-dlko4z/S05 | none | A future asset-preservation slice writes per-paper PDF/MD/assets plus an assets-manifest with stable asset ids, paths, hashes, page/bbox/caption-span/linkage metadata, and safety flags proving no raw binary/base64/embeddings are included in machine logs. |
+| R030 | continuity | validated | M005-dlko4z/S05 | none | M024 S04 closeout verified metadata-only asset preservation contract and bridge integration with fixture manifests for figures/tables/equation images, fail-closed forbidden-payload validation, stable IDs/provenance/status summaries, and full regression/property suite: `uv run pytest tests/test_article_loader.py tests/test_article_artifacts.py tests/test_source_asset_manifest.py tests/test_article_evidence_bridge.py tests/test_property_article_evidence_bridge.py tests/test_article_page_index.py tests/test_property_article_page_index.py tests/test_article_assets.py tests/test_property_article_assets.py -q` passed 132 tests. |
 | R031 | quality-attribute | active | M006-638rza | M005-dlko4z | A 30-paper dry-run report exists with redacted aggregate/per-paper diagnostics, deviation analysis against M005 10-paper evidence, new-pattern taxonomy, and explicit no-go/go recommendations for remediation. |
 | R032 | operability | active | future-validation-automation | M006-638rza | A CLI or equivalent command can run batches of +10 papers, persist per-batch manifests/diagnostics/reports, resume after failures, compare each batch against prior baselines, and stop at review gates without production KG writes. |
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
@@ -594,7 +594,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 16
-- Mapped to slices: 16
-- Validated: 36 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
+- Active requirements: 15
+- Mapped to slices: 15
+- Validated: 37 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
 - Unmapped active requirements: 0
