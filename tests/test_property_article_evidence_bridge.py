@@ -55,7 +55,7 @@ FORBIDDEN_PAYLOAD_KEYS = st.sampled_from(
         "optimizer_trace",
     ]
 )
-REQUIRED_SUBTREES = ("raw", "normalized", "page_index", "assets", "retrieval", "staging", "metrics")
+REQUIRED_SUBTREES = ("raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics")
 
 
 def source_ref_strategy() -> st.SearchStrategy[ArticleEvidenceSourceReference]:

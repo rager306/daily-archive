@@ -891,7 +891,9 @@ def _asset_page_index_provenance(assets: list[dict[str, Any]], asset_manifest: d
 
 def _links_dedup_redacted_manifest(value: Any) -> dict[str, Any]:
     try:
-        from arxiv_archive.article_links_dedup import to_redacted_dict as links_dedup_to_redacted_dict
+        from arxiv_archive.article_links_dedup import (
+            to_redacted_dict as links_dedup_to_redacted_dict,
+        )
     except ImportError:
         return dict(value) if isinstance(value, dict) else {}
     if isinstance(value, dict) or hasattr(value, "to_redacted_dict"):

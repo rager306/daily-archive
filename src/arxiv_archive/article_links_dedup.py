@@ -323,7 +323,7 @@ def title_author_year_hash(*, title_hash: str | None = None, author_hashes: list
 
 def deterministic_id(prefix: str, *parts: Any, length: int = 16) -> str:
     """Return a stable ID from canonical non-payload fields."""
-    payload = json.dumps([part for part in parts], sort_keys=True, separators=(",", ":"))
+    payload = json.dumps(list(parts), sort_keys=True, separators=(",", ":"))
     return f"{prefix}:{hashlib.sha256(payload.encode('utf-8')).hexdigest()[:length]}"
 
 
@@ -376,7 +376,6 @@ def summarize_article_links_dedup(manifest: dict[str, Any]) -> dict[str, Any]:
     dedup_candidates = _list_of_dicts(manifest.get("dedup_candidates"))
     diagnostics = _list_of_dicts(manifest.get("diagnostics"))
     anchor_ids = set(_string_list((manifest.get("page_index_refs") or {}).get("anchor_ids") if isinstance(manifest.get("page_index_refs"), dict) else []))
-    signal_by_id = {signal.get("signal_id"): signal for signal in metadata_signals if isinstance(signal.get("signal_id"), str)}
 
     required_anchors: list[str | None] = []
     required_spans: list[str | None] = []
@@ -537,7 +536,7 @@ def _validate_payload(manifest: dict[str, Any]) -> list[dict[str, Any]]:
 
     diagnostics.extend(_scan_forbidden_payload_keys(manifest))
     diagnostics.extend(_scan_unsafe_true_flags(manifest))
-    return _unique_diagnostics([diagnostic.to_redacted_dict() for diagnostic in diagnostics])
+    return _unique_diagnostics(_redacted_diagnostic_dicts(diagnostics))
 
 
 def _validate_review_state(record: dict[str, Any], path: str, object_id: str | None) -> list[ArticleLinksDedupDiagnostic]:
@@ -652,7 +651,7 @@ def _sanitize_value(value: Any) -> Any:
 
 
 def _diagnostic_counts(diagnostics: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {key: 0 for key in DIAGNOSTIC_COUNTER_KEYS}
+    counts = dict.fromkeys(DIAGNOSTIC_COUNTER_KEYS, 0)
     for diagnostic in diagnostics:
         code = str(diagnostic.get("code", ""))
         if code == "duplicate_id":
@@ -698,6 +697,16 @@ def _required(value: dict[str, Any], fields: tuple[str, ...], path: str) -> list
         if field_name not in value or value.get(field_name) is None:
             diagnostics.append(_diagnostic(f"missing_{field_name}", f"{path}/{field_name}" if path else f"/{field_name}"))
     return diagnostics
+
+
+def _redacted_diagnostic_dicts(diagnostics: list[Any]) -> list[dict[str, Any]]:
+    redacted: list[dict[str, Any]] = []
+    for diagnostic in diagnostics:
+        if isinstance(diagnostic, ArticleLinksDedupDiagnostic):
+            redacted.append(diagnostic.to_redacted_dict())
+        elif isinstance(diagnostic, dict):
+            redacted.append(diagnostic)
+    return redacted
 
 
 def _unique_diagnostics(diagnostics: list[dict[str, Any]]) -> list[dict[str, Any]]:
