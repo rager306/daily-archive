@@ -554,6 +554,94 @@ def attach_page_index_summary(
     return payload
 
 
+def attach_assets_summary(
+    bundle: ArticleEvidenceBundle | dict[str, Any],
+    asset_manifest: dict[str, Any],
+    manifest_path: str | Path | None = None,
+    manifest_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Return a redacted bundle dict with an updated ``subtrees["assets"]`` summary.
+
+    The bridge stores aggregate asset observability only: manifest provenance,
+    status, counts, coverage rates, source/PageIndex provenance counters, and
+    fail-closed import flags. It never copies asset records, captions, table
+    contents, image payloads, embeddings, vectors, or graph-readiness claims into
+    the evidence bundle subtree.
+    """
+    payload = to_redacted_dict(bundle)
+    bundle_source_refs = _list_of_dicts(payload.get("source_refs"))
+    summary = asset_manifest.get("summary") if isinstance(asset_manifest.get("summary"), dict) else {}
+    manifest_source_refs = _list_of_dicts(asset_manifest.get("source_refs"))
+    assets = _list_of_dicts(asset_manifest.get("assets"))
+    diagnostics = (
+        _list_of_dicts(asset_manifest.get("diagnostics"))
+        + _asset_manifest_validation_diagnostics(asset_manifest)
+        + _asset_bridge_diagnostics(
+            asset_manifest,
+            bundle_source_refs,
+            manifest_source_refs,
+            assets,
+            manifest_path=manifest_path,
+            manifest_sha256=manifest_sha256,
+        )
+    )
+    diagnostic_counts = _counts(diagnostic.get("code") for diagnostic in diagnostics)
+    blocker_count = sum(1 for diagnostic in diagnostics if diagnostic.get("blocks_import") is True)
+    manifest_status = _string_or_none((asset_manifest.get("subtree") or {}).get("status") if isinstance(asset_manifest.get("subtree"), dict) else None)
+    status: BundleSubtreeStatus
+    if blocker_count:
+        status = "blocked"
+    elif manifest_status and manifest_status.startswith("review_only"):
+        status = "review_only"
+    else:
+        status = "metadata_only"
+
+    record_count = _int_from_mapping(summary, "asset_count") if summary else len(assets)
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees["assets"] = {
+        "status": status,
+        "review_only": True,
+        "record_count": record_count,
+        "asset_count": record_count,
+        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {})) if isinstance(summary.get("asset_counts_by_type"), dict) else _counts(asset.get("asset_type") for asset in assets),
+        "preservation_state_counts": dict(summary.get("preservation_state_counts", {})) if isinstance(summary.get("preservation_state_counts"), dict) else _counts(asset.get("preservation_state") for asset in assets),
+        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {})) if isinstance(summary.get("interpretation_status_counts"), dict) else _counts(asset.get("interpretation_status") for asset in assets),
+        "source_ref_count": _int_from_mapping(summary, "source_ref_count") if summary else len(manifest_source_refs),
+        "page_index_node_ref_count": _int_from_mapping(summary, "page_index_node_ref_count"),
+        "page_index_anchor_ref_count": _int_from_mapping(summary, "page_index_anchor_ref_count"),
+        "hash_coverage_rate": _float_from_mapping(summary, "hash_coverage_rate"),
+        "page_index_anchor_coverage_rate": _float_from_mapping(summary, "page_index_anchor_coverage_rate"),
+        "source_span_coverage_rate": _float_from_mapping(summary, "source_span_coverage_rate"),
+        "blocker_count": blocker_count,
+        "import_ineligible_count": record_count,
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_counts_by_code": diagnostic_counts,
+        "manifest": {
+            "path": str(manifest_path) if manifest_path is not None else None,
+            "sha256": manifest_sha256,
+            "schema_version": _string_or_none(asset_manifest.get("schema_version")),
+            "diagnostics_schema_version": _string_or_none(asset_manifest.get("diagnostics_schema_version")),
+            "builder": _string_or_none(asset_manifest.get("builder")),
+            "paper_id": _string_or_none(asset_manifest.get("paper_id")),
+        },
+        "source_provenance": _asset_source_provenance(bundle_source_refs, manifest_source_refs, assets),
+        "page_index_provenance": _asset_page_index_provenance(assets, asset_manifest),
+        "graph_import_claim": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+    }
+    payload["subtrees"] = subtrees
+    payload["import_eligible_count"] = 0
+    payload["promoted_to_fact_count"] = 0
+    payload["production_import_attempted"] = False
+    payload["ladybugdb_written"] = False
+    payload["safety_flags"] = default_safety_flags()
+    return payload
+
+
 def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> str:
     """Serialize a bridge artifact deterministically."""
     return json.dumps(to_redacted_dict(value), indent=2, sort_keys=True) + "\n"
@@ -604,6 +692,14 @@ def _page_index_validation_diagnostics(page_index: dict[str, Any]) -> list[dict[
     return validate_article_page_index(page_index)
 
 
+def _asset_manifest_validation_diagnostics(asset_manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    try:
+        from arxiv_archive.article_assets import validate_article_asset_manifest
+    except ImportError:
+        return [_diagnostic("asset_manifest_validator_unavailable", "/subtrees/assets").to_redacted_dict()]
+    return validate_article_asset_manifest(asset_manifest)
+
+
 def _page_index_bridge_diagnostics(source_refs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     diagnostics: list[ArticleEvidenceDiagnostic] = []
     if not source_refs:
@@ -627,6 +723,88 @@ def _page_index_source_provenance(source_refs: list[dict[str, Any]]) -> dict[str
         "failure_counts": _counts(source.get("failure_reason") for source in source_refs if source.get("failure_reason")),
         "failed_source_present": any(source.get("load_outcome") == "failed" for source in source_refs),
     }
+
+
+
+
+def _asset_bridge_diagnostics(
+    asset_manifest: dict[str, Any],
+    bundle_source_refs: list[dict[str, Any]],
+    manifest_source_refs: list[dict[str, Any]],
+    assets: list[dict[str, Any]],
+    *,
+    manifest_path: str | Path | None,
+    manifest_sha256: str | None,
+) -> list[dict[str, Any]]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    if manifest_path is None or not str(manifest_path).strip():
+        diagnostics.append(_diagnostic("assets_missing_manifest_path", "/subtrees/assets/manifest/path"))
+    if not _valid_sha256(manifest_sha256):
+        diagnostics.append(_diagnostic("assets_missing_manifest_sha256", "/subtrees/assets/manifest/sha256"))
+    if not bundle_source_refs:
+        diagnostics.append(_diagnostic("assets_missing_bundle_source_refs", "/source_refs"))
+    if assets and not manifest_source_refs:
+        diagnostics.append(_diagnostic("assets_missing_manifest_source_refs", "/asset_manifest/source_refs"))
+
+    bundle_source_ids = {str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id")}
+    manifest_source_ids = {str(source.get("source_id")) for source in manifest_source_refs if source.get("source_id")}
+    for source_id in sorted(manifest_source_ids - bundle_source_ids):
+        diagnostics.append(_diagnostic("assets_source_ref_not_in_bundle", "/asset_manifest/source_refs", source_id))
+    for index, asset in enumerate(assets):
+        object_id = _string_or_none(asset.get("asset_id") or asset.get("source_asset_ref"))
+        source_file_id = _string_or_none(asset.get("source_file_id"))
+        if source_file_id and source_file_id not in manifest_source_ids:
+            diagnostics.append(_diagnostic("assets_record_unknown_source_ref", f"/asset_manifest/assets[{index}]/source_file_id", object_id))
+        if asset.get("import_eligible") is not False:
+            diagnostics.append(_diagnostic("assets_record_import_eligible", f"/asset_manifest/assets[{index}]/import_eligible", object_id))
+        if asset.get("promoted_to_fact") is not False:
+            diagnostics.append(_diagnostic("assets_record_promoted_to_fact", f"/asset_manifest/assets[{index}]/promoted_to_fact", object_id))
+
+    for field_name in ("import_eligible_count", "promoted_to_fact_count"):
+        if asset_manifest.get(field_name) != 0:
+            diagnostics.append(_diagnostic(f"assets_{field_name}_nonzero", f"/asset_manifest/{field_name}"))
+    for field_name in ("production_import_attempted", "ladybugdb_written"):
+        if asset_manifest.get(field_name) is not False:
+            diagnostics.append(_diagnostic(f"assets_{field_name}_true", f"/asset_manifest/{field_name}"))
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def _asset_source_provenance(
+    bundle_source_refs: list[dict[str, Any]], manifest_source_refs: list[dict[str, Any]], assets: list[dict[str, Any]]
+) -> dict[str, Any]:
+    asset_source_ids = sorted(str(asset.get("source_file_id")) for asset in assets if asset.get("source_file_id"))
+    manifest_source_ids = sorted(str(source.get("source_id")) for source in manifest_source_refs if source.get("source_id"))
+    bundle_source_ids = sorted(str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id"))
+    hashes = sorted(str(source.get("sha256")) for source in manifest_source_refs if _valid_sha256(source.get("sha256")))
+    return {
+        "bundle_source_count": len(bundle_source_refs),
+        "manifest_source_count": len(manifest_source_refs),
+        "referenced_source_count": len(set(asset_source_ids)),
+        "bundle_source_ids": bundle_source_ids,
+        "manifest_source_ids": manifest_source_ids,
+        "referenced_source_ids": sorted(set(asset_source_ids)),
+        "source_hash_count": len(hashes),
+        "source_hash_coverage_rate": len(hashes) / len(manifest_source_refs) if manifest_source_refs else 0.0,
+        "source_paths": sorted(str(source.get("source_path")) for source in manifest_source_refs if source.get("source_path")),
+    }
+
+
+def _asset_page_index_provenance(assets: list[dict[str, Any]], asset_manifest: dict[str, Any]) -> dict[str, Any]:
+    manifest = asset_manifest.get("page_index_manifest") if isinstance(asset_manifest.get("page_index_manifest"), dict) else {}
+    return {
+        "manifest_path": _string_or_none(manifest.get("manifest_path")),
+        "manifest_sha256": _string_or_none(manifest.get("manifest_sha256")),
+        "manifest_schema_version": _string_or_none(manifest.get("schema_version")),
+        "node_ref_count": len({asset.get("page_index_node_id") for asset in assets if asset.get("page_index_node_id")}),
+        "anchor_ref_count": len({asset.get("page_index_anchor_id") for asset in assets if asset.get("page_index_anchor_id")}),
+    }
+
+
+def _float_from_mapping(value: Any, key: str) -> float:
+    if not isinstance(value, dict):
+        return 0.0
+    item = value.get(key, 0.0)
+    return float(item) if isinstance(item, int | float) else 0.0
 
 
 def _int_from_mapping(value: Any, key: str) -> int:
@@ -961,6 +1139,7 @@ __all__ = [
     "ArticleEvidenceReplayError",
     "ArticleEvidenceRunSummary",
     "ArticleEvidenceSourceReference",
+    "attach_assets_summary",
     "attach_page_index_summary",
     "build_article_evidence_bundle",
     "build_article_evidence_bundle_from_load_events",

@@ -12,6 +12,7 @@ from arxiv_archive.article_evidence_bridge import (
     ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
     ArticleEvidenceReplayError,
+    attach_assets_summary,
     attach_page_index_summary,
     build_article_evidence_bundle,
     build_article_evidence_bundle_from_load_events,
@@ -25,6 +26,7 @@ from arxiv_archive.article_evidence_bridge import (
     validate_article_load_events,
 )
 from arxiv_archive.article_loader import ArticleLoadSource, load_article_source
+from arxiv_archive.article_assets import build_article_asset_manifest
 from arxiv_archive.article_page_index import build_article_page_index_from_structure
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
@@ -143,6 +145,74 @@ def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) 
         manifest_path="artifacts/page-index-manifest.json",
         manifest_sha256="a" * 64,
     )
+
+
+def _asset_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-assets-bridge-test",
+    ).to_redacted_dict()
+    source_ref = bundle["source_refs"][0]
+    source_id = str(source_ref["source_id"])
+    span = {
+        "span_id": "2605.bridge:span:figure-0001",
+        "source_id": source_id,
+        "coordinate_space": "page_bbox",
+        "char_start": None,
+        "char_end": None,
+        "page_start": 2,
+        "page_end": 2,
+        "bbox": [72.0, 120.0, 468.0, 360.0],
+        "span_hash": "1" * 64,
+        "raw_text_embedded": False,
+    }
+    manifest = build_article_asset_manifest(
+        {
+            "paper_id": "2605.bridge",
+            "run_id": "m024-assets-bridge-test",
+            "source_refs": [source_ref],
+            "page_index": {
+                "schema_version": "m024-page-index.v1",
+                "manifest_path": "artifacts/page-index-manifest.json",
+                "manifest_sha256": "a" * 64,
+                "nodes": [
+                    {
+                        "node_id": "2605.bridge:page-index:artifact:figure:0001",
+                        "paper_id": "2605.bridge",
+                        "node_type": "artifact",
+                        "summary": {"artifact_type": "figure"},
+                        "source_ref_ids": [source_id],
+                        "source_span": span,
+                        "anchor_ids": ["2605.bridge:page-index-anchor:figure-0001"],
+                        "import_eligible": False,
+                        "promoted_to_fact": False,
+                    }
+                ],
+                "anchors": [
+                    {
+                        "anchor_id": "2605.bridge:page-index-anchor:figure-0001",
+                        "node_id": "2605.bridge:page-index:artifact:figure:0001",
+                        "source_id": source_id,
+                    }
+                ],
+            },
+            "asset_placeholders": [
+                {
+                    "source_asset_ref": "figure:1",
+                    "asset_type": "figure",
+                    "source_file_id": source_id,
+                    "page_index_node_id": "2605.bridge:page-index:artifact:figure:0001",
+                    "page_index_anchor_id": "2605.bridge:page-index-anchor:figure-0001",
+                    "preservation_state": "source_linked",
+                    "interpretation_status": "not_interpreted",
+                    "source_span": span,
+                    **({"import_eligible": True, "caption_text": "FORBIDDEN_ASSET_CAPTION"} if unsafe else {}),
+                }
+            ],
+        }
+    )
+    return bundle, manifest
 
 
 def _combined_s01_log_events(tmp_path: Path):
@@ -467,6 +537,117 @@ def test_page_index_summary_blocks_missing_source_path_or_hash_without_raw_paylo
     assert "" not in subtree["source_provenance"]["source_paths"]
     assert validate_article_evidence_bundle(payload)
     _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_assets_summary_attaches_metadata_only_counts_and_validates_cleanly(tmp_path: Path) -> None:
+    bundle, manifest = _asset_manifest_for_bridge(tmp_path)
+
+    payload = attach_assets_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-assets-manifest.json",
+        manifest_sha256="b" * 64,
+    )
+    subtree = payload["subtrees"]["assets"]
+
+    assert subtree["status"] == "review_only"
+    assert subtree["record_count"] == 1
+    assert subtree["asset_counts_by_type"] == {"figure": 1}
+    assert subtree["preservation_state_counts"] == {"source_linked": 1}
+    assert subtree["interpretation_status_counts"] == {"not_interpreted": 1}
+    assert subtree["blocker_count"] == 0
+    assert subtree["diagnostic_count"] == 0
+    assert subtree["hash_coverage_rate"] == 1.0
+    assert subtree["page_index_anchor_coverage_rate"] == 1.0
+    assert subtree["manifest"] == {
+        "path": "artifacts/article-assets-manifest.json",
+        "sha256": "b" * 64,
+        "schema_version": "m024-article-assets.v1",
+        "diagnostics_schema_version": "m024-article-assets-diagnostics.v1",
+        "builder": "metadata_only_article_assets_v1",
+        "paper_id": "2605.bridge",
+    }
+    assert "assets" not in subtree
+    assert "source_asset_ref" not in subtree
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["production_import_attempted"] is False
+    assert subtree["ladybugdb_written"] is False
+    assert subtree["import_eligible_count"] == 0
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_assets_summary_blocks_manifest_diagnostics_without_copying_records(tmp_path: Path) -> None:
+    bundle, manifest = _asset_manifest_for_bridge(tmp_path, unsafe=True)
+
+    payload = attach_assets_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-assets-manifest.json",
+        manifest_sha256="b" * 64,
+    )
+    subtree = payload["subtrees"]["assets"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["blocker_count"] > 0
+    assert subtree["diagnostic_counts_by_code"]["forbidden_payload_key"] >= 1
+    assert subtree["diagnostic_counts_by_code"]["unsafe_import_eligible_flag"] >= 1
+    assert subtree["import_eligible_count"] == 0
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert "FORBIDDEN_ASSET_CAPTION" not in json.dumps(subtree, sort_keys=True)
+    assert "caption_text" not in json.dumps(subtree, sort_keys=True)
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_assets_summary_blocks_missing_manifest_provenance(tmp_path: Path) -> None:
+    bundle, manifest = _asset_manifest_for_bridge(tmp_path)
+
+    payload = attach_assets_summary(bundle, manifest)
+    subtree = payload["subtrees"]["assets"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["manifest"]["path"] is None
+    assert subtree["manifest"]["sha256"] is None
+    assert subtree["diagnostic_counts_by_code"] == {
+        "assets_missing_manifest_path": 1,
+        "assets_missing_manifest_sha256": 1,
+    }
+    assert validate_article_evidence_bundle(payload) == []
+
+
+def test_assets_summary_is_deterministic_and_aggregate_only(tmp_path: Path) -> None:
+    bundle, manifest = _asset_manifest_for_bridge(tmp_path)
+
+    first = attach_assets_summary(bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64)
+    second = attach_assets_summary(bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64)
+
+    assert first["subtrees"]["assets"] == second["subtrees"]["assets"]
+    serialized = json.dumps(first["subtrees"]["assets"], sort_keys=True)
+    assert "asset_id" not in serialized
+    assert "source_asset_ref" not in serialized
+    assert "caption_text" not in serialized
+    assert "table_text" not in serialized
+    assert "image_bytes" not in serialized
+    assert validate_article_evidence_bundle(first) == []
+
+
+def test_assets_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_path: Path) -> None:
+    bundle, manifest = _asset_manifest_for_bridge(tmp_path)
+    payload = attach_assets_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/article-assets-manifest.json",
+        manifest_sha256="b" * 64,
+    )
+    payload["subtrees"]["assets"]["caption_text"] = "raw caption must not enter bridge"
+    payload["subtrees"]["assets"]["import_eligible_count"] = 1
+
+    diagnostics = validate_article_evidence_bundle(payload)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+
+    assert "forbidden_payload_key" in codes
+    assert "subtree_import_eligible_count_nonzero" in codes
 
 
 def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path: Path) -> None:
