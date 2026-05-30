@@ -534,7 +534,23 @@ def _validate_diagnostic_record(record: dict[str, Any], path: str) -> list[Artic
 
 
 def _redacted_source_ref(source: dict[str, Any]) -> dict[str, Any]:
-    result = dict(source)
+    allowed = {
+        "source_id",
+        "paper_id",
+        "source_path",
+        "source_type",
+        "source_role",
+        "media_type",
+        "sha256",
+        "byte_size",
+        "parser_name",
+        "loader_name",
+        "load_outcome",
+        "failure_reason",
+        "warning_count",
+        "duration_ms",
+    }
+    result = {key: source.get(key) for key in allowed if key in source}
     result["raw_text_embedded"] = False
     result["raw_binary_embedded"] = False
     return result
