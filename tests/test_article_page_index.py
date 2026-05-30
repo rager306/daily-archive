@@ -16,7 +16,6 @@ from pathlib import Path
 
 import pytest
 
-
 ARTICLE_FIXTURES = Path(__file__).parent / "fixtures" / "article_artifacts"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "article_page_index"
 FORBIDDEN_SENTINEL = "FORBIDDEN_SENTINEL_DO_NOT_ECHO"
