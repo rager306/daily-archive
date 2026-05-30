@@ -15,6 +15,7 @@ from arxiv_archive.article_evidence_bridge import (
     attach_assets_summary,
     attach_links_dedup_summary,
     attach_page_index_summary,
+    attach_retrieval_table_benchmark_summary,
     build_article_evidence_bundle,
     build_article_evidence_bundle_from_load_events,
     build_article_evidence_run_summary,
@@ -34,6 +35,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
 ARTICLE_STRUCTURE_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
 PAGE_INDEX_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_page_index"
 LINKS_DEDUP_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_links_dedup"
+RETRIEVAL_TABLES_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_retrieval_tables"
 
 FORBIDDEN_SNIPPETS = [
     "%PDF-1.4",
@@ -817,6 +819,173 @@ def test_links_dedup_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_
     assert "subtree_import_eligible_count_nonzero" in codes
     assert "links_dedup_source_ref_not_in_bundle" in codes
 
+
+
+def _retrieval_table_manifest_for_bridge(tmp_path: Path) -> tuple[dict[str, object], dict[str, object]]:
+    from arxiv_archive.article_retrieval_tables import build_article_retrieval_table_manifest
+
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-retrieval-table-bridge-test",
+    ).to_redacted_dict()
+    manifest = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    source_refs = [dict(bundle["source_refs"][0]), dict(bundle["source_refs"][1])]
+    manifest["paper_id"] = "2605.bridge"
+    manifest["run_id"] = "m024-retrieval-table-bridge-test"
+    manifest["source_refs"] = source_refs
+    normalized_source_id = str(source_refs[0]["source_id"])
+    pdf_source_id = str(source_refs[1]["source_id"])
+    for unit in manifest["retrieval_units"]:
+        if unit["unit_family"] == "table_candidate_context_unit":
+            unit["source_ref_ids"] = [pdf_source_id]
+        else:
+            unit["source_ref_ids"] = [normalized_source_id]
+    manifest["table_candidates"][0]["source_ref_ids"] = [pdf_source_id]
+    return bundle, build_article_retrieval_table_manifest(
+        paper_id=manifest["paper_id"],
+        run_id=manifest["run_id"],
+        source_refs=manifest["source_refs"],
+        page_index_refs=manifest["page_index_refs"],
+        asset_refs=manifest["asset_refs"],
+        links_dedup_refs=manifest["links_dedup_refs"],
+        retrieval_units=manifest["retrieval_units"],
+        table_candidates=manifest["table_candidates"],
+        manifest_path=manifest["manifest_path"],
+    )
+
+
+def test_retrieval_table_benchmark_summary_attaches_review_only_aggregate_counts(tmp_path: Path) -> None:
+    bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
+
+    payload = attach_retrieval_table_benchmark_summary(
+        bundle,
+        manifest,
+        manifest_path=manifest["manifest_path"],
+        manifest_sha256=manifest["manifest_sha256"],
+    )
+    subtree = payload["subtrees"]["retrieval"]
+    metrics = payload["subtrees"]["metrics"]["retrieval_table_benchmark"]
+
+    assert subtree["status"] == "review_only"
+    assert subtree["review_only"] is True
+    assert subtree["record_count"] == 4
+    assert subtree["retrieval_unit_count"] == 3
+    assert subtree["table_candidate_count"] == 1
+    assert subtree["included_review_only_count"] == 4
+    assert subtree["ranking_tie_count"] == 1
+    assert subtree["source_ref_count"] == 2
+    assert subtree["page_index_node_ref_count"] == 3
+    assert subtree["page_index_anchor_ref_count"] == 3
+    assert subtree["asset_ref_count"] == 1
+    assert subtree["link_provenance_ref_count"] == 3
+    assert subtree["manifest_provenance_count"] == 3
+    assert subtree["diagnostic_count"] == 0
+    assert subtree["diagnostic_counts_by_code"] == {}
+    assert subtree["manifest"] == {
+        "path": "artifacts/retrieval-table-benchmark-manifest.json",
+        "sha256": "0" * 64,
+        "schema_version": "m024-article-retrieval-tables.v1",
+        "manifest_schema": "m024-article-retrieval-tables.v1",
+        "builder": "metadata_only_article_retrieval_tables_v1",
+        "paper_id": "2605.bridge",
+        "run_id": "m024-retrieval-table-bridge-test",
+    }
+    assert subtree["source_provenance"]["bundle_source_count"] == 3
+    assert subtree["source_provenance"]["manifest_source_count"] == 2
+    assert subtree["source_provenance"]["source_hash_coverage_rate"] == 1.0
+    assert subtree["page_index_provenance"]["node_ref_count"] == 3
+    assert subtree["asset_provenance"]["asset_ref_count"] == 1
+    assert subtree["links_dedup_provenance"]["metadata_signal_ref_count"] == 2
+    assert subtree["links_dedup_provenance"]["dedup_candidate_ref_count"] == 1
+    assert subtree["embedding_generation_attempted"] is False
+    assert subtree["vector_indexing_attempted"] is False
+    assert subtree["import_eligible_count"] == 0
+    assert subtree["promoted_to_fact_count"] == 0
+    assert subtree["production_import_attempted"] is False
+    assert subtree["ladybugdb_written"] is False
+    assert metrics["record_count"] == 4
+    assert metrics["manifest_path"] == "artifacts/retrieval-table-benchmark-manifest.json"
+    assert metrics["import_eligible_count"] == 0
+    assert "retrieval_units" not in subtree
+    assert "table_candidates" not in subtree
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_retrieval_table_benchmark_summary_blocks_unsafe_manifest_without_copying_payloads(tmp_path: Path) -> None:
+    bundle = build_article_evidence_bundle(
+        _mixed_loader_results(tmp_path),
+        paper_id="2605.bridge",
+        run_id="m024-retrieval-table-bridge-unsafe-test",
+    ).to_redacted_dict()
+    manifest = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "unsafe_manifest.json").read_text(encoding="utf-8"))
+
+    payload = attach_retrieval_table_benchmark_summary(
+        bundle,
+        manifest,
+        manifest_path="artifacts/different-retrieval-table-manifest.json",
+        manifest_sha256="d" * 64,
+    )
+    subtree = payload["subtrees"]["retrieval"]
+    codes = subtree["diagnostic_counts_by_code"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["blocker_count"] > 0
+    assert codes["forbidden_payload_key"] >= 1
+    assert codes["unsafe_authorization"] >= 1
+    assert codes["unsafe_readiness"] >= 1
+    assert codes["retrieval_table_manifest_path_mismatch"] == 1
+    assert codes["retrieval_table_manifest_sha256_mismatch"] == 1
+    assert codes["retrieval_table_paper_id_mismatch"] == 1
+    assert codes["retrieval_table_source_ref_not_in_bundle"] == 1
+    assert subtree["forbidden_payload_detection_count"] >= 1
+    assert subtree["unsafe_authorization_count"] >= 1
+    assert subtree["unsafe_readiness_count"] >= 1
+    assert subtree["import_eligible_count"] == 0
+    assert subtree["trusted_kg_import_allowed"] is False
+    assert subtree["production_import_attempted"] is False
+    assert subtree["ladybugdb_written"] is False
+    assert "FORBIDDEN_RAW_ARTICLE_TEXT_DO_NOT_ECHO" not in json.dumps(subtree, sort_keys=True)
+    assert "FORBIDDEN_TABLE_TEXT_DO_NOT_ECHO" not in json.dumps(subtree, sort_keys=True)
+    assert "raw_text" not in json.dumps(subtree, sort_keys=True)
+    assert "table_text" not in json.dumps(subtree, sort_keys=True)
+    assert validate_article_evidence_bundle(payload) == []
+    _assert_no_forbidden_bridge_payload(payload)
+
+
+def test_retrieval_table_benchmark_summary_blocks_missing_manifest_provenance(tmp_path: Path) -> None:
+    bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
+    manifest.pop("manifest_path")
+    manifest.pop("manifest_sha256")
+
+    payload = attach_retrieval_table_benchmark_summary(bundle, manifest)
+    subtree = payload["subtrees"]["retrieval"]
+
+    assert subtree["status"] == "blocked"
+    assert subtree["manifest"]["path"] is None
+    assert subtree["manifest"]["sha256"] is None
+    assert subtree["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_path"] == 1
+    assert subtree["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_sha256"] == 1
+    assert validate_article_evidence_bundle(payload) == []
+
+
+def test_retrieval_table_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_path: Path) -> None:
+    bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
+    payload = attach_retrieval_table_benchmark_summary(
+        bundle,
+        manifest,
+        manifest_path=manifest["manifest_path"],
+        manifest_sha256=manifest["manifest_sha256"],
+    )
+    payload["subtrees"]["retrieval"]["raw_text"] = "raw retrieval text must not enter bridge"
+    payload["subtrees"]["retrieval"]["import_eligible_count"] = 1
+
+    diagnostics = validate_article_evidence_bundle(payload)
+    codes = {diagnostic["code"] for diagnostic in diagnostics}
+
+    assert "forbidden_payload_key" in codes
+    assert "subtree_import_eligible_count_nonzero" in codes
 
 def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path: Path) -> None:
     bundle = build_article_evidence_bundle(

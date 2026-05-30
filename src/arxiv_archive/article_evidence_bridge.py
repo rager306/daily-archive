@@ -731,6 +731,133 @@ def attach_links_dedup_summary(
     return payload
 
 
+
+def attach_retrieval_table_benchmark_summary(
+    bundle: ArticleEvidenceBundle | dict[str, Any],
+    benchmark_manifest: Any,
+    *,
+    manifest_path: str | Path | None = None,
+    manifest_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Attach S06 retrieval/table benchmark aggregates to an evidence bundle.
+
+    The attachment is intentionally aggregate-only. It validates the untrusted
+    manifest, converts it through the retrieval/table redactor, and copies only
+    constant-size counters, status totals, manifest provenance, source/PageIndex
+    /asset/link provenance counters, diagnostic counts, and fail-closed
+    import/write indicators into ``subtrees["retrieval"]`` and ``subtrees["metrics"]``.
+    Retrieval-unit arrays and table-candidate records never enter the bridge.
+    """
+    payload = to_redacted_dict(bundle)
+    bundle_source_refs = _list_of_dicts(payload.get("source_refs"))
+    manifest = _retrieval_table_redacted_manifest(benchmark_manifest)
+    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    manifest_diagnostics = _list_of_dicts(manifest.get("diagnostics"))
+    validation_diagnostics = _retrieval_table_validation_diagnostics(benchmark_manifest)
+    bridge_diagnostics = _retrieval_table_bridge_diagnostics(
+        manifest,
+        bundle_source_refs,
+        manifest_path=manifest_path,
+        manifest_sha256=manifest_sha256,
+        bundle_paper_id=_string_or_none(payload.get("paper_id")),
+    )
+    diagnostics = manifest_diagnostics + validation_diagnostics + bridge_diagnostics
+    diagnostic_counts = _counts(diagnostic.get("code") for diagnostic in diagnostics)
+    blocker_count = sum(1 for diagnostic in diagnostics if diagnostic.get("blocks_import") is not False)
+    summary_diagnostic_counts = summary.get("diagnostic_counts") if isinstance(summary.get("diagnostic_counts"), dict) else {}
+
+    retrieval_unit_count = _int_from_mapping(summary, "retrieval_unit_count")
+    table_candidate_count = _int_from_mapping(summary, "table_candidate_count")
+    record_count = retrieval_unit_count + table_candidate_count
+    status: BundleSubtreeStatus = "blocked" if blocker_count else "review_only"
+
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    retrieval_subtree = {
+        "status": status,
+        "review_only": True,
+        "record_count": record_count,
+        "retrieval_unit_count": retrieval_unit_count,
+        "table_candidate_count": table_candidate_count,
+        "included_review_only_count": _int_from_mapping(summary, "included_review_only_count"),
+        "blocked_count": _int_from_mapping(summary, "blocked_count"),
+        "repair_required_count": _int_from_mapping(summary, "repair_required_count"),
+        "ranking_tie_count": _int_from_mapping(summary, "ranking_tie_count"),
+        "source_ref_count": _int_from_mapping(summary, "source_ref_count"),
+        "page_index_node_ref_count": _int_from_mapping(summary, "page_index_node_ref_count"),
+        "page_index_anchor_ref_count": _int_from_mapping(summary, "page_index_anchor_ref_count"),
+        "asset_ref_count": _int_from_mapping(summary, "asset_ref_count"),
+        "link_provenance_ref_count": _int_from_mapping(summary, "link_provenance_ref_count"),
+        "manifest_provenance_count": _int_from_mapping(summary, "manifest_provenance_count"),
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_counts_by_code": diagnostic_counts,
+        "summary_diagnostic_counts": dict(sorted((str(key), int(value)) for key, value in summary_diagnostic_counts.items() if isinstance(value, int))),
+        "blocker_count": blocker_count,
+        "forbidden_payload_detection_count": _int_from_mapping(summary_diagnostic_counts, "forbidden_payload_detection_count") + int(diagnostic_counts.get("forbidden_payload_key", 0)),
+        "unsafe_authorization_count": _int_from_mapping(summary_diagnostic_counts, "unsafe_authorization_count") + int(diagnostic_counts.get("unsafe_authorization", 0)),
+        "unsafe_readiness_count": _int_from_mapping(summary_diagnostic_counts, "unsafe_readiness_count") + int(diagnostic_counts.get("unsafe_readiness", 0)),
+        "manifest": {
+            "path": str(manifest_path) if manifest_path is not None else _string_or_none(manifest.get("manifest_path")),
+            "sha256": manifest_sha256 if manifest_sha256 is not None else _string_or_none(manifest.get("manifest_sha256")),
+            "schema_version": _string_or_none(manifest.get("schema_version")),
+            "manifest_schema": _string_or_none(manifest.get("manifest_schema")),
+            "builder": _string_or_none(manifest.get("builder")),
+            "paper_id": _string_or_none(manifest.get("paper_id")),
+            "run_id": _string_or_none(manifest.get("run_id")),
+        },
+        "source_provenance": _retrieval_table_source_provenance(bundle_source_refs, _list_of_dicts(manifest.get("source_refs"))),
+        "page_index_provenance": _retrieval_table_manifest_provenance(manifest.get("page_index_refs")),
+        "asset_provenance": _retrieval_table_manifest_provenance(manifest.get("asset_refs")),
+        "links_dedup_provenance": _retrieval_table_manifest_provenance(manifest.get("links_dedup_refs")),
+        "graph_import_claim": False,
+        "trusted_kg_import_allowed": False,
+        "embedding_generation_attempted": False,
+        "vector_indexing_attempted": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "import_eligible_count": 0,
+        "promoted_to_fact_count": 0,
+    }
+    subtrees["retrieval"] = retrieval_subtree
+
+    metrics = dict(subtrees.get("metrics") if isinstance(subtrees.get("metrics"), dict) else {})
+    metrics.update(
+        {
+            "status": "blocked" if blocker_count else "review_only",
+            "retrieval_table_benchmark": {
+                "status": status,
+                "record_count": record_count,
+                "retrieval_unit_count": retrieval_unit_count,
+                "table_candidate_count": table_candidate_count,
+                "included_review_only_count": retrieval_subtree["included_review_only_count"],
+                "blocked_count": retrieval_subtree["blocked_count"],
+                "repair_required_count": retrieval_subtree["repair_required_count"],
+                "ranking_tie_count": retrieval_subtree["ranking_tie_count"],
+                "diagnostic_count": len(diagnostics),
+                "diagnostic_counts_by_code": diagnostic_counts,
+                "manifest_path": retrieval_subtree["manifest"]["path"],
+                "manifest_sha256": retrieval_subtree["manifest"]["sha256"],
+                "manifest_schema": retrieval_subtree["manifest"]["schema_version"],
+                "import_eligible_count": 0,
+                "promoted_to_fact_count": 0,
+                "production_import_attempted": False,
+                "ladybugdb_written": False,
+            },
+            "import_eligible_count": 0,
+            "promoted_to_fact_count": 0,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        }
+    )
+    subtrees["metrics"] = metrics
+
+    payload["subtrees"] = subtrees
+    payload["import_eligible_count"] = 0
+    payload["promoted_to_fact_count"] = 0
+    payload["production_import_attempted"] = False
+    payload["ladybugdb_written"] = False
+    payload["safety_flags"] = default_safety_flags()
+    return payload
+
 def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str, Any]) -> str:
     """Serialize a bridge artifact deterministically."""
     return json.dumps(to_redacted_dict(value), indent=2, sort_keys=True) + "\n"
@@ -988,6 +1115,113 @@ def _links_dedup_page_index_provenance(manifest: dict[str, Any]) -> dict[str, An
         "anchor_ref_count": len(_string_list(refs.get("anchor_ids"))),
     }
 
+
+
+def _retrieval_table_redacted_manifest(value: Any) -> dict[str, Any]:
+    try:
+        from arxiv_archive.article_retrieval_tables import to_redacted_dict as retrieval_tables_to_redacted_dict
+    except ImportError:
+        return dict(value) if isinstance(value, dict) else {}
+    if isinstance(value, dict) or hasattr(value, "to_redacted_dict"):
+        try:
+            return retrieval_tables_to_redacted_dict(value.to_redacted_dict() if hasattr(value, "to_redacted_dict") else value)
+        except (TypeError, ValueError, AttributeError):
+            return dict(value) if isinstance(value, dict) else {}
+    return {}
+
+
+def _retrieval_table_validation_diagnostics(value: Any) -> list[dict[str, Any]]:
+    try:
+        from arxiv_archive.article_retrieval_tables import validate_article_retrieval_table_manifest
+    except ImportError:
+        return [_diagnostic("retrieval_table_validator_unavailable", "/subtrees/retrieval").to_redacted_dict()]
+    raw_manifest = value.to_redacted_dict() if hasattr(value, "to_redacted_dict") else value
+    if not isinstance(raw_manifest, dict):
+        return [_diagnostic("retrieval_table_manifest_not_mapping", "/subtrees/retrieval").to_redacted_dict()]
+    return [diagnostic.to_redacted_dict() for diagnostic in validate_article_retrieval_table_manifest(raw_manifest)]
+
+
+def _retrieval_table_bridge_diagnostics(
+    manifest: dict[str, Any],
+    bundle_source_refs: list[dict[str, Any]],
+    *,
+    manifest_path: str | Path | None,
+    manifest_sha256: str | None,
+    bundle_paper_id: str | None,
+) -> list[dict[str, Any]]:
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    provided_path = str(manifest_path) if manifest_path is not None else None
+    manifest_declared_path = _string_or_none(manifest.get("manifest_path"))
+    provided_sha = manifest_sha256 if manifest_sha256 is not None else None
+    manifest_declared_sha = _string_or_none(manifest.get("manifest_sha256"))
+    if not provided_path and not manifest_declared_path:
+        diagnostics.append(_diagnostic("retrieval_table_missing_manifest_path", "/subtrees/retrieval/manifest/path"))
+    if provided_path is not None and not provided_path.strip():
+        diagnostics.append(_diagnostic("retrieval_table_empty_manifest_path", "/subtrees/retrieval/manifest/path"))
+    if provided_path and manifest_declared_path and provided_path != manifest_declared_path:
+        diagnostics.append(_diagnostic("retrieval_table_manifest_path_mismatch", "/subtrees/retrieval/manifest/path"))
+    if not _valid_sha256(provided_sha or manifest_declared_sha):
+        diagnostics.append(_diagnostic("retrieval_table_missing_manifest_sha256", "/subtrees/retrieval/manifest/sha256"))
+    if provided_sha and manifest_declared_sha and provided_sha != manifest_declared_sha:
+        diagnostics.append(_diagnostic("retrieval_table_manifest_sha256_mismatch", "/subtrees/retrieval/manifest/sha256"))
+    if manifest.get("schema_version") != "m024-article-retrieval-tables.v1":
+        diagnostics.append(_diagnostic("retrieval_table_invalid_manifest_schema", "/retrieval_table_manifest/schema_version"))
+    manifest_paper_id = _string_or_none(manifest.get("paper_id"))
+    if bundle_paper_id and manifest_paper_id and manifest_paper_id != bundle_paper_id:
+        diagnostics.append(_diagnostic("retrieval_table_paper_id_mismatch", "/retrieval_table_manifest/paper_id", manifest_paper_id))
+    manifest_source_refs = _list_of_dicts(manifest.get("source_refs"))
+    if not bundle_source_refs:
+        diagnostics.append(_diagnostic("retrieval_table_missing_bundle_source_refs", "/source_refs"))
+    if not manifest_source_refs:
+        diagnostics.append(_diagnostic("retrieval_table_missing_manifest_source_refs", "/retrieval_table_manifest/source_refs"))
+
+    bundle_source_ids = {str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id")}
+    bundle_source_hashes = {str(source.get("sha256")) for source in bundle_source_refs if _valid_sha256(source.get("sha256"))}
+    for index, source in enumerate(manifest_source_refs):
+        object_id = _string_or_none(source.get("source_id"))
+        if not source.get("source_path"):
+            diagnostics.append(_diagnostic("retrieval_table_missing_source_path", f"/retrieval_table_manifest/source_refs[{index}]/source_path", object_id))
+        sha = source.get("sha256")
+        if not _valid_sha256(sha):
+            diagnostics.append(_diagnostic("retrieval_table_missing_source_hash", f"/retrieval_table_manifest/source_refs[{index}]/sha256", object_id))
+        if object_id and bundle_source_ids and object_id not in bundle_source_ids:
+            diagnostics.append(_diagnostic("retrieval_table_source_ref_not_in_bundle", f"/retrieval_table_manifest/source_refs[{index}]/source_id", object_id))
+        if _valid_sha256(sha) and bundle_source_hashes and str(sha) not in bundle_source_hashes:
+            diagnostics.append(_diagnostic("retrieval_table_source_hash_not_in_bundle", f"/retrieval_table_manifest/source_refs[{index}]/sha256", object_id))
+
+    for field_name in ("import_eligible_count", "promoted_to_fact_count"):
+        if manifest.get(field_name) != 0:
+            diagnostics.append(_diagnostic(f"retrieval_table_{field_name}_nonzero", f"/retrieval_table_manifest/{field_name}"))
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def _retrieval_table_source_provenance(bundle_source_refs: list[dict[str, Any]], manifest_source_refs: list[dict[str, Any]]) -> dict[str, Any]:
+    bundle_ids = sorted(str(source.get("source_id")) for source in bundle_source_refs if source.get("source_id"))
+    manifest_ids = sorted(str(source.get("source_id")) for source in manifest_source_refs if source.get("source_id"))
+    hashes = sorted(str(source.get("sha256")) for source in manifest_source_refs if _valid_sha256(source.get("sha256")))
+    return {
+        "bundle_source_count": len(bundle_source_refs),
+        "manifest_source_count": len(manifest_source_refs),
+        "bundle_source_ids": bundle_ids,
+        "manifest_source_ids": manifest_ids,
+        "source_hash_count": len(hashes),
+        "source_hash_coverage_rate": len(hashes) / len(manifest_source_refs) if manifest_source_refs else 0.0,
+        "source_paths": sorted(str(source.get("source_path")) for source in manifest_source_refs if source.get("source_path")),
+    }
+
+
+def _retrieval_table_manifest_provenance(value: Any) -> dict[str, Any]:
+    refs = value if isinstance(value, dict) else {}
+    return {
+        "manifest_path": _string_or_none(refs.get("manifest_path")),
+        "manifest_sha256": _string_or_none(refs.get("manifest_sha256")),
+        "manifest_schema_version": _string_or_none(refs.get("schema_version")),
+        "node_ref_count": len(_string_list(refs.get("node_ids"))),
+        "anchor_ref_count": len(_string_list(refs.get("anchor_ids"))),
+        "asset_ref_count": len(_string_list(refs.get("asset_ids"))),
+        "metadata_signal_ref_count": len(_string_list(refs.get("metadata_signal_ids"))),
+        "dedup_candidate_ref_count": len(_string_list(refs.get("dedup_candidate_ids"))),
+    }
 
 def _float_from_mapping(value: Any, key: str) -> float:
     if not isinstance(value, dict):
@@ -1363,6 +1597,7 @@ __all__ = [
     "attach_assets_summary",
     "attach_links_dedup_summary",
     "attach_page_index_summary",
+    "attach_retrieval_table_benchmark_summary",
     "build_article_evidence_bundle",
     "build_article_evidence_bundle_from_load_events",
     "build_article_evidence_run_summary",
