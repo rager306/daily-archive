@@ -1,0 +1,182 @@
+{
+  "schema_version": "m024-article-links-dedup.v1",
+  "paper_id": "fixture-paper-0001",
+  "run_id": "m024-s05-links-dedup-minimal",
+  "source_refs": [
+    {
+      "source_id": "fixture-paper-0001:source:normalized-md",
+      "paper_id": "fixture-paper-0001",
+      "source_role": "normalized_markdown",
+      "source_path": "papers/fixture-paper-0001/source/normalized.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "text/markdown"
+    }
+  ],
+  "page_index_refs": {
+    "schema_version": "m024-page-index.v1",
+    "manifest_path": "artifacts/page-index-manifest.json",
+    "manifest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "node_ids": [
+      "fixture-paper-0001:page-index:section:results",
+      "fixture-paper-0001:page-index:artifact:reference:0001"
+    ],
+    "anchor_ids": [
+      "fixture-paper-0001:page-index-anchor:section-results",
+      "fixture-paper-0001:page-index-anchor:citation-0001"
+    ]
+  },
+  "citation_links": [
+    {
+      "link_id": "fixture-paper-0001:link:citation:0001",
+      "link_family": "citation",
+      "source_page_index_node_id": "fixture-paper-0001:page-index:section:results",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "target_ref": {
+        "target_type": "reference_entry",
+        "target_id": "fixture-paper-0001:reference:0001"
+      },
+      "source_span_ids": ["fixture-paper-0001:span:citation-0001"],
+      "evidence_signal_ids": ["fixture-paper-0001:metadata-signal:doi:0001"],
+      "review_state": "review_required"
+    }
+  ],
+  "structural_links": [
+    {
+      "link_id": "fixture-paper-0001:link:structural:0001",
+      "link_family": "structural",
+      "relationship": "located_in",
+      "source_page_index_node_id": "fixture-paper-0001:page-index:artifact:reference:0001",
+      "target_page_index_node_id": "fixture-paper-0001:page-index:section:results",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "source_span_ids": ["fixture-paper-0001:span:citation-0001"],
+      "review_state": "review_required"
+    }
+  ],
+  "metadata_signals": [
+    {
+      "signal_id": "fixture-paper-0001:metadata-signal:doi:0001",
+      "signal_type": "doi",
+      "normalized_value": "10.48550/arxiv.2605.00001",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "source_span_id": "fixture-paper-0001:span:citation-0001",
+      "normalization": {
+        "algorithm": "lowercase-strip-doi-prefix",
+        "version": 1
+      },
+      "review_state": "review_required"
+    },
+    {
+      "signal_id": "fixture-paper-0001:metadata-signal:arxiv:0001",
+      "signal_type": "arxiv_id",
+      "normalized_value": "2605.00001v2",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "source_span_id": "fixture-paper-0001:span:citation-0001",
+      "normalization": {
+        "algorithm": "strip-arxiv-prefix-lowercase",
+        "version": 1
+      },
+      "review_state": "review_required"
+    },
+    {
+      "signal_id": "fixture-paper-0001:metadata-signal:url:0001",
+      "signal_type": "url",
+      "normalized_value": "https://example.org/papers/2605.00001",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "source_span_id": "fixture-paper-0001:span:citation-0001",
+      "normalization": {
+        "algorithm": "strip-query-fragment-lowercase-host",
+        "version": 1
+      },
+      "review_state": "review_required"
+    },
+    {
+      "signal_id": "fixture-paper-0001:metadata-signal:hash:0001",
+      "signal_type": "content_hash",
+      "normalized_value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "source_page_index_anchor_id": "fixture-paper-0001:page-index-anchor:citation-0001",
+      "source_span_id": "fixture-paper-0001:span:citation-0001",
+      "normalization": {
+        "algorithm": "sha256-lowercase-hex",
+        "version": 1
+      },
+      "review_state": "review_required"
+    }
+  ],
+  "dedup_candidates": [
+    {
+      "candidate_id": "fixture-paper-0001:dedup:preprint:0001",
+      "candidate_family": "preprint_dedup",
+      "decision": "candidate_same_work_review_required",
+      "source_record_ref": "fixture-paper-0001:reference:0001",
+      "target_record_ref": "arxiv:2605.00001v2",
+      "evidence_signal_ids": [
+        "fixture-paper-0001:metadata-signal:doi:0001",
+        "fixture-paper-0001:metadata-signal:arxiv:0001",
+        "fixture-paper-0001:metadata-signal:url:0001",
+        "fixture-paper-0001:metadata-signal:hash:0001"
+      ],
+      "confidence_label": "medium",
+      "review_state": "review_required",
+      "import_eligible": false
+    }
+  ],
+  "summary": {
+    "link_family_counts": {
+      "citation": 1,
+      "structural": 1,
+      "metadata_signal": 4,
+      "dedup_candidate": 1
+    },
+    "page_index_anchor_coverage": {
+      "required_anchor_ref_count": 7,
+      "covered_anchor_ref_count": 7,
+      "missing_anchor_ref_count": 0
+    },
+    "source_span_coverage": {
+      "required_source_span_ref_count": 7,
+      "covered_source_span_ref_count": 7,
+      "missing_source_span_ref_count": 0
+    },
+    "metadata_signal_counts": {
+      "doi": 1,
+      "arxiv_id": 1,
+      "url": 1,
+      "content_hash": 1
+    },
+    "dedup_decision_counts": {
+      "candidate_same_work_review_required": 1
+    },
+    "diagnostic_counts": {
+      "duplicate_id_count": 0,
+      "malformed_source_ref_count": 0,
+      "missing_page_index_anchor_count": 0,
+      "bad_vocabulary_count": 0,
+      "conflict_count": 0,
+      "insufficient_metadata_count": 0,
+      "forbidden_payload_detection_count": 0,
+      "unsafe_authorization_count": 0
+    },
+    "import_eligible_count": 0
+  },
+  "bridge_subtree": {
+    "status": "review_only_not_import_eligible",
+    "source_slice": "M024-0xjwh9/S05",
+    "graph_import_claim": false,
+    "trusted_kg_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "raw_payloads_included": false
+  },
+  "safety_flags": {
+    "metadata_only": true,
+    "review_only": true,
+    "trusted_kg_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "model_outputs_included": false,
+    "raw_payloads_included": false
+  },
+  "diagnostics": [],
+  "import_eligible_count": 0,
+  "promoted_to_fact_count": 0
+}
