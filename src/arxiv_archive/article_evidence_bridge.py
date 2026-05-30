@@ -26,6 +26,8 @@ LoadOutcome = Literal["loaded", "loaded_metadata_only", "failed"]
 DiagnosticSeverity = Literal["info", "warning", "repair_required", "error"]
 
 ALLOWED_LOAD_OUTCOMES = frozenset({"loaded", "loaded_metadata_only", "failed"})
+ALLOWED_REPLAY_EVENTS = frozenset({"source.load_started", "source.load_completed", "source.load_failed"})
+TERMINAL_REPLAY_EVENTS = frozenset({"source.load_completed", "source.load_failed"})
 ALLOWED_SUBTREE_STATUSES = frozenset({"absent", "metadata_only", "review_only", "blocked", "not_attempted"})
 ALLOWED_USES = ("source_provenance_review", "bridge_validation", "downstream_scaffolding")
 EXCLUDED_USES = (
@@ -90,6 +92,15 @@ def default_safety_flags() -> dict[str, bool]:
     }
 
 
+class ArticleEvidenceReplayError(ValueError):
+    """Raised when S01 metadata-only events cannot be replayed safely."""
+
+    def __init__(self, diagnostics: list[dict[str, Any]]) -> None:
+        self.diagnostics = diagnostics
+        codes = ", ".join(str(diagnostic.get("code")) for diagnostic in diagnostics[:5])
+        super().__init__(f"Article evidence replay rejected by diagnostics: {codes}")
+
+
 @dataclass(frozen=True)
 class ArticleEvidenceDiagnostic:
     """One stable, redacted diagnostic for bundle validation."""
@@ -128,6 +139,7 @@ class ArticleEvidenceSourceReference:
     load_outcome: str
     failure_reason: str | None
     warning_count: int
+    duration_ms: int
 
     @classmethod
     def from_load_result(cls, result: ArticleLoadResult, *, paper_id: str) -> ArticleEvidenceSourceReference:
@@ -144,6 +156,25 @@ class ArticleEvidenceSourceReference:
             load_outcome=result.outcome,
             failure_reason=result.failure_reason,
             warning_count=result.warning_count,
+            duration_ms=result.duration_ms,
+        )
+
+    @classmethod
+    def from_load_event(cls, event: dict[str, Any], *, paper_id: str) -> ArticleEvidenceSourceReference:
+        return cls(
+            source_id=str(event["source_id"]),
+            paper_id=str(event.get("paper_id") or paper_id),
+            source_path=str(event["source_path"]),
+            source_type=str(event["source_type"]),
+            media_type=str(event["media_type"]),
+            sha256=event.get("sha256") if event.get("sha256") is not None else None,
+            byte_size=int(event["byte_size"]),
+            parser_name=str(event["parser_name"]),
+            loader_name=str(event["loader_name"]),
+            load_outcome=str(event["outcome"]),
+            failure_reason=event.get("failure_reason") if event.get("failure_reason") is not None else None,
+            warning_count=int(event.get("warning_count", 0) or 0),
+            duration_ms=int(event.get("duration_ms", 0) or 0),
         )
 
     def to_redacted_dict(self) -> dict[str, Any]:
@@ -160,6 +191,7 @@ class ArticleEvidenceSourceReference:
             "load_outcome": self.load_outcome,
             "failure_reason": self.failure_reason,
             "warning_count": self.warning_count,
+            "duration_ms": self.duration_ms,
             "raw_text_embedded": False,
             "raw_binary_embedded": False,
         }
@@ -210,6 +242,8 @@ class ArticleEvidenceRunSummary:
     run_id: str
     bundles: tuple[dict[str, Any], ...]
     output_paths: dict[str, Any] = field(default_factory=dict)
+    input_source_ids: tuple[str, ...] = ()
+    input_hashes: tuple[str, ...] = ()
 
     def to_redacted_dict(self) -> dict[str, Any]:
         summaries = [bundle.get("summary", {}) for bundle in self.bundles if isinstance(bundle.get("summary"), dict)]
@@ -226,6 +260,8 @@ class ArticleEvidenceRunSummary:
             "failure_counts": _merge_counts(summary.get("failure_counts", {}) for summary in summaries),
             "diagnostic_count": len(diagnostics),
             "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
+            "input_source_ids": list(self.input_source_ids),
+            "input_hashes": list(self.input_hashes),
             "import_eligible_count": 0,
             "promoted_to_fact_count": 0,
             "production_import_attempted": False,
@@ -248,6 +284,125 @@ def build_article_evidence_bundle(
             key=lambda source: (source.source_id, source.source_path, source.load_outcome),
         )
     )
+    return _bundle_from_source_refs(source_refs, paper_id=paper_id, run_id=run_id, bundle_root=bundle_root)
+
+
+def build_article_evidence_bundle_from_load_events(
+    events: Iterable[dict[str, Any]],
+    *,
+    paper_id: str,
+    run_id: str,
+    bundle_root: str | Path | None = None,
+) -> ArticleEvidenceBundle:
+    """Build a metadata-only evidence bundle by replaying flattened S01 load events.
+
+    ``source.load_started`` events are accepted for validation/replay provenance,
+    but only terminal ``source.load_completed`` and ``source.load_failed`` events
+    become source references so replayed bundles match the direct
+    ``ArticleLoadResult`` path without rerunning acquisition or extraction.
+    """
+    event_list = [dict(event) for event in events]
+    diagnostics = validate_article_load_events(event_list, paper_id=paper_id)
+    if diagnostics:
+        raise ArticleEvidenceReplayError(diagnostics)
+    source_refs = tuple(
+        sorted(
+            (
+                ArticleEvidenceSourceReference.from_load_event(event, paper_id=paper_id)
+                for event in event_list
+                if event.get("event") in TERMINAL_REPLAY_EVENTS
+            ),
+            key=lambda source: (source.source_id, source.source_path, source.load_outcome),
+        )
+    )
+    return _bundle_from_source_refs(source_refs, paper_id=paper_id, run_id=run_id, bundle_root=bundle_root)
+
+
+def validate_article_load_events(events: Iterable[dict[str, Any]], *, paper_id: str | None = None) -> list[dict[str, Any]]:
+    """Validate S01 flattened load events for safe metadata-only replay."""
+    diagnostics: list[ArticleEvidenceDiagnostic] = []
+    terminal_source_ids: set[str] = set()
+    required = (
+        "event",
+        "source_path",
+        "source_id",
+        "source_type",
+        "media_type",
+        "byte_size",
+        "parser_name",
+        "loader_name",
+        "outcome",
+        "duration_ms",
+        "warning_count",
+    )
+    for index, event in enumerate(events):
+        path = f"/events[{index}]"
+        if not isinstance(event, dict):
+            diagnostics.append(_diagnostic("malformed_replay_event", path))
+            continue
+        object_id = _string_or_none(event.get("source_id"))
+        diagnostics.extend(_validate_forbidden_keys(event, path))
+        event_name = event.get("event")
+        if event_name not in ALLOWED_REPLAY_EVENTS:
+            diagnostics.append(_diagnostic("unsupported_replay_event", f"{path}/event", object_id))
+            continue
+        diagnostics.extend(_required(event, required, path))
+        diagnostics.extend(_validate_non_empty_ids(event, ("source_path", "source_id", "source_type", "media_type", "parser_name", "loader_name"), path, object_id))
+        if paper_id is not None and event.get("paper_id") not in {None, paper_id}:
+            diagnostics.append(_diagnostic("replay_paper_id_mismatch", f"{path}/paper_id", object_id))
+        if not isinstance(event.get("byte_size"), int) or int(event.get("byte_size", -1)) < 0:
+            diagnostics.append(_diagnostic("invalid_byte_size", f"{path}/byte_size", object_id))
+        if not isinstance(event.get("warning_count"), int) or int(event.get("warning_count", -1)) < 0:
+            diagnostics.append(_diagnostic("invalid_warning_count", f"{path}/warning_count", object_id))
+        if not isinstance(event.get("duration_ms"), int) or int(event.get("duration_ms", -1)) < 0:
+            diagnostics.append(_diagnostic("invalid_duration_ms", f"{path}/duration_ms", object_id))
+        sha = event.get("sha256")
+        if sha is not None and not _valid_sha256(sha):
+            diagnostics.append(_diagnostic("invalid_sha256", f"{path}/sha256", object_id))
+        if event_name == "source.load_started":
+            if event.get("outcome") != "started":
+                diagnostics.append(_diagnostic("invalid_started_outcome", f"{path}/outcome", object_id))
+            if event.get("failure_reason") is not None:
+                diagnostics.append(_diagnostic("unexpected_failure_reason", f"{path}/failure_reason", object_id))
+            continue
+        if event.get("outcome") not in ALLOWED_LOAD_OUTCOMES:
+            diagnostics.append(_diagnostic("invalid_load_outcome", f"{path}/outcome", object_id))
+        if event_name == "source.load_completed" and event.get("outcome") not in {"loaded", "loaded_metadata_only"}:
+            diagnostics.append(_diagnostic("terminal_event_outcome_mismatch", f"{path}/outcome", object_id))
+        if event_name == "source.load_failed" and event.get("outcome") != "failed":
+            diagnostics.append(_diagnostic("terminal_event_outcome_mismatch", f"{path}/outcome", object_id))
+        if event.get("outcome") == "failed" and not event.get("failure_reason"):
+            diagnostics.append(_diagnostic("missing_failure_reason", f"{path}/failure_reason", object_id))
+        if event.get("outcome") != "failed" and event.get("failure_reason") is not None:
+            diagnostics.append(_diagnostic("unexpected_failure_reason", f"{path}/failure_reason", object_id))
+        if event.get("outcome") in {"loaded", "loaded_metadata_only"} and not _valid_sha256(sha):
+            diagnostics.append(_diagnostic("missing_checksum_for_loaded_source", f"{path}/sha256", object_id))
+        source_id = event.get("source_id")
+        if isinstance(source_id, str) and source_id:
+            if source_id in terminal_source_ids:
+                diagnostics.append(_diagnostic("duplicate_terminal_source_id", f"{path}/source_id", source_id))
+            else:
+                terminal_source_ids.add(source_id)
+    return [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+
+
+def replay_input_source_ids(events: Iterable[dict[str, Any]]) -> list[str]:
+    """Return deterministic source IDs observed in replay input events."""
+    return sorted({str(event.get("source_id")) for event in events if isinstance(event, dict) and event.get("source_id")})
+
+
+def replay_input_hashes(events: Iterable[dict[str, Any]]) -> list[str]:
+    """Return deterministic redacted hashes for replay input events."""
+    return sorted(_replay_event_hash(event) for event in events if isinstance(event, dict))
+
+
+def _bundle_from_source_refs(
+    source_refs: tuple[ArticleEvidenceSourceReference, ...],
+    *,
+    paper_id: str,
+    run_id: str,
+    bundle_root: str | Path | None = None,
+) -> ArticleEvidenceBundle:
     source_dicts = [source.to_redacted_dict() for source in source_refs]
     summary = summarize_source_refs(source_dicts)
     bundle_id = _bundle_id(paper_id=paper_id, run_id=run_id, source_refs=source_dicts)
@@ -334,11 +489,40 @@ def to_json(value: ArticleEvidenceBundle | ArticleEvidenceRunSummary | dict[str,
 
 
 def build_article_evidence_run_summary(
-    *, run_id: str, bundles: Iterable[ArticleEvidenceBundle | dict[str, Any]], output_paths: dict[str, Any] | None = None
+    *,
+    run_id: str,
+    bundles: Iterable[ArticleEvidenceBundle | dict[str, Any]],
+    output_paths: dict[str, Any] | None = None,
+    input_source_ids: Iterable[str] | None = None,
+    input_hashes: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     """Build a redacted run summary artifact for evidence bridge outputs."""
     bundle_dicts = tuple(to_redacted_dict(bundle) for bundle in bundles)
-    return ArticleEvidenceRunSummary(run_id=run_id, bundles=bundle_dicts, output_paths=dict(output_paths or {})).to_redacted_dict()
+    return ArticleEvidenceRunSummary(
+        run_id=run_id,
+        bundles=bundle_dicts,
+        output_paths=dict(output_paths or {}),
+        input_source_ids=tuple(sorted(str(value) for value in (input_source_ids or ()))),
+        input_hashes=tuple(sorted(str(value) for value in (input_hashes or ()))),
+    ).to_redacted_dict()
+
+
+def build_article_evidence_run_summary_from_load_events(
+    *,
+    run_id: str,
+    bundles: Iterable[ArticleEvidenceBundle | dict[str, Any]],
+    events: Iterable[dict[str, Any]],
+    output_paths: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a run summary that fingerprints metadata-only replay inputs."""
+    event_list = [dict(event) for event in events]
+    return build_article_evidence_run_summary(
+        run_id=run_id,
+        bundles=bundles,
+        output_paths=output_paths,
+        input_source_ids=replay_input_source_ids(event_list),
+        input_hashes=replay_input_hashes(event_list),
+    )
 
 
 def _default_subtrees(source_refs: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -416,6 +600,7 @@ def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> li
                 "loader_name",
                 "load_outcome",
                 "warning_count",
+                "duration_ms",
                 "raw_text_embedded",
                 "raw_binary_embedded",
             ),
@@ -435,6 +620,8 @@ def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> li
         diagnostics.append(_diagnostic("invalid_byte_size", f"{path}/byte_size", source_id))
     if not isinstance(source.get("warning_count"), int) or int(source.get("warning_count", -1)) < 0:
         diagnostics.append(_diagnostic("invalid_warning_count", f"{path}/warning_count", source_id))
+    if not isinstance(source.get("duration_ms"), int) or int(source.get("duration_ms", -1)) < 0:
+        diagnostics.append(_diagnostic("invalid_duration_ms", f"{path}/duration_ms", source_id))
     sha = source.get("sha256")
     if sha is not None and not _valid_sha256(sha):
         diagnostics.append(_diagnostic("invalid_sha256", f"{path}/sha256", source_id))
@@ -604,6 +791,31 @@ def _string_or_none(value: Any) -> str | None:
     return str(value) if value is not None else None
 
 
+def _replay_event_hash(event: dict[str, Any]) -> str:
+    redacted_fingerprint = {
+        key: event.get(key)
+        for key in (
+            "event",
+            "source_id",
+            "source_path",
+            "source_type",
+            "media_type",
+            "sha256",
+            "byte_size",
+            "parser_name",
+            "loader_name",
+            "outcome",
+            "failure_reason",
+            "duration_ms",
+            "warning_count",
+        )
+    }
+    if event.get("paper_id") is not None:
+        redacted_fingerprint["paper_id"] = event.get("paper_id")
+    digest = hashlib.sha256(json.dumps(redacted_fingerprint, sort_keys=True, default=str).encode()).hexdigest()
+    return f"source-load-event:{digest}"
+
+
 def _counts(values: Any) -> dict[str, int]:
     counts: dict[str, int] = {}
     for value in values:
@@ -627,6 +839,7 @@ def _merge_counts(values: Any) -> dict[str, int]:
 
 __all__ = [
     "ALLOWED_LOAD_OUTCOMES",
+    "ALLOWED_REPLAY_EVENTS",
     "ALLOWED_SUBTREE_STATUSES",
     "ALLOWED_USES",
     "ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION",
@@ -634,13 +847,19 @@ __all__ = [
     "ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION",
     "ArticleEvidenceBundle",
     "ArticleEvidenceDiagnostic",
+    "ArticleEvidenceReplayError",
     "ArticleEvidenceRunSummary",
     "ArticleEvidenceSourceReference",
     "build_article_evidence_bundle",
+    "build_article_evidence_bundle_from_load_events",
     "build_article_evidence_run_summary",
+    "build_article_evidence_run_summary_from_load_events",
     "default_safety_flags",
     "summarize_source_refs",
+    "replay_input_hashes",
+    "replay_input_source_ids",
     "to_json",
     "to_redacted_dict",
     "validate_article_evidence_bundle",
+    "validate_article_load_events",
 ]

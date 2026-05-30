@@ -11,11 +11,17 @@ from arxiv_archive.article_evidence_bridge import (
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
+    ArticleEvidenceReplayError,
     build_article_evidence_bundle,
+    build_article_evidence_bundle_from_load_events,
     build_article_evidence_run_summary,
+    build_article_evidence_run_summary_from_load_events,
+    replay_input_hashes,
+    replay_input_source_ids,
     to_json,
     to_redacted_dict,
     validate_article_evidence_bundle,
+    validate_article_load_events,
 )
 from arxiv_archive.article_loader import ArticleLoadSource, load_article_source
 
@@ -86,6 +92,30 @@ def _mixed_loader_results(tmp_path: Path):
     ]
 
 
+def _read_jsonl(path: Path) -> list[dict[str, object]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _combined_s01_log_events(tmp_path: Path):
+    paper_id = "2605.bridge"
+    log_path = tmp_path / "s01-load-events.jsonl"
+    results = [
+        load_article_source(
+            ArticleLoadSource(FIXTURES_DIR / "structured_paper.md", paper_id=paper_id, source_type="markdown"),
+            log_path=log_path,
+        ),
+        load_article_source(
+            ArticleLoadSource(FIXTURES_DIR / "minimal.pdf", paper_id=paper_id, source_type="pdf"),
+            log_path=log_path,
+        ),
+        load_article_source(
+            ArticleLoadSource(FIXTURES_DIR / "arxiv_landing_only.md", paper_id=paper_id, source_type="markdown"),
+            log_path=log_path,
+        ),
+    ]
+    return results, _read_jsonl(log_path)
+
+
 def _walk_keys(value: object) -> list[str]:
     if isinstance(value, dict):
         keys = list(value.keys())
@@ -150,6 +180,71 @@ def test_builds_valid_mixed_outcome_bundle_from_loader_metadata_only(tmp_path: P
         assert source_ref["raw_binary_embedded"] is False
 
     assert validate_article_evidence_bundle(bundle) == []
+
+
+def test_replays_s01_metadata_only_jsonl_events_into_equivalent_bridge_bundle(tmp_path: Path) -> None:
+    results, events = _combined_s01_log_events(tmp_path)
+
+    direct_payload = build_article_evidence_bundle(
+        results,
+        paper_id="2605.bridge",
+        run_id="m024-replay-test",
+    ).to_redacted_dict()
+    replay_payload = build_article_evidence_bundle_from_load_events(
+        events,
+        paper_id="2605.bridge",
+        run_id="m024-replay-test",
+    ).to_redacted_dict()
+
+    assert [event["event"] for event in events] == [
+        "source.load_started",
+        "source.load_completed",
+        "source.load_started",
+        "source.load_completed",
+        "source.load_started",
+        "source.load_failed",
+    ]
+    assert validate_article_load_events(events, paper_id="2605.bridge") == []
+    assert replay_payload["source_refs"] == direct_payload["source_refs"]
+    assert replay_payload["summary"] == direct_payload["summary"]
+    assert replay_payload["bundle_id"] == direct_payload["bundle_id"]
+    assert validate_article_evidence_bundle(replay_payload) == []
+
+    serialized = json.dumps(replay_payload, sort_keys=True)
+    for forbidden in FORBIDDEN_SNIPPETS:
+        assert forbidden not in serialized
+    assert not (set(_walk_keys(replay_payload)) & FORBIDDEN_EXACT_KEYS)
+
+
+def test_replay_run_summary_records_redacted_input_fingerprints_and_no_import_claims(tmp_path: Path) -> None:
+    results, events = _combined_s01_log_events(tmp_path)
+    bundle = build_article_evidence_bundle_from_load_events(
+        events,
+        paper_id="2605.bridge",
+        run_id="m024-replay-summary-test",
+    )
+
+    run_summary = build_article_evidence_run_summary_from_load_events(
+        run_id="m024-replay-summary-test",
+        bundles=[bundle],
+        events=events,
+        output_paths={"bundle": "redacted-bundle.json", "summary": "run-summary.json"},
+    )
+
+    assert run_summary["schema_version"] == ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION
+    assert run_summary["bundle_count"] == 1
+    assert run_summary["source_count"] == 3
+    assert run_summary["outcome_counts"] == {"failed": 1, "loaded": 1, "loaded_metadata_only": 1}
+    assert run_summary["input_source_ids"] == replay_input_source_ids(events)
+    assert run_summary["input_hashes"] == replay_input_hashes(events)
+    assert len(run_summary["input_hashes"]) == len(events)
+    assert all(value.startswith("source-load-event:") for value in run_summary["input_hashes"])
+    assert {result.source_id for result in results} <= set(run_summary["input_source_ids"])
+    assert run_summary["import_eligible_count"] == 0
+    assert run_summary["promoted_to_fact_count"] == 0
+    assert run_summary["production_import_attempted"] is False
+    assert run_summary["ladybugdb_written"] is False
+    assert run_summary["output_paths"] == {"bundle": "redacted-bundle.json", "summary": "run-summary.json"}
 
 
 def test_bundle_id_and_json_are_deterministic_for_reordered_loader_results(tmp_path: Path) -> None:
@@ -244,6 +339,35 @@ def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path:
     assert run_summary["production_import_attempted"] is False
     assert run_summary["ladybugdb_written"] is False
     assert to_redacted_dict(run_summary) == run_summary
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_code"),
+    [
+        (lambda events: events[0].__setitem__("event", "source.fetch_completed"), "unsupported_replay_event"),
+        (lambda events: events[1].pop("source_path"), "missing_source_path"),
+        (lambda events: events[1].__setitem__("sha256", "not-a-sha"), "invalid_sha256"),
+        (lambda events: events.append(dict(events[1])), "duplicate_terminal_source_id"),
+        (lambda events: events[1].__setitem__("text", "raw article payload should be refused"), "forbidden_payload_key"),
+        (lambda events: events[1].__setitem__("outcome", "failed"), "terminal_event_outcome_mismatch"),
+    ],
+)
+def test_replay_rejects_malformed_or_payload_bearing_s01_events(tmp_path: Path, mutate, expected_code: str) -> None:
+    _, events = _combined_s01_log_events(tmp_path)
+    mutate(events)
+
+    diagnostics = validate_article_load_events(events, paper_id="2605.bridge")
+    assert expected_code in {diagnostic["code"] for diagnostic in diagnostics}
+    assert all(diagnostic["json_path"].startswith("/events[") for diagnostic in diagnostics)
+    assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(diagnostics, sort_keys=True)
+
+    with pytest.raises(ArticleEvidenceReplayError) as exc_info:
+        build_article_evidence_bundle_from_load_events(
+            events,
+            paper_id="2605.bridge",
+            run_id="m024-replay-negative-test",
+        )
+    assert expected_code in {diagnostic["code"] for diagnostic in exc_info.value.diagnostics}
 
 
 @pytest.mark.parametrize(
