@@ -25,7 +25,7 @@ S08 consumes chunk outputs plus separated evidence artifacts to run the full loc
 
 ## Tasks
 
-- [ ] **T01: Define evidence boundary contracts** `est:medium`
+- [x] **T01: Define evidence boundary contracts** `est:medium`
   Define the separated metadata-safe evidence artifact contracts for assets, tables, links, and identity. The contracts must reference article/source/element/chunk identifiers without embedding raw payload text or binary data, and must keep graph import and production write flags false. At execution time this task consumes S01 catalog/index/selection outputs and S06 chunking outputs, but those future artifacts are intentionally not listed as static inputs for pre-execution validation.
   - Files: `tests/test_article_evidence_boundaries.py`, `tests/fixtures/article_evidence_boundaries_v00_01/`
   - Verify: uv run pytest tests/test_article_evidence_boundaries.py -q
