@@ -17,7 +17,7 @@ import re
 import sys
 from collections import Counter
 from copy import deepcopy
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -751,8 +751,8 @@ def _blocked_placeholder(index: int, codes: list[str]) -> dict[str, Any]:
         "source_sha256": None,
         "status": "blocked_review_only",
         "diagnostic_codes": sorted(set(codes)),
-        "subtree_statuses": {name: "absent" for name in SUBTREE_NAMES},
-        "coverage": {name: 0 for name in SUBTREE_NAMES},
+        "subtree_statuses": dict.fromkeys(SUBTREE_NAMES, "absent"),
+        "coverage": dict.fromkeys(SUBTREE_NAMES, 0),
         "freshness": {"status": "not_provided", "stale_artifact_count": 0},
         "graph_import_attempted": False,
         "ladybugdb_written": False,
@@ -763,7 +763,7 @@ def _blocked_placeholder(index: int, codes: list[str]) -> dict[str, Any]:
 
 
 def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
-    counts = {key: 0 for key in DIAGNOSTIC_COUNTER_KEYS}
+    counts = dict.fromkeys(DIAGNOSTIC_COUNTER_KEYS, 0)
     for diagnostic in diagnostics:
         code = str(diagnostic.get("code", ""))
         if code == "empty_batch":

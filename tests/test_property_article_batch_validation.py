@@ -11,7 +11,10 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from arxiv_archive import article_batch_validation as batch
-from arxiv_archive.validation_batch_provenance import build_artifact_freshness_report, fingerprint_file
+from arxiv_archive.validation_batch_provenance import (
+    build_artifact_freshness_report,
+    fingerprint_file,
+)
 
 FORBIDDEN_SENTINELS = (
     "FORBIDDEN_RAW_ARTICLE_TEXT_DO_NOT_ECHO",
@@ -94,9 +97,7 @@ def test_generated_safe_metadata_reports_are_deterministic_sorted_and_fixed_zero
     )
     assert report["aggregate_diagnostics"]["document_count"] == 10
     assert report["aggregate_diagnostics"]["blocked_document_count"] == 0
-    assert report["aggregate_diagnostics"]["diagnostic_counts"] == {
-        key: 0 for key in batch.DIAGNOSTIC_COUNTER_KEYS
-    }
+    assert report["aggregate_diagnostics"]["diagnostic_counts"] == dict.fromkeys(batch.DIAGNOSTIC_COUNTER_KEYS, 0)
     assert report["recommendation"] == "proceed_to_20_document_scale_review_only"
     assert batch.validate_article_batch_validation_report(report) == []
     _assert_metadata_only(report)

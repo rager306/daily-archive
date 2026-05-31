@@ -310,7 +310,7 @@ def test_summary_helper_returns_aggregate_benchmark_and_fixed_zero_import_counte
     assert summary["asset_ref_count"] == 1
     assert summary["link_provenance_ref_count"] == 3
     assert summary["manifest_provenance_count"] == 3
-    assert summary["diagnostic_counts"] == {key: 0 for key in EXPECTED_DIAGNOSTIC_COUNTER_KEYS}
+    assert summary["diagnostic_counts"] == dict.fromkeys(EXPECTED_DIAGNOSTIC_COUNTER_KEYS, 0)
     assert summary["import_eligible_count"] == 0
     assert summary["promoted_to_fact_count"] == 0
     assert summary["ladybugdb_written_count"] == 0

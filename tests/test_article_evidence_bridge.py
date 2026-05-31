@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from arxiv_archive.article_assets import build_article_asset_manifest
 from arxiv_archive.article_evidence_bridge import (
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
@@ -28,7 +29,6 @@ from arxiv_archive.article_evidence_bridge import (
     validate_article_load_events,
 )
 from arxiv_archive.article_loader import ArticleLoadSource, load_article_source
-from arxiv_archive.article_assets import build_article_asset_manifest
 from arxiv_archive.article_page_index import build_article_page_index_from_structure
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
@@ -160,7 +160,6 @@ def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) ->
         run_id="m024-links-dedup-bridge-test",
     ).to_redacted_dict()
     source_ref = dict(bundle["source_refs"][0])
-    source_id = str(source_ref["source_id"])
     manifest = json.loads((LINKS_DEDUP_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
     manifest["paper_id"] = "2605.bridge"
     manifest["run_id"] = "m024-links-dedup-bridge-test"

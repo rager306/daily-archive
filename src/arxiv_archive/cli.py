@@ -23,7 +23,6 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
-from arxiv_archive.article_batch_validation import run_article_batch_validation_report  # noqa: E402
 from arxiv_archive.article_artifact_minimax import (  # noqa: E402
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     build_article_artifact_minimax_request,
@@ -41,6 +40,7 @@ from arxiv_archive.article_artifacts import (  # noqa: E402
     to_json,
     validate_article_artifact_manifest,
 )
+from arxiv_archive.article_batch_validation import run_article_batch_validation_report  # noqa: E402
 from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
 from arxiv_archive.embedder import Embedder  # noqa: E402
 from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402

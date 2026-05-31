@@ -109,7 +109,7 @@ def test_ten_document_report_is_deterministic_metadata_only_and_review_ready() -
         "ready_document_count": 10,
         "blocked_document_count": 0,
         "diagnostic_count": 0,
-        "diagnostic_counts": {key: 0 for key in batch.DIAGNOSTIC_COUNTER_KEYS},
+        "diagnostic_counts": dict.fromkeys(batch.DIAGNOSTIC_COUNTER_KEYS, 0),
         "import_eligible_count": 0,
         "promoted_to_fact_count": 0,
         "ladybugdb_written_count": 0,
