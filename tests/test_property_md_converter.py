@@ -2,22 +2,22 @@
 
 from typing import Any
 
-from adaptix import Retort
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from arxiv_archive.md_converter import ConversionResult, MDConverter
+from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN, MODULAR_RETORT, adaptix_dump
 
-MD_RETORT = Retort()
 
 def dict_to_conversion_result(data: dict[str, Any]) -> ConversionResult:
-    return MD_RETORT.load(data, ConversionResult)
+    return MODULAR_RETORT.load(data, ConversionResult)
+
 
 # --- Property: Adaptix roundtripping ---
 
 @settings(max_examples=100)
 @given(
-    markdown=st.one_of(st.none(), st.text()),
+    markdown=st.one_of(st.none(), st.just(FIXTURE_MARKDOWN), st.text()),
     method=st.sampled_from(["arxiv2md", "marker", "error", "unknown"]),
     error=st.one_of(st.none(), st.text()),
 )
@@ -26,7 +26,7 @@ def test_conversion_result_adaptix_roundtrip(
 ) -> None:
     """ConversionResult serialized to dict and back must preserve all fields."""
     original = ConversionResult(markdown=markdown, method=method, error=error)
-    dumped = MD_RETORT.dump(original)
+    dumped = adaptix_dump(original)
     restored = dict_to_conversion_result(dumped)
 
     assert restored.markdown == original.markdown

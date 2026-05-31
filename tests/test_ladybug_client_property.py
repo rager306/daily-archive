@@ -10,6 +10,7 @@ from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.cli import DailyAnalysis
 from arxiv_archive.ladybug_client import init_db, upsert_daily_analysis
 from arxiv_archive.scoring import ScoredPaper
+from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 SAFE_TEXT = st.text(
     alphabet=st.characters(
@@ -36,7 +37,7 @@ def make_conn() -> ladybug.Connection:
 
 def make_analysis(
     *,
-    paper_id: str = "arxiv:test-1",
+    paper_id: str = f"arxiv:{FIXTURE_PAPER_ID}",
     title: str = "Test Title",
     authors: list[str] | None = None,
     categories: list[str] | None = None,

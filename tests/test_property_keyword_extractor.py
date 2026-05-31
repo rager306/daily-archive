@@ -4,6 +4,7 @@ from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
 from arxiv_archive.keyword_extractor import KeywordExtractor
+from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN
 
 
 @settings(verbosity=Verbosity.verbose, max_examples=200)
@@ -59,7 +60,7 @@ def test_repeated_word_increases_extraction(
     extractor = KeywordExtractor()
     # Repeat a term 5 times in the text
     term = "graph neural network"
-    repeated_text = f"{text} {' '.join([term] * 5)} {text}"
+    repeated_text = f"{FIXTURE_MARKDOWN}\n{text} {' '.join([term] * 5)} {text}"
 
     keywords = extractor.extract_for_paper(repeated_text, "")
 

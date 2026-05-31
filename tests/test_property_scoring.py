@@ -8,10 +8,11 @@ from hypothesis import strategies as st
 from arxiv_archive.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoringEngine
 from arxiv_archive.semantic_scholar import SemanticScholarPaper
+from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 
 def make_arxiv_paper(
-    arxiv_id: str = "arxiv:2310.00001",
+    arxiv_id: str = f"arxiv:{FIXTURE_PAPER_ID}",
     categories: list[str] | None = None,
     days_ago: int = 0,
 ) -> ArxivPaper:
@@ -32,7 +33,7 @@ def make_arxiv_paper(
 
 
 def make_semschol(
-    arxiv_id: str = "2310.00001",
+    arxiv_id: str = FIXTURE_PAPER_ID,
     citation_count: int = 0,
 ) -> SemanticScholarPaper:
     return SemanticScholarPaper(
