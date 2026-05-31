@@ -31,7 +31,7 @@
 - [x] **S05: PageIndex Replay** `risk:high` `depends:[S04]`
   > After this: After this: PageIndex is built from normalized elements for the smoke corpus, with deterministic nodes, anchors, routes, and provenance references verified against baseline expectations.
 
-- [ ] **S06: Chunking Replay** `risk:high` `depends:[S05]`
+- [x] **S06: Chunking Replay** `risk:high` `depends:[S05]`
   > After this: After this: chunking is isolated and proven on the smoke corpus, with traceable chunks for expected articles and explicit diagnostics for zero-chunk or low-quality cases.
 
 - [ ] **S07: Assets Tables Links Identity Replay** `risk:high` `depends:[S06]`
