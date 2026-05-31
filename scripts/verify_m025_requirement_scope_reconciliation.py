@@ -83,6 +83,26 @@ REQUIRED_ROW_KEYS = {
     "rationale",
 }
 
+REQUIRED_COVERAGE_PHRASES = {
+    "doc/validation/m025_requirement_scope_matrix.json",
+    "doc/validation/m025_requirement_scope_matrix.md",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/final-replay-summary.json",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/final-replay-report.md",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/readiness-decision.json",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-summary.json",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-report.md",
+    "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-events.jsonl",
+    "m025_advanced_preprocessing_only",
+    "m025_advanced_preprocessing_diagnostics",
+    "m025_advanced_traceable_chunks",
+    "already_validated_supported_by_m025",
+    "m025_advanced_audit_provenance",
+    "constraint_followed_not_validated",
+    "Q5 — Failure Modes",
+    "Q6 — Load Profile",
+    "Q7 — Negative Tests",
+}
+
 # These phrases are safe when they appear in forbidden-claim or out-of-scope
 # sections, but unsafe when they appear as allowed/positive closeout claims.
 UNSAFE_POSITIVE_CLAIM_PHRASES = {
@@ -391,6 +411,21 @@ def validate_matrix(
     return errors
 
 
+def validate_coverage_handoff(coverage_markdown: str) -> list[str]:
+    """Return diagnostics for the S11 human coverage handoff."""
+
+    errors: list[str] = []
+    if not coverage_markdown.strip():
+        return ["coverage handoff is empty"]
+    for phrase in sorted(REQUIRED_COVERAGE_PHRASES):
+        if phrase not in coverage_markdown:
+            errors.append(f"coverage handoff missing required phrase/path: {phrase}")
+    for rid in sorted(REQUIRED_REQUIREMENT_IDS):
+        if rid not in coverage_markdown:
+            errors.append(f"coverage handoff missing requirement id: {rid}")
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -407,6 +442,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matrix", required=True, type=Path, help="Path to m025_requirement_scope_matrix.json")
     parser.add_argument("--rendered", required=True, type=Path, help="Path to rendered matrix markdown")
+    parser.add_argument("--coverage", type=Path, help="Optional path to S11-COVERAGE.md handoff")
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--require-requirements", nargs="+", default=sorted(REQUIRED_REQUIREMENT_IDS))
     parser.add_argument("--reject-unsafe-claims", action="store_true")
@@ -435,6 +471,12 @@ def main(argv: list[str] | None = None) -> int:
             reject_unsafe_claims=args.reject_unsafe_claims,
             allow_planning_evidence=not args.disallow_planning_evidence,
         )
+        if args.coverage is not None:
+            try:
+                coverage = args.coverage.read_text(encoding="utf-8")
+            except FileNotFoundError as exc:
+                raise MatrixValidationError(f"coverage handoff file not found: {args.coverage}") from exc
+            errors.extend(validate_coverage_handoff(coverage))
     except MatrixValidationError as exc:
         sys.stderr.write(f"ERROR: {exc}\n")
         return 2

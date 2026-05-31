@@ -17,6 +17,7 @@ sys.modules[spec.name] = verify_m025_requirement_scope_reconciliation
 spec.loader.exec_module(verify_m025_requirement_scope_reconciliation)
 
 validate_matrix = verify_m025_requirement_scope_reconciliation.validate_matrix
+validate_coverage_handoff = verify_m025_requirement_scope_reconciliation.validate_coverage_handoff
 main = verify_m025_requirement_scope_reconciliation.main
 
 REAL_MATRIX = Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.json"
@@ -233,3 +234,36 @@ def test_rejects_stale_rendered_markdown(tmp_path: Path) -> None:
     errors = _errors(matrix, rendered=rendered, tmp_path=tmp_path)
 
     assert any("rendered markdown missing requirement id: R036" in error for error in errors)
+
+
+def test_coverage_handoff_requires_closeout_sections_and_evidence_paths() -> None:
+    coverage = "\n".join(
+        [
+            "R024 R027 R029 R030 R036 R040",
+            "doc/validation/m025_requirement_scope_matrix.json",
+            "doc/validation/m025_requirement_scope_matrix.md",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/final-replay-summary.json",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/final-replay-report.md",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/readiness-decision.json",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-summary.json",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-report.md",
+            "data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/boundary-replay-events.jsonl",
+            "m025_advanced_preprocessing_only",
+            "m025_advanced_preprocessing_diagnostics",
+            "m025_advanced_traceable_chunks",
+            "already_validated_supported_by_m025",
+            "m025_advanced_audit_provenance",
+            "constraint_followed_not_validated",
+            "Q5 — Failure Modes",
+            "Q6 — Load Profile",
+            "Q7 — Negative Tests",
+        ]
+    )
+
+    assert validate_coverage_handoff(coverage) == []
+
+
+def test_coverage_handoff_rejects_missing_required_evidence_path() -> None:
+    errors = validate_coverage_handoff("R024 R027 R029 R030 R036 R040")
+
+    assert any("coverage handoff missing required phrase/path" in error for error in errors)
