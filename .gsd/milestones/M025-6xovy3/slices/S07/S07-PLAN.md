@@ -31,12 +31,12 @@ S08 consumes chunk outputs plus separated evidence artifacts to run the full loc
   - Verify: uv run pytest tests/test_article_evidence_boundaries.py -q
 uv run ruff check tests/test_article_evidence_boundaries.py
 
-- [ ] **T02: Replay separated evidence artifacts** `est:medium`
+- [x] **T02: Replay separated evidence artifacts** `est:medium`
   Implement or adapt a local evidence replay command that reads the fixed corpus outputs from S06 and writes separate assets, tables, links, and identity artifacts per article. Unsupported evidence types must produce diagnostics rather than silent empty outputs. The command must read the catalog index and corpus selection at runtime and fail clearly if expected S06 chunking artifacts are absent.
   - Files: `src/arxiv_archive/`, `scripts/verify_m025_evidence_boundaries.py`, `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/`
   - Verify: uv run python scripts/verify_m025_evidence_boundaries.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --chunks data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/chunking --evidence data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence --write-events data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence-events.jsonl
 
-- [ ] **T03: Finalize evidence boundary report** `est:small`
+- [x] **T03: Finalize evidence boundary report** `est:small`
   Validate the separated evidence artifacts and write the S07 report. The report must summarize per-article counts, missing/unsupported evidence diagnostics, provenance coverage, redaction checks, and no-import/no-write safety state.
   - Files: `scripts/verify_m025_evidence_boundaries.py`, `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/`
   - Verify: uv run python scripts/verify_m025_evidence_boundaries.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --evidence data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence --events data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence-events.jsonl --require-redaction --require-no-import-flags --write-summary data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence-summary.json --write-report data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/evidence-report.md

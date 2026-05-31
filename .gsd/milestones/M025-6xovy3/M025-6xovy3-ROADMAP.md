@@ -34,7 +34,7 @@
 - [x] **S06: Chunking Replay** `risk:high` `depends:[S05]`
   > After this: After this: chunking is isolated and proven on the smoke corpus, with traceable chunks for expected articles and explicit diagnostics for zero-chunk or low-quality cases.
 
-- [ ] **S07: Assets Tables Links Identity Replay** `risk:high` `depends:[S06]`
+- [x] **S07: Assets Tables Links Identity Replay** `risk:high` `depends:[S06]`
   > After this: After this: assets, tables, links, and identity evidence are separated from chunks and replayed on the same corpus with metadata-safe provenance-bearing outputs.
 
 - [ ] **S08: End to End Preprocessing Replay** `risk:high` `depends:[S07]`
