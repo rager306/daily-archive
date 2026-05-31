@@ -19,7 +19,7 @@
 - [x] **S01: Smoke Corpus Freeze** `risk:high` `depends:[]`
   > After this: After this: a fixed 5 article corpus exists with local source artifacts, catalog index entries, checksums, expected profiles, and an integrity validator so every later slice uses the same real inputs.
 
-- [ ] **S02: Current Pipeline Baseline** `risk:high` `depends:[S01]`
+- [x] **S02: Current Pipeline Baseline** `risk:high` `depends:[S01]`
   > After this: After this: the current pipeline has been run as-is on the smoke corpus, with per-article intermediate artifacts, metrics, diagnostics, and a baseline report that future refactors compare against.
 
 - [ ] **S03: Loader Boundary Replay** `risk:high` `depends:[S02]`
