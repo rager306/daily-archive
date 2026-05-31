@@ -22,7 +22,7 @@
 - [x] **S02: Current Pipeline Baseline** `risk:high` `depends:[S01]`
   > After this: After this: the current pipeline has been run as-is on the smoke corpus, with per-article intermediate artifacts, metrics, diagnostics, and a baseline report that future refactors compare against.
 
-- [ ] **S03: Loader Boundary Replay** `risk:high` `depends:[S02]`
+- [x] **S03: Loader Boundary Replay** `risk:high` `depends:[S02]`
   > After this: After this: article loading is isolated behind a loader boundary and replayed on the same corpus, proving source IDs, checksums, kinds, outcomes, and failure reasons match or intentionally improve over baseline.
 
 - [ ] **S04: Parser Normalization Replay** `risk:high` `depends:[S03]`
