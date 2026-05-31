@@ -28,7 +28,7 @@
 - [x] **S04: Parser Normalization Replay** `risk:high` `depends:[S03]`
   > After this: After this: parser and normalization are isolated from loader and downstream indexing, and the same smoke corpus produces typed article elements, source-span diagnostics, and parser quality metrics.
 
-- [ ] **S05: PageIndex Replay** `risk:high` `depends:[S04]`
+- [x] **S05: PageIndex Replay** `risk:high` `depends:[S04]`
   > After this: After this: PageIndex is built from normalized elements for the smoke corpus, with deterministic nodes, anchors, routes, and provenance references verified against baseline expectations.
 
 - [ ] **S06: Chunking Replay** `risk:high` `depends:[S05]`
