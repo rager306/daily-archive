@@ -26,6 +26,9 @@ from arxiv_archive.validation_batch_state import (
     write_batch_state,
 )
 from arxiv_archive.validation_logging import ValidationLogger, sanitize_event_details
+from scripts.run_quality_gate import run_quality_gate
+
+VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "m025-validation-smoke-review.v1"
 
 SELECTION_ROLE_ALIASES = {
     "m005_baseline_overlap": "baseline_overlap",
@@ -292,6 +295,95 @@ def run_validation_batch_scan(
         "delta_report_path": delta_path,
         "outlier_report_path": outlier_path,
     }
+
+
+def run_validation_batch_smoke_with_quality_gate(
+    state: ValidationBatchState,
+    output_dir: str | Path,
+    *,
+    structure_baseline_path: str | Path | None = None,
+    mixed_benchmark_path: str | Path | None = None,
+    run_id: str | None = None,
+    milestone_id: str | None = None,
+    quality_gate_paths: tuple[str | Path, ...] | list[str | Path] | None = None,
+    quality_gate_baseline_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Run a validation smoke scan and attach non-blocking maintainability diagnostics.
+
+    The maintainability gate is informational: scan pass/fail status is determined
+    by the functional validation scan, while quality diagnostics are written next
+    to the smoke artifacts for local review.
+    """
+    output = Path(output_dir)
+    scan_result = run_validation_batch_scan(
+        state,
+        output,
+        structure_baseline_path=structure_baseline_path,
+        mixed_benchmark_path=mixed_benchmark_path,
+        run_id=run_id,
+        milestone_id=milestone_id,
+    )
+    quality_dir = output / "quality"
+    quality_report = run_quality_gate(
+        paths=quality_gate_paths
+        or (
+            Path("src/arxiv_archive/validation_batch_workflow.py"),
+            Path("scripts/run_quality_gate.py"),
+            Path("src/arxiv_archive/quality/riskratchet_adapter.py"),
+        ),
+        output_dir=quality_dir,
+        baseline_path=quality_gate_baseline_path,
+    )
+    review_path = write_validation_smoke_review(
+        scan_result=scan_result,
+        quality_report=quality_report,
+        output_path=output / "validation-smoke-review.json",
+    )
+    return {
+        **scan_result,
+        "quality_gate_report": quality_report,
+        "quality_gate_json_path": Path(quality_report["output_paths"]["json"]),
+        "quality_gate_human_path": Path(quality_report["output_paths"]["human"]),
+        "smoke_review_path": review_path,
+    }
+
+
+def write_validation_smoke_review(
+    *,
+    scan_result: dict[str, Any],
+    quality_report: dict[str, Any],
+    output_path: str | Path,
+) -> Path:
+    """Write the combined local smoke review envelope."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    state = scan_result.get("state")
+    payload = {
+        "schema_version": VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION,
+        "batch_id": getattr(state, "batch_id", None),
+        "phase": getattr(state, "phase", None),
+        "functional_smoke": {
+            "state_path": str(scan_result["state_path"]),
+            "summary_path": str(scan_result["summary_path"]),
+            "diagnostics_path": str(scan_result["diagnostics_path"]),
+            "delta_report_path": str(scan_result["delta_report_path"]),
+            "outlier_report_path": str(scan_result["outlier_report_path"]),
+        },
+        "maintainability_diagnostic": {
+            "diagnostic_only": True,
+            "blocking": False,
+            "pass_fail_affected": False,
+            "status": quality_report.get("status"),
+            "tool_status": quality_report.get("tool_status"),
+            "summary": quality_report.get("summary", {}),
+            "baseline_delta": quality_report.get("baseline_delta", {}),
+            "output_paths": quality_report.get("output_paths", {}),
+            "quality_gate": quality_report.get("quality_gate", {}),
+        },
+        **default_safety_flags(),
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
 
 
 def write_validation_scan_manifest(

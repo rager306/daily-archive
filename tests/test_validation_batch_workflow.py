@@ -13,6 +13,7 @@ from arxiv_archive.validation_batch_workflow import (
     initialize_validation_batch,
     load_validation_manifest,
     preflight_validation_batch,
+    run_validation_batch_smoke_with_quality_gate,
     selected_papers_from_manifest,
     source_readiness_for_paper,
     validation_batch_state_preview,
@@ -229,7 +230,59 @@ def test_build_source_preflight_summary_counts_blockers() -> None:
     assert summary["raw_text_included"] is False
 
 
-def test_validation_batch_state_preview_is_compact_and_redacted() -> None:
+def test_validation_batch_smoke_writes_functional_and_quality_review(tmp_path: Path) -> None:
+    paper_dir = tmp_path / "papers" / "2605.00040v1"
+    paper_dir.mkdir(parents=True)
+    (paper_dir / "full_text.md").write_text(
+        "# Abstract\n\nThis real-article smoke fixture has enough markdown to exercise chunking.\n\n"
+        "# Findings\n\nThe workflow records functional diagnostics next to maintainability diagnostics.\n",
+        encoding="utf-8",
+    )
+    state = ValidationBatchState(
+        batch_id="b006",
+        phase="source_ready",
+        selected_papers=(
+            SelectedPaper(
+                paper_id="2605.00040v1",
+                rank=1,
+                selection_role="deterministic_expansion",
+                source_paths={"research_workspace": str(paper_dir)},
+            ),
+        ),
+        source_readiness_by_paper={
+            "2605.00040v1": SourceReadiness(
+                markdown_present=True,
+                markdown_quality_accepted=True,
+                ready_for_markdown_scan=True,
+            )
+        },
+    )
+
+    result = run_validation_batch_smoke_with_quality_gate(
+        state,
+        tmp_path / "smoke",
+        run_id="b006-smoke",
+        milestone_id="M025-6xovy3",
+        quality_gate_paths=["src/arxiv_archive/validation_batch_workflow.py"],
+    )
+
+    review = json.loads(result["smoke_review_path"].read_text(encoding="utf-8"))
+    quality_json = json.loads(result["quality_gate_json_path"].read_text(encoding="utf-8"))
+    human_quality = result["quality_gate_human_path"].read_text(encoding="utf-8")
+
+    assert review["schema_version"] == "m025-validation-smoke-review.v1"
+    assert review["batch_id"] == "b006"
+    assert review["functional_smoke"]["summary_path"].endswith("validation-scan-summary.json")
+    assert review["maintainability_diagnostic"]["diagnostic_only"] is True
+    assert review["maintainability_diagnostic"]["blocking"] is False
+    assert review["maintainability_diagnostic"]["pass_fail_affected"] is False
+    assert review["maintainability_diagnostic"]["summary"]["total_functions"] > 0
+    assert review["maintainability_diagnostic"]["baseline_delta"]["baseline_present"] is False
+    assert quality_json["quality_gate"]["blocking"] is False
+    assert quality_json["quality_gate"]["touched_modules"] == ["src/arxiv_archive/validation_batch_workflow.py"]
+    assert "Severity bands" in human_quality
+
+
     state = ValidationBatchState(
         batch_id="b005",
         selected_papers=(SelectedPaper(paper_id="2605.00005v1", selection_role="retry"),),
