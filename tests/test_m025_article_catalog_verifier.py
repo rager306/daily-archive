@@ -54,6 +54,42 @@ def _run_verifier(catalog: Path, index: Path, selection: Path) -> subprocess.Com
     )
 
 
+def _run_rebuild(
+    catalog: Path,
+    index: Path,
+    selection: Path,
+    report: Path,
+    diagnostics: Path,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--catalog",
+            str(catalog),
+            "--index",
+            str(index),
+            "--selection",
+            str(selection),
+            "--rebuild-index",
+            "--write-index",
+            str(index),
+            "--write-index-report",
+            str(report),
+            "--write-diagnostics",
+            str(diagnostics),
+            "--check-index-idempotent",
+            "--check-index-titles",
+            "--check-safe-traversal",
+            "--check-duplicate-lookups",
+            "--check-index-lookup-only",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+
 def test_m025_article_catalog_verifier_accepts_fixture_scaffold(tmp_path: Path) -> None:
     catalog, index, selection = _copy_scaffold(tmp_path)
 
@@ -85,3 +121,68 @@ def test_m025_article_catalog_verifier_rejects_selection_not_in_index(tmp_path: 
 
     assert result.returncode == 1
     assert "selection article_ref not present in index" in result.stderr
+
+
+def test_m025_article_catalog_rebuild_writes_idempotent_report_and_diagnostics(tmp_path: Path) -> None:
+    catalog, index, selection = _copy_scaffold(tmp_path)
+    report = index.parent / "index-rebuild-report.json"
+    diagnostics = index.parent / "index-rebuild-diagnostics.jsonl"
+
+    result = _run_rebuild(catalog, index, selection, report, diagnostics)
+
+    assert result.returncode == 0, result.stderr
+    assert "index rebuild passed" in result.stdout
+    rebuilt_report = json.loads(report.read_text(encoding="utf-8"))
+    assert rebuilt_report["entries_emitted"] == 5
+    assert rebuilt_report["idempotent"] is True
+    assert rebuilt_report["network_fetch_attempted"] is False
+    assert diagnostics.read_text(encoding="utf-8") == ""
+
+
+def test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key(tmp_path: Path) -> None:
+    catalog, index, selection = _copy_scaffold(tmp_path)
+    article_path = index.parent / "article_catalog" / "arxiv" / "cs-ai" / "2605.28617v1" / "article.json"
+    article = json.loads(article_path.read_text(encoding="utf-8"))
+    article["article_key"] = "2512.24601"
+    article["catalog_path"] = "arxiv/cs-ai/2512.24601"
+    article_path.write_text(json.dumps(article), encoding="utf-8")
+
+    result = _run_rebuild(
+        catalog,
+        index,
+        selection,
+        index.parent / "index-rebuild-report.json",
+        index.parent / "index-rebuild-diagnostics.jsonl",
+    )
+
+    assert result.returncode == 1
+    assert "duplicate" in result.stderr or "malformed_article_record" in result.stderr
+
+
+def test_m025_article_catalog_verifier_rejects_unsafe_index_traversal(tmp_path: Path) -> None:
+    catalog, index, selection = _copy_scaffold(tmp_path)
+    payload = json.loads(index.read_text(encoding="utf-8"))
+    payload["articles"][0]["article_path"] = "../outside/article.json"
+    index.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--catalog",
+            str(catalog),
+            "--index",
+            str(index),
+            "--selection",
+            str(selection),
+            "--validate-only",
+            "--require-index",
+            "--check-safe-traversal",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 1
+    assert "unsafe catalog-relative path" in result.stderr or "non-canonical" in result.stderr
