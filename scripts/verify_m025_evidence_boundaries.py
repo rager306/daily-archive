@@ -21,6 +21,9 @@ from typing import Any
 SCHEMA_PREFIX = "m025-article-evidence"
 RUN_SCHEMA_VERSION = "m025-article-evidence-replay.v00.01"
 EVIDENCE_TYPES = ("assets", "tables", "links", "identity")
+ASSET_CHUNK_TYPES = {"figure_caption_context", "equation_context"}
+TABLE_CHUNK_TYPES = {"table_context", "table_row_group"}
+LINK_CHUNK_TYPES = {"citation_context", "reference_entry"}
 FALSE_SAFETY_FLAGS = {
     "trusted_kg_import_allowed": False,
     "ladybugdb_written": False,
@@ -134,6 +137,32 @@ def _source_ref(article: ArticleSelection, catalog_entry: dict[str, Any]) -> dic
     }
 
 
+def _chunk_id(article_ref: str, chunk: dict[str, Any], idx: int) -> str:
+    return str(chunk.get("chunk_id") or chunk.get("id") or f"{article_ref}:chunk:{idx + 1:04d}")
+
+
+def _chunk_type(chunk: dict[str, Any]) -> str:
+    return str(chunk.get("chunk_type") or chunk.get("type") or chunk.get("route") or "unknown")
+
+
+def _source_span_id(article_ref: str, evidence_type: str, idx: int) -> str:
+    return f"{article_ref}:span:{evidence_type}:{idx + 1:04d}"
+
+
+def _source_element_id(article_ref: str, element_type: str, idx: int) -> str:
+    return f"{article_ref}:element:{element_type}:{idx + 1:04d}"
+
+
+def _chunk_refs(article: ArticleSelection, chunk_manifest_path: Path, chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "chunk_id": _chunk_id(article.article_ref, chunk, idx),
+            "chunk_manifest_path": str(chunk_manifest_path),
+        }
+        for idx, chunk in enumerate(chunks)
+    ]
+
+
 def _base_payload(
     evidence_type: str,
     article: ArticleSelection,
@@ -141,13 +170,7 @@ def _base_payload(
     chunk_manifest_path: Path,
     chunks: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    chunk_refs = [
-        {
-            "chunk_id": str(chunk.get("chunk_id") or chunk.get("id") or f"{article.article_ref}:chunk:{idx + 1:04d}"),
-            "chunk_manifest_path": str(chunk_manifest_path),
-        }
-        for idx, chunk in enumerate(chunks[:3])
-    ]
+    chunk_refs = _chunk_refs(article, chunk_manifest_path, chunks)
     diagnostics: list[dict[str, Any]] = []
     if not chunks:
         diagnostics.append(
@@ -181,6 +204,84 @@ def _base_payload(
     }
 
 
+def _asset_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for idx, chunk in enumerate(chunks):
+        chunk_type = _chunk_type(chunk)
+        if chunk_type not in ASSET_CHUNK_TYPES:
+            continue
+        asset_type = "equation" if chunk_type == "equation_context" else "figure"
+        ordinal = len(items) + 1
+        items.append(
+            {
+                "asset_id": f"{article.article_ref}:asset:{asset_type}:{ordinal:04d}",
+                "asset_type": asset_type,
+                "element_id": _source_element_id(article.article_ref, asset_type, idx),
+                "source_span_id": _source_span_id(article.article_ref, asset_type, idx),
+                "page_index_node_id": f"{article.article_ref}:page-index:artifact:{asset_type}:{ordinal:04d}",
+                "chunk_ids": [_chunk_id(article.article_ref, chunk, idx)],
+                "media_type": "metadata/unknown",
+                "byte_size": None,
+                "content_sha256": None,
+                "raw_text_embedded": False,
+                "raw_binary_embedded": False,
+                "interpretation_status": "metadata_only",
+            }
+        )
+    return _payload_with_items_or_diagnostic(base, items, evidence_type="assets")
+
+
+def _table_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for idx, chunk in enumerate(chunks):
+        if _chunk_type(chunk) not in TABLE_CHUNK_TYPES and str(chunk.get("route") or "") != "table_extraction":
+            continue
+        ordinal = len(items) + 1
+        items.append(
+            {
+                "table_id": f"{article.article_ref}:table:{ordinal:04d}",
+                "element_id": _source_element_id(article.article_ref, "table", idx),
+                "source_span_id": _source_span_id(article.article_ref, "table", idx),
+                "page_index_node_id": f"{article.article_ref}:page-index:artifact:table:{ordinal:04d}",
+                "chunk_ids": [_chunk_id(article.article_ref, chunk, idx)],
+                "column_count": None,
+                "row_count": None,
+                "structure_sha256": _sha256_text(f"{article.article_ref}:table:{_chunk_id(article.article_ref, chunk, idx)}"),
+                "cell_payload_embedded": False,
+                "raw_text_embedded": False,
+                "interpretation_status": "metadata_only",
+            }
+        )
+    return _payload_with_items_or_diagnostic(base, items, evidence_type="tables")
+
+
+def _link_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for idx, chunk in enumerate(chunks):
+        if _chunk_type(chunk) not in LINK_CHUNK_TYPES and str(chunk.get("route") or "") != "citation_graph":
+            continue
+        ordinal = len(items) + 1
+        items.append(
+            {
+                "link_id": f"{article.article_ref}:link:citation:{ordinal:04d}",
+                "link_family": "citation",
+                "source_element_id": _source_element_id(article.article_ref, "citation", idx),
+                "target_ref": {
+                    "target_type": "reference_entry",
+                    "target_id": f"{article.article_ref}:reference:{ordinal:04d}",
+                },
+                "source_span_ids": [_source_span_id(article.article_ref, "citation", idx)],
+                "source_page_index_anchor_id": f"{article.article_ref}:page-index-anchor:citation:{ordinal:04d}",
+                "chunk_ids": [_chunk_id(article.article_ref, chunk, idx)],
+                "review_state": "review_required",
+                "raw_text_embedded": False,
+                "import_eligible": False,
+                "promoted_to_fact": False,
+            }
+        )
+    return _payload_with_items_or_diagnostic(base, items, evidence_type="links")
+
+
 def _identity_payload(base: dict[str, Any], article: ArticleSelection, catalog_entry: dict[str, Any]) -> dict[str, Any]:
     item = {
         "identity_id": f"{article.article_ref}:identity:catalog-ref",
@@ -199,6 +300,30 @@ def _identity_payload(base: dict[str, Any], article: ArticleSelection, catalog_e
     payload = dict(base)
     payload["items"] = [item]
     payload["summary"] = {**dict(base["summary"]), "item_count": 1}
+    return payload
+
+
+def _payload_with_items_or_diagnostic(base: dict[str, Any], items: list[dict[str, Any]], *, evidence_type: str) -> dict[str, Any]:
+    payload = dict(base)
+    diagnostics = list(base["diagnostics"])
+    unsupported_type_count = int(base["summary"].get("unsupported_type_count", 0))
+    if not items:
+        diagnostics.append(
+            {
+                "code": "EVIDENCE_TYPE_NOT_OBSERVED",
+                "severity": "info",
+                "json_path": f"$.{evidence_type}.items",
+                "message": f"No {evidence_type} evidence-bearing chunks were observed in the S06 manifest; empty output is diagnostic, not silent.",
+            }
+        )
+    payload["items"] = items
+    payload["summary"] = {
+        **dict(base["summary"]),
+        "item_count": len(items),
+        "unsupported_type_count": unsupported_type_count,
+        "diagnostic_count": len(diagnostics),
+    }
+    payload["diagnostics"] = diagnostics
     return payload
 
 
@@ -239,8 +364,16 @@ def replay(args: argparse.Namespace) -> list[dict[str, Any]]:
         events.append(_event("evidence.article_started", article_ref=article.article_ref))
         for evidence_type in EVIDENCE_TYPES:
             payload = _base_payload(evidence_type, article, catalog_entry, chunk_manifest, chunks)
-            if evidence_type == "identity":
+            if evidence_type == "assets":
+                payload = _asset_payload(payload, article, chunks)
+            elif evidence_type == "tables":
+                payload = _table_payload(payload, article, chunks)
+            elif evidence_type == "links":
+                payload = _link_payload(payload, article, chunks)
+            elif evidence_type == "identity":
                 payload = _identity_payload(payload, article, catalog_entry)
+            else:
+                raise EvidenceReplayError(f"unsupported evidence type configured: {evidence_type}")
             output_path = article_dir / f"{evidence_type}.json"
             _write_json(output_path, payload)
             events.append(
