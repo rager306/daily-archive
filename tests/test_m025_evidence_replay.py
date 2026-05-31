@@ -118,3 +118,71 @@ def test_empty_separated_evidence_is_diagnostic_not_silent(tmp_path: Path) -> No
     assert assets["items"] == []
     assert assets["summary"]["diagnostic_count"] == 1
     assert assets["diagnostics"][0]["code"] == "EVIDENCE_TYPE_NOT_OBSERVED"
+
+
+def _write_fixture_chunks(args: Namespace) -> None:
+    chunk_manifest = args.chunks / "arxiv-cs-ai-2512.24601" / "chunks.json"
+    _write_json(
+        chunk_manifest,
+        {
+            "chunks": [
+                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0001", "chunk_type": "figure_caption_context"},
+                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0002", "chunk_type": "table_context", "route": "table_extraction"},
+                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0003", "chunk_type": "citation_context", "route": "citation_graph"},
+            ]
+        },
+    )
+
+
+def _write_events(path: Path, events: list[dict[str, Any]]) -> None:
+    path.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+
+
+def _validation_args(args: Namespace) -> Namespace:
+    return Namespace(
+        catalog=args.catalog,
+        index=args.index,
+        selection=args.selection,
+        evidence=args.evidence,
+        events=args.write_events,
+        require_redaction=True,
+        require_no_import_flags=True,
+        write_summary=args.evidence.parent / "summary.json",
+        write_report=args.evidence.parent / "report.md",
+    )
+
+
+def test_validate_evidence_writes_summary_and_report(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+    _write_fixture_chunks(args)
+    events = replay(args)
+    _write_events(args.write_events, events)
+    validation_args = _validation_args(args)
+
+    summary = verify_m025_evidence_boundaries.validate_evidence(validation_args)
+    verify_m025_evidence_boundaries._write_json(validation_args.write_summary, summary)
+    verify_m025_evidence_boundaries._write_report(validation_args.write_report, summary)
+
+    assert summary["validation_passed"] is True
+    assert summary["evidence_counts"] == {"assets": 1, "tables": 1, "links": 1, "identity": 1}
+    assert summary["provenance_coverage"]["items_with_provenance_checked"] == 4
+    assert summary["redaction_checks"]["passed"] is True
+    assert summary["safety_state"]["production_import_attempted"] is False
+    assert "## Per-Article Counts" in validation_args.write_report.read_text(encoding="utf-8")
+    assert "## No-Import / No-Write Safety State" in validation_args.write_report.read_text(encoding="utf-8")
+
+
+def test_validate_evidence_fails_on_import_flag_violation(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+    _write_fixture_chunks(args)
+    events = replay(args)
+    _write_events(args.write_events, events)
+    assets_path = args.evidence / "arxiv-cs-ai-2512.24601" / "assets.json"
+    assets = json.loads(assets_path.read_text(encoding="utf-8"))
+    assets["safety_flags"]["production_import_attempted"] = True
+    _write_json(assets_path, assets)
+
+    summary = verify_m025_evidence_boundaries.validate_evidence(_validation_args(args))
+
+    assert summary["validation_passed"] is False
+    assert any(finding["code"] == "SAFETY_FLAG_MISMATCH" for finding in summary["findings"])
