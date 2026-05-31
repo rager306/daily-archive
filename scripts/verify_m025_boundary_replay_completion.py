@@ -299,11 +299,11 @@ def _parser_and_page_index_summaries(loader: dict[str, Any]) -> tuple[dict[str, 
         )
 
 
-def _chunk_path(corpus_root: Path, article_ref: str) -> Path:
+def _chunk_path(chunking_root: Path, article_ref: str) -> Path:
     slug = _article_slug(article_ref)
     candidates = [
-        corpus_root / "chunking" / slug / "chunks.json",
-        corpus_root / "chunking" / f"{slug}.json",
+        chunking_root / slug / "chunks.json",
+        chunking_root / f"{slug}.json",
     ]
     for candidate in candidates:
         if candidate.exists():
@@ -314,8 +314,8 @@ def _chunk_path(corpus_root: Path, article_ref: str) -> Path:
     )
 
 
-def _chunk_summary(corpus_root: Path, article_ref: str) -> dict[str, Any]:
-    path = _chunk_path(corpus_root, article_ref)
+def _chunk_summary(chunking_root: Path, article_ref: str) -> dict[str, Any]:
+    path = _chunk_path(chunking_root, article_ref)
     payload = _load_json(path)
     raw_chunks = payload.get("chunks") or payload.get("items") or []
     if not isinstance(raw_chunks, list):
@@ -343,14 +343,14 @@ def _chunk_summary(corpus_root: Path, article_ref: str) -> dict[str, Any]:
     }
 
 
-def _evidence_summary(corpus_root: Path, article_ref: str) -> dict[str, Any]:
+def _evidence_summary(evidence_root: Path, article_ref: str) -> dict[str, Any]:
     slug = _article_slug(article_ref)
     counts: dict[str, int] = {}
     diagnostic_counts: dict[str, int] = {}
     paths: dict[str, str] = {}
     diagnostics: list[dict[str, Any]] = []
     for evidence_type in EVIDENCE_TYPES:
-        path = corpus_root / "evidence" / slug / f"{evidence_type}.json"
+        path = evidence_root / slug / f"{evidence_type}.json"
         if not path.exists():
             raise BoundaryReplayError(f"missing local evidence artifact for {article_ref}: {path}")
         payload = _load_json(path)
@@ -462,8 +462,10 @@ def _artifact_for_article(
     resolution = _resolve_local_source(catalog_entry, article, roots)
     loader = _loader_summary(article, resolution)
     parser_summary, page_summary = _parser_and_page_index_summaries(loader)
-    chunking = _chunk_summary(args.selection.parent, article.article_ref)
-    evidence = _evidence_summary(args.selection.parent, article.article_ref)
+    chunking_root = getattr(args, "chunking", None) or (args.selection.parent / "chunking")
+    evidence_root = getattr(args, "evidence", None) or (args.selection.parent / "evidence")
+    chunking = _chunk_summary(chunking_root, article.article_ref)
+    evidence = _evidence_summary(evidence_root, article.article_ref)
     metrics = {
         "loader_char_count": int(loader.get("char_count") or 0),
         "parser_element_count": int(parser_summary.get("element_count") or 0),
@@ -545,7 +547,7 @@ def _artifact_for_article(
 def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     if not getattr(args, "no_network", False):
         raise BoundaryReplayError("boundary replay requires --no-network so missing local artifacts fail closed")
-    for label in ("catalog", "index", "selection", "boundary"):
+    for label in ("catalog", "index", "selection", "boundary", "chunking", "evidence"):
         value = getattr(args, label, None)
         if value is not None:
             _reject_url_path(value, label)
@@ -829,14 +831,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--index", required=True, type=Path)
     parser.add_argument("--selection", required=True, type=Path)
-    parser.add_argument("--boundary", required=True, type=Path)
+    parser.add_argument("--boundary", dest="boundary", type=Path, help="Directory for per-article boundary replay artifacts.")
+    parser.add_argument(
+        "--boundary-replay",
+        dest="boundary",
+        type=Path,
+        help="Compatibility alias for --boundary used by the S10 task/slice plans.",
+    )
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--final-replay", type=Path)
+    parser.add_argument("--chunking", type=Path, help="Directory containing per-article chunking artifacts.")
+    parser.add_argument("--evidence", type=Path, help="Directory containing per-article evidence artifacts.")
     parser.add_argument("--write-events", type=Path)
     parser.add_argument("--events", type=Path, help="Read an existing boundary event log instead of rewriting it.")
     parser.add_argument("--no-network", action="store_true")
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
+    parser.add_argument("--require-redaction", action="store_true")
+    parser.add_argument("--expect-article-count", type=int)
+    parser.add_argument("--reject-zero-chunk-without-diagnostic", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--write-summary", type=Path)
     parser.add_argument("--write-report", type=Path)
@@ -846,6 +859,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.boundary is None:
+        parser.error("the following arguments are required: --boundary (or --boundary-replay)")
     args.no_network = bool(args.no_network or args.require_no_network)
     try:
         if args.validate_only or (args.events is not None and args.write_events is None):
@@ -865,6 +880,18 @@ def main(argv: list[str] | None = None) -> int:
                 raise BoundaryReplayError("network fetch was attempted despite --require-no-network")
             if args.require_no_import_flags and summary["no_write_safety"]["safety_violations"]:
                 raise BoundaryReplayError("boundary artifacts contain graph/import/write safety flag violations")
+            if args.require_redaction and not summary["redaction_checks"]["passed"]:
+                raise BoundaryReplayError("boundary artifacts failed metadata-only redaction checks")
+            if args.expect_article_count is not None and summary["article_count"] != args.expect_article_count:
+                raise BoundaryReplayError(
+                    f"expected {args.expect_article_count} boundary articles, found {summary['article_count']}"
+                )
+            if args.reject_zero_chunk_without_diagnostic and summary["zero_chunk_checks"]["violations"]:
+                raise BoundaryReplayError("one or more zero-chunk articles lacked an explicit diagnostic")
+            if summary["readiness"]["blockers"]:
+                raise BoundaryReplayError(
+                    "boundary replay readiness is blocked: " + ", ".join(summary["readiness"]["blockers"])
+                )
         if args.write_summary is not None and summary is not None:
             _write_json(args.write_summary, summary)
         if args.write_report is not None and summary is not None:

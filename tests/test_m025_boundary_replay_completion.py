@@ -20,6 +20,7 @@ BoundaryReplayError = verify_m025_boundary_replay_completion.BoundaryReplayError
 run_replay = verify_m025_boundary_replay_completion.run_replay
 summary_from_artifacts = verify_m025_boundary_replay_completion._summary_from_artifacts
 write_report = verify_m025_boundary_replay_completion._write_report
+main = verify_m025_boundary_replay_completion.main
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -142,6 +143,48 @@ def test_boundary_replay_requires_no_network(tmp_path: Path) -> None:
 
     with pytest.raises(BoundaryReplayError, match="requires --no-network"):
         run_replay(args)
+
+
+def test_cli_accepts_task_plan_aliases_and_explicit_artifact_roots(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+
+    exit_code = main(
+        [
+            "--catalog",
+            str(args.catalog),
+            "--index",
+            str(args.index),
+            "--selection",
+            str(args.selection),
+            "--baseline",
+            str(args.baseline),
+            "--chunking",
+            str(args.selection.parent / "chunking"),
+            "--evidence",
+            str(args.selection.parent / "evidence"),
+            "--boundary-replay",
+            str(args.boundary),
+            "--write-events",
+            str(args.write_events),
+            "--write-summary",
+            str(args.write_summary),
+            "--write-report",
+            str(args.write_report),
+            "--no-network",
+            "--require-no-network",
+            "--require-no-import-flags",
+            "--require-redaction",
+            "--expect-article-count",
+            "1",
+            "--reject-zero-chunk-without-diagnostic",
+        ]
+    )
+
+    assert exit_code == 0
+    assert (args.boundary / "arxiv-cs-ai-2512.24601" / "boundary.json").exists()
+    summary = json.loads(args.write_summary.read_text(encoding="utf-8"))
+    assert summary["article_count"] == 1
+    assert summary["readiness"]["decision"] == "ready"
 
 
 def test_boundary_replay_writes_metadata_safe_artifacts_summary_and_report(tmp_path: Path) -> None:
