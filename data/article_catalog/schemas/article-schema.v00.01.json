@@ -1,0 +1,62 @@
+{
+  "$id": "https://daily-archive.local/schemas/article-schema.v00.01.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "article_key": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "catalog_path": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "coarse_topic_code": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "identity": {
+      "additionalProperties": true,
+      "properties": {
+        "title": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "type": "object"
+    },
+    "safety_flags": {
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "article.v00.01"
+    },
+    "source_code": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_variants": {
+      "items": {
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "catalog_path",
+    "source_code",
+    "coarse_topic_code",
+    "article_key",
+    "identity",
+    "source_strategy",
+    "source_variants",
+    "safety_flags"
+  ],
+  "title": "Daily Archive Article v00.01",
+  "type": "object"
+}

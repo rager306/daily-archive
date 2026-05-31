@@ -1,0 +1,78 @@
+{
+  "$id": "https://daily-archive.local/schemas/article-catalog-schema.v00.01.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "article_schema_version": {
+      "const": "article.v00.01"
+    },
+    "catalog_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "index": {
+      "additionalProperties": true,
+      "properties": {
+        "cli_must_use_index": {
+          "const": true
+        },
+        "full_tree_scan_allowed": {
+          "const": false
+        },
+        "lookup_keys": {
+          "contains": {
+            "const": "title"
+          },
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "const": "index.json"
+        },
+        "refresh_command_rebuilds_index": {
+          "const": true
+        },
+        "schema_version": {
+          "const": "article-catalog-index.v00.01"
+        }
+      },
+      "required": [
+        "schema_version",
+        "path",
+        "cli_must_use_index",
+        "full_tree_scan_allowed",
+        "refresh_command_rebuilds_index",
+        "lookup_keys"
+      ],
+      "type": "object"
+    },
+    "path_template": {
+      "const": "{source_code}/{coarse_topic_code}/{article_key}"
+    },
+    "root": {
+      "const": "data/article_catalog"
+    },
+    "safety_flags": {
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "article-catalog.v00.01"
+    }
+  },
+  "required": [
+    "schema_version",
+    "article_schema_version",
+    "catalog_id",
+    "root",
+    "path_template",
+    "index",
+    "sources",
+    "topic_code_system",
+    "storage_policy",
+    "safety_flags"
+  ],
+  "title": "Daily Archive Article Catalog v00.01",
+  "type": "object"
+}
