@@ -35,7 +35,7 @@ Safe next step: Use this matrix as S09 validation input; do not widen M024 scope
 | R032 | active | out_of_scope_future | not_applicable_to_m024 | `.gsd/REQUIREMENTS.md` | — |
 | R033 | active | out_of_scope_other_milestone | not_applicable_to_m024 | `.gsd/REQUIREMENTS.md` | — |
 | R035 | active | out_of_scope_other_milestone | not_applicable_to_m024 | `.gsd/REQUIREMENTS.md` | — |
-| R036 | active | in_scope_evidence_backed_candidate | validated_pending_requirement_update_review | `.gsd/milestones/M024-0xjwh9/slices/S01/S01-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S02/S02-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S06/S06-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S07/S07-SUMMARY.md`<br>`src/arxiv_archive/validation_batch_provenance.py`<br>`tests/test_validation_batch_provenance.py`<br>`tests/test_validation_batch_cli_article_report.py` | Before milestone completion, decide whether to update R036 through the GSD requirement tool or cite it as validated-pending-update evidence. |
+| R036 | active | in_scope_evidence_backed_candidate | covered_by_existing_validation | `.gsd/REQUIREMENTS.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S01/S01-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S02/S02-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S06/S06-SUMMARY.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S07/S07-SUMMARY.md`<br>`src/arxiv_archive/validation_batch_provenance.py`<br>`src/arxiv_archive/article_batch_validation.py`<br>`src/arxiv_archive/cli.py`<br>`tests/test_validation_batch_provenance.py`<br>`tests/test_validation_batch_cli_article_report.py`<br>`tests/fixtures/article_batch_validation/ten_document_manifest.json` | No implementation clause remains open for the M024 article-report provenance surface; if milestone validation requires canonical requirement status parity, update R036 through the GSD requirement tool rather than editing REQUIREMENTS.md directly. |
 | R040 | active | out_of_scope_project_constraint_followed | constraint_respected_not_validated | `.gsd/REQUIREMENTS.md`<br>`.gsd/milestones/M024-0xjwh9/slices/S07/S07-SUMMARY.md` | — |
 | R050 | active | out_of_scope_other_milestone | not_applicable_to_m024 | `.gsd/REQUIREMENTS.md` | — |
 | R051 | active | out_of_scope_other_milestone | not_applicable_to_m024 | `.gsd/REQUIREMENTS.md` | — |
@@ -180,14 +180,16 @@ Safe next step: Use this matrix as S09 validation input; do not widen M024 scope
 
 - Current status: `active`
 - M024 applicability: `in_scope_evidence_backed_candidate`
-- Coverage verdict: `validated_pending_requirement_update_review`
-- Rationale: M024 evidence includes loader events plus validation-batch provenance/freshness sidecars tying article-report artifacts to command inputs, output hashes, cwd, git commit, exit status, and active manifest context. Because REQUIREMENTS.md still marks R036 active and earlier notes mention missing automatic provenance emission from real commands, S08 records it as an evidence-backed candidate pending explicit requirement update/review rather than silently changing status.
+- Coverage verdict: `covered_by_existing_validation`
+- Rationale: M024 S07/S08 evidence satisfies the R036 executable provenance contract for the article-report validation CLI surface: the real command emits provenance and freshness artifacts tying generated report/diagnostics outputs to the redacted argv/command, input and output fingerprints, cwd, git commit, start/completion/duration, exit code, batch/run context, expected artifact metadata, and JSONL round trip/verification behavior. Focused provenance and article-report CLI tests cover secret redaction, unchanged/missing/mutated/unsafe artifacts, metadata mismatch detection, malformed JSON handling, blocked report artifacts, and fresh CLI output. The canonical requirement row still shows active because this execution runtime did not expose the DB-backed gsd_requirement_update tool; S08 did not manually edit REQUIREMENTS.md.
 - Allowed claims:
-  - M024 provides direct R036 evidence through S07 CLI provenance/freshness and tests.
-  - R036 can be reviewed for validation/update in a requirement-update pass.
+  - M024 provides direct R036 validation evidence for the metadata-only article-report validation CLI provenance surface.
+  - The article-report CLI automatically emits provenance and freshness artifacts for generated report/diagnostics outputs.
+  - R036 status reconciliation should be performed only through the GSD requirement tool when that tool is available.
 - Forbidden claims:
-  - S08 silently changes R036 status
+  - S08 manually edited REQUIREMENTS.md
   - R036 validates unrelated future validation-batch commands outside M024 evidence
+  - R036 authorizes KG import, production writes, embeddings, vectors, or unattended scaling
 
 ### R040
 
@@ -243,13 +245,15 @@ Safe next step: Use this matrix as S09 validation input; do not widen M024 scope
 - Evidence:
   - `.gsd/milestones/M024-0xjwh9/slices/S08/S08-RESEARCH.md`
 
-### S09-GAP-r036-requirement-update-decision: R036 status update decision
+### S09-GAP-r036-requirement-update-decision: R036 canonical requirement status reconciliation
 
 - Severity: `requirement_status_reconciliation`
-- Required before validation rerun: `True`
-- Description: R036 has M024 evidence through provenance/freshness and CLI tests, but REQUIREMENTS.md remains active. S09 or an S08 follow-up should decide whether to update R036 via GSD requirement tooling or cite the pending-update status explicitly.
+- Required before validation rerun: `False`
+- Description: S08 verified that M024 article-report CLI provenance satisfies R036 for the in-scope executable surface, but REQUIREMENTS.md remains active because the DB-backed gsd_requirement_update tool was not exposed in this execution runtime. Milestone validation may cite the matrix as implementation evidence, and any canonical status/note change must be made through the GSD requirement tool, not by manual file edit.
 - Evidence:
   - `src/arxiv_archive/validation_batch_provenance.py`
+  - `src/arxiv_archive/article_batch_validation.py`
+  - `src/arxiv_archive/cli.py`
   - `tests/test_validation_batch_provenance.py`
   - `tests/test_validation_batch_cli_article_report.py`
 
@@ -257,5 +261,5 @@ Safe next step: Use this matrix as S09 validation input; do not widen M024 scope
 
 - R024, R027, and R029 are intentionally partial/advanced, not validated by M024.
 - R030 is already validated by M024 S04 and should be cited as covered.
-- R036 is evidence-backed but left as validated-pending-update review because this task does not call requirement-update tooling.
+- R036 is covered by M024 article-report provenance evidence; REQUIREMENTS.md remains active only because this runtime did not expose DB-backed requirement-update tooling.
 - M003, M023, 30-paper, and 100-paper requirements are explicitly out of M024 validation scope.
