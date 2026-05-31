@@ -153,6 +153,9 @@ UNSAFE_READINESS_STATUSES = frozenset(
 )
 _SAFE_ID_RE = re.compile(r"^[A-Za-z0-9_.:/-]+$")
 _SHA256_RE = re.compile(r"^[a-fA-F0-9]{64}$")
+_SECRET_LIKE_VALUE_RE = re.compile(
+    r"(?i)(?:api[_-]?key|token|secret|password|credential)s?\s*=|[?&](?:api[_-]?key|token|secret|password|credential)s?="
+)
 
 
 @dataclass(frozen=True)
@@ -623,6 +626,19 @@ def _iter_payload_paths(value: Any, path: str = "$") -> list[tuple[str, str]]:
     return findings
 
 
+def _iter_sensitive_value_paths(value: Any, path: str = "$") -> list[str]:
+    findings: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            findings.extend(_iter_sensitive_value_paths(child, _json_child_path(path, str(key))))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            findings.extend(_iter_sensitive_value_paths(child, _json_child_path(path, index)))
+    elif isinstance(value, str) and _SECRET_LIKE_VALUE_RE.search(value):
+        findings.append(path)
+    return findings
+
+
 def _iter_unsafe_true_paths(value: Any, path: str = "$") -> list[tuple[str, str]]:
     findings: list[tuple[str, str]] = []
     if isinstance(value, dict):
@@ -656,6 +672,8 @@ def _validate_forbidden_and_unsafe(value: Any) -> list[ArticleBatchValidationDia
     diagnostics: list[ArticleBatchValidationDiagnostic] = []
     for key, path in _iter_payload_paths(value):
         diagnostics.append(_diagnostic(f"forbidden_payload_key:{key}", path, severity="error"))
+    for path in _iter_sensitive_value_paths(value):
+        diagnostics.append(_diagnostic("forbidden_payload_value:sensitive_token", path, severity="error"))
     for key, path in _iter_unsafe_true_paths(value):
         if key in UNSAFE_AUTHORIZATION_FLAGS:
             diagnostics.append(_diagnostic(f"unsafe_authorization_flag:{key}", path, severity="error"))
@@ -768,7 +786,7 @@ def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any
             counts["blocked_subtree_count"] += 1
         elif code in {"stale_artifact", "malformed_freshness_summary"}:
             counts["stale_artifact_count"] += 1
-        elif code.startswith("forbidden_payload_key:"):
+        elif code.startswith("forbidden_payload_key:") or code.startswith("forbidden_payload_value:"):
             counts["forbidden_payload_detection_count"] += 1
         elif code.startswith("unsafe_authorization_flag:"):
             counts["unsafe_authorization_count"] += 1
@@ -842,4 +860,6 @@ def _redact(value: Any) -> Any:
         return redacted
     if isinstance(value, list):
         return [_redact(child) for child in value]
+    if isinstance(value, str):
+        return "<redacted-sensitive-value>" if _SECRET_LIKE_VALUE_RE.search(value) else deepcopy(value)
     return deepcopy(value)

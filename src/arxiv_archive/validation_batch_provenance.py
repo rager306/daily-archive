@@ -238,10 +238,30 @@ def write_artifact_freshness_report(report: dict[str, Any], path: str | Path) ->
     return output_path
 
 
-def _verify_fingerprints(expected: Sequence[dict[str, Any]], *, role: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _verify_fingerprints(expected: Sequence[dict[str, Any]] | Any, *, role: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     current: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
-    for expected_item in expected:
+    if isinstance(expected, (str, bytes)) or not isinstance(expected, Sequence):
+        diagnostics.append(
+            _diagnostic(
+                "blocker",
+                "invalid_provenance",
+                f"Recorded {role} fingerprints are not a list.",
+                "Regenerate provenance with the current schema.",
+            )
+        )
+        return current, diagnostics
+    for index, expected_item in enumerate(expected):
+        if not isinstance(expected_item, dict):
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    "invalid_provenance",
+                    f"Recorded {role} fingerprint at index {index} is not an object.",
+                    "Regenerate provenance with the current schema.",
+                )
+            )
+            continue
         path = expected_item.get("path")
         if not path or not Path(path).exists():
             current.append(_missing_fingerprint(path or ""))
@@ -257,12 +277,16 @@ def _verify_fingerprints(expected: Sequence[dict[str, Any]], *, role: str) -> tu
 
 
 def _verify_expected_artifact_metadata(
-    outputs: Sequence[dict[str, Any]], expected_metadata: dict[str, Any]
+    outputs: Sequence[dict[str, Any]] | Any, expected_metadata: dict[str, Any]
 ) -> list[dict[str, Any]]:
     if not expected_metadata:
         return []
+    if isinstance(outputs, (str, bytes)) or not isinstance(outputs, Sequence):
+        return []
     diagnostics: list[dict[str, Any]] = []
     for output in outputs:
+        if not isinstance(output, dict):
+            continue
         path = output.get("path")
         if not path or not Path(path).exists():
             continue
