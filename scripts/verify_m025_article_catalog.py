@@ -793,6 +793,278 @@ def run_rebuild(args: argparse.Namespace, existing_index: dict[str, Any]) -> tup
     return errors, report, diagnostics
 
 
+def _load_rebuild_report(catalog_path: Path) -> dict[str, Any]:
+    report_path = catalog_path.parent / "index-rebuild-report.json"
+    if not report_path.exists():
+        return {
+            "path": str(report_path),
+            "present": False,
+            "idempotent": None,
+            "existing_index_matches_rebuild": None,
+            "network_fetch_attempted": None,
+        }
+    try:
+        report = load_json(report_path)
+    except ValueError as exc:
+        return {"path": str(report_path), "present": True, "load_error": str(exc)}
+    report["path"] = str(report_path)
+    report["present"] = True
+    return report
+
+
+def build_catalog_readiness_artifacts(
+    catalog_path: Path,
+    index: dict[str, Any],
+    selection: dict[str, Any],
+    index_articles: dict[str, dict[str, Any]],
+    *,
+    rebuild_report: dict[str, Any] | None,
+) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
+    diagnostics: list[dict[str, Any]] = []
+    selected_rows = selection.get("articles") if isinstance(selection.get("articles"), list) else []
+    selected_refs = [row.get("article_ref") for row in selected_rows if isinstance(row, dict) and isinstance(row.get("article_ref"), str)]
+    stored_rebuild_report = _load_rebuild_report(catalog_path)
+    rebuild_evidence = dict(stored_rebuild_report)
+    if rebuild_report:
+        rebuild_evidence.update(rebuild_report)
+        rebuild_evidence.setdefault("path", stored_rebuild_report.get("path"))
+        rebuild_evidence.setdefault("present", stored_rebuild_report.get("present"))
+    diagnostics.append(
+        diagnostic(
+            "index_readiness",
+            "catalog index readiness evidence",
+            severity="info",
+            index_article_count=len(index.get("articles", [])) if isinstance(index.get("articles"), list) else 0,
+            index_idempotent=rebuild_evidence.get("idempotent"),
+            existing_index_matches_rebuild=rebuild_evidence.get("existing_index_matches_rebuild"),
+            network_fetch_attempted=rebuild_evidence.get("network_fetch_attempted"),
+            rebuild_report_path=rebuild_evidence.get("path"),
+        )
+    )
+
+    articles: list[dict[str, Any]] = []
+    total_variants = 0
+    captured_variants = 0
+    primary_lightweight = 0
+    pdf_fallback_refs: list[str] = []
+    blocked_articles: list[dict[str, Any]] = []
+    loader_outcome_counts: dict[str, int] = {}
+    capture_status_counts: dict[str, int] = {}
+    lightweight_formats = {"html", "markdown", "text", "ocr_text"}
+
+    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+        if load_error or article is None:
+            blocked_articles.append({"article_ref": article_ref, "reason": load_error or "missing_article"})
+            diagnostics.append(diagnostic("article_blocked", "article record could not be loaded", article_ref=article_ref, reason=load_error))
+            continue
+        entry = index_articles.get(article_ref, {})
+        identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
+        variants = article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
+        primary = next((variant for variant in variants if isinstance(variant, dict) and variant.get("is_primary") is True), None)
+        fallback_pdfs = [
+            variant
+            for variant in variants
+            if isinstance(variant, dict)
+            and variant.get("source_format") == "pdf"
+            and variant.get("is_content_bearing") is True
+            and variant.get("is_primary") is not True
+        ]
+        if fallback_pdfs:
+            pdf_fallback_refs.append(article_ref)
+        article_blockers: list[str] = []
+        if not isinstance(primary, dict):
+            article_blockers.append("missing_primary_variant")
+        else:
+            if primary.get("capture_status") != "captured":
+                article_blockers.append("primary_not_captured")
+            if primary.get("source_format") not in lightweight_formats:
+                article_blockers.append("primary_not_lightweight")
+            if primary.get("loader_outcome") != "loaded":
+                article_blockers.append("primary_loader_not_loaded")
+            else:
+                primary_lightweight += 1
+        for variant in variants:
+            if not isinstance(variant, dict):
+                continue
+            total_variants += 1
+            capture_status = str(variant.get("capture_status"))
+            loader_outcome = str(variant.get("loader_outcome"))
+            capture_status_counts[capture_status] = capture_status_counts.get(capture_status, 0) + 1
+            loader_outcome_counts[loader_outcome] = loader_outcome_counts.get(loader_outcome, 0) + 1
+            if variant.get("capture_status") == "captured":
+                captured_variants += 1
+            diagnostics.append(
+                diagnostic(
+                    "source_variant_readiness",
+                    "selected source variant readiness",
+                    severity="info",
+                    article_ref=article_ref,
+                    source_provider=article.get("source_code"),
+                    coarse_topic_code=article.get("coarse_topic_code"),
+                    article_key=article.get("article_key"),
+                    title=identity.get("title"),
+                    variant_id=variant.get("variant_id"),
+                    source_role=variant.get("source_role"),
+                    source_format=variant.get("source_format"),
+                    is_primary=variant.get("is_primary"),
+                    is_content_bearing=variant.get("is_content_bearing"),
+                    is_metadata_only=variant.get("is_metadata_only"),
+                    capture_status=variant.get("capture_status"),
+                    checksum=variant.get("sha256"),
+                    byte_size=variant.get("byte_size"),
+                    loader_outcome=variant.get("loader_outcome"),
+                    fallback_reason=variant.get("conversion_hint"),
+                    raw_text_embedded=variant.get("raw_text_embedded"),
+                    raw_binary_embedded=variant.get("raw_binary_embedded"),
+                )
+            )
+        if article_blockers:
+            blocked_articles.append({"article_ref": article_ref, "reason": ",".join(article_blockers)})
+        article_summary = {
+            "article_ref": article_ref,
+            "article_key": article.get("article_key"),
+            "source_code": article.get("source_code"),
+            "coarse_topic_code": article.get("coarse_topic_code"),
+            "title": identity.get("title") or entry.get("title"),
+            "primary_source_role": primary.get("source_role") if isinstance(primary, dict) else None,
+            "primary_source_format": primary.get("source_format") if isinstance(primary, dict) else None,
+            "primary_loader_outcome": primary.get("loader_outcome") if isinstance(primary, dict) else None,
+            "captured_variant_count": sum(1 for variant in variants if isinstance(variant, dict) and variant.get("capture_status") == "captured"),
+            "variant_count": len([variant for variant in variants if isinstance(variant, dict)]),
+            "pdf_fallback_preserved": bool(fallback_pdfs),
+            "blocked_before_s02": bool(article_blockers),
+            "blocker_reasons": article_blockers,
+            "expected_profile": article.get("expected_profile"),
+            "article_path": str(article_path),
+        }
+        articles.append(article_summary)
+        diagnostics.append(diagnostic("article_readiness", "selected article readiness", severity="info", **article_summary))
+
+    summary = {
+        "schema_version": "article-corpus-run-summary.v00.01",
+        "selection_id": selection.get("selection_id"),
+        "catalog_schema_version": CATALOG_SCHEMA_VERSION,
+        "article_schema_version": ARTICLE_SCHEMA_VERSION,
+        "selection_path": str(catalog_path.parent.parent / "article_corpora" / EXPECTED_SELECTION_ID / "selection.json"),
+        "article_count": len(selected_refs),
+        "variant_count": total_variants,
+        "captured_variant_count": captured_variants,
+        "capture_status_counts": capture_status_counts,
+        "loader_outcome_counts": loader_outcome_counts,
+        "primary_lightweight_ready_count": primary_lightweight,
+        "pdf_fallback_article_refs": pdf_fallback_refs,
+        "index": {
+            "path": str(catalog_path.parent / "index.json"),
+            "lookup_surface": "index.json",
+            "full_tree_scan_attempted": False,
+            "rebuild_report_path": rebuild_evidence.get("path"),
+            "rebuild_report_present": rebuild_evidence.get("present"),
+            "existing_index_matches_rebuild": rebuild_evidence.get("existing_index_matches_rebuild"),
+            "idempotent": rebuild_evidence.get("idempotent"),
+            "network_fetch_attempted": rebuild_evidence.get("network_fetch_attempted"),
+        },
+        "network": {
+            "test_phase_must_not_fetch": True,
+            "pipeline_phase_reads_catalog_only": True,
+            "network_fetch_attempted_during_validation": False,
+        },
+        "readiness": {
+            "blocked_article_count": len(blocked_articles),
+            "blocked_articles": blocked_articles,
+            "ready_for_s02_baseline": not blocked_articles,
+        },
+        "safety_flags": {
+            "graph_import_allowed": False,
+            "production_ladybugdb_write_allowed": False,
+            "trusted_kg_import_allowed": False,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+        },
+        "articles": articles,
+    }
+    report = render_catalog_report(summary, diagnostics)
+    return summary, diagnostics, report
+
+
+def render_catalog_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]]) -> str:
+    articles = summary.get("articles") if isinstance(summary.get("articles"), list) else []
+    lines = [
+        "# M025 S01 Catalog Readiness Report",
+        "",
+        "## Overview",
+        f"- Selection: `{summary.get('selection_id')}`",
+        f"- Articles selected: {summary.get('article_count')}",
+        f"- Source variants captured: {summary.get('captured_variant_count')}/{summary.get('variant_count')}",
+        f"- S02 blockers: {summary.get('readiness', {}).get('blocked_article_count')}",
+        f"- Ready for S02 parser/chunking baseline: {summary.get('readiness', {}).get('ready_for_s02_baseline')}",
+        "- Network replay guarantee: validation uses catalog/index/loader artifacts only and does not fetch.",
+        "",
+        "## Index Evidence",
+        f"- Lookup surface: `{summary.get('index', {}).get('lookup_surface')}`",
+        f"- Full tree scan attempted during validation: {summary.get('index', {}).get('full_tree_scan_attempted')}",
+        f"- Rebuild report: `{summary.get('index', {}).get('rebuild_report_path')}` (present={summary.get('index', {}).get('rebuild_report_present')})",
+        f"- Existing index matches rebuild: {summary.get('index', {}).get('existing_index_matches_rebuild')}",
+        f"- Idempotent rebuild evidence: {summary.get('index', {}).get('idempotent')}",
+        f"- Network fetch attempted: {summary.get('index', {}).get('network_fetch_attempted')}",
+        "",
+        "## Article Readiness",
+        "| Article | Provider | Topic | Primary | Captured Variants | PDF Fallback | Blocked Before S02 |",
+        "|---|---:|---:|---|---:|---:|---:|",
+    ]
+    for article in articles:
+        lines.append(
+            "| "
+            f"{article.get('article_ref')} | {article.get('source_code')} | {article.get('coarse_topic_code')} | "
+            f"{article.get('primary_source_role')} / {article.get('primary_source_format')} / {article.get('primary_loader_outcome')} | "
+            f"{article.get('captured_variant_count')}/{article.get('variant_count')} | "
+            f"{article.get('pdf_fallback_preserved')} | {article.get('blocked_before_s02')} |"
+        )
+    lines.extend([
+        "",
+        "## Source Variant Diagnostics",
+        "| Article | Role | Format | Primary | Capability | Capture | Checksum | Loader Outcome | Fallback Reason |",
+        "|---|---|---|---:|---|---|---|---|---|",
+    ])
+    for row in diagnostics:
+        if row.get("code") != "source_variant_readiness":
+            continue
+        capability = "metadata" if row.get("is_metadata_only") else "content" if row.get("is_content_bearing") else "auxiliary"
+        checksum = str(row.get("checksum") or "")[:12]
+        lines.append(
+            "| "
+            f"{row.get('article_ref')} | {row.get('source_role')} | {row.get('source_format')} | {row.get('is_primary')} | "
+            f"{capability} | {row.get('capture_status')} | {checksum} | {row.get('loader_outcome')} | {row.get('fallback_reason') or ''} |"
+        )
+    lines.extend([
+        "",
+        "## Failure Modes",
+        "- Filesystem dependency: missing catalog, index, selection, article records, loader events, or captured source files bubble as validator errors with non-zero exit; artifact writes are atomic temp-file-plus-rename writes.",
+        "- Malformed JSON dependency: `load_json` rejects malformed or non-object JSON and the CLI exits non-zero before writing readiness success claims.",
+        "- Index drift dependency: `--check-index-idempotent` rebuilds the projection in memory and fails if the existing index no longer matches an idempotent rebuild report.",
+        "- Network dependency: S01 report generation has no network mode; tests and pipeline validation report `network_fetch_attempted=false` instead of refreshing implicitly.",
+        "- Subprocess dependency: callers observe standard CLI exit codes; failed validation prints concrete diagnostics to stderr.",
+        "",
+        "## Load Profile",
+        "- Expected load is five selected articles and their local variants; 10x load first saturates local filesystem reads and optional checksum hashing, not network or database resources.",
+        "- Protection: normal validation resolves articles through `index.json`, full tree traversal is confined to explicit rebuild/idempotency checks, and output writes are bounded JSON/JSONL/Markdown files.",
+        "- No pool sizing or rate limiting is needed because report generation has no async, network, API, or database runtime dimension.",
+        "",
+        "## Negative Tests",
+        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_index_title_drift` covers index/article title drift.",
+        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_selection_not_in_index` covers invalid selection references.",
+        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key` covers duplicate lookup/index rebuild failures.",
+        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_unsafe_index_traversal` covers unsafe catalog-relative paths.",
+        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_writes_catalog_readiness_outputs` covers final summary/report/diagnostics generation and planned S02 blocker reporting.",
+        "",
+        "## Observability Impact",
+        "- `run-summary.json` records article, variant, loader, rebuild, network, blocker, and safety counts for S02 handoff.",
+        "- `diagnostics.jsonl` records machine-readable index, article, and source-variant readiness rows without raw payloads or vectors.",
+        "- `catalog-report.md` provides a human-readable handoff stating primary lightweight variants, preserved PDF fallbacks, idempotency evidence, and S02 blockers.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
 def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None]:
     errors: list[str] = []
     try:
@@ -821,8 +1093,37 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
     if args.rebuild_index:
         rebuild_errors, report, _diagnostics = run_rebuild(args, index)
         errors.extend(rebuild_errors)
+    elif args.check_index_idempotent:
+        rebuilt, diagnostics = rebuild_index_from_articles(args.catalog, index)
+        second_rebuilt, second_diagnostics = rebuild_index_from_articles(args.catalog, rebuilt)
+        diagnostics.extend(second_diagnostics)
+        report = build_rebuild_report(
+            rebuilt,
+            diagnostics,
+            existing_matches_rebuilt=index == rebuilt,
+            second_pass_matches=rebuilt == second_rebuilt and not [d for d in second_diagnostics if d.get("severity") == "error"],
+            write_index=None,
+        )
+        errors.extend(f"{row.get('code')}: {row['message']}" for row in diagnostics if row.get("severity") == "error")
+        if report["idempotent"] is not True:
+            errors.append("rebuilt index is not idempotent")
     if args.check_index_lookup_only:
         errors.extend(check_static_lookup_policy(Path(__file__)))
+    if not errors and (args.write_summary or args.write_report or (args.write_diagnostics and not args.rebuild_index)):
+        summary, readiness_diagnostics, markdown_report = build_catalog_readiness_artifacts(
+            args.catalog,
+            index,
+            selection,
+            index_articles,
+            rebuild_report=report,
+        )
+        if args.write_summary:
+            write_json_atomic(args.write_summary, summary)
+        if args.write_diagnostics and not args.rebuild_index:
+            write_jsonl_atomic(args.write_diagnostics, readiness_diagnostics)
+        if args.write_report:
+            args.write_report.parent.mkdir(parents=True, exist_ok=True)
+            args.write_report.write_text(markdown_report, encoding="utf-8")
     return errors, report
 
 
@@ -866,7 +1167,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--rebuild-index", action="store_true", help="Explicitly rebuild index.json from canonical local article records.")
     parser.add_argument("--write-index", type=Path, help="Atomically write the rebuilt index to this path.")
     parser.add_argument("--write-index-report", type=Path, help="Atomically write the rebuild report JSON to this path.")
-    parser.add_argument("--write-diagnostics", type=Path, help="Atomically write rebuild diagnostics as JSONL to this path.")
+    parser.add_argument("--write-summary", type=Path, help="Atomically write the catalog readiness run summary JSON to this path.")
+    parser.add_argument("--write-diagnostics", type=Path, help="Atomically write readiness or rebuild diagnostics as JSONL to this path.")
+    parser.add_argument("--write-report", type=Path, help="Write the human-readable catalog readiness report Markdown to this path.")
     parser.add_argument("--require-index", action="store_true", help="Require index policy fields for index-only CLI lookup.")
     parser.add_argument("--check-index-idempotent", action="store_true", help="Require rebuilt index projection to be idempotent.")
     parser.add_argument("--check-index-titles", action="store_true", help="Require every index title to mirror article identity.title.")
@@ -882,8 +1185,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         parser.error("--write-index requires --rebuild-index")
     if args.write_index_report and not args.rebuild_index:
         parser.error("--write-index-report requires --rebuild-index")
-    if args.write_diagnostics and not args.rebuild_index:
-        parser.error("--write-diagnostics requires --rebuild-index")
     if not (
         args.validate_only
         or args.rebuild_index

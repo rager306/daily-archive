@@ -90,6 +90,40 @@ def _run_rebuild(
     )
 
 
+def _run_catalog_report(
+    catalog: Path,
+    index: Path,
+    selection: Path,
+    summary: Path,
+    diagnostics: Path,
+    report: Path,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--catalog",
+            str(catalog),
+            "--index",
+            str(index),
+            "--selection",
+            str(selection),
+            "--validate-only",
+            "--require-index",
+            "--check-index-idempotent",
+            "--write-summary",
+            str(summary),
+            "--write-diagnostics",
+            str(diagnostics),
+            "--write-report",
+            str(report),
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+
 def test_m025_article_catalog_verifier_accepts_fixture_scaffold(tmp_path: Path) -> None:
     catalog, index, selection = _copy_scaffold(tmp_path)
 
@@ -137,6 +171,30 @@ def test_m025_article_catalog_rebuild_writes_idempotent_report_and_diagnostics(t
     assert rebuilt_report["idempotent"] is True
     assert rebuilt_report["network_fetch_attempted"] is False
     assert diagnostics.read_text(encoding="utf-8") == ""
+
+
+def test_m025_article_catalog_verifier_writes_catalog_readiness_outputs(tmp_path: Path) -> None:
+    catalog, index, selection = _copy_scaffold(tmp_path)
+    summary_path = selection.parent / "run-summary.json"
+    diagnostics_path = selection.parent / "diagnostics.jsonl"
+    report_path = selection.parent / "catalog-report.md"
+
+    result = _run_catalog_report(catalog, index, selection, summary_path, diagnostics_path, report_path)
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["schema_version"] == "article-corpus-run-summary.v00.01"
+    assert summary["article_count"] == 5
+    assert summary["readiness"]["blocked_article_count"] == 5
+    assert summary["index"]["idempotent"] is True
+    assert summary["network"]["network_fetch_attempted_during_validation"] is False
+    diagnostics = [json.loads(line) for line in diagnostics_path.read_text(encoding="utf-8").splitlines()]
+    assert {row["code"] for row in diagnostics} >= {"index_readiness", "article_readiness", "source_variant_readiness"}
+    report = report_path.read_text(encoding="utf-8")
+    assert "## Failure Modes" in report
+    assert "## Load Profile" in report
+    assert "## Negative Tests" in report
+    assert "Ready for S02 parser/chunking baseline: False" in report
 
 
 def test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key(tmp_path: Path) -> None:
