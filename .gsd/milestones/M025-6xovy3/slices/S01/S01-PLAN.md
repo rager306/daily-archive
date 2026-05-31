@@ -56,7 +56,7 @@ uv run ruff check tests/test_article_catalog_schema.py
   - Files: `scripts/verify_m025_article_catalog.py`, `data/article_catalog/`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --require-loader-events --check-redaction --check-index-lookup-only
 
-- [ ] **T06: Finalize catalog readiness report** `est:small`
+- [x] **T06: Finalize catalog readiness report** `est:small`
   Finalize the S01 catalog readiness report and machine-readable run summary. The report must state which source variants are captured, which are primary for lightweight preprocessing, which PDFs are preserved as fallback, whether the index was rebuilt and checked for idempotency, and whether any article is blocked before S02 baseline.
   - Files: `scripts/verify_m025_article_catalog.py`, `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --require-loader-events --check-redaction --check-index-idempotent --write-summary data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/run-summary.json --write-diagnostics data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/diagnostics.jsonl --write-report data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/catalog-report.md
