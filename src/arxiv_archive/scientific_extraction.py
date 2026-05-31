@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from arxiv_archive.evidence import EvidencePath
+from arxiv_archive.parsing.normalization import slugify
 
 SUPPORTED_RELATION_TYPES = frozenset({"supports", "contradicts", "mentions", "uses", "extends"})
 
@@ -213,16 +214,7 @@ def _has_stable_id_prefix(kind: str, draft_id: str) -> bool:
 
 
 def _stable_slug(value: str) -> str:
-    chars: list[str] = []
-    previous_dash = False
-    for char in value.lower():
-        if char.isalnum():
-            chars.append(char)
-            previous_dash = False
-        elif not previous_dash:
-            chars.append("-")
-            previous_dash = True
-    return "".join(chars).strip("-") or "unknown"
+    return slugify(value).replace("section", "unknown") if not value.strip() else slugify(value)
 
 
 __all__ = [

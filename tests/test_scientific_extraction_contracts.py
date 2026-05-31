@@ -18,6 +18,8 @@ from arxiv_archive.scientific_extraction import (
     ExtractionPatch,
     ScientificEntity,
     ScientificRelation,
+    claim_id,
+    entity_id,
     validate_claim,
     validate_extraction_patch,
 )
@@ -117,6 +119,13 @@ def sample_patch(
         validation_warnings=[],
         provenance={"source": "fixture"},
     )
+
+
+def test_scientific_ids_use_parser_normalization_contract() -> None:
+    assert claim_id("2605.12345", "2605.12345:method:chunk-0001", "Local Markdown PageIndex") == (
+        "claim:2605.12345:2605-12345-method-chunk-0001:local-markdown-pageindex"
+    )
+    assert entity_id("2605.12345", "PageIndex") == "entity:2605.12345:pageindex"
 
 
 def test_claim_entity_relation_models_are_storage_ready_and_traceable() -> None:

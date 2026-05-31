@@ -1,5 +1,11 @@
+from pathlib import Path
 
+from arxiv_archive.full_text import FullTextSource, ingest_full_text
 from arxiv_archive.keyword_extractor import KeywordExtractor
+from arxiv_archive.page_index import build_page_index
+from arxiv_archive.parsing.parser import parse_article
+
+FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 
 
 def test_keyword_extractor_init() -> None:
@@ -57,3 +63,23 @@ def test_extract_for_paper() -> None:
 
     # Should have extracted some keywords
     assert len(keywords) > 0
+
+
+def test_extract_for_parser_and_page_index_share_normalized_text_source() -> None:
+    """Parser/PageIndex keyword entrypoints use the same normalized article text."""
+    extractor = KeywordExtractor()
+    ingestion = ingest_full_text(
+        FullTextSource(
+            paper_id="2605.12345",
+            source_type="markdown",
+            source_path=FULL_TEXT_FIXTURES / "structured_paper.md",
+        )
+    )
+    parsed = parse_article(ingestion)
+    document = build_page_index(ingestion)
+
+    parsed_keywords = extractor.extract_for_parsed_article(parsed)
+    page_index_keywords = extractor.extract_for_page_index(document)
+
+    assert parsed_keywords == page_index_keywords
+    assert any("local markdown" in keyword.lower() for keyword in parsed_keywords)

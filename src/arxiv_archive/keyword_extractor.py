@@ -1,6 +1,17 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Protocol
 
 import yake
+
+from arxiv_archive.indexing.page_index import PageIndexDocument
+from arxiv_archive.parsing.structure import ParsedArticle
+
+
+class _ArticleTextElement(Protocol):
+    title: str
+    text: str
+    order: int
 
 
 @dataclass
@@ -73,6 +84,29 @@ class KeywordExtractor:
         Returns:
             List of keyword strings sorted by YAKE score (lower = better).
         """
-        combined = f"{title} {abstract}"
+        return self.extract_for_text_parts([title, abstract])
+
+    def extract_for_parsed_article(self, article: ParsedArticle) -> list[str]:
+        """Extract keywords from normalized parser elements in document order."""
+        return self.extract_for_text_parts(_ordered_article_text(article.elements))
+
+    def extract_for_page_index(self, document: PageIndexDocument) -> list[str]:
+        """Extract keywords from PageIndex nodes while preserving the legacy keyword API."""
+        return self.extract_for_text_parts(_ordered_article_text(document.nodes))
+
+    def extract_for_text_parts(self, parts: list[str]) -> list[str]:
+        """Extract keyword strings from ordered text parts through one normalized path."""
+        combined = " ".join(part.strip() for part in parts if part and part.strip())
         results = self.extract(combined, self.top_k)
         return [keyword for keyword, _score in results]
+
+
+def _ordered_article_text(elements: Sequence[_ArticleTextElement]) -> list[str]:
+    ordered = sorted(elements, key=lambda element: element.order)
+    parts: list[str] = []
+    for element in ordered:
+        if element.title.strip():
+            parts.append(element.title)
+        if element.text.strip():
+            parts.append(element.text)
+    return parts

@@ -12,11 +12,18 @@ from arxiv_archive.evidence import (
     EvidencePath,
     SemanticChunk,
     build_evidence_path,
+    build_evidence_paths,
     build_semantic_chunks,
+    build_semantic_chunks_from_parsed,
     validate_evidence_path,
 )
 from arxiv_archive.full_text import FullTextSource, ingest_full_text
-from arxiv_archive.page_index import PageIndexDocument, build_page_index
+from arxiv_archive.page_index import (
+    PageIndexDocument,
+    build_page_index,
+    build_page_index_from_parsed,
+)
+from arxiv_archive.parsing.parser import parse_article
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"
@@ -36,6 +43,47 @@ def build_document(
         )
     )
     return build_page_index(ingestion)
+
+
+def ingest_fixture(
+    paper_id: str = "2605.12345",
+    source_path: Path | None = None,
+    source_type: str = "markdown",
+):
+    path = source_path or FULL_TEXT_FIXTURES / "structured_paper.md"
+    return ingest_full_text(
+        FullTextSource(
+            paper_id=paper_id,
+            source_type=source_type,
+            source_path=path,
+        )
+    )
+
+
+def test_builds_semantic_chunks_directly_from_parser_output() -> None:
+    ingestion = ingest_fixture()
+    parsed = parse_article(ingestion)
+
+    chunks_from_parsed = build_semantic_chunks_from_parsed(parsed)
+    chunks_from_index = build_semantic_chunks(build_page_index_from_parsed(parsed))
+
+    assert chunks_from_parsed == chunks_from_index
+    assert [chunk.page_index_node_id for chunk in chunks_from_parsed] == [
+        "2605.12345:abstract",
+        "2605.12345:introduction",
+        "2605.12345:method",
+        "2605.12345:conclusion",
+    ]
+
+
+def test_builds_evidence_paths_for_all_chunks() -> None:
+    document = build_document()
+    chunks = build_semantic_chunks(document)
+
+    paths = build_evidence_paths(document, chunks)
+
+    assert [path.semantic_chunk_id for path in paths] == [chunk.id for chunk in chunks]
+    assert all(path.validation_warnings == [] for path in paths)
 
 
 def test_builds_deterministic_semantic_chunks_for_pageindex_nodes() -> None:

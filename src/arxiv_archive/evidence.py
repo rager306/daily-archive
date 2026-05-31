@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from arxiv_archive.page_index import PageIndexDocument
+from arxiv_archive.indexing.page_index import PageIndexDocument, build_page_index_from_parsed
+from arxiv_archive.parsing.structure import ParsedArticle
 
 DEFAULT_CHUNKING_STRATEGY = "section_text_v1"
 
@@ -41,6 +42,18 @@ class EvidencePath:
     node_path: list[str]
     validation_warnings: list[str] = field(default_factory=list)
     provenance: dict[str, str] = field(default_factory=dict)
+
+
+def build_semantic_chunks_from_parsed(
+    article: ParsedArticle,
+    *,
+    chunking_strategy: str = DEFAULT_CHUNKING_STRATEGY,
+) -> list[SemanticChunk]:
+    """Build deterministic chunks from parser output via the canonical PageIndex builder."""
+    return build_semantic_chunks(
+        build_page_index_from_parsed(article),
+        chunking_strategy=chunking_strategy,
+    )
 
 
 def build_semantic_chunks(
@@ -91,6 +104,11 @@ def build_semantic_chunks(
         )
 
     return chunks
+
+
+def build_evidence_paths(document: PageIndexDocument, chunks: list[SemanticChunk]) -> list[EvidencePath]:
+    """Build and validate EvidencePath records for a document's semantic chunks."""
+    return [build_evidence_path(document, chunk) for chunk in chunks]
 
 
 def build_evidence_path(document: PageIndexDocument, chunk: SemanticChunk) -> EvidencePath:
@@ -167,6 +185,8 @@ __all__ = [
     "EvidencePath",
     "SemanticChunk",
     "build_evidence_path",
+    "build_evidence_paths",
     "build_semantic_chunks",
+    "build_semantic_chunks_from_parsed",
     "validate_evidence_path",
 ]
