@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import os
 import sys
@@ -344,6 +345,150 @@ def validate_selection(selection: dict[str, Any], index_articles: dict[str, dict
     return errors
 
 
+def _selection_article_records(
+    catalog_path: Path,
+    selection: dict[str, Any],
+    index_articles: dict[str, dict[str, Any]],
+) -> list[tuple[str, Path, dict[str, Any] | None, str | None]]:
+    records: list[tuple[str, Path, dict[str, Any] | None, str | None]] = []
+    articles = selection.get("articles") if isinstance(selection.get("articles"), list) else []
+    for row in articles:
+        article_ref = row.get("article_ref") if isinstance(row, dict) else None
+        if not isinstance(article_ref, str):
+            continue
+        entry = index_articles.get(article_ref)
+        if not isinstance(entry, dict):
+            records.append((article_ref, catalog_path.parent / "<missing>", None, "missing_index_entry"))
+            continue
+        article_path = entry.get("article_path")
+        if not isinstance(article_path, str):
+            records.append((article_ref, catalog_path.parent / "<missing>", None, "missing_article_path"))
+            continue
+        try:
+            path = article_manifest_path(catalog_path, article_path)
+            article = load_json(path)
+        except ValueError as exc:
+            records.append((article_ref, catalog_path.parent / article_path, None, str(exc)))
+            continue
+        records.append((article_ref, path, article, None))
+    return records
+
+
+def _local_article_artifact_path(article_path: Path, rel_path: str) -> Path:
+    normalized = normalize_posix_path(rel_path)
+    if normalized.startswith("/") or ".." in PurePosixPath(normalized).parts:
+        raise ValueError(f"unsafe article-relative path: {rel_path}")
+    root = article_path.parent.resolve()
+    resolved = (article_path.parent / normalized).resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"article artifact path escapes article directory: {rel_path}")
+    return resolved
+
+
+def check_captured_sources(
+    catalog_path: Path,
+    selection: dict[str, Any],
+    index_articles: dict[str, dict[str, Any]],
+    *,
+    check_checksums: bool,
+) -> list[str]:
+    errors: list[str] = []
+    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+        if load_error:
+            errors.append(f"{article_ref} cannot load article record for capture checks: {load_error}")
+            continue
+        assert article is not None
+        variants = article.get("source_variants")
+        if not isinstance(variants, list) or not variants:
+            errors.append(f"{article_ref} source_variants must be present for capture checks")
+            continue
+        for position, variant in enumerate(variants):
+            if not isinstance(variant, dict):
+                errors.append(f"{article_ref}.source_variants[{position}] must be an object")
+                continue
+            variant_id = variant.get("variant_id", f"source_variants[{position}]")
+            if variant.get("capture_status") != "captured":
+                errors.append(f"{article_ref} {variant_id} capture_status must be 'captured'")
+            rel_path = variant.get("path")
+            if not isinstance(rel_path, str) or not rel_path:
+                errors.append(f"{article_ref} {variant_id} path must be a non-empty string")
+                continue
+            try:
+                source_path = _local_article_artifact_path(article_path, rel_path)
+            except ValueError as exc:
+                errors.append(f"{article_ref} {variant_id} {exc}")
+                continue
+            if not source_path.exists():
+                errors.append(f"{article_ref} {variant_id} source file missing: {source_path}")
+                continue
+            byte_size = source_path.stat().st_size
+            if variant.get("byte_size") != byte_size:
+                errors.append(f"{article_ref} {variant_id} byte_size drift: metadata={variant.get('byte_size')!r} actual={byte_size!r}")
+            if check_checksums:
+                actual_sha = hashlib.sha256(source_path.read_bytes()).hexdigest()
+                if variant.get("sha256") != actual_sha:
+                    errors.append(f"{article_ref} {variant_id} sha256 drift")
+            if variant.get("raw_text_embedded") is not False or variant.get("raw_binary_embedded") is not False:
+                errors.append(f"{article_ref} {variant_id} raw payload embedding flags must be false")
+    return errors
+
+
+def _jsonl_rows(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+    return rows
+
+
+def check_loader_events(
+    catalog_path: Path,
+    selection: dict[str, Any],
+    index_articles: dict[str, dict[str, Any]],
+    *,
+    check_redaction: bool,
+) -> list[str]:
+    errors: list[str] = []
+    forbidden = ["raw_text", "raw_bytes", "binary_payload", "base64", "embedding", "embeddings", "vector", "vectors", "api_key"]
+    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+        if load_error:
+            errors.append(f"{article_ref} cannot load article record for loader checks: {load_error}")
+            continue
+        assert article is not None
+        loader_dir = article_path.parent / "loader"
+        event_path = loader_dir / "events.jsonl"
+        summary_path = loader_dir / "summary.json"
+        if not event_path.exists():
+            errors.append(f"{article_ref} missing loader events: {event_path}")
+            continue
+        if not summary_path.exists():
+            errors.append(f"{article_ref} missing loader summary: {summary_path}")
+            continue
+        try:
+            summary = load_json(summary_path)
+            events = _jsonl_rows(event_path)
+        except (ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"{article_ref} malformed loader artifact: {exc}")
+            continue
+        variants = article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
+        terminal_events = [row for row in events if row.get("event") in {"source.load_completed", "source.load_failed", "source.load_metadata_only"}]
+        if len(terminal_events) != len(variants):
+            errors.append(f"{article_ref} terminal loader event count must match source variants")
+        if summary.get("lookup_surface") != "index.json" or summary.get("full_tree_scan_attempted") is not False:
+            errors.append(f"{article_ref} loader summary must declare index-only lookup")
+        for variant in variants:
+            if isinstance(variant, dict) and variant.get("loader_outcome") not in {"loaded", "loaded_metadata_only", "failed"}:
+                errors.append(f"{article_ref} {variant.get('variant_id')} has invalid loader_outcome {variant.get('loader_outcome')!r}")
+        if check_redaction:
+            serialized = json.dumps({"events": events, "summary": summary}, sort_keys=True)
+            for token in forbidden:
+                if token in serialized:
+                    errors.append(f"{article_ref} loader artifacts contain forbidden token {token!r}")
+    return errors
+
+
 def iter_canonical_article_record_paths(catalog_path: Path) -> tuple[list[Path], list[dict[str, Any]]]:
     """Return only canonical source/topic/key/article.json records under the catalog root."""
     root = catalog_root(catalog_path)
@@ -668,6 +813,10 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
     )
     errors.extend(index_errors)
     errors.extend(validate_selection(selection, index_articles))
+    if args.require_captured_sources:
+        errors.extend(check_captured_sources(args.catalog, selection, index_articles, check_checksums=args.check_checksums))
+    if args.require_loader_events:
+        errors.extend(check_loader_events(args.catalog, selection, index_articles, check_redaction=args.check_redaction))
     report = None
     if args.rebuild_index:
         rebuild_errors, report, _diagnostics = run_rebuild(args, index)
@@ -723,6 +872,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--check-index-titles", action="store_true", help="Require every index title to mirror article identity.title.")
     parser.add_argument("--check-safe-traversal", action="store_true", help="Reject catalog paths that escape the catalog root or do not match canonical record layout.")
     parser.add_argument("--check-duplicate-lookups", action="store_true", help="Reject duplicate article lookup keys.")
+    parser.add_argument("--require-captured-sources", action="store_true", help="Require selected source variants to have local captured files.")
+    parser.add_argument("--check-checksums", action="store_true", help="Verify captured source byte sizes and sha256 checksums.")
+    parser.add_argument("--require-loader-events", action="store_true", help="Require local loader summaries/events for selected source variants.")
+    parser.add_argument("--check-redaction", action="store_true", help="Reject raw payload or vector/secret-like fields in loader artifacts.")
     parser.add_argument("--check-index-lookup-only", action="store_true", help="Run the AST-aware guard that normal lookup must not scan article records.")
     args = parser.parse_args(argv)
     if args.write_index and not args.rebuild_index:
@@ -731,8 +884,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         parser.error("--write-index-report requires --rebuild-index")
     if args.write_diagnostics and not args.rebuild_index:
         parser.error("--write-diagnostics requires --rebuild-index")
-    if not args.validate_only and not args.rebuild_index:
-        parser.error("choose --validate-only and/or --rebuild-index; no network fetch mode exists")
+    if not (
+        args.validate_only
+        or args.rebuild_index
+        or args.require_captured_sources
+        or args.require_loader_events
+        or args.check_redaction
+        or args.check_index_lookup_only
+    ):
+        parser.error("choose --validate-only, --rebuild-index, or a concrete check mode; no network fetch mode exists")
     return args
 
 

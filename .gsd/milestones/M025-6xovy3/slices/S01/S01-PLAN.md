@@ -36,22 +36,22 @@ S02 Current Pipeline Baseline must consume the M025 selection over reusable arti
   - Verify: uv run pytest tests/test_article_catalog_schema.py -q
 uv run ruff check tests/test_article_catalog_schema.py
 
-- [ ] **T02: Create catalog scaffold and initial index** `est:medium`
+- [x] **T02: Create catalog scaffold and initial index** `est:medium`
   Implement the durable catalog scaffold and initial selection writer for the M025 mixed-source corpus. Create local catalog directories using `source_code/coarse_topic_code/article_key`, write `data/article_catalog/catalog.json`, create the initial `data/article_catalog/index.json` from the fixture seed, and create `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json`. This task proves the CLI/verifier can create the first index as part of scaffold initialization; it must not yet rely on rebuilding from discovered article records.
   - Files: `data/article_catalog/`, `data/article_corpora/`, `scripts/verify_m025_article_catalog.py`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --validate-only --require-index --check-index-titles
 
-- [ ] **T03: Rebuild catalog index from article records** `est:medium`
+- [x] **T03: Rebuild catalog index from article records** `est:medium`
   Add the explicit index rebuild path and prove it is idempotent. The CLI/verifier must rebuild `data/article_catalog/index.json` from the article records under `data/article_catalog/{source_code}/{coarse_topic_code}/{article_key}/article.json`, compare the rebuilt output to the existing index, and detect stale/missing entries, path drift, title drift, source/topic drift, canonical URL drift, and duplicate lookup keys. Normal lookup must use the index; full tree traversal is allowed only for this explicit rebuild/refresh command.
   - Files: `scripts/verify_m025_article_catalog.py`, `data/article_catalog/`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --rebuild-index --write-index data/article_catalog/index.json --write-index-report data/article_catalog/index-rebuild-report.json --write-diagnostics data/article_catalog/index-rebuild-diagnostics.jsonl --check-index-idempotent --check-index-titles
 
-- [ ] **T04: Capture selected raw source variants** `est:medium`
+- [x] **T04: Capture selected raw source variants** `est:medium`
   Capture the selected raw source variants once into the reusable catalog. For arXiv entries, capture available HTML/abs metadata and PDF variants; for the PageIndex blog entry, capture HTML and the provided BibTeX citation. Compute checksums and update article records with capture status. After capture, rerun the explicit index rebuild so title/path/URL/source metadata stays synchronized. Do not parse or chunk yet.
   - Files: `data/article_catalog/`, `scripts/verify_m025_article_catalog.py`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --require-captured-sources --check-checksums --rebuild-index --check-index-idempotent
 
-- [ ] **T05: Run loader over local catalog variants** `est:medium`
+- [x] **T05: Run loader over local catalog variants** `est:medium`
   Run the existing local article loader over captured catalog variants and write loader events/summaries back under each article entry. Confirm HTML variants load as text-like sources, PDFs are classified as metadata-only current loader outcomes while remaining content-bearing fallback variants, and BibTeX/metadata variants are treated safely. Loader replay must resolve article paths through `data/article_catalog/index.json`, not by scanning the full tree.
   - Files: `scripts/verify_m025_article_catalog.py`, `data/article_catalog/`
   - Verify: uv run python scripts/verify_m025_article_catalog.py --catalog data/article_catalog/catalog.json --index data/article_catalog/index.json --selection data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json --require-loader-events --check-redaction --check-index-lookup-only
