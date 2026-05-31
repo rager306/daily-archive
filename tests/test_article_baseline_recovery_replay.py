@@ -230,9 +230,11 @@ def test_validation_helper_rejects_baseline_missing_final_summary(tmp_path: Path
         verify_m025_baseline_recovery_outputs.validate_final_outputs(
             final=None,
             final_summary=final_summary,
+            expect_article_count=None,
             require_no_network=True,
             require_no_import_flags=True,
             reject_baseline_missing=True,
+            require_ready=False,
         )
 
 
@@ -254,3 +256,82 @@ def test_validation_helper_rejects_unsafe_baseline_flags(tmp_path: Path) -> None
     )
 
     assert exit_code == 2
+
+
+def test_validation_helper_accepts_plan_alias_flags_and_recovery_surfaces(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+    args.write_summary = args.selection.parent / "baseline-recovery-summary.json"
+    args.write_report = args.selection.parent / "baseline-recovery-report.md"
+    args.require_no_import_flags = True
+    events = run_recovery(args)
+    args.write_events.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+    summary = verify_m025_baseline_recovery_replay._summary_from_artifacts(args, events)
+    verify_m025_baseline_recovery_replay._write_json(args.write_summary, summary)
+
+    exit_code = verify_m025_baseline_recovery_outputs.main(
+        [
+            "--baseline-dir",
+            str(args.baseline),
+            "--baseline-summary",
+            str(args.write_summary),
+            "--baseline-events",
+            str(args.write_events),
+            "--expect-article-count",
+            "1",
+            "--require-no-network",
+            "--require-no-import-flags",
+        ]
+    )
+
+    assert exit_code == 0
+
+
+def test_validation_helper_accepts_t03_final_summary_and_readiness_decision_flags(tmp_path: Path) -> None:
+    final_summary = tmp_path / "final-replay-summary.json"
+    readiness_decision = tmp_path / "readiness-decision.json"
+    _write_json(
+        final_summary,
+        {
+            "article_count": 5,
+            "baseline_comparison_counts": {"exact_match": 5, "baseline_missing": 0},
+            "no_network_proof": {"network_fetch_attempted": False},
+            "no_write_safety": {"safety_violations": []},
+            "readiness": {
+                "larger_preprocessing_validation_ready": True,
+                "decision": "ready",
+                "blockers": [],
+                "graph_readiness_claim": False,
+            },
+        },
+    )
+    _write_json(
+        readiness_decision,
+        {
+            "decision": "ready",
+            "larger_preprocessing_validation_ready": True,
+            "blockers": [],
+            "graph_readiness_claim": False,
+            "evidence": {
+                "article_count": 5,
+                "no_network_proof": {"network_fetch_attempted": False},
+                "no_write_safety": {"safety_violations": []},
+            },
+        },
+    )
+
+    exit_code = verify_m025_baseline_recovery_outputs.main(
+        [
+            "--final-summary",
+            str(final_summary),
+            "--readiness-decision",
+            str(readiness_decision),
+            "--expect-article-count",
+            "5",
+            "--expect-no-baseline-missing",
+            "--require-ready",
+            "--require-no-network",
+            "--require-no-import-flags",
+        ]
+    )
+
+    assert exit_code == 0

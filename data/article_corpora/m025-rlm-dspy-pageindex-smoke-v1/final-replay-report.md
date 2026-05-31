@@ -2,9 +2,9 @@
 
 ## Decision
 
-- Larger preprocessing validation ready: **false**
-- Decision: **blocked**
-- Blockers: baseline_missing
+- Larger preprocessing validation ready: **true**
+- Decision: **ready**
+- Blockers: None
 - Graph readiness claim: **false**
 
 M025 makes no graph readiness claim. This report only evaluates whether the refactored preprocessing replay over the fixed five-article local smoke corpus is ready for larger preprocessing validation.
@@ -13,24 +13,24 @@ M025 makes no graph readiness claim. This report only evaluates whether the refa
 
 - Baseline path: `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/baseline`
 - Final replay path: `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/final-replay`
-- Behavior counts: `{"blocked": 5}`
-- Baseline comparison counts: `{"baseline_missing": 5}`
+- Behavior counts: `{"preserved": 5}`
+- Baseline comparison counts: `{"exact_match": 5}`
 
 | Article | Baseline | Behavior | Ready | Diagnostics |
 |---|---:|---|---|---:|
-| arxiv/cs-ai/2512.24601 | baseline_missing | blocked | no | 2 |
-| arxiv/cs-ai/2605.28617v1 | baseline_missing | blocked | no | 2 |
-| arxiv/cs-cl/2507.19457 | baseline_missing | blocked | no | 2 |
-| arxiv/cs-cv/2605.26525v1 | baseline_missing | blocked | no | 2 |
-| company_blog/cs-ir/pageindex_zhang2025pageindex | baseline_missing | blocked | no | 2 |
+| arxiv/cs-ai/2512.24601 | exact_match | preserved | yes | 1 |
+| arxiv/cs-ai/2605.28617v1 | exact_match | preserved | yes | 1 |
+| arxiv/cs-cl/2507.19457 | exact_match | preserved | yes | 1 |
+| arxiv/cs-cv/2605.26525v1 | exact_match | preserved | yes | 1 |
+| company_blog/cs-ir/pageindex_zhang2025pageindex | exact_match | preserved | yes | 1 |
 
 ## Diagnostics
 
-`{"BASELINE_ARTIFACT_MISSING": 5, "S06_ROADMAP_HANDOFF_RECONSTRUCTED": 5}`
+`{"S06_ROADMAP_HANDOFF_RECONSTRUCTED": 5}`
 
 ## Readiness Blockers
 
-- baseline_missing
+- None
 
 ## No-Network Proof
 
