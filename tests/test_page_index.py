@@ -9,7 +9,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from arxiv_archive.full_text import FullTextSource, ingest_full_text
+from arxiv_archive.indexing.page_index import build_page_index_from_parsed
 from arxiv_archive.page_index import build_page_index
+from arxiv_archive.parsing.parser import parse_article
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"
@@ -23,6 +25,30 @@ def ingest_fixture(paper_id: str, source_path: Path, source_type: str = "markdow
             source_path=source_path,
         )
     )
+
+
+def test_parser_boundary_emits_typed_elements_before_indexing() -> None:
+    ingestion = ingest_fixture("2605.12345", FULL_TEXT_FIXTURES / "structured_paper.md")
+
+    parsed = parse_article(ingestion)
+    document = build_page_index_from_parsed(parsed)
+
+    assert parsed.provenance["parser"] == "markdown_headings_v1"
+    assert parsed.provenance["parse_fallback"] == "false"
+    assert parsed.provenance["section_count"] == "5"
+    assert [element.id for element in parsed.elements] == [node.id for node in document.nodes]
+    assert parsed.elements[3].title == "Method"
+    assert parsed.elements[3].path == ["2605.12345:root", "2605.12345:method"]
+    assert parsed.elements[3].parent_id == "2605.12345:root"
+    assert document.provenance["page_index_builder"] == "parsed_article_v1"
+    assert document.provenance["node_count"] == "5"
+    assert [anchor.node_id for anchor in document.navigation_anchors] == [
+        "2605.12345:root",
+        "2605.12345:abstract",
+        "2605.12345:introduction",
+        "2605.12345:method",
+        "2605.12345:conclusion",
+    ]
 
 
 def test_builds_ordered_pageindex_tree_from_structured_markdown() -> None:
@@ -128,6 +154,26 @@ def test_walk_next_returns_document_order() -> None:
         "2605.12345:method",
         "2605.12345:conclusion",
     ]
+
+
+def test_parser_boundary_reports_fallback_before_indexing() -> None:
+    ingestion = ingest_fixture(
+        "2605.noheadings",
+        PAGE_INDEX_FIXTURES / "no_headings.txt",
+        source_type="text",
+    )
+
+    parsed = parse_article(ingestion)
+    document = build_page_index_from_parsed(parsed)
+
+    assert parsed.validation_warnings == [
+        "no markdown headings found; created fallback full-text section"
+    ]
+    assert parsed.provenance["parse_fallback"] == "true"
+    assert parsed.provenance["fallback_reason"] == "no_headings"
+    assert [element.title for element in parsed.elements] == ["Document", "Full Text"]
+    assert document.validation_warnings == parsed.validation_warnings
+    assert document.navigation_anchors[0].children_ids == ["2605.noheadings:full-text"]
 
 
 def test_no_heading_source_creates_fallback_section_with_diagnostic() -> None:
