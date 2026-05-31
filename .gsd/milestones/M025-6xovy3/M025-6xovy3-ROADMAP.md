@@ -25,7 +25,7 @@
 - [x] **S03: Loader Boundary Replay** `risk:high` `depends:[S02]`
   > After this: After this: article loading is isolated behind a loader boundary and replayed on the same corpus, proving source IDs, checksums, kinds, outcomes, and failure reasons match or intentionally improve over baseline.
 
-- [ ] **S04: Parser Normalization Replay** `risk:high` `depends:[S03]`
+- [x] **S04: Parser Normalization Replay** `risk:high` `depends:[S03]`
   > After this: After this: parser and normalization are isolated from loader and downstream indexing, and the same smoke corpus produces typed article elements, source-span diagnostics, and parser quality metrics.
 
 - [ ] **S05: PageIndex Replay** `risk:high` `depends:[S04]`
