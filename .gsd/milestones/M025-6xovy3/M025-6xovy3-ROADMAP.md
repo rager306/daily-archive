@@ -40,7 +40,7 @@
 - [x] **S08: End to End Preprocessing Replay** `risk:high` `depends:[S07]`
   > After this: After this: the full refactored preprocessing pipeline runs on the same smoke corpus, writes final per-article artifacts, compares against baseline, and states whether larger preprocessing validation is ready or blocked.
 
-- [ ] **S09: Baseline Recovery Replay** `risk:high` `depends:[S08]`
+- [x] **S09: Baseline Recovery Replay** `risk:high` `depends:[S08]`
   > After this: Recover or regenerate the current-pipeline baseline for the fixed five-article smoke corpus using local artifacts only, persist per-article baseline artifacts and diagnostics, and prove no network fetches or production writes occurred.
 
 - [ ] **S10: Boundary Replay Completion** `risk:high` `depends:[S09]`
