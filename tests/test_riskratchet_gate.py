@@ -11,6 +11,7 @@ import pytest
 from arxiv_archive.quality import build_maintainability_report, write_maintainability_report
 from arxiv_archive.quality.baselines import baseline_delta, read_baseline
 from arxiv_archive.quality.thresholds import MaintainabilityThresholds
+from scripts import run_quality_gate as quality_gate_runner
 
 
 def test_thresholds_classify_boundary_scores() -> None:
@@ -108,3 +109,125 @@ def test_write_report_creates_parent_directories(tmp_path: Path) -> None:
 
     assert written == output_path
     assert json.loads(output_path.read_text(encoding="utf-8")) == report
+
+
+def test_quality_gate_runner_writes_json_and_human_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_report(*, paths, baseline_path=None):
+        return {
+            "schema_version": "test-report",
+            "status": "diagnostic_complete",
+            "diagnostic_only": True,
+            "blocking": False,
+            "pass_fail_affected": False,
+            "tool_status": "ok",
+            "tool_error": None,
+            "summary": {
+                "total_functions": 2,
+                "max_score": 12.5,
+                "average_score": 6.25,
+                "by_severity": {"low": 1, "medium": 1, "high": 0, "critical": 0},
+            },
+            "baseline_delta": {
+                "baseline_present": False,
+                "max_score_delta": None,
+                "average_score_delta": None,
+                "function_count_delta": None,
+                "severity_count_delta": {},
+            },
+            "riskratchet": {"blocking": False, "functions": []},
+        }
+
+    monkeypatch.setattr(quality_gate_runner, "build_maintainability_report", fake_report)
+
+    report = quality_gate_runner.run_quality_gate(
+        paths=["src/arxiv_archive/quality/baselines.py"],
+        output_dir=tmp_path,
+    )
+
+    json_path = tmp_path / quality_gate_runner.JSON_REPORT_NAME
+    human_path = tmp_path / quality_gate_runner.HUMAN_REPORT_NAME
+    json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    human_report = human_path.read_text(encoding="utf-8")
+
+    assert report["blocking"] is False
+    assert report["pass_fail_affected"] is False
+    assert json_payload["quality_gate"]["diagnostic_only"] is True
+    assert json_payload["quality_gate"]["touched_modules"] == ["src/arxiv_archive/quality/baselines.py"]
+    assert json_payload["output_paths"] == {"json": str(json_path), "human": str(human_path)}
+    assert "Diagnostic-only" in human_report
+    assert "non-blocking" in human_report
+    assert "Severity bands" in human_report
+
+
+def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(monkeypatch: pytest.MonkeyPatch) -> None:
+    completed = subprocess.CompletedProcess(
+        args=["git"],
+        returncode=0,
+        stdout="\n".join(
+            [
+                "src/arxiv_archive/quality/baselines.py",
+                "scripts/run_quality_gate.py",
+                "tests/test_riskratchet_gate.py",
+                "README.md",
+            ]
+        ),
+        stderr="",
+    )
+    monkeypatch.setattr(quality_gate_runner.subprocess, "run", lambda *args, **kwargs: completed)
+
+    touched = quality_gate_runner.gather_touched_python_modules(base_ref="HEAD~1")
+
+    assert touched == (
+        Path("src/arxiv_archive/quality/baselines.py"),
+        Path("scripts/run_quality_gate.py"),
+    )
+
+
+def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    def raise_os_error(*args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(quality_gate_runner.subprocess, "run", raise_os_error)
+
+    touched = quality_gate_runner.gather_touched_python_modules()
+
+    assert touched == quality_gate_runner.DEFAULT_DIAGNOSTIC_SCOPE
+
+
+def test_quality_gate_runner_is_non_blocking_for_critical_scores(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def critical_report(*, paths, baseline_path=None):
+        return {
+            "schema_version": "test-report",
+            "status": "diagnostic_complete",
+            "diagnostic_only": True,
+            "blocking": False,
+            "pass_fail_affected": False,
+            "tool_status": "ok",
+            "tool_error": None,
+            "summary": {
+                "total_functions": 1,
+                "max_score": 99.0,
+                "average_score": 99.0,
+                "by_severity": {"low": 0, "medium": 0, "high": 0, "critical": 1},
+            },
+            "baseline_delta": {
+                "baseline_present": True,
+                "max_score_delta": 50.0,
+                "average_score_delta": 50.0,
+                "function_count_delta": 0,
+                "severity_count_delta": {"critical": 1},
+            },
+            "riskratchet": {"blocking": False, "functions": [{"qualname": "risky", "score": 99.0}]},
+        }
+
+    monkeypatch.setattr(quality_gate_runner, "build_maintainability_report", critical_report)
+
+    exit_code = quality_gate_runner.main(
+        ["src/arxiv_archive/quality/riskratchet_adapter.py", "--output-dir", str(tmp_path)]
+    )
+
+    payload = json.loads((tmp_path / quality_gate_runner.JSON_REPORT_NAME).read_text(encoding="utf-8"))
+    assert exit_code == 0
+    assert payload["blocking"] is False
+    assert payload["quality_gate"]["blocking"] is False
+    assert payload["summary"]["by_severity"]["critical"] == 1
