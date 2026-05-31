@@ -4,6 +4,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
+from arxiv_archive.ingestion.loader import load_article_source
 from arxiv_archive.article_artifacts import (
     ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
@@ -265,6 +266,25 @@ def test_deterministic_fixture_detector_rejects_raw_payload_markers() -> None:
         assert "forbidden raw payload keys" in str(exc)
     else:  # pragma: no cover - defensive assertion branch
         raise AssertionError("raw payload marker should be rejected")
+
+
+def test_source_reference_can_be_built_from_loader_result(tmp_path: Path) -> None:
+    source_path = tmp_path / "paper.md"
+    source_path.write_text("# Abstract\n\nExplicit loader provenance.\n", encoding="utf-8")
+    result = load_article_source(source_path, source_type="markdown", paper_id="p-loader")
+
+    source = SourceReference.from_loader_result(result, source_role="normalized_markdown")
+    payload = source.to_redacted_dict()
+
+    assert payload["source_id"] == result.source_id
+    assert payload["paper_id"] == "p-loader"
+    assert payload["source_role"] == "normalized_markdown"
+    assert payload["source_path"] == str(source_path)
+    assert payload["sha256"] == result.sha256
+    assert payload["media_type"] == "text/markdown"
+    assert payload["conversion_status"] == "loaded"
+    assert payload["raw_text_embedded"] is False
+    assert payload["raw_binary_embedded"] is False
 
 def test_artifact_manifest_serializes_redacted_contract() -> None:
     manifest = _manifest()

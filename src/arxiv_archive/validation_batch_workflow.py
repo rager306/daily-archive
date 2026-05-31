@@ -13,6 +13,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Any
 
+from arxiv_archive.ingestion.loader import load_article_source
 from arxiv_archive.thirty_paper_deviation_scan import build_thirty_paper_deviation_scan
 from arxiv_archive.validation_batch_state import (
     ScanArtifactPaths,
@@ -24,6 +25,7 @@ from arxiv_archive.validation_batch_state import (
     default_safety_flags,
     write_batch_state,
 )
+from arxiv_archive.validation_logging import ValidationLogger, sanitize_event_details
 
 SELECTION_ROLE_ALIASES = {
     "m005_baseline_overlap": "baseline_overlap",
@@ -116,24 +118,36 @@ def initialize_validation_batch(
     }
 
 
-def source_readiness_for_paper(paper: SelectedPaper, *, fallback_root: str | Path = "/root/.research/papers", cache_root: str | Path = "/root/.arxiv_cache") -> SourceReadiness:
+def source_readiness_for_paper(
+    paper: SelectedPaper,
+    *,
+    fallback_root: str | Path = "/root/.research/papers",
+    cache_root: str | Path = "/root/.arxiv_cache",
+    logger: ValidationLogger | None = None,
+) -> SourceReadiness:
     fallback_root_path = Path(fallback_root)
     cache_root_path = Path(cache_root)
-    markdown_path = _first_existing_path(
+    markdown_candidates = (
         paper.source_paths.get("research_full_text_md"),
         paper.source_paths.get("cache_markdown"),
         str(fallback_root_path / paper.paper_id / "full_text.md"),
         str(cache_root_path / f"{paper.paper_id}.md"),
     )
-    pdf_path = _first_existing_path(
+    pdf_candidates = (
         paper.source_paths.get("cache_pdf"),
         paper.source_paths.get("research_pdf"),
         str(cache_root_path / f"{paper.paper_id}.pdf"),
         str(fallback_root_path / paper.paper_id / "paper.pdf"),
     )
-    markdown_present = markdown_path is not None
-    markdown_quality_accepted = _markdown_quality_accepted(markdown_path)
-    pdf_present = pdf_path is not None
+    markdown_path = _first_existing_path(*markdown_candidates) or _first_candidate_path(*markdown_candidates)
+    pdf_path = _first_existing_path(*pdf_candidates) or _first_candidate_path(*pdf_candidates)
+
+    markdown_result = load_article_source(markdown_path, source_type="markdown", paper_id=paper.paper_id, logger=logger)
+    pdf_result = load_article_source(pdf_path, source_type="pdf", paper_id=paper.paper_id, logger=logger)
+
+    markdown_present = markdown_result.sha256 is not None
+    markdown_quality_accepted = markdown_result.outcome == "loaded" and markdown_result.failure_reason is None
+    pdf_present = pdf_result.sha256 is not None and pdf_result.outcome == "loaded_metadata_only"
     risk_tags = set(paper.risk_tags)
     conversion_failed = "conversion_failed" in risk_tags or ("missing_markdown" in risk_tags and not markdown_present)
     conversion_repaired = "docling_repair" in risk_tags or "conversion_repaired" in risk_tags
@@ -147,6 +161,10 @@ def source_readiness_for_paper(paper: SelectedPaper, *, fallback_root: str | Pat
         conversion_failed=conversion_failed,
         unavailable_source=unavailable_source,
         ready_for_markdown_scan=markdown_present and markdown_quality_accepted,
+        loader_provenance_by_role={
+            "markdown": _loader_provenance(markdown_result),
+            "pdf": _loader_provenance(pdf_result),
+        },
     )
 
 
@@ -699,6 +717,27 @@ def _share_delta(current_counts: dict[str, Any], baseline_counts: dict[str, Any]
         }
         for key in keys
     }
+
+
+def _loader_provenance(result: Any) -> dict[str, Any]:
+    provenance = dict(result.provenance or {})
+    provenance.update(
+        {
+            "outcome": result.outcome,
+            "failure_reason": result.failure_reason,
+            "selected_fallback": result.failure_reason,
+            "warning_count": result.warning_count,
+            "duration_ms": result.duration_ms,
+        }
+    )
+    return sanitize_event_details(provenance)
+
+
+def _first_candidate_path(*raw_paths: str | None) -> Path:
+    for raw_path in raw_paths:
+        if raw_path:
+            return Path(raw_path)
+    raise ValueError("at least one source candidate path is required")
 
 
 def _first_existing_path(*raw_paths: str | None) -> Path | None:

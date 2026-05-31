@@ -90,6 +90,7 @@ class SourceReadiness:
     conversion_failed: bool = False
     unavailable_source: bool = False
     ready_for_markdown_scan: bool = False
+    loader_provenance_by_role: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -161,6 +162,11 @@ def source_readiness_from_dict(payload: dict[str, Any]) -> SourceReadiness:
         conversion_failed=bool(payload.get("conversion_failed", False)),
         unavailable_source=bool(payload.get("unavailable_source", False)),
         ready_for_markdown_scan=bool(payload.get("ready_for_markdown_scan", False)),
+        loader_provenance_by_role={
+            str(role): dict(provenance)
+            for role, provenance in payload.get("loader_provenance_by_role", {}).items()
+            if isinstance(provenance, dict)
+        },
     )
 
 

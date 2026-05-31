@@ -107,6 +107,11 @@ def _sanitize_error(error: BaseException | str) -> dict[str, str]:
     }
 
 
+def sanitize_event_details(values: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a JSON-native redacted copy of event/detail metadata."""
+    return _sanitize_mapping(values)
+
+
 def _sanitize_mapping(values: Mapping[str, Any]) -> dict[str, Any]:
     sanitized: dict[str, Any] = {}
     for key, value in values.items():
@@ -136,4 +141,4 @@ def _redact_string(value: str) -> str:
     return _SECRET_VALUE_RE.sub("[REDACTED]", value)
 
 
-__all__ = ["ValidationLogger", "ValidationStatus"]
+__all__ = ["ValidationLogger", "ValidationStatus", "sanitize_event_details"]

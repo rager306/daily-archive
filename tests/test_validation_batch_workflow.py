@@ -116,6 +116,51 @@ def test_source_readiness_for_paper_uses_deterministic_fallback_paths(tmp_path: 
     assert readiness.ready_for_markdown_scan is True
 
 
+
+def test_source_readiness_for_paper_carries_loader_provenance(tmp_path: Path) -> None:
+    full_text = tmp_path / "full_text.md"
+    full_text.write_text("# Abstract\n\nLoader provenance is explicit.\n", encoding="utf-8")
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF-1.4 fixture")
+    paper = SelectedPaper(
+        paper_id="2605.00030v1",
+        selection_role="deterministic_expansion",
+        source_paths={"research_full_text_md": str(full_text), "cache_pdf": str(pdf)},
+    )
+
+    readiness = source_readiness_for_paper(paper)
+
+    assert readiness.ready_for_markdown_scan is True
+    assert readiness.pdf_present is True
+    markdown = readiness.loader_provenance_by_role["markdown"]
+    pdf_provenance = readiness.loader_provenance_by_role["pdf"]
+    assert markdown["source_type"] == "markdown"
+    assert markdown["source_path"] == str(full_text)
+    assert markdown["sha256"]
+    assert markdown["outcome"] == "loaded"
+    assert markdown["failure_reason"] is None
+    assert pdf_provenance["source_type"] == "pdf"
+    assert pdf_provenance["media_type"] == "application/pdf"
+    assert pdf_provenance["outcome"] == "loaded_metadata_only"
+
+
+def test_source_readiness_for_paper_records_missing_source_failure(tmp_path: Path) -> None:
+    missing_markdown = tmp_path / "missing.md"
+    missing_pdf = tmp_path / "missing.pdf"
+    paper = SelectedPaper(
+        paper_id="2605.00031v1",
+        selection_role="deterministic_expansion",
+        source_paths={"research_full_text_md": str(missing_markdown), "cache_pdf": str(missing_pdf)},
+    )
+
+    readiness = source_readiness_for_paper(paper)
+
+    assert readiness.ready_for_markdown_scan is False
+    assert readiness.unavailable_source is True
+    assert readiness.loader_provenance_by_role["markdown"]["failure_reason"] == "source_missing"
+    assert readiness.loader_provenance_by_role["markdown"]["selected_fallback"] == "source_missing"
+    assert readiness.loader_provenance_by_role["pdf"]["failure_reason"] == "source_missing"
+
 def test_preflight_validation_batch_adds_contradiction_diagnostics(tmp_path: Path) -> None:
     full_text = tmp_path / "full_text.md"
     full_text.write_text("content", encoding="utf-8")

@@ -53,6 +53,7 @@ def test_validation_batch_state_round_trips_json(tmp_path: Path) -> None:
                 markdown_quality_accepted=True,
                 pdf_missing=True,
                 ready_for_markdown_scan=True,
+                loader_provenance_by_role={"markdown": {"source_type": "markdown", "sha256": "a" * 64}},
             )
         },
         recommendation=BatchRecommendation(
@@ -70,6 +71,7 @@ def test_validation_batch_state_round_trips_json(tmp_path: Path) -> None:
     assert read_batch_state(path) == state
     assert payload["schema_version"] == "m007-validation-batch-state.v1"
     assert payload["safety"]["raw_text_included"] is False
+    assert payload["source_readiness_by_paper"]["2605.00001v1"]["loader_provenance_by_role"]["markdown"]["sha256"] == "a" * 64
 
 
 def test_detect_source_contradictions_for_ready_missing_markdown() -> None:

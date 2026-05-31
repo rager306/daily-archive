@@ -203,6 +203,29 @@ class SourceReference:
     media_type: str | None = None
     conversion_status: str = "review_required"
 
+    @classmethod
+    def from_loader_result(
+        cls,
+        result: Any,
+        *,
+        paper_id: str | None = None,
+        source_role: str | None = None,
+        conversion_status: str | None = None,
+    ) -> SourceReference:
+        """Build a redacted source reference from loader provenance metadata."""
+        resolved_paper_id = paper_id or getattr(result, "paper_id", None)
+        if not resolved_paper_id:
+            raise ValueError("paper_id is required to build a source reference from loader provenance")
+        return cls(
+            source_id=str(getattr(result, "source_id")),
+            paper_id=str(resolved_paper_id),
+            source_role=source_role or str(getattr(result, "source_type", "article_source")),
+            source_path=str(getattr(result, "source_path")) if getattr(result, "source_path", None) is not None else None,
+            sha256=getattr(result, "sha256", None),
+            media_type=getattr(result, "media_type", None),
+            conversion_status=conversion_status or str(getattr(result, "outcome", "review_required")),
+        )
+
     def to_redacted_dict(self) -> dict[str, Any]:
         return {
             "source_id": self.source_id,
