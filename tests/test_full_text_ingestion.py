@@ -175,3 +175,16 @@ def test_rejects_unknown_source_type_before_parsing(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unsupported full-text source type: html"):
         ingest_full_text(source)
+
+
+def test_legacy_full_text_module_delegates_to_ingestion_loader() -> None:
+    from arxiv_archive.ingestion.loader import FullTextSource as IngestionFullTextSource
+    from arxiv_archive.ingestion.loader import ingest_full_text as ingestion_ingest_full_text
+
+    source_path = FIXTURES_DIR / "structured_paper.md"
+    legacy_result = ingest_full_text(FullTextSource("2605.12345", "markdown", source_path))
+    ingestion_result = ingestion_ingest_full_text(
+        IngestionFullTextSource("2605.12345", "markdown", source_path)
+    )
+
+    assert legacy_result == ingestion_result

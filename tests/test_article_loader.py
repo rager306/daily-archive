@@ -428,3 +428,21 @@ def test_logging_contract_for_failures_contains_metadata_not_payloads(tmp_path: 
     assert failed["failure_reason"] == "decode_failed"
     assert failed["warning_count"] == 1
     _assert_safe_event_payload(events)
+
+
+def test_ingestion_loader_stack_exposes_checksum_fallback_and_failure_reason(tmp_path: Path) -> None:
+    from arxiv_archive.ingestion.loader import load_article_source as ingestion_load_article_source
+
+    source_path = tmp_path / "binary.html"
+    source_path.write_bytes(b"\xff\xfe\x00<html>not utf-8</html>\x80")
+    log_path = tmp_path / "ingestion-failure.jsonl"
+
+    result = ingestion_load_article_source(source_path, log_path=log_path)
+    failed_event = _read_events(log_path)[-1]
+
+    assert result.failure_reason == "decode_failed"
+    assert failed_event["source_type"] == "html"
+    assert failed_event["source_path"] == str(source_path)
+    assert failed_event["checksum"] == result.sha256
+    assert failed_event["selected_fallback"] == "decode_failed"
+    assert failed_event["failure_reason"] == "decode_failed"
