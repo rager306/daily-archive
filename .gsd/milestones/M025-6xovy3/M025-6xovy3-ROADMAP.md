@@ -37,8 +37,17 @@
 - [x] **S07: Assets Tables Links Identity Replay** `risk:high` `depends:[S06]`
   > After this: After this: assets, tables, links, and identity evidence are separated from chunks and replayed on the same corpus with metadata-safe provenance-bearing outputs.
 
-- [ ] **S08: End to End Preprocessing Replay** `risk:high` `depends:[S07]`
+- [x] **S08: End to End Preprocessing Replay** `risk:high` `depends:[S07]`
   > After this: After this: the full refactored preprocessing pipeline runs on the same smoke corpus, writes final per-article artifacts, compares against baseline, and states whether larger preprocessing validation is ready or blocked.
+
+- [ ] **S09: Baseline Recovery Replay** `risk:high` `depends:[S08]`
+  > After this: Recover or regenerate the current-pipeline baseline for the fixed five-article smoke corpus using local artifacts only, persist per-article baseline artifacts and diagnostics, and prove no network fetches or production writes occurred.
+
+- [ ] **S10: Boundary Replay Completion** `risk:high` `depends:[S09]`
+  > After this: Replay loader, parser normalization, PageIndex, chunking, and evidence boundaries on the same five-article corpus against the recovered baseline or accepted prior run, with explicit comparisons, traceable chunks, and diagnostics for low-quality or zero-chunk cases.
+
+- [ ] **S11: Requirements Scope Reconciliation** `risk:medium` `depends:[S10]`
+  > After this: Produce a milestone requirements coverage matrix distinguishing M025 preprocessing requirements from out-of-scope KG/RLM/scale requirements, update requirement notes where appropriate, and rerun final end-to-end replay so validation can close with coherent requirement coverage.
 
 ## Boundary Map
 
