@@ -1,0 +1,267 @@
+{
+  "schema_version": "m024-validation-evidence-closure.v1",
+  "artifact_type": "validation_evidence_closure",
+  "milestone_id": "M024-0xjwh9",
+  "slice_id": "S09",
+  "task_id": "T01",
+  "scope_boundary": {
+    "summary": "M024 validation closure evidence is metadata-only, review-only, and limited to rerun inputs for the clean 10-document article evidence validation milestone.",
+    "in_scope": [
+      "Resolve S08 handoff gaps for the M024 validation rerun.",
+      "State exactly which M024 requirement treatments are safe to cite.",
+      "Preserve S01-S08 evidence as review-only validation inputs."
+    ],
+    "out_of_scope": [
+      "Installing, requiring, or executing riskratchet.",
+      "Authorizing KG import, production LadybugDB writes, production graph reads, promoted scientific facts, final graph schema readiness, embeddings, vectors, tokens, secrets, or raw article payload handling.",
+      "Executing 20-document, one-week, 30-paper, or 100-paper validation stages.",
+      "Manually editing .gsd/REQUIREMENTS.md or changing canonical requirement status outside DB-backed requirement tooling.",
+      "Activating DSPy, RLM, optimizers, MiniMax helpers, or heavy multimodal extraction."
+    ],
+    "safe_next_step": "Use this artifact and the S08 requirement matrix as validation rerun inputs; do not widen M024 to satisfy out-of-scope active requirements."
+  },
+  "source_matrix": {
+    "json_path": "doc/validation/m024_requirement_coverage_matrix.json",
+    "markdown_path": "doc/validation/m024_requirement_coverage_matrix.md",
+    "handoff_path": ".gsd/milestones/M024-0xjwh9/slices/S08/S08-COVERAGE.md",
+    "expected_schema_version": "m024-requirement-coverage-matrix.v1",
+    "source_status": "present_and_parseable_during_s09_t01",
+    "source_use": "Cited as prior reviewed coverage classification; this closure artifact does not invent additional implementation evidence."
+  },
+  "closure_decisions": [
+    {
+      "gap_id": "S09-GAP-riskratchet-direct-evidence",
+      "source_gap_title": "riskratchet diagnostic evidence is absent from code/test artifacts",
+      "decision": "closed_non_blocking_not_applicable_not_executed_for_m024",
+      "blocking_for_m024_validation_rerun": false,
+      "riskratchet_installed_or_required": false,
+      "riskratchet_executed": false,
+      "rationale": "The S08 matrix and handoff identify riskratchet as a non-blocking criterion with no direct repository or dependency evidence. M024 is a local metadata-only article evidence validation milestone, so the validation rerun may explicitly mark riskratchet not applicable/not executed rather than making it a required diagnostic.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        "doc/validation/m024_requirement_coverage_matrix.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S08/S08-COVERAGE.md"
+      ],
+      "allowed_validation_statement": "The riskratchet diagnostic criterion is resolved for M024 as non-blocking and not applicable/not executed; no riskratchet installation or execution is required for this metadata-only validation rerun.",
+      "forbidden_validation_statements": [
+        "M024 executed riskratchet successfully.",
+        "M024 requires riskratchet before validation can pass.",
+        "riskratchet evidence authorizes KG import or production writes.",
+        "riskratchet absence invalidates the S01-S08 metadata-only evidence."
+      ]
+    },
+    {
+      "gap_id": "S09-GAP-r036-requirement-update-decision",
+      "source_gap_title": "R036 canonical requirement status reconciliation",
+      "decision": "deferred_to_db_backed_requirement_tooling",
+      "blocking_for_m024_validation_rerun": false,
+      "manual_requirements_edit_allowed": false,
+      "rationale": "S08 classified the M024 article-report provenance surface as implementation-covered, while canonical R036 status remains active. S09 does not manually edit .gsd/REQUIREMENTS.md; status parity remains deferred unless a later agent intentionally uses DB-backed requirement tooling.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        ".gsd/milestones/M024-0xjwh9/slices/S08/S08-COVERAGE.md",
+        "src/arxiv_archive/validation_batch_provenance.py",
+        "src/arxiv_archive/article_batch_validation.py",
+        "src/arxiv_archive/cli.py",
+        "tests/test_validation_batch_provenance.py",
+        "tests/test_validation_batch_cli_article_report.py"
+      ],
+      "allowed_validation_statement": "M024 provides evidence for the in-scope R036 article-report provenance surface, but canonical R036 status parity is deferred to DB-backed requirement tooling.",
+      "forbidden_validation_statements": [
+        "S09 manually updated .gsd/REQUIREMENTS.md for R036.",
+        "R036 status parity is complete without DB-backed requirement tooling.",
+        "R036 evidence authorizes KG import, production writes, embeddings, vectors, or unattended scaling."
+      ]
+    }
+  ],
+  "requirement_treatments": [
+    {
+      "requirement_id": "R024",
+      "current_status_from_matrix": "active",
+      "m024_treatment": "advanced_not_validated",
+      "validation_rerun_position": "partial_advancement_only",
+      "rationale": "M024 delivered a deterministic 10-document metadata-only validation loop and review-only scale recommendation, but did not execute 20-document, one-week corpus, or graph-quality validation.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        "tests/fixtures/article_batch_validation/ten_document_manifest.json",
+        "src/arxiv_archive/article_batch_validation.py"
+      ],
+      "allowed_claims": [
+        "M024 advances the 10-document review-only validation surface for R024.",
+        "M024 recommends a safe review-only 20-document next step."
+      ],
+      "forbidden_claims": [
+        "M024 fully validates R024.",
+        "M024 validates 20-document graph quality.",
+        "M024 validates one-week corpus graph quality.",
+        "M024 authorizes KG import."
+      ]
+    },
+    {
+      "requirement_id": "R027",
+      "current_status_from_matrix": "active",
+      "m024_treatment": "advanced_not_validated",
+      "validation_rerun_position": "partial_advancement_only",
+      "rationale": "M024 advanced diagnostics and metadata contracts for source, structure, assets, links, retrieval, tables, and 10-document aggregation, but did not provide positive graph-readiness acceptance.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        ".gsd/milestones/M024-0xjwh9/slices/S01/S01-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S02/S02-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S03/S03-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S04/S04-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S05/S05-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S06/S06-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S07/S07-SUMMARY.md"
+      ],
+      "allowed_claims": [
+        "M024 advances graph-readiness evidence diagnostics for source, structure, assets, links, retrieval, and table candidates."
+      ],
+      "forbidden_claims": [
+        "M024 validates positive graph readiness.",
+        "M024 authorizes KG validation to resume.",
+        "M024 authorizes scaling beyond review-only evidence."
+      ]
+    },
+    {
+      "requirement_id": "R029",
+      "current_status_from_matrix": "active",
+      "m024_treatment": "advanced_not_validated",
+      "validation_rerun_position": "partial_advancement_only",
+      "rationale": "M024 advanced stable IDs, source spans, PageIndex anchors, lineage/provenance, and review-only status rows, but did not create an import-ready typed chunk package with independent semantic acceptance.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        ".gsd/milestones/M024-0xjwh9/slices/S03/S03-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S04/S04-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S05/S05-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S06/S06-SUMMARY.md",
+        ".gsd/milestones/M024-0xjwh9/slices/S07/S07-SUMMARY.md"
+      ],
+      "allowed_claims": [
+        "M024 advances R029 lineage/provenance evidence for later import-readiness work."
+      ],
+      "forbidden_claims": [
+        "M024 validates import-ready chunks.",
+        "M024 validates positive KG import readiness.",
+        "M024 promotes chunks to trusted KG facts."
+      ]
+    },
+    {
+      "requirement_id": "R030",
+      "current_status_from_matrix": "validated",
+      "m024_treatment": "covered_by_existing_s04_validation",
+      "validation_rerun_position": "cite_existing_coverage_do_not_reopen",
+      "rationale": "R030 is already validated by M024 S04 metadata-only asset preservation evidence and should be cited directly rather than reopened by S09.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        ".gsd/milestones/M024-0xjwh9/slices/S04/S04-SUMMARY.md",
+        "src/arxiv_archive/article_assets.py",
+        "tests/test_article_assets.py",
+        "tests/test_property_article_assets.py"
+      ],
+      "allowed_claims": [
+        "R030 is validated by M024 S04 metadata-only asset preservation evidence."
+      ],
+      "forbidden_claims": [
+        "R030 implies raw image bytes are preserved in the bridge.",
+        "R030 implies multimodal retrieval is implemented."
+      ]
+    },
+    {
+      "requirement_id": "R036",
+      "current_status_from_matrix": "active",
+      "m024_treatment": "evidence_covered_status_parity_deferred",
+      "validation_rerun_position": "cite_implementation_coverage_without_claiming_canonical_status_parity",
+      "rationale": "S08 classified the in-scope article-report provenance surface as covered by existing validation, but canonical status remains active until DB-backed requirement tooling updates it.",
+      "evidence_paths": [
+        "doc/validation/m024_requirement_coverage_matrix.json",
+        ".gsd/milestones/M024-0xjwh9/slices/S08/S08-COVERAGE.md",
+        "src/arxiv_archive/validation_batch_provenance.py",
+        "src/arxiv_archive/article_batch_validation.py",
+        "src/arxiv_archive/cli.py",
+        "tests/test_validation_batch_provenance.py",
+        "tests/test_validation_batch_cli_article_report.py"
+      ],
+      "allowed_claims": [
+        "M024 provides direct R036 validation evidence for the metadata-only article-report validation CLI provenance surface.",
+        "R036 status reconciliation should be performed only through DB-backed GSD requirement tooling when intentionally used."
+      ],
+      "forbidden_claims": [
+        "S09 manually edited .gsd/REQUIREMENTS.md.",
+        "R036 validates unrelated future validation-batch commands outside M024 evidence.",
+        "R036 authorizes KG import, production writes, embeddings, vectors, or unattended scaling."
+      ]
+    }
+  ],
+  "global_allowed_claims": [
+    "M024 validation rerun may cite S09 closure evidence for riskratchet as non-blocking/not applicable/not executed.",
+    "M024 remains metadata-only and review-only.",
+    "R024, R027, and R029 are advanced by M024 evidence but remain not fully validated.",
+    "R030 is covered by existing M024 S04 evidence.",
+    "R036 has in-scope article-report provenance implementation evidence, while canonical status parity remains deferred to DB-backed requirement tooling."
+  ],
+  "global_forbidden_claims": [
+    "M024 authorizes KG import.",
+    "M024 authorizes production LadybugDB writes or production graph reads.",
+    "M024 validates final graph readiness, promoted scientific facts, embeddings, vectors, tokens, secrets, or raw article payloads.",
+    "M024 validates 20-document, one-week, 30-paper, or 100-paper corpus stages.",
+    "M024 activates DSPy, RLM, optimizers, MiniMax helpers, or heavy multimodal extraction.",
+    "S09 manually changes canonical requirement status in .gsd/REQUIREMENTS.md.",
+    "R024, R027, or R029 are fully validated by M024.",
+    "R036 canonical status parity is complete without DB-backed requirement tooling."
+  ],
+  "evidence_paths": [
+    "doc/validation/m024_requirement_coverage_matrix.json",
+    "doc/validation/m024_requirement_coverage_matrix.md",
+    ".gsd/milestones/M024-0xjwh9/slices/S08/S08-COVERAGE.md",
+    "src/arxiv_archive/article_batch_validation.py",
+    "src/arxiv_archive/validation_batch_provenance.py",
+    "src/arxiv_archive/cli.py",
+    "tests/test_article_batch_validation.py",
+    "tests/test_validation_batch_provenance.py",
+    "tests/test_validation_batch_cli_article_report.py"
+  ],
+  "failure_modes": [
+    {
+      "dependency": "Filesystem access to source matrix, handoff, and closure artifacts",
+      "failure_path": "Missing or unreadable files should fail the validation rerun or verifier with an explicit missing-path diagnostic; this artifact records the source paths and does not fabricate missing evidence."
+    },
+    {
+      "dependency": "JSON parsing for the source matrix and this closure artifact",
+      "failure_path": "Malformed JSON should bubble as a parser/verifier failure before milestone validation uses the closure claims."
+    },
+    {
+      "dependency": "Markdown review surface",
+      "failure_path": "Malformed or inconsistent Markdown should be caught by reviewer inspection and by comparing it to this JSON source; the JSON is the machine-verifiable source."
+    },
+    {
+      "dependency": "Optional future DB-backed requirement tooling for R036",
+      "failure_path": "If tooling is unavailable or fails, R036 canonical status parity remains deferred and must not be claimed as complete."
+    },
+    {
+      "dependency": "riskratchet diagnostic availability",
+      "failure_path": "If riskratchet remains unavailable, that absence is the closure fact: non-blocking, not applicable/not executed for M024, and not a validation blocker."
+    }
+  ],
+  "load_profile": {
+    "runtime_load_dimension": "none_deployed",
+    "expected_use": "Single-file validation rerun input read by humans and local verifier scripts.",
+    "ten_x_breakpoint": "At 10x the expected number of requirement rows or closure decisions, local JSON parsing and reviewer comprehension saturate before CPU, network, or database capacity.",
+    "protections": [
+      "Bounded static JSON artifact.",
+      "No network calls, background daemons, production databases, imports, or raw payload reads.",
+      "Claims are enumerated as allowed/forbidden lists for deterministic verifier checks."
+    ]
+  },
+  "negative_tests_expected": [
+    "Verifier should reject a missing riskratchet closure decision.",
+    "Verifier should reject riskratchet_installed_or_required=true or riskratchet_executed=true.",
+    "Verifier should reject R024, R027, or R029 treatment other than advanced_not_validated.",
+    "Verifier should reject missing R030 S04 coverage citation.",
+    "Verifier should reject R036 claims that canonical status parity is complete without DB-backed requirement tooling.",
+    "Verifier should reject global forbidden import/production-write/readiness approval claims."
+  ],
+  "observability_surfaces": [
+    "doc/validation/m024_validation_evidence_closure.json",
+    "doc/validation/m024_validation_evidence_closure.md"
+  ]
+}
