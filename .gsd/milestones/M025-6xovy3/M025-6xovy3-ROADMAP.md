@@ -43,7 +43,7 @@
 - [x] **S09: Baseline Recovery Replay** `risk:high` `depends:[S08]`
   > After this: Recover or regenerate the current-pipeline baseline for the fixed five-article smoke corpus using local artifacts only, persist per-article baseline artifacts and diagnostics, and prove no network fetches or production writes occurred.
 
-- [ ] **S10: Boundary Replay Completion** `risk:high` `depends:[S09]`
+- [x] **S10: Boundary Replay Completion** `risk:high` `depends:[S09]`
   > After this: Replay loader, parser normalization, PageIndex, chunking, and evidence boundaries on the same five-article corpus against the recovered baseline or accepted prior run, with explicit comparisons, traceable chunks, and diagnostics for low-quality or zero-chunk cases.
 
 - [ ] **S11: Requirements Scope Reconciliation** `risk:medium` `depends:[S10]`
