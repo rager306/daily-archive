@@ -148,27 +148,31 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
-        print("usage: verify_m024_requirement_coverage.py <matrix.json>", file=sys.stderr)
+        sys.stderr.write("usage: verify_m024_requirement_coverage.py <matrix.json>\n")
         return 2
     matrix_path = Path(argv[1])
     try:
         matrix = json.loads(matrix_path.read_text())
     except FileNotFoundError:
-        print(f"ERROR: matrix file not found: {matrix_path}", file=sys.stderr)
+        sys.stderr.write(f"ERROR: matrix file not found: {matrix_path}\n")
         return 2
     except json.JSONDecodeError as exc:
-        print(f"ERROR: malformed JSON: {exc}", file=sys.stderr)
+        sys.stderr.write(f"ERROR: malformed JSON: {exc}\n")
         return 2
     if not isinstance(matrix, dict):
-        print("ERROR: matrix root must be an object", file=sys.stderr)
+        sys.stderr.write("ERROR: matrix root must be an object\n")
         return 2
     errors = validate_matrix(matrix)
     if errors:
-        print("M024 requirement coverage matrix validation failed:", file=sys.stderr)
+        sys.stderr.write("M024 requirement coverage matrix validation failed:\n")
         for error in errors:
-            print(f"- {error}", file=sys.stderr)
+            sys.stderr.write(f"- {error}\n")
         return 1
-    print("M024 requirement coverage matrix validation passed: " f"{len(matrix['requirements'])} requirement rows, " f"{len(matrix['s09_handoff_gaps'])} S09 handoff gaps.")
+    sys.stdout.write(
+        "M024 requirement coverage matrix validation passed: "
+        f"{len(matrix['requirements'])} requirement rows, "
+        f"{len(matrix['s09_handoff_gaps'])} S09 handoff gaps.\n"
+    )
     return 0
 
 
