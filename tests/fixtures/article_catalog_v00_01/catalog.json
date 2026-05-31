@@ -1,0 +1,105 @@
+{
+  "schema_version": "article-catalog.v00.01",
+  "article_schema_version": "article.v00.01",
+  "catalog_id": "daily_archive_article_catalog_fixture_v00_01",
+  "description": "Reusable local article source and preprocessing artifact catalog contract fixture.",
+  "root": "data/article_catalog",
+  "path_template": "{source_code}/{coarse_topic_code}/{article_key}",
+  "index": {
+    "schema_version": "article-catalog-index.v00.01",
+    "path": "index.json",
+    "cli_must_use_index": true,
+    "full_tree_scan_allowed": false,
+    "refresh_command_rebuilds_index": true,
+    "lookup_keys": [
+      "article_key",
+      "citation_key",
+      "canonical_url",
+      "source_code",
+      "coarse_topic_code",
+      "title"
+    ]
+  },
+  "sources": [
+    {
+      "source_code": "arxiv",
+      "source_type": "preprint_server",
+      "allowed_source_roles": [
+        "arxiv_api_metadata",
+        "arxiv_abs_page",
+        "arxiv_html",
+        "arxiv_pdf"
+      ]
+    },
+    {
+      "source_code": "company_blog",
+      "source_type": "web_article",
+      "allowed_source_roles": [
+        "web_article_html",
+        "bibtex_citation",
+        "html_meta"
+      ]
+    },
+    {
+      "source_code": "personal_blog",
+      "source_type": "web_article",
+      "allowed_source_roles": [
+        "web_article_html",
+        "bibtex_citation",
+        "html_meta",
+        "manual_metadata"
+      ]
+    },
+    {
+      "source_code": "nature",
+      "source_type": "publisher",
+      "allowed_source_roles": [
+        "publisher_html",
+        "publisher_pdf",
+        "citation_metadata"
+      ]
+    }
+  ],
+  "topic_code_system": {
+    "kind": "coarse_arxiv_classifier",
+    "version": "v00.01",
+    "allowed_coarse_topic_codes": [
+      "cs-ai",
+      "cs-cl",
+      "cs-cv",
+      "cs-ir",
+      "cs-lg",
+      "stat-ml",
+      "math-oc",
+      "physics",
+      "bio",
+      "econ",
+      "unknown"
+    ]
+  },
+  "source_strategy_defaults": {
+    "lightweight_content_first": true,
+    "preferred_lightweight_formats": [
+      "html",
+      "markdown",
+      "text"
+    ],
+    "pdf_policy": "capture_immediately_use_as_fallback",
+    "fallback_policy": "use_pdf_when_html_or_markdown_missing_low_quality_or_inconsistent"
+  },
+  "storage_policy": {
+    "raw_sources_captured_once": true,
+    "capture_phase_may_fetch_network": true,
+    "pipeline_tests_must_not_fetch_network": true,
+    "pipeline_reads_local_catalog_only": true
+  },
+  "safety_flags": {
+    "metadata_manifests_embed_raw_text": false,
+    "metadata_manifests_embed_raw_binary": false,
+    "graph_import_allowed": false,
+    "production_ladybugdb_write_allowed": false,
+    "trusted_kg_import_allowed": false,
+    "production_import_attempted": false,
+    "ladybugdb_written": false
+  }
+}
