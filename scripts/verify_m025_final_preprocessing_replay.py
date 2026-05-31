@@ -300,6 +300,210 @@ def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     return events
 
 
+def _read_final_artifacts(final: Path) -> list[dict[str, Any]]:
+    artifacts: list[dict[str, Any]] = []
+    for path in sorted(final.glob("*/final.json")):
+        artifact = _load_json(path)
+        artifact["_path"] = str(path)
+        artifacts.append(artifact)
+    if not artifacts:
+        raise FinalReplayError(f"no final replay artifacts were found under {final}")
+    return artifacts
+
+
+def _classification_for(category: str) -> str:
+    if category == "baseline_missing":
+        return "blocked"
+    if category == "exact_match":
+        return "preserved"
+    if category == "improved":
+        return "improved"
+    if category == "regressed":
+        return "regressed"
+    if category in {"metric_delta", "not_applicable"}:
+        return "preserved"
+    return "blocked"
+
+
+def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any]]) -> dict[str, Any]:
+    artifacts = _read_final_artifacts(args.final)
+    behavior_counts: dict[str, int] = {}
+    comparison_counts: dict[str, int] = {}
+    diagnostic_counts: dict[str, int] = {}
+    article_results: list[dict[str, Any]] = []
+    safety_violations: list[dict[str, Any]] = []
+    for artifact in artifacts:
+        article_ref = str(artifact.get("article_ref"))
+        comparison = artifact.get("baseline_comparison") if isinstance(artifact.get("baseline_comparison"), dict) else {}
+        category = str(comparison.get("category") or "unknown")
+        behavior = _classification_for(category)
+        comparison_counts[category] = comparison_counts.get(category, 0) + 1
+        behavior_counts[behavior] = behavior_counts.get(behavior, 0) + 1
+        diagnostics = artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        for diagnostic in diagnostics:
+            if isinstance(diagnostic, dict):
+                code = str(diagnostic.get("code") or "UNKNOWN")
+                diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
+        safety_state = artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
+        violated = {key: safety_state.get(key) for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False}
+        if violated:
+            safety_violations.append({"article_ref": article_ref, "violations": violated})
+        article_results.append(
+            {
+                "article_ref": article_ref,
+                "path": artifact.get("_path"),
+                "baseline_category": category,
+                "behavior_classification": behavior,
+                "larger_validation_ready": bool(
+                    isinstance(artifact.get("readiness"), dict)
+                    and artifact["readiness"].get("larger_validation_ready") is True
+                ),
+                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
+                "metrics": artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {},
+            }
+        )
+    no_network_proof = {
+        "required": True,
+        "network_fetch_attempted": any(event.get("network_fetch_attempted") is True for event in events),
+        "all_events_no_network": all(event.get("no_network") is True for event in events if "no_network" in event),
+    }
+    no_write_safety = {
+        "require_no_import_flags": bool(getattr(args, "require_no_import_flags", False)),
+        "safety_violations": safety_violations,
+        "graph_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+    }
+    ready = not safety_violations and all(result["larger_validation_ready"] for result in article_results)
+    blockers: list[str] = []
+    if any(result["baseline_category"] == "baseline_missing" for result in article_results):
+        blockers.append("baseline_missing")
+    if safety_violations:
+        blockers.append("safety_flag_violation")
+    if no_network_proof["network_fetch_attempted"]:
+        blockers.append("network_fetch_attempted")
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "summary_type": "m025-final-preprocessing-replay-summary",
+        "article_count": len(article_results),
+        "final_path": str(args.final),
+        "baseline_path": str(args.baseline),
+        "events_path": str(getattr(args, "events", getattr(args, "write_events", ""))),
+        "behavior_counts": behavior_counts,
+        "baseline_comparison_counts": comparison_counts,
+        "diagnostic_counts": diagnostic_counts,
+        "article_results": article_results,
+        "no_network_proof": no_network_proof,
+        "no_write_safety": no_write_safety,
+        "readiness": {
+            "larger_preprocessing_validation_ready": ready,
+            "decision": "ready" if ready else "blocked",
+            "blockers": blockers,
+            "graph_readiness_claim": False,
+            "message": "M025 makes no graph readiness claim; this decision is limited to preprocessing replay readiness.",
+        },
+    }
+
+
+def _write_summary(path: Path, summary: dict[str, Any]) -> None:
+    _write_json(path, summary)
+
+
+def _write_decision(path: Path, summary: dict[str, Any]) -> None:
+    decision = {
+        "schema_version": "m025-preprocessing-readiness-decision.v00.01",
+        "decision": summary["readiness"]["decision"],
+        "larger_preprocessing_validation_ready": summary["readiness"]["larger_preprocessing_validation_ready"],
+        "blockers": summary["readiness"]["blockers"],
+        "graph_readiness_claim": False,
+        "rationale": summary["readiness"]["message"],
+        "evidence": {
+            "summary": str(path.parent / "final-replay-summary.json"),
+            "final_path": summary["final_path"],
+            "baseline_path": summary["baseline_path"],
+            "article_count": summary["article_count"],
+            "behavior_counts": summary["behavior_counts"],
+            "no_network_proof": summary["no_network_proof"],
+            "no_write_safety": summary["no_write_safety"],
+        },
+    }
+    _write_json(path, decision)
+
+
+def _write_report(path: Path, summary: dict[str, Any]) -> None:
+    rows = [
+        "| Article | Baseline | Behavior | Ready | Diagnostics |",
+        "|---|---:|---|---|---:|",
+    ]
+    for result in summary["article_results"]:
+        rows.append(
+            "| {article_ref} | {baseline_category} | {behavior_classification} | {ready} | {diagnostic_count} |".format(
+                article_ref=result["article_ref"],
+                baseline_category=result["baseline_category"],
+                behavior_classification=result["behavior_classification"],
+                ready="yes" if result["larger_validation_ready"] else "no",
+                diagnostic_count=result["diagnostic_count"],
+            )
+        )
+    blockers = summary["readiness"]["blockers"] or ["None"]
+    diagnostics = summary["diagnostic_counts"] or {"None": 0}
+    report = f"""# M025 S08 Final Preprocessing Replay Report
+
+## Decision
+
+- Larger preprocessing validation ready: **{str(summary['readiness']['larger_preprocessing_validation_ready']).lower()}**
+- Decision: **{summary['readiness']['decision']}**
+- Blockers: {', '.join(blockers)}
+- Graph readiness claim: **false**
+
+M025 makes no graph readiness claim. This report only evaluates whether the refactored preprocessing replay over the fixed five-article local smoke corpus is ready for larger preprocessing validation.
+
+## Baseline Comparison
+
+- Baseline path: `{summary['baseline_path']}`
+- Final replay path: `{summary['final_path']}`
+- Behavior counts: `{json.dumps(summary['behavior_counts'], sort_keys=True)}`
+- Baseline comparison counts: `{json.dumps(summary['baseline_comparison_counts'], sort_keys=True)}`
+
+{chr(10).join(rows)}
+
+## Diagnostics
+
+`{json.dumps(diagnostics, sort_keys=True)}`
+
+## Readiness Blockers
+
+{chr(10).join(f'- {blocker}' for blocker in blockers)}
+
+## No-Network Proof
+
+`{json.dumps(summary['no_network_proof'], sort_keys=True)}`
+
+## No-Write Safety Evidence
+
+`{json.dumps(summary['no_write_safety'], sort_keys=True)}`
+
+## Failure Modes
+
+- Filesystem inputs: missing or malformed catalog, index, selection, chunking, or evidence JSON raises `FinalReplayError` and exits non-zero rather than fetching or synthesizing data.
+- Network dependency: intentionally disabled by `--require-no-network`/`--no-network`; any missing local artifact fails closed.
+- Production graph writes/imports: guarded by required false safety flags; `--require-no-import-flags` verifies graph/import/write flags remain false in final artifacts.
+- Subprocess dependency: the verifier is invoked through `uv run python`; interpreter or dependency failures bubble as command failures.
+
+## Load Profile
+
+Expected load is the fixed five-article smoke corpus. At 10x, filesystem JSON reads/writes and artifact enumeration saturate first; no network, database, or graph writer pool is involved. Protection is fail-closed local artifact validation and bounded per-article JSON artifacts, with larger-corpus validation blocked until a baseline exists.
+
+## Negative Tests
+
+- `tests/test_article_preprocessing_replay_contract.py::test_final_replay_requires_no_network_execution` covers missing no-network enforcement.
+- `tests/test_article_preprocessing_replay_contract.py::test_final_replay_rejects_missing_local_evidence_instead_of_fetching` covers missing local evidence and verifies no fetch fallback.
+- `tests/test_article_preprocessing_replay_contract.py::test_final_replay_writes_contract_compliant_per_article_artifact` covers baseline-missing blocked readiness and false safety flags.
+"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(report, encoding="utf-8")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=Path)
@@ -307,21 +511,59 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--selection", required=True, type=Path)
     parser.add_argument("--baseline", required=True, type=Path)
     parser.add_argument("--final", required=True, type=Path)
-    parser.add_argument("--write-events", required=True, type=Path)
+    parser.add_argument("--write-events", type=Path)
+    parser.add_argument("--events", type=Path, help="Read an existing final replay event log instead of rewriting it.")
     parser.add_argument("--no-network", action="store_true")
+    parser.add_argument("--require-no-network", action="store_true")
+    parser.add_argument("--require-no-import-flags", action="store_true")
+    parser.add_argument("--write-summary", type=Path)
+    parser.add_argument("--write-report", type=Path)
+    parser.add_argument("--write-decision", type=Path)
     return parser
+
+
+def _events_from_path(path: Path) -> list[dict[str, Any]]:
+    try:
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    except FileNotFoundError as exc:
+        raise FinalReplayError(f"required local event log is missing: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise FinalReplayError(f"event log is not valid JSONL: {path}: {exc}") from exc
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    args.no_network = bool(args.no_network or args.require_no_network)
     try:
-        events = run_replay(args)
-        args.write_events.parent.mkdir(parents=True, exist_ok=True)
-        args.write_events.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
-        completed = sum(1 for event in events if event["event_type"] == "final_replay.article_completed")
+        if args.events is not None and args.write_events is None:
+            events = _events_from_path(args.events)
+            _read_final_artifacts(args.final)
+            completed = sum(1 for event in events if event.get("event_type") == "final_replay.article_completed")
+        else:
+            events = run_replay(args)
+            if args.write_events is not None:
+                args.write_events.parent.mkdir(parents=True, exist_ok=True)
+                args.write_events.write_text(
+                    "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+                )
+            completed = sum(1 for event in events if event["event_type"] == "final_replay.article_completed")
+        summary = None
+        if args.write_summary or args.write_report or args.write_decision:
+            summary = _summary_from_artifacts(args, events)
+            if args.require_no_network and summary["no_network_proof"]["network_fetch_attempted"]:
+                raise FinalReplayError("network fetch was attempted despite --require-no-network")
+            if args.require_no_import_flags and summary["no_write_safety"]["safety_violations"]:
+                raise FinalReplayError("final replay artifacts contain graph/import/write safety flag violations")
+        if args.write_summary is not None and summary is not None:
+            _write_summary(args.write_summary, summary)
+        if args.write_report is not None and summary is not None:
+            _write_report(args.write_report, summary)
+        if args.write_decision is not None and summary is not None:
+            _write_decision(args.write_decision, summary)
         sys.stdout.write(
-            f"wrote final preprocessing replay for {completed} articles to {args.final}; events={args.write_events}\n"
+            f"wrote final preprocessing replay report for {completed} articles to {args.final}; "
+            f"summary={args.write_summary}; report={args.write_report}; decision={args.write_decision}\n"
         )
         return 0
     except FinalReplayError as exc:

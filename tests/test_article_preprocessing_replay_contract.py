@@ -142,3 +142,60 @@ def test_final_replay_rejects_missing_local_evidence_instead_of_fetching(tmp_pat
 
     with pytest.raises(FinalReplayError, match="missing local evidence artifact"):
         run_replay(args)
+
+
+def test_final_replay_summary_report_and_decision_are_blocked_without_baseline(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+    args.events = args.write_events
+    args.require_no_import_flags = True
+    events = run_replay(args)
+    summary = verify_m025_final_preprocessing_replay._summary_from_artifacts(args, events)
+
+    verify_m025_final_preprocessing_replay._write_summary(args.selection.parent / "summary.json", summary)
+    verify_m025_final_preprocessing_replay._write_report(args.selection.parent / "report.md", summary)
+    verify_m025_final_preprocessing_replay._write_decision(args.selection.parent / "decision.json", summary)
+
+    decision = json.loads((args.selection.parent / "decision.json").read_text(encoding="utf-8"))
+    report = (args.selection.parent / "report.md").read_text(encoding="utf-8")
+    assert summary["readiness"]["decision"] == "blocked"
+    assert summary["readiness"]["graph_readiness_claim"] is False
+    assert summary["no_network_proof"]["network_fetch_attempted"] is False
+    assert summary["no_write_safety"]["safety_violations"] == []
+    assert decision["larger_preprocessing_validation_ready"] is False
+    assert decision["graph_readiness_claim"] is False
+    assert "## Failure Modes" in report
+    assert "## Load Profile" in report
+    assert "## Negative Tests" in report
+
+
+def test_require_no_import_flags_fails_on_safety_violation(tmp_path: Path) -> None:
+    args = _args(tmp_path)
+    events = run_replay(args)
+    args.write_events.write_text("".join(json.dumps(event) + "\n" for event in events), encoding="utf-8")
+    artifact_path = args.final / "arxiv-cs-ai-2512.24601" / "final.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["safety_state"]["ladybugdb_written"] = True
+    _write_json(artifact_path, artifact)
+
+    exit_code = verify_m025_final_preprocessing_replay.main(
+        [
+            "--catalog",
+            str(args.catalog),
+            "--index",
+            str(args.index),
+            "--selection",
+            str(args.selection),
+            "--baseline",
+            str(args.baseline),
+            "--final",
+            str(args.final),
+            "--events",
+            str(args.write_events),
+            "--require-no-network",
+            "--require-no-import-flags",
+            "--write-summary",
+            str(args.selection.parent / "summary.json"),
+        ]
+    )
+
+    assert exit_code == 2
