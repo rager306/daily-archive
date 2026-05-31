@@ -14,10 +14,21 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sys
 from collections import Counter
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Literal
+
+from arxiv_archive.validation_batch_provenance import (
+    append_validation_cli_provenance,
+    build_artifact_freshness_report,
+    build_validation_cli_provenance_entry,
+    write_artifact_freshness_report,
+)
+from arxiv_archive.validation_batch_state import ValidationBatchState, read_batch_state
 
 ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION = "m024-article-batch-validation.v1"
 ARTICLE_BATCH_VALIDATION_BUILDER = "metadata_only_article_batch_validation_v1"
@@ -324,6 +335,193 @@ def build_article_batch_validation_report(manifest: dict[str, Any] | Any) -> dic
         "diagnostics": diagnostic_dicts,
     }
     return _redact(report)
+
+
+def run_article_batch_validation_report(
+    *,
+    output_dir: str | Path,
+    manifest_path: str | Path | None = None,
+    state_path: str | Path | None = None,
+    limit: int = EXPECTED_DOCUMENT_COUNT,
+    provenance_log_path: str | Path | None = None,
+    argv: list[str] | None = None,
+) -> dict[str, Any]:
+    """Write S07 metadata-only batch report, diagnostics, provenance, and freshness artifacts.
+
+    Exactly one of ``manifest_path`` or ``state_path`` must be provided.  Manifest
+    input is expected to already use the S07 ``documents`` contract.  State input
+    is adapted from validation-batch selected-paper metadata only; article files
+    referenced by source paths are not opened or hashed.
+    """
+
+    if (manifest_path is None) == (state_path is None):
+        raise ValueError("provide exactly one of manifest_path or state_path")
+    if limit <= 0:
+        raise ValueError("limit must be positive")
+
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    input_path = Path(manifest_path or state_path or "")
+    report_path = output / "article-batch-validation-report.json"
+    diagnostics_path = output / "article-batch-validation-diagnostics.jsonl"
+    freshness_path = output / "article-batch-validation-freshness.json"
+    provenance_path = Path(provenance_log_path) if provenance_log_path is not None else output / "validation-cli-provenance.jsonl"
+    started_at = datetime.now(UTC)
+    status = "article_report_written"
+    exit_code = 0
+
+    try:
+        manifest = _load_runner_manifest(manifest_path=manifest_path, state_path=state_path, limit=limit)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        manifest = _blocked_runner_manifest(input_path, reason=type(exc).__name__)
+        status = "blocked_report_written"
+        exit_code = 1
+
+    report = build_article_batch_validation_report(manifest)
+    report["runner"] = {
+        "command": "validation-batch article-report",
+        "source_kind": "manifest" if manifest_path is not None else "state",
+        "input_path": str(input_path),
+        "output_dir": str(output),
+        "report_path": str(report_path),
+        "diagnostics_path": str(diagnostics_path),
+        "provenance_log_path": str(provenance_path),
+        "freshness_report_path": str(freshness_path),
+        "selected_document_limit": min(limit, EXPECTED_DOCUMENT_COUNT),
+        "metadata_only": True,
+        "real_source_acquisition_performed": False,
+        "real_scan_performed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+    }
+    _write_report_and_diagnostics(report, report_path=report_path, diagnostics_path=diagnostics_path)
+
+    completed_at = datetime.now(UTC)
+    provenance_entry = build_validation_cli_provenance_entry(
+        command="validation-batch article-report",
+        argv=argv or sys.argv[1:],
+        batch_id=str(report.get("batch_id") or "unknown-batch"),
+        input_paths=[input_path] if input_path.exists() else [],
+        output_paths=[report_path, diagnostics_path],
+        status=status,
+        started_at=started_at,
+        completed_at=completed_at,
+        exit_code=0 if exit_code == 0 else 1,
+        cwd=Path.cwd(),
+        run_id=str(report.get("run_id") or "unknown-run"),
+        real_source_acquisition_performed=False,
+        real_scan_performed=False,
+        expected_artifact_metadata={"schema_version": ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION},
+    )
+    append_validation_cli_provenance(provenance_path, provenance_entry)
+    freshness = build_artifact_freshness_report(provenance_entry)
+    write_artifact_freshness_report(freshness, freshness_path)
+
+    return {
+        "status": status,
+        "exit_code": exit_code,
+        "batch_id": report.get("batch_id"),
+        "run_id": report.get("run_id"),
+        "recommendation": report.get("recommendation"),
+        "ready_document_count": report.get("aggregate_diagnostics", {}).get("ready_document_count", 0),
+        "blocked_document_count": report.get("aggregate_diagnostics", {}).get("blocked_document_count", 0),
+        "diagnostic_count": report.get("aggregate_diagnostics", {}).get("diagnostic_count", 0),
+        "freshness_verdict": freshness.get("verdict"),
+        "report_path": str(report_path),
+        "diagnostics_path": str(diagnostics_path),
+        "freshness_report_path": str(freshness_path),
+        "provenance_log_path": str(provenance_path),
+        "real_source_acquisition_performed": False,
+        "real_scan_performed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "trusted_kg_import_allowed": False,
+    }
+
+
+def _load_runner_manifest(
+    *,
+    manifest_path: str | Path | None,
+    state_path: str | Path | None,
+    limit: int,
+) -> dict[str, Any]:
+    if manifest_path is not None:
+        payload = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("article batch manifest must be a JSON object")
+        documents = payload.get("documents")
+        if isinstance(documents, list):
+            payload = dict(payload)
+            payload["documents"] = documents[: min(limit, EXPECTED_DOCUMENT_COUNT)]
+        return payload
+    state = read_batch_state(Path(state_path or ""))
+    return _manifest_from_batch_state(state, state_path=Path(state_path or ""), limit=limit)
+
+
+def _manifest_from_batch_state(state: ValidationBatchState, *, state_path: Path, limit: int) -> dict[str, Any]:
+    documents: list[dict[str, Any]] = []
+    selected = list(state.selected_papers)[: min(limit, EXPECTED_DOCUMENT_COUNT)]
+    for paper in selected:
+        source_path = _preferred_source_path(paper.source_paths)
+        source_sha256 = _source_sha256_from_metadata(paper.source_paths)
+        readiness = state.source_readiness_by_paper.get(paper.paper_id)
+        freshness_status = "fresh" if readiness is not None and readiness.ready_for_markdown_scan else "not_provided"
+        stale_count = 0 if freshness_status == "fresh" else 1 if readiness is not None else 0
+        documents.append(
+            {
+                "document_id": paper.paper_id,
+                "paper_id": paper.paper_id,
+                "source_id": f"{paper.paper_id}:validation-batch-state",
+                "source_path": source_path,
+                "source_sha256": source_sha256,
+                "subtrees": {name: {"status": "metadata_only", "record_count": 0} for name in SUBTREE_NAMES},
+                "freshness": {"status": freshness_status, "stale_artifact_count": stale_count},
+                "selection_role": paper.selection_role,
+                "rank": paper.rank,
+                "risk_tag_count": len(paper.risk_tags),
+            }
+        )
+    return {
+        "batch_id": state.batch_id,
+        "run_id": f"{state.batch_id}-article-report",
+        "source_state_path": str(state_path),
+        "documents": documents,
+    }
+
+
+def _preferred_source_path(source_paths: dict[str, str]) -> str | None:
+    for key in ("research_full_text_md", "cache_markdown", "research_pdf", "cache_pdf", "source_path"):
+        value = source_paths.get(key)
+        if value:
+            return str(value)
+    for _key, value in sorted(source_paths.items()):
+        if value:
+            return str(value)
+    return None
+
+
+def _source_sha256_from_metadata(source_paths: dict[str, str]) -> str | None:
+    for key in ("source_sha256", "sha256", "research_full_text_sha256", "cache_markdown_sha256"):
+        value = source_paths.get(key)
+        if value:
+            return str(value).removeprefix("sha256:")
+    return None
+
+
+def _blocked_runner_manifest(input_path: Path, *, reason: str) -> dict[str, Any]:
+    return {
+        "batch_id": input_path.stem or "blocked-input",
+        "run_id": f"{input_path.stem or 'blocked-input'}-article-report-blocked",
+        "documents": [],
+        "runner_input_error": reason,
+    }
+
+
+def _write_report_and_diagnostics(report: dict[str, Any], *, report_path: Path, diagnostics_path: Path) -> None:
+    report_path.write_text(to_json(report), encoding="utf-8")
+    with diagnostics_path.open("w", encoding="utf-8") as handle:
+        for diagnostic in report.get("diagnostics", []):
+            handle.write(json.dumps(diagnostic, sort_keys=True, separators=(",", ":")) + "\n")
 
 
 def validate_article_batch_validation_report(report: dict[str, Any] | Any) -> list[dict[str, Any]]:

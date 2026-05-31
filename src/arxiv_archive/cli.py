@@ -23,6 +23,7 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
+from arxiv_archive.article_batch_validation import run_article_batch_validation_report  # noqa: E402
 from arxiv_archive.article_artifact_minimax import (  # noqa: E402
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     build_article_artifact_minimax_request,
@@ -710,6 +711,52 @@ def validation_batch_verify_artifacts(
         raise typer.Exit(1) from exc
     _echo_validation_batch_response(report, as_json=json_output)
     if report.get("verdict") != "fresh":
+        raise typer.Exit(1)
+
+
+@validation_batch_app.command("article-report")
+def validation_batch_article_report(
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Directory where S07 article report artifacts will be written."),
+    ],
+    manifest_path: Annotated[
+        Path | None,
+        typer.Option("--manifest-path", help="S07 article batch manifest JSON with metadata-only documents."),
+    ] = None,
+    state_path: Annotated[
+        Path | None,
+        typer.Option("--state-path", help="Existing validation batch-state.json to adapt into article metadata rows."),
+    ] = None,
+    provenance_log: Annotated[
+        Path | None,
+        typer.Option("--provenance-log", help="Optional validation CLI provenance JSONL path."),
+    ] = None,
+    limit: Annotated[int, typer.Option("--limit", help="Maximum documents to select, capped at ten.")] = 10,
+    json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
+) -> None:
+    """Write the S07 metadata-only 10-document article validation report."""
+    try:
+        response = run_article_batch_validation_report(
+            manifest_path=manifest_path,
+            state_path=state_path,
+            output_dir=output_dir,
+            provenance_log_path=provenance_log,
+            limit=limit,
+        )
+    except ValueError as exc:
+        response = {
+            "status": "invalid_article_report_request",
+            "command": "validation-batch article-report",
+            "error": str(exc),
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+            "trusted_kg_import_allowed": False,
+        }
+        _echo_validation_batch_response(response, as_json=json_output)
+        raise typer.Exit(2) from exc
+    _echo_validation_batch_response(response, as_json=json_output)
+    if response.get("exit_code") != 0:
         raise typer.Exit(1)
 
 
