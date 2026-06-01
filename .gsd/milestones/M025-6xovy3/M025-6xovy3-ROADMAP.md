@@ -46,7 +46,7 @@
 - [x] **S10: Boundary Replay Completion** `risk:high` `depends:[S09]`
   > After this: Replay loader, parser normalization, PageIndex, chunking, and evidence boundaries on the same five-article corpus against the recovered baseline or accepted prior run, with explicit comparisons, traceable chunks, and diagnostics for low-quality or zero-chunk cases.
 
-- [ ] **S11: Requirements Scope Reconciliation** `risk:medium` `depends:[S10]`
+- [x] **S11: Requirements Scope Reconciliation** `risk:medium` `depends:[S10]`
   > After this: Produce a milestone requirements coverage matrix distinguishing M025 preprocessing requirements from out-of-scope KG/RLM/scale requirements, update requirement notes where appropriate, and rerun final end-to-end replay so validation can close with coherent requirement coverage.
 
 ## Boundary Map

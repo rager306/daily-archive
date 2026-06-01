@@ -46,7 +46,7 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: future-validation-milestone
 - Supporting slices: M003-km5fty/S01-S10
 - Validation: Re-scoped boundary preserved by M022 S05 final gate: packet_count=6, import_allowed=false, semantic_ready_for_kg=false, production_import_attempted=false, ladybugdb_written=false, recommendation=human_semantic_review_or_bounded_repair_only. M022 advances the safety/review gate only; it does not validate 20-document or one-week staged KG graph quality.
-- Notes: M022 validation scope clarification: R024 is advanced by the no-import/no-readiness final gate and remains active for future staged real-article KG validation. It must not be counted as fully validated by M022, and unrelated staged-scaling deliverables remain outside M022 scope.
+- Notes: M025 S11 scope reconciliation: advanced by five-article local preprocessing replay and readiness-for-larger-preprocessing evidence only; remains active for staged 10-document, 20-document, and one-week scientific KG validation plus graph-quality analysis.
 
 ### R027 — Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
 - Class: quality-attribute
@@ -56,7 +56,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-feedback-after-S10-chunk-review
 - Primary owning slice: M004
 - Validation: Partial bounded advancement in M022: S01-S05 produced stable source/locator/span IDs, source-hash coverage, route/review/repair diagnostics, reviewer packet artifacts, and final no-import guard with import_allowed=false and semantic_ready_for_kg=false. Full validation still requires a dedicated graph-readiness quality benchmark/acceptance pass before KG validation or scaling resumes.
-- Notes: M022 validation scope clarification: M022 advanced R027 by producing auditable locator evidence, a typed repair contract, bounded repair diagnostics, reviewer packets, and a final no-import gate. It did not validate positive graph readiness or semantic KG import readiness; R027 remains active and blocked on later human semantic review plus dedicated graph-readiness acceptance evidence.
+- Notes: M025 S11 scope reconciliation: advanced by preprocessing diagnostics, redaction checks, and boundary traceability; remains active because positive graph-readiness acceptance is still not proven by M025.
 
 ### R029 — Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.
 - Class: quality-attribute
@@ -66,7 +66,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-directed post-M004 chunking deepening
 - Primary owning slice: M005-dlko4z
 - Validation: Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation.
-- Notes: M022 validation scope clarification: M022 validates a review-only typed packet handoff and final no-import safety gate, not a positive import-ready KG package. R029 remains active/blocked for KG import until human semantic review accepts packets and a later gate proves import readiness. Unrelated corpus-scaling requirements are outside M022 scope.
+- Notes: M025 S11 scope reconciliation: advanced by traceable smoke-corpus chunks and PageIndex/source-provenance diagnostics; remains active because import-ready typed packages, independent semantic review, and import eligibility are still not proven.
 
 ### R031 — Before drawing broader chunking/import-readiness conclusions, validation must expand from the 10-paper gold corpus to a 30-paper deviation scan that compares distributions, outliers, missing-source rates, route/refusal patterns, and new failure modes without authorizing production KG import.
 - Class: quality-attribute
@@ -118,7 +118,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user feedback after M008 completion
 - Primary owning slice: next validation hardening milestone
 - Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
-- Notes: M009 implemented provenance/freshness primitives, `validation-batch verify-artifacts`, active lineage metadata checks, and pass/stale/mismatch sample evidence. Automatic provenance emission from init/preflight/scan remains future work, so R036 stays active until real runs produce provenance without manual wrapper steps.
+- Notes: M025 S11 scope reconciliation: advanced by event logs, reports, readiness decisions, summaries, and boundary provenance; remains active unless exact command/input/output-hash/exit-code/cwd/git-commit/active-context provenance fields are proven for relevant CLI surfaces.
 
 ### R040 — New infrastructure must be researched, compatibility-probed, and safety-wrapped before it is enabled in the main Scientific KG process.
 - Class: constraint
@@ -398,7 +398,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-direction
 - Primary owning slice: M005-dlko4z/S05
 - Validation: M024 S04 closeout verified metadata-only asset preservation contract and bridge integration with fixture manifests for figures/tables/equation images, fail-closed forbidden-payload validation, stable IDs/provenance/status summaries, and full regression/property suite: `uv run pytest tests/test_article_loader.py tests/test_article_artifacts.py tests/test_source_asset_manifest.py tests/test_article_evidence_bridge.py tests/test_property_article_evidence_bridge.py tests/test_article_page_index.py tests/test_property_article_page_index.py tests/test_article_assets.py tests/test_property_article_assets.py -q` passed 132 tests.
-- Notes: Validated by S04 Assets Preservation. Bridge `subtrees["assets"]` remains aggregate-only/review-only and import-ineligible; raw text, image bytes, base64, embeddings, vectors, tokens, payloads, and graph-import readiness claims remain forbidden.
+- Notes: M025 S11 scope reconciliation: already validated by M024 asset-preservation evidence and supported by M025 metadata-preserving local replay; no new validation status change needed.
 
 ### R034 — Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.
 - Class: primary-user-loop
