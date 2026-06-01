@@ -61,3 +61,21 @@ This report is metadata-only. It does not embed article text, abstracts, HTML sn
 - `arxiv/mixed-source/2603.04448` `arxiv_pdf`: captured (captured_source_artifact) -> `source/original.pdf`
 - `arxiv/mixed-source/2604.18478` `arxiv_abs_page`: captured (captured_source_artifact) -> `source/abs.html`
 - `arxiv/mixed-source/2604.18478` `arxiv_pdf`: captured (captured_source_artifact) -> `source/original.pdf`
+
+## Local-Only Replay Verification
+
+This section is metadata-only and does not embed article text, HTML snippets, PDF text, binary bytes, or base64 payloads.
+- Verifier schema: `m027-source-acquisition-replay.v1`
+- Validate only: `True`
+- Network fetch attempted: `False`
+- Production import attempted: `False`
+- LadybugDB written: `False`
+- Trusted KG import allowed: `False`
+- Graph import allowed: `False`
+- Selected articles verified: 6
+- Selected source variants verified: 11
+- Exit code: 0
+- Error diagnostics: 0
+- Command: `['uv', 'run', 'python', 'scripts/verify_m027_source_acquisition_boundary.py']`
+- CWD: `/root/daily-archive`
+- Git commit: `5a8e39d71281df7355c80981b01d9cc7e49f2a70`

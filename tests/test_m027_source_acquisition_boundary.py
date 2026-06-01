@@ -19,6 +19,7 @@ from capture_m027_mixed_source_sources import (  # noqa: E402
     selected_article_paths,
     sha256_bytes,
 )
+from verify_m027_source_acquisition_boundary import main as verify_replay_main  # noqa: E402
 
 FORBIDDEN_KEYS = {
     "text",
@@ -543,3 +544,201 @@ def test_cli_rejects_output_dir_traversal(tmp_path: Path) -> None:
                 str(fixture_dir),
             ]
         )
+
+
+def _run_capture_fixture(catalog_root: Path, catalog_path: Path, index_path: Path, selection_path: Path, fixture_dir: Path, output_dir: Path) -> None:
+    exit_code = main(
+        [
+            "capture_m027_mixed_source_sources.py",
+            "--catalog-root",
+            str(catalog_root),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--selection",
+            str(selection_path),
+            "--output-dir",
+            str(output_dir),
+            "--fixture-response-dir",
+            str(fixture_dir),
+        ]
+    )
+    assert exit_code == 0
+
+
+def _run_replay_verifier(catalog_root: Path, catalog_path: Path, index_path: Path, selection_path: Path, output_dir: Path) -> int:
+    return verify_replay_main(
+        [
+            "verify_m027_source_acquisition_boundary.py",
+            "--catalog-root",
+            str(catalog_root),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--selection",
+            str(selection_path),
+            "--summary",
+            str(output_dir / "source-acquisition-summary.json"),
+            "--diagnostics",
+            str(output_dir / "source-acquisition-diagnostics.jsonl"),
+            "--report",
+            str(output_dir / "source-acquisition-report.md"),
+        ]
+    )
+
+
+def _prepared_replay_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+    catalog_root, catalog_path, index_path, selection_path, fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    output_dir = tmp_path / "corpus"
+    _run_capture_fixture(catalog_root, catalog_path, index_path, selection_path, fixture_dir, output_dir)
+    return catalog_root, catalog_path, index_path, selection_path, output_dir
+
+
+def _first_selected_variant(catalog_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897", role: str = "arxiv_abs_page") -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    article_path = catalog_root / "article_catalog" / article_ref / "article.json"
+    article = json.loads(article_path.read_text(encoding="utf-8"))
+    variant = [v for v in article["source_variants"] if v.get("source_role") == role][0]
+    return article_path, article, variant
+
+
+def _write_article(article_path: Path, article: dict[str, Any]) -> None:
+    article_path.write_text(json.dumps(article), encoding="utf-8")
+
+
+def _diagnostic_text(output_dir: Path) -> str:
+    return (output_dir / "source-acquisition-diagnostics.jsonl").read_text(encoding="utf-8")
+
+
+def test_replay_verifier_passes_local_only_against_fixture_generated_records(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 0
+    summary = json.loads((output_dir / "source-acquisition-summary.json").read_text(encoding="utf-8"))
+    replay = summary["local_only_replay_verification"]
+    assert replay["status"] == "passed"
+    assert replay["selected_article_count"] == 6
+    assert replay["network_fetch_attempted"] is False
+    assert replay["production_import_attempted"] is False
+    assert replay["ladybugdb_written"] is False
+    assert replay["trusted_kg_import_allowed"] is False
+    assert replay["graph_import_allowed"] is False
+    assert replay["provenance"]["validate_only"] is True
+    assert replay["provenance"]["output_hashes"]
+    report = (output_dir / "source-acquisition-report.md").read_text(encoding="utf-8")
+    assert "Local-Only Replay Verification" in report
+
+
+@pytest.mark.parametrize(
+    ("bad_path", "expected_code"),
+    [
+        ("../escape.pdf", "unsafe_local_path"),
+        ("/tmp/escape.pdf", "unsafe_local_path"),
+        ("https://example.test/source.pdf", "url_not_allowed_as_local_path"),
+    ],
+)
+def test_replay_verifier_rejects_unsafe_or_url_like_local_paths(tmp_path: Path, bad_path: str, expected_code: str) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, article, variant = _first_selected_variant(catalog_root, role="arxiv_pdf")
+    variant["path"] = bad_path
+    _write_article(article_path, article)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert expected_code in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_fails_on_hash_mismatch_after_captured_bytes_change(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, _article_data, variant = _first_selected_variant(catalog_root, role="arxiv_abs_page")
+    (article_path.parent / variant["path"]).write_bytes(b"<html>changed local bytes</html>")
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    diagnostics = _diagnostic_text(output_dir)
+    assert "sha256_mismatch" in diagnostics
+    assert "byte_size_mismatch" in diagnostics
+
+
+def test_replay_verifier_fails_on_missing_captured_file(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, _article_data, variant = _first_selected_variant(catalog_root, role="arxiv_abs_page")
+    (article_path.parent / variant["path"]).unlink()
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert "missing_captured_file" in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_fails_on_captured_pdf_without_pdf_signature(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, article, variant = _first_selected_variant(catalog_root, role="arxiv_pdf")
+    bad_pdf = b"not-a-pdf"
+    (article_path.parent / variant["path"]).write_bytes(bad_pdf)
+    variant["sha256"] = sha256_bytes(bad_pdf)
+    variant["byte_size"] = len(bad_pdf)
+    _write_article(article_path, article)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert "bad_pdf_signature" in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_fails_on_blocked_variant_without_reason(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, article, variant = _first_selected_variant(catalog_root, role="arxiv_abs_page")
+    variant["capture_status"] = "blocked"
+    variant["acquisition_status"] = "blocked"
+    variant["diagnostic_code"] = "fixture_blocked"
+    variant["failure_reason"] = ""
+    _write_article(article_path, article)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert "missing_failure_reason" in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_rejects_raw_payload_field_leakage(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, article, variant = _first_selected_variant(catalog_root, role="arxiv_abs_page")
+    variant["raw_text"] = "do not serialize article body text"
+    _write_article(article_path, article)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert "raw_payload_key_leakage" in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_rejects_raw_payload_snippet_in_metadata_artifact(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    summary = json.loads((output_dir / "source-acquisition-summary.json").read_text(encoding="utf-8"))
+    summary["leaked_note"] = "base64,abcdef"
+    (output_dir / "source-acquisition-summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    assert "raw_payload_snippet_leakage" in _diagnostic_text(output_dir)
+
+
+def test_replay_verifier_rejects_unsafe_graph_or_production_write_flags(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, output_dir = _prepared_replay_fixture(tmp_path)
+    article_path, article, variant = _first_selected_variant(catalog_root, role="arxiv_abs_page")
+    variant["production_import_attempted"] = True
+    _write_article(article_path, article)
+
+    exit_code = _run_replay_verifier(catalog_root, catalog_path, index_path, selection_path, output_dir)
+
+    assert exit_code == 1
+    diagnostics = _diagnostic_text(output_dir)
+    assert "unsafe_true_safety_flag" in diagnostics
+    assert "production_import_attempted" in diagnostics
