@@ -9,7 +9,7 @@ This report is metadata-only. It does not embed article text, abstracts, HTML sn
 - Exit-code style status: `0`
 - Command: `scripts/capture_m027_mixed_source_sources.py --catalog data/article_catalog/catalog.json --catalog-root data/article_catalog --index data/article_catalog/index.json --selection data/article_corpora/m027-mixed-source-corpus-v1/selection.json --output-dir data/article_corpora/m027-mixed-source-corpus-v1`
 - CWD: `/root/daily-archive`
-- Git commit: `41018a6`
+- Git commit: `1d90ce6`
 - Captured: 11
 - Blocked: 0
 - Failed: 0
@@ -26,18 +26,18 @@ This report is metadata-only. It does not embed article text, abstracts, HTML sn
 - `catalog`: `data/article_catalog/catalog.json` sha256=`a11a9abe550426fd4893d52912ae9270a441ff2099ad726a95fe05941e580099`
 - `index`: `data/article_catalog/index.json` sha256=`a3a56fefc8a554e8abfb15eb26171cbe1e45f86c4db52ab83e82bb40e8cd7f37`
 - `selection`: `data/article_corpora/m027-mixed-source-corpus-v1/selection.json` sha256=`fa8e475c9264b18b992f323227df9312619a65ef11348d74d17e44149214d3cf`
-- `article:article:3`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.20897/article.json` sha256=`48b19e7e8de25bdb7e37dd2f6e447c829255963df3372224998bf20397f9bf7d`
-- `article:article:4`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.21401/article.json` sha256=`6cba0fe06098cd501cf0251fbeb13a9422ea91454300d8c8f357d25306399d1b`
-- `article:article:5`: `/root/daily-archive/data/article_catalog/article_catalog/nature/mixed-source/s44387-025-00019-5/article.json` sha256=`ee86dd6ca1036bed276688a42be5f8035864f320ef14207244d2e6ca356e6f1c`
-- `article:article:6`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.25522/article.json` sha256=`f61f1a1aace6cfcc64a7214c0f125615d5e3e3cc30d0bbb86ce75a8bd053b428`
-- `article:article:7`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2603.04448/article.json` sha256=`06c2dfac7aafa7b30203ee3d2118827d06e6a3119815f831669eec9cad7788ec`
-- `article:article:8`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2604.18478/article.json` sha256=`5501e912997a2477a683dba53d4696daa40d301354b16c5ac20c9146c9f58c35`
+- `article:article:3`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.20897/article.json` sha256=`d37eae0b1ef5dbc9cfe6e6866b328ad3110107b732c4e02ba31b275ffdb2969d`
+- `article:article:4`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.21401/article.json` sha256=`a7b27d9c446393e12abdd2838948b6d83aa04a601e69ab70810d5c0c860b0981`
+- `article:article:5`: `/root/daily-archive/data/article_catalog/article_catalog/nature/mixed-source/s44387-025-00019-5/article.json` sha256=`c32fda54e5c7f73d064d0ed8ebc8a8a364ee7d0174aa68ea549dea2a79495db7`
+- `article:article:6`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2605.25522/article.json` sha256=`5c386b37ce87c9ad42c745a9e094b51ede3861a802e5a7956f6364c85cb20c6c`
+- `article:article:7`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2603.04448/article.json` sha256=`eae5597362d5644d19baf0ecab057aa5aa41b5aa4ea2c7999e05c233974b8b22`
+- `article:article:8`: `/root/daily-archive/data/article_catalog/article_catalog/arxiv/mixed-source/2604.18478/article.json` sha256=`8bef60ab90ef900fd315390f40e4b1231a84f95bc9e9aa5924253bc4628c9571`
 
 ## Outputs
 
-- `summary`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-summary.json` sha256=`d14dd79945d7e8fa5cd4dda8f3ea52d4bab3cf34ffd7f143171b0a6f0c10789d`
-- `diagnostics`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-diagnostics.jsonl` sha256=`24dfa44d93b885c7eb997a82e4f5ed4ef20dbd6d2a421d5177a4139e1515b25e`
-- `report`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-report.md` sha256=`d9625d75f368378a174780251543aa95fe17bcde223391cd4beda6e04236ad65`
+- `summary`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-summary.json` sha256=`7b523cf97e99f387050119bd0179c222d31c58dd95bffcd120b8b9439c0618b1`
+- `diagnostics`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-diagnostics.jsonl` sha256=`dfb679967b3610acafe34f9e8c9c577c389074254e263e28309240d905f4bf26`
+- `report`: `/root/daily-archive/data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-report.md` sha256=`e99d791acec7ab6ce097ac387b03ca6d9c51e53258836831932c01155d72724c`
 
 ## Article Counts
 
@@ -78,4 +78,4 @@ This section is metadata-only and does not embed article text, HTML snippets, PD
 - Error diagnostics: 0
 - Command: `['uv', 'run', 'python', 'scripts/verify_m027_source_acquisition_boundary.py']`
 - CWD: `/root/daily-archive`
-- Git commit: `5a8e39d71281df7355c80981b01d9cc7e49f2a70`
+- Git commit: `1d90ce658a93f5caa6e796e16e5b86578949c76e`
