@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_article_catalog.py"
+WRAPPER_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m027_mixed_source_catalog.py"
 REGISTER_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m027_mixed_source_corpus.py"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 
@@ -248,6 +249,61 @@ def _run_generic(catalog: Path, index: Path, selection: Path, *extra: str) -> su
         check=False,
         text=True,
     )
+
+
+def test_m027_wrapper_emits_local_only_handoff_artifacts() -> None:
+    result = subprocess.run(
+        [sys.executable, str(WRAPPER_SCRIPT)],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "M027 mixed-source catalog validation passed" in result.stdout
+
+    corpus_dir = Path(__file__).parents[1] / "data" / "article_corpora" / SELECTION_ID
+    summary = json.loads((corpus_dir / "catalog-summary.json").read_text(encoding="utf-8"))
+    diagnostics = [json.loads(line) for line in (corpus_dir / "catalog-diagnostics.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    report = (corpus_dir / "catalog-report.md").read_text(encoding="utf-8")
+
+    assert summary["milestone_id"] == "M027-aakeky"
+    assert summary["slice_id"] == "S01"
+    assert summary["article_count"] == 6
+    assert summary["local_only_validation"]["network_fetch_attempted"] is False
+    assert summary["local_only_validation"]["index_lookup_only"] is True
+    assert summary["out_of_scope"] == {
+        "captured_sources_claimed": False,
+        "conversion_claimed": False,
+        "parser_readiness_claimed": False,
+        "chunks_claimed": False,
+        "production_import_claimed": False,
+        "trusted_facts_claimed": False,
+        "ladybugdb_write_claimed": False,
+    }
+    assert summary["provenance"]["command"] == ["uv", "run", "python", "scripts/verify_m027_mixed_source_catalog.py"]
+    assert summary["provenance"]["exit_code"] == 0
+    assert "data/article_corpora/m027-mixed-source-corpus-v1/catalog-report.md" in summary["provenance"]["output_hashes"]
+
+    expected_urls = [
+        "https://arxiv.org/pdf/2605.20897",
+        "https://arxiv.org/abs/2605.21401",
+        "https://www.nature.com/articles/s44387-025-00019-5",
+        "https://arxiv.org/abs/2605.25522",
+        "https://arxiv.org/abs/2603.04448",
+        "https://arxiv.org/abs/2604.18478",
+    ]
+    assert [row["seed_url"] for row in summary["articles"]] == expected_urls
+    assert all(row["article_ref"] in report for row in summary["articles"])
+    assert all(url in report for url in expected_urls)
+    assert "Validate-only network_fetch_attempted=false" in report
+    assert "Out of scope: captured sources, conversion, parser readiness, chunks, production imports, trusted facts, and LadybugDB writes." in report
+    assert "Expected load is six selected articles" in report
+    assert "Expected load is five selected articles" not in report
+    assert diagnostics
+    assert all(row.get("selection_id") == SELECTION_ID for row in diagnostics)
+    assert all(row.get("network_fetch_attempted") is False for row in diagnostics)
+    assert all("json_path" in row and "failing_invariant" in row and "file_path" in row for row in diagnostics)
 
 
 def test_generic_verifier_accepts_m027_mixed_source_selection_id_and_url_shapes(tmp_path: Path) -> None:
