@@ -4,8 +4,9 @@
 This module is intentionally safe to import from tests.  It performs acquisition
 only: selected catalog article records are loaded through ``index.json``, source
 variant roles are mapped to fixed catalog-local target paths, fetched bytes are
-validated and hashed, and metadata-only result records are emitted.  Failed
-fetches never become fallback source artifacts.
+validated and hashed, article JSON records are updated with terminal acquisition
+metadata, and metadata-only handoff artifacts are emitted.  Failed fetches never
+become fallback source artifacts.
 """
 
 from __future__ import annotations
@@ -13,11 +14,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
+from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -26,6 +30,8 @@ from typing import Any
 
 USER_AGENT = "daily-archive-m027-source-acquisition/0.1 (metadata-only boundary)"
 NETWORK_TIMEOUT_SECONDS = 25
+MILESTONE_ID = "M027-aakeky"
+SLICE_ID = "S02"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 SOURCE_ACQUISITION_SCHEMA_VERSION = "m027-source-acquisition.v1"
 
@@ -96,18 +102,55 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=False) + "\n")
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        tmp_path.replace(path)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def atomic_write_bytes(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        tmp_path.replace(path)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def append_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, sort_keys=True) + "\n")
+    lines = "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows)
+    atomic_write_text(path, lines)
 
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def safe_catalog_path(root: Path, rel_path: str) -> Path:
@@ -123,6 +166,22 @@ def safe_catalog_path(root: Path, rel_path: str) -> Path:
     if not resolved.is_relative_to(root_resolved):
         raise ValueError("catalog_path_escapes_root")
     return resolved
+
+
+def confined_child_path(root: Path, filename: str) -> Path:
+    root_resolved = root.resolve()
+    path = (root_resolved / filename).resolve()
+    if not path.is_relative_to(root_resolved):
+        raise ValueError("output_path_escapes_root")
+    return path
+
+
+def validate_relative_cli_path(path: Path, code: str) -> None:
+    if path.is_absolute():
+        return
+    normalized = PurePosixPath(str(path).replace("\\", "/"))
+    if ".." in normalized.parts:
+        raise ValueError(code)
 
 
 def target_path_for_variant(article_dir: Path, variant: Mapping[str, Any]) -> tuple[Path | None, str | None, str | None]:
@@ -163,15 +222,21 @@ def fixture_response_fetcher(response_dir: Path) -> Fetcher:
 
     Tests and offline replays can place ``<sha256(url)>.bin`` files in the
     response directory.  Missing files raise ``FileNotFoundError`` and therefore
-    produce blocked diagnostics instead of fallback captures.
+    produce blocked diagnostics instead of fallback captures.  The URL never
+    becomes part of the filesystem path.
     """
+
+    response_root = response_dir.resolve()
 
     def fetch(url: str) -> FetchResponse:
         key = sha256_bytes(url.encode("utf-8"))
-        candidates = [response_dir / f"{key}.bin", response_dir / key]
+        candidates = [response_root / f"{key}.bin", response_root / key]
         for candidate in candidates:
-            if candidate.exists():
-                return FetchResponse(candidate.read_bytes())
+            resolved = candidate.resolve()
+            if not resolved.is_relative_to(response_root):
+                raise ValueError("fixture_response_path_escapes_root")
+            if resolved.exists():
+                return FetchResponse(resolved.read_bytes())
         raise FileNotFoundError(f"fixture response missing for URL hash {key}")
 
     return fetch
@@ -200,6 +265,8 @@ def diagnostic_result(
     role = variant.get("source_role")
     result = {
         "schema_version": SOURCE_ACQUISITION_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "article_ref": article_ref,
         "article_key": None,
@@ -217,6 +284,8 @@ def diagnostic_result(
         "network_fetch_attempted": network_fetch_attempted,
         "captured_at": None,
         "command_provenance": dict(command_provenance or {}),
+        "capture_phase_network_allowed": True,
+        "replay_phase_network_allowed": False,
         "raw_text_embedded": False,
         "raw_binary_embedded": False,
         "raw_payload_embedded_in_metadata": False,
@@ -240,6 +309,8 @@ def captured_result(
     article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else None
     result = {
         "schema_version": SOURCE_ACQUISITION_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "article_ref": article_ref,
         "article_key": article.get("article_key") if isinstance(article.get("article_key"), str) else None,
@@ -257,6 +328,8 @@ def captured_result(
         "network_fetch_attempted": network_fetch_attempted,
         "captured_at": utc_now(),
         "command_provenance": dict(command_provenance or {}),
+        "capture_phase_network_allowed": True,
+        "replay_phase_network_allowed": False,
         "raw_text_embedded": False,
         "raw_binary_embedded": False,
         "raw_payload_embedded_in_metadata": False,
@@ -363,8 +436,7 @@ def capture_variant(
 
     if write:
         assert target is not None  # for type-checkers; path_error guard proves this.
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(response.data)
+        atomic_write_bytes(target, response.data)
 
     return captured_result(
         article=article,
@@ -382,12 +454,18 @@ def selected_article_paths(catalog_root: Path, index: Mapping[str, Any], selecti
     selected = selection.get("articles")
     if not isinstance(rows, list) or not isinstance(selected, list):
         raise ValueError("malformed index or selection articles")
-    by_ref = {
-        row.get("article_ref"): row
-        for row in rows
-        if isinstance(row, dict) and isinstance(row.get("article_ref"), str)
-    }
+
+    by_ref: dict[str, Mapping[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("article_ref"), str):
+            continue
+        article_ref = str(row["article_ref"])
+        if article_ref in by_ref:
+            raise ValueError(f"duplicate index row for article_ref: {article_ref}")
+        by_ref[article_ref] = row
+
     paths: list[Path] = []
+    seen_paths: set[Path] = set()
     for selected_row in selected:
         article_ref = selected_row.get("article_ref") if isinstance(selected_row, dict) else None
         if not isinstance(article_ref, str) or article_ref not in by_ref:
@@ -395,7 +473,11 @@ def selected_article_paths(catalog_root: Path, index: Mapping[str, Any], selecti
         article_path = by_ref[article_ref].get("article_path")
         if not isinstance(article_path, str):
             raise ValueError(f"index row missing article_path: {article_ref}")
-        paths.append(safe_catalog_path(catalog_root, article_path))
+        resolved = safe_catalog_path(catalog_root, article_path)
+        if resolved in seen_paths:
+            raise ValueError(f"duplicate article path in index selection: {article_path}")
+        seen_paths.add(resolved)
+        paths.append(resolved)
     return paths
 
 
@@ -411,13 +493,93 @@ def command_provenance(argv: list[str]) -> dict[str, Any]:
     except Exception:
         commit = None
     return {
+        "command": " ".join(argv),
         "argv": argv,
         "cwd": str(Path.cwd()),
         "git_commit": commit or None,
     }
 
 
-def build_summary(results: list[dict[str, Any]], *, provenance: Mapping[str, Any]) -> dict[str, Any]:
+def variant_update_from_result(result: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "capture_status": result.get("status"),
+        "acquisition_status": result.get("status"),
+        "diagnostic_code": result.get("diagnostic_code"),
+        "failure_reason": result.get("failure_reason"),
+        "path": result.get("local_path"),
+        "sha256": result.get("sha256"),
+        "byte_size": result.get("byte_size"),
+        "media_type": result.get("media_type"),
+        "network_fetch_attempted": result.get("network_fetch_attempted"),
+        "captured_at": result.get("captured_at"),
+        "capture_phase_network_allowed": True,
+        "replay_phase_network_allowed": False,
+        "raw_text_embedded": False,
+        "raw_binary_embedded": False,
+        "raw_payload_embedded_in_metadata": False,
+        "graph_import_allowed": False,
+        "production_ladybugdb_write_allowed": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+    }
+
+
+def update_article_record(article: dict[str, Any], results: list[dict[str, Any]]) -> dict[str, int]:
+    by_variant = {result.get("variant_id"): result for result in results if result.get("variant_id")}
+    counts: dict[str, int] = {"selected": 0, "captured": 0, "blocked": 0, "failed": 0}
+    variants = article.get("source_variants")
+    if not isinstance(variants, list):
+        raise ValueError("article has malformed source_variants")
+    for variant in variants:
+        if not isinstance(variant, dict):
+            raise ValueError("article has malformed source variant")
+        if variant.get("source_role") not in ROLE_TARGETS:
+            continue
+        counts["selected"] += 1
+        result = by_variant.get(variant.get("variant_id"))
+        if result is None:
+            raise ValueError(f"missing acquisition result for variant: {variant.get('variant_id')}")
+        status = str(result.get("status"))
+        if status in ("captured", "blocked", "failed"):
+            counts[status] += 1
+        variant.update(variant_update_from_result(result))
+
+    article["capture_summary"] = {
+        "schema_version": SOURCE_ACQUISITION_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
+        "selection_id": SELECTION_ID,
+        "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
+        "selected_count": counts["selected"],
+        "captured_count": counts["captured"],
+        "blocked_count": counts["blocked"],
+        "failed_count": counts["failed"],
+        "capture_phase_network_allowed": True,
+        "replay_phase_network_allowed": False,
+        "raw_payload_embedded_in_metadata": False,
+        "fail_closed_safety_flags": dict(FAIL_CLOSED_SAFETY_FLAGS),
+        "updated_at": utc_now(),
+    }
+    article["safety_flags"] = {**dict(article.get("safety_flags") or {}), **FAIL_CLOSED_SAFETY_FLAGS}
+    return counts
+
+
+def input_hashes(paths: Mapping[str, Path]) -> dict[str, str | None]:
+    hashes: dict[str, str | None] = {}
+    for name, path in paths.items():
+        hashes[name] = sha256_file(path) if path.exists() else None
+    return hashes
+
+
+def build_summary(
+    results: list[dict[str, Any]],
+    *,
+    provenance: Mapping[str, Any],
+    input_paths: Mapping[str, Path] | None = None,
+    output_paths: Mapping[str, Path] | None = None,
+    article_counts: Mapping[str, Mapping[str, int]] | None = None,
+) -> dict[str, Any]:
     counts: dict[str, int] = {"captured": 0, "blocked": 0, "failed": 0}
     for result in results:
         status = str(result.get("status"))
@@ -425,14 +587,31 @@ def build_summary(results: list[dict[str, Any]], *, provenance: Mapping[str, Any
             counts[status] += 1
     return {
         "schema_version": SOURCE_ACQUISITION_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
+        "exit_code_style_status": 0 if counts["failed"] == 0 else 1,
+        "article_count": len(article_counts or {}),
         "variant_count": len(results),
         "counts": counts,
+        "article_capture_counts": dict(article_counts or {}),
         "results": results,
         "command_provenance": dict(provenance),
-        "input_hashes": {},
+        "command": provenance.get("command"),
+        "cwd": provenance.get("cwd"),
+        "git_commit": provenance.get("git_commit"),
+        "input_paths": {name: str(path) for name, path in dict(input_paths or {}).items()},
+        "input_hashes": input_hashes(dict(input_paths or {})),
+        "output_paths": {name: str(path) for name, path in dict(output_paths or {}).items()},
         "output_hashes": {},
+        "capture_phase_network_allowed": True,
+        "replay_phase_network_allowed": False,
+        "graph_import_allowed": False,
+        "production_ladybugdb_write_allowed": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
         "raw_text_embedded": False,
         "raw_binary_embedded": False,
         "raw_payload_embedded_in_metadata": False,
@@ -474,24 +653,114 @@ def capture_selection(
     return results
 
 
+def capture_selection_and_update_catalog(
+    *,
+    catalog_root: Path,
+    index_path: Path,
+    selection_path: Path,
+    fetcher: Fetcher = default_fetcher,
+    write: bool = True,
+    provenance: Mapping[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, int]], list[Path]]:
+    index = load_json(index_path)
+    selection = load_json(selection_path)
+    article_paths = selected_article_paths(catalog_root, index, selection)
+    article_results: dict[Path, list[dict[str, Any]]] = defaultdict(list)
+    all_results: list[dict[str, Any]] = []
+
+    for article_path in article_paths:
+        article = load_json(article_path)
+        variants = article.get("source_variants")
+        if not isinstance(variants, list):
+            raise ValueError(f"article has malformed source_variants: {article_path}")
+        for variant in variants:
+            if not isinstance(variant, dict):
+                raise ValueError(f"article has malformed source variant: {article_path}")
+            if variant.get("source_role") not in ROLE_TARGETS:
+                continue
+            result = capture_variant(
+                article_path,
+                article,
+                variant,
+                fetcher=fetcher,
+                write=write,
+                command_provenance=provenance,
+            )
+            article_results[article_path].append(result)
+            all_results.append(result)
+
+    article_counts: dict[str, dict[str, int]] = {}
+    if write:
+        for article_path in article_paths:
+            article = load_json(article_path)
+            counts = update_article_record(article, article_results.get(article_path, []))
+            article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else str(article_path)
+            article_counts[article_ref] = dict(counts)
+            write_json(article_path, article)
+    else:
+        for article_path in article_paths:
+            article = load_json(article_path)
+            counts = {"selected": len(article_results.get(article_path, [])), "captured": 0, "blocked": 0, "failed": 0}
+            for result in article_results.get(article_path, []):
+                status = str(result.get("status"))
+                if status in counts:
+                    counts[status] += 1
+            article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else str(article_path)
+            article_counts[article_ref] = counts
+    return all_results, article_counts, article_paths
+
+
 def render_report(summary: Mapping[str, Any]) -> str:
     counts = summary.get("counts") if isinstance(summary.get("counts"), dict) else {}
     lines = [
         "# M027 Source Acquisition Report",
         "",
-        "This report is metadata-only. It does not embed article text, HTML snippets, PDF text, binary bytes, or base64 payloads.",
+        "This report is metadata-only. It does not embed article text, abstracts, HTML snippets, PDF text, binary bytes, or base64 payloads.",
         "",
+        f"- Milestone: `{summary.get('milestone_id')}`",
+        f"- Slice: `{summary.get('slice_id')}`",
         f"- Selection: `{summary.get('selection_id')}`",
         f"- Status: `{summary.get('status')}`",
+        f"- Exit-code style status: `{summary.get('exit_code_style_status')}`",
+        f"- Command: `{summary.get('command')}`",
+        f"- CWD: `{summary.get('cwd')}`",
+        f"- Git commit: `{summary.get('git_commit')}`",
         f"- Captured: {counts.get('captured', 0)}",
         f"- Blocked: {counts.get('blocked', 0)}",
         f"- Failed: {counts.get('failed', 0)}",
+        "- Capture phase network allowed: true",
+        "- Replay phase network allowed: false",
         "- Graph import allowed: false",
         "- Production LadybugDB write allowed: false",
+        "- Trusted KG import allowed: false",
+        "- Production import attempted: false",
+        "- LadybugDB written: false",
         "",
-        "## Variants",
+        "## Inputs",
         "",
     ]
+    input_paths = summary.get("input_paths") if isinstance(summary.get("input_paths"), dict) else {}
+    input_hash_map = summary.get("input_hashes") if isinstance(summary.get("input_hashes"), dict) else {}
+    for name, path in input_paths.items():
+        lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")
+
+    lines.extend(["", "## Outputs", ""])
+    output_paths = summary.get("output_paths") if isinstance(summary.get("output_paths"), dict) else {}
+    output_hash_map = summary.get("output_hashes") if isinstance(summary.get("output_hashes"), dict) else {}
+    for name, path in output_paths.items():
+        lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")
+
+    lines.extend(["", "## Article Counts", ""])
+    article_counts = summary.get("article_capture_counts") if isinstance(summary.get("article_capture_counts"), dict) else {}
+    for article_ref, article_count in article_counts.items():
+        if isinstance(article_count, dict):
+            lines.append(
+                f"- `{article_ref}`: selected={article_count.get('selected', 0)} "
+                f"captured={article_count.get('captured', 0)} blocked={article_count.get('blocked', 0)} "
+                f"failed={article_count.get('failed', 0)}"
+            )
+
+    lines.extend(["", "## Variants", ""])
     for result in summary.get("results", []):
         if isinstance(result, dict):
             lines.append(
@@ -501,8 +770,17 @@ def render_report(summary: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def assert_metadata_artifact_is_redacted(path: Path) -> None:
+    payload = path.read_text(encoding="utf-8")
+    forbidden = ["<html", "</html", "%PDF-", "base64,", "fixture arxiv abstract page", "fixture nature article page"]
+    found = [token for token in forbidden if token in payload]
+    if found:
+        raise ValueError(f"metadata artifact is not redacted: {path}: {found}")
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--catalog", type=Path, default=Path("data/article_catalog/catalog.json"))
     parser.add_argument("--catalog-root", type=Path, default=Path("data/article_catalog"))
     parser.add_argument("--index", type=Path, default=Path("data/article_catalog/index.json"))
     parser.add_argument(
@@ -516,13 +794,27 @@ def main(argv: list[str]) -> int:
         default=Path("data/article_corpora/m027-mixed-source-corpus-v1"),
     )
     parser.add_argument("--fixture-response-dir", type=Path)
-    parser.add_argument("--dry-run", action="store_true", help="Validate and summarize without writing captured source bytes.")
+    parser.add_argument("--dry-run", action="store_true", help="Validate and summarize without writing captured source bytes or article JSON.")
     args = parser.parse_args(argv[1:])
 
     started = time.perf_counter()
+    validate_relative_cli_path(args.output_dir, "unsafe_output_dir_traversal")
+    validate_relative_cli_path(args.index, "unsafe_index_path_traversal")
+    validate_relative_cli_path(args.selection, "unsafe_selection_path_traversal")
+    validate_relative_cli_path(args.catalog, "unsafe_catalog_path_traversal")
+    if args.fixture_response_dir is not None:
+        validate_relative_cli_path(args.fixture_response_dir, "unsafe_fixture_response_dir_traversal")
+
     provenance = command_provenance(argv)
     fetcher = fixture_response_fetcher(args.fixture_response_dir) if args.fixture_response_dir else default_fetcher
-    results = capture_selection(
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = confined_child_path(output_dir, "source-acquisition-summary.json")
+    diagnostics_path = confined_child_path(output_dir, "source-acquisition-diagnostics.jsonl")
+    report_path = confined_child_path(output_dir, "source-acquisition-report.md")
+    output_paths = {"summary": summary_path, "diagnostics": diagnostics_path, "report": report_path}
+
+    results, article_counts, article_paths = capture_selection_and_update_catalog(
         catalog_root=args.catalog_root,
         index_path=args.index,
         selection_path=args.selection,
@@ -530,15 +822,33 @@ def main(argv: list[str]) -> int:
         write=not args.dry_run,
         provenance=provenance,
     )
-    summary = build_summary(results, provenance=provenance)
+    input_paths = {"catalog": args.catalog, "index": args.index, "selection": args.selection}
+    for article_path in article_paths:
+        input_paths[f"article:{article_path.stem}:{len(input_paths)}"] = article_path
+
+    summary = build_summary(
+        results,
+        provenance=provenance,
+        input_paths=input_paths,
+        output_paths=output_paths,
+        article_counts=article_counts,
+    )
     summary["duration_ms"] = int((time.perf_counter() - started) * 1000)
 
-    summary_path = args.output_dir / "source-acquisition-summary.json"
-    diagnostics_path = args.output_dir / "source-acquisition-diagnostics.jsonl"
-    report_path = args.output_dir / "source-acquisition-report.md"
     write_json(summary_path, summary)
     append_jsonl(diagnostics_path, results)
     report_path.write_text(render_report(summary), encoding="utf-8")
+
+    output_hashes = {name: sha256_file(path) for name, path in output_paths.items()}
+    summary["output_hashes"] = output_hashes
+    write_json(summary_path, summary)
+    report_path.write_text(render_report(summary), encoding="utf-8")
+    summary["output_hashes"] = {name: sha256_file(path) for name, path in output_paths.items()}
+    write_json(summary_path, summary)
+
+    for artifact_path in output_paths.values():
+        assert_metadata_artifact_is_redacted(artifact_path)
+
     print(json.dumps({"summary_path": str(summary_path), "variant_count": len(results), "counts": summary["counts"]}, sort_keys=True))
     return 0 if not summary["counts"]["failed"] else 1
 

@@ -14,6 +14,7 @@ from capture_m027_mixed_source_sources import (  # noqa: E402
     FetchResponse,
     capture_selection,
     capture_variant,
+    main,
     safe_catalog_path,
     selected_article_paths,
     sha256_bytes,
@@ -308,3 +309,237 @@ def test_selection_loads_articles_through_index_and_captures_offline_fixtures(tm
     assert (article_path.parent / "source" / "original.pdf").exists()
     for result in results:
         _assert_metadata_only(result)
+
+M027_REFS = [
+    "arxiv/mixed-source/2605.20897",
+    "arxiv/mixed-source/2605.21401",
+    "nature/mixed-source/s44387-025-00019-5",
+    "arxiv/mixed-source/2605.25522",
+    "arxiv/mixed-source/2603.04448",
+    "arxiv/mixed-source/2604.18478",
+]
+
+
+def _m027_variants(article_ref: str) -> list[dict[str, Any]]:
+    key = article_ref.rsplit("/", 1)[-1]
+    if article_ref.startswith("nature/"):
+        return [
+            _variant("nature_html", url="https://www.nature.com/articles/s44387-025-00019-5"),
+            _variant("citation_metadata", url="https://www.nature.com/articles/s44387-025-00019-5"),
+        ]
+    return [
+        _variant("arxiv_abs_page", url=f"https://arxiv.org/abs/{key}"),
+        _variant("arxiv_pdf", url=f"https://arxiv.org/pdf/{key}"),
+    ]
+
+
+def _write_response(response_dir: Path, url: str, payload: bytes) -> None:
+    response_dir.mkdir(parents=True, exist_ok=True)
+    (response_dir / f"{sha256_bytes(url.encode('utf-8'))}.bin").write_bytes(payload)
+
+
+def _write_m027_catalog_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+    catalog_root = tmp_path / "catalog"
+    corpus_dir = tmp_path / "corpus"
+    fixture_dir = tmp_path / "fixtures"
+    index_rows = []
+    selection_rows = []
+    for article_ref in M027_REFS:
+        article_path = catalog_root / "article_catalog" / article_ref / "article.json"
+        article_path.parent.mkdir(parents=True, exist_ok=True)
+        article = _article(article_ref)
+        article["source_variants"] = _m027_variants(article_ref)
+        article_path.write_text(json.dumps(article), encoding="utf-8")
+        rel = f"article_catalog/{article_ref}/article.json"
+        index_rows.append({"article_ref": article_ref, "article_path": rel})
+        selection_rows.append({"article_ref": article_ref})
+        for variant in article["source_variants"]:
+            if variant["source_role"] not in {"arxiv_abs_page", "arxiv_pdf", "nature_html"}:
+                continue
+            payload = b"%PDF-1.4\n%%EOF\n" if variant["source_role"] == "arxiv_pdf" else b"<html><body>fixture arxiv abstract page</body></html>"
+            if variant["source_role"] == "nature_html":
+                payload = b"<html><body>fixture nature article page</body></html>"
+            _write_response(fixture_dir, variant["url"], payload)
+    catalog_path = catalog_root / "catalog.json"
+    catalog_path.write_text(json.dumps({"schema_version": "catalog.test"}), encoding="utf-8")
+    index_path = catalog_root / "index.json"
+    index_path.write_text(json.dumps({"articles": index_rows}), encoding="utf-8")
+    selection_path = corpus_dir / "selection.json"
+    selection_path.parent.mkdir(parents=True, exist_ok=True)
+    selection_path.write_text(json.dumps({"articles": selection_rows}), encoding="utf-8")
+    return catalog_root, catalog_path, index_path, selection_path, fixture_dir
+
+
+def _artifact_texts(output_dir: Path) -> str:
+    return "\n".join(
+        [
+            (output_dir / "source-acquisition-summary.json").read_text(encoding="utf-8"),
+            (output_dir / "source-acquisition-diagnostics.jsonl").read_text(encoding="utf-8"),
+            (output_dir / "source-acquisition-report.md").read_text(encoding="utf-8"),
+        ]
+    )
+
+
+def test_cli_updates_all_six_selected_records_and_writes_metadata_only_artifacts(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    output_dir = tmp_path / "corpus"
+
+    exit_code = main(
+        [
+            "capture_m027_mixed_source_sources.py",
+            "--catalog-root",
+            str(catalog_root),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--selection",
+            str(selection_path),
+            "--output-dir",
+            str(output_dir),
+            "--fixture-response-dir",
+            str(fixture_dir),
+        ]
+    )
+
+    assert exit_code == 0
+    summary = json.loads((output_dir / "source-acquisition-summary.json").read_text(encoding="utf-8"))
+    assert summary["milestone_id"] == "M027-aakeky"
+    assert summary["slice_id"] == "S02"
+    assert summary["capture_phase_network_allowed"] is True
+    assert summary["replay_phase_network_allowed"] is False
+    assert summary["graph_import_allowed"] is False
+    assert summary["production_import_attempted"] is False
+    assert summary["ladybugdb_written"] is False
+    assert summary["variant_count"] == 11
+    assert summary["counts"] == {"captured": 11, "blocked": 0, "failed": 0}
+    assert set(summary["output_paths"]) == {"summary", "diagnostics", "report"}
+    assert set(summary["output_hashes"]) == {"summary", "diagnostics", "report"}
+    assert (output_dir / "source-acquisition-diagnostics.jsonl").read_text(encoding="utf-8").count("\n") == 11
+
+    for article_ref in M027_REFS:
+        article_path = catalog_root / "article_catalog" / article_ref / "article.json"
+        article = json.loads(article_path.read_text(encoding="utf-8"))
+        assert article["capture_summary"]["selection_id"] == "m027-mixed-source-corpus-v1"
+        assert article["capture_summary"]["failed_count"] == 0
+        assert article["capture_summary"]["blocked_count"] == 0
+        for variant in article["source_variants"]:
+            if variant["source_role"] in {"arxiv_abs_page", "arxiv_pdf", "nature_html"}:
+                assert variant["capture_status"] == "captured"
+                assert variant["network_fetch_attempted"] is True
+                assert variant["path"] in {"source/abs.html", "source/original.pdf", "source/article.html"}
+                assert variant["graph_import_allowed"] is False
+                assert variant["production_ladybugdb_write_allowed"] is False
+
+    serialized = _artifact_texts(output_dir)
+    for forbidden in FORBIDDEN_SNIPPETS:
+        assert forbidden not in serialized
+
+
+def test_cli_missing_index_row_fails_before_artifact_promotion(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    index_path.write_text(json.dumps({"articles": []}), encoding="utf-8")
+    output_dir = tmp_path / "corpus"
+
+    with pytest.raises(ValueError, match="selection article not present in index"):
+        main(
+            [
+                "capture_m027_mixed_source_sources.py",
+                "--catalog-root",
+                str(catalog_root),
+                "--catalog",
+                str(catalog_path),
+                "--index",
+                str(index_path),
+                "--selection",
+                str(selection_path),
+                "--output-dir",
+                str(output_dir),
+                "--fixture-response-dir",
+                str(fixture_dir),
+            ]
+        )
+    assert not (output_dir / "source-acquisition-summary.json").exists()
+
+
+def test_cli_duplicate_or_unsafe_index_path_is_rejected(tmp_path: Path) -> None:
+    catalog_root, _catalog_path, index_path, selection_path, _fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    selection = {"articles": [{"article_ref": "arxiv/mixed-source/2605.20897"}]}
+    selection_path.write_text(json.dumps(selection), encoding="utf-8")
+    index_path.write_text(
+        json.dumps(
+            {
+                "articles": [
+                    {"article_ref": "arxiv/mixed-source/2605.20897", "article_path": "article_catalog/arxiv/mixed-source/2605.20897/article.json"},
+                    {"article_ref": "arxiv/mixed-source/2605.20897", "article_path": "article_catalog/arxiv/mixed-source/2605.20897/article.json"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate index row"):
+        selected_article_paths(catalog_root, json.loads(index_path.read_text()), json.loads(selection_path.read_text()))
+
+    index_path.write_text(
+        json.dumps({"articles": [{"article_ref": "arxiv/mixed-source/2605.20897", "article_path": "../escape/article.json"}]}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unsafe_catalog_relative_path"):
+        selected_article_paths(catalog_root, json.loads(index_path.read_text()), json.loads(selection_path.read_text()))
+
+
+def test_cli_fixture_failure_response_records_failed_diagnostic_without_fallback(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    # Empty one selected response: the command completes artifact emission but returns non-zero style status.
+    _write_response(fixture_dir, "https://arxiv.org/abs/2605.20897", b"")
+    output_dir = tmp_path / "corpus"
+
+    exit_code = main(
+        [
+            "capture_m027_mixed_source_sources.py",
+            "--catalog-root",
+            str(catalog_root),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--selection",
+            str(selection_path),
+            "--output-dir",
+            str(output_dir),
+            "--fixture-response-dir",
+            str(fixture_dir),
+        ]
+    )
+
+    assert exit_code == 1
+    summary = json.loads((output_dir / "source-acquisition-summary.json").read_text(encoding="utf-8"))
+    assert summary["counts"]["failed"] == 1
+    failed = [row for row in summary["results"] if row["status"] == "failed"]
+    assert failed[0]["diagnostic_code"] == "empty_response"
+    article = json.loads((catalog_root / "article_catalog/arxiv/mixed-source/2605.20897/article.json").read_text(encoding="utf-8"))
+    failed_variant = [v for v in article["source_variants"] if v["source_role"] == "arxiv_abs_page"][0]
+    assert failed_variant["capture_status"] == "failed"
+    assert not (catalog_root / "article_catalog/arxiv/mixed-source/2605.20897/source/abs.html").exists()
+
+
+def test_cli_rejects_output_dir_traversal(tmp_path: Path) -> None:
+    catalog_root, catalog_path, index_path, selection_path, fixture_dir = _write_m027_catalog_fixture(tmp_path)
+    with pytest.raises(ValueError, match="unsafe_output_dir_traversal"):
+        main(
+            [
+                "capture_m027_mixed_source_sources.py",
+                "--catalog-root",
+                str(catalog_root),
+                "--catalog",
+                str(catalog_path),
+                "--index",
+                str(index_path),
+                "--selection",
+                str(selection_path),
+                "--output-dir",
+                "../outside-corpus",
+                "--fixture-response-dir",
+                str(fixture_dir),
+            ]
+        )
