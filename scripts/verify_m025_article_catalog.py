@@ -25,6 +25,7 @@ INDEX_SCHEMA_VERSION = "article-catalog-index.v00.01"
 SELECTION_SCHEMA_VERSION = "article-corpus-selection.v00.01"
 EXPECTED_SELECTION_ID = "m025-rlm-dspy-pageindex-smoke-v1"
 CATALOG_RECORD_DIR = "article_catalog"
+DEFAULT_REPORT_TITLE = "Article Catalog Readiness Report"
 
 FORBIDDEN_TRUE_FLAGS = {
     "metadata_manifests_embed_raw_text",
@@ -307,10 +308,17 @@ def validate_index(
     return errors, by_ref
 
 
-def validate_selection(selection: dict[str, Any], index_articles: dict[str, dict[str, Any]]) -> list[str]:
+def validate_selection(
+    selection: dict[str, Any],
+    index_articles: dict[str, dict[str, Any]],
+    *,
+    expected_selection_id: str | None,
+    require_selection_titles: bool = False,
+) -> list[str]:
     errors: list[str] = []
     require_equal(errors, "selection.schema_version", selection.get("schema_version"), SELECTION_SCHEMA_VERSION)
-    require_equal(errors, "selection.selection_id", selection.get("selection_id"), EXPECTED_SELECTION_ID)
+    if expected_selection_id is not None:
+        require_equal(errors, "selection.selection_id", selection.get("selection_id"), expected_selection_id)
     require_equal(errors, "selection.catalog_schema_version", selection.get("catalog_schema_version"), CATALOG_SCHEMA_VERSION)
     require_equal(errors, "selection.article_schema_version", selection.get("article_schema_version"), ARTICLE_SCHEMA_VERSION)
     network_policy = selection.get("network_policy")
@@ -335,9 +343,16 @@ def validate_selection(selection: dict[str, Any], index_articles: dict[str, dict
             selection_refs.add(article_ref)
             if article_ref not in index_articles:
                 errors.append(f"selection article_ref not present in index: {article_ref}")
-            index_source = index_articles.get(article_ref, {}).get("source_code")
+            index_entry = index_articles.get(article_ref, {})
+            index_source = index_entry.get("source_code")
             if row.get("source_code") != index_source:
                 errors.append(f"selection {article_ref} source_code does not match index")
+            title = row.get("title")
+            index_title = index_entry.get("title")
+            if require_selection_titles and (not isinstance(title, str) or not title):
+                errors.append(f"selection {article_ref} title must be a non-empty string")
+            if isinstance(title, str) and title and title != index_title:
+                errors.append(f"selection {article_ref} title does not match index")
         missing_from_selection = sorted(set(index_articles) - selection_refs)
         if missing_from_selection:
             errors.append(f"index articles missing from selection: {', '.join(missing_from_selection)}")
@@ -819,6 +834,7 @@ def build_catalog_readiness_artifacts(
     index_articles: dict[str, dict[str, Any]],
     *,
     rebuild_report: dict[str, Any] | None,
+    report_title: str = DEFAULT_REPORT_TITLE,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
     diagnostics: list[dict[str, Any]] = []
     selected_rows = selection.get("articles") if isinstance(selection.get("articles"), list) else []
@@ -945,7 +961,7 @@ def build_catalog_readiness_artifacts(
         "selection_id": selection.get("selection_id"),
         "catalog_schema_version": CATALOG_SCHEMA_VERSION,
         "article_schema_version": ARTICLE_SCHEMA_VERSION,
-        "selection_path": str(catalog_path.parent.parent / "article_corpora" / EXPECTED_SELECTION_ID / "selection.json"),
+        "selection_path": str(catalog_path.parent.parent / "article_corpora" / str(selection.get("selection_id")) / "selection.json"),
         "article_count": len(selected_refs),
         "variant_count": total_variants,
         "captured_variant_count": captured_variants,
@@ -982,14 +998,14 @@ def build_catalog_readiness_artifacts(
         },
         "articles": articles,
     }
-    report = render_catalog_report(summary, diagnostics)
+    report = render_catalog_report(summary, diagnostics, report_title=report_title)
     return summary, diagnostics, report
 
 
-def render_catalog_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]]) -> str:
+def render_catalog_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]], *, report_title: str = DEFAULT_REPORT_TITLE) -> str:
     articles = summary.get("articles") if isinstance(summary.get("articles"), list) else []
     lines = [
-        "# M025 S01 Catalog Readiness Report",
+        f"# {report_title}",
         "",
         "## Overview",
         f"- Selection: `{summary.get('selection_id')}`",
@@ -1084,7 +1100,12 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
         check_duplicate_lookups=args.check_duplicate_lookups,
     )
     errors.extend(index_errors)
-    errors.extend(validate_selection(selection, index_articles))
+    errors.extend(validate_selection(
+        selection,
+        index_articles,
+        expected_selection_id=args.expected_selection_id,
+        require_selection_titles=args.require_selection_titles,
+    ))
     if args.require_captured_sources:
         errors.extend(check_captured_sources(args.catalog, selection, index_articles, check_checksums=args.check_checksums))
     if args.require_loader_events:
@@ -1116,6 +1137,7 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
             selection,
             index_articles,
             rebuild_report=report,
+            report_title=args.report_title,
         )
         if args.write_summary:
             write_json_atomic(args.write_summary, summary)
@@ -1158,7 +1180,7 @@ def check_static_lookup_policy(script_path: Path) -> list[str]:
     return errors
 
 
-def parse_args(argv: list[str]) -> argparse.Namespace:
+def parse_args(argv: list[str], *, default_expected_selection_id: str | None = EXPECTED_SELECTION_ID, default_report_title: str = "M025 S01 Catalog Readiness Report") -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--index", required=True, type=Path)
@@ -1180,6 +1202,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--require-loader-events", action="store_true", help="Require local loader summaries/events for selected source variants.")
     parser.add_argument("--check-redaction", action="store_true", help="Reject raw payload or vector/secret-like fields in loader artifacts.")
     parser.add_argument("--check-index-lookup-only", action="store_true", help="Run the AST-aware guard that normal lookup must not scan article records.")
+    parser.add_argument("--expected-selection-id", default=default_expected_selection_id, help="Optional strict selection_id to require; omit in generic callers to accept any corpus selection.")
+    parser.add_argument("--require-selection-titles", action="store_true", help="Require selected article rows to carry titles matching index.json.")
+    parser.add_argument("--report-title", default=default_report_title, help="Markdown title for readiness reports.")
     args = parser.parse_args(argv)
     if args.write_index and not args.rebuild_index:
         parser.error("--write-index requires --rebuild-index")
@@ -1197,24 +1222,34 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return args
 
 
-def main(argv: list[str]) -> int:
-    args = parse_args(argv[1:])
+def main(
+    argv: list[str],
+    *,
+    default_expected_selection_id: str | None = EXPECTED_SELECTION_ID,
+    label: str = "M025 article catalog",
+    default_report_title: str = "M025 S01 Catalog Readiness Report",
+) -> int:
+    args = parse_args(
+        argv[1:],
+        default_expected_selection_id=default_expected_selection_id,
+        default_report_title=default_report_title,
+    )
     errors, report = validate(args)
     if errors:
-        sys.stderr.write("M025 article catalog validation failed:\n")
+        sys.stderr.write(f"{label} validation failed:\n")
         for error in errors:
             sys.stderr.write(f"- {error}\n")
         return 1
     if args.rebuild_index:
         sys.stdout.write(
-            "M025 article catalog index rebuild passed: "
+            f"{label} index rebuild passed: "
             f"{report['entries_emitted'] if report else 0} entries, "
             f"idempotent={report['idempotent'] if report else False}, "
             "normal lookup remains index-only, no network fetch attempted.\n"
         )
     else:
         sys.stdout.write(
-            "M025 article catalog validation passed: local scaffold, initial index, schemas, "
+            f"{label} validation passed: local scaffold, initial index, schemas, "
             "selection, titles, and fail-closed safety flags are consistent.\n"
         )
     return 0
