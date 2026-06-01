@@ -15,6 +15,7 @@ from convert_m027_source_quality_boundary import (  # noqa: E402
     main,
     sha256_file,
 )
+from verify_m027_conversion_quality_boundary import main as verify_main  # noqa: E402
 
 FORBIDDEN_KEYS = {
     "text",
@@ -124,6 +125,31 @@ def _run_boundary(tmp_path: Path, rows: list[dict[str, Any]]) -> tuple[dict[str,
     return summary, diagnostics, report
 
 
+def _verify_boundary(tmp_path: Path, *, article_count: int, variant_count: int) -> int:
+    source_root = tmp_path / "corpus"
+    return verify_main(
+        [
+            "verify_m027_conversion_quality_boundary.py",
+            "--source-summary",
+            str(source_root / "source-acquisition-summary.json"),
+            "--summary",
+            str(source_root / "conversion-quality-summary.json"),
+            "--diagnostics",
+            str(source_root / "conversion-quality-diagnostics.jsonl"),
+            "--report",
+            str(source_root / "conversion-quality-report.md"),
+            "--source-root",
+            str(source_root),
+            "--corpus-dir",
+            str(source_root),
+            "--expected-article-count",
+            str(article_count),
+            "--expected-variant-count",
+            str(variant_count),
+        ]
+    )
+
+
 def _assert_metadata_redacted(*artifacts: Any) -> None:
     serialized = json.dumps(artifacts, sort_keys=True)
     for key in FORBIDDEN_KEYS:
@@ -213,6 +239,7 @@ def test_local_conversion_classifies_abs_pdf_fallback_and_nature_body(tmp_path: 
     assert "Failure Modes" in report
     assert "Load Profile" in report
     assert "Negative Tests" in report
+    assert _verify_boundary(tmp_path, article_count=2, variant_count=3) == 0
     _assert_metadata_redacted(summary, diagnostics, report)
 
 
@@ -288,30 +315,101 @@ def test_missing_hash_mismatch_and_non_captured_rows_fail_closed(tmp_path: Path)
     _assert_metadata_redacted(summary, diagnostics)
 
 
-def test_malformed_summary_returns_nonzero_without_network(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    source_root = tmp_path / "corpus"
-    summary_path = _write_summary(source_root / "source-acquisition-summary.json", [])
-    payload = json.loads(summary_path.read_text(encoding="utf-8"))
-    payload.pop("results")
-    summary_path.write_text(json.dumps(payload), encoding="utf-8")
-
-    exit_code = main(
-        [
-            "convert_m027_source_quality_boundary.py",
-            "--source-summary",
-            str(summary_path),
-            "--source-root",
-            str(source_root),
-            "--output-summary",
-            str(source_root / "conversion-quality-summary.json"),
-            "--output-diagnostics",
-            str(source_root / "conversion-quality-diagnostics.jsonl"),
-            "--output-report",
-            str(source_root / "conversion-quality-report.md"),
-        ]
+def _write_conversion_artifacts(source_root: Path, summary: dict[str, Any]) -> None:
+    (source_root / "conversion-quality-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (source_root / "conversion-quality-diagnostics.jsonl").write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in summary["results"]),
+        encoding="utf-8",
     )
 
-    captured = capsys.readouterr()
-    assert exit_code == 1
-    assert "missing results list" in captured.err
-    assert not (source_root / "conversion-quality-summary.json").exists()
+
+def _arxiv_abs_row(source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897") -> dict[str, Any]:
+    return _captured_row(
+        source_root,
+        article_ref,
+        "arxiv_abs_page",
+        "source/abs.html",
+        "<html><body><h1>Title</h1><blockquote class='abstract'>metadata only</blockquote></body></html>",
+    )
+
+
+def _arxiv_pdf_row(source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897") -> dict[str, Any]:
+    return _captured_row(
+        source_root,
+        article_ref,
+        "arxiv_pdf",
+        "source/original.pdf",
+        _pdf_bytes(
+            "converted fallback text with enough local content for parser readiness. "
+            "This fixture includes multiple scientific article sentences so quality passes."
+        ),
+    )
+
+
+def test_conversion_verifier_fails_on_unsafe_converted_text_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    source_root = tmp_path / "corpus"
+    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    pdf_row = _by_role(summary["results"], "arxiv_pdf")
+    pdf_row["converted_text_path"] = "../escape.txt"
+    _write_conversion_artifacts(source_root, summary)
+
+    assert _verify_boundary(tmp_path, article_count=1, variant_count=2) == 1
+    assert "unsafe_converted_text_path" in capsys.readouterr().err
+
+
+def test_conversion_verifier_fails_on_stale_source_and_converted_hashes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source_root = tmp_path / "corpus"
+    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    pdf_row = _by_role(summary["results"], "arxiv_pdf")
+    Path(source_root / "arxiv/mixed-source/2605.20897/source/original.pdf").write_bytes(b"stale source bytes")
+    converted_path = Path(pdf_row["converted_text_path"])
+    converted_path.write_text(converted_path.read_text(encoding="utf-8") + "\nstale converted text", encoding="utf-8")
+
+    assert _verify_boundary(tmp_path, article_count=1, variant_count=2) == 1
+    stderr = capsys.readouterr().err
+    assert "source_sha256_mismatch" in stderr
+    assert "converted_text_sha256_mismatch" in stderr
+
+
+def test_conversion_verifier_fails_on_metadata_payload_leakage(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source_root = tmp_path / "corpus"
+    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary["text"] = "RAW_PDF_SECRET must never appear in metadata"
+    _write_conversion_artifacts(source_root, summary)
+
+    assert _verify_boundary(tmp_path, article_count=1, variant_count=2) == 1
+    stderr = capsys.readouterr().err
+    assert "metadata_payload_key_leakage" in stderr
+    assert "metadata_payload_snippet_leakage" in stderr
+
+
+def test_conversion_verifier_fails_when_arxiv_pdf_fallback_is_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source_root = tmp_path / "corpus"
+    _run_boundary(tmp_path, [_arxiv_abs_row(source_root)])
+
+    assert _verify_boundary(tmp_path, article_count=1, variant_count=1) == 1
+    stderr = capsys.readouterr().err
+    assert "missing_arxiv_pdf_fallback" in stderr
+    assert "article_without_parser_ready_fallback" in stderr
+
+
+def test_conversion_verifier_fails_on_unsafe_safety_flags(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    source_root = tmp_path / "corpus"
+    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary["fail_closed_safety_flags"]["graph_import_allowed"] = True
+    pdf_row = _by_role(summary["results"], "arxiv_pdf")
+    pdf_row["fail_closed_safety_flags"]["production_ladybugdb_write_allowed"] = True
+    pdf_row["safety_flag_context"]["parser_readiness_claimed_without_conversion_quality"] = True
+    _write_conversion_artifacts(source_root, summary)
+
+    assert _verify_boundary(tmp_path, article_count=1, variant_count=2) == 1
+    stderr = capsys.readouterr().err
+    assert "unsafe_safety_flag_true" in stderr
+    assert "graph_import_allowed" in stderr
+    assert "production_ladybugdb_write_allowed" in stderr
