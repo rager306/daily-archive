@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_article_catalog.py"
+REGISTER_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m027_mixed_source_corpus.py"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 
 
@@ -351,3 +352,94 @@ def test_generic_verifier_rejects_malformed_selection_json_with_path(tmp_path: P
     assert result.returncode == 1
     assert "malformed JSON" in result.stderr
     assert str(selection) in result.stderr
+
+
+def test_generic_verifier_allows_shared_index_superset_when_requested(tmp_path: Path) -> None:
+    catalog, index, selection = _copy_m027_scaffold(tmp_path)
+    payload = json.loads(index.read_text(encoding="utf-8"))
+    extra_ref = "arxiv/cs-ai/2401.09999"
+    extra_article = _article(
+        article_ref=extra_ref,
+        title="Shared Index Extra Row Outside This Selection",
+        canonical_url="https://arxiv.org/abs/2401.09999",
+        role="arxiv_abs_page",
+        source_format="html_metadata",
+    )
+    extra_path = index.parents[0] / "article_catalog" / extra_ref / "article.json"
+    extra_path.parent.mkdir(parents=True, exist_ok=True)
+    extra_path.write_text(json.dumps(extra_article, indent=2), encoding="utf-8")
+    payload["articles"].append(_index_entry(extra_ref, extra_article))
+    payload["indexes"] = _build_indexes(payload["articles"])
+    index.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    strict_result = _run_generic(catalog, index, selection)
+    assert strict_result.returncode == 1
+    assert "index articles missing from selection" in strict_result.stderr
+
+    superset_result = _run_generic(catalog, index, selection, "--allow-index-superset")
+    assert superset_result.returncode == 0, superset_result.stderr
+
+
+def test_registration_command_writes_six_rows_idempotently_and_preserves_existing_index(tmp_path: Path) -> None:
+    catalog_root = tmp_path / "article_catalog"
+    corpora_root = tmp_path / "article_corpora"
+    catalog_root.mkdir(parents=True)
+    preserved_ref = "arxiv/cs-ai/2512.24601"
+    preserved_entry = {
+        "article_ref": preserved_ref,
+        "article_key": "2512.24601",
+        "source_code": "arxiv",
+        "coarse_topic_code": "cs-ai",
+        "canonical_url": "https://arxiv.org/abs/2512.24601",
+        "primary_source_role": "arxiv_html",
+        "content_fallback_roles": ["arxiv_pdf"],
+        "metadata_roles": ["arxiv_abs_page"],
+        "article_path": f"article_catalog/{preserved_ref}/article.json",
+        "title": "Recursive Language Models",
+    }
+    index_payload = {
+        "schema_version": "article-catalog-index.v00.01",
+        "catalog_schema_version": "article-catalog.v00.01",
+        "article_schema_version": "article.v00.01",
+        "index_id": "temp_index",
+        "generated_from": "article_catalog/",
+        "lookup_policy": {"cli_must_use_index": True, "full_tree_scan_allowed": False, "refresh_command_rebuilds_index": True},
+        "articles": [preserved_entry],
+        "indexes": _build_indexes([preserved_entry]),
+        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+    }
+    (catalog_root / "index.json").write_text(json.dumps(index_payload, indent=2), encoding="utf-8")
+
+    command = [
+        sys.executable,
+        str(REGISTER_SCRIPT),
+        "--write",
+        "--catalog-root",
+        str(catalog_root),
+        "--corpora-root",
+        str(corpora_root),
+    ]
+    first = subprocess.run(command, capture_output=True, check=False, text=True)
+    assert first.returncode == 0, first.stderr
+    before = (catalog_root / "index.json").read_text(encoding="utf-8")
+    second = subprocess.run(command, capture_output=True, check=False, text=True)
+    assert second.returncode == 0, second.stderr
+    assert (catalog_root / "index.json").read_text(encoding="utf-8") == before
+
+    index_after = json.loads(before)
+    refs = {row["article_ref"] for row in index_after["articles"]}
+    assert preserved_ref in refs
+    assert len([ref for ref in refs if "/mixed-source/" in ref]) == 6
+    selection = json.loads((corpora_root / SELECTION_ID / "selection.json").read_text(encoding="utf-8"))
+    assert [row["seed_url"] for row in selection["articles"]] == [
+        "https://arxiv.org/pdf/2605.20897",
+        "https://arxiv.org/abs/2605.21401",
+        "https://www.nature.com/articles/s44387-025-00019-5",
+        "https://arxiv.org/abs/2605.25522",
+        "https://arxiv.org/abs/2603.04448",
+        "https://arxiv.org/abs/2604.18478",
+    ]
+    assert all(row["title"] for row in selection["articles"])
+    assert "raw_text_payload" not in before
+    assert "raw_binary_payload" not in before
+    assert all(row.get("network_fetch_attempted") is False for row in selection["articles"])

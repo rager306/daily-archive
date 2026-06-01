@@ -314,6 +314,7 @@ def validate_selection(
     *,
     expected_selection_id: str | None,
     require_selection_titles: bool = False,
+    allow_index_superset: bool = False,
 ) -> list[str]:
     errors: list[str] = []
     require_equal(errors, "selection.schema_version", selection.get("schema_version"), SELECTION_SCHEMA_VERSION)
@@ -354,7 +355,7 @@ def validate_selection(
             if isinstance(title, str) and title and title != index_title:
                 errors.append(f"selection {article_ref} title does not match index")
         missing_from_selection = sorted(set(index_articles) - selection_refs)
-        if missing_from_selection:
+        if missing_from_selection and not allow_index_superset:
             errors.append(f"index articles missing from selection: {', '.join(missing_from_selection)}")
     check_safety_flags(errors, "selection", selection)
     return errors
@@ -1105,6 +1106,7 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
         index_articles,
         expected_selection_id=args.expected_selection_id,
         require_selection_titles=args.require_selection_titles,
+        allow_index_superset=args.allow_index_superset,
     ))
     if args.require_captured_sources:
         errors.extend(check_captured_sources(args.catalog, selection, index_articles, check_checksums=args.check_checksums))
@@ -1204,6 +1206,7 @@ def parse_args(argv: list[str], *, default_expected_selection_id: str | None = E
     parser.add_argument("--check-index-lookup-only", action="store_true", help="Run the AST-aware guard that normal lookup must not scan article records.")
     parser.add_argument("--expected-selection-id", default=default_expected_selection_id, help="Optional strict selection_id to require; omit in generic callers to accept any corpus selection.")
     parser.add_argument("--require-selection-titles", action="store_true", help="Require selected article rows to carry titles matching index.json.")
+    parser.add_argument("--allow-index-superset", action="store_true", help="Allow index.json to contain catalog rows outside the current corpus selection.")
     parser.add_argument("--report-title", default=default_report_title, help="Markdown title for readiness reports.")
     args = parser.parse_args(argv)
     if args.write_index and not args.rebuild_index:
