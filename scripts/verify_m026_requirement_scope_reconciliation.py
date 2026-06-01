@@ -562,6 +562,60 @@ def validate_matrix(
     return errors
 
 
+def validate_coverage_markdown(coverage_markdown: str, *, required_requirements: set[str] | None = None) -> list[str]:
+    """Return validation diagnostics for the S05 coverage handoff markdown."""
+
+    required = required_requirements or REQUIRED_REQUIREMENT_IDS
+    errors: list[str] = []
+    if not coverage_markdown.strip():
+        return ["coverage markdown is empty"]
+
+    required_markers = {
+        "# S05 Coverage Handoff",
+        "## M026 Boundary",
+        "## Source Artifacts",
+        "## Coverage Summary",
+        "## Allowed Validation Language",
+        "## Forbidden Validation Language",
+        "## Canonical Requirement Note Recommendations",
+        "## Q5 — Failure Modes",
+        "## Q6 — Load Profile",
+        "## Q7 — Negative Tests",
+        "doc/validation/m026_requirement_scope_matrix.json",
+        "doc/validation/m026_requirement_scope_matrix.md",
+        "scripts/verify_m026_requirement_scope_reconciliation.py",
+        "tests/test_m026_requirement_scope_reconciliation.py",
+    }
+    for marker in sorted(required_markers):
+        if marker not in coverage_markdown:
+            errors.append(f"coverage markdown missing marker: {marker}")
+
+    for rid in sorted(required):
+        if rid not in coverage_markdown:
+            errors.append(f"coverage markdown missing requirement id: {rid}")
+
+    unsafe_true_markers = (
+        "loader_implementation_claimed: true",
+        "batch_selection_implementation_claimed: true",
+        "kg_import_or_readiness_claimed: true",
+        "graph_validation_claimed: true",
+        "import_ready_chunks_claimed: true",
+        "scientific_kg_corpus_validation_claimed: true",
+        "dspy_rlm_minimax_activation_claimed: true",
+        "raw_payloads_embedded: true",
+        "binary_payloads_embedded: true",
+        "vector_payloads_embedded: true",
+        "secrets_embedded: true",
+        "production_ladybugdb_writes_claimed: true",
+    )
+    lowered = coverage_markdown.lower()
+    for marker in unsafe_true_markers:
+        if marker in lowered:
+            errors.append(f"coverage markdown contains unsafe true boolean marker: {marker}")
+
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -586,6 +640,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Require all active/touched M026 requirement rows, classifications, and safety flags.",
     )
     parser.add_argument("--reject-unsafe-claims", action="store_true")
+    parser.add_argument(
+        "--coverage",
+        type=Path,
+        help="Optional S05 coverage handoff markdown to validate for closeout markers and requirement scope rows.",
+    )
     parser.add_argument(
         "--require-planning-evidence",
         action="store_true",
@@ -612,6 +671,12 @@ def main(argv: list[str] | None = None) -> int:
             reject_unsafe_claims=args.reject_unsafe_claims,
             require_planning_evidence=args.require_planning_evidence,
         )
+        if args.coverage is not None:
+            try:
+                coverage = args.coverage.read_text(encoding="utf-8")
+            except FileNotFoundError as exc:
+                raise MatrixValidationError(f"coverage markdown file not found: {args.coverage}") from exc
+            errors.extend(validate_coverage_markdown(coverage, required_requirements=required))
     except MatrixValidationError as exc:
         sys.stderr.write(f"ERROR: {exc}\n")
         return 2

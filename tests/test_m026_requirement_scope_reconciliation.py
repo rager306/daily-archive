@@ -17,10 +17,12 @@ sys.modules[spec.name] = verify_m026_requirement_scope_reconciliation
 spec.loader.exec_module(verify_m026_requirement_scope_reconciliation)
 
 validate_matrix = verify_m026_requirement_scope_reconciliation.validate_matrix
+validate_coverage_markdown = verify_m026_requirement_scope_reconciliation.validate_coverage_markdown
 main = verify_m026_requirement_scope_reconciliation.main
 
 REAL_MATRIX = Path(__file__).parents[1] / "doc" / "validation" / "m026_requirement_scope_matrix.json"
 REAL_RENDERED = Path(__file__).parents[1] / "doc" / "validation" / "m026_requirement_scope_matrix.md"
+REAL_COVERAGE = Path(__file__).parents[1] / ".gsd" / "milestones" / "M026-3rvvgp" / "slices" / "S05" / "S05-COVERAGE.md"
 REQUIRED_IDS = verify_m026_requirement_scope_reconciliation.REQUIRED_REQUIREMENT_IDS
 
 
@@ -86,6 +88,38 @@ def test_cli_passes_against_real_matrix_and_rendered_pair() -> None:
     )
 
     assert exit_code == 0
+
+
+def test_cli_passes_with_real_coverage_handoff() -> None:
+    exit_code = main(
+        [
+            "--matrix",
+            str(REAL_MATRIX),
+            "--rendered",
+            str(REAL_RENDERED),
+            "--coverage",
+            str(REAL_COVERAGE),
+            "--require-active-scope",
+            "--reject-unsafe-claims",
+        ]
+    )
+
+    assert exit_code == 0
+
+
+def test_rejects_incomplete_coverage_handoff() -> None:
+    errors = validate_coverage_markdown("# S05 Coverage Handoff\n\nR040 only\n", required_requirements=REQUIRED_IDS)
+
+    assert any("coverage markdown missing marker: ## Q5 — Failure Modes" in error for error in errors)
+    assert any("coverage markdown missing requirement id: R001" in error for error in errors)
+
+
+def test_rejects_unsafe_true_marker_in_coverage_handoff() -> None:
+    coverage = REAL_COVERAGE.read_text(encoding="utf-8") + "\nloader_implementation_claimed: true\n"
+
+    errors = validate_coverage_markdown(coverage, required_requirements=REQUIRED_IDS)
+
+    assert any("unsafe true boolean marker" in error for error in errors)
 
 
 def test_cli_rejects_malformed_json(tmp_path: Path) -> None:
