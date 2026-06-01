@@ -13,8 +13,9 @@ import argparse
 import json
 import re
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 MILESTONE_ID = "M026-3rvvgp"
 SLICE_ID = "S06"
