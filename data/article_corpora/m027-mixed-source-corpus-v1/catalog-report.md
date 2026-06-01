@@ -3,7 +3,7 @@
 ## Overview
 - Selection: `m027-mixed-source-corpus-v1`
 - Articles selected: 6
-- Source variants captured: 0/12
+- Source variants captured: 11/12
 - S02 blockers: 6
 - Ready for S02 parser/chunking baseline: False
 - Network replay guarantee: validation uses catalog/index/loader artifacts only and does not fetch.
@@ -19,28 +19,28 @@
 ## Article Readiness
 | Article | Provider | Topic | Primary | Captured Variants | PDF Fallback | Blocked Before S02 |
 |---|---:|---:|---|---:|---:|---:|
-| arxiv/mixed-source/2605.20897 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 0/2 | True | True |
-| arxiv/mixed-source/2605.21401 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 0/2 | True | True |
-| nature/mixed-source/s44387-025-00019-5 | nature | mixed-source | nature_html / html_metadata / not_loaded_metadata_only | 0/2 | False | True |
-| arxiv/mixed-source/2605.25522 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 0/2 | True | True |
-| arxiv/mixed-source/2603.04448 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 0/2 | True | True |
-| arxiv/mixed-source/2604.18478 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 0/2 | True | True |
+| arxiv/mixed-source/2605.20897 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 2/2 | True | True |
+| arxiv/mixed-source/2605.21401 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 2/2 | True | True |
+| nature/mixed-source/s44387-025-00019-5 | nature | mixed-source | nature_html / html_metadata / not_loaded_metadata_only | 1/2 | False | True |
+| arxiv/mixed-source/2605.25522 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 2/2 | True | True |
+| arxiv/mixed-source/2603.04448 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 2/2 | True | True |
+| arxiv/mixed-source/2604.18478 | arxiv | mixed-source | arxiv_abs_page / html_metadata / not_loaded_metadata_only | 2/2 | True | True |
 
 ## Source Variant Diagnostics
 | Article | Role | Format | Primary | Capability | Capture | Checksum | Loader Outcome | Fallback Reason |
 |---|---|---|---:|---|---|---|---|---|
-| arxiv/mixed-source/2605.20897 | arxiv_abs_page | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2605.20897 | arxiv_pdf | pdf | False | content | not_captured |  | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
-| arxiv/mixed-source/2605.21401 | arxiv_abs_page | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2605.21401 | arxiv_pdf | pdf | False | content | not_captured |  | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
-| nature/mixed-source/s44387-025-00019-5 | nature_html | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2605.20897 | arxiv_abs_page | html_metadata | True | metadata | captured | e1bcfe65b0b7 | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2605.20897 | arxiv_pdf | pdf | False | content | captured | b0265c4651cb | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
+| arxiv/mixed-source/2605.21401 | arxiv_abs_page | html_metadata | True | metadata | captured | d09b8a50de56 | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2605.21401 | arxiv_pdf | pdf | False | content | captured | 6f6aa8f43aa6 | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
+| nature/mixed-source/s44387-025-00019-5 | nature_html | html_metadata | True | metadata | captured | d4189dd89772 | not_loaded_metadata_only |  |
 | nature/mixed-source/s44387-025-00019-5 | citation_metadata | metadata | False | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2605.25522 | arxiv_abs_page | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2605.25522 | arxiv_pdf | pdf | False | content | not_captured |  | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
-| arxiv/mixed-source/2603.04448 | arxiv_abs_page | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2603.04448 | arxiv_pdf | pdf | False | content | not_captured |  | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
-| arxiv/mixed-source/2604.18478 | arxiv_abs_page | html_metadata | True | metadata | not_captured |  | not_loaded_metadata_only |  |
-| arxiv/mixed-source/2604.18478 | arxiv_pdf | pdf | False | content | not_captured |  | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
+| arxiv/mixed-source/2605.25522 | arxiv_abs_page | html_metadata | True | metadata | captured | b3f31f94699e | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2605.25522 | arxiv_pdf | pdf | False | content | captured | 54214575fc87 | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
+| arxiv/mixed-source/2603.04448 | arxiv_abs_page | html_metadata | True | metadata | captured | 16fceff1b0f1 | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2603.04448 | arxiv_pdf | pdf | False | content | captured | 65c081a8134c | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
+| arxiv/mixed-source/2604.18478 | arxiv_abs_page | html_metadata | True | metadata | captured | ae2da91a3bc6 | not_loaded_metadata_only |  |
+| arxiv/mixed-source/2604.18478 | arxiv_pdf | pdf | False | content | captured | ddad8666fd63 | not_loaded | future_pdf_to_markdown_conversion_after_acquisition |
 
 ## Failure Modes
 - Filesystem dependency: missing catalog, index, selection, article records, loader events, or captured source files bubble as validator errors with non-zero exit; artifact writes are atomic temp-file-plus-rename writes.
@@ -88,6 +88,6 @@
 ## Provenance
 - Command: `uv run python scripts/verify_m027_mixed_source_catalog.py`
 - CWD: `/root/daily-archive`
-- Git commit: `a0c7415ef76d648ed6da68764fedbe4895e0bf40`
+- Git commit: `09af1d5d0acf1ffb16c29e751c6364601423b447`
 - Exit code: 0
 - Output hashes are recorded in `catalog-summary.json` for non-self-referential outputs.
