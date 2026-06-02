@@ -92,10 +92,18 @@ This report is metadata-only. It summarizes local S01-S06 preprocessing evidence
 
 ## Negative Tests
 - Covered by: `tests/test_m027_pipeline_readiness_synthesis.py`
+- real-artifact validate-only path passes for the current S07 outputs
 - missing upstream JSON produces missing_json_artifact and failed status
+- malformed JSON and malformed JSONL rows produce stable malformed_* diagnostics
 - URL-like artifact path references produce unsafe_artifact_reference diagnostics
-- readiness/import claim creep produces unsafe_safety_or_readiness_flag_true diagnostics
-- stale declared output hashes produce declared_artifact_sha256_mismatch diagnostics
+- unsafe graph/import/production/LadybugDB/trusted-fact/raw-payload flags produce unsafe_safety_or_readiness_flag_true diagnostics
+- S06 riskratchet blocking=true or pass_fail_affected=true remains diagnostic-only and is rejected if promoted
+- S05 unsafe import decision overrides produce readiness_decision_claim_creep diagnostics
+- raw payload keys and sentinel markers produce metadata_payload_* leakage diagnostics
+- stale declared input/output hashes produce provenance hash mismatch diagnostics
+- missing parser-ready zero-chunk blocker in the summary or report is rejected
+- forbidden positive graph/import/production readiness claims in the summary or report are rejected
+- tampered S07 outputs make validate-only exit non-zero
 
 ## Observability Impact
 S07 writes machine-readable health, failure phases, diagnostic codes, artifact paths, JSON paths, SHA-256/byte-size provenance rows, safety flags, and recovery guidance for future agents.

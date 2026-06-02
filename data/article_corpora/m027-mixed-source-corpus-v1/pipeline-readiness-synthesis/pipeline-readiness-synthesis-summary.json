@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-02T08:12:03Z",
+  "created_at": "2026-06-02T08:17:45Z",
   "diagnostics": [],
   "drill_down_paths": {
     "s01_catalog_summary": "data/article_corpora/m027-mixed-source-corpus-v1/catalog-summary.json",
@@ -108,10 +108,18 @@
   ],
   "negative_tests": {
     "cases": [
+      "real-artifact validate-only path passes for the current S07 outputs",
       "missing upstream JSON produces missing_json_artifact and failed status",
+      "malformed JSON and malformed JSONL rows produce stable malformed_* diagnostics",
       "URL-like artifact path references produce unsafe_artifact_reference diagnostics",
-      "readiness/import claim creep produces unsafe_safety_or_readiness_flag_true diagnostics",
-      "stale declared output hashes produce declared_artifact_sha256_mismatch diagnostics"
+      "unsafe graph/import/production/LadybugDB/trusted-fact/raw-payload flags produce unsafe_safety_or_readiness_flag_true diagnostics",
+      "S06 riskratchet blocking=true or pass_fail_affected=true remains diagnostic-only and is rejected if promoted",
+      "S05 unsafe import decision overrides produce readiness_decision_claim_creep diagnostics",
+      "raw payload keys and sentinel markers produce metadata_payload_* leakage diagnostics",
+      "stale declared input/output hashes produce provenance hash mismatch diagnostics",
+      "missing parser-ready zero-chunk blocker in the summary or report is rejected",
+      "forbidden positive graph/import/production readiness claims in the summary or report are rejected",
+      "tampered S07 outputs make validate-only exit non-zero"
     ],
     "covered_by": "tests/test_m027_pipeline_readiness_synthesis.py"
   },
@@ -127,7 +135,7 @@
   "provenance": {
     "command": "scripts/synthesize_m027_pipeline_readiness.py",
     "cwd": "/root/daily-archive",
-    "git_commit": "0ea944ec772b2f1c639b31bb4a0c120d13f15a3b",
+    "git_commit": "f3102a59a24f0fcfb2513e618d40257e152cb800",
     "input_artifacts": [
       {
         "byte_size": 16357,
@@ -228,7 +236,7 @@
     ],
     "output_artifacts": [
       {
-        "byte_size": 17073,
+        "byte_size": 17842,
         "description": "S07 readiness synthesis summary",
         "exists": true,
         "path": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-summary.json",
@@ -244,12 +252,12 @@
         "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
-        "byte_size": 9501,
+        "byte_size": 10214,
         "description": "S07 readiness synthesis markdown report",
         "exists": true,
         "path": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-report.md",
         "role": "report",
-        "sha256": "48e4884473a1d69e6a937fe76396fc2796f748a08a8e8c276844f4004d9539a3"
+        "sha256": "3754204829ca33d2e677e0476c8e20f1d23f6ec4e76223de7dc4bdc7b2b07018"
       }
     ],
     "self_hash_excluded": true,

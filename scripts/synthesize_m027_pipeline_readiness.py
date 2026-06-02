@@ -88,6 +88,23 @@ FORBIDDEN_PAYLOAD_KEYS = {
     "paper_text",
 }
 FORBIDDEN_SNIPPETS = ("<html", "</html", "%PDF-", "base64,", "RAW_ARXIV_ABS_SECRET", "RAW_NATURE_BODY_SECRET", "RAW_PDF_SECRET")
+FORBIDDEN_POSITIVE_CLAIM_PHRASES = (
+    "ready for graph import",
+    "ready for trusted fact",
+    "ready for trusted kg",
+    "ready for production import",
+    "ready for ladybugdb",
+    "import ready",
+    "graph ready",
+    "trusted fact ready",
+    "production ready",
+    "ladybugdb ready",
+    "can import to graph",
+    "can write ladybugdb",
+    "safe to import",
+)
+NEGATING_CLAIM_PREFIXES = ("not ", "no ", "never ", "without ", "does not ", "do not ", "cannot ", "can't ", "blocked from ", "blocked and ", "out of scope for ")
+REQUIRED_ZERO_CHUNK_BLOCKER_PHRASE = "zero chunks"
 REQUIRED_SUMMARY_CONTRACTS = {
     "s01_catalog_summary": ("S01", None),
     "s02_source_acquisition_summary": ("S02", "m027-source-acquisition.v1"),
@@ -273,6 +290,34 @@ def validate_no_payload_leakage(value: Any, *, serialized: str, where: Path | st
         if snippet.lower() in lowered:
             findings.append(diagnostic("metadata_payload_snippet_leakage", "metadata artifact includes a forbidden raw payload sentinel", artifact_path=where, failure_source_class="redaction"))
     return findings
+
+
+def validate_no_positive_readiness_claims(text: str, *, where: Path | str, json_path: str = "$") -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    lowered = text.lower().replace("_", " ").replace("-", " ")
+    for phrase in FORBIDDEN_POSITIVE_CLAIM_PHRASES:
+        start = 0
+        while True:
+            index = lowered.find(phrase, start)
+            if index == -1:
+                break
+            prefix_window = lowered[max(0, index - 24):index]
+            suffix_window = lowered[index + len(phrase):index + len(phrase) + 16]
+            clause_start = max(lowered.rfind(separator, 0, index) for separator in ("\n", ".", ";")) + 1
+            clause_prefix = lowered[clause_start:index]
+            is_counter_or_field_label = suffix_window.startswith(" count") or suffix_window.lstrip().startswith((":", '":', '",', '"}'))
+            is_negated = any(prefix_window.endswith(prefix) for prefix in NEGATING_CLAIM_PREFIXES) or any(token in clause_prefix for token in ("no ", "not ", "does not ", "cannot ", "without "))
+            if not is_counter_or_field_label and not is_negated:
+                findings.append(diagnostic("forbidden_positive_readiness_claim", f"forbidden positive readiness/import claim found: {phrase}", artifact_path=where, json_path=json_path, failure_source_class="claim_boundary"))
+            start = index + len(phrase)
+    return findings
+
+
+def validate_zero_chunk_blocker(value: Any, *, where: Path | str, json_path: str) -> list[dict[str, Any]]:
+    serialized = json.dumps(value, sort_keys=True).lower() if not isinstance(value, str) else value.lower()
+    if REQUIRED_ZERO_CHUNK_BLOCKER_PHRASE not in serialized:
+        return [diagnostic("missing_parser_ready_zero_chunk_blocker", "S07 synthesis must preserve the parser-ready zero-chunk blocker", artifact_path=where, json_path=json_path, failure_source_class="claim_boundary")]
+    return []
 
 
 def false_flag_diagnostics(value: Mapping[str, Any], *, where: Path | str, json_prefix: str = "$") -> list[dict[str, Any]]:
@@ -521,10 +566,18 @@ def build_summary(payloads: Mapping[str, Mapping[str, Any]], jsonl_payloads: Map
         "negative_tests": {
             "covered_by": "tests/test_m027_pipeline_readiness_synthesis.py",
             "cases": [
+                "real-artifact validate-only path passes for the current S07 outputs",
                 "missing upstream JSON produces missing_json_artifact and failed status",
+                "malformed JSON and malformed JSONL rows produce stable malformed_* diagnostics",
                 "URL-like artifact path references produce unsafe_artifact_reference diagnostics",
-                "readiness/import claim creep produces unsafe_safety_or_readiness_flag_true diagnostics",
-                "stale declared output hashes produce declared_artifact_sha256_mismatch diagnostics",
+                "unsafe graph/import/production/LadybugDB/trusted-fact/raw-payload flags produce unsafe_safety_or_readiness_flag_true diagnostics",
+                "S06 riskratchet blocking=true or pass_fail_affected=true remains diagnostic-only and is rejected if promoted",
+                "S05 unsafe import decision overrides produce readiness_decision_claim_creep diagnostics",
+                "raw payload keys and sentinel markers produce metadata_payload_* leakage diagnostics",
+                "stale declared input/output hashes produce provenance hash mismatch diagnostics",
+                "missing parser-ready zero-chunk blocker in the summary or report is rejected",
+                "forbidden positive graph/import/production readiness claims in the summary or report are rejected",
+                "tampered S07 outputs make validate-only exit non-zero",
             ],
         },
         "next_cycle_recommendations": [
@@ -557,12 +610,16 @@ def validate_s07_outputs(summary_path: Path, diagnostics_path: Path, report_path
                 if heading not in report_text:
                     findings.append(diagnostic("report_required_section_missing", f"S07 report missing required section: {heading}", artifact_path=report_path, failure_source_class="report_contract"))
             findings.extend(validate_no_payload_leakage({"report": report_text}, serialized=report_text, where=report_path))
+            findings.extend(validate_no_positive_readiness_claims(report_text, where=report_path))
+            findings.extend(validate_zero_chunk_blocker(report_text, where=report_path, json_path="$"))
     if summary is None:
         return findings
     if summary.get("schema_version") != SCHEMA_VERSION or summary.get("slice_id") != SLICE_ID:
         findings.append(diagnostic("s07_summary_contract_mismatch", "S07 summary has unexpected schema_version or slice_id", artifact_path=summary_path, json_path="$.schema_version", failure_source_class="artifact_contract"))
     findings.extend(false_flag_diagnostics(summary, where=summary_path))
     findings.extend(validate_no_payload_leakage(summary, serialized=json.dumps(summary, sort_keys=True), where=summary_path))
+    findings.extend(validate_no_positive_readiness_claims(json.dumps(summary, sort_keys=True), where=summary_path))
+    findings.extend(validate_zero_chunk_blocker(summary.get("functional_readiness", {}), where=summary_path, json_path="$.functional_readiness"))
     rows = summary.get("provenance", {}).get("output_artifacts") if isinstance(summary.get("provenance"), dict) else None
     if not isinstance(rows, list):
         findings.append(diagnostic("missing_output_artifact_provenance", "S07 summary lacks provenance.output_artifacts", artifact_path=summary_path, json_path="$.provenance.output_artifacts", failure_source_class="provenance_hash"))
