@@ -16,6 +16,13 @@ replay = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = replay
 spec.loader.exec_module(replay)
 
+VERIFY_MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m027_current_pipeline_baseline.py"
+verify_spec = importlib.util.spec_from_file_location("verify_m027_current_pipeline_baseline", VERIFY_MODULE_PATH)
+assert verify_spec is not None and verify_spec.loader is not None
+verifier = importlib.util.module_from_spec(verify_spec)
+sys.modules[verify_spec.name] = verifier
+verify_spec.loader.exec_module(verifier)
+
 BaselineReplayError = replay.BaselineReplayError
 
 
@@ -89,6 +96,31 @@ def _fixture(tmp_path: Path, *, parser_text: str | None = None, metadata_only: b
         output_dir=corpus / "current-pipeline-baseline",
         no_network=True,
     )
+
+
+def _write_replay_outputs(args: Namespace) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    summary, diagnostics = replay.replay_baseline(args)
+    replay.write_json(args.output_summary, summary)
+    replay.write_jsonl(args.output_diagnostics, diagnostics)
+    replay.write_report(args.output_report, summary)
+    return summary, diagnostics
+
+
+def _verifier_args(tmp_path: Path, args: Namespace, *, expected_article_count: int = 1, expected_variant_count: int = 2) -> Namespace:
+    return Namespace(
+        summary=args.output_summary,
+        diagnostics=args.output_diagnostics,
+        report=args.output_report,
+        output_dir=args.output_dir,
+        conversion_summary=args.conversion_summary,
+        root=tmp_path,
+        expected_article_count=expected_article_count,
+        expected_variant_count=expected_variant_count,
+    )
+
+
+def _diagnostic_codes(findings: list[dict[str, Any]]) -> set[str]:
+    return {str(finding.get("diagnostic_code")) for finding in findings}
 
 
 def test_replay_requires_s03_linkage_and_no_network(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -182,3 +214,120 @@ def test_metadata_artifacts_are_redacted(tmp_path: Path, monkeypatch: pytest.Mon
     assert '"raw_text"' not in combined
     assert "<html" not in combined.lower()
     assert "%PDF-" not in combined
+
+
+def test_verifier_accepts_valid_replay_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+
+    verifier_summary, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    assert findings == []
+    assert verifier_summary["status"] == "passed"
+    assert verifier_summary["network_fetch_attempted"] is False
+    assert verifier_summary["production_import_attempted"] is False
+    assert verifier_summary["ladybugdb_written"] is False
+    assert verifier_summary["graph_import_allowed"] is False
+
+
+def test_verifier_flags_stale_s03_source_summary_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text('{"changed": true}\n', encoding="utf-8")
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    assert "s03_source_summary_sha256_mismatch" in _diagnostic_codes(findings)
+
+
+def test_verifier_flags_missing_per_article_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+    (args.output_dir / "article_one" / "baseline.json").unlink()
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    assert "missing_baseline_artifact" in _diagnostic_codes(findings)
+
+
+def test_verifier_flags_stale_converted_payload_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+    converted = tmp_path / "corpus" / "conversion-quality" / "article_one" / "arxiv_pdf.txt"
+    converted.write_text("tampered after baseline replay", encoding="utf-8")
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    codes = _diagnostic_codes(findings)
+    assert "converted_payload_sha256_mismatch" in codes
+    assert "converted_payload_byte_size_mismatch" in codes
+
+
+def test_verifier_flags_unsafe_baseline_artifact_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    summary, _ = _write_replay_outputs(args)
+    summary["article_results"][0]["baseline_artifact_path"] = "../escape/baseline.json"
+    replay.write_json(args.output_summary, summary)
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    assert any(code.startswith("unsafe_baseline_artifact_path") for code in _diagnostic_codes(findings))
+
+
+def test_verifier_flags_payload_leakage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    summary, _ = _write_replay_outputs(args)
+    summary["article_results"][0]["raw_text"] = "RAW_PDF_SECRET <html"
+    replay.write_json(args.output_summary, summary)
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    codes = _diagnostic_codes(findings)
+    assert "metadata_payload_key_leakage" in codes
+    assert "metadata_payload_snippet_leakage" in codes
+
+
+def test_verifier_flags_missing_baseline_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+    artifact_path = args.output_dir / "article_one" / "baseline.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["variants"] = artifact["variants"][:1]
+    artifact["variant_count"] = 1
+    replay.write_json(artifact_path, artifact)
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    assert "baseline_artifact_variant_mismatch" in _diagnostic_codes(findings)
+
+
+def test_verifier_flags_unsafe_true_flags(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    summary, diagnostics = _write_replay_outputs(args)
+    summary["network_fetch_attempted"] = True
+    summary["article_results"][0]["graph_import_allowed"] = True
+    diagnostics[0]["ladybugdb_written"] = True
+    replay.write_json(args.output_summary, summary)
+    replay.write_jsonl(args.output_diagnostics, diagnostics)
+
+    _, findings = verifier.verify(_verifier_args(tmp_path, args))
+
+    codes = _diagnostic_codes(findings)
+    assert "summary_contract_mismatch" in codes
+    assert "unsafe_safety_flag_true" in codes
