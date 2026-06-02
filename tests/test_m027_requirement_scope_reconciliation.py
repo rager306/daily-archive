@@ -158,8 +158,10 @@ def test_can_require_planning_evidence_existence(tmp_path: Path) -> None:
         ("R027", "M027 validates graph readiness."),
         ("R029", "M027 validates import-ready chunks."),
         ("R019", "M027 fully validates R019."),
+        ("R023", "M027 promotes trusted facts."),
         ("R031", "M027 proves unattended scaling."),
         ("R033", "M027 validates Scientific KG corpus behavior."),
+        ("R029", "M027 activates optimizer behavior."),
     ],
 )
 def test_rejects_unsafe_positive_claim_phrases(tmp_path: Path, requirement_id: str, claim: str) -> None:
@@ -192,7 +194,10 @@ def test_rejects_unsafe_true_boolean_fields(tmp_path: Path, field: str) -> None:
     )
 
 
-@pytest.mark.parametrize("field", ["raw_article_text", "base64_payload", "vector_payload", "secret_value", "production_connection"])
+@pytest.mark.parametrize(
+    "field",
+    ["raw_article_text", "binary_payload", "base64_payload", "vector_payload", "secret_value", "production_connection"],
+)
 def test_rejects_raw_payload_or_secret_field_names(tmp_path: Path, field: str) -> None:
     matrix = _load_real_matrix()
     _row(matrix, "R036")[field] = "must not be stored in validation metadata"
@@ -200,6 +205,19 @@ def test_rejects_raw_payload_or_secret_field_names(tmp_path: Path, field: str) -
     errors = _errors(matrix, tmp_path=tmp_path)
 
     assert any("contains unsafe raw/binary/base64/vector/secret field name" in error and field in error for error in errors)
+
+
+@pytest.mark.parametrize(
+    "marker",
+    ["-----BEGIN PRIVATE KEY-----", "data:application/pdf;base64,AAAA", "secret=do-not-store", "password=do-not-store"],
+)
+def test_rejects_raw_payload_base64_or_secret_leakage_markers(tmp_path: Path, marker: str) -> None:
+    matrix = _load_real_matrix()
+    _row(matrix, "R024")["review_notes"] = marker
+
+    errors = _errors(matrix, tmp_path=tmp_path)
+
+    assert any("contains raw payload, base64, or secret leakage marker" in error for error in errors)
 
 
 @pytest.mark.parametrize("requirement_id", ["R019", "R022", "R023", "R031", "R032", "R033"])
@@ -246,6 +264,15 @@ def test_rejects_stale_rendered_markdown(tmp_path: Path) -> None:
     errors = _errors(matrix, rendered=rendered, tmp_path=tmp_path)
 
     assert any("rendered markdown missing requirement id: R036" in error for error in errors)
+
+
+def test_rejects_rendered_markdown_with_stale_source_matrix_path(tmp_path: Path) -> None:
+    matrix = _load_real_matrix()
+    rendered = _load_rendered().replace("doc/validation/m027_requirement_scope_matrix.json", "doc/validation/old.json")
+
+    errors = _errors(matrix, rendered=rendered, tmp_path=tmp_path)
+
+    assert any("rendered markdown missing marker: doc/validation/m027_requirement_scope_matrix.json" in error for error in errors)
 
 
 def test_cli_rejects_negative_fixture(tmp_path: Path) -> None:
