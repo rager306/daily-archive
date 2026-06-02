@@ -12,11 +12,21 @@ import pytest
 
 REPO_ROOT = Path(__file__).parents[1]
 BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_pdf_acquisition_diagnostics.py"
+VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_pdf_acquisition_diagnostics.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
 def _load_script() -> ModuleType:
     spec = importlib.util.spec_from_file_location("build_m028_pdf_acquisition_diagnostics", BUILD_SCRIPT_PATH)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_verifier() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("verify_m028_pdf_acquisition_diagnostics", VERIFY_SCRIPT_PATH)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -379,3 +389,125 @@ def test_real_corpus_regeneration_contract() -> None:
     serialized = (REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl").read_text(encoding="utf-8") + (REAL_CORPUS_DIR / "pdf-acquisition-summary.json").read_text(encoding="utf-8")
     for forbidden in ["%PDF-", "<html", "</html>", "raw_text", "chunk_text", "trusted_fact"]:
         assert forbidden.lower() not in serialized.lower()
+
+
+def _real_verifier_inputs(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, object], list[dict[str, object]], dict[str, object]]:
+    selection = _read_json(REAL_CORPUS_DIR / "selection.json")
+    events = _read_jsonl(REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl")
+    summary = _read_json(REAL_CORPUS_DIR / "pdf-acquisition-summary.json")
+    selection_path = tmp_path / "selection.json"
+    events_path = tmp_path / "pdf-acquisition-events.jsonl"
+    summary_path = tmp_path / "pdf-acquisition-summary.json"
+    _write_json(selection_path, selection)
+    _write_jsonl(events_path, events)
+    _write_json(summary_path, summary)
+    return selection_path, events_path, summary_path, selection, events, summary
+
+
+def _verify_mutation(tmp_path: Path, *, reject_unsafe_claims: bool = True) -> tuple[ModuleType, list[dict[str, object]]]:
+    verifier = _load_verifier()
+    diagnostics = verifier.verify_files(
+        selection_path=tmp_path / "selection.json",
+        events_path=tmp_path / "pdf-acquisition-events.jsonl",
+        summary_path=tmp_path / "pdf-acquisition-summary.json",
+        repo_root=REPO_ROOT,
+        reject_unsafe_claims=reject_unsafe_claims,
+    )
+    return verifier, diagnostics
+
+
+def _assert_diagnostic_codes(diagnostics: list[dict[str, object]], *codes: str) -> None:
+    actual = {str(item.get("code")) for item in diagnostics}
+    for code in codes:
+        assert code in actual
+
+
+def test_pdf_acquisition_verifier_accepts_real_artifacts(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    selection_path, events_path, summary_path, *_ = _real_verifier_inputs(tmp_path)
+
+    diagnostics = verifier.verify_files(
+        selection_path=selection_path,
+        events_path=events_path,
+        summary_path=summary_path,
+        repo_root=REPO_ROOT,
+        reject_unsafe_claims=True,
+    )
+
+    assert diagnostics == []
+
+
+@pytest.mark.parametrize(
+    "mutate,expected_code",
+    [
+        (lambda _selection, _events, summary: summary.update({"url_ref_count": 14}), "corpus_scope_stale"),
+        (lambda selection, _events, _summary: selection.update({"refs": [ref for ref in selection["refs"] if ref["ref_id"] != "R15"]}), "missing_new_refs"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R03")["candidate_pdf"].update({"is_candidate": True, "candidate_kind": "arxiv_abs_pdf_candidate"}), "non_arxiv_pdf_promotion"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R01")["safety_flags"].update({"graph_write_attempted": True}), "unsafe_claim_detected"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R02").update({"debug_raw_text": "<html>raw source body</html>"}), "raw_payload_leakage"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R01")["pdf_artifact"].update({"sha256": "0" * 64}), "artifact_checksum_mismatch"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R02")["pdf_acquisition"].pop("reason"), "required_nullable_field_missing"),
+        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R10")["identity_group"].update({"ref_ids": ["R10"], "url_ref_count": 1, "has_url_variants": False}), "duplicate_identity_mismatch"),
+    ],
+)
+def test_pdf_acquisition_verifier_rejects_mutated_boundaries(tmp_path: Path, mutate, expected_code: str) -> None:
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+    mutate(selection, events, summary)
+    _write_json(selection_path, selection)
+    _write_jsonl(events_path, events)
+    _write_json(summary_path, summary)
+
+    _verifier, diagnostics = _verify_mutation(tmp_path)
+
+    _assert_diagnostic_codes(diagnostics, expected_code)
+
+
+def test_pdf_acquisition_verifier_rejects_malformed_existing_pdf_signature(tmp_path: Path) -> None:
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+    fake_pdf = tmp_path / "sources" / "R01-malformed.pdf"
+    fake_pdf.parent.mkdir()
+    fake_pdf.write_bytes(b"not-a-pdf but checksum matches\n")
+    r01 = next(event for event in events if event["ref_id"] == "R01")
+    artifact = r01["pdf_artifact"]
+    artifact["path"] = str(fake_pdf.relative_to(tmp_path))
+    artifact["sha256"] = _sha256(fake_pdf)
+    artifact["byte_count"] = fake_pdf.stat().st_size
+    _write_json(selection_path, selection)
+    _write_jsonl(events_path, events)
+    _write_json(summary_path, summary)
+    verifier = _load_verifier()
+
+    diagnostics = verifier.verify_files(
+        selection_path=selection_path,
+        events_path=events_path,
+        summary_path=summary_path,
+        repo_root=tmp_path,
+        reject_unsafe_claims=True,
+    )
+
+    _assert_diagnostic_codes(diagnostics, "malformed_existing_pdf_signature")
+
+
+def test_pdf_acquisition_verifier_cli_fails_with_stable_diagnostic(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+    summary["pdf_status_counts"] = {"not_acquired": 21}
+    _write_json(selection_path, selection)
+    _write_jsonl(events_path, events)
+    _write_json(summary_path, summary)
+    verifier = _load_verifier()
+
+    exit_code = verifier.main(
+        [
+            "--selection",
+            str(selection_path),
+            "--events",
+            str(events_path),
+            "--summary",
+            str(summary_path),
+            "--reject-unsafe-claims",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "summary_event_mismatch" in captured.err
