@@ -15,7 +15,7 @@ This report is metadata-only. It summarizes local S01-S06 preprocessing evidence
 - Riskratchet telemetry is diagnostic-only and non-blocking; it is not a production quality gate.
 
 ## Not ready
-- Not ready for graph import, trusted KG facts, production ingestion, unattended scaling, or parser-quality claims.
+- Not ready for graph import, trusted KG facts, import-ready chunks, scientific KG quality, production writes, DSPy/RLM optimization, unattended scaling, or parser-quality claims.
 - Not ready if any S07 diagnostic has severity=error; validation exits non-zero in that case.
 
 ## Functional readiness by slice

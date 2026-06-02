@@ -513,7 +513,7 @@ def build_summary(payloads: Mapping[str, Mapping[str, Any]], jsonl_payloads: Map
             ],
             "ready_with_blockers_conditions": blockers,
             "not_ready": [
-                "Not ready for graph import, trusted KG facts, production ingestion, unattended scaling, or parser-quality claims.",
+                "Not ready for graph import, trusted KG facts, import-ready chunks, scientific KG quality, production writes, DSPy/RLM optimization, unattended scaling, or parser-quality claims.",
                 "Not ready if any S07 diagnostic has severity=error; validation exits non-zero in that case.",
             ],
         },

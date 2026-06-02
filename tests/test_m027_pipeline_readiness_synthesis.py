@@ -116,7 +116,7 @@ def _valid_s07_outputs(root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
                 "## Ready with blockers/conditions",
                 "- One parser-ready variant still produces zero chunks.",
                 "## Not ready",
-                "- Not ready for graph import, trusted facts, production ingestion, or LadybugDB writes.",
+                "- Not ready for graph import, trusted facts, import-ready chunks, scientific KG quality, production writes, DSPy/RLM optimization, unattended scaling, or LadybugDB writes.",
                 "## Requirement coverage",
                 "## Health, failure, and recovery",
                 "## Next-cycle recommendations",
@@ -131,7 +131,7 @@ def _valid_s07_outputs(root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
         "health": {"diagnostic_count": 0},
         "functional_readiness": {
             "ready_with_blockers_conditions": ["One parser-ready variant still produces zero chunks."],
-            "not_ready": ["Not ready for graph import, trusted facts, production ingestion, or LadybugDB writes."],
+            "not_ready": ["Not ready for graph import, trusted facts, import-ready chunks, scientific KG quality, production writes, DSPy/RLM optimization, unattended scaling, or LadybugDB writes."],
         },
         "provenance": {"self_hash_excluded": True, "output_artifacts": []},
         **synthesis.FALSE_SAFETY_FLAGS,
