@@ -43,7 +43,7 @@ This report captures accepted current mixed-source pipeline behavior before S05 
 ## Provenance
 
 - Conversion summary: `data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json`
-- Conversion summary SHA-256: `069b152f91fc5dc57a0e6a52325dc2cad282a17610912ed715874a05102d005c`
+- Conversion summary SHA-256: `54b435f75e02cf438a1ee96b08fd80c6ac98e97416891540f1692249dda0cbd0`
 - Baseline diagnostics: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-diagnostics.jsonl`
 - Per-article baseline directory: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline`
 

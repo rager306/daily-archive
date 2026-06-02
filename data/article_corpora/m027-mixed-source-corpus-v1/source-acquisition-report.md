@@ -78,4 +78,4 @@ This section is metadata-only and does not embed article text, HTML snippets, PD
 - Error diagnostics: 0
 - Command: `['uv', 'run', 'python', 'scripts/verify_m027_source_acquisition_boundary.py']`
 - CWD: `/root/daily-archive`
-- Git commit: `82fbd8c1ce9fe53dc516f151f23c54c4991263e0`
+- Git commit: `ba6ed85788bce7172c43ca2bf3a9623afeface6c`

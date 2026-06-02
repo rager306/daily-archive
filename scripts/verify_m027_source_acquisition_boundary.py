@@ -14,9 +14,7 @@ import argparse
 import hashlib
 import json
 import sys
-import time
 from collections.abc import Iterable, Mapping
-from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -462,17 +460,19 @@ def file_hashes(paths: Iterable[Path]) -> dict[str, str | None]:
 
 def build_provenance(args: argparse.Namespace, article_paths: list[tuple[str, Path]], *, exit_code: int, duration_ms: int) -> dict[str, Any]:
     outputs = [args.summary, args.diagnostics, args.report]
+    hashable_outputs = [args.diagnostics, args.report]
     return {
         "schema_version": SCHEMA_VERSION,
         "command": ["uv", "run", "python", "scripts/verify_m027_source_acquisition_boundary.py"],
-        "argv": sys.argv,
+        "argv": ["scripts/verify_m027_source_acquisition_boundary.py"],
         "cwd": str(ROOT),
         "git_commit": git_commit(ROOT),
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "input_hashes": file_hashes(input_paths(args.catalog, args.index, args.selection, article_paths)),
-        "output_hashes": file_hashes(outputs),
+        "output_hashes": file_hashes(hashable_outputs),
+        "output_hash_note": "source-acquisition-summary.json is intentionally excluded to avoid self-referential stale hashes",
         "exit_code": exit_code,
         "duration_ms": duration_ms,
         "validate_only": True,
@@ -541,7 +541,13 @@ def refresh_artifacts(
         path=args.summary,
     )
     verification_row["error_count"] = len(errors)
-    write_jsonl(args.diagnostics, [*diagnostic_rows, verification_row, *errors])
+    retained_diagnostic_rows = [
+        row
+        for row in diagnostic_rows
+        if str(row.get("diagnostic_code") or row.get("code") or "")
+        not in {"local_only_replay_verification_passed", "local_only_replay_verification_failed"}
+    ]
+    write_jsonl(args.diagnostics, [*retained_diagnostic_rows, verification_row, *errors])
     existing_report = args.report.read_text(encoding="utf-8") if args.report.exists() else "# M027 Source Acquisition Report\n"
     marker = "\n## Local-Only Replay Verification\n"
     base_report = existing_report.split(marker, 1)[0].rstrip() + "\n"
@@ -549,7 +555,7 @@ def refresh_artifacts(
         base_report + render_report_section(provenance, errors, selected_article_count=selected_article_count, selected_variant_count=selected_variant_count),
         encoding="utf-8",
     )
-    provenance["output_hashes"] = file_hashes([args.summary, args.diagnostics, args.report])
+    provenance["output_hashes"] = file_hashes([args.diagnostics, args.report])
     summary["local_only_replay_verification"]["provenance"] = provenance
     write_json(args.summary, summary)
 
@@ -567,7 +573,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    started = time.perf_counter()
     argv = argv or sys.argv
     args = parse_args(argv)
     errors: list[dict[str, Any]] = []
@@ -605,7 +610,7 @@ def main(argv: list[str] | None = None) -> int:
     for artifact_path in (args.summary, args.diagnostics, args.report):
         validate_text_redaction(artifact_path, errors)
 
-    duration_ms = int((time.perf_counter() - started) * 1000)
+    duration_ms = 0
     exit_code = 0 if not errors else 1
     provenance = build_provenance(args, article_paths, exit_code=exit_code, duration_ms=duration_ms)
     refresh_artifacts(

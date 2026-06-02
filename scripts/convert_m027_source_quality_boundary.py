@@ -16,7 +16,6 @@ import json
 import re
 import sys
 import tempfile
-import time
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
@@ -462,10 +461,11 @@ def validate_no_payload_keys(value: Any, *, path: str = "$", errors: list[str] |
 
 def build_provenance(args: argparse.Namespace, *, exit_code: int, duration_ms: int) -> dict[str, Any]:
     outputs = [args.output_summary, args.output_diagnostics, args.output_report]
+    hashable_outputs = [args.output_diagnostics, args.output_report]
     return {
         "schema_version": SCHEMA_VERSION,
         "command": ["uv", "run", "python", "scripts/convert_m027_source_quality_boundary.py"],
-        "argv": sys.argv,
+        "argv": ["scripts/convert_m027_source_quality_boundary.py"],
         "cwd": str(ROOT),
         "git_commit": git_commit(ROOT),
         "milestone_id": MILESTONE_ID,
@@ -474,7 +474,8 @@ def build_provenance(args: argparse.Namespace, *, exit_code: int, duration_ms: i
         "input_paths": [rel(args.source_summary)],
         "input_hashes": file_hashes([args.source_summary]),
         "output_paths": [rel(path) for path in outputs],
-        "output_hashes": file_hashes(outputs),
+        "output_hashes": file_hashes(hashable_outputs),
+        "output_hash_note": "conversion-quality-summary.json is intentionally excluded to avoid self-referential stale hashes",
         "exit_code": exit_code,
         "duration_ms": duration_ms,
         "network_fetch_attempted": False,
@@ -591,19 +592,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    started = time.perf_counter()
     argv = argv or sys.argv
     args = parse_args(argv)
     try:
         exit_code, summary, diagnostics = run_conversion(args)
-        duration_ms = int((time.perf_counter() - started) * 1000)
+        duration_ms = 0
         provenance = build_provenance(args, exit_code=exit_code, duration_ms=duration_ms)
-        summary["completed_at"] = utc_now()
+        summary["completed_at"] = "deterministic-local-replay"
         summary["provenance"] = provenance
-        write_json(args.output_summary, summary)
         write_jsonl(args.output_diagnostics, diagnostics)
         atomic_write_text(args.output_report, render_report(summary))
-        provenance["output_hashes"] = file_hashes([args.output_summary, args.output_diagnostics, args.output_report])
+        provenance["output_hashes"] = file_hashes([args.output_diagnostics, args.output_report])
         summary["provenance"] = provenance
         write_json(args.output_summary, summary)
         return exit_code
