@@ -236,6 +236,26 @@ def test_rejects_missing_canonical_class() -> None:
     assert any("missing canonical classes: UAT" in error for error in _errors(mutate))
 
 
+def test_rejects_extra_canonical_class() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        extra = deepcopy(audit["canonical_verification_classes"][0])
+        extra["class"] = "Performance"
+        audit["canonical_verification_classes"].append(extra)
+        audit["rerun_ready_validation_inputs"]["verification_classes"].append(
+            {
+                "class": "Performance",
+                "verdict": "PASS",
+                "planned_check": "Performance fixture planned check remains metadata-only.",
+                "evidence": [AUDIT_JSON_PATH, MATRIX_PATH],
+            }
+        )
+        return None
+
+    errors = _errors(mutate)
+    assert any("has unexpected classes: Performance" in error for error in errors)
+    assert any("verification_classes must list exactly the canonical classes" in error for error in errors)
+
+
 def test_rejects_non_pass_class_verdict() -> None:
     def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
         audit["canonical_verification_classes"][0]["verdict"] = "FAIL"
@@ -252,6 +272,25 @@ def test_rejects_matrix_semantic_drift() -> None:
         return None
 
     assert any("s08_verdict must be" in error for error in _errors(mutate))
+
+
+def test_rejects_semantic_drift_between_audit_and_matrix_rows() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["requirement_coverage_interpretation"]["requirement_rows"][0]["recommended_requirement_action"] = "close_requirement"
+        return None
+
+    assert any("audit R019 recommended_requirement_action must be remain_active" in error for error in _errors(mutate))
+
+
+def test_rejects_broad_active_requirement_reinterpretation_as_m027_deliverable() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        row = next(row for row in matrix["requirements"] if row["requirement_id"] == "R031")
+        row["m027_applicability"] = "m027_advanced_preprocessing_only"
+        audit_row = next(row for row in audit["requirement_coverage_interpretation"]["requirement_rows"] if row["requirement_id"] == "R031")
+        audit_row["m027_applicability"] = "m027_advanced_preprocessing_only"
+        return None
+
+    assert any("R031 m027_applicability must be future_out_of_scope_active_requirement" in error for error in _errors(mutate))
 
 
 def test_rejects_unsafe_safety_flag() -> None:
@@ -275,6 +314,55 @@ def test_rejects_source_summary_claim_creep() -> None:
         return None
 
     assert any("S07 summary graph_import_allowed must be false" in error for error in _errors(mutate))
+
+
+def test_rejects_missing_rerun_ready_validation_command() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["rerun_ready_validation_inputs"]["commands"] = [
+            "uv run python scripts/verify_m027_requirement_scope_reconciliation.py --validate-only"
+        ]
+        return None
+
+    assert any("commands missing class-audit validate-only command" in error for error in _errors(mutate))
+
+
+def test_rejects_rerun_verification_class_evidence_missing_matrix() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["rerun_ready_validation_inputs"]["verification_classes"][0]["evidence"] = [AUDIT_JSON_PATH]
+        return None
+
+    assert any("rerun verification class Contract evidence must include matrix and audit JSON" in error for error in _errors(mutate))
+
+
+def test_rejects_missing_rerun_ready_validation_source_paths() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["rerun_ready_validation_inputs"]["requirement_coverage_source"] = "doc/validation/other_matrix.json"
+        audit["rerun_ready_validation_inputs"]["class_audit_source"] = "doc/validation/other_audit.json"
+        return None
+
+    errors = _errors(mutate)
+    assert any("$.rerun_ready_validation_inputs.requirement_coverage_source must be" in error for error in errors)
+    assert any("$.rerun_ready_validation_inputs.class_audit_source must be" in error for error in errors)
+
+
+def test_rejects_unsafe_positive_prose() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["safe_validation_wording"].append("M027 validates graph readiness for the corpus.")
+        return None
+
+    assert any("contains unsafe positive claim phrase: m027 validates graph readiness" in error for error in _errors(mutate))
+
+
+def test_rejects_raw_binary_and_vector_payload_fields() -> None:
+    def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any], _summary: dict[str, Any]) -> None:
+        audit["raw_payload_fixture"] = "not allowed"
+        audit["nested_payloads"] = {"binary_payload_fixture": "not allowed", "vector_payload_fixture": "not allowed"}
+        return None
+
+    errors = _errors(mutate)
+    assert any("$.raw_payload_fixture contains unsafe raw/binary/base64/vector/secret field name" in error for error in errors)
+    assert any("$.nested_payloads.binary_payload_fixture contains unsafe raw/binary/base64/vector/secret field name" in error for error in errors)
+    assert any("$.nested_payloads.vector_payload_fixture contains unsafe raw/binary/base64/vector/secret field name" in error for error in errors)
 
 
 def test_rejects_raw_payload_leakage_marker() -> None:
