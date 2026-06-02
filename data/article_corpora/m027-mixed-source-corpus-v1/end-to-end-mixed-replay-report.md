@@ -45,9 +45,9 @@ This report records a local-only replay through loader, parser, PageIndex, chunk
 
 ## Provenance
 
-- Command: `scripts/replay_m027_end_to_end_mixed_replay.py --no-network`
+- Command: `scripts/replay_m027_end_to_end_mixed_replay.py`
 - CWD: `/root/daily-archive`
-- Git commit: `2d60b53491099ca3adb347a377a281b118ceafea`
+- Git commit: `d2fc9b2a200f3078125173a24476e3c16bf35a47`
 - Conversion summary: `data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json`
 - S04 baseline summary: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-summary.json`
 - Replay diagnostics: `data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-diagnostics.jsonl`
