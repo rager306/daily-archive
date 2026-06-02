@@ -110,16 +110,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements.
 - Notes: M009/S04 implemented bounded top-up planning with pass and blocked shortage artifacts. Replacement materialization and preflight remain required during the next batch runbook before scan.
 
-### R036 — Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
-- Class: failure-visibility
-- Status: active
-- Description: Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
-- Why it matters: Current validation artifacts can be checked for consistency, but they do not fully prove that each artifact was freshly produced by a specific CLI run. Provenance is required to detect stale artifacts and metadata mismatches such as an M008 artifact carrying M006 milestone metadata.
-- Source: user feedback after M008 completion
-- Primary owning slice: next validation hardening milestone
-- Validation: Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands.
-- Notes: M025 S11 scope reconciliation: advanced by event logs, reports, readiness decisions, summaries, and boundary provenance; remains active unless exact command/input/output-hash/exit-code/cwd/git-commit/active-context provenance fields are proven for relevant CLI surfaces.
-
 ### R040 — New infrastructure must be researched, compatibility-probed, and safety-wrapped before it is enabled in the main Scientific KG process.
 - Class: constraint
 - Status: active
@@ -128,6 +118,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user principle during M012 planning
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
+- Notes: M025 S11 scope reconciliation: followed as a local-first safety constraint in M025 through metadata-only, no-network, no-import, no-write, and redacted replay; remains a project-wide active constraint for future infrastructure work.
 
 ### R050 — Provide a deterministic CLI for detecting article structure artifacts and candidate KG scaffold links from preserved paper sources without performing KG import.
 - Class: core-capability
@@ -411,6 +402,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate.
 - Notes: Validated by M008: one genuinely new +10 batch was selected, source-ready, quota-gated, scanned, and independently reviewed. The review requires bounded top-up automation before another +10, but R034's one-batch goal is satisfied.
 
+### R036 — Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
+- Class: failure-visibility
+- Status: validated
+- Description: Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.
+- Why it matters: Current validation artifacts can be checked for consistency, but they do not fully prove that each artifact was freshly produced by a specific CLI run. Provenance is required to detect stale artifacts and metadata mismatches such as an M008 artifact carrying M006 milestone metadata.
+- Source: user feedback after M008 completion
+- Primary owning slice: next validation hardening milestone
+- Validation: M027-aakeky S06 validated R036-style provenance for replay/gate artifacts via `uv run python scripts/verify_m027_end_to_end_mixed_replay.py && uv run python scripts/verify_m027_provenance_and_riskratchet_gate.py --validate-only && uv run python -m pytest tests/test_m027_provenance_and_riskratchet_gate.py tests/test_riskratchet_gate.py tests/test_m027_end_to_end_mixed_replay.py -q` (gsd_exec 7ac737ec-e48b-45a2-bf86-18fa892e9c51, exit 0, 32 passed). The S06 summary records command, cwd, git commit, input/output artifact hashes, exit code/status, milestone/slice context, self-hash exclusion rationale, and fail-closed safety/riskratchet flags.
+- Notes: M027 S06 advances provenance on the mixed-source replay artifacts without graph import, LadybugDB writes, trusted fact promotion, production import, network replay, or using riskratchet as a blocking correctness gate.
+
 ### R037 — Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.
 - Class: core-capability
 - Status: validated
@@ -574,7 +575,7 @@ This file is the explicit capability and coverage contract for the project.
 | R033 | operability | active | M007-opaont | M007/S01,S02,S03,S04 | A local CLI can select the next batch, preflight/acquire sources, run redacted deviation scans, compare route/refusal deltas, flag outliers/contradictions, and persist resumable batch state without raw/chunk text or KG writes. |
 | R034 | primary-user-loop | validated | M008-c9zb94 | M008/S01,S02,S03,S04 | M008 evidence: selected_count=10, m006_overlap_count=0, final source_ready=10, quota accepted_ready_count=10, scan paper_count=10, chunk_count=1591, outlier_count=6, import_eligible_chunk_count=0, review verdict FLAG with next-batch gate. |
 | R035 | quality-attribute | active | M008-c9zb94 | M008/S03,M008/S04 | Partial validation: top-up pass sample final_accepted_ready_count=target_count and scan_allowed=true; blocked sample remaining_shortage_count=2 and scan_allowed=false. Missing: automatic acquisition/preflight integration for accepted replacements. |
-| R036 | failure-visibility | active | next validation hardening milestone | none | Partial validation: S01/S02/S03 artifacts prove fresh/stale/missing/hash/metadata verification. Final guard: freshness_pass=fresh, freshness_stale=stale, lineage_mismatch=stale. Missing: automatic provenance emission for real validation-batch commands. |
+| R036 | failure-visibility | validated | next validation hardening milestone | none | M027-aakeky S06 validated R036-style provenance for replay/gate artifacts via `uv run python scripts/verify_m027_end_to_end_mixed_replay.py && uv run python scripts/verify_m027_provenance_and_riskratchet_gate.py --validate-only && uv run python -m pytest tests/test_m027_provenance_and_riskratchet_gate.py tests/test_riskratchet_gate.py tests/test_m027_end_to_end_mixed_replay.py -q` (gsd_exec 7ac737ec-e48b-45a2-bf86-18fa892e9c51, exit 0, 32 passed). The S06 summary records command, cwd, git commit, input/output artifact hashes, exit code/status, milestone/slice context, self-hash exclusion rationale, and fail-closed safety/riskratchet flags. |
 | R037 | core-capability | validated | next reviewed +10 milestone | none | M010 final guard: review_verdict=PASS; selected_count=10; prior_overlap_count=0; quota_ready_count=10; paper_count=10; chunk_count=1477; freshness_verdict=fresh; import_eligible_chunk_count=0; positive_import_blocked=true; production_writes_blocked=true; unattended_scaling_blocked=true. |
 | R038 | quality-attribute | validated | M011 | none | M011 final guard: review_verdict=PASS; gate_result=pass_negative_readiness_gate; target_count=10; source_hash_missing_count=0; repair_required_count=7; retrieval_only_count=3; import_candidate_count=0; raw_payload_key_count=0; positive_import_blocked=true; production_writes_blocked=true; chunk_span_provenance_required_next=true. |
 | R039 | constraint | validated | M012 | none | M012 final guard: review_verdict=PASS; dspy_verdict=conditional_go_optional_dev_probe_only; minimax_verdict=conditional_go_optional_helper_probe_only; production_import_allowed=false; dspy_optimizer_allowed=false; minimax_orchestrator_allowed=false; next_safe_options=[dspy_optional_dev_dependency_no_lm_probe, minimax_explicit_synthetic_auth_smoke_test, chunk_span_provenance_candidate_locator_packet]. |
@@ -594,7 +595,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 15
-- Mapped to slices: 15
-- Validated: 37 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
+- Active requirements: 14
+- Mapped to slices: 14
+- Validated: 38 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
 - Unmapped active requirements: 0
