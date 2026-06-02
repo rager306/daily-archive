@@ -8,7 +8,7 @@
 - Pass/fail affected: `false`
 - Total functions: `86`
 - Max score: `73.66`
-- Average score: `47.9066`
+- Average score: `47.9128`
 - Severity bands: `{"critical": 0, "high": 25, "low": 0, "medium": 61}`
 - Baseline present: `false`
 - Max score delta: `None`

@@ -10,10 +10,12 @@
 - graph_import_allowed: `False`
 - ladybugdb_written: `False`
 
+This is a validate-only, local-only audit artifact. Riskratchet telemetry is diagnostic-only and non-blocking, and this report is not an import/readiness approval.
+
 ## Provenance
 - Command: `scripts/verify_m027_provenance_and_riskratchet_gate.py`
 - CWD: `/root/daily-archive`
-- Git commit: `0c13520055d444e42600a606b5fb7376640826cd`
+- Git commit: `b54d286876f255ef939608b71f7d98a0a1704323`
 - Self hash excluded: `True`
 - Self hash reason: summary output provenance is self-referential; non-summary outputs are hash-enforced validate-only
 

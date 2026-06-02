@@ -474,6 +474,8 @@ def write_report(path: Path, summary: Mapping[str, Any]) -> None:
         f"- graph_import_allowed: `{summary.get('graph_import_allowed')}`",
         f"- ladybugdb_written: `{summary.get('ladybugdb_written')}`",
         "",
+        "This is a validate-only, local-only audit artifact. Riskratchet telemetry is diagnostic-only and non-blocking, and this report is not an import/readiness approval.",
+        "",
         "## Provenance",
         f"- Command: `{summary.get('provenance', {}).get('command')}`",
         f"- CWD: `{summary.get('provenance', {}).get('cwd')}`",

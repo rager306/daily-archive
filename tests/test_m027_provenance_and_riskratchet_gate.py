@@ -172,6 +172,10 @@ def test_gate_generates_happy_path_and_self_hash_exclusion(tmp_path: Path, monke
     assert args.summary_output.exists()
     assert args.diagnostics_output.exists()
     assert args.report_output.exists()
+    report_text = args.report_output.read_text(encoding="utf-8")
+    assert "validate-only, local-only audit artifact" in report_text
+    assert "diagnostic-only and non-blocking" in report_text
+    assert "not an import/readiness approval" in report_text
     assert args.maintainability_json.exists()
     assert args.maintainability_report.exists()
     roles = {row["role"] for row in summary["provenance"]["output_artifacts"]}
