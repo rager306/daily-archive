@@ -38,12 +38,12 @@ This report captures accepted current mixed-source pipeline behavior before S05 
 
 ## Diagnostics
 
-`{"converted_payload_hash_verified": 6, "current_pipeline_retrieval_only_chunks": 5, "current_pipeline_zero_chunks": 1, "metadata_only_not_replayed": 5, "no_converted_payload_expected": 5, "s03_converter_refreshed_after_source_verifier": 1, "s03_linkage_verified": 1}`
+`{"converted_payload_hash_verified": 6, "current_pipeline_retrieval_only_chunks": 5, "current_pipeline_zero_chunks": 1, "metadata_only_not_replayed": 5, "no_converted_payload_expected": 5, "s03_linkage_verified": 1}`
 
 ## Provenance
 
 - Conversion summary: `data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json`
-- Conversion summary SHA-256: `5d97b024a11c1612f569f56d6469327bded06d77b1ae94900f3ba4f03d76043a`
+- Conversion summary SHA-256: `069b152f91fc5dc57a0e6a52325dc2cad282a17610912ed715874a05102d005c`
 - Baseline diagnostics: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-diagnostics.jsonl`
 - Per-article baseline directory: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline`
 
