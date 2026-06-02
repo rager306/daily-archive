@@ -1,0 +1,404 @@
+{
+  "created_at": "2026-06-02T08:12:03Z",
+  "diagnostics": [],
+  "drill_down_paths": {
+    "s01_catalog_summary": "data/article_corpora/m027-mixed-source-corpus-v1/catalog-summary.json",
+    "s02_source_acquisition_summary": "data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-summary.json",
+    "s03_conversion_quality_summary": "data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json",
+    "s04_current_pipeline_baseline_summary": "data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-summary.json",
+    "s05_end_to_end_replay_summary": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-summary.json",
+    "s05_end_to_end_replay_verification": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-verification.json",
+    "s05_readiness_decision": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-readiness-decision.json",
+    "s05_verifier_script": "scripts/verify_m027_end_to_end_mixed_replay.py",
+    "s06_maintainability_diagnostic": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/maintainability-diagnostic.json",
+    "s06_riskratchet_diagnostics": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/provenance-riskratchet-gate-diagnostics.jsonl",
+    "s06_riskratchet_summary": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/provenance-riskratchet-gate-summary.json",
+    "s06_verifier_script": "scripts/verify_m027_provenance_and_riskratchet_gate.py",
+    "s07_diagnostics": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-diagnostics.jsonl",
+    "s07_report": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-report.md",
+    "s07_summary": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-summary.json"
+  },
+  "failure_modes": {
+    "filesystem": "Missing/unreadable/stale local artifacts emit diagnostics with artifact_path/json_path and non-zero exit.",
+    "graph_database": "No graph database, LadybugDB, production import, or trusted KG writer is called; all related flags remain false.",
+    "json_jsonl": "Malformed JSON or JSONL rows emit stable malformed_* diagnostics and block readiness synthesis.",
+    "network": "No network API is called; URL-like artifact references are rejected as path-tampering risks.",
+    "subprocess": "No subprocess is invoked by S07; upstream verifier scripts are hashed as local provenance inputs only."
+  },
+  "functional_readiness": {
+    "not_ready": [
+      "Not ready for graph import, trusted KG facts, production ingestion, unattended scaling, or parser-quality claims.",
+      "Not ready if any S07 diagnostic has severity=error; validation exits non-zero in that case."
+    ],
+    "ready_now": [
+      "Local six-article S01-S06 preprocessing evidence is present and hash-enumerated.",
+      "Catalog, capture, conversion, baseline, replay, and provenance/riskratchet boundaries can be inspected from local metadata artifacts."
+    ],
+    "ready_with_blockers_conditions": [
+      "No graph import, trusted fact, import-ready, production, or LadybugDB readiness is claimed.",
+      "S05 decision remains not_import_ready_validate_only.",
+      "One parser-ready variant still produces zero chunks and metadata-only variants remain non-parser-ready evidence only.",
+      "Riskratchet telemetry is diagnostic-only and non-blocking; it is not a production quality gate."
+    ]
+  },
+  "graph_import_allowed": false,
+  "health": {
+    "diagnostic_codes": {},
+    "diagnostic_count": 0,
+    "error_count": 0,
+    "failure_phase_counts": {},
+    "readiness_state": "ready_with_blockers_conditions",
+    "severity_counts": {},
+    "status": "passed"
+  },
+  "integration_gaps": [
+    "Graph import and trusted fact promotion remain blocked and unattempted.",
+    "Parser-ready zero-chunk behavior is preserved as current-pipeline evidence, not corrected here.",
+    "Metadata-only variants remain non-parser-ready and cannot support graph/import claims.",
+    "No dashboard, pager, scheduled CI, or runtime readiness service is introduced.",
+    "No unattended 10x scale claim is made beyond linear local hashing/rendering characteristics."
+  ],
+  "jsonl_diagnostic_row_counts": {
+    "s06_riskratchet_diagnostics": 0
+  },
+  "ladybugdb_written": false,
+  "load_profile": {
+    "expected_articles": 6,
+    "expected_input_artifacts": 12,
+    "first_10x_saturation": "local filesystem hashing and JSON/Markdown rendering grow linearly with artifact count and report size",
+    "protection": "streaming SHA-256 reads, local-only path checks, no network/database pools, no graph writers, and no unattended scaling claims"
+  },
+  "milestone_id": "M027-aakeky",
+  "module_boundaries": [
+    {
+      "boundary": "catalog_and_selection",
+      "owned_by": "S01",
+      "status": "local metadata only"
+    },
+    {
+      "boundary": "source_acquisition",
+      "owned_by": "S02",
+      "status": "captured source metadata; replay phase no-network"
+    },
+    {
+      "boundary": "conversion_quality",
+      "owned_by": "S03",
+      "status": "converted/metadata-only quality evidence; no raw payload embedding"
+    },
+    {
+      "boundary": "current_pipeline_baseline",
+      "owned_by": "S04",
+      "status": "retrieval-only baseline, import eligibility forced to zero"
+    },
+    {
+      "boundary": "end_to_end_replay",
+      "owned_by": "S05",
+      "status": "exact replay comparison and not-import-ready decision"
+    },
+    {
+      "boundary": "provenance_riskratchet",
+      "owned_by": "S06",
+      "status": "diagnostic-only maintainability telemetry"
+    },
+    {
+      "boundary": "pipeline_readiness_synthesis",
+      "owned_by": "S07",
+      "status": "validation/report surface only"
+    }
+  ],
+  "negative_tests": {
+    "cases": [
+      "missing upstream JSON produces missing_json_artifact and failed status",
+      "URL-like artifact path references produce unsafe_artifact_reference diagnostics",
+      "readiness/import claim creep produces unsafe_safety_or_readiness_flag_true diagnostics",
+      "stale declared output hashes produce declared_artifact_sha256_mismatch diagnostics"
+    ],
+    "covered_by": "tests/test_m027_pipeline_readiness_synthesis.py"
+  },
+  "network_fetch_attempted": false,
+  "next_cycle_recommendations": [
+    "Keep the next staged corpus cycle validate-only until parser-ready zero-chunk behavior and metadata-only boundaries are resolved.",
+    "Promote graph/import readiness only in a separate slice with explicit import eligibility tests and LadybugDB write controls.",
+    "Carry forward S07 input hashes and diagnostic codes as the first freshness check for future agents.",
+    "If 10x corpus work is attempted, add pagination/batching evidence before claiming unattended scale."
+  ],
+  "production_import_attempted": false,
+  "production_ladybugdb_write_allowed": false,
+  "provenance": {
+    "command": "scripts/synthesize_m027_pipeline_readiness.py",
+    "cwd": "/root/daily-archive",
+    "git_commit": "0ea944ec772b2f1c639b31bb4a0c120d13f15a3b",
+    "input_artifacts": [
+      {
+        "byte_size": 16357,
+        "description": "S01 catalog selection and loader boundary summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/catalog-summary.json",
+        "role": "s01_catalog_summary",
+        "sha256": "3dd3cb5357327a500b5455e06e148f97bc2f5e69a0126d6d3d65c8206a98cefd"
+      },
+      {
+        "byte_size": 35788,
+        "description": "S02 local source acquisition summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/source-acquisition-summary.json",
+        "role": "s02_source_acquisition_summary",
+        "sha256": "ecbb80ac3700f08dbd45b6c18c1d9462448ec6b6b1131621e2062b1e2c94ffa7"
+      },
+      {
+        "byte_size": 36574,
+        "description": "S03 conversion quality summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json",
+        "role": "s03_conversion_quality_summary",
+        "sha256": "54b435f75e02cf438a1ee96b08fd80c6ac98e97416891540f1692249dda0cbd0"
+      },
+      {
+        "byte_size": 23664,
+        "description": "S04 current pipeline baseline summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-summary.json",
+        "role": "s04_current_pipeline_baseline_summary",
+        "sha256": "293c8d06dc2328ddd8c0869f29d8e6af3cc169fe4778a926862a52d254ecb695"
+      },
+      {
+        "byte_size": 47510,
+        "description": "S05 end-to-end mixed replay summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-summary.json",
+        "role": "s05_end_to_end_replay_summary",
+        "sha256": "8e94fc848b1a193c81f443afef1eeafcf2eec0d4022b51aace0c58668a189a5a"
+      },
+      {
+        "byte_size": 1806,
+        "description": "S05 validate-only verification result",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-verification.json",
+        "role": "s05_end_to_end_replay_verification",
+        "sha256": "3952a9495618861f9f9661ebdd78cc7ad886f2f99be9cdb89becc3d52225ca8a"
+      },
+      {
+        "byte_size": 933,
+        "description": "S05 fail-closed readiness decision",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/end-to-end-mixed-replay-readiness-decision.json",
+        "role": "s05_readiness_decision",
+        "sha256": "d799e916964a2692494007bf0d7c5ccdf4ac8c59e1509e8b81bda4bb3f5729a0"
+      },
+      {
+        "byte_size": 6810,
+        "description": "S06 provenance/riskratchet gate summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/provenance-riskratchet-gate-summary.json",
+        "role": "s06_riskratchet_summary",
+        "sha256": "d4cb6173914c99895e476ca2bb6a502b1648883d446b6927d3d1938838054f9a"
+      },
+      {
+        "byte_size": 0,
+        "description": "S06 provenance/riskratchet diagnostics",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/provenance-riskratchet-gate-diagnostics.jsonl",
+        "role": "s06_riskratchet_diagnostics",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "byte_size": 32274,
+        "description": "S06 diagnostic-only maintainability telemetry",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/maintainability-diagnostic.json",
+        "role": "s06_maintainability_diagnostic",
+        "sha256": "ea7480596fdb423b171e0de2077e5845d172fc0678c769bf5beaf0ef1b2ef0d4"
+      },
+      {
+        "byte_size": 42025,
+        "description": "S05 verifier implementation used as contract reference",
+        "exists": true,
+        "path": "scripts/verify_m027_end_to_end_mixed_replay.py",
+        "role": "s05_verifier_script",
+        "sha256": "547532f24c9e38cdd3088a48e4a46dd0514a83ad50621fe4f11681d036424322"
+      },
+      {
+        "byte_size": 37638,
+        "description": "S06 verifier implementation used as contract reference",
+        "exists": true,
+        "path": "scripts/verify_m027_provenance_and_riskratchet_gate.py",
+        "role": "s06_verifier_script",
+        "sha256": "391fbb372bab2057041d163ace54b018be28148f16db34b50c5fd48a6851dfef"
+      }
+    ],
+    "output_artifacts": [
+      {
+        "byte_size": 17073,
+        "description": "S07 readiness synthesis summary",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-summary.json",
+        "role": "summary",
+        "sha256": null
+      },
+      {
+        "byte_size": 0,
+        "description": "S07 readiness synthesis diagnostics JSONL",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-diagnostics.jsonl",
+        "role": "diagnostics",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "byte_size": 9501,
+        "description": "S07 readiness synthesis markdown report",
+        "exists": true,
+        "path": "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-report.md",
+        "role": "report",
+        "sha256": "48e4884473a1d69e6a937fe76396fc2796f748a08a8e8c276844f4004d9539a3"
+      }
+    ],
+    "self_hash_excluded": true,
+    "self_hash_excluded_reason": "summary output provenance is self-referential; validate-only skips the summary row hash and enforces diagnostics/report hashes"
+  },
+  "raw_binary_embedded_in_metadata": false,
+  "raw_payload_embedded_in_metadata": false,
+  "raw_text_embedded_in_metadata": false,
+  "requirement_coverage": [
+    {
+      "coverage": "S07 synthesizes provenance closeout across S01-S06 with input hashes, failure phase, diagnostic codes, safety flags, and recovery guidance.",
+      "requirement_id": "R036",
+      "status": "owned"
+    },
+    {
+      "coverage": "S01-S05 provide local corpus selection, capture, conversion, current-pipeline baseline, and replay evidence without production import.",
+      "requirement_id": "R024",
+      "status": "supported_preprocessing_only"
+    },
+    {
+      "coverage": "S03-S05 preserve conversion/replay boundary evidence and metadata-only decisions for six selected articles.",
+      "requirement_id": "R027",
+      "status": "supported_preprocessing_only"
+    },
+    {
+      "coverage": "S04-S06 expose current-pipeline behavior, exact replay comparison, and diagnostic-only maintainability telemetry.",
+      "requirement_id": "R029",
+      "status": "supported_preprocessing_only"
+    },
+    {
+      "coverage": "Graph/trusted fact readiness remains explicitly out of scope; no import-ready evidence is claimed.",
+      "requirement_id": "R019",
+      "status": "out_of_scope_future"
+    },
+    {
+      "coverage": "Production graph import, KG writes, and import eligibility remain future work.",
+      "requirement_id": "R022",
+      "status": "out_of_scope_future"
+    },
+    {
+      "coverage": "Article text/binary payload handling beyond metadata-only artifacts is not introduced here.",
+      "requirement_id": "R023",
+      "status": "out_of_scope_future"
+    },
+    {
+      "coverage": "Unattended scale, CI scheduling, dashboards, and runtime services are not claimed.",
+      "requirement_id": "R031",
+      "status": "out_of_scope_future"
+    },
+    {
+      "coverage": "Operational paging or production monitoring is not introduced by S07.",
+      "requirement_id": "R032",
+      "status": "out_of_scope_future"
+    },
+    {
+      "coverage": "Graph/import promotion policy remains future validation work.",
+      "requirement_id": "R033",
+      "status": "out_of_scope_future"
+    }
+  ],
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "network_fetch_attempted": false,
+    "production_import_attempted": false,
+    "production_ladybugdb_write_allowed": false,
+    "raw_binary_embedded_in_metadata": false,
+    "raw_payload_embedded_in_metadata": false,
+    "raw_text_embedded_in_metadata": false,
+    "trusted_kg_import_allowed": false
+  },
+  "schema_version": "m027-pipeline-readiness-synthesis.v1",
+  "selection_id": "m027-mixed-source-corpus-v1",
+  "slice_id": "S07",
+  "slice_readiness": {
+    "S01": {
+      "article_count": 6,
+      "artifact_role": "s01_catalog_summary",
+      "status": "metadata_boundary_present",
+      "variant_count": 12
+    },
+    "S02": {
+      "artifact_role": "s02_source_acquisition_summary",
+      "captured_variant_count": 11,
+      "network_capture_boundary": "capture may have been allowed upstream; S07 does not fetch",
+      "status": "captured"
+    },
+    "S03": {
+      "artifact_role": "s03_conversion_quality_summary",
+      "counts": {
+        "converted": 6,
+        "metadata_only": 5
+      },
+      "parser_ready_count": 6,
+      "status": "completed"
+    },
+    "S04": {
+      "artifact_role": "s04_current_pipeline_baseline_summary",
+      "chunk_count": 5,
+      "import_ready_count": 0,
+      "status": "completed"
+    },
+    "S05": {
+      "artifact_role": "s05_end_to_end_replay_summary",
+      "baseline_missing_count": 0,
+      "chunk_count": 5,
+      "decision": "not_import_ready_validate_only",
+      "status": "completed"
+    },
+    "S06": {
+      "artifact_role": "s06_riskratchet_summary",
+      "maintainability_status": "diagnostic_complete",
+      "riskratchet": {
+        "average_score": 47.9128,
+        "blocking": false,
+        "diagnostic_only": true,
+        "human_report": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/maintainability-diagnostic.md",
+        "json_report": "data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/maintainability-diagnostic.json",
+        "max_score": 73.66,
+        "pass_fail_affected": false,
+        "severity_bands": {
+          "critical": 0,
+          "high": 25,
+          "low": 0,
+          "medium": 61
+        },
+        "status": "diagnostic_complete",
+        "tool_status": "ok",
+        "total_functions": 86,
+        "touched_module_count": 4,
+        "touched_modules": [
+          "scripts/verify_m027_provenance_and_riskratchet_gate.py",
+          "scripts/replay_m027_end_to_end_mixed_replay.py",
+          "scripts/verify_m027_end_to_end_mixed_replay.py",
+          "scripts/run_quality_gate.py"
+        ]
+      },
+      "status": "passed"
+    }
+  },
+  "source_slice_ids": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06"
+  ],
+  "status": "passed",
+  "trusted_kg_import_allowed": false,
+  "verification_result": "passed"
+}
