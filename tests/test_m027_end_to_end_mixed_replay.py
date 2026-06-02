@@ -160,6 +160,8 @@ def _verify_args(args: Namespace, tmp_path: Path) -> Namespace:
         conversion_summary=args.conversion_summary,
         baseline_summary=args.baseline_summary,
         baseline_diagnostics=args.baseline_diagnostics,
+        verification_output=tmp_path / "corpus" / "end-to-end-mixed-replay-verification.json",
+        verification_report=tmp_path / "corpus" / "end-to-end-mixed-replay-verification-report.md",
         root=tmp_path,
         expected_article_count=1,
         expected_variant_count=2,
@@ -357,6 +359,59 @@ def test_validate_only_verifier_accepts_generated_replay_artifacts(tmp_path: Pat
     assert verifier_summary["network_fetch_attempted"] is False
     assert verifier_summary["production_import_attempted"] is False
     assert verifier_summary["ladybugdb_written"] is False
+
+
+def test_validate_only_verifier_writes_closeout_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(replay, "ROOT", tmp_path)
+    args = _fixture(tmp_path)
+    _write_replay_outputs(args)
+    verification_output = tmp_path / "corpus" / "end-to-end-mixed-replay-verification.json"
+    verification_report = tmp_path / "corpus" / "end-to-end-mixed-replay-verification-report.md"
+
+    exit_code = verify_replay.main(
+        [
+            "verify_m027_end_to_end_mixed_replay.py",
+            "--summary",
+            str(args.output_summary),
+            "--diagnostics",
+            str(args.output_diagnostics),
+            "--events",
+            str(args.output_events),
+            "--report",
+            str(args.output_report),
+            "--readiness-decision",
+            str(args.readiness_decision),
+            "--output-dir",
+            str(args.output_dir),
+            "--conversion-summary",
+            str(args.conversion_summary),
+            "--baseline-summary",
+            str(args.baseline_summary),
+            "--baseline-diagnostics",
+            str(args.baseline_diagnostics),
+            "--verification-output",
+            str(verification_output),
+            "--verification-report",
+            str(verification_report),
+            "--root",
+            str(tmp_path),
+            "--expected-article-count",
+            "1",
+            "--expected-variant-count",
+            "2",
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(verification_output.read_text(encoding="utf-8"))
+    report = verification_report.read_text(encoding="utf-8")
+    assert payload["status"] == "passed"
+    assert payload["diagnostic_count"] == 0
+    assert payload["exit_status"] == 0
+    assert "# M027 S05 End to End Mixed Replay Verification" in report
+    combined = json.dumps(payload, sort_keys=True) + report
+    assert "This fixture has enough local converted article prose" not in combined
+    assert "RAW_PDF_SECRET" not in combined
 
 
 def test_validate_only_verifier_rejects_missing_per_article_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

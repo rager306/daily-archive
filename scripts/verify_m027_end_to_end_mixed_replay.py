@@ -37,6 +37,8 @@ EVENTS_PATH = CORPUS_DIR / "end-to-end-mixed-replay-events.jsonl"
 REPORT_PATH = CORPUS_DIR / "end-to-end-mixed-replay-report.md"
 READINESS_DECISION_PATH = CORPUS_DIR / "end-to-end-mixed-replay-readiness-decision.json"
 OUTPUT_DIR = CORPUS_DIR / "end-to-end-mixed-replay"
+VERIFICATION_PATH = CORPUS_DIR / "end-to-end-mixed-replay-verification.json"
+VERIFICATION_REPORT_PATH = CORPUS_DIR / "end-to-end-mixed-replay-verification-report.md"
 CONVERSION_SUMMARY_PATH = CORPUS_DIR / "conversion-quality-summary.json"
 BASELINE_SUMMARY_PATH = CORPUS_DIR / "current-pipeline-baseline-summary.json"
 BASELINE_DIAGNOSTICS_PATH = CORPUS_DIR / "current-pipeline-baseline-diagnostics.jsonl"
@@ -626,8 +628,66 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
         "production_import_attempted": False,
         "ladybugdb_written": False,
         "graph_import_allowed": False,
+        "cwd": str(Path.cwd()),
+        "command": " ".join(sys.argv),
+        "exit_status": 0 if not diagnostics else 1,
+        "verification_result": "passed" if not diagnostics else "failed",
     }
     return verifier_summary, diagnostics
+
+
+def write_verification_artifacts(args: argparse.Namespace, verifier_summary: dict[str, Any], diagnostics: list[dict[str, Any]]) -> None:
+    """Persist redacted validate-only closeout metadata and a markdown report."""
+    verification_path = safe_under_root(args.root, str(args.verification_output), code_label="verification_output")
+    report_path = safe_under_root(args.root, str(args.verification_report), code_label="verification_report")
+    payload = {
+        **verifier_summary,
+        "diagnostics": diagnostics,
+        "diagnostic_codes": sorted({str(row.get("diagnostic_code")) for row in diagnostics if row.get("diagnostic_code")}),
+        "artifact_paths": {
+            "summary": str(args.summary),
+            "diagnostics": str(args.diagnostics),
+            "events": str(args.events),
+            "report": str(args.report),
+            "readiness_decision": str(args.readiness_decision),
+            "output_dir": str(args.output_dir),
+            "conversion_summary": str(args.conversion_summary),
+            "baseline_summary": str(args.baseline_summary),
+            "baseline_diagnostics": str(args.baseline_diagnostics),
+        },
+    }
+    leakage_findings = validate_no_payload_leakage(payload, serialized=json.dumps(payload, sort_keys=True), where=rel(verification_path))
+    if leakage_findings:
+        raise RuntimeError(f"verification artifact leakage detected: {[row.get('diagnostic_code') for row in leakage_findings]}")
+    verification_path.parent.mkdir(parents=True, exist_ok=True)
+    verification_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    report_lines = [
+        "# M027 S05 End to End Mixed Replay Verification",
+        "",
+        f"- status: `{verifier_summary['status']}`",
+        f"- diagnostic_count: `{verifier_summary['diagnostic_count']}`",
+        f"- milestone_id: `{MILESTONE_ID}`",
+        f"- slice_id: `{SLICE_ID}`",
+        f"- source_slice_id: `{SOURCE_SLICE_ID}`",
+        f"- baseline_slice_id: `{BASELINE_SLICE_ID}`",
+        f"- network_fetch_attempted: `{verifier_summary['network_fetch_attempted']}`",
+        f"- production_import_attempted: `{verifier_summary['production_import_attempted']}`",
+        f"- graph_import_allowed: `{verifier_summary['graph_import_allowed']}`",
+        f"- ladybugdb_written: `{verifier_summary['ladybugdb_written']}`",
+        f"- exit_status: `{verifier_summary['exit_status']}`",
+        "",
+        "## Diagnostics",
+    ]
+    if diagnostics:
+        report_lines.extend(f"- `{row.get('diagnostic_code')}` at `{row.get('json_path', '$')}`: {row.get('message', '')}" for row in diagnostics)
+    else:
+        report_lines.append("- None.")
+    report = "\n".join(report_lines) + "\n"
+    leakage_findings = validate_no_payload_leakage({"report": report}, serialized=report, where=rel(report_path))
+    if leakage_findings:
+        raise RuntimeError(f"verification report leakage detected: {[row.get('diagnostic_code') for row in leakage_findings]}")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(report, encoding="utf-8")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -641,6 +701,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--conversion-summary", type=Path, default=CONVERSION_SUMMARY_PATH)
     parser.add_argument("--baseline-summary", type=Path, default=BASELINE_SUMMARY_PATH)
     parser.add_argument("--baseline-diagnostics", type=Path, default=BASELINE_DIAGNOSTICS_PATH)
+    parser.add_argument("--verification-output", type=Path, default=VERIFICATION_PATH)
+    parser.add_argument("--verification-report", type=Path, default=VERIFICATION_REPORT_PATH)
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--expected-article-count", type=int, default=EXPECTED_ARTICLE_COUNT)
     parser.add_argument("--expected-variant-count", type=int, default=EXPECTED_VARIANT_COUNT)
@@ -651,6 +713,7 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv
     args = parse_args(argv)
     verifier_summary, diagnostics = verify(args)
+    write_verification_artifacts(args, verifier_summary, diagnostics)
     if diagnostics:
         sys.stderr.write(json.dumps({"summary": verifier_summary, "diagnostics": diagnostics}, indent=2, sort_keys=True) + "\n")
         return 1
