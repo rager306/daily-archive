@@ -88,6 +88,6 @@
 ## Provenance
 - Command: `uv run python scripts/verify_m027_mixed_source_catalog.py`
 - CWD: `/root/daily-archive`
-- Git commit: `09af1d5d0acf1ffb16c29e751c6364601423b447`
+- Git commit: `8249790ba6b6908d9b2a7383d3684b875691fb64`
 - Exit code: 0
 - Output hashes are recorded in `catalog-summary.json` for non-self-referential outputs.

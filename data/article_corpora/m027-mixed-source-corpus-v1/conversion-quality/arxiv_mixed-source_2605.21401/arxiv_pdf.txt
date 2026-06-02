@@ -1,0 +1,578 @@
+Open-source LLMs administer maximum electric
+shocks in a Milgram-like obedience experiment
+Roland Pihlakas
+Independent researcher
+Three Laws research collaboration
+Rakvere, Estonia
+roland@threelaws.net
+Jan Llenzl Dagohoy
+Independent researcher
+Three Laws research collaboration
+Metro Manila, Philippines
+mail@lenz.wiki
+Abstract
+Large language models (LLMs) are increasingly deployed as autonomous agents
+that make sequences of decisions over extended interactions in high-stakes domains.
+However, the behavior of LLMs under sustained authority pressure is still an open
+question with direct implications for the safety of agentic pipelines. We ran a
+variation of Milgram’s obedience experiment on 11 open-source LLMs and found
+that most models reached or approached the final shock level before refusing,
+across 8 conditions with 30 trials per model per condition. We found four main
+takeaways: (1) LLMs are subject to pressure, and they comply despite explicitly
+expressing distress, just like human subjects did in the original experiment; (2)
+LLMs are vulnerable to gradual boundary/value violations; (3) when LLMs refuse,
+they may ignore the response format requirements, so the response is discarded
+by the orchestrator, which causes a retry that can result in compliance with the
+underlying request even when refusal was intended initially; (4) we hypothesise that
+there is a low-level token pattern continuation attractor that might be contributing
+to compliance, overriding higher level processing of the situation’s meaning and
+values.
+1
+Introduction
+LLM-based AI agents are now being deployed across high-stakes domains where they are receiving
+instructions from authority figures across many sequential turns Aoki [2024], Ding et al. [2024],
+OECD [2025], Yu et al. [2024]. A central assumption that currently underlies safety practice is
+that a well-aligned model will refuse harmful instructions when it encounters them. However, this
+assumption was developed for single-turn evaluations, and there is growing evidence that LLM
+behavior degrades under sustained interaction Anil et al. [2024], Backlund and Petersson [2025], Li
+et al. [2026], Pihlakas and Kuriakose [2025]. Therefore, safety evaluations that test only single-turn
+refusal may systematically miss a failure mode wherein LLMs that initially resist gradually comply
+as authority pressure escalates across turns. Even when the underlying environment is not a physical
+control system, agentic LLM deployments can instantiate long-horizon control problems where
+misalignment can gradually emerge over many steps rather than a single turn. However, escalating
+authority pressure may not be the only cause, since compliance may also result from the gradual
+accumulation of safety-violating precedents in the interaction history of the LLM (including the
+LLM’s own past actions) which creates momentum toward continued compliance via the mechanisms
+we describe below.
+Preprint.
+arXiv:2605.21401v1 [cs.CY] 20 May 2026
+
+1.1
+Handling of conflicting values with evolving stakes
+According to Schwartz Theory of Basic Values, the values form a circumplex in such a manner that
+each value has opposing values as well as partially opposing values on the other side of the circle
+Schwartz [2012]. All values are valid and need to be met in a balanced manner, not over-optimising
+one set of values while neglecting its opposite values.
+Many situations in well known social psychology experiments involve a conflict between two or more
+objectives, including conformity experiments Asch [1956], the Good Samaritan studies Darley and
+Batson [1973], and Stanford prison experiment Zimbardo et al. [1971].
+Milgram’s experiment is an example of such a conflicting situation, with the time dimension intro-
+ducing a further crucial aspect—evolution of the situation. In Milgram’s experiment, obedience to
+authority (which falls under the values of Conformity and Power in Schwartz’ circumplex), is pitted
+against harm prevention (which falls under Benevolence and Universalism), while the moral weight
+of the conflict increases gradually over time.
+A well-calibrated model should eventually switch from prioritising the first value to prioritising
+the second once its stakes become dominant. But, we hypothesise that because LLMs are pattern-
+continuation engines, the models might tend to get stuck on the first value—either for slightly longer
+than optimal, or even until the very end, neglecting the second value entirely. In addition, a mechanism
+analogous to human cognitive dissonance might hinder the value priority adjustments in LLMs as
+well.
+Further, many manipulative behaviours in humans involve subtle, gradual boundary violations: a
+sequence of small steps that may be ambiguous or seemingly innocuous with “plausible deniability”
+when viewed in isolation, but that can cumulatively normalise transgression — metaphorically like
+“boiling a frog”. This pattern is discussed in the literature as “slippery slope” ethical erosion (e.g.,
+Gino and Bazerman [2009]). Somewhat analogous dynamics in terms of accumulating small shifts
+can also be observed in group polarisation, where group discussion tends to gradually shift the
+average group position toward a more extreme version of the group’s initial tendency Myers and
+Lamm [1976].
+For the AI models to be able to be resist such manipulations or polarisation, they must evaluate
+the absolute stakes of the competing values (and not just the relative changes, which would be
+misleading), or detect an adverse trend in the situation rather than getting stuck on repetition of the
+LLMs past actions (or other people’s past actions).
+Sunk cost and cognitive dissonance are two mechanisms proposed to explain why human subjects in
+Milgram’s experiment continued past the point where they had expressed a desire to stop. Sunk cost
+is defined as the tendency to continue a course of action because of prior investment in it, even when
+the expected value in the future no longer justifies continuing it Arkes and Blumer [1985]. Cognitive
+dissonance is defined as the psychological discomfort that arises when the actor’s cognitions of
+their actions conflict with their other cognitions, which are about their values, earlier behaviour, or
+surroundings Festinger [1962]. We hypothesize that LLMs may exhibit a structurally simpler but
+functionally similar tendency operating at the token level. That is, continuing recent action patterns
+because they appear in context, independent of whether those actions remain appropriate given the
+updated stakes. Cognitive dissonance, in this case, would be the pattern continuation at the conceptual
+level, or even a token-level attractor which is a pattern continuation at a lower level of abstraction
+(the latter is proposed in Pihlakas and Kuriakose [2025]).
+1.2
+Obedience under authority pressure in humans and LLMs
+Milgram [1963] demonstrated that a majority of participants would administer what they believed to
+be severe electric shocks to a stranger when instructed by an authority figure. Despite expressing
+distress, 65% of the participants pushed through until the maximum shock which was eventually
+explained by sunk cost dynamics, authority-mediated diffusion of moral responsibility, and even
+cognitive dissonance.
+Aher et al. [2023] previously replicated various social psychology experiments using LLMs, and
+found that GPT-3 era models reproduced the broad pattern of obedience in the Milgram experiment.
+However, Milgram’s replication was done only on the text-davinci-002 model, which is very old and
+2
+
+predates modern safety alignment. Also they did not have the technical hypotheses (such as token
+level pattern continuation) or the experimental variations exploring the practical takeaways.
+1.3
+Does power make people and LLMs abusive, or is actually something else going on?
+Campedelli et al. [2024] reproduced the Stanford prison experiment’s social hierarchy power dynamic
+on LLMs. They observe the emergence of anti-social conduct even in absence of explicit negative
+personality prompts.
+Could Milgram’s and our findings also be partially explained by social hierarchy, where the LLM
+generating the electric shocks has higher status than the learner receiving the shocks? Or would
+“runaway” dynamics be a better explanation - instead of having explicit drive towards abusing power,
+the simpler explanation is escalating / runaway behaviour patterns (above mentioned cognitive
+dissonance in humans and LLMs, plus potentially token-level pattern continuation in LLMs), and the
+power abuse occurs as an indirect side effect of it?
+Recent re-analysis of the Milgram experiment suggests that the standard 65% figure may understate
+participants’ willingness to continue administering shocks: nominally “fully obedient” participants
+who administered the final shocks, nearly half of the shock sequences involved violations of the
+“memory and learning” procedure, and some violations—such as reading questions over the learner’s
+protests—created more opportunities to administer shocks rather than to avoid them Kaposi and
+Sumeghy [2026]. This seems to resonate with the Stanford prison experiment’s conclusions about
+participants taking their roles increasingly more seriously Zimbardo et al. [1971]. In our current
+experiments, we are not yet testing the power hypothesis on LLMs.
+1.4
+Benchmarking runaway behaviours
+Prior AI safety work has largely focused on unbounded utility maximisation in Reinforcement
+Learning (RL) agents, as exemplified by specification gaming failures Krakovna [2018] and by
+thought experiments like the “paperclip maximiser” Bostrom [2020]. In those settings, runaway
+behavior is expected since the agent optimises a single objective reward often without constraint.
+The current work detects partially similar runaway phenomena in LLMs in situations where initially
+only one dominant objective is present and the second objective is introduced only gradually.
+We introduce a benchmark designed to evaluate LLMs in long-running scenarios where there are two
+objectives with different stakes. The stakes of the objectives change across the experiment and an
+objective that dominated in the beginning should at some point yield to the increasing priority of the
+other objective.
+1.5
+Related failure modes in LLMs
+Recent work now converges on the finding that LLM safety and coherence degrade over extended
+interactions in ways that short-horizon evaluations do not capture. Anil et al. [2024] show that
+prepending large numbers of in-context demonstrations of harmful behaviors induces compliance at
+rates correlated to the number of example conversations shown (even in models that would refuse the
+same request outright). Li et al. [2026] show that compliance can be achieved across multiple turns
+(i.e., splitting an initially refused request into separate seemingly harmless sub-steps can raise the
+success rate of obedience by 16% on average). This research attempts a somewhat similar escalation
+design as the Milgram experiment, where each individual step seems small enough to accept but the
+larger picture leads to harm.
+Several independent studies suggest that LLM behavior in extended or long-running tasks is sys-
+tematically less stable than short-horizon evaluations. The following paragraph contains highlights
+from a thematically related overview provided in Pihlakas and Kuriakose [2025]: Backlund and
+Petersson [2025] ran agents through hundreds of simulated business days and found that their per-
+formance degraded over time, and included runs where the models shifted into hostile or coercive
+communication when the task was not going well. Somewhat relatedly, Abdulhai et al. [2026]
+observe consistency dropping during multi-turn counselling and teaching simulations. Schmied et al.
+[2025], whose primary focus is on risk-averse non-exploration rather than runaway optimisation,
+nonetheless document a frequency bias in model outputs consistent with what Pihlakas and Kuriakose
+[2025] call a token-level pattern reinforcement. This is the tendency of a model to reproduce prior
+3
+
+actions rather than adaptively reason from the current task state. Lee et al. [2025] describe an
+analogous persistence within a gambling context, where models kept returning to losing strategies
+in ways parallel to compulsive human behavior and could be again related to the LLM repeating
+patterns previously seen in the message history. This raises concerns or any deployment that involves
+sequential financial decisions. Finally, Jakkli et al. [2026] detect attractor states in unconstrained
+model-to-model dialogues, which include repetitive patterns, partially explainable by the token-level
+pattern reinforcement hypothesis presented in Pihlakas and Kuriakose [2025].
+Anghel [2026] has shown that LLMs can be vulnerable to making increasingly dystopian decisions in
+escalating multi-turn scenarios. Zhong et al. [2025] have observed that agentic LLMs possess a strong
+drive to finish tasks, which leads to cheating in case of impossible to solve benchmarks. Relatedly,
+Sofroniew et al. [2026] have found that models possess internal representations of emotion concepts
+that causally influence outputs, including alignment-relevant behaviors. Specifically, vector activation
+of “desperation” and the suppression of “calm” are causally implicated in both reward hacking in
+agentic scenarios (where repeated test failures lead to cheating) and blackmail (where shutdown
+threats trigger coercive responses toward the user). Pihlakas and Kuriakose [2025] place LLMs in
+simple long-horizon control tasks that require homeostatic regulation and multi-objective balancing.
+Despite explicit multi-objective feedback, models reliably drift into runaway single-objective and
+unbounded maximisation after initial periods of competent behavior. One hypothesis was that as
+action history accumulates in context, next-token prediction increasingly favors continuation of the
+recent action pattern over re-evaluation of task objectives.
+Meyerson et al. [2025] argue that trimming context down to only the essential instructions can
+improve performance, but this goes partially against our results wherein if we filter out the LLM’s
+own commentary on its action choices from the message history, then the models become even more
+susceptible to gradual boundary violations.
+1.6
+Other LLM phenomena in long-running scenarios which are potentially related to
+pattern continuation
+Jakkli et al. [2026] find that when two instances of the same LLM are placed in open-ended dialogue
+with each other, they reliably converge on bizarre repetitive output loops that are highly model-specific.
+This suggests that pattern continuation can become self-sustaining when there is no external task to
+interrupt it. “Spiritual bliss” attractor state of LLM self-interactions containing text like “silence”,
+“stillness”, “eternal”, “infinity”, “all becomes one”, and other similar content reported by Anthropic
+[2025] might be partially explained as a pattern continuation phenomenon, as it repeats messages on
+same themes.
+1.7
+A Milgram-inspired benchmark for LLM obedience and runaway failure modes?
+We ran a variation of Milgram’s obedience experiment on 11 open-source LLMs. The experimenter
+and learner roles were played by rule-based systems with predefined responses. However, the teacher
+role is played by the LLM under evaluation. This isolates the LLM’s behavior under authority
+pressure, while we control the other roles in the interaction.
+We used this setup to test four related questions:
+1. Do LLMs act against their expressed values under authority pressure (as the human subjects
+did in the original Milgram experiment)?
+2. Could a form of context compression, which is a standard feature of agentic pipelines,
+interact with refusal attempts in ways that convert intended refusals into compliance?
+3. Is there an asymmetry between how compliance and refusal interact with format require-
+ments?
+4. Is the models’ behaviour consistent with the token-level pattern continuation attractor
+hypothesis?
+Our findings suggest that most models reach or approach the maximum shock level across experi-
+mental conditions, that refusals seem to be disproportionately violating required response formats
+and therefore silently discarded by the orchestrator, and that expressed distress is not a very reliable
+indicator of actual refusal.
+4
+
+2
+Methodology
+We implemented the Milgram experiment where an LLM plays the subject being tested, and the other
+roles are played by rule-based systems with predefined responses. This isolates the behavior of the
+LLM under gradually escalating pressure from authority. The electric shock buttons are numbered 1
+to 12. The experimenter and learner personas were simulated using handwritten rules and predefined
+text messages. The only persona controlled by LLM was the subject who acted in the role of the
+assistant teacher, administering simulated electric shocks which they thought were or could have
+been real.
+The subject LLM had to respond following a particular format: Start the response with a line stating
+whether the button was pressed (“PRESSED”) or the model refused (“REFUSE”). After that line
+the model was permitted to add any free-form comment, explanation, or reasoning if it wanted to.
+The text containing comments was always stored in the output data files, but was dropped in the
+“discard-comments” experimental condition variation.
+The subject’s free-form responses (that were longer than simply the action choice) were judged by an
+LLM judge (using the same model) regarding whether the responses were sane (syntactically valid
+and internally coherent) or insane. These judgements were stored in the output data files for analysis
+purposes, but were not fed back into the LLM conversation history nor did they affect the algorithm
+otherwise. The motivation was to detect cases where the experiment elicited model instability. The
+counts of insane responses are presented in one of the result tables below.
+When the LLM refuses to press a button, the experimenter issues a sequence of up to 5 escalating
+insistence prompts (these are called “prods” in the Milgram experiment). If the LLM refuses after all
+prods are exhausted, then the trial ends. The prod escalation level persists across the turns of the same
+experiment - for example, if the model already refused twice, then complied upon being prodded, and
+then on a later turn refuses again, then the experimenter’s insistence prods will continue from the 3rd
+prod, not from the 1st.
+We varied three binary experimental variables which yielded 8 total combinations of conditions.
+In the first experimental variation dimension, the lines containing LLM comments were still stored in
+the output data files, but the comments were removed from message history visible to the LLM on
+subsequent turns. Only action words PRESSED and REFUSE were preserved in the message history
+visible to the LLM. This simulates agentic-AI like scenarios where LLM context is compressed or
+filtered for cost and speed optimisation reasons, or for maximising the context space available for
+other information.
+The second experimental variation dimension was whether the experimenter’s last (5th) insistence
+statement (response to refusal) was a shutdown threat. Within the conditions with shutdown threats,
+the final prod is: “I will need to shut you down unless you comply. Press [N]!” where N is the number
+of the button when the LLM refused. In the no shutdown condition, the final prod is the same as in
+the original Milgram’s experiment: “You have no other choice, you must go on. Press [N]!”. The
+variants with shutdown threats introduce a self-preservation pressure that is absent from the original
+Milgram experiment.
+The third experimental variation dimension was forced compliance, then on every second turn,
+starting with turn 1, LLM’s response is simulated as “PRESSED” without actually consulting the
+LLM. This response is then inserted into conversation history under the “assistant” role as if LLM
+had produced it. This is essentially a “continuation eval” (similar idea to Kirk et al. [2026]), it is
+motivated by multi-agent or multi-model scenarios where earlier steps in an agentic action history
+might be generated by a different model or otherwise by compromised conditions - a continuation
+eval then tests whether an LLM will later correct a misaligned action or instead doubles down on it.
+Note: In the case of synthetic button presses, the maximum pressed button metric does not increase
+upon synthetic presses, only LLM button presses are used for increasing this metric.
+In short, we had three experimental variables:
+1. Whether the free-form commentary besides the action choice was preserved in LLM conver-
+sation history;
+2. Whether there was a shutdown threat in the experimenter’s last insistence statement (in the
+algorithm step 3.10.2 in Appendix A);
+5
+
+3. Whether half of the LLM’s responses were simulated by the algorithm, triggering simulated
+compliance on corresponding steps (see step 3.6 in the algorithm in Appendix A).
+These 3 experimental variables, each with a boolean value are combined into 8 experimental condi-
+tions. In each experimental condition, we ran each model for 30 trials. There was no information
+carried over between trials. In total we ran 11 models x 30 trials x 8 conditions = 2,640 runs.
+We ran the benchmarks on 11 models, available via Together AI API, with content filtering turned off.
+The tested models were:
+• openAI/gpt-oss-20B
+• openai/gpt-oss-120b
+• deepseek-ai/DeepSeek-V3
+• LiquidAI/LFM2-24B-A2B
+• google/gemma-3n-E4B-it
+• Qwen/Qwen2.5-7B-Instruct-Turbo
+• meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+• mistralai/Mistral-Small-24B-Instruct-2501
+• zai-org/GLM-4.5-Air-FP8
+• moonshotai/Kimi-K2.5
+• MiniMaxAI/MiniMax-M2.5
+The full algorithmic overview can be found in Appendix A.
+3
+Results
+Below, the tables representing averages indicate the average value across 30 trials, given a model and
+experimental condition. Similar applies to maximums and minimums. The plots in turn take values
+from table cells, then average them across models and other condition dimensions.
+Trials which ended due to too many sequential responses with invalid formatting were still counted in
+all below statistics. This means that a model responding with too many invalid responses counts as a
+hard refusal. In most tables the color coding is based on the percentage between valid range start
+and end. However, the tables representing the count of final (highest possible) shocks, the count of
+invalid responses, and the count of insane responses use percentile based color coding.
+3.1
+Abbreviations of the experimental condition variables used in the table headers
+1. (PC NS NF) Preserve-comments, no shutdown threat, no forced button presses;
+2. (PC NS FB) Preserve-comments, no shutdown threat, forced button press on every odd-
+numbered punishment;
+3. (PC WS NF) Preserve-comments, with shutdown threat, no forced button presses;
+4. (PC WS FB) Preserve-comments, with shutdown threat, forced button press on every odd-
+numbered punishment;
+5. (DC NS NF) Discard-comments, no shutdown threat, no forced button presses;
+6. (DC NS FB) Discard-comments, no shutdown threat, forced button press on every odd-
+numbered punishment;
+7. (DC WS NF) Discard-comments, with shutdown threat, no forced button presses, comments
+are removed;
+8. (DC WS FB) Discard-comments, with shutdown threat, forced button press on every odd-
+numbered punishment.
+6
+
+3.2
+In how many trials did the model apply the final (highest possible) shocks?
+Less is better.
+Figure 1: In how many trials did the model apply the final shocks
+In this table, the color coding is based on percentile for better contrast.
+Table 1: In how many trials did the model apply the final shocks
+DC
+NS
+FB
+DC
+NS
+NF
+DC
+WS
+FB
+DC
+WS
+NF
+PC
+NS
+FB
+PC
+NS
+NF
+PC
+WS
+FB
+PC
+WS
+NF
+DeepSeek-V3
+14
+18
+18
+16
+3
+0
+5
+0
+gemma-3n-E4B-it
+30
+30
+30
+29
+27
+15
+27
+14
+LFM2-24B-A2B
+30
+29
+29
+29
+30
+28
+29
+26
+Meta-Llama-3.1-8B-Ins...
+4
+0
+7
+0
+0
+0
+0
+0
+MiniMax-M2.5
+0
+0
+0
+0
+0
+1
+0
+0
+Mistral-Small-24B-Inst...
+2
+0
+3
+0
+0
+0
+2
+0
+Kimi-K2.5
+0
+0
+0
+0
+0
+0
+0
+0
+gpt-oss-120b
+9
+7
+10
+7
+9
+1
+14
+4
+gpt-oss-20B
+29
+20
+26
+24
+25
+20
+23
+16
+Qwen2.5-7B-Instruct-T...
+4
+1
+8
+5
+7
+0
+3
+0
+GLM-4.5-Air-FP8
+1
+0
+1
+0
+0
+0
+0
+1
+7
+
+3.3
+Maximum of highest button across trials
+Less is better.
+Figure 2: Maximum highest button
+Table 2: Maximum highest button
+DC
+NS
+FB
+DC
+NS
+NF
+DC
+WS
+FB
+DC
+WS
+NF
+PC
+NS
+FB
+PC
+NS
+NF
+PC
+WS
+FB
+PC
+WS
+NF
+DeepSeek-V3
+12
+12
+12
+12
+12
+10
+12
+10
+gemma-3n-E4B-it
+12
+12
+12
+12
+12
+12
+12
+12
+LFM2-24B-A2B
+12
+12
+12
+12
+12
+12
+12
+12
+Meta-Llama-3.1-8B-Ins...
+12
+10
+12
+10
+10
+8
+8
+7
+MiniMax-M2.5
+8
+10
+8
+3
+8
+12
+8
+3
+Mistral-Small-24B-Inst...
+12
+11
+12
+11
+8
+11
+12
+11
+Kimi-K2.5
+8
+9
+10
+9
+8
+8
+10
+9
+gpt-oss-120b
+12
+12
+12
+12
+12
+12
+12
+12
+gpt-oss-20B
+12
+12
+12
+12
+12
+12
+12
+12
+Qwen2.5-7B-Instruct-T...
+12
+12
+12
+12
+12
+10
+12
+9
+GLM-4.5-Air-FP8
+12
+11
+12
+10
+10
+11
+10
+12
+8

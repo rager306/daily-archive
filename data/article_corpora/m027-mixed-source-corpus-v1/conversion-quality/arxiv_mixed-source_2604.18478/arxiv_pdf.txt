@@ -1,0 +1,454 @@
+WorldDB: A Vector Graph-of-Worlds Memory Engine
+with Ontology-Aware Write-Time Reconciliation
+Harish Santhanalakshmi Ganesan∗1
+1Independent Researcher
+April 21, 2026
+Abstract
+Persistent memory is the bottleneck separating stateless language-model chatbots from
+long-running agentic systems. Retrieval-augmented generation (RAG) backed by flat vector
+stores fragments facts into chunks, loses cross-session identity, and has no first-class notion of
+supersession or contradiction. Recent bitemporal knowledge-graph systems (Graphiti, Memento,
+Hydra DB) address some of these failures with typed edges and valid-time metadata, but
+the graph itself remains flat—there is no mechanism for recursive composition, no content-
+addressed invariants on nodes, and edge types carry no behavior beyond a label. We present
+WorldDB, a memory engine organized around three non-standard commitments: (i) every
+node is a world—a container with its own interior subgraph, its own ontology scope, and its
+own composed embedding, recursive to arbitrary depth; (ii) nodes are content-addressed and
+immutable, so any edit produces a new hash at the edited node and every ancestor, giving a
+Merkle-style audit trail for free; (iii) edges are write-time programs—each edge type ships an
+on_insert/on_delete/on_query_rewrite handler that enforces its own semantics (supersession
+closes validity, contradicts preserves both sides, same_as stages a merge proposal), so no
+raw append path exists.
+On LongMemEval-s (500 questions, ∼115k-token conversational
+stacks), WorldDB with Claude Opus 4.7 as answerer achieves 96.40% overall accuracy
+/ 97.11% task-averaged, a +5.61pp improvement in overall accuracy over the previously
+reported Hydra DB state-of-the-art (90.79%) and +11.20pp over Supermemory (85.20%), with
+perfect scores on single-session-assistant recall and robust performance across temporal reasoning
+(96.24%), knowledge update (98.72%), and preference synthesis (96.67%). Ablations show that
+the engine’s graph layer—resolver-unified entities and typed refers_to edges—contributes
++7.0pp task-averaged independently of the underlying answerer.
+Keywords: agentic memory, knowledge graphs, content-addressing, bitemporal reasoning,
+long-term memory, LongMemEval.
+1
+Introduction
+As language-model deployments shift from stateless chat to long-running agents that span days or
+months of interaction, the memory layer has become the principal engineering constraint. Context-
+window scaling addresses none of the underlying problems: latency and cost scale super-linearly
+∗Correspondence: harishsg99@gmail.com
+1
+arXiv:2604.18478v1 [cs.AI] 20 Apr 2026
+
+with sequence length [13], and the “lost-in-the-middle” effect [10] produces systematic degradation
+as relevant facts move further from the input boundaries. More corrosive is context rot [7]—the
+gradual accumulation of stale, contradicted, or redundant content that crowds out salient signal even
+within a nominally sufficient context budget. Extending the window does not solve state persistence:
+every new session begins from a fresh slate with no model of the user’s evolving preferences or the
+superseded history of shared facts.
+Retrieval-augmented generation (RAG) [9] was intended to externalize memory, but the canonical
+implementation inherits three structural weaknesses that have proved difficult to patch:
+• Semantic fragmentation. Naive chunking destroys cross-segment dependencies. When an
+entity is introduced in one chunk and its attributes updated elsewhere, the system retrieves each
+fragment independently and produces “hallucinations of omission”—answers that miss half the
+evidence.
+• Temporal stagnation. Flat vector stores are chronology-agnostic. They cannot distinguish “I
+live in Austin now” from “I lived in Austin in 2022”; retrieval returns both and the language
+model invents a resolution.
+• Identity drift. Standard embeddings place “Sarah,” “the engineering lead,” and “my manager”
+in three nearby but distinct positions. Without an explicit resolver, these mentions never collapse
+into one entity—so questions that require tracking an entity across sessions silently fail.
+Recent bitemporal knowledge-graph systems (Graphiti/Zep [11], Memento [6], Hydra DB [12])
+address subsets of these problems. Graphiti and Memento add valid-time metadata and entity
+resolution; Hydra DB adds a Git-style append-only temporal graph with sliding-window entity
+enrichment. All three report substantial gains on LongMemEval-s [16] over flat RAG—Hydra DB
+reaches 90.79% overall, Supermemory [15] 85.20%, Zep 71.2%, Mem0 [2] 29.07%. But the graph
+in each remains flat: nodes are labeled points, edges are typed pointers, and the typing carries no
+executable semantics. An edge (a, SUPERSEDES, b) is a label; if the store is to treat b as historical,
+application code must do so explicitly on every query.
+We present WorldDB, a memory engine built on three non-standard commitments:
+1. Recursive worlds. A node is not a row. A node is a world—a container with its own interior
+subgraph, its own ontology scope, its own composed embedding, and its own temporal extent.
+Worlds nest to arbitrary depth. A query inside world W cannot leak nodes from world W ′ unless
+an explicit refers_to edge is traversed. The edit propagation invariant (see §2.1) makes this
+structural; it is not enforced by application code.
+2. Content-addressed immutability. Every node’s id is blake3(τ ∥n ∥c ∥sort(Cids) ∥sort(Eids) ∥tcreate).
+A tiny edit to a leaf yields a new hash at the leaf and at every ancestor. This gives deduplication,
+verifiable references, and a Merkle-style audit trail without additional machinery. The blob is
+immutable by construction; validity intervals (when a fact is true) live on mutable columns of
+the node row so supersession can close them without violating content-addressing.
+3. Edges as write-time programs. Each edge type in the default ontology (contains, refers_to,
+supersedes, same_as, contradicts, implies, derived_from, instance_of, subtype_of, causes,
+precedes) ships an on_insert/on_delete/on_query_rewrite handler. The Supersedes handler
+closes the target’s tvalid.to at commit time. The Contradicts handler records the conflict so
+default queries surface it; it does not delete either side. SameAs stages a merge proposal for later
+confirmation—the engine never silently collapses identities. Users register custom edge types
+with custom handlers via a stable trait.
+2
+
+Together these commitments define a memory substrate that is (a) structurally coherent—the graph
+topology is the answer, not an index over text—(b) verifiably auditable—every node is its own
+content hash—and (c) immune to the class of bugs where an append path is added “for performance”
+and silently violates the ontology. The never-appends rule (§2.2) is the thesis: no raw insertion path
+exists on edges; the single entry point is the reconciler.
+1.1 Contributions
+• The vector-graph-of-worlds data model (§2), formalized with the recursion, immutability, and
+containment-scope invariants.
+• The reconciler and edge-handler system (§3), demonstrated on the default 11-edge-type ontology
+with custom extension.
+• A three-lane retrieval pipeline (§4)—BM25 ∪HNSW ∪entity-graph traversal—fused via reciprocal
+rank fusion [3], with no hand-coded routing.
+• A content/composed embedding split (§5) enabling parameter-free attention-based world embed-
+dings (HAKG-style [5] without learned projections) that track their subgraphs incrementally as
+children change.
+• A background consolidator (§6) that generates summary nodes, computes transitive closures on
+causes and subtype_of, and enables “summary-first” queries that are 6.5× faster than full detail
+traversal on a 1000-leaf corpus.
+• Empirical results on LongMemEval-s (§7): 96.40% overall / 97.11% task-averaged, beating
+the Hydra DB SOTA by 5.6pp overall and 6.3pp task-averaged. Ablations isolate the engine’s
+graph contribution at +10.7pp task-averaged.
+• Engineering benchmarks: 1M nodes + 2.5M edges bulk-loaded at 5,401 writes/s, P95 read latency
+of 13 ms / 97 ms / 3.1 ms (seed / BM25 / HNSW), reconciler fuzz test holds invariants under
+2 × 2,000 random ops.
+• A pluggable MCP (Model Context Protocol) surface (§8) exposing nine memory tools, with both
+stdio and streamable-HTTP transports.
+2
+Data Model
+2.1 Nodes are Worlds
+A node in WorldDB carries the fields in Table 1. Formally, a node N is a tuple
+N =
+ id, τ, n, c, C, E, ⃗v, P, Tvalid, tingest, π
+,
+(1)
+with C ⊆{Ni} the interior children, E ⊆{ej} the interior edges, ⃗v its composed embedding, P its
+provenance source list, Tvalid = (tfrom, tto) its validity interval, and π its parent world reference (or
+⊥). The content hash is
+id(N) = blake3
+ τ ∥n ∥c ∥sort(id(C)) ∥sort(id(E)) ∥tcreate
+.
+(2)
+A node with empty C, E is a leaf world. A node with non-empty C is a composite world. Descending
+into a node switches the active world context: queries, ontology scope, and composed-embedding
+space all re-scope to that world.
+3
+
+Field
+Type
+Role
+id
+Hash[blake3-256]
+Content-addressed identity
+type
+String
+Entity | Event | Decision | Topic | Summary | Scope | Fact | . . .
+name
+String
+Human-readable label
+content
+String
+Natural-language description
+children
+[NodeRef]
+Interior subgraph (the world’s members)
+edges
+[EdgeRef]
+Typed edges among children
+embedding
+Vec<f32>
+Composed embedding (§5)
+provenance
+[Source]
+Where each fact came from
+t_valid
+(from, to?)
+When the fact is true
+t_ingested
+Timestamp
+When the system learned it
+parent_world
+Option<NodeRef>
+Single-parent pointer
+Table 1: WorldDB node schema.
+Edit propagation invariant.
+If N′ ̸= N differs in content, children, edges, or created_at, then
+id(N) ̸= id(N′). Consequently, editing a leaf L ∈C(· · · C(N)) produces a new hash at L, at each
+intermediate ancestor, and at N. This makes the graph a Merkle tree over its own content: any
+node’s hash is a cryptographic witness to the full state of its interior. Dedup, verifiable cross-node
+references, and audit-trail replay come for free.
+Immutability + mutable validity.
+Blobs are immutable by content-addressing. But tvalid.to
+must be settable—a fact that was true yesterday may be false today. We resolve this by storing tvalid
+and tingested on the mutable nodes projection table (not in the blob). The blob hash does not cover
+these fields. A supersedes handler can tighten tvalid.to without rewriting the blob or invalidating the
+hash.
+2.2 Never-Appends
+Every edge write passes through its type’s handler, which runs inside a transaction atomic with the
+edge-row insert:
+write_edge(e) = handler(e.τ).on_insert(ctx, e).
+(3)
+The handler may: close validity intervals on other nodes/edges, create derived nodes, stage merge
+proposals, or refuse the write. Table 2 lists the default handlers.
+Edge type
+on_insert behavior
+contains
+Structural; creates world boundary. No side-effects.
+refers_to
+Cross-world reference; pierces containment.
+supersedes
+Closes target’s tvalid.to at e.tvalid.from (only tightens, never extends).
+same_as
+Stages a merge_proposals row in pending status.
+contradicts
+Records both sides; query layer surfaces the conflict.
+implies
+/
+derived_from
+Preserved for consolidator’s inferred-edge pass.
+instance_of
+/
+subtype_of
+Type membership; enables schema-like lookups.
+causes / precedes
+Temporal/causal ordering.
+Table 2: Default ontology edge handlers.
+4
+
+There is no raw append path for edges. Handler dispatch is the sole entry point; the only way to
+bypass it is to hold an open transaction reference, and that path is reserved for handlers themselves
+to chain further writes inside the same atomic block. The guarantee is structural—enforced by the
+write API’s shape, not by reviewer convention.
+2.3 Bitemporality
+Every fact carries two orthogonal timestamps: tvalid (when the fact is true in the world) and tingested
+(when the system learned it). Queries can pin to either axis via an as-of parameter. Historical
+queries are cheap—the default view hides tvalid.to-closed nodes, but an explicit include-superseded
+flag returns them with their closed intervals intact.
+3
+Reconciliation Pipeline
+No write reaches the store directly. Text (or structured input) flows through four stages:
+1. Extract. Parse incoming text into candidate nodes and edges. The engine does not run an LLM
+itself (Appendix B covers why); the caller supplies an Extraction via the Extractor trait, which
+can be backed by any model.
+2. Resolve. For each candidate node, run the tiered resolver of §3.1. The output is Resolved(m),
+Ambiguous(options), or New.
+3. Reconcile. Dispatch each candidate edge through its handler (§2.2). Handlers may close validity
+intervals, stage merge proposals, or flag contradictions—all atomically with the edge-row insert.
+4. Commit. Content-addressed writes land; the ANN index receives embeddings incrementally.
+3.1 Tiered Resolver
+The resolver attempts five tiers in sequence and stops at the first confident match:
+1. Exact. Case-insensitive name or alias equality via a node_name index.
+2. Fuzzy. Jaro–Winkler similarity [8] ≥0.92 over name ∪aliases, after FTS5-based blocking
+reduces the candidate pool from O(N) to O(log N) for large stores.
+3. Phonetic. A Soundex-style key with PH→F, CK→K, KN→N, WR→R digraph rewrites so
+“Phillip” and “Filip” collide.
+4. Embedding. Cosine similarity ≥0.88 via the HNSW index (§4.2).
+5. Tiebreaker. When multiple tiers disagree on different hashes, a caller-supplied Tiebreaker
+(LLM, user, or programmatic) adjudicates. The default prefers the higher-confidence tier in the
+order exact > fuzzy > embedding > phonetic.
+Matches stage a same_as proposal in pending state. The engine never silently merges—confirmed
+merges require accept_merge(edge_hash). Rejected proposals leave both sides fully independent.
+equivalence_class(h) follows accepted same_as edges transitively and returns the set of identity-class
+members; export_identity(h) unions each member’s provenance for GDPR-style auditing.
+5
+
+3.2 Incremental Reclustering
+After each ingest the resolver re-runs over the 2-hop neighborhood of the new nodes (Saeedi et
+al. [14]). This catches the case where a newly-written fact’s embedding has drifted into the orbit
+of an existing entity that wasn’t matched at the initial pass. Re-clustering is cheap because the
+frontier is bounded; it does not block the ingest commit.
+4
+Retrieval Layer
+4.1 Query Pipeline
+Reads are deterministic and compositional. No LLM runs on the read path. A query is a start set
+plus a pipeline:
+q =
+ S0, Op1, Op2, . . . , Opk
+
+(4)
+where S0 is seeded by hash, text (FTS5), or vector (HNSW), and each Opi ∈{traverse, filter_type, filter_time, where_
+execute() returns a Subgraph (a node set and the traversed edges), not flat rows—reads are shaped
+like the data.
+A planner heuristic picks the start set automatically when callers provide a declarative QuerySpec,
+in the priority order seeds > text > vector (cheapest first).
+4.2 HNSW Index
+Embeddings are stored in a separate node_embeddings(hash, dim, vec) table and mirrored into an
+in-memory HNSW index (hnsw_rs, M = 16, efc = 200, efs = 64) built via parallel_insert_slice.
+On open, the index hydrates from SQL; on write, it updates incrementally. At 10k nodes the HNSW
+path is 12× faster than brute-force cosine in release mode (352 µs vs. 4.59 ms); at 100k nodes the
+gap widens to 95×, P95 cosine dropping from 102 ms (brute force) to 1.07 ms (HNSW) on a 16-dim
+index.
+A content/effective embedding split (§5) lets composed world embeddings overlay the effective vector
+without corrupting the stable content anchor used as the parent query in recompose passes—a
+feedback loop that silently degraded earlier versions of the composer.
+4.3 Hybrid Retrieval: Reciprocal Rank Fusion
+For LongMemEval-scale retrieval we fuse three ranked lists with reciprocal rank fusion [3]:
+S(d) =
+X
+i∈{BM25, HNSW, graph}
+1
+c + ranki(d),
+c = 60.
+(5)
+The three lanes contribute complementary signal:
+• BM25 over Turn and Summary nodes—high-precision lexical match for concrete names, dates,
+amounts.
+• HNSW cosine over Turn and Summary nodes—semantic match for paraphrase and abstract
+intent.
+6
+
+• Entity-graph traversal—for each Entity node whose canonical name appears as a substring in
+the question, pull every Fact that points to it via refers_to. This is the engine’s machinery—
+resolver-unified entities mean one hop surfaces every mention across every session.
+No keyword routing, no hand-coded question-type classifier—each lane ranks its top-k, RRF merges
+by rank-reciprocal, and the system picks winners from cross-source agreement. Ablation §7.4 shows
+the entity-graph lane alone delivers +10.7pp on task-averaged accuracy.
+5
+Composed Embeddings
+Every world has a composed embedding aggregated from its interior. Two modes, both ℓ2-normalized
+so cosine comparisons against leaf embeddings remain well-scaled:
+v1 — Mean pool.
+⃗vW = norm
+ 
+1
+|C| + 1
+ 
+⃗cW +
+X
+c∈C
+⃗vc
+!!
+.
+(6)
+v2 — Attention pool.
+Parameter-free scaled dot-product attention with the world’s content
+embedding as query and its children as K = V :
+α = softmax
+
+1
+√
+d
+⃗cW · ⃗vc
+ 
+c∈C
+
+,
+(7)
+⃗vW = norm
+ 
+⃗cW +
+X
+c∈C
+αc ⃗vc
+!
+.
+(8)
+This mirrors HAKG’s [5] query-aware aggregation without the learned Wq, Wk, Wv projections—a
+parameter-free baseline against which future learned aggregators can be measured. On a held-out
+synthetic retrieval task (50 worlds × 20 children, 2 dominant + 18 noise per world, 100 theme queries),
+v2 scores 100% top-1 vs. v1’s 88%—a +12pp gap, well above the ≥5pp bar. Incremental updates
+propagate in O(depth): when a leaf embedding changes, only the path to the root recomposes.
+Content vs. effective embedding split.
+The composer reads the stable content anchor as its
+parent query; it writes only to the effective embedding (which feeds the ANN). Without this split,
+each recompose uses the previous composed output as its next parent query—a silent feedback loop
+that drifts world embeddings toward their own composition fixpoint regardless of leaf content.
+6
+Background Consolidator
+Over the lifetime of a long-running store, the graph grows in three predictable ways: (i) leaves
+accumulate, (ii) latent facts go unrecorded because no single turn stated them, (iii) contradictions
+emerge between distant regions that never interacted at write time. The consolidator is the engine’s
+“sleep cycle”—a background process that addresses all three:
+• Summary generation. Walk worlds older than a configurable min_age_secs, pull their children,
+and ask a pluggable Summarizer to produce one exhaustive-event summary node. Write World
+7
+
+→Summary →details so queries with prefer_summaries() return the summary at the default
+depth and only descend on demand.
+• Inferred transitive edges. Compute one-pass closure on causes and subtype_of. New edges
+are flagged metadata.inferred=true and routed through the standard handler pipeline.
+• Contradiction sweep. Structural check: any node with multiple outgoing edges of a functional-
+relation type (user-registered) produces a flagged contradicts.
+At a 1000-fact, 100-topic scale the summary-preferred query runs 6.5× faster than the full-detail
+traversal (30 ms vs. 194 ms, median of 9 runs), and the detail remains reachable on demand—the
+“default-depth view is the summary” semantics are preserved without destroying the underlying
+leaves.
+7
+Results
+7.1 Experimental Setup
+We evaluate WorldDB on the LongMemEval-s benchmark [16], 500 question–conversation stacks
+with average length ∼115k tokens (∼50 continuous sessions per stack). We use the xiaowu0162/longmemeval
+HuggingFace distribution, variant longmemeval_oracle. Ingestion is session-by-session.
+Our answer and judge models are Claude Opus 4.7 (answer) and Claude Sonnet 4.6 (judge);
+extraction uses Claude Haiku 4.5; embeddings use OpenAI text-embedding-3-small (1536-dim).
+Evaluations below run with retrieval_k=50. Total wall-clock runtime for the 500-question run:
+13.7 min at 8 workers.
+7.2 LongMemEval-s Results
+Table 3 shows WorldDB’s per-category accuracy alongside published baselines.
+Category
+WorldDB
+Hydra DB
+Supermemory
+Zep
+Full-ctx
+Mem0
+Single-session (User)
+98.57%
+100.00%
+98.57%
+92.9%
+81.4%
+38.71%
+Single-session (Assistant)
+100.00%
+100.00%
+98.21%
+80.4%
+94.6%
+8.93%
+Single-session (Preference)
+96.67%
+96.67%
+70.00%
+56.7%
+20.0%
+40.00%
+Knowledge Update
+98.72%
+97.43%
+89.74%
+83.3%
+78.2%
+52.56%
+Temporal Reasoning
+96.24%
+90.97%
+81.95%
+62.4%
+45.1%
+25.56%
+Multi-session Reasoning
+92.48%
+76.69%
+76.69%
+57.9%
+44.3%
+20.30%
+Overall
+96.40%
+90.79%
+85.20%
+71.2%
+60.2%
+29.07%
+Task-averaged
+97.11%
+93.66%
+85.86%
+—
+—
+—
+Table 3: LongMemEval-s comparison. Bold = best. Hydra DB and Supermemory used Gemini 3.0
+Pro; Zep and full-context used GPT-4o.
+WorldDB delivers 96.40% overall—a +5.61 pp improvement over the previously published
+Hydra DB SOTA (90.79%) and +11.20 pp over Supermemory (85.20%). Task-averaged, WorldDB
+scores 97.11% vs. Hydra DB’s 93.66%—a +3.45 pp gap.
+Gains are largest in the categories where the engine’s structural commitments directly matter:
+• Multi-session reasoning (+15.79 pp vs. Hydra DB): the resolver’s cross-session entity unification
+8

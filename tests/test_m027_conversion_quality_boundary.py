@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from convert_m027_source_quality_boundary import (  # noqa: E402
+    CONVERTED_TEXT_DIR,
     FAIL_CLOSED_SAFETY_FLAGS,
     main,
     sha256_file,
@@ -165,6 +166,10 @@ def _by_role(rows: list[dict[str, Any]], role: str) -> dict[str, Any]:
     matches = [row for row in rows if row.get("source_role") == role]
     assert len(matches) == 1
     return matches[0]
+
+
+def test_default_payload_directory_matches_s03_handoff_contract() -> None:
+    assert CONVERTED_TEXT_DIR.name == "conversion-quality"
 
 
 def test_local_conversion_classifies_abs_pdf_fallback_and_nature_body(tmp_path: Path) -> None:

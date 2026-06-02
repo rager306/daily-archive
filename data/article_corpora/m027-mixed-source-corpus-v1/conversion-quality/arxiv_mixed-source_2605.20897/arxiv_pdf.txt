@@ -1,0 +1,344 @@
+Creating Robust and Fair Graph Structures for Connectivity and
+Clustering
+by
+KUSHAGRA CHATTERJEE
+A0243436H
+A THESIS SUBMITTED FOR THE DEGREE OF
+DOCTOR OF PHILOSOPHY
+in
+COMPUTER SCIENCE
+to the
+GRADUATE DIVISION
+of the
+NATIONAL UNIVERSITY OF SINGAPORE
+2025
+Advisor: Dr. Diptarka Chakraborty
+Examiner 1: Dr. Chang Yi-Jun
+Examiner 2: Dr. Chen Yu
+arXiv:2605.20897v1 [cs.DS] 20 May 2026
+
+Acknowledgement
+I would like to express my deepest gratitude to my PhD advisor, Prof. Diptarka Chakraborty,
+for his constant guidance, encouragement, and patience throughout my doctoral studies. I have been
+extremely fortunate to have an advisor who guided me through every aspect of the research process,
+including how to read research papers critically, how to identify and approach meaningful research
+problems, how to develop and analyze solutions rigorously, and how to write and present research
+clearly and effectively. His insights, rigor, and exceptionally high standards have shaped not only
+this thesis but also my overall development as a researcher. I am truly grateful to have had him as
+my advisor.
+I am sincerely thankful to my collaborators Prof. Debarati Das, Tien-Long Nguyen,
+Romina Nobahari, and Keerti Choudhary for their invaluable intellectual contributions. Work-
+ing with them has been a rewarding experience marked by numerous insightful discussions and
+scrutiny of ideas. They provided critical feedback while solving problems, helped identify mistakes
+in my solutions, and consistently encouraged me to complete the writing—especially during in-
+tense periods near submission deadlines. Without their support, persistence, and collaboration,
+completing this thesis would not have been possible.
+I would also like to thank Prof. Prajakta Nimbhorkar, with whom I collaborated during
+different stages of my PhD. Beyond our academic interactions, she has been a consistent source of
+encouragement and support throughout my doctoral journey. Her thoughtful advice and reassur-
+ing presence were invaluable during challenging periods, and I am grateful for her generosity and
+kindness.
+I would like to acknowledge the academic environment and research culture at my institution,
+which provided an intellectually stimulating and supportive setting for my doctoral work.
+The
+seminars, discussions, and interactions with faculty members and peers contributed significantly to
+my growth as a researcher. In particular, I would like to mention Prof. Yi-jun Chang, whose
+interactions and discussions helped me substantially improve my research capabilities. In addition,
+as part of the Graduate Assistantship Programme (GAP) requirements mandated by the university,
+I had the opportunity to serve as a teaching assistant for the courses CS2040S, CS5230, and CS4234
+under the supervision of Prof. Seth Gilbert, Prof. Arnab Bhattacharyya, and my advisor,
+Prof. Diptarka Chakraborty. This teaching experience was highly enriching and allowed me to
+deepen my understanding of fundamental concepts while significantly improving my communication
+and presentation skills as a researcher.
+Finally, and most importantly, I would like to express my deepest gratitude to my parents and my
+grandmother for their constant emotional support, unconditional love, patience, and encouragement
+throughout these years. Their unwavering belief in me and their sacrifices have been a continual
+source of strength and motivation during my PhD journey. I also wish to acknowledge my personal
+faith, and I am grateful for the strength and guidance I draw from my belief in Ma Durga.
+1
+
+Representative Papers
+This thesis includes contributions from the following set of papers:
+Chakraborty, D., Chatterjee, K., & Choudhary, K. Pairwise Reachability Oracle and Preserver
+under Failures. ICALP 2022 [CCC22].
+Chakraborty, D., Chatterjee, K., Das, D., Nguyen, T. L., & Nobahari, R. Towards Fair Repre-
+sentation: Clustering and Consensus COLT 2025 [CCD+25].
+Chakraborty, D., Chatterjee, K., Das, D., & Nguyen, T. L. Generalizing Fair Clustering to
+Multiple Groups: Algorithms and Applications AAAI 2026(Oral Presentation) [CCD+26b].
+Chakraborty, D., Chatterjee, K., Das, D., & Nguyen, T. L. A Generic Framework for Fair Con-
+sensus Clustering in Streams AAMAS 2026 [CCD+26a].
+2
+
+Abstract
+Graph algorithms are fundamental to large-scale applications such as navigation systems including
+Google Maps, Apple Maps, and Waze. Two central challenges in these systems are robustness to
+failures and fairness in clustering outcomes. This thesis addresses both challenges by developing new
+algorithmic techniques for (i) fault-tolerant graph structures and (ii) fair clustering, unifying them
+under the broader goal of designing large-scale applications that are efficient, resilient, and socially
+responsible.
+In the first part of the thesis, we study fault-tolerant reachability preservers. Given a directed
+graph G = (V, E) on n vertices and a set of pairs P ⊆V × V , a reachability preserver is a
+sparse subgraph that preserves the existence of paths between all pairs in P even after k failures
+for some integer parameter k. We provide the first non-trivial constructions of dual fault-tolerant
+pairwise reachability preservers, resilient to two edge or vertex failures. In particular, we present
+a construction of size O(n4/3|P|1/3), significantly improving upon prior work that was restricted to
+the single-fault setting.
+In the second part of the thesis, we investigate the design of clustering algorithms that are not
+only representative of the underlying data but also fair with respect to sensitive attributes. Classical
+clustering methods often fail to provide proportional representation for marginalized groups, thereby
+amplifying biases present in the data. To address this issue, we study fair variants of clustering
+problems, where each cluster must approximately reflect the global distribution of protected groups.
+Our first contribution in this direction is the study of fair consensus clustering for two groups, for
+which we provide the first constant-factor approximation algorithms that integrate fairness into con-
+sensus clustering tasks. To achieve this, we introduce a new framework called closest fair clustering,
+and show that the problem becomes NP-hard when the two groups are of unequal size.
+We then generalize closest fair clustering to arbitrary numbers of groups and develop near-linear-
+time approximation algorithms that efficiently handle multi-group settings. Building on this frame-
+work, we extend our results to obtain improved guarantees for unweighted fair correlation clustering
+and provide the first approximation algorithms for weighted fair correlation clustering when the
+weights satisfy probability constraints, as well as for multi-group fair consensus clustering.
+Finally, we address the scalability of fair consensus clustering by initiating the study of fair
+consensus clustering in the streaming model. In this setting, input clusterings arrive sequentially,
+and memory is limited, making it infeasible to store all inputs. We design the first constant-factor
+approximation algorithm for fair consensus clustering in the streaming model, which processes the
+stream while storing only a logarithmic number of input clusterings.
+Taken together, these contributions advance the broader vision of designing graph algorithms
+that make large-scale applications both robust and fair. Fault-tolerant reachability preservers ensure
+that critical connectivity information is maintained even under multiple failures, while fair cluster-
+ing algorithms guarantee balanced representation across sensitive groups. By addressing the dual
+challenges of robustness and fairness, this thesis contributes to the foundations of building graph-
+based systems that are not only efficient in theory but also trustworthy, inclusive, and dependable in
+practice.
+3
+
+Contents
+1
+Introduction
+1
+1.1
+Our Contribution . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+1.2
+Related Works
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+12
+1.3
+Technical Overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+15
+1.4
+Organization
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+32
+2
+Reachability Preservers
+33
+2.1
+An (Alternate) Construction of 2-FTRS for a Single Pair
+. . . . . . . . . . . . . . .
+33
+2.2
+Dual Fault-tolerant Pairwise Reachability Preserver . . . . . . . . . . . . . . . . . . .
+35
+3
+Closest Fair Clustering with Two Colors
+40
+3.1
+Creating a p-divisible clustering.
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+40
+3.1.1
+Details of the Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+41
+3.1.2
+Approximation Guarantee for AlgoforGeneral . . . . . . . . . . . . . . . . .
+43
+3.2
+Making a p-divisible clustering fair. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+72
+3.2.1
+Details of the Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+72
+3.2.2
+Approximation Guarantee of MakeClustersFair
+. . . . . . . . . . . . . . . .
+73
+3.3
+Concluding the Approximation Guarantee . . . . . . . . . . . . . . . . . . . . . . . .
+80
+3.4
+Hardness of Closest Fair Clustering Problem . . . . . . . . . . . . . . . . . . . . . . .
+81
+3.4.1
+Hardness of closest p-fair for p ≥3: . . . . . . . . . . . . . . . . . . . . . .
+82
+3.4.2
+Hardness of closest p-fair for p = 2: . . . . . . . . . . . . . . . . . . . . . .
+92
+4
+Closest Fair Clustering with more than Two Colors
+98
+4.1
+Approximate Closest Fair Clustering for Equi-Proportion Groups . . . . . . . . . . .
+98
+4.1.1
+Details of the Algorithm: Power-of-Two Colors
+. . . . . . . . . . . . . . . . .
+98
+4.1.2
+Approximation Guarantee of fairpower-of-two
+. . . . . . . . . . . . . . . . 101
+4.1.3
+Details of Algorithm: General Case . . . . . . . . . . . . . . . . . . . . . . . . 109
+4.1.4
+Approximation Guarantee of fair-equi . . . . . . . . . . . . . . . . . . . . . 111
+4.2
+Approximate Closest Fair Clustering for Arbitrary-Proportion Groups
+. . . . . . . . 121
+4.2.1
+Details of the Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 122
+4.2.2
+Approximation Guarantee of fair-general . . . . . . . . . . . . . . . . . . . 124
+5
+Implications to Weighted Fair Correlation and Fair Consensus Clustering
+128
+5.1
+Implication to weighted Fair Correlation Clustering . . . . . . . . . . . . . . . . . . . 128
+5.2
+Implication to Fair Consensus Clustering . . . . . . . . . . . . . . . . . . . . . . . . . 131
+4
+
+6
+Fair Consensus Clustering in Streaming setting
+133
+6.1
+Details of the algorithm: algo-fair-con-stream . . . . . . . . . . . . . . . . . . . . 134
+6.2
+Analysis of algo-fair-con-stream . . . . . . . . . . . . . . . . . . . . . . . . . . . . 135
+6.2.1
+Approximation Guarantee . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 135
+6.2.2
+Time and Space Complexity . . . . . . . . . . . . . . . . . . . . . . . . . . . . 141
+6.2.3
+Proof of Main Theorem
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 141
+7
+Open Problems
+143
+7.1
+Improving the Approximation Factor for Multiple Colors . . . . . . . . . . . . . . . . 143
+7.2
+Extending to Alternative Fairness Notions . . . . . . . . . . . . . . . . . . . . . . . . 143
+7.3
+Handling Overlapping Subgroups . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 144
+8
+Appendix (Pseudocodes)
+145
+8.1
+Pseudocode of the algorithm AlgoforGeneral . . . . . . . . . . . . . . . . . . . . . . 146
+8.2
+Pseudocode of the algorithm AlgoforMerge . . . . . . . . . . . . . . . . . . . . . . . 147
+8.3
+Pseudocode of the algorithm AlgoforCut
+. . . . . . . . . . . . . . . . . . . . . . . . 148
+8.4
+Pseudocode of the algorithm MakeClustersFair
+. . . . . . . . . . . . . . . . . . . . 149
+8.5
+Pseudocode of the algorithm fairpower-of-two
+. . . . . . . . . . . . . . . . . . . . 150
+8.6
+Pseudocode of the algorithm multi-gm . . . . . . . . . . . . . . . . . . . . . . . . . . 151
+8.7
+Pseudocode of the algorithm make-pdc-fair
+. . . . . . . . . . . . . . . . . . . . . . 152
+8.8
+Pseudocode of the algorithm create-pdc
+. . . . . . . . . . . . . . . . . . . . . . . . 154
+8.9
+Pseudocode of algo-fair-con-stream . . . . . . . . . . . . . . . . . . . . . . . . . . 155
+
+Chapter 1
+Introduction
+Modern large-scale applications such as Google Maps, Apple Maps, and Waze serve millions of users
+daily, providing critical services such as navigation, routing, and location-based recommendations.
+At their core, these systems rely heavily on graph algorithms and clustering methods to deliver fast,
+accurate, and personalized results. Two central challenges naturally arise in this setting: ensuring
+robustness to failures and guaranteeing fair representation. Addressing these challenges requires
+principled algorithmic techniques, motivating the study of both fault-tolerant graph structures and
+fair clustering. In this thesis, we pursue both directions: on the one hand, we study reachability
+preservers as a fundamental tool for fault-tolerant graph sparsification, and on the other hand, we
+study fair clustering to design clustering algorithms that are both accurate and representative.
+Navigation platforms such as Google Maps, Apple Maps and Waze rely on algorithms that solve
+shortest-path queries at scale under stringent real-time constraints. To achieve fast query response,
+these systems often rely on precomputation-based architectures such as Contraction Hierarchies
+[GSS+08] and Customizable Route Planning [DGP+17]. These methods are highly efficient but
+typically return a single “best” route, often the shortest path. In practice, however, users may seek
+multiple alternatives—for example, avoiding highways, toll roads, or unsafe streets. This motivates
+research into computing alternative routes [ADG+13].
+Supporting such customizable objectives
+directly on the full road network is computationally prohibitive, leading to the development of
+algorithms that extract smaller subgraphs while preserving essential connectivity.
+For example,
+work on subgraph extraction for routing [AGH+24] and efficient subgraphs for customizable route
+planning [DGP+17] demonstrates that compact subgraphs enable flexible routing with reduced
+overhead.
+This need for smaller yet faithful subgraphs necessitates the broader study of graph sparsifiers.
+Graph sparsification is the process of approximating a large graph with a sparse subgraph that
+preserves certain properties of the original. Over the last few decades, multiple notions of sparsi-
+fication have been introduced, each tailored to a different structural or algorithmic objective. For
+example, graph spanners preserve approximate distances between all pairs of vertices, and have
+been extensively studied starting with Awerbuch [Awe83], Peleg and Schäffer [PS89], and Alon et
+al. [AKP+95], culminating in optimal constructions such as those of Thorup and Zwick [TZ05] and
+Elkin and Peleg [EP05]. A related notion, emulators, preserves approximate distances by allowing
+additional edges [BS07]. Another classical line of work is cut sparsifiers, which preserve the capacity
+of all cuts approximately, beginning with the seminal work of Benczúr and Karger [BK96]. More
+recently, spectral sparsifiers, introduced by Spielman and Srivastava [SS11], preserve the quadratic
+1
+
+form of the Laplacian matrix, leading to powerful applications in numerical linear algebra and op-
+timization. Each of these sparsifiers captures a different structural aspect of the input graph, and
+together they form a central toolkit of modern graph algorithms.
+Among these sparsification primitives, one of the simplest and most natural objects is the reach-
+ability preserver. Given a graph G and a set of pairs P of vertices, a reachability preserver is a
+sparse subgraph H that preserves the existence of a path between each pair (s, t) ∈P if and only if
+one exists in G. Reachability preservers thus capture one of the most fundamental binary relations
+in a graph—whether a path exists between two vertices—and serve as a baseline abstraction for
+path-preserving sparsification. They arise naturally in applications where connectivity, rather than
+distance or capacity, is the key requirement. For example, in network reliability and fault-tolerant
+design, ensuring that communication remains possible between designated end vertices is often
+more important than minimizing distances. Similarly, in road networks, the ability to guarantee
+that certain critical routes remain present even under subgraph extraction is essential for supporting
+customizable routing at scale.
+In this thesis, we take this perspective further by studying fault-tolerant reachability preservers,
+which remain valid even after the failure of edges or vertices. Fault tolerance is crucial in real-world
+settings where networks may be subject to disruptions due to accidents, congestion, or hardware
+failures. While classical sparsification notions largely assume static networks, fault-tolerant vari-
+ants aim to guarantee structural preservation under adversarial deletions. As such, fault-tolerant
+reachability preservers unify two key ideas: sparsification for efficiency and robustness for reliability.
+In addition to routing, clustering is another core primitive underlying the functionality of large-
+scale platforms like Google Maps, Apple Maps, and Waze.
+Clustering is used to group nearby
+places of interest, such as restaurants, tourist attractions, or services, and to present representative
+subsets to the user. From a theoretical perspective, clustering is one of the most extensively studied
+problems in computer science and operations research, with variants such as k-center, k-median,
+and k-means receiving decades of attention. In the setting of graph metrics, the distance between
+two vertices is given by the length of the shortest path connecting them. Clustering problems such
+as k-center, k-median, and k-means have been extensively studied under this formulation, where
+clusters are formed based on shortest-path distances in the graph. Classic results include the 2-
+approximation greedy algorithm for k-center by Gonzalez [Gon85], the local search framework for
+k-median by Arya et al. [AGK+04], and LP-rounding approaches for facility location and clustering
+by Charikar et al. [CGT+99] and Jain and Vazirani [JV01].
+Another influential formulation is correlation clustering, introduced by Bansal, Blum, and
+Chawla [BBC02], where the input is a complete graph with similarity/dissimilarity labels, and
+the goal is to partition vertices to minimize disagreements. Correlation clustering has since become
+a central abstraction for unsupervised learning and data integration tasks, with applications rang-
+ing from community detection to document classification and entity resolution [CGW05; ACN08;
+CMS+18]. Early works established both the algorithmic and hardness foundations of the problem.
+Bansal et al. [BBC04] showed that correlation clustering is NP-hard even on complete unweighted
+graphs, and provided the first constant-factor approximation algorithms for both the minimization
+and maximization variants. Charikar, Guruswami, and Kumar [CGW05] subsequently developed
+an LP-based rounding approach that achieved a 3-approximation for the minimize-disagreement
+version and an O(1)-approximation for the maximize-agreement variant. This work set the stage
+for a long line of research on improving approximation guarantees and extending correlation clus-
+tering to richer settings. Ailon, Charikar, and Newman [ACN08] proposed the celebrated pivot
+2
