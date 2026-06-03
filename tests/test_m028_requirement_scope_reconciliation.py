@@ -169,6 +169,7 @@ def test_can_require_planning_evidence_existence(tmp_path: Path) -> None:
         ("R035", "M028 advances R035 as a deliverable."),
         ("R035", "M028 delivers validation-batch quota top-up."),
         ("R035", "M028 materializes deterministic replacement candidates."),
+        ("R035", "M028 delivers source-ready replacement candidates."),
         ("R051", "M028 activates MiniMax."),
     ],
 )
@@ -276,13 +277,18 @@ def test_rejects_r040_false_global_validation_claim(tmp_path: Path) -> None:
     assert any("unsafe claim phrase" in error and "R040" in error for error in errors)
 
 
-def test_rejects_stale_rendered_markdown(tmp_path: Path) -> None:
+@pytest.mark.parametrize("requirement_id", ["R035", "R036"])
+def test_rejects_stale_rendered_markdown(tmp_path: Path, requirement_id: str) -> None:
     matrix = _load_real_matrix()
-    rendered = _load_rendered().replace("R036", "RXXX")
+    rendered = _load_rendered().replace(requirement_id, "RXXX")
 
     errors = _errors(matrix, rendered=rendered, tmp_path=tmp_path)
 
-    assert any("M028_MATRIX_MARKDOWN_STALE" in error and "rendered markdown missing requirement id: R036" in error for error in errors)
+    assert any(
+        "M028_MATRIX_MARKDOWN_STALE" in error
+        and f"rendered markdown missing requirement id: {requirement_id}" in error
+        for error in errors
+    )
 
 
 def test_rejects_rendered_markdown_with_stale_source_matrix_path(tmp_path: Path) -> None:

@@ -211,6 +211,7 @@ UNSAFE_POSITIVE_CLAIM_PHRASES = {
     "m028 changes r035 to validated",
     "m028 delivers validation-batch quota top-up",
     "m028 materializes deterministic replacement candidates",
+    "m028 delivers source-ready replacement candidates",
     "m028 validates graph readiness",
     "m028 authorizes kg import",
     "m028 authorizes kg import readiness",
