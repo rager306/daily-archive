@@ -214,10 +214,10 @@ def diagnostic_base(row: Mapping[str, Any], *, status: str, diagnostic_code: str
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "article_ref": row.get("article_ref") or row.get("article_key") or row.get("identity_key"),
+        "article_ref": row.get("article_ref"),
         "article_key": row.get("article_key"),
         "identity_key": row.get("identity_key"),
-        "variant_id": row.get("variant_id") or row.get("url"),
+        "variant_id": row.get("variant_id"),
         "source_role": row.get("source_role"),
         "source_path": row.get("local_path"),
         "status": status,
@@ -429,8 +429,10 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
         result["status"] = quality["status"]
         result["diagnostic_code"] = "arxiv_abs_html_metadata_only" if quality["status"] == "metadata_only" else "arxiv_abs_html_low_quality"
         result["code"] = result["diagnostic_code"]
-        result["failure_reason"] = "arxiv abs page is not parser-ready full text"
+        result["failure_reason"] = "arxiv abstract/navigation page is not parser-ready full text"
         result["conversion_attempted"] = True
+        result["terminal_state"] = result["status"]
+        result["fallback_reason"] = "no_substantive_body"
         result["extraction_method"] = "beautifulsoup_metadata_probe"
     elif source_role in HTML_ROLES:
         text, quality, structure = extract_article_html(source_path, source_role=str(source_role))
@@ -465,7 +467,7 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
     if source_role == "arxiv_abs_page":
         result["semantic_body_detected"] = False
         result["parser_ready_gate"] = "failed"
-        result["fallback_reason"] = result.get("failure_reason")
+        result["fallback_reason"] = "no_substantive_body"
     result["quality"] = quality
     result["structure_counts"] = structure
     return result
@@ -554,10 +556,13 @@ def run_conversion(args: argparse.Namespace) -> tuple[int, dict[str, Any], list[
     selection = load_json(args.selection)
     if selection.get("selection_id") != SELECTION_ID:
         raise ValueError(f"selection_id mismatch: {selection.get('selection_id')!r}")
+    selection = load_json(args.selection)
     source_summary = load_json(args.source_summary)
     rows = source_summary.get("results")
     if not isinstance(rows, list):
         raise ValueError("source acquisition summary missing results list")
+    selected_articles = selection.get("articles")
+    selected_article_count = len(selected_articles) if isinstance(selected_articles, list) else 0
 
     diagnostics: list[dict[str, Any]] = []
     for row in rows:
@@ -580,7 +585,7 @@ def run_conversion(args: argparse.Namespace) -> tuple[int, dict[str, Any], list[
         "selection_id": SELECTION_ID,
         "status": status,
         "exit_code_style_status": exit_code,
-        "article_count": len(article_refs),
+        "article_count": selected_article_count or len(article_refs),
         "variant_count": len(diagnostics),
         "parser_ready_count": parser_ready_count,
         "counts": dict(sorted(counts.items())),

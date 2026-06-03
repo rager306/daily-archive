@@ -864,6 +864,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--check-negative-cases", action="store_true")
     parser.add_argument("--check-low-quality-sources", action="store_true")
     parser.add_argument("--require-no-substantive-body-diagnostic", action="store_true")
+    parser.add_argument("--require-no-network", action="store_true", help="Compatibility flag; local-only/no-network is always enforced.")
+    parser.add_argument("--require-no-import-flags", action="store_true", help="Compatibility flag; fail-closed import flags are always checked.")
+    parser.add_argument("--reject-empty-semantic-body", action="store_true", help="Compatibility flag; empty/low-quality bodies are always rejected.")
+    parser.add_argument("--require-fallback-reasons", action="store_true", help="Compatibility flag; non-parser-ready rows are always required to carry fallback diagnostics.")
+    parser.add_argument("--check-parser-ready-gates", action="store_true", help="Compatibility flag; parser-ready gates are always checked.")
     return parser.parse_args(argv[1:])
 
 

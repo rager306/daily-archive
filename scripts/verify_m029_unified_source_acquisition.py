@@ -563,10 +563,11 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", required=True, type=Path)
     parser.add_argument("--source-dir", required=True, type=Path)
+    parser.add_argument("--source-summary", type=Path, help="Compatibility input alias; defaults to source-dir parent source-acquisition-summary.json.")
     parser.add_argument("--catalog", type=Path, default=Path("data/article_catalog/catalog.json"))
     parser.add_argument("--index", type=Path, default=Path("data/article_catalog/index.json"))
-    parser.add_argument("--write-summary", required=True, type=Path)
-    parser.add_argument("--write-diagnostics", required=True, type=Path)
+    parser.add_argument("--write-summary", type=Path)
+    parser.add_argument("--write-diagnostics", type=Path)
     parser.add_argument("--write-report", type=Path)
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
@@ -577,8 +578,14 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv[1:])
 
     started = time.perf_counter()
-    capture_summary_path = args.source_dir.parent / "source-acquisition-summary.json"
-    if not capture_summary_path.exists() and args.write_summary.exists():
+    write_requested = args.check_strategies or args.write_summary is not None or args.write_diagnostics is not None or args.write_report is not None
+    default_summary_path = args.source_dir.parent / "source-acquisition-summary.json"
+    if write_requested:
+        args.write_summary = args.write_summary or default_summary_path
+        args.write_diagnostics = args.write_diagnostics or args.source_dir.parent / "source-acquisition-diagnostics.jsonl"
+        args.write_report = args.write_report or args.source_dir.parent / "source-acquisition-report.md"
+    capture_summary_path = args.source_summary or default_summary_path
+    if not capture_summary_path.exists() and args.write_summary is not None and args.write_summary.exists():
         capture_summary_path = args.write_summary
     if not capture_summary_path.exists():
         raise FileNotFoundError(f"capture summary not found: {capture_summary_path}")
@@ -593,6 +600,10 @@ def main(argv: list[str]) -> int:
         require_no_import_flags=args.require_no_import_flags or args.check_fail_closed,
     )
     verification["duration_ms"] = int((time.perf_counter() - started) * 1000)
+
+    if not write_requested:
+        print(json.dumps({"summary_path": capture_summary_path.as_posix(), "error_count": len(errors), "counts": verification["counts"]}, sort_keys=True))
+        return 0 if not errors else 1
 
     if args.check_strategies:
         catalog = load_json(args.catalog)
