@@ -1,0 +1,533 @@
+SkillNet: Create, Evaluate, and Connect AI Skills
+Yuan Liang1*, Ruobin Zhong1*, Haoming Xu1*, Chen Jiang3*, Yi Zhong1, Runnan Fang4,
+Jia-Chen Gu11, Shumin Deng15, Yunzhi Yao1, Mengru Wang1, Shuofei Qiao1, Xin Xu12,
+Tongtong Wu14, Kun Wang16, Yang Liu16, Zhen Bi17, Jungang Lou17, Yuchen Eleanor
+Jiang7, Hangcheng Zhu4, Gang Yu4, Haiwen Hong4, Longtao Huang4, Hui Xue4, Chenxi
+Wang1, Yĳun Wang6, Zifei Shan6, Xi Chen6, Zhaopeng Tu6, Feiyu Xiong10, Xin Xie5,
+Peng Zhang5, Zhengke Gui5, Lei Liang5, Jun Zhou5, Chiyu Wu8, Jin Shang8, Yu Gong8,
+Junyu Lin9, Changliang Xu19, Hongjie Deng1, Wen Zhang1, Keyan Ding1, Qiang Zhang1,
+Fei Huang18, Ningyu Zhang1†, Jeff Z. Pan13, Guilin Qi3, Haofen Wang2, Huajun Chen1
+1Zhejiang University, 2Tongji University, 3Southeast University
+4Alibaba Group, 5Ant Group, 6Tencent, 7OPPO, 8HomologyAI
+9Fudan University, 10MemTensor (Shanghai) Technology, 11UCLA, 12UCSD,
+13The University of Edinburgh, 14Monash University, 15National University of Singapore,
+16Nanyang Technological University, 17Huzhou University, 18Hornor Device Co., Ltd,
+19Hangzhou Institute for Advanced Study, UCAS
+Abstract
+Current AI agents can flexibly invoke tools and execute complex tasks, yet their long-term advance-
+ment is hindered by the lack of systematic accumulation and transfer of skills. Without a unified
+mechanism for skill consolidation, agents frequently “reinvent the wheel”, rediscovering solutions
+in isolated contexts without leveraging prior strategies. To overcome this limitation, we introduce
+SkillNet, an open infrastructure designed to create, evaluate, and organize AI skills at scale. SkillNet
+structures skills within a unified ontology that supports creating skills from heterogeneous sources,
+establishing rich relational connections, and performing multi-dimensional evaluation across Safety,
+Completeness, Executability, Maintainability, and Cost-awareness. Our infrastructure integrates a
+repository of over 200,000 skills, an interactive platform, and a versatile Python toolkit. Experimental
+evaluations on ALFWorld, WebShop, and ScienceWorld demonstrate that SkillNet significantly
+enhances agent performance, improving average rewards by 40% and reducing execution steps by
+30% across multiple backbone models. By formalizing skills as evolving, composable assets, SkillNet
+provides a robust foundation for agents to move from transient experience to durable mastery.
+Correspondence: zhangningyu@zju.edu.cn
+Website: http://skillnet.openkg.cn, https://github.com/zjunlp/SkillNet
+∗Equal Contribution.
+†Corresponding authors.
+arXiv:2603.04448v1 [cs.AI] 26 Feb 2026
+
+🛡
+🧩
+🚀
+🛠 
+💰
+Category
+Evaluation
+Safety
+Completeness
+Executability 
+Maintainability
+Cost-Awareness 
+Development
+AIGC
+Research
+Science
+Business
+200,000+ Total
+150,000+ Curated
+Testing
+Security
+Productivity
+Lifestyle
+SkillNet
+Figure 1 Overview of SkillNet. SkillNet organizes large-scale agent skills into a structured skill network, modeling
+rich relations (e.g., similarity, composition, and dependency), supporting multi-dimensional evaluation, and providing
+unified interfaces for skill discovery, creation, and analysis.
+1
+Introduction
+As Richard S. Sutton noted, “we are in the era of experience” [1]. Intelligence is increasingly grounded not in
+ab initio knowledge acquisition, but in the efficient retrieval and adaptive reuse of heuristics distilled from
+prior experience. This transition marks the advent of the agent era, where AI moves beyond static question
+answering to orchestrate long-horizon, executable tasks [2, 3, 4, 5, 6, 7, 8]. Despite recent progress in agentic
+systems, a critical yet underexplored question remains: How can agents systematically consolidate episodic
+experience into durable, transferable mastery?
+Current AI methods largely rely on manual engineering or transient in-context learning [9, 10, 11].
+While humans excel at consolidating episodic experience into reusable schemas [12], for instance when a
+programmer internalizes the logic of an algorithm rather than merely memorizing its syntax, contemporary
+AI systems struggle to bridge the divide between transient context and long-term capability. Without a
+unified mechanism for skill consolidation and sharing, agents repeatedly “reinvent the wheel” in isolated
+contexts, and even well-established strategies rarely inform future tasks. This gap highlights a broader,
+longstanding tension in AI between explicit structure and scalable representation, a limitation that becomes
+especially evident when examined through the historical evolution of knowledge engineering [13]:
+• The Symbolic Era: Systems relied on rigid symbolic logic, offering interpretability but suffering from
+brittleness and limited scalability [14, 15, 16].
+• The Deep Learning Era: Knowledge became parametric, taking the form of high-dimensional weight
+matrices. While powerful, such representations are opaque and difficult to modularize or reuse [17, 18].
+• The Agentic Era (Current Frontier): We are witnessing a convergence toward agent skills, which serve
+as simple, transferable units that provide agents with new capabilities and expertise while separating
+intelligence from monolithic parameter spaces [19, 20, 21, 22].
+This historical trajectory suggests a natural progression toward skills as modular, externalized units of
+knowledge that reconcile structural interpretability with scalable representation. Consequently, the central
+challenge in the agent era is no longer merely learning from experience, but transforming fragmented
+experience into durable, composable skill units that support generalizable intelligence. However, current
+AI approaches fall short in two fundamental respects. First, there is no unified mechanism to acquire and
+consolidate skills from experience. Valuable expertise exists at scale across open-source repositories, academic
+publications, and agent execution traces [23, 24], yet it remains largely unstructured and disconnected. Unlike
+human learners, who continuously internalize external information into organized knowledge schemas,
+AI agents cannot automatically distill these resources into reusable, executable capabilities. As a result,
+skill acquisition remains a manual and episodic process rather than an autonomous, cumulative one [3].
+Second, there is no principled framework to validate and maintain skill quality at scale. Without intrinsic and
+2
+
+systematic evaluation, skill repositories are prone to “pollution,” where executability, safety, and robustness
+are assessed only indirectly through downstream task success [25, 26, 27]. Such stochastic and opaque
+validation introduces technical debt, undermining long-term capability growth and preventing agents from
+leveraging accumulated experience in a reliable and scalable manner. Together, these gaps highlight the need
+for a structured framework that not only captures and organizes skills, but also rigorously evaluates and
+interconnects them to enable dependable, large-scale knowledge reuse.
+To address these issues, we introduce SkillNet (Figure 1), an open infrastructure for creating, evaluating,
+and organizing AI skills at scale. We conceptualize a skill as a unified knowledge representation that bridges
+unstructured language understanding with structured, machine-executable logic. SkillNet constructs a
+comprehensive Skill Ontology with three interconnected layers: a taxonomic layer for functional categorization,
+a relational layer encoding dependencies and composition, and a skill-package layer for modular deployment.
+To ensure the reliability of these skills, we propose a multi-dimensional evaluation framework that assesses
+skills based on Safety, Completeness, Executability, Maintainability, and Cost-awareness.
+Our approach transforms fragmented experience from diverse sources, including execution trajectories,
+open-source repositories, and documentation, into a structured network of over 200,000 curated skills. Exper-
+imental results across three text-based simulated environments (ALFWorld, WebShop, and ScienceWorld)
+demonstrate that agents augmented with SkillNet achieve substantial gains. For instance, our approach
+improves the average reward by 40% while reducing interaction steps by 30% across various backbone models
+(e.g., DeepSeek V3, Gemini 2.5 Pro, and o4 Mini), validating that systematic skill accumulation effectively
+enhances agent competence cumulatively rather than episodically.
+Our contributions are summarized as follows:
+1. We introduce SkillNet, a unified framework that transforms fragmented agent experience into a structured
+network of modular, composable skills with rich relational modeling, serving as a scalable foundation for
+actionable knowledge engineering.
+2. We establish a rigorous skill evaluation protocol that quantitatively measures safety, completeness,
+executability, maintainability, and cost-awareness, ensuring the reliability of large-scale skill repositories.
+3. We release an open-source ecosystem, including a repository of over 200,000 curated skills, a Python toolkit,
+and comprehensive benchmarks, which empirically demonstrate significant performance improvements in
+agent planning and execution tasks.
+2
+Agent Skills
+In the context of agentic systems, skills represent a lightweight, modular, and reusable abstraction for
+extending the capabilities of AI agents [28]. Conceptually, a skill encapsulates procedural knowledge, task-
+specific instructions, and supporting resources, enabling agents to perform complex tasks more accurately,
+efficiently, and consistently.
+Functionally, skills are organized as structured folders containing a central SKILL.md file, which defines
+the skill’s metadata and detailed instructions. The metadata typically includes the skill’s name, a brief
+description of its purpose, and usage conditions, while the instructions provide step-by-step guidance for
+execution. Skills may optionally include scripts, templates, documentation, and other resources required to
+perform tasks, forming a self-contained capability package.
+The core purpose of skills is to provide agents with access to reusable procedural knowledge and
+context-specific information on demand. For example, an agent can leverage a skill to automate a data analysis
+pipeline, perform domain-specific reasoning, or generate structured outputs such as reports or presentations.
+By encapsulating these capabilities, skills enable consistent and repeatable workflows, reduce reliance on
+hard-coded rules or ad hoc prompts, and allow knowledge to be shared across agents, teams, or applications.
+Skills operate through a progressive three-step process:
+1. Discovery: Agents initially load only minimal metadata (e.g., name and description) to identify
+potentially relevant skills for a given task.
+2. Activation: When a task matches a skill’s description, the agent reads the full instructions from
+SKILL.md and prepares any associated resources.
+3
+
+3. Execution: The agent follows the instructions and optionally executes bundled code or utilizes referenced
+assets to complete the task.
+One of the key benefits of skills is that they are self-documenting. The embedded instructions and
+structured metadata make it straightforward to understand, audit, and iteratively improve each capability.
+Fundamentally, a skill serves as a unified knowledge representation that integrates entities, relationships,
+workflows, and executable code, encompassing both textual semantics and symbolic outcomes. This
+hybrid representation enables skills to bridge unstructured language understanding with structured, machine-
+executable logic. Skills are highly extensible, ranging from lightweight textual guidance to complex bundles
+that include executable programs and supporting assets. Their file-based, version-controlled nature ensures
+portability, allowing the same skill to be shared, reused, and deployed across different agents or systems with
+minimal adaptation.
+Note that by encapsulating domain-specific knowledge and operational workflows in a structured and
+reusable form, skills provide an effective mechanism for institutionalizing business logic. This structured
+accumulation of expertise not only supports the systematic propagation of domain knowledge, but also
+enhances agent performance through reusable, reliable, and composable capabilities. However, in practice,
+these skills are often fragmented, scattered across scripts, prompts, or isolated workflows, and their quality,
+reliability, and reusability are rarely evaluated in a systematic way. Without a unified framework to organize,
+verify, and evolve skills, agents cannot fully realize the potential of this modular knowledge, limiting their
+ability to evolve continuously and adapt to new tasks. This motivates the development of SkillNet.
+3
+SkillNet
+3.1
+Overview
+User Trajectory
+Documents
+GitHub Projects
+Direct Prompt
+Open-source Skills
+Skill Creation
+Analyze Inputs
+Create Skills
+…
+Skill Filtering
+Evaluation
+Safety
+
+Completeness
+
+Executability
+
+Maintainability
+
+Cost-Awareness
+
+Evaluation
+Dimensions
+Deduplication
+Categorization
+Tagging
+SkillNet
+High-quality 
+Skills
+Search Skills
+Download Skills
+Evaluate Skills
+ Analyze Skills
+Contribute Skills
+Figure 2 End-to-end Pipeline of SkillNet. SkillNet transforms heterogeneous user inputs and open internet resources into
+executable skills through automated skill creation and multi-dimensional evaluation, and organizes high-quality skills
+into a structured network to support search, download, analysis, and contribution.
+Figure 2 illustrates the overall architecture of SkillNet, which systematically creates, evaluates, and
+organizes high-quality skills for agent systems.
+SkillNet is designed to transform fragmented agent
+experiences and human knowledge into reusable and verifiable skill entities, enabling scalable and reliable
+capability growth. SkillNet consists of three core modules:
+Skill Creation.
+This module analyzes diverse inputs, including user trajectories, office documents, GitHub
+projects, direct prompts, and open internet resources. Based on these inputs, SkillNet generates new skills by
+extracting executable patterns and structuring them as reusable capabilities.
+Skill Evaluation.
+Generated skills are filtered and evaluated along multiple principal dimensions, including
+safety, completeness, executability, maintainability, and cost-awareness. This evaluation ensures that only
+high-quality skills are retained, mitigating redundancy, brittleness, and potential risks.
+4
+
+Skills
+Skills
+has_category
+has_category
+has_category
+has_category
+has_category
+Development
+Development
+AIGC
+AIGC
+Research
+Research
+Science
+Science
+Testing
+Testing
+has_tag
+has_tag
+has_tag
+has_tag
+has_tag
+Skill Taxonomy
+Skill Relation Graph
+belong_to
+depend_on
+similar_to
+Skill Package Library
+Category
+Skill
+Package
+similar_to
+belong_to
+compose_with
+depend_on
+Instantiate
+Instantiate
+Instantiate
+Instantiate
+compose_with
+depend_on
+packaged_in
+packaged_in
+packaged_in
+frontend
+frontend
+python
+python
+frontend
+python
+plotting
+plotting
+plotting
+llm
+llm
+ai agents
+ai agents
+llm
+ai agents
+physics
+physics
+biology
+biology
+physics
+biology
+web testing
+web testing
+web testing
+debugging
+debugging
+experiment
+experiment
+experiment
+browser-automation
+browser-automation
+playwright
+playwright
+skill-adapter
+skill-adapter
+write-e2e-tests
+write-e2e-tests
+nextjs-expert
+nextjs-expert
+matplotlib
+matplotlib
+seaborn
+seaborn
+react-patterns
+react-patterns
+. . .
+. . .
+. . .
+. . .
+. . .
+. . .
+ react-nextjs-fullstack
+nextjs-
+expert
+nextjs-
+expert
+. . .
+react
+react
+react-
+patterns
+react-
+patterns
+frontend-
+patterns
+frontend-
+patterns
+ react-nextjs-fullstack
+nextjs-
+expert
+. . .
+react
+react-
+patterns
+frontend-
+patterns
+data-science-visualization
+matplotlib
+. . .
+plotly
+plotly
+plotly
+seaborn
+seaborn
+seaborn
+geopandas
+e2e-browser-testing
+. . .
+testing-
+expert
+testing-
+expert
+testing-
+expert
+playwright
+playwright
+senior-qa
+senior-qa
+skill-
+adapter
+skill-
+adapter
+skill-
+adapter
+Figure 3 The Skill Ontology for SkillNet. It consists of three levels: the Skill Taxonomy (top) defines functional categories;
+the Skill Relation Graph (middle) models inter-skill dependencies and semantic associations; and the Skill Package
+Library (bottom) organizes skills into modular, task-oriented bundles.
+Skill Analysis.
+Beyond isolated skills, SkillNet automatically analyzes structural and functional relationships
+among skills, constructing large-scale skill graphs that capture similarity, hierarchy, composition, and
+dependency patterns.
+This structured representation enables global reasoning over skill repositories,
+supporting efficient retrieval, composition, and workflow synthesis.
+Open Resources.
+SkillNet organizes curated, high-quality skills within a structured repository, offering
+versatile toolkits that enable users and agents to efficiently search, download, create, evaluate, analyze, and
+contribute skills. By providing these standardized interfaces for skill interaction, SkillNet facilitates seamless
+skill reuse and collaborative evolution across tasks, domains, and agent populations.
+3.2
+Skill Ontology
+The Skill Ontology organizes individual skills into a structured, composable network, as illustrated in Figure 3.
+The architecture is organized into three progressive layers:
+Skill Taxonomy.
+This layer organizes skills into a multi-level hierarchy using category and tag relations. It
+categorizes broad domains (e.g., Development, AIGC, Science ...) into fine-grained tags (e.g., frontend, llm,
+physics), providing a high-level semantic skeleton.
+Skill Relation Graph.
+This layer instantiates abstract tags into specific Skill Entities (e.g., Matplotlib, Playwright).
+It defines the core interaction logic through multi-relational edges: similar_to, compose_with, belong_to,
+and depend_on, forming the backbone for reasoning and planning.
+Skill Package Library.
+The bottom layer represents the physical organization of skills. Individual skills
+are encapsulated into Skill Packages (e.g., data-science-visualization) via the packaged_in relation,
+facilitating modular release and deployment.
+5
+
+Note that the skill ontology is dynamic, modeling relations between skills. Tags can be continually added
+from the taxonomy, and LLMs infer relations from them, enabling the instantiation of a skill relation graph.
+3.3
+Skill Creation
+SkillNet conceptualizes skills as intermediate capability units that bridge abstract, declarative knowledge and
+concrete, executable programs. Specifically, we develop an automated creation pipeline that systematically
+transforms heterogeneous information sources into standardized, reusable agent skills.
+3.3.1
+From Human Experience to Skill Abstraction
+To construct a comprehensive and versatile skill repository, SkillNet abstracts skills from diverse data sources,
+transforming heterogeneous information into reusable structured agent skills.
+We design a multi-source automated skill creation pipeline that enables SkillNet to induce agentic
+skills from heterogeneous human knowledge and experience. Specifically, SkillNet supports four major
+categories of data sources: (1) execution trajectories and conversational interaction logs, (2) open-source
+GitHub repositories, (3) semi-structured documents including PDF, PowerPoint, and Word files, and (4) direct
+natural language prompts provided by users. This process is fully implemented through LLMs, and users
+can also customize the underlying models. In addition, SkillNet continuously expands its skill pool through
+open internet resources, in-house development, and community contributions, ensuring sustained scalability
+and coverage expansion.
+3.3.2
+Data-Driven Skill Filtering and Consolidation
+Automatic construction of skills does not imply indiscriminate accumulation. Instead, SkillNet introduces
+a data-driven filtering and consolidation pipeline to ensure the quality of the skill repository. Specifically,
+SkillNet applies a multi-stage curation process consisting of deduplication, filtering, categorization and
+tagging, evaluation, and final selective consolidation.
+Deduplication is performed by jointly comparing skill directory structures and MD5 hashes of skill
+markdown files, effectively removing redundant skills. Filtering eliminates low-quality, incomplete, or
+semantically meaningless skills through rule-based validation and model-based checking. Categorization
+and tagging classify each skill into one of ten functional categories (Development, AIGC, Research, Science,
+Business, Testing, Productivity, Security, Lifestyle, Other) and assign fine-grained semantic tags to facilitate
+retrieval and composition. Then, a multi-dimensional evaluation mechanism is applied to determine whether
+a skill is admitted into the SkillNet repository. SkillNet automatically establishes inter-skill associations based
+on ontology-defined relations, ultimately resulting in a structured skill package library.
+This structured pipeline enables SkillNet to function as a self-evolving skill ecosystem rather than a static
+skill collection, continuously improving both skill quality and coverage.
+3.4
+Skill Evaluation
+Although skill creation is important, the utility of a skill repository ultimately depends on its reliability. To
+bridge the gap left by existing repositories that lack standardized assessment, we propose a multi-dimensional
+systematic evaluation framework.
+We define five core dimensions to quantitatively characterize the quality and readiness of each skill:
+• Safety: Assesses potential risks, including hazardous system operations (e.g., unauthorized file deletion)
+and robustness against prompt injection or adversarial manipulation.
+• Completeness: Evaluates whether the skill encapsulates all critical procedural steps and explicitly
+defines necessary prerequisites, dependencies, and execution constraints.
+• Executability: Verifies if the skill can be successfully implemented by agents in sandboxed environments,
+identifying hallucinated tool calls or ambiguous instructions.
+• Maintainability: Measures the modularity and composability of skills, ensuring they can be locally
+updated without disrupting global dependencies or breaking backward compatibility.
+6
+
+Figure 4 Multi-dimensional Skill Evaluation and Reliability Analysis. (a) Quality distribution of curated skills in SkillNet,
+assessed using a three-level grading scheme, where most skills are rated Good or Average. (b) Reliability validation of the
+automated evaluator on 200 randomly sampled skills. The heatmap shows mean absolute error (MAE) and quadratic
+weighted kappa (QWK) between human annotators and the model evaluator, with near-perfect QWK and low MAE
+across all dimensions, demonstrating the robustness and scalability of the evaluation framework.
+• Cost-awareness: Quantifies execution overhead, including time latency, computational resource
+consumption, and API usage costs to support efficiency optimization.
+To achieve high-throughput assessment, all dimensions are primarily evaluated via an automated LLM-
+based evaluator (instantiated with GPT-5o-mini), guided by fine-grained rubrics. For Executability, we
+complement LLM judgment with empirical validation: skills containing code or tool invocations are executed
+in controlled sandbox environments to verify runtime correctness. Each dimension is categorized into three
+levels: Good, Average, and Poor.
+The quality distribution across the repository is illustrated in Figure 4(a). We observe that while Safety and
+Maintainability maintain a high proportion of “Good” ratings, Executability presents a greater challenge,
+with a larger fraction of skills rated as Average. This reflects our rigorous filtering criteria, ensuring that only
+high-fidelity skills are prioritized for complex task execution.
+To validate the reliability of this automated pipeline, we randomly sampled 200 skills and recruited
+three PhD-level computer science annotators for independent blind reviews. As shown in Figure 4(b), the
+inter-rater agreement between human judgments and LLM-based scores exhibits exceptional consistency.
+Across all dimensions, the Mean Absolute Error (MAE) remains below 0.03, and the Quadratic Weighted
+Kappa (QWK) consistently reaches near-perfect levels (1.000). These results confirm that our automated
+evaluator provides a human-aligned, robust, and scalable foundation for managing the SkillNet ecosystem.
+3.5
+Skill Analysis
+Beyond isolated skill creation and evaluation, large-scale skill repositories introduce a new challenge: how
+to systematically understand, organize, and exploit the relations among skills. To address this, SkillNet
+introduces a dedicated Skill Analysis module that automatically discovers and models structural relations
+between skills, forming a structured and interpretable skill relation graph. This enables global reasoning over
+large skill repositories and supports advanced downstream applications such as skill retrieval, composition,
+dependency resolution, and workflow synthesis.
+Relation Modeling.
+SkillNet formulates skill analysis as a structured relations discovery problem. Given a
+large amount of heterogeneous skills, the system automatically identifies and annotates multiple types of
+semantic and functional relations between skills, including (task-specific relations are omitted here, and users
+may extend the schema by defining custom relations as needed):
+• similar_to: Two skills perform functionally equivalent or highly similar tasks and can often be used
+interchangeably, enabling redundancy detection, replacement, and robustness enhancement.
+7
+
+Figure 5 Practical use examples of skillnet-ai. The package offers a unified functional experience through both a command-
+line interface (left) for interactive usage and a Python library (right) for seamless integration into AI development pipelines.
+• belong_to: A skill serves as a sub-component or atomic step within a larger composite workflow,
+capturing hierarchical structures and supporting skill abstraction and modularization.
+• compose_with: Two skills are frequently co-invoked in workflows, where one typically produces
+outputs consumed by the other, enabling automatic workflow composition and pipeline generation.
+• depend_on: A skill cannot execute independently without prerequisite skills, such as environment
+setup or API initialization, enabling explicit dependency tracking and safe execution planning.
+Automated Skill Relation Graph Construction.
+SkillNet can construct large-scale skill relation graphs through a
+hybrid pipeline that integrates semantic embedding and LLM-based relational inference. Candidate relations
+are first generated via similarity matching, dependency extraction, and execution trace alignment, and LLM
+reasoning, enabling scalable and accurate discovery of structured skill relations. These relations jointly form a
+directed, typed multi-relational graph, where nodes represent skills and edges encode fine-grained structural
+dependencies and functional associations.
+Task-Oriented Skill Collection Release.
+To promote reproducibility and practical adoption, SkillNet releases
+over 20 task-specific skill collections, covering domains such as scientific research automation, software
+development, data processing pipelines, web automation, etc. In particular, several collections are designed
+for academic benchmarks, and we conduct quantitative evaluations to assess the effectiveness of this paradigm,
+as detailed in a later section. These released collections provide structured and reusable infrastructures for
+studying large-scale agent planning, workflow synthesis, and skill evolution, offering a foundation for future
+research on structured agent intelligence.
+3.6
+Open Resources
+SkillNet provides a comprehensive open infrastructure for creating, evaluating, and organizing AI skills at
+scale. This includes a large-scale skill repository, a front-end website, an open access API, and a versatile
+Python toolkit (skillnet-ai), forming a unified ecosystem for skill management and utilization.
+The front-end website allows users to seamlessly browse, search, and download skills directly. Users can
+explore skill categories, view detailed API documentation and Python toolkit usage guidelines, and learn
+how to apply SkillNet to scientific research or coding scenarios. The platform also supports community
+contributions, enabling users to submit and share newly constructed skills, thus fostering a collaborative and
+continuously evolving skill ecosystem.
+For API access, SkillNet supports both keyword-based and vector-based searches. Users can search for
+skills by keywords, categories, or semantic similarity via http://api-skillnet.openkg.cn/v1/search.
+To bridge the gap between static repositories and dynamic execution, we developed skillnet-ai, a
+unified Python library and CLI tool that enables flexible integration with users. Through this toolkit, users
+8
