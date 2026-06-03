@@ -14,7 +14,7 @@ This report is metadata-only and does not embed raw article text, HTML, PDF byte
 - Diagnostics: `29`
 - Command: `['uv', 'run', 'python', 'scripts/convert_m029_unified_source_quality_boundary.py']`
 - CWD: `/root/daily-archive`
-- Git commit: `cf48c2b982c0139fa54a6df2f37abfc8b2a47cc1`
+- Git commit: `3028d71135550c829c53732ea00186f40b7b0a4a`
 
 ## Failure Modes
 
