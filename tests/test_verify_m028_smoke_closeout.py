@@ -5,16 +5,13 @@ import hashlib
 import json
 from pathlib import Path
 
-import pytest
-
 import scripts.verify_m028_smoke_closeout as verifier
-
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_DIR = ROOT / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout"
-SUMMARY_PATH = FIXTURE_DIR / "closeout-summary.json"
-EVENTS_PATH = FIXTURE_DIR / "closeout-events.jsonl"
-REPORT_PATH = FIXTURE_DIR / "closeout-report.md"
+SUMMARY_PATH = FIXTURE_DIR / "smoke-replay-closeout-summary.json"
+EVENTS_PATH = FIXTURE_DIR / "smoke-replay-closeout-events.jsonl"
+REPORT_PATH = FIXTURE_DIR / "smoke-replay-closeout-report.md"
 
 
 def load_fixture() -> tuple[dict, list[dict], str]:

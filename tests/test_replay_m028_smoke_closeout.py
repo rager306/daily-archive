@@ -3,7 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from scripts.replay_m028_smoke_closeout import CloseoutError, read_jsonl, validate_source_acquisition
+from scripts.replay_m028_smoke_closeout import (
+    CloseoutError,
+    read_jsonl,
+    validate_source_acquisition,
+)
 
 
 def _write_minimal_corpus(base: Path, *, artifact_path: str, unsafe_event: bool = False) -> None:
