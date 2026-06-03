@@ -5,7 +5,7 @@
 - Status: `pass`
 - Corpus: `data/article_corpora/m028-universal-loader-runtime-smoke-v1`
 - Replay artifacts: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts`
-- Git commit: `5a8bdb6c446020c11d8d1e5e4b561233517ad08d`
+- Git commit: `9911688507159dfdd0319ae0997c8b3efe432428`
 
 ## Metadata-only Boundary
 
@@ -23,14 +23,14 @@ This closeout replays only local metadata/provenance stages S02-S05. It does not
 
 | Stage | Status | Exit Code | Duration ms |
 |---|---:|---:|---:|
-| S02_build_source_metadata_adapters | pass | 0 | 88 |
-| S02_verify_source_metadata_adapters | pass | 0 | 47 |
-| S03_build_pdf_acquisition_diagnostics | pass | 0 | 70 |
-| S03_verify_pdf_acquisition_diagnostics | pass | 0 | 67 |
-| S04_build_universal_loader_evidence_bundles | pass | 0 | 64 |
-| S04_verify_universal_loader_evidence_bundles | pass | 0 | 64 |
-| S05_build_hermes_digest_projection | pass | 0 | 64 |
-| S05_verify_hermes_digest_projection | pass | 0 | 63 |
+| S02_build_source_metadata_adapters | pass | 0 | 91 |
+| S02_verify_source_metadata_adapters | pass | 0 | 49 |
+| S03_build_pdf_acquisition_diagnostics | pass | 0 | 74 |
+| S03_verify_pdf_acquisition_diagnostics | pass | 0 | 77 |
+| S04_build_universal_loader_evidence_bundles | pass | 0 | 68 |
+| S04_verify_universal_loader_evidence_bundles | pass | 0 | 71 |
+| S05_build_hermes_digest_projection | pass | 0 | 65 |
+| S05_verify_hermes_digest_projection | pass | 0 | 67 |
 
 ## Safety Flags
 

@@ -10,8 +10,8 @@ Evidence-only consumer digest projection generated from S04 universal-loader evi
 - Source kind counts: `{"arxiv_abs_url": 15, "arxiv_pdf_url": 4, "company_blog_url": 1, "nature_article_url": 1}`
 
 ## Source References
-- Loader bundles: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-bundles.jsonl` sha256=a5c31711b3a010a76f54b6e1d9bad3f8f35d74e62c7ee15e20bd3b5fbac81e50
-- Loader summary: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-summary.json` sha256=e3b22a63372b5571558ef7268d483624d94ebd2372fcc4b43a706bc8c8e9ee94
+- Loader bundles: `tests/tmp_m028_hermes_digest_projection/test_verifier_rejects_nonzero_1/universal-loader-evidence-bundles.jsonl` sha256=a5c31711b3a010a76f54b6e1d9bad3f8f35d74e62c7ee15e20bd3b5fbac81e50
+- Loader summary: `tests/tmp_m028_hermes_digest_projection/test_verifier_rejects_nonzero_1/universal-loader-evidence-summary.json` sha256=ba67ba81bf65289b3d78262aca2ec512a96369b9d0bf7f994eef22d3e2ba61d3
 - Selection ref: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json`
 
 ## Summary
