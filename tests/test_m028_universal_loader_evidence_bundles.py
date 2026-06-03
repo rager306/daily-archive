@@ -53,6 +53,10 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _diagnostic_codes(diagnostics: list[object]) -> set[str]:
+    return {str(diagnostic.code) for diagnostic in diagnostics}
+
+
 def _selection() -> dict[str, object]:
     refs: list[dict[str, object]] = [
         {
@@ -433,4 +437,192 @@ def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"FORBIDDEN_KEY_PRESENT", "FORBIDDEN_MARKER_PRESENT"}.issubset({diagnostic.code for diagnostic in diagnostics})
+    assert {"FORBIDDEN_KEY_PRESENT", "FORBIDDEN_MARKER_PRESENT"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_real_corpus_regeneration_outputs_verify(tmp_path: Path) -> None:
+    builder = _load_script()
+    verifier = _load_verifier()
+    bundles, summary = builder.build_universal_loader_evidence_outputs(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "source-metadata-summary.json",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-summary.json",
+        tmp_path,
+        repo_root=REPO_ROOT,
+    )
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        tmp_path / "universal-loader-evidence-bundles.jsonl",
+        tmp_path / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert len(bundles) == 21
+    assert summary["url_ref_count"] == 21
+    assert diagnostics == []
+
+
+def test_verifier_rejects_stale_14_ref_scope_and_missing_expanded_refs(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    selection = _read_json(REAL_CORPUS_DIR / "selection.json")
+    refs = selection["refs"]
+    assert isinstance(refs, list)
+    selection["refs"] = refs[:14]
+    selection_path = tmp_path / "selection-14-refs.json"
+    _write_json(selection_path, selection)
+
+    diagnostics = verifier.verify_contract(
+        selection_path,
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"SCOPE_REF_COUNT_MISMATCH", "EXPANDED_SCOPE_REFS_MISSING", "BUNDLE_REF_SET_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_verifier_rejects_duplicate_identity_collapse(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    selection = _read_json(REAL_CORPUS_DIR / "selection.json")
+    refs = selection["refs"]
+    assert isinstance(refs, list)
+    for ref in refs:
+        assert isinstance(ref, dict)
+        if ref.get("ref_id") == "R10":
+            ref["normalized_identity"] = "arxiv:2605.20897-collapsed-away"
+    selection_path = tmp_path / "selection-duplicate-collapse.json"
+    _write_json(selection_path, selection)
+
+    diagnostics = verifier.verify_contract(
+        selection_path,
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"SCOPE_IDENTITY_COUNT_MISMATCH", "DUPLICATE_IDENTITY_DRIFT", "BUNDLE_IDENTITY_GROUP_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_verifier_rejects_non_arxiv_pdf_and_import_promotion(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
+    target = next(row for row in bundle_rows if row["ref_id"] == "R03")
+    assert target["source_kind"] == "nature_article_url"
+    target["pdf_diagnostic"] = {
+        "candidate_kind": "explicit_arxiv_pdf_url",
+        "diagnostic_count": 0,
+        "reason": "existing_pdf_checksum_signature_verified",
+        "status": "acquired_existing_pdf",
+        "terminal": True,
+    }
+    assert isinstance(target["loader_evidence"], dict)
+    target["loader_evidence"]["kg_import_eligible"] = True
+    target["loader_evidence"]["production_import_eligible"] = True
+    bundles_path = tmp_path / "bundles-non-arxiv-promotion.jsonl"
+    _write_jsonl(bundles_path, bundle_rows)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        bundles_path,
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"PDF_DIAGNOSTIC_STATUS_MISMATCH", "LOADER_EVIDENCE_UNSAFE_POSITIVE", "UNSAFE_CLAIM_IN_BUNDLE"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_verifier_rejects_checksum_signature_drift(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
+    target = next(row for row in bundle_rows if row["ref_id"] == "R01")
+    pdf_artifact = target["artifact_refs"]["pdf_artifact"]
+    assert isinstance(pdf_artifact, dict)
+    pdf_artifact["sha256"] = "f" * 64
+    pdf_artifact["payload_embedded"] = True
+    bundles_path = tmp_path / "bundles-checksum-drift.jsonl"
+    _write_jsonl(bundles_path, bundle_rows)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        bundles_path,
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"PDF_ARTIFACT_LINKAGE_MISMATCH", "ARTIFACT_PAYLOAD_FLAG_UNSAFE", "PDF_SIGNATURE_PAYLOAD_UNSAFE"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_verifier_rejects_wrong_quality_mapping(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
+    target = next(row for row in bundle_rows if row["ref_id"] == "R02")
+    assert isinstance(target["loader_evidence"], dict)
+    target["loader_evidence"]["source_quality_status"] = "source_metadata_with_verified_pdf_artifact"
+    bundles_path = tmp_path / "bundles-quality-drift.jsonl"
+    _write_jsonl(bundles_path, bundle_rows)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        bundles_path,
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"SOURCE_QUALITY_STATUS_MISMATCH", "SUMMARY_QUALITY_COUNTS_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+
+
+def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
+    target = next(row for row in bundle_rows if row["ref_id"] == "R02")
+    assert target["artifact_refs"]["pdf_artifact"]["path"] is None
+    del target["artifact_refs"]["pdf_artifact"]
+    bundles_path = tmp_path / "bundles-missing-nullable-pdf-artifact.jsonl"
+    _write_jsonl(bundles_path, bundle_rows)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        bundles_path,
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert "ARTIFACT_REF_REQUIRED" in _diagnostic_codes(diagnostics)
+
+
+def test_verifier_rejects_summary_drift(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
+    summary["ref_ids"] = list(reversed(summary["ref_ids"]))
+    summary["source_kind_counts"] = {"arxiv_abs_url": 14, "arxiv_pdf_url": 4, "company_blog_url": 2, "nature_article_url": 1}
+    summary_path = tmp_path / "summary-drift.json"
+    _write_json(summary_path, summary)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        summary_path,
+        reject_unsafe_claims=True,
+    )
+
+    assert {"SUMMARY_REF_IDS_MISMATCH", "SUMMARY_SOURCE_KIND_COUNTS_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
