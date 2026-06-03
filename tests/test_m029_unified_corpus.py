@@ -377,3 +377,151 @@ def test_verify_m029_rejects_unsafe_selection_article_ref_during_rebuild(tmp_pat
 
     assert result.returncode == 1
     assert "selection_stub_entry_failed" in result.stderr
+
+
+def test_verify_m029_validate_only_writes_selection_contract_artifacts(tmp_path: Path) -> None:
+    m025, m027, m028, catalog_root, output_dir = _fixture_inputs(tmp_path)
+    subprocess.run(
+        [
+            sys.executable,
+            str(REGISTER_SCRIPT),
+            "--write",
+            "--m025-selection",
+            str(m025),
+            "--m027-selection",
+            str(m027),
+            "--m028-roadmap",
+            str(m028),
+            "--catalog-root",
+            str(catalog_root),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(output_dir / "selection.json"),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--rebuild-index",
+            "--write-index",
+            str(catalog_root / "index.json"),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    summary_path = output_dir / "selection-summary.json"
+    diagnostics_path = output_dir / "selection-diagnostics.jsonl"
+    report_path = output_dir / "selection-report.md"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(output_dir / "selection.json"),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--index",
+            str(catalog_root / "index.json"),
+            "--validate-only",
+            "--require-index",
+            "--check-index-titles",
+            "--check-safe-traversal",
+            "--check-duplicate-lookups",
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["validation_status"] == "passed"
+    assert summary["unique_article_count"] == 18
+    assert summary["index_resolution"] == {"resolved": 2, "unresolved": 16}
+    assert summary["index_contract"]["selected_url_lookup_count"] == 18
+    assert summary["index_contract"]["selected_article_key_lookup_count"] == 18
+    assert summary["index_contract"]["title_bearing_catalog_rows"] == 2
+    assert summary["index_contract"]["placeholder_title_count"] == 0
+    assert not diagnostics_path.read_text(encoding="utf-8")
+    assert "# M029 Unified Corpus Selection Report" in report_path.read_text(encoding="utf-8")
+
+
+def test_verify_m029_validate_only_rejects_missing_required_index_lookup(tmp_path: Path) -> None:
+    m025, m027, m028, catalog_root, output_dir = _fixture_inputs(tmp_path)
+    subprocess.run(
+        [
+            sys.executable,
+            str(REGISTER_SCRIPT),
+            "--write",
+            "--m025-selection",
+            str(m025),
+            "--m027-selection",
+            str(m027),
+            "--m028-roadmap",
+            str(m028),
+            "--catalog-root",
+            str(catalog_root),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(output_dir / "selection.json"),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--rebuild-index",
+            "--write-index",
+            str(catalog_root / "index.json"),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    index_path = catalog_root / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    del index["indexes"]["by_canonical_url"]["https://arxiv.org/abs/2605.23904"]
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(output_dir / "selection.json"),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--index",
+            str(index_path),
+            "--validate-only",
+            "--require-index",
+            "--check-duplicate-lookups",
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 1
+    assert "selected_url_missing_from_index" in result.stderr
