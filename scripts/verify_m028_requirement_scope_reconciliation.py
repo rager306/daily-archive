@@ -25,7 +25,7 @@ DEFAULT_MATRIX = Path("doc/validation/m028_requirement_scope_matrix.json")
 DEFAULT_RENDERED = Path("doc/validation/m028_requirement_scope_matrix.md")
 
 M028_SMOKE_LOADER_REQUIREMENT_IDS = {"R024", "R027", "R029"}
-FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS = {"R019", "R022", "R023", "R031", "R032", "R033", "R050", "R051", "R052"}
+FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS = {"R019", "R022", "R023", "R031", "R032", "R033", "R035", "R050", "R051", "R052"}
 R036_SUPPORTED_REQUIREMENT_IDS = {"R036"}
 R040_SAFETY_REQUIREMENT_IDS = {"R040"}
 REQUIRED_REQUIREMENT_IDS = (
@@ -192,6 +192,7 @@ UNSAFE_POSITIVE_CLAIM_PHRASES = {
     "m028 fully validates r031",
     "m028 fully validates r032",
     "m028 fully validates r033",
+    "m028 fully validates r035",
     "m028 fully validates r036",
     "m028 fully validates r040",
     "m028 fully validates r050",
@@ -203,9 +204,13 @@ UNSAFE_POSITIVE_CLAIM_PHRASES = {
     "m028 advances r031 as a deliverable",
     "m028 advances r032 as a deliverable",
     "m028 advances r033 as a deliverable",
+    "m028 advances r035 as a deliverable",
     "m028 advances r050 as a deliverable",
     "m028 advances r051 as a deliverable",
     "m028 advances r052 as a deliverable",
+    "m028 changes r035 to validated",
+    "m028 delivers validation-batch quota top-up",
+    "m028 materializes deterministic replacement candidates",
     "m028 validates graph readiness",
     "m028 authorizes kg import",
     "m028 authorizes kg import readiness",

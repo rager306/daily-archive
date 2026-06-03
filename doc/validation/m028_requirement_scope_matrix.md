@@ -6,13 +6,13 @@ Schema: `m028-requirement-scope-matrix.v1`
 This fresh-reader twin is metadata-only. It distinguishes M028-covered universal-loader smoke evidence from broad active Scientific KG requirements that remain future/out-of-scope, and it explicitly avoids any no-global-validation leakage.
 
 ## Closeout Boundary
-M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accepted expanded mixed-source corpus of 21 URL refs / 20 normalized identities. This S07 matrix is metadata-only remediation evidence that separates M028-covered smoke-loader support from broad active Scientific KG requirements that remain out of scope.
+M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accepted expanded mixed-source corpus of 21 URL refs / 20 normalized identities. This S08-updated matrix is metadata-only remediation evidence that separates M028-covered smoke-loader support from broad active Scientific KG requirements that remain out of scope, including R035 validation-batch quota top-up and deterministic replacement materialization.
 
 ### In Scope
 - Classify R024, R027, and R029 as advanced only by M028 smoke-loader/replay evidence, not globally validated.
 - Classify R040 as an active safety constraint preserved and advanced by M028 fail-closed runtime-smoke evidence.
 - Classify R036 as already validated and only supported by M028 replay provenance evidence.
-- Classify R019, R022, R023, R031, R032, R033, R050, R051, and R052 as future/out-of-scope active requirements for M028.
+- Classify R019, R022, R023, R031, R032, R033, R035, R050, R051, and R052 as future/out-of-scope active requirements for M028.
 - Preserve repo-relative evidence paths and explicit forbidden claim language for validation closeout.
 
 ### Out of Scope
@@ -30,6 +30,7 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 | R031 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
 | R032 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
 | R033 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
+| R035 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
 | R036 | validated | `already_validated_requirement_supported_by_replay_provenance` | `supported_not_revalidated_by_m028` | preserve_existing_validated_status |
 | R040 | active | `active_safety_constraint_preserved_and_advanced` | `preserved_and_advanced_not_validated` | remain_active_with_m028_safety_evidence_note |
 | R050 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
@@ -37,22 +38,22 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 | R052 | active | `future_out_of_scope_active_requirement` | `not_advanced_not_validated_by_m028` | remain_active |
 
 ## Evidence Sources
-- `.gsd/REQUIREMENTS.md`
-- `.gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md`
-- `.gsd/milestones/M028-8hwqjk/slices/S06/S06-SUMMARY.md`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-summary.json`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-events.jsonl`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-report.md`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/source-metadata-events.jsonl`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/source-metadata-summary.json`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-events.jsonl`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-summary.json`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-report.md`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-bundles.jsonl`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-summary.json`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-report.md`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/hermes-digest-projection.json`
-- `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/hermes-digest-projection-report.md`
+- .gsd/REQUIREMENTS.md
+- .gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md
+- .gsd/milestones/M028-8hwqjk/slices/S06/S06-SUMMARY.md
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-summary.json
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-events.jsonl
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-report.md
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/source-metadata-events.jsonl
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/source-metadata-summary.json
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-events.jsonl
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-summary.json
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/pdf-acquisition-report.md
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-bundles.jsonl
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-summary.json
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-report.md
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/hermes-digest-projection.json
+- data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/hermes-digest-projection-report.md
 
 ## Allowed Validation Language
 ### R019
@@ -85,6 +86,10 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 ### R033
 - M028 leaves R033 as a future/out-of-scope active requirement.
 - Validation should not count broad active Scientific KG requirements as failed M028 deliverables when the M028 boundary excludes them.
+### R035
+- M028 leaves R035 as a future/out-of-scope active requirement.
+- M028 does not validate or advance R035 because the fixed accepted smoke-loader corpus is not a validation-batch quota/top-up workflow and does not materialize deterministic replacements.
+- Validation should not count R035 as a failed M028 deliverable when the M028 boundary excludes accepted-paper quota filling and replacement candidate materialization.
 ### R036
 - M028 supports the already validated R036 provenance requirement with smoke replay provenance evidence.
 - M028 preserves R036 evidence by providing repo-relative replay summary, events, report, and per-stage artifact hashes.
@@ -114,6 +119,11 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 - M028 proves unattended scaling
 - M028 changes parser or chunker behavior
 - M028 embeds raw article text, PDFs, binary payloads, base64 payloads, vector payloads, secrets, or production connection details
+- M028 fully validates R035
+- M028 advances R035 as a deliverable
+- M028 changes R035 to validated
+- M028 delivers validation-batch quota top-up
+- M028 materializes deterministic replacement candidates
 ### R019
 - M028 fully validates R019
 - M028 advances R019 as a deliverable
@@ -178,6 +188,17 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 ### R033
 - M028 fully validates R033
 - M028 advances R033 as a deliverable
+- M028 validates Scientific KG corpus behavior
+- M028 validates graph readiness
+- M028 authorizes KG import
+- M028 proves unattended scaling
+- M028 activates DSPy, RLM, MiniMax, or optimizer behavior
+### R035
+- M028 fully validates R035
+- M028 advances R035 as a deliverable
+- M028 changes R035 to validated
+- M028 delivers validation-batch quota top-up
+- M028 materializes deterministic replacement candidates
 - M028 validates Scientific KG corpus behavior
 - M028 validates graph readiness
 - M028 authorizes KG import
@@ -274,6 +295,13 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 - Evidence: S06 closeout evidence is metadata-only and explicitly defers parser/chunker refactors, graph import, LadybugDB writes, model helpers, large-batch ingestion, crawler behavior, production retrieval evaluation, and positive KG readiness.
 - Remaining work: Keep this requirement active until a future milestone targets it directly with canonical validation evidence.
 - Remaining work: Do not expand M028 validation beyond the universal-loader runtime smoke boundary.
+### R035
+- Rationale: M028's fixed accepted smoke-loader corpus is not a validation-batch +10 quota/top-up workflow and does not materialize deterministic replacements.
+- Evidence: M028 scope is limited to the expanded mixed-source universal-loader runtime smoke path over 21 URL refs / 20 normalized identities.
+- Evidence: M028 uses a fixed accepted smoke-loader corpus and does not execute a validation-batch +10 quota/top-up workflow.
+- Evidence: S06 closeout evidence is metadata-only and explicitly defers automatic accepted-paper replacement acquisition, deterministic replacement materialization, parser/chunker refactors, graph import, LadybugDB writes, model helpers, large-batch ingestion, crawler behavior, production retrieval evaluation, and positive KG readiness.
+- Remaining work: Keep R035 active until a future validation-batch milestone supplies direct canonical evidence for accepted-paper quota top-up and deterministic replacement materialization.
+- Remaining work: Do not expand M028 validation beyond the fixed universal-loader runtime smoke corpus boundary.
 ### R036
 - Rationale: R036 is already validated and M028 only contributes additional replay provenance support for the smoke-loader closeout.
 - Evidence: R036 is already validated in .gsd/REQUIREMENTS.md before this S07 remediation task.
@@ -312,7 +340,7 @@ M028-covered does not mean globally validated. Future/out-of-scope active requir
 - R024, R027, and R029 were advanced only through M028 metadata-only smoke-loader replay evidence.
 - R040 was preserved and advanced as an active safety constraint.
 - R036 was already validated and is only supported by M028 replay provenance.
-- R019, R022, R023, R031, R032, R033, R050, R051, and R052 remain active future/out-of-scope requirements.
+- R019, R022, R023, R031, R032, R033, R035, R050, R051, and R052 remain active future/out-of-scope requirements.
 
 ## Safety Flags
 - `metadata_only`: `true`
@@ -339,20 +367,27 @@ M028-covered does not mean globally validated. Future/out-of-scope active requir
 - No API, network, database, model, crawler, graph, or runtime service dependency is introduced by this task.
 
 ## Load Profile
-- Expected load is one local JSON matrix, one markdown twin, and fourteen requirement rows.
+- Expected load is one local JSON matrix, one markdown twin, and fifteen requirement rows.
 - At 10x rows, local filesystem reads and deterministic string/JSON scans saturate first and remain linear; no pooling, pagination, rate limiting, or caching is needed.
 
 ## Negative Tests
-- Current T01 verification covers malformed JSON via json.tool and missing/empty markdown via test -s.
-- Future validate-only CLI should add negative tests for missing rows, duplicate rows, unsafe true booleans, unsafe claim leakage, stale markdown, invalid evidence paths, and false global validation wording.
+- Current T01 verification covers malformed JSON via json.tool and executable verifier checks for missing rows, duplicate rows, unsafe true booleans, unsafe claim leakage, stale markdown, invalid evidence paths, and false global validation wording.
+- Focused tests include R035 future/out-of-scope false-validation and unsafe quota/replacement positive-claim scenarios.
 
 ## Observability Impact
-Adds human and machine-readable metadata-only validation surfaces that make requirement coverage ambiguity, forbidden global-validation claims, safety flags, evidence paths, and future verifier diagnostics inspectable without changing runtime behavior.
+Adds human and machine-readable metadata-only validation surfaces that make requirement coverage ambiguity, forbidden global-validation claims, R035 quota/replacement scope boundaries, safety flags, evidence paths, and future verifier diagnostics inspectable without changing runtime behavior.
 
 ## Verifier Expectations
 - JSON parse command: `uv run python -m json.tool doc/validation/m028_requirement_scope_matrix.json`
 - Markdown nonempty command: `test -s doc/validation/m028_requirement_scope_matrix.md`
 - Future validate-only diagnostics should use JSON paths such as `$.requirements[<index>].<field>` and `$.safety_flags.<flag>`.
+- JSON parses as object and contains every required_requirement_ids row exactly once.
+- Markdown references Source JSON: `doc/validation/m028_requirement_scope_matrix.json`.
+- Markdown requirement table contains every required requirement row.
+- Safety flags remain metadata-only/fail-closed and no raw/binary/vector/secret payload fields are embedded.
+- Allowed claims do not imply global validation for future/out-of-scope active requirements.
+- Forbidden claim list keeps parser/chunker, KG/import, LadybugDB, DSPy, RLM, MiniMax, scaling, readiness, raw-payload, and production-write claims blocked.
+- Validate-only success reports 15 requirement rows checked.
 - `M028_MATRIX_JSON_MALFORMED`
 - `M028_MATRIX_REQUIRED_ROW_MISSING`
 - `M028_MATRIX_REQUIRED_ROW_DUPLICATE`

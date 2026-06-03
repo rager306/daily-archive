@@ -90,13 +90,17 @@ def test_cli_rejects_malformed_json(tmp_path: Path) -> None:
     assert exit_code == 2
 
 
-def test_rejects_missing_required_requirement_id(tmp_path: Path) -> None:
+@pytest.mark.parametrize("requirement_id", ["R027", "R035"])
+def test_rejects_missing_required_requirement_id(tmp_path: Path, requirement_id: str) -> None:
     matrix = _load_real_matrix()
-    matrix["requirements"] = [row for row in matrix["requirements"] if row["requirement_id"] != "R027"]
+    matrix["requirements"] = [row for row in matrix["requirements"] if row["requirement_id"] != requirement_id]
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("M028_MATRIX_REQUIRED_ROW_MISSING" in error and "missing requirement rows: R027" in error for error in errors)
+    assert any(
+        "M028_MATRIX_REQUIRED_ROW_MISSING" in error and f"missing requirement rows: {requirement_id}" in error
+        for error in errors
+    )
 
 
 def test_rejects_duplicate_requirement_id(tmp_path: Path) -> None:
@@ -161,6 +165,10 @@ def test_can_require_planning_evidence_existence(tmp_path: Path) -> None:
         ("R023", "M028 promotes trusted facts."),
         ("R031", "M028 proves unattended scaling."),
         ("R033", "M028 validates Scientific KG corpus behavior."),
+        ("R035", "M028 fully validates R035."),
+        ("R035", "M028 advances R035 as a deliverable."),
+        ("R035", "M028 delivers validation-batch quota top-up."),
+        ("R035", "M028 materializes deterministic replacement candidates."),
         ("R051", "M028 activates MiniMax."),
     ],
 )
@@ -219,7 +227,7 @@ def test_rejects_raw_payload_base64_or_secret_leakage_markers(tmp_path: Path, ma
     assert any("M028_MATRIX_UNSAFE_CLAIM_LEAKED" in error and "secret leakage marker" in error for error in errors)
 
 
-@pytest.mark.parametrize("requirement_id", ["R019", "R022", "R023", "R031", "R032", "R033", "R050", "R051", "R052"])
+@pytest.mark.parametrize("requirement_id", ["R019", "R022", "R023", "R031", "R032", "R033", "R035", "R050", "R051", "R052"])
 def test_rejects_false_validation_of_future_out_of_scope_requirements(tmp_path: Path, requirement_id: str) -> None:
     matrix = _load_real_matrix()
     row = _row(matrix, requirement_id)
