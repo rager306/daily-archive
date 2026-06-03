@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
@@ -12,6 +13,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).parents[1]
 BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_universal_loader_evidence_bundles.py"
+VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_universal_loader_evidence_bundles.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
@@ -20,6 +22,17 @@ def _load_script() -> ModuleType:
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_verifier() -> ModuleType:
+    module_name = "verify_m028_universal_loader_evidence_bundles"
+    spec = importlib.util.spec_from_file_location(module_name, VERIFY_SCRIPT_PATH)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -345,3 +358,79 @@ def test_real_corpus_build_contract(tmp_path: Path) -> None:
     }
     assert all(value == 0 for value in summary["unsafe_claim_counts"].values())
     assert _read_json(tmp_path / "universal-loader-evidence-summary.json")["schema_version"] == "m028.universal-loader-evidence-summary.v1"
+
+
+def test_real_corpus_verifier_contract_passes() -> None:
+    verifier = _load_verifier()
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert diagnostics == []
+
+
+def test_verifier_rejects_unsafe_summary_counter(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
+    assert isinstance(summary["unsafe_claim_counts"], dict)
+    summary["unsafe_claim_counts"]["import_eligible_count"] = 1
+    summary_path = tmp_path / "summary.json"
+    _write_json(summary_path, summary)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        summary_path,
+        reject_unsafe_claims=True,
+    )
+
+    assert {diagnostic.code for diagnostic in diagnostics} >= {"SUMMARY_UNSAFE_COUNTS_MISMATCH", "UNSAFE_CLAIM_REJECTED"}
+
+
+def test_verifier_rejects_missing_expanded_scope_ref(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    selection = _read_json(REAL_CORPUS_DIR / "selection.json")
+    refs = selection["refs"]
+    assert isinstance(refs, list)
+    selection["refs"] = refs[:-1]
+    selection_path = tmp_path / "selection.json"
+    _write_json(selection_path, selection)
+
+    diagnostics = verifier.verify_contract(
+        selection_path,
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl",
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {diagnostic.code for diagnostic in diagnostics} >= {"SCOPE_REF_COUNT_MISMATCH", "EXPANDED_SCOPE_REFS_MISSING"}
+
+
+def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
+    verifier = _load_verifier()
+    bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
+    bundle_rows[0]["diagnostics"] = list(bundle_rows[0]["diagnostics"])
+    bundle_rows[0]["diagnostics"].append({"code": "fixture", "details": {"raw_text": "<html>leak</html>"}})
+    bundles_path = tmp_path / "bundles.jsonl"
+    _write_jsonl(bundles_path, bundle_rows)
+
+    diagnostics = verifier.verify_contract(
+        REAL_CORPUS_DIR / "selection.json",
+        REAL_CORPUS_DIR / "source-metadata-events.jsonl",
+        REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl",
+        bundles_path,
+        REAL_CORPUS_DIR / "universal-loader-evidence-summary.json",
+        reject_unsafe_claims=True,
+    )
+
+    assert {"FORBIDDEN_KEY_PRESENT", "FORBIDDEN_MARKER_PRESENT"}.issubset({diagnostic.code for diagnostic in diagnostics})
