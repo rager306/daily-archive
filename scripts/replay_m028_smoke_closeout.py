@@ -17,10 +17,11 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 MILESTONE_ID = "M028-8hwqjk"
 SLICE_ID = "S06"
@@ -32,9 +33,9 @@ EXPECTED_TERMINAL_EVENTS = 21
 EXPECTED_EXPANSION_REFS = [f"R{index:02d}" for index in range(15, 22)]
 EXPECTED_DUPLICATE_IDENTITY = "arxiv:2605.20897"
 
-SUMMARY_FILENAME = "closeout-summary.json"
-EVENTS_FILENAME = "closeout-events.jsonl"
-REPORT_FILENAME = "closeout-report.md"
+SUMMARY_FILENAME = "smoke-replay-closeout-summary.json"
+EVENTS_FILENAME = "smoke-replay-closeout-events.jsonl"
+REPORT_FILENAME = "smoke-replay-closeout-report.md"
 REPLAY_ARTIFACTS_DIRNAME = "replay-artifacts"
 PYTHON_CMD = os.environ.get("PYTHON", "python")
 
@@ -233,8 +234,8 @@ def nested_items(payload: Any) -> Iterable[tuple[str, Any]]:
 
 
 def unsafe_status(payload: Any) -> tuple[dict[str, bool], dict[str, int], list[Diagnostic]]:
-    flags = {name: False for name in UNSAFE_FLAG_NAMES}
-    counters = {name: 0 for name in UNSAFE_COUNTER_NAMES}
+    flags = dict.fromkeys(UNSAFE_FLAG_NAMES, False)
+    counters = dict.fromkeys(UNSAFE_COUNTER_NAMES, 0)
     diagnostics: list[Diagnostic] = []
     for key, value in nested_items(payload):
         if key in flags:
@@ -365,8 +366,8 @@ def validate_source_acquisition(corpus_dir: Path, root: Path) -> tuple[dict[str,
         "expansion_refs": expansion_refs,
         "duplicate_identity": EXPECTED_DUPLICATE_IDENTITY,
         "duplicate_identity_ref_count": normalized.count(EXPECTED_DUPLICATE_IDENTITY),
-        "safety_flags": {name: False for name in UNSAFE_FLAG_NAMES},
-        "unsafe_counters": {name: 0 for name in UNSAFE_COUNTER_NAMES},
+        "safety_flags": dict.fromkeys(UNSAFE_FLAG_NAMES, False),
+        "unsafe_counters": dict.fromkeys(UNSAFE_COUNTER_NAMES, 0),
         "diagnostics": [diagnostic.as_dict() for diagnostic in diagnostics],
     }
     return preflight, diagnostics
@@ -555,9 +556,9 @@ Expected load is exactly 21 URL refs and 20 normalized identities. At 10x, local
 
 ## Negative Tests
 
-- `tests/test_replay_m028_smoke_closeout.py::test_validate_source_acquisition_rejects_missing_artifact` covers missing repo-relative artifacts.
-- `tests/test_replay_m028_smoke_closeout.py::test_validate_source_acquisition_rejects_unsafe_flag` covers unsafe graph/write flags.
-- `tests/test_replay_m028_smoke_closeout.py::test_read_jsonl_rejects_malformed_row` covers malformed JSONL rows.
+- `tests/test_m028_smoke_replay_closeout.py::test_verifier_rejects_absolute_or_escaping_artifact_path` covers unsafe repo-relative artifact paths.
+- `tests/test_m028_smoke_replay_closeout.py::test_verifier_rejects_nonzero_unsafe_counter_and_flag` covers unsafe graph/write flags and counters.
+- `tests/test_m028_smoke_replay_closeout.py::test_verifier_rejects_payload_bearing_key` and `tests/test_m028_smoke_replay_closeout.py::test_verifier_rejects_raw_payload_marker` cover payload-bearing keys and raw payload markers.
 
 ## Diagnostics
 
@@ -698,7 +699,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.stderr.write(str(exc) + "\n")
         return 1
 
-    print(f"closeout_summary={args.out_dir / SUMMARY_FILENAME} closeout_events={args.out_dir / EVENTS_FILENAME} closeout_report={args.out_dir / REPORT_FILENAME} status={summary['status']}")
+    sys.stdout.write(
+        f"closeout_summary={args.out_dir / SUMMARY_FILENAME} "
+        f"closeout_events={args.out_dir / EVENTS_FILENAME} "
+        f"closeout_report={args.out_dir / REPORT_FILENAME} status={summary['status']}\n"
+    )
     return 0 if summary["status"] == "pass" else 1
 
 

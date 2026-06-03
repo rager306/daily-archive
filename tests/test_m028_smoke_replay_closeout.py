@@ -18,9 +18,9 @@ CANONICAL_HASH_PATHS = [
     CORPUS_DIR / "source-acquisition-events.jsonl",
     CORPUS_DIR / "source-acquisition-summary.json",
     CORPUS_DIR / "acquisition-report.md",
-    CANONICAL_CLOSEOUT_DIR / "closeout-summary.json",
-    CANONICAL_CLOSEOUT_DIR / "closeout-events.jsonl",
-    CANONICAL_CLOSEOUT_DIR / "closeout-report.md",
+    CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-summary.json",
+    CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-events.jsonl",
+    CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-report.md",
 ]
 EXPECTED_STAGES = [
     "S02_build_source_metadata_adapters",
@@ -51,9 +51,9 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
 
 
 def _write_closeout(tmp_path: Path, summary: dict[str, object], events: list[dict[str, object]], report: str) -> tuple[Path, Path, Path]:
-    summary_path = tmp_path / "closeout-summary.json"
-    events_path = tmp_path / "closeout-events.jsonl"
-    report_path = tmp_path / "closeout-report.md"
+    summary_path = tmp_path / "smoke-replay-closeout-summary.json"
+    events_path = tmp_path / "smoke-replay-closeout-events.jsonl"
+    report_path = tmp_path / "smoke-replay-closeout-report.md"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8")
     report_path.write_text(report, encoding="utf-8")
@@ -62,9 +62,9 @@ def _write_closeout(tmp_path: Path, summary: dict[str, object], events: list[dic
 
 def _load_canonical_closeout() -> tuple[dict[str, object], list[dict[str, object]], str]:
     return (
-        _read_json(CANONICAL_CLOSEOUT_DIR / "closeout-summary.json"),
-        _read_jsonl(CANONICAL_CLOSEOUT_DIR / "closeout-events.jsonl"),
-        (CANONICAL_CLOSEOUT_DIR / "closeout-report.md").read_text(encoding="utf-8"),
+        _read_json(CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-summary.json"),
+        _read_jsonl(CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-events.jsonl"),
+        (CANONICAL_CLOSEOUT_DIR / "smoke-replay-closeout-report.md").read_text(encoding="utf-8"),
     )
 
 
@@ -124,9 +124,9 @@ def test_closeout_runner_and_verifier_accept_real_corpus_without_mutating_canoni
         )
         assert replay.returncode == 0, replay.stderr
 
-        summary_path = out_dir / "closeout-summary.json"
-        events_path = out_dir / "closeout-events.jsonl"
-        report_path = out_dir / "closeout-report.md"
+        summary_path = out_dir / "smoke-replay-closeout-summary.json"
+        events_path = out_dir / "smoke-replay-closeout-events.jsonl"
+        report_path = out_dir / "smoke-replay-closeout-report.md"
         verify = _run_verifier(summary_path, events_path, report_path)
         assert verify.returncode == 0, verify.stderr
         assert "m028_smoke_closeout_verdict=pass diagnostics=0" in verify.stdout

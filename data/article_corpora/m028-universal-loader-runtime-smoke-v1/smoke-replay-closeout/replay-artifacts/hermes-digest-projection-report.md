@@ -11,7 +11,7 @@ Evidence-only consumer digest projection generated from S04 universal-loader evi
 
 ## Source References
 - Loader bundles: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-bundles.jsonl` sha256=a5c31711b3a010a76f54b6e1d9bad3f8f35d74e62c7ee15e20bd3b5fbac81e50
-- Loader summary: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-summary.json` sha256=b2f2ae617709f8b66e78a9213caacbcf2698549f709513e16c28006f78c3fd96
+- Loader summary: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/replay-artifacts/universal-loader-evidence-summary.json` sha256=22a5d039ca4754253146fa7bad1748bdbab5220f6b02b61c382f50dd17c6ea83
 - Selection ref: `data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json`
 
 ## Summary

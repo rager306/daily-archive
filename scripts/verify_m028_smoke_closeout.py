@@ -14,9 +14,10 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 MILESTONE_ID = "M028-8hwqjk"
 SLICE_ID = "S06"
@@ -458,10 +459,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     diagnostics = validate_closeout(args.summary, args.events, args.report, reject_unsafe_claims=args.reject_unsafe_claims)
     if diagnostics:
         for diagnostic in diagnostics:
-            print(diagnostic.format(), file=sys.stderr)
-        print(f"m028_smoke_closeout_verdict=fail diagnostics={len(diagnostics)}", file=sys.stderr)
+            sys.stderr.write(diagnostic.format() + "\n")
+        sys.stderr.write(f"m028_smoke_closeout_verdict=fail diagnostics={len(diagnostics)}\n")
         return 1
-    print("m028_smoke_closeout_verdict=pass diagnostics=0")
+    sys.stdout.write("m028_smoke_closeout_verdict=pass diagnostics=0\n")
     return 0
 
 
