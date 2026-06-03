@@ -180,6 +180,115 @@ def test_capture_cli_and_verify_write_metadata_only_artifacts(tmp_path: Path) ->
     assert "<html" not in report_path.read_text(encoding="utf-8")
 
 
+def test_verify_check_strategies_writes_primary_fallback_policy_summary(tmp_path: Path) -> None:
+    catalog_path, index_path, selection_path, output_dir = _fixture_tree(tmp_path)
+    capture = subprocess.run(
+        [
+            sys.executable,
+            str(CAPTURE_SCRIPT),
+            "--selection",
+            str(selection_path),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    assert capture.returncode == 0, capture.stderr
+
+    summary_path = output_dir.parent / "source-strategy-summary.json"
+    diagnostics_path = output_dir.parent / "source-strategy-diagnostics.jsonl"
+    result = verify_main(
+        [
+            "verify_m029_unified_source_acquisition.py",
+            "--selection",
+            str(selection_path),
+            "--source-dir",
+            str(output_dir),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--check-strategies",
+            "--check-fail-closed",
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+        ]
+    )
+
+    assert result == 0
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["schema_version"] == "m029-source-strategy-normalization.v1"
+    assert summary["status"] == "passed"
+    assert summary["counts"]["articles"] == 2
+    assert summary["counts"]["primary_captured"] == 1
+    assert summary["counts"]["primary_blocked"] == 1
+    assert summary["counts"]["fallback_needed"] == 0
+    resolved = next(row for row in summary["articles"] if row["article_key"] == "2605.20897")
+    assert resolved["intended_primary_source_role"] == "arxiv_abs_page"
+    assert resolved["content_fallback_roles"] == []
+    assert resolved["capture_policy"] == "local_only_no_network"
+    assert resolved["primary_terminal_state"] == "captured"
+    unresolved = next(row for row in summary["articles"] if row["article_key"] == "2605.23904")
+    assert unresolved["primary_terminal_state"] == "blocked"
+    assert diagnostics_path.read_text(encoding="utf-8") == ""
+
+
+def test_verify_check_strategies_rejects_selection_catalog_primary_mismatch(tmp_path: Path) -> None:
+    catalog_path, index_path, selection_path, output_dir = _fixture_tree(tmp_path)
+    capture = subprocess.run(
+        [
+            sys.executable,
+            str(CAPTURE_SCRIPT),
+            "--selection",
+            str(selection_path),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    assert capture.returncode == 0
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["articles"][0]["primary_source_role"] = "arxiv_pdf"
+    _write_json(index_path, index)
+
+    result = verify_main(
+        [
+            "verify_m029_unified_source_acquisition.py",
+            "--selection",
+            str(selection_path),
+            "--source-dir",
+            str(output_dir),
+            "--catalog",
+            str(catalog_path),
+            "--index",
+            str(index_path),
+            "--check-strategies",
+            "--write-summary",
+            str(output_dir.parent / "source-strategy-summary.json"),
+            "--write-diagnostics",
+            str(output_dir.parent / "source-strategy-diagnostics.jsonl"),
+        ]
+    )
+
+    assert result == 1
+    diagnostics = (output_dir.parent / "source-strategy-diagnostics.jsonl").read_text(encoding="utf-8")
+    assert "strategy_primary_mismatch" in diagnostics
+
+
 def test_capture_blocks_unsafe_catalog_source_path(tmp_path: Path) -> None:
     catalog_path, index_path, selection_path, output_dir = _fixture_tree(tmp_path)
     article_path = catalog_path.parent / "article_catalog" / "arxiv" / "mixed-source" / "2605.20897" / "article.json"

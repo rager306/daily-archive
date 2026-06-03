@@ -23,6 +23,7 @@ MILESTONE_ID = "M029-eb0ljz"
 SLICE_ID = "S02"
 SELECTION_ID = "m029-unified-corpus-v1"
 VERIFY_SCHEMA_VERSION = "m029-source-acquisition-verify.v1"
+STRATEGY_SCHEMA_VERSION = "m029-source-strategy-normalization.v1"
 TERMINAL_STATES = {"captured", "blocked", "failed"}
 UNSAFE_TRUE_FLAGS = {
     "graph_import_allowed",
@@ -245,6 +246,275 @@ def acquisition_diagnostics(summary: Mapping[str, Any], errors: list[dict[str, A
     return rows
 
 
+def _article_url(row: Mapping[str, Any]) -> str:
+    url = row.get("seed_url") if isinstance(row.get("seed_url"), str) else row.get("canonical_url")
+    if not isinstance(url, str) or not url:
+        raise ValueError("selection row missing seed/canonical URL")
+    return url
+
+
+def _catalog_index_by_ref(index: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    articles = index.get("articles")
+    if not isinstance(articles, list):
+        raise ValueError("catalog index articles must be a list")
+    by_ref: dict[str, Mapping[str, Any]] = {}
+    for row in articles:
+        if isinstance(row, dict) and isinstance(row.get("article_ref"), str):
+            by_ref[row["article_ref"]] = row
+    return by_ref
+
+
+def _allowed_roles_by_source(catalog: Mapping[str, Any]) -> dict[str, set[str]]:
+    allowed: dict[str, set[str]] = {}
+    for source in catalog.get("sources", []):
+        if not isinstance(source, dict) or not isinstance(source.get("source_code"), str):
+            continue
+        roles = source.get("allowed_source_roles")
+        allowed[source["source_code"]] = {role for role in roles if isinstance(role, str)} if isinstance(roles, list) else set()
+    return allowed
+
+
+def normalize_source_strategies(
+    selection: Mapping[str, Any],
+    capture_summary: Mapping[str, Any],
+    catalog: Mapping[str, Any],
+    index: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
+    """Classify each selected article's source strategy and fallback state.
+
+    The output is metadata-only: it joins selection intent, catalog/index strategy
+    roles, and acquisition terminal states without embedding captured content.
+    """
+
+    articles = selection.get("articles")
+    if not isinstance(articles, list):
+        raise ValueError("selection articles must be a list")
+    results = capture_summary.get("results")
+    if not isinstance(results, list):
+        results = []
+
+    index_by_ref = _catalog_index_by_ref(index)
+    allowed_roles = _allowed_roles_by_source(catalog)
+    results_by_url: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    results_by_article_key: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    results_by_article_ref: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        if isinstance(item.get("url"), str):
+            results_by_url[item["url"]].append(item)
+        if isinstance(item.get("article_key"), str):
+            results_by_article_key[item["article_key"]].append(item)
+        if isinstance(item.get("article_ref"), str):
+            results_by_article_ref[item["article_ref"]].append(item)
+
+    rows: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    counts = {
+        "articles": 0,
+        "resolved": 0,
+        "unresolved": 0,
+        "primary_captured": 0,
+        "primary_blocked": 0,
+        "primary_failed": 0,
+        "primary_missing_terminal": 0,
+        "fallback_needed": 0,
+        "fallback_captured": 0,
+        "strategy_mismatch": 0,
+    }
+    by_primary_role: dict[str, int] = defaultdict(int)
+    by_capture_policy: dict[str, int] = defaultdict(int)
+
+    for article in articles:
+        if not isinstance(article, dict):
+            raise ValueError("selection row must be an object")
+        counts["articles"] += 1
+        article_ref = article.get("article_ref") if isinstance(article.get("article_ref"), str) else None
+        article_key = article.get("article_key") if isinstance(article.get("article_key"), str) else None
+        source_code = article.get("source_code") if isinstance(article.get("source_code"), str) else None
+        selection_strategy = article.get("source_strategy") if isinstance(article.get("source_strategy"), str) else None
+        catalog_resolution = article.get("catalog_resolution") if isinstance(article.get("catalog_resolution"), str) else "unknown"
+        url = _article_url(article)
+        index_row = index_by_ref.get(article_ref or "")
+        index_primary = index_row.get("primary_source_role") if isinstance(index_row, Mapping) and isinstance(index_row.get("primary_source_role"), str) else None
+        primary_role = index_primary or selection_strategy or "unknown"
+        fallback_roles = index_row.get("content_fallback_roles") if isinstance(index_row, Mapping) else []
+        metadata_roles = index_row.get("metadata_roles") if isinstance(index_row, Mapping) else []
+        fallback_role_list = [role for role in fallback_roles if isinstance(role, str)] if isinstance(fallback_roles, list) else []
+        metadata_role_list = [role for role in metadata_roles if isinstance(role, str)] if isinstance(metadata_roles, list) else []
+        terminal_results = results_by_article_ref.get(article_ref or "") or results_by_article_key.get(article_key or "") or results_by_url.get(url, [])
+        terminal_by_role: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
+        for result in terminal_results:
+            role = result.get("source_role") if isinstance(result.get("source_role"), str) else "unknown"
+            status = result.get("status")
+            if status in TERMINAL_STATES:
+                terminal_by_role[role][str(status)] += 1
+
+        primary_counts = terminal_by_role.get(primary_role, {"captured": 0, "blocked": 0, "failed": 0})
+        if primary_counts["captured"]:
+            primary_state = "captured"
+            counts["primary_captured"] += 1
+        elif primary_counts["blocked"]:
+            primary_state = "blocked"
+            counts["primary_blocked"] += 1
+        elif primary_counts["failed"]:
+            primary_state = "failed"
+            counts["primary_failed"] += 1
+        else:
+            primary_state = "missing"
+            counts["primary_missing_terminal"] += 1
+
+        fallback_captured_roles = [role for role in fallback_role_list if terminal_by_role.get(role, {}).get("captured", 0) > 0]
+        fallback_needed = primary_state != "captured" and bool(fallback_captured_roles)
+        if fallback_needed:
+            counts["fallback_needed"] += 1
+        if fallback_captured_roles:
+            counts["fallback_captured"] += 1
+        if catalog_resolution == "resolved":
+            counts["resolved"] += 1
+        else:
+            counts["unresolved"] += 1
+        if selection_strategy and index_primary and selection_strategy != index_primary:
+            counts["strategy_mismatch"] += 1
+            diagnostics.append(
+                strategy_diagnostic(
+                    "strategy_primary_mismatch",
+                    "selection source_strategy differs from catalog index primary_source_role",
+                    article=article,
+                    source_role=primary_role,
+                    url=url,
+                    severity="error",
+                )
+            )
+        if primary_state == "missing":
+            diagnostics.append(
+                strategy_diagnostic(
+                    "primary_source_missing_terminal_state",
+                    "intended primary source has no acquisition terminal state",
+                    article=article,
+                    source_role=primary_role,
+                    url=url,
+                    severity="error" if catalog_resolution == "resolved" else "info",
+                )
+            )
+        if source_code and primary_role not in allowed_roles.get(source_code, {primary_role}):
+            diagnostics.append(
+                strategy_diagnostic(
+                    "primary_source_role_not_catalog_allowed",
+                    "primary source role is not listed in catalog allowed_source_roles for source_code",
+                    article=article,
+                    source_role=primary_role,
+                    url=url,
+                    severity="warning",
+                )
+            )
+        if fallback_needed:
+            diagnostics.append(
+                strategy_diagnostic(
+                    "content_fallback_used",
+                    "primary source was not captured and a content fallback was captured",
+                    article=article,
+                    source_role=primary_role,
+                    url=url,
+                    severity="warning",
+                )
+            )
+
+        capture_policy = "local_only_no_network"
+        by_primary_role[primary_role] += 1
+        by_capture_policy[capture_policy] += 1
+        rows.append(
+            {
+                "schema_version": STRATEGY_SCHEMA_VERSION,
+                "milestone_id": MILESTONE_ID,
+                "slice_id": SLICE_ID,
+                "selection_id": SELECTION_ID,
+                "article_ref": article_ref,
+                "article_key": article_key,
+                "identity_key": article.get("identity_key"),
+                "url": url,
+                "source_code": source_code,
+                "catalog_resolution": catalog_resolution,
+                "selection_source_strategy": selection_strategy,
+                "intended_primary_source_role": primary_role,
+                "catalog_primary_source_role": index_primary,
+                "content_fallback_roles": fallback_role_list,
+                "metadata_roles": metadata_role_list,
+                "capture_policy": capture_policy,
+                "capture_phase_network_allowed": False,
+                "replay_phase_network_allowed": False,
+                "terminal_state_counts_by_role": {role: dict(value) for role, value in sorted(terminal_by_role.items())},
+                "primary_terminal_state": primary_state,
+                "fallback_captured_roles": fallback_captured_roles,
+                "fallback_needed": fallback_needed,
+                "diagnostic_codes": [row["diagnostic_code"] for row in diagnostics if row.get("article_key") == article_key and row.get("url") == url],
+                "graph_import_allowed": False,
+                "production_import_attempted": False,
+                "ladybugdb_written": False,
+                "trusted_kg_import_allowed": False,
+                "raw_payload_embedded_in_metadata": False,
+            }
+        )
+
+    summary = {
+        "schema_version": STRATEGY_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
+        "selection_id": SELECTION_ID,
+        "status": "passed" if not [d for d in diagnostics if d.get("severity") == "error"] else "failed",
+        "article_count": counts["articles"],
+        "counts": counts,
+        "by_primary_source_role": dict(sorted(by_primary_role.items())),
+        "by_capture_policy": dict(sorted(by_capture_policy.items())),
+        "strategy_diagnostic_count": len(diagnostics),
+        "error_count": len([d for d in diagnostics if d.get("severity") == "error"]),
+        "diagnostics": diagnostics,
+        "articles": rows,
+        "capture_phase_network_allowed": False,
+        "replay_phase_network_allowed": False,
+        "graph_import_allowed": False,
+        "production_ladybugdb_write_allowed": False,
+        "trusted_kg_import_allowed": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "raw_text_embedded": False,
+        "raw_binary_embedded": False,
+        "raw_payload_embedded_in_metadata": False,
+    }
+    return diagnostics, summary, rows
+
+
+def strategy_diagnostic(
+    code: str,
+    message: str,
+    *,
+    article: Mapping[str, Any],
+    source_role: str,
+    url: str,
+    severity: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": STRATEGY_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
+        "selection_id": SELECTION_ID,
+        "severity": severity,
+        "diagnostic_code": code,
+        "code": code,
+        "message": message,
+        "article_ref": article.get("article_ref"),
+        "article_key": article.get("article_key"),
+        "identity_key": article.get("identity_key"),
+        "source_role": source_role,
+        "url": url,
+        "network_fetch_attempted": False,
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "trusted_kg_import_allowed": False,
+        "graph_import_allowed": False,
+    }
+
+
 def render_report(summary: Mapping[str, Any]) -> str:
     counts = summary.get("counts") if isinstance(summary.get("counts"), dict) else {}
     lines = [
@@ -293,9 +563,11 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", required=True, type=Path)
     parser.add_argument("--source-dir", required=True, type=Path)
+    parser.add_argument("--catalog", type=Path, default=Path("data/article_catalog/catalog.json"))
+    parser.add_argument("--index", type=Path, default=Path("data/article_catalog/index.json"))
     parser.add_argument("--write-summary", required=True, type=Path)
     parser.add_argument("--write-diagnostics", required=True, type=Path)
-    parser.add_argument("--write-report", required=True, type=Path)
+    parser.add_argument("--write-report", type=Path)
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
     parser.add_argument("--check-terminal-states", action="store_true")
@@ -321,11 +593,44 @@ def main(argv: list[str]) -> int:
         require_no_import_flags=args.require_no_import_flags or args.check_fail_closed,
     )
     verification["duration_ms"] = int((time.perf_counter() - started) * 1000)
+
+    if args.check_strategies:
+        catalog = load_json(args.catalog)
+        index = load_json(args.index)
+        strategy_errors, strategy_summary, _strategy_rows = normalize_source_strategies(selection, verification, catalog, index)
+        strategy_summary["duration_ms"] = int((time.perf_counter() - started) * 1000)
+        write_json(args.write_summary, strategy_summary)
+        write_jsonl(args.write_diagnostics, strategy_errors)
+        artifact_paths = [args.write_summary, args.write_diagnostics]
+        if args.write_report is not None:
+            args.write_report.parent.mkdir(parents=True, exist_ok=True)
+            args.write_report.write_text(render_report(verification), encoding="utf-8")
+            artifact_paths.append(args.write_report)
+        for artifact_path in artifact_paths:
+            assert_metadata_artifact_is_redacted(artifact_path)
+        total_errors = len(errors) + len([row for row in strategy_errors if row.get("severity") == "error"])
+        print(
+            json.dumps(
+                {
+                    "summary_path": args.write_summary.as_posix(),
+                    "diagnostics_path": args.write_diagnostics.as_posix(),
+                    "error_count": total_errors,
+                    "counts": strategy_summary["counts"],
+                },
+                sort_keys=True,
+            )
+        )
+        return 0 if total_errors == 0 else 1
+
     write_json(args.write_summary, verification)
     write_jsonl(args.write_diagnostics, acquisition_diagnostics(verification, errors))
-    args.write_report.parent.mkdir(parents=True, exist_ok=True)
-    args.write_report.write_text(render_report(verification), encoding="utf-8")
-    for artifact_path in (args.write_summary, args.write_diagnostics, args.write_report):
+    if args.write_report is not None:
+        args.write_report.parent.mkdir(parents=True, exist_ok=True)
+        args.write_report.write_text(render_report(verification), encoding="utf-8")
+    artifact_paths = [args.write_summary, args.write_diagnostics]
+    if args.write_report is not None:
+        artifact_paths.append(args.write_report)
+    for artifact_path in artifact_paths:
         assert_metadata_artifact_is_redacted(artifact_path)
     print(json.dumps({"summary_path": args.write_summary.as_posix(), "error_count": len(errors), "counts": verification["counts"]}, sort_keys=True))
     return 0 if not errors else 1
