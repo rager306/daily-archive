@@ -16,8 +16,9 @@ import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
-from typing import Any, Sequence
+from typing import Any
 
 EXPECTED_EVENT_SCHEMA_VERSION = "m028.pdf-acquisition-event.v1"
 EXPECTED_SUMMARY_SCHEMA_VERSION = "m028.pdf-acquisition-summary.v1"

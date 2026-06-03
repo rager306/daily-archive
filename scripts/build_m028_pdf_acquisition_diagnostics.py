@@ -506,7 +506,7 @@ def summarize(events: list[dict[str, Any]], identity_groups: dict[str, dict[str,
         "existing_pdf_artifact_count": sum(1 for event in events if event["pdf_artifact"]["exists"]),
         "candidate_ref_count": sum(1 for event in events if event["candidate_pdf"]["is_candidate"]),
         "safety_flags": dict(SAFETY_FLAGS),
-        "unsafe_claim_counts": {key: 0 for key in UNSAFE_COUNTER_KEYS},
+        "unsafe_claim_counts": dict.fromkeys(UNSAFE_COUNTER_KEYS, 0),
         "load_profile": {
             "expected_url_refs": EXPECTED_REF_COUNT,
             "ten_x_url_refs": EXPECTED_REF_COUNT * 10,
