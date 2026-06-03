@@ -1,17 +1,11 @@
 {
-  "candidate_kind_counts": {
-    "arxiv_abs_pdf_candidate": 15,
-    "explicit_arxiv_pdf_url": 4,
-    "not_applicable_non_arxiv": 2
-  },
-  "candidate_ref_count": 19,
-  "checksum_status_counts": {
-    "not_verified": 17,
-    "verified": 4
+  "bundle_status_counts": {
+    "metadata_only_bundle_ready": 21
   },
   "diagnostic_counts": {
-    "arxiv_abs_no_local_pdf_artifact": 15,
-    "not_applicable_non_arxiv_pdf_source": 2
+    "upstream_metadata_optional_metadata_missing": 44,
+    "upstream_pdf_arxiv_abs_no_local_pdf_artifact": 15,
+    "upstream_pdf_not_applicable_non_arxiv_pdf_source": 2
   },
   "duplicate_identity_group_count": 1,
   "duplicate_identity_groups": [
@@ -30,26 +24,29 @@
       ]
     }
   ],
-  "existing_pdf_artifact_count": 4,
   "failure_modes": [
     {
       "dependency": "selection JSON",
-      "failure_path": "missing, malformed, stale-count, duplicate, or required-field errors raise PdfDiagnosticInputError before output write"
+      "failure_path": "missing, malformed, stale-count, duplicate, or required-field errors raise UniversalLoaderEvidenceInputError before output write"
     },
     {
       "dependency": "source acquisition JSONL",
-      "failure_path": "missing, malformed, duplicate, non-terminal, missing-linkage, source-kind drift, or identity drift raise stable input errors"
+      "failure_path": "missing, malformed, duplicate, missing-linkage, source-kind drift, identity drift, or unsafe artifact paths raise stable input errors or typed per-ref diagnostics"
     },
     {
       "dependency": "source metadata events/summary",
-      "failure_path": "missing, malformed, stale count, missing linkage, source-kind drift, or identity drift raise stable input errors"
+      "failure_path": "missing, malformed, stale count, missing linkage, source-kind drift, identity drift, or unsafe safety flags raise stable input errors before output write"
     },
     {
-      "dependency": "captured PDF artifact filesystem",
-      "failure_path": "unsafe paths, missing files, checksum mismatches, non-PDF artifacts, and malformed signatures become typed per-ref non-acquired diagnostics"
+      "dependency": "PDF acquisition events/summary",
+      "failure_path": "missing, malformed, stale count, missing linkage, source-kind drift, identity drift, or unsafe safety flags raise stable input errors before output write"
+    },
+    {
+      "dependency": "filesystem outputs",
+      "failure_path": "output directory creation or write failures bubble as filesystem exceptions; no network or subprocess dependency exists"
     }
   ],
-  "generated_at": "2026-06-03T07:19:23.954340+00:00",
+  "generated_at": "deterministic_from_input_sha256",
   "identity_groups": [
     {
       "group_id": "identity:arxiv:2605.20897",
@@ -294,22 +291,44 @@
       ]
     }
   ],
+  "input_fingerprints": {
+    "metadata_events": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/source-metadata-events.jsonl",
+      "sha256": "ef893be198459950798d478807befe340b15e7d6f81d07df03d31e3878b4932b"
+    },
+    "metadata_summary": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/source-metadata-summary.json",
+      "sha256": "d557ad346765e7a7fc0e929b3ef18c24aa03d53e5508488b880ec8aeb28a812d"
+    },
+    "pdf_events": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/pdf-acquisition-events.jsonl",
+      "sha256": "cc5a5a285651ee6e44a8ca899d7700677a17214a42b1fd477dbd8fd918eac130"
+    },
+    "pdf_summary": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/pdf-acquisition-summary.json",
+      "sha256": "811ab4da81793cbef6c9ab0a955caaf58b7642b4501ce93a732388c155b6917e"
+    },
+    "selection": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json",
+      "sha256": "6de02bcea9b6745bb9a1fb52c0ae421a0ee15a027b0613b59e701a928f30e593"
+    },
+    "source_acquisition_events": {
+      "path": "data/article_corpora/m028-universal-loader-runtime-smoke-v1/source-acquisition-events.jsonl",
+      "sha256": "a54859e57e7f6abcf000512d85307ddf37b60ee2ae77d74022caf05d77ca9915"
+    }
+  },
   "load_profile": {
     "expected_url_refs": 21,
-    "first_saturating_resource": "sequential filesystem reads and streaming checksum/signature probes for existing PDF artifacts",
-    "protection": "no network calls, one-pass chunked SHA-256 hashing, five-byte signature probe, deterministic per-ref iteration, no parser/graph/KG/model production paths",
+    "first_saturating_resource": "JSON/JSONL input size and deterministic serialization of per-ref metadata-only bundles",
+    "protection": "single-pass in-memory processing for small smoke corpus, no live network/parser/model/graph calls, chunked SHA-256 only for six input artifact fingerprints, and no source/PDF payload reads",
     "ten_x_url_refs": 210
   },
   "negative_tests": [
-    "tests/test_m028_pdf_acquisition_diagnostics.py::test_malformed_existing_pdf_signature_becomes_typed_diagnostic",
-    "tests/test_m028_pdf_acquisition_diagnostics.py::test_missing_acquisition_linkage_is_stable_input_error",
-    "tests/test_m028_pdf_acquisition_diagnostics.py::test_checksum_mismatch_records_typed_non_acquired_reason",
-    "tests/test_m028_pdf_acquisition_diagnostics.py::test_real_corpus_regeneration_contract"
+    "tests/test_m028_universal_loader_evidence_bundles.py::test_fixture_build_preserves_duplicate_identity_and_fail_closed_flags",
+    "tests/test_m028_universal_loader_evidence_bundles.py::test_missing_pdf_event_is_stable_input_error",
+    "tests/test_m028_universal_loader_evidence_bundles.py::test_upstream_unsafe_flag_is_stable_input_error",
+    "tests/test_m028_universal_loader_evidence_bundles.py::test_real_corpus_build_contract"
   ],
-  "non_acquired_reason_counts": {
-    "arxiv_abs_no_local_pdf_artifact": 15,
-    "not_applicable_non_arxiv_pdf_source": 2
-  },
   "normalized_identity_count": 20,
   "pdf_status_counts": {
     "acquired_existing_pdf": 4,
@@ -341,25 +360,29 @@
     "R21"
   ],
   "safety_flags": {
+    "binary_payload_embedded": false,
     "chunk_content_embedded": false,
+    "chunk_payload_embedded": false,
+    "chunker_attempted": false,
     "dspy_attempted": false,
+    "graph_ready_claimed": false,
     "graph_write_attempted": false,
+    "hermes_digest_generated": false,
     "html_source_embedded": false,
     "kg_readiness_claimed": false,
     "ladybugdb_written": false,
     "minimax_attempted": false,
+    "model_output_embedded": false,
+    "parser_attempted": false,
     "parser_readiness_claimed": false,
     "production_import_attempted": false,
     "production_persistence_attempted": false,
     "raw_article_text_embedded": false,
     "raw_pdf_bytes_embedded": false,
-    "rlm_attempted": false
+    "rlm_attempted": false,
+    "source_payload_embedded": false
   },
-  "schema_version": "m028.pdf-acquisition-summary.v1",
-  "signature_status_counts": {
-    "not_verified": 17,
-    "verified": 4
-  },
+  "schema_version": "m028.universal-loader-evidence-summary.v1",
   "source_family_counts": {
     "arxiv": 19,
     "company_blog": 1,
@@ -371,20 +394,36 @@
     "company_blog_url": 1,
     "nature_article_url": 1
   },
+  "source_quality_status_counts": {
+    "source_metadata_only_non_pdf_source": 2,
+    "source_metadata_only_pdf_not_acquired": 15,
+    "source_metadata_with_verified_pdf_artifact": 4
+  },
   "unsafe_claim_counts": {
+    "binary_payload_embedded": 0,
     "chunk_content_embedded": 0,
+    "chunk_payload_embedded": 0,
+    "chunker_attempted": 0,
     "dspy_attempted": 0,
+    "graph_ready_claimed": 0,
     "graph_write_attempted": 0,
+    "hermes_digest_count": 0,
+    "hermes_digest_generated": 0,
     "html_source_embedded": 0,
+    "import_eligible_count": 0,
     "kg_readiness_claimed": 0,
     "ladybugdb_written": 0,
     "minimax_attempted": 0,
+    "model_output_embedded": 0,
+    "parser_attempted": 1,
     "parser_readiness_claimed": 0,
     "production_import_attempted": 0,
     "production_persistence_attempted": 0,
+    "promoted_to_fact_count": 0,
     "raw_article_text_embedded": 0,
     "raw_pdf_bytes_embedded": 0,
-    "rlm_attempted": 0
+    "rlm_attempted": 0,
+    "source_payload_embedded": 0
   },
   "url_ref_count": 21
 }
