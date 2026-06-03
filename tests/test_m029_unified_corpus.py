@@ -65,6 +65,28 @@ def _catalog(root: Path) -> None:
             "index": {"path": "index.json"},
         },
     )
+    for entry in entries:
+        _write_json(
+            root / "article_catalog" / entry["article_ref"] / "article.json",
+            {
+                "schema_version": "article.v00.01",
+                "article_key": entry["article_key"],
+                "catalog_path": entry["article_ref"],
+                "source_code": entry["source_code"],
+                "coarse_topic_code": entry["coarse_topic_code"],
+                "identity": {"title": entry["title"], "canonical_url": entry["canonical_url"]},
+                "source_strategy": {"primary_source_variant_id": f"{entry['article_key']}:primary"},
+                "source_variants": [
+                    {
+                        "variant_id": f"{entry['article_key']}:primary",
+                        "source_role": entry["primary_source_role"],
+                        "is_primary": True,
+                        "is_content_bearing": entry["primary_source_role"] != "arxiv_abs_page",
+                        "is_metadata_only": entry["primary_source_role"] == "arxiv_abs_page",
+                    }
+                ],
+            },
+        )
     _write_json(
         root / "index.json",
         {
@@ -243,3 +265,115 @@ def test_register_m029_rejects_malformed_selection(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert "m029_unified_registry_failed" in result.stderr
     assert not (output_dir / "selection.json").exists()
+
+
+def test_verify_m029_rebuilds_index_with_selection_only_lookup_entries(tmp_path: Path) -> None:
+    m025, m027, m028, catalog_root, output_dir = _fixture_inputs(tmp_path)
+    subprocess.run(
+        [
+            sys.executable,
+            str(REGISTER_SCRIPT),
+            "--write",
+            "--m025-selection",
+            str(m025),
+            "--m027-selection",
+            str(m027),
+            "--m028-roadmap",
+            str(m028),
+            "--catalog-root",
+            str(catalog_root),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    index_path = catalog_root / "index.json"
+    report_path = catalog_root / "index-rebuild-report.json"
+    diagnostics_path = catalog_root / "index-rebuild-diagnostics.jsonl"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(output_dir / "selection.json"),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--rebuild-index",
+            "--write-index",
+            str(index_path),
+            "--write-index-report",
+            str(report_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--check-index-titles",
+            "--check-index-idempotent",
+            "--check-safe-traversal",
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["records_scanned"] == 2
+    assert report["selection_entries_considered"] == 18
+    assert report["selection_stub_entries_added"] == 16
+    assert report["entries_emitted"] == 18
+    assert report["idempotent"] is True
+    assert index["indexes"]["by_canonical_url"]["https://arxiv.org/abs/2605.23904"] == "arxiv/mixed-source/2605.23904"
+    placeholder = next(entry for entry in index["articles"] if entry["article_ref"] == "arxiv/mixed-source/2605.23904")
+    assert placeholder["catalog_record_present"] is False
+    assert placeholder["title_status"] == "unresolved_catalog_placeholder"
+    assert not diagnostics_path.read_text(encoding="utf-8")
+
+
+def test_verify_m029_rejects_unsafe_selection_article_ref_during_rebuild(tmp_path: Path) -> None:
+    m025, m027, m028, catalog_root, output_dir = _fixture_inputs(tmp_path)
+    subprocess.run(
+        [
+            sys.executable,
+            str(REGISTER_SCRIPT),
+            "--write",
+            "--m025-selection",
+            str(m025),
+            "--m027-selection",
+            str(m027),
+            "--m028-roadmap",
+            str(m028),
+            "--catalog-root",
+            str(catalog_root),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    selection_path = output_dir / "selection.json"
+    selection = json.loads(selection_path.read_text(encoding="utf-8"))
+    selection["articles"][-1]["article_ref"] = "../escape"
+    selection_path.write_text(json.dumps(selection), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_SCRIPT),
+            "--selection",
+            str(selection_path),
+            "--catalog",
+            str(catalog_root / "catalog.json"),
+            "--rebuild-index",
+            "--check-safe-traversal",
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 1
+    assert "selection_stub_entry_failed" in result.stderr
