@@ -13,9 +13,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from build_m031_catalog_backed_replay_selection import build_selection, main  # noqa: E402
 from replay_m031_catalog_backed_acquisition import main as replay_main  # noqa: E402
 from replay_m031_catalog_backed_acquisition import replay_selection, sha256_file  # noqa: E402
+from replay_m031_catalog_backed_loader_evidence import (  # noqa: E402
+    LoaderEvidenceError,
+    assert_fail_closed_flags,
+    build_summary as build_loader_summary,
+    main as loader_main,
+    replay_loader_evidence,
+)
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_m031_catalog_backed_replay_selection.py"
 REPLAY_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_acquisition.py"
+LOADER_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_loader_evidence.py"
 REAL_SOURCE_SELECTION = Path("data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json")
 REAL_CATALOG = Path("data/article_catalog/catalog.json")
 REAL_INDEX = Path("data/article_catalog/index.json")
@@ -573,3 +581,255 @@ def test_replay_m031_cli_writes_redacted_summary_diagnostics_and_report(tmp_path
     assert "<html" not in serialized.lower()
     assert "</html" not in serialized.lower()
     assert "base64," not in serialized.lower()
+
+
+def _fixture_acquisition_summary(tmp_path: Path) -> tuple[Path, Path, Path]:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    summary_path = tmp_path / "source-acquisition-summary.json"
+    _write_json(
+        summary_path,
+        {
+            "schema_version": "m031-catalog-backed-acquisition.v1",
+            "selection_id": "m031-catalog-backed-replay-v1",
+            "results": results,
+        },
+    )
+    return selection, summary_path, output_dir
+
+
+def test_replay_m031_real_loader_evidence_only_loads_captured_artifacts(tmp_path: Path) -> None:
+    summary_path = tmp_path / "loader-evidence-summary.json"
+    diagnostics_path = tmp_path / "loader-evidence-diagnostics.jsonl"
+    report_path = tmp_path / "loader-evidence-report.md"
+    evidence_dir = tmp_path / "loader-evidence"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(LOADER_SCRIPT),
+            "--selection",
+            "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+            "--acquisition-summary",
+            "data/article_corpora/m031-catalog-backed-replay-v1/source-acquisition-summary.json",
+            "--source-dir",
+            "data/article_corpora/m031-catalog-backed-replay-v1/source",
+            "--output-dir",
+            str(evidence_dir),
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["counts"] == {
+        "loader_attempted": 3,
+        "loaded": 2,
+        "loaded_metadata_only": 1,
+        "failed": 0,
+        "loader_blocked": 4,
+    }
+    assert summary["network_fetch_attempted_count"] == 0
+    assert summary["graph_import_allowed"] is False
+    assert summary["production_ladybugdb_write_allowed"] is False
+    assert summary["ladybugdb_written"] is False
+    attempted = [row for row in summary["results"] if row["loader_attempted"]]
+    assert {row["local_path"] for row in attempted} == {
+        "arxiv/cs-cl/2507.19457/source/article.html",
+        "arxiv/cs-cl/2507.19457/source/original.pdf",
+        "arxiv/cs-cl/2507.19457/source/abs.html",
+    }
+    pdf_row = next(row for row in attempted if row["source_role"] == "arxiv_pdf")
+    assert pdf_row["status"] == "loaded_metadata_only"
+    assert pdf_row["text_present"] is False
+    assert pdf_row["parser_name"] == "pdf_metadata_probe"
+    html_rows = [row for row in attempted if row["source_role"] in {"arxiv_html", "arxiv_abs_page"}]
+    assert all(row["status"] == "loaded" and row["text_present"] is True for row in html_rows)
+    blockers = [row for row in summary["results"] if row["status"] == "blocked"]
+    assert len(blockers) == 4
+    assert all(row["loader_attempted"] is False for row in blockers)
+    event_path = evidence_dir / "arxiv" / "cs-cl" / "2507.19457" / "events.jsonl"
+    assert event_path.exists()
+    events = [json.loads(line) for line in event_path.read_text(encoding="utf-8").splitlines()]
+    assert len([event for event in events if event["event"] in {"source.load_completed", "source.load_failed"}]) == 3
+    assert all(not Path(event["source_path"]).is_absolute() for event in events)
+    assert {event["source_path"] for event in events} == {
+        "arxiv/cs-cl/2507.19457/source/article.html",
+        "arxiv/cs-cl/2507.19457/source/original.pdf",
+        "arxiv/cs-cl/2507.19457/source/abs.html",
+    }
+    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report_path.read_text(encoding="utf-8") + event_path.read_text(encoding="utf-8")
+    assert "GEPA: Reflective Prompt" not in serialized
+    assert "base64," not in serialized.lower()
+    assert '"text":' not in serialized
+    assert '"raw_binary":' not in serialized
+    report = report_path.read_text(encoding="utf-8")
+    assert "## Failure Modes" in report
+    assert "## Load Profile" in report
+    assert "## Negative Tests" in report
+
+
+def test_replay_m031_fixture_loader_blocks_non_captured_rows_and_redacts_text(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+
+    rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+    )
+
+    assert [row["loader_attempted"] for row in rows].count(True) == 3
+    assert [row["status"] for row in rows].count("blocked") == 4
+    assert all(row["loader_attempted"] is False for row in rows if row["acquisition_status"] != "captured")
+    assert "fixture article html bytes" not in json.dumps(rows)
+    assert all("text" not in row for row in rows)
+    pdf_row = next(row for row in rows if row["source_role"] == "arxiv_pdf" and row["loader_attempted"])
+    assert pdf_row["status"] == "loaded_metadata_only"
+    assert pdf_row["text_present"] is False
+
+
+def test_replay_m031_loader_blocks_missing_captured_file(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").unlink()
+
+    rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+    )
+
+    missing = next(row for row in rows if row["source_role"] == "arxiv_html")
+    assert missing["status"] == "blocked"
+    assert missing["diagnostic_code"] == "captured_source_missing"
+    assert missing["loader_attempted"] is False
+
+
+def test_replay_m031_loader_blocks_hash_mismatch_before_loading(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"changed bytes")
+
+    rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+    )
+
+    mismatch = next(row for row in rows if row["source_role"] == "arxiv_html")
+    assert mismatch["status"] == "blocked"
+    assert mismatch["diagnostic_code"] == "captured_hash_mismatch"
+    assert mismatch["loader_attempted"] is False
+
+
+def test_replay_m031_loader_confines_unsafe_event_article_ref(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    payload = json.loads(acquisition_summary.read_text(encoding="utf-8"))
+    payload["results"][0]["article_ref"] = "../escape"
+    _write_json(acquisition_summary, payload)
+
+    rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+    )
+
+    unsafe = next(row for row in rows if row["source_role"] == "arxiv_html")
+    assert unsafe["loader_attempted"] is True
+    assert unsafe["event_path"].startswith("unsafe/")
+    assert ".." not in unsafe["event_path"]
+    assert (tmp_path / "loader-evidence" / unsafe["event_path"]).exists()
+
+
+def test_replay_m031_loader_rejects_malformed_acquisition_results(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    payload = json.loads(acquisition_summary.read_text(encoding="utf-8"))
+    payload["results"] = {"not": "a-list"}
+    _write_json(acquisition_summary, payload)
+
+    with pytest.raises(LoaderEvidenceError, match="acquisition summary results must be a list"):
+        replay_loader_evidence(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            source_dir=source_dir,
+            output_dir=tmp_path / "loader-evidence",
+        )
+
+
+def test_replay_m031_loader_rejects_selection_acquisition_mismatch(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    payload = json.loads(acquisition_summary.read_text(encoding="utf-8"))
+    payload["selection_id"] = "different-selection"
+    _write_json(acquisition_summary, payload)
+
+    with pytest.raises(LoaderEvidenceError, match="selection_id mismatch"):
+        replay_loader_evidence(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            source_dir=source_dir,
+            output_dir=tmp_path / "loader-evidence",
+        )
+
+
+def test_replay_m031_loader_rejects_true_fail_closed_safety_flags(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+    )
+    summary = build_loader_summary(
+        rows,
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary,
+        source_dir=source_dir,
+        output_dir=tmp_path / "loader-evidence",
+        duration_ms=0,
+    )
+    summary["fail_closed_safety_flags"]["graph_import_allowed"] = True
+
+    with pytest.raises(LoaderEvidenceError, match="unexpected safety flag"):
+        assert_fail_closed_flags(summary)
+
+
+def test_replay_m031_loader_cli_writes_summary_diagnostics_report(tmp_path: Path) -> None:
+    selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
+    summary_path = tmp_path / "summary.json"
+    diagnostics_path = tmp_path / "diagnostics.jsonl"
+    report_path = tmp_path / "report.md"
+
+    assert loader_main(
+        [
+            "--selection",
+            str(selection),
+            "--acquisition-summary",
+            str(acquisition_summary),
+            "--source-dir",
+            str(source_dir),
+            "--output-dir",
+            str(tmp_path / "loader-evidence"),
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ]
+    ) == 0
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["counts"]["loader_attempted"] == 3
+    assert summary["counts"]["loader_blocked"] == 4
+    assert "missing_local_source_path" in diagnostics_path.read_text(encoding="utf-8")
+    assert "## Failure Modes" in report_path.read_text(encoding="utf-8")
