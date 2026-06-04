@@ -1,0 +1,91 @@
+{
+  "accepted_count": 0,
+  "chunk_text_included": false,
+  "completed_review_refusal_in_force": true,
+  "diagnostic_code_counts": {
+    "M031_IMPORT_BOUNDARY_REFUSED": 7
+  },
+  "embeddings_included": false,
+  "fail_closed_flags": {
+    "chunk_text_included": false,
+    "embeddings_included": false,
+    "graph_import_allowed": false,
+    "graph_write_attempted": false,
+    "ladybugdb_written": false,
+    "model_call_attempted": false,
+    "network_fetch_attempted": false,
+    "production_import_attempted": false,
+    "production_persistence_attempted": false,
+    "raw_text_included": false,
+    "trusted_kg_import_allowed": false,
+    "vectors_included": false
+  },
+  "failure_count": 0,
+  "failure_modes_gate_q5": [
+    "Filesystem: missing JSON/JSONL/Markdown artifacts fail with M031_S05_INPUT_MISSING before writes.",
+    "Malformed artifacts: invalid JSON/JSONL fail with M031_S05_INVALID_JSON or M031_S05_INVALID_JSONL.",
+    "Scope drift: stale counts, missing stages, missing continuity sections, or permissive import flags fail before closeout artifacts are written.",
+    "Review boundary drift: completed-review claims without explicit verdict evidence fail with M031_S05_COMPLETED_REVIEW_WITHOUT_VERDICT."
+  ],
+  "graph_import_allowed": false,
+  "graph_write_attempted": false,
+  "import_eligible_count": 0,
+  "import_refusal_diagnostic_count": 7,
+  "independent_review_completed_count": 0,
+  "ladybugdb_written": false,
+  "load_profile_gate_q6": {
+    "expected_load": "7 progression rows, 8 stages per row, 7 import refusal diagnostics, bounded local summary/report artifacts",
+    "protection": "single-pass local validation, deterministic counts, no remote calls, no raw payload reads, no database writes, and outputs written only after all preflight checks pass",
+    "ten_x_breakpoint": "local JSON/Markdown parsing and recursive payload scanning saturate first at about 70 rows; no network, model, subprocess, graph, or LadybugDB runtime path exists"
+  },
+  "milestone_id": "M031-vwpd8e",
+  "model_call_attempted": false,
+  "negative_tests_gate_q7": [
+    "permissive import summary accepted_count/import_eligible_count",
+    "missing progression matrix row",
+    "completed review claim without verdict evidence",
+    "raw payload leakage in source artifacts"
+  ],
+  "network_fetch_attempted": false,
+  "production_import_attempted": false,
+  "production_persistence_attempted": false,
+  "progression_row_count": 7,
+  "progression_stage_count_per_row": 8,
+  "raw_text_included": false,
+  "recovery_commands": [
+    "uv run python scripts/replay_m031_import_boundary_rehearsal.py",
+    "uv run python scripts/verify_m031_process_continuity_audit.py",
+    "uv run python scripts/verify_m031_s05_closeout.py"
+  ],
+  "rejected_import_candidate_count": 7,
+  "required_continuity_sections_present": [
+    "## Stage Owners, Evidence, Verifiers, and Failure Modes",
+    "## Unsafe Claims to Preserve",
+    "## Fail-Closed Flags",
+    "## Structural Route Label Notice",
+    "## Failure Modes",
+    "## Load Profile",
+    "## Negative Tests",
+    "## Import Boundary Checkpoint"
+  ],
+  "s04_graph_readiness_package_count": 1,
+  "s04_row_count": 7,
+  "s04_zero_chunk_refusal_count": 6,
+  "schema_version": "m031-s05-closeout-verifier.v1",
+  "selection_id": "m031-catalog-backed-replay-v1",
+  "slice_id": "S05",
+  "source_artifacts": [
+    "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence-closeout-summary.json",
+    "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-summary.json",
+    "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-diagnostics.jsonl",
+    "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-report.md",
+    "data/article_corpora/m031-catalog-backed-replay-v1/progression-matrix.json",
+    "data/article_corpora/m031-catalog-backed-replay-v1/progression-matrix.md",
+    "data/article_corpora/m031-catalog-backed-replay-v1/m031-continuity-audit.json",
+    "data/article_corpora/m031-catalog-backed-replay-v1/m031-continuity-audit.md",
+    "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/independent-review-events.jsonl"
+  ],
+  "status": "passed",
+  "trusted_kg_import_allowed": false,
+  "vectors_included": false
+}
