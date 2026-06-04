@@ -1,0 +1,661 @@
+{
+  "schema_version": "m030-requirement-module-matrix.v1",
+  "milestone_id": "M030-abwhdm",
+  "slice_id": "S04",
+  "task_id": "T01",
+  "created_at": "2026-06-04",
+  "purpose": "Machine-readable mapping from active and pipeline-relevant requirements to current modules/functions, coverage status, evidence paths, and next action.",
+  "source_inputs": [
+    "doc/validation/m027_requirement_scope_matrix.json",
+    "doc/validation/m028_requirement_scope_matrix.json",
+    ".gsd/REQUIREMENTS.md",
+    "doc/architecture/m030_pipeline_module_inventory.json",
+    "doc/architecture/m030_module_function_readiness.json"
+  ],
+  "scope_boundary": {
+    "metadata_only": true,
+    "behavior_changed": false,
+    "runtime_replay_performed": false,
+    "network_fetch_attempted": false,
+    "graph_write_attempted": false,
+    "production_persistence_attempted": false,
+    "readiness_claimed": false,
+    "notes": "This matrix records requirement-to-module coverage only. It does not register missing refs, acquire sources, parse/chunk articles, perform KG import, write LadybugDB, activate DSPy/RLM/MiniMax behavior, or promote trusted facts. Future/out-of-scope and unsafe-to-claim classifications are preserved from M027/M028 scope matrices."
+  },
+  "coverage_status_legend": {
+    "covered": "Current module/function surface and evidence directly cover the bounded requirement aspect listed in this row.",
+    "supported": "The requirement is already validated or externally scoped, and current artifacts provide supporting evidence only.",
+    "partial": "Some pipeline modules exist and have evidence, but the full requirement remains active until future canonical validation.",
+    "blocked": "Pipeline module exists, but upstream artifacts or required validation are missing for M030 requested refs.",
+    "future_out_of_scope": "Requirement remains active and intentionally outside the bounded M030 static architecture/readiness scope.",
+    "gated_future_scope": "Requirement remains active, but any model/helper/optimizer activation is explicitly gated by future fixtures, metrics, and safety checks.",
+    "unsafe_to_claim": "Current code is a fail-closed boundary only; positive import/write/readiness claims are unsafe."
+  },
+  "module_catalog_refs": [
+    {
+      "module_id": "m030_requested_ref_intake",
+      "stage": "url_intake",
+      "claim_state": "ready"
+    },
+    {
+      "module_id": "metadata_only_catalog_registration",
+      "stage": "article_catalog",
+      "claim_state": "partial"
+    },
+    {
+      "module_id": "mixed_source_capture_boundary",
+      "stage": "source_acquisition",
+      "claim_state": "blocked"
+    },
+    {
+      "module_id": "local_ingestion_loader_and_evidence_bridge",
+      "stage": "loader_evidence",
+      "claim_state": "partial"
+    },
+    {
+      "module_id": "conversion_quality_and_parser_boundary",
+      "stage": "parser_conversion",
+      "claim_state": "blocked"
+    },
+    {
+      "module_id": "pageindex_semantic_chunk_evidence",
+      "stage": "chunking",
+      "claim_state": "future-scope"
+    },
+    {
+      "module_id": "graph_readiness_export_and_independent_review",
+      "stage": "graph_readiness_review",
+      "claim_state": "future-scope"
+    },
+    {
+      "module_id": "fail_closed_import_contract_and_rehearsal",
+      "stage": "graph_import_boundary",
+      "claim_state": "unsafe-to-claim"
+    },
+    {
+      "module_id": "current_pipeline_and_end_to_end_replay",
+      "stage": "cross_stage_replay",
+      "claim_state": "blocked"
+    }
+  ],
+  "requirements": [
+    {
+      "requirement_id": "R019",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Hybrid retrieval must return traceable evidence contexts with vector, graph, fusion score metadata, and EvidencePath references.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "hybrid_retrieval_future_surface",
+          "stage": "retrieval",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/hybrid_retrieval.py",
+            "src/arxiv_archive/evidence.py",
+            "src/arxiv_archive/graph_readiness_retrieval_validation.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/hybrid_retrieval.py",
+            "src/arxiv_archive/evidence.py:EvidencePath",
+            "src/arxiv_archive/graph_readiness_retrieval_validation.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active for a future retrieval validation milestone with vector-only, graph expansion, fused retrieval, score metadata, and EvidencePath comparison tests.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim M030 validates hybrid retrieval.",
+        "Do not claim graph readiness or trusted fact promotion."
+      ]
+    },
+    {
+      "requirement_id": "R022",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "RLM document navigation and workflow-in-code prototypes must be read-only, bounded, typed, and deterministically validated.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "rlm_workflow_future_surface",
+          "stage": "rlm_helper",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/rlm_workflow.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/rlm_workflow.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active until bounded read-only RLM workflow fixtures prove typed draft outputs, trajectory capture, and deterministic validation.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim RLM activation.",
+        "Do not claim model helper outputs are authoritative."
+      ]
+    },
+    {
+      "requirement_id": "R023",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "RLM graph traversal must be benchmarked against deterministic retrieval baselines before adoption recommendations.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "rlm_graph_traversal_future_surface",
+          "stage": "retrieval_benchmark",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/rlm_graph_traversal.py",
+            "src/arxiv_archive/hybrid_retrieval.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/rlm_graph_traversal.py",
+            "src/arxiv_archive/hybrid_retrieval.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active for a future comparative benchmark covering vector-only, one-hop graph expansion, heuristic BFS, adaptive traversal, cost, latency, and recall.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim RLM traversal adoption readiness.",
+        "Do not claim graph traversal beats deterministic baselines."
+      ]
+    },
+    {
+      "requirement_id": "R024",
+      "current_status": "active",
+      "classification": "m027_m028_advanced_preprocessing_and_smoke_loader_only",
+      "coverage_status": "partial",
+      "requirement_summary": "Scientific KG behavior must be validated on staged real article batches of 10 documents, 20 documents, then one-week corpus with graph quality analysis.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "current_pipeline_and_end_to_end_replay",
+          "stage": "cross_stage_replay",
+          "claim_state": "blocked",
+          "files": [
+            "scripts/replay_m027_current_pipeline_baseline.py",
+            "scripts/replay_m027_end_to_end_mixed_replay.py"
+          ],
+          "functions_classes": [
+            "scripts/replay_m027_current_pipeline_baseline.py:replay_baseline",
+            "scripts/replay_m027_current_pipeline_baseline.py:run_current_pipeline",
+            "scripts/replay_m027_end_to_end_mixed_replay.py:replay_end_to_end",
+            "scripts/replay_m027_end_to_end_mixed_replay.py:build_readiness_decision"
+          ]
+        },
+        {
+          "module_id": "graph_readiness_export_and_independent_review",
+          "stage": "graph_readiness_review",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/graph_readiness_export.py",
+            "src/arxiv_archive/graph_readiness_review.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/graph_readiness_export.py:export_corpus",
+            "src/arxiv_archive/graph_readiness_review.py:validate_review_artifacts"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json",
+        "doc/architecture/m030_module_function_readiness.json"
+      ],
+      "next_action": "Treat M027/M028 as partial preprocessing/smoke evidence only; run staged KG validation with graph-quality review before changing requirement status.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim staged KG behavior is validated.",
+        "Do not claim M030 requested refs are graph-ready."
+      ]
+    },
+    {
+      "requirement_id": "R027",
+      "current_status": "active",
+      "classification": "m027_m028_advanced_conversion_provenance_only",
+      "coverage_status": "partial",
+      "requirement_summary": "Converted paper data and chunks must satisfy graph-readiness quality covering fidelity, normalization, semantics, table/figure handling, section hierarchy, and provenance.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "conversion_quality_and_parser_boundary",
+          "stage": "parser_conversion",
+          "claim_state": "blocked",
+          "files": [
+            "scripts/convert_m027_source_quality_boundary.py",
+            "scripts/verify_m027_conversion_quality_boundary.py",
+            "src/arxiv_archive/parsing/parser.py"
+          ],
+          "functions_classes": [
+            "scripts/convert_m027_source_quality_boundary.py:verify_source_bytes",
+            "scripts/verify_m027_conversion_quality_boundary.py:verify",
+            "scripts/verify_m027_conversion_quality_boundary.py:validate_row_semantics",
+            "src/arxiv_archive/parsing/parser.py:parse_article"
+          ]
+        },
+        {
+          "module_id": "pageindex_semantic_chunk_evidence",
+          "stage": "chunking",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/indexing/page_index.py",
+            "src/arxiv_archive/evidence.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/indexing/page_index.py:build_page_index_from_parsed",
+            "src/arxiv_archive/evidence.py:build_semantic_chunks",
+            "src/arxiv_archive/evidence.py:validate_evidence_path"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json",
+        "doc/architecture/m030_pipeline_module_inventory.json",
+        "doc/architecture/m030_module_function_readiness.json"
+      ],
+      "next_action": "Replay M030 source acquisition and parser/conversion for selected refs, then run graph-readiness quality benchmark before any positive readiness claim.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim parser_ready or chunk_ready for M030 requested refs before replay evidence exists.",
+        "Do not claim graph-readiness acceptance."
+      ]
+    },
+    {
+      "requirement_id": "R029",
+      "current_status": "active",
+      "classification": "m027_m028_advanced_chunk_provenance_only",
+      "coverage_status": "partial",
+      "requirement_summary": "Chunking must produce import-ready typed chunk packages with stable IDs, source spans, lineage, routes, quality states, deterministic annotations, and independent review evidence.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "pageindex_semantic_chunk_evidence",
+          "stage": "chunking",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/evidence.py",
+            "src/arxiv_archive/indexing/page_index.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/evidence.py:SemanticChunk",
+            "src/arxiv_archive/evidence.py:EvidencePath",
+            "src/arxiv_archive/evidence.py:build_semantic_chunks",
+            "src/arxiv_archive/evidence.py:build_evidence_paths"
+          ]
+        },
+        {
+          "module_id": "fail_closed_import_contract_and_rehearsal",
+          "stage": "graph_import_boundary",
+          "claim_state": "unsafe-to-claim",
+          "files": [
+            "src/arxiv_archive/chunk_import_contract.py",
+            "src/arxiv_archive/staging/import_boundary.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/chunk_import_contract.py:validate_import_ready_package",
+            "src/arxiv_archive/chunk_import_contract.py:ContractValidationResult.import_ready",
+            "src/arxiv_archive/staging/import_boundary.py:validate_import_boundary_rehearsal"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json",
+        "doc/architecture/m030_pipeline_module_inventory.json"
+      ],
+      "next_action": "Keep active until import-ready typed packages pass independent review and fail-closed import contract checks; M030 static readiness is not positive import readiness.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim import_ready=true.",
+        "Do not claim independent semantic review exists for M030 refs."
+      ]
+    },
+    {
+      "requirement_id": "R031",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Validation must expand to a 30-paper deviation scan before broader chunking/import-readiness conclusions.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "batch_deviation_scan_future_surface",
+          "stage": "batch_validation",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_batch_validation.py",
+            "src/arxiv_archive/chunk_baseline_measurement.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_batch_validation.py",
+            "src/arxiv_archive/chunk_baseline_measurement.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active for a future 30-paper deviation scan with distributions, outliers, missing-source rates, route/refusal patterns, and no-import recommendations.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim 30-paper scan completion from M030 static architecture evidence."
+      ]
+    },
+    {
+      "requirement_id": "R032",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Corpus validation must support automated +10-paper iterative loops up to 100 papers with resumable state, acquisition, deviation analysis, remediation, and no-import/no-write gates.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "iterative_batch_loop_future_surface",
+          "stage": "batch_validation",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_batch_validation.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_batch_validation.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active until an automated resumable +10 loop persists manifests, diagnostics, reports, baselines, and review gates without KG writes.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim unattended scaling or +10 loop support from M030 static matrices."
+      ]
+    },
+    {
+      "requirement_id": "R033",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Provide deterministic, resumable CLI workflow for iterative +10-paper validation batches toward a 100-paper diagnostic corpus.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "resumable_validation_cli_future_surface",
+          "stage": "batch_validation_cli",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_batch_validation.py",
+            "src/arxiv_archive/cli.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_batch_validation.py",
+            "src/arxiv_archive/cli.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active until CLI commands select next batches, preflight/acquire sources, run redacted scans, compare deltas, flag blockers, and persist resumable batch state.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim deterministic 100-paper validation workflow readiness from M030 static evidence."
+      ]
+    },
+    {
+      "requirement_id": "R035",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement_scope_sensitive",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Validation batches must fill target accepted-paper quota using deterministic replacement candidates when selected papers cannot become source-ready within bounded acquisition rules.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "validation_batch_top_up_future_surface",
+          "stage": "batch_selection_and_top_up",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_batch_validation.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_batch_validation.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Preserve R035 as active; a future validation-batch milestone must materialize deterministic replacements and prove target quota or explicit shortage blocker.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim M030 or M028 fully validates R035.",
+        "Do not claim deterministic replacement materialization or validation-batch quota top-up has been delivered."
+      ]
+    },
+    {
+      "requirement_id": "R036",
+      "current_status": "validated",
+      "classification": "already_validated_requirement_supported_by_replay_provenance",
+      "coverage_status": "supported",
+      "requirement_summary": "Generated artifacts must preserve provenance with command, inputs, outputs, hashes, exit status, cwd/git context, and milestone/batch context.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "provenance_supported_by_replay_artifacts",
+          "stage": "cross_stage_replay_and_verifiers",
+          "claim_state": "supported",
+          "files": [
+            "scripts/replay_m027_current_pipeline_baseline.py",
+            "scripts/replay_m027_end_to_end_mixed_replay.py",
+            "scripts/replay_m028_smoke_closeout.py",
+            "scripts/verify_m030_module_function_readiness.py"
+          ],
+          "functions_classes": [
+            "scripts/replay_m027_current_pipeline_baseline.py:replay_baseline",
+            "scripts/replay_m027_end_to_end_mixed_replay.py:replay_end_to_end",
+            "scripts/replay_m028_smoke_closeout.py",
+            "scripts/verify_m030_module_function_readiness.py:validate_matrix"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m027_requirement_scope_matrix.json",
+        "doc/validation/m028_requirement_scope_matrix.json",
+        "doc/architecture/m030_pipeline_module_inventory.json",
+        "doc/architecture/m030_module_function_readiness.json"
+      ],
+      "next_action": "Preserve validated status and continue requiring command/input/output hash and context provenance for future generated artifact classes.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim M030 newly validates all future provenance workflows globally.",
+        "Do not claim production write authorization."
+      ]
+    },
+    {
+      "requirement_id": "R040",
+      "current_status": "active",
+      "classification": "active_safety_constraint_preserved_and_advanced",
+      "coverage_status": "covered",
+      "requirement_summary": "New infrastructure must be researched, compatibility-probed, and safety-wrapped before enabling it in the main Scientific KG process.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "m030_fail_closed_static_architecture_safety",
+          "stage": "all_static_architecture_rows",
+          "claim_state": "covered",
+          "files": [
+            "doc/architecture/m030_pipeline_module_inventory.json",
+            "doc/architecture/m030_module_function_readiness.json",
+            "scripts/verify_m030_module_function_readiness.py"
+          ],
+          "functions_classes": [
+            "scripts/verify_m030_module_function_readiness.py:validate_matrix",
+            "scripts/verify_m030_module_function_readiness.py:validate_report"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m028_requirement_scope_matrix.json",
+        "doc/architecture/m030_pipeline_module_inventory.json",
+        "doc/architecture/m030_module_function_readiness.json"
+      ],
+      "next_action": "Keep active as a project-wide constraint; require future infrastructure work to include research/probe artifacts, redaction boundaries, failure-mode analysis, and explicit go/no-go decisions.",
+      "unsafe_claims_to_preserve": [
+        "Do not treat safety preservation as permission to enable model helpers, graph writes, production persistence, or KG import."
+      ]
+    },
+    {
+      "requirement_id": "R050",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement",
+      "coverage_status": "future_out_of_scope",
+      "requirement_summary": "Provide deterministic CLI for detecting article structure artifacts and candidate KG scaffold links from preserved paper sources without KG import.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "article_artifact_detection_future_surface",
+          "stage": "pre_kg_artifact_detection",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_artifacts.py",
+            "src/arxiv_archive/article_assets.py",
+            "src/arxiv_archive/article_artifact_metrics.py",
+            "src/arxiv_archive/article_retrieval_tables.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_artifacts.py",
+            "src/arxiv_archive/article_assets.py",
+            "src/arxiv_archive/article_artifact_metrics.py",
+            "src/arxiv_archive/article_retrieval_tables.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active until a deterministic pre-KG CLI emits artifact manifests, stable IDs, source spans, candidate links, review states, provenance, and kg_import_allowed=false.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim article artifact detection CLI is delivered by M030 S04.",
+        "Do not claim candidate KG scaffolds are importable."
+      ]
+    },
+    {
+      "requirement_id": "R051",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement_model_helper_gated",
+      "coverage_status": "gated_future_scope",
+      "requirement_summary": "MiniMax may assist article artifact detection only as bounded structured helper with forced tool calls, local schema validation, redacted inputs, and non-authoritative outputs.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "minimax_artifact_helper_gated_surface",
+          "stage": "bounded_model_helper",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/article_artifact_minimax.py",
+            "src/arxiv_archive/minimax_structured.py",
+            "src/arxiv_archive/minimax_usage.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/article_artifact_minimax.py",
+            "src/arxiv_archive/minimax_structured.py",
+            "src/arxiv_archive/minimax_usage.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active and gated until tests/fixtures prove forced tool-call shape, local schema validation, redacted diagnostics, non-authoritative outputs, and no KG import authorization.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim MiniMax activation.",
+        "Do not claim MiniMax output is source-of-truth or importable."
+      ]
+    },
+    {
+      "requirement_id": "R052",
+      "current_status": "active",
+      "classification": "future_out_of_scope_active_requirement_optimizer_gated",
+      "coverage_status": "gated_future_scope",
+      "requirement_summary": "DSPy prompt optimization for artifact detection must remain gated until benchmark fixtures, metrics, and baseline outputs exist.",
+      "mapped_modules_functions": [
+        {
+          "module_id": "dspy_artifact_optimizer_gated_surface",
+          "stage": "optimizer_evaluation",
+          "claim_state": "future-scope",
+          "files": [
+            "src/arxiv_archive/dspy_extraction.py",
+            "src/arxiv_archive/article_artifact_metrics.py"
+          ],
+          "functions_classes": [
+            "src/arxiv_archive/dspy_extraction.py",
+            "src/arxiv_archive/article_artifact_metrics.py"
+          ]
+        }
+      ],
+      "evidence_paths": [
+        ".gsd/REQUIREMENTS.md",
+        "doc/validation/m028_requirement_scope_matrix.json"
+      ],
+      "next_action": "Keep active and gated until benchmark fixtures and metrics compare deterministic/MiniMax baselines before any DSPy optimizer activation recommendation.",
+      "unsafe_claims_to_preserve": [
+        "Do not claim DSPy or optimizer activation.",
+        "Do not claim prompt optimization readiness without benchmark evidence."
+      ]
+    }
+  ],
+  "requirement_coverage_summary": {
+    "total_rows": 15,
+    "active_rows": 14,
+    "validated_supported_rows": 1,
+    "covered_rows": [
+      "R040"
+    ],
+    "supported_rows": [
+      "R036"
+    ],
+    "partial_rows": [
+      "R024",
+      "R027",
+      "R029"
+    ],
+    "future_out_of_scope_rows": [
+      "R019",
+      "R022",
+      "R023",
+      "R031",
+      "R032",
+      "R033",
+      "R035",
+      "R050"
+    ],
+    "gated_future_scope_rows": [
+      "R051",
+      "R052"
+    ],
+    "unsafe_positive_claims_blocked": [
+      "KG import readiness",
+      "production LadybugDB writes",
+      "trusted fact promotion",
+      "graph readiness validation",
+      "parser/chunk readiness for M030 refs",
+      "R035 quota top-up/replacement materialization",
+      "RLM/MiniMax/DSPy activation",
+      "unattended scaling"
+    ]
+  },
+  "verification_contract": {
+    "json_parse_command": "uv run python -m json.tool doc/architecture/m030_requirement_module_matrix.json",
+    "expected_result": "JSON parses as a single object with 15 requirement rows and preserved fail-closed scope classifications."
+  }
+}
