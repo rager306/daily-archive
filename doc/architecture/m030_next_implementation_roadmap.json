@@ -1,0 +1,451 @@
+{
+  "schema_version": "m030-next-implementation-roadmap.v1",
+  "milestone_id": "M030-abwhdm",
+  "slice_id": "S06",
+  "task_id": "T01",
+  "created_at": "2026-06-04",
+  "purpose": "Rank evidence-backed implementation options for the next article-processing pipeline milestone.",
+  "scope_boundary": {
+    "artifact_only": true,
+    "behavior_changed": false,
+    "network_fetch_attempted": false,
+    "graph_write_attempted": false,
+    "production_persistence_attempted": false,
+    "notes": "This roadmap ranks implementation options from M030 audit evidence. It does not register catalog records, acquire sources, replay parsing/chunking, approve graph readiness, write LadybugDB, or attempt production import."
+  },
+  "source_evidence": [
+    {
+      "artifact": "doc/architecture/m030_pipeline_module_inventory.json",
+      "used_for": "Owner modules, likely touched files, verifiers, and fail-closed graph/import boundary representation."
+    },
+    {
+      "artifact": "doc/architecture/m030_module_function_readiness.json",
+      "used_for": "Readiness claim states and next actions by pipeline stage."
+    },
+    {
+      "artifact": "doc/architecture/m030_requirement_module_matrix.json",
+      "used_for": "Requirement impact and conservative coverage classifications."
+    },
+    {
+      "artifact": "doc/architecture/m030_process_continuity_audit.json",
+      "used_for": "Continuity edge states, known breakpoints B01-B03, and fail-closed diagnostic contract."
+    }
+  ],
+  "ranking_method": {
+    "priority_factors": [
+      "Unblocks downstream continuity edges for the M030 selected refs.",
+      "Has direct audit evidence and concrete owner modules.",
+      "Can be verified locally before any network, graph, or production write claim.",
+      "Reduces false readiness risk by preserving fail-closed constraints."
+    ],
+    "risk_scale": {
+      "low": "Metadata or validator-local work with no external writes beyond repository artifacts.",
+      "medium": "Replay or transformation work touching filesystem artifacts and multiple stage contracts.",
+      "high": "Work adjacent to trusted graph readiness or import boundaries where false positives could authorize unsafe writes."
+    }
+  },
+  "ranked_options": [
+    {
+      "rank": 1,
+      "option_id": "catalog_coverage_remediation",
+      "title": "Catalog coverage remediation for missing M030 refs",
+      "recommendation": "Do first.",
+      "risk": "low",
+      "dependency_state": "Depends only on validated URL intake selection m029-pipeline-architecture-audit-v1.",
+      "why_ranked_here": "Continuity breakpoint B01 blocks all downstream M030 replay. Metadata-only catalog rows for stanford:cs224n:gradient-notes and arxiv:2605.29548 are the smallest safe action that creates stable article_ref boundaries without claiming acquisition, parser, chunk, or graph readiness.",
+      "audit_evidence": [
+        "S05 B01_missing_m030_catalog_records: selection.json reports 2 missing_from_article_catalog refs: stanford:cs224n:gradient-notes and arxiv:2605.29548.",
+        "S03 article_catalog claim_state=partial with next action to register metadata-only catalog rows and rebuild/validate index rows while keeping network_fetch_attempted=false.",
+        "S05 E01_url_intake_to_article_catalog continuity_state=partial and E02_article_catalog_to_source_acquisition continuity_state=blocked_for_missing_m030_catalog_records."
+      ],
+      "likely_touched_files_or_modules": [
+        "scripts/register_m027_mixed_source_corpus.py",
+        "data/article_catalog/index.json",
+        "data/article_catalog/catalog.json",
+        "data/article_catalog/article_catalog/**/article.json",
+        "data/article_catalog/schemas/article-schema.v00.01.json",
+        "data/article_catalog/schemas/article-catalog-schema.v00.01.json",
+        "tests/test_m027_mixed_source_catalog.py",
+        "scripts/verify_m025_article_catalog.py"
+      ],
+      "module_refs": [
+        "metadata_only_catalog_registration",
+        "m030_requested_ref_intake"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R036",
+          "impact": "Preserves command/input/output hash and context provenance for generated catalog artifacts."
+        },
+        {
+          "id": "R040",
+          "impact": "Advances the project-wide audit constraint by keeping registration bounded, local, and evidence-backed."
+        },
+        {
+          "id": "R027",
+          "impact": "Removes the first blocker before parser/conversion and graph-readiness evidence can be replayed."
+        }
+      ],
+      "acceptance_signals": [
+        "Both missing normalized identities are represented as metadata-only catalog records.",
+        "Article catalog index rebuild/validation passes.",
+        "network_fetch_attempted remains false for registration-only work.",
+        "No parser_ready_claimed, chunk_ready_claimed, kg_readiness_claimed, graph_write_attempted, or production_persistence_attempted flags become true."
+      ],
+      "blocks_until_complete": [
+        "catalog_backed_acquisition_replay",
+        "parser_conversion_replay",
+        "chunking_replay",
+        "graph_readiness_review_package",
+        "graph_import_boundary_hardening"
+      ]
+    },
+    {
+      "rank": 2,
+      "option_id": "catalog_backed_acquisition_replay",
+      "title": "Catalog-backed acquisition replay for requested refs",
+      "recommendation": "Do after catalog coverage remediation.",
+      "risk": "medium",
+      "dependency_state": "Blocked until missing M030 refs have stable catalog article_ref and variant boundaries.",
+      "why_ranked_here": "Once catalog boundaries exist, acquisition replay creates the local source/PDF artifacts needed by loader and parser stages. It directly addresses B02 and converts source_acquisition from blocked to replay-evidenced without touching graph import.",
+      "audit_evidence": [
+        "S05 B02_abs_without_local_pdf_artifact: universal-loader-evidence-summary.json reports upstream_pdf_arxiv_abs_no_local_pdf_artifact=15.",
+        "S03 source_acquisition claim_state=blocked with next action to replay controlled acquisition for the two missing refs and include already-cataloged refs in replay scope.",
+        "S05 E02_article_catalog_to_source_acquisition continuity_state=blocked_for_missing_m030_catalog_records."
+      ],
+      "likely_touched_files_or_modules": [
+        "scripts/capture_m027_mixed_source_sources.py",
+        "scripts/verify_m027_source_acquisition_boundary.py",
+        "tests/test_m027_source_acquisition_boundary.py",
+        "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json",
+        "data/article_catalog/index.json",
+        "data/article_catalog/catalog.json",
+        "data/article_corpora/<next-milestone-corpus>/acquisition-events.jsonl",
+        "data/article_corpora/<next-milestone-corpus>/acquisition-summary.json"
+      ],
+      "module_refs": [
+        "mixed_source_capture_boundary",
+        "local_ingestion_loader_and_evidence_bridge"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R024",
+          "impact": "Strengthens partial preprocessing/source evidence before staged KG validation."
+        },
+        {
+          "id": "R027",
+          "impact": "Creates source artifacts required before parser/conversion and graph-readiness quality replay."
+        },
+        {
+          "id": "R036",
+          "impact": "Adds replay events and summaries with provenance and stable artifact hashes."
+        }
+      ],
+      "acceptance_signals": [
+        "Acquisition events and summary exist for all four requested identities or emit typed per-ref blockers.",
+        "Local source artifact paths are safe, bounded, and linked to catalog records.",
+        "Loader evidence can classify acquired artifacts with provenance, diagnostics, and safety flags.",
+        "source_acquisition_completed is only true for refs with real local captures."
+      ],
+      "blocks_until_complete": [
+        "parser_conversion_replay",
+        "chunking_replay",
+        "graph_readiness_review_package",
+        "graph_import_boundary_hardening"
+      ]
+    },
+    {
+      "rank": 3,
+      "option_id": "parser_conversion_replay",
+      "title": "Parser and conversion replay for acquired artifacts",
+      "recommendation": "Do after catalog-backed acquisition replay has artifacts or typed blockers.",
+      "risk": "medium",
+      "dependency_state": "Requires loader-classified local source/PDF artifacts with provenance and parser-readiness flags.",
+      "why_ranked_here": "Parser/conversion is the next blocked handoff after acquisition. It is required before chunk evidence can be generated, but it should not run on metadata-only or missing-source variants.",
+      "audit_evidence": [
+        "S03 parser_conversion claim_state=blocked with next actions to classify the Stanford PDF through local parser path and replay arXiv PDF/HTML conversion quality.",
+        "S05 E04_loader_evidence_to_parser_conversion continuity_state=conditional_on_parser_ready_local_artifact.",
+        "S04 R027 and R029 remain partial until parser/conversion and graph-readiness evidence exists."
+      ],
+      "likely_touched_files_or_modules": [
+        "scripts/convert_m027_source_quality_boundary.py",
+        "scripts/verify_m027_conversion_quality_boundary.py",
+        "src/arxiv_archive/full_text.py",
+        "src/arxiv_archive/parsing/parser.py",
+        "tests/test_m027_conversion_quality_boundary.py",
+        "tests/test_page_index.py",
+        "data/article_corpora/<next-milestone-corpus>/conversion-events.jsonl",
+        "data/article_corpora/<next-milestone-corpus>/conversion-summary.json"
+      ],
+      "module_refs": [
+        "conversion_quality_and_parser_boundary",
+        "local_ingestion_loader_and_evidence_bridge"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R024",
+          "impact": "Moves preprocessing evidence from partial smoke coverage toward replayed parser/conversion coverage."
+        },
+        {
+          "id": "R027",
+          "impact": "Produces conversion diagnostics required before graph-readiness quality benchmark work."
+        },
+        {
+          "id": "R029",
+          "impact": "Begins the evidence chain needed before any import-ready typed package can be considered."
+        }
+      ],
+      "acceptance_signals": [
+        "Parser-ready artifacts produce converted text with sha256 and byte_size.",
+        "Metadata-only or not_parser_ready variants remain explicit refusals, not silent successes.",
+        "Raw text or binary payloads are not embedded into metadata-only outputs.",
+        "parser_ready_claimed remains false for unreplayed or refused refs."
+      ],
+      "blocks_until_complete": [
+        "chunking_replay",
+        "graph_readiness_review_package",
+        "graph_import_boundary_hardening"
+      ]
+    },
+    {
+      "rank": 4,
+      "option_id": "chunking_replay",
+      "title": "Chunking replay and evidence-path validation",
+      "recommendation": "Do after parser/conversion replay proves usable converted text.",
+      "risk": "medium",
+      "dependency_state": "Requires converted text artifacts and parsed element streams for parser-ready refs.",
+      "why_ranked_here": "Chunk evidence is future-scope until parser output exists. It should follow parser replay and must preserve retrieval-only versus graph-import-eligible distinctions.",
+      "audit_evidence": [
+        "S03 chunking claim_state=future-scope with next actions to run PageIndex/semantic chunk evidence only after parser output is available and usable.",
+        "S05 E05_parser_conversion_to_chunking continuity_state=covered_for_existing_converted_variants_future_scope_for_m030_requested_refs.",
+        "S05 failure modes require zero-chunk parser-ready variants and evidence_path_count=0 to block readiness promotion."
+      ],
+      "likely_touched_files_or_modules": [
+        "src/arxiv_archive/page_index.py",
+        "src/arxiv_archive/indexing/page_index.py",
+        "src/arxiv_archive/evidence.py",
+        "tests/test_evidence_paths.py",
+        "tests/test_page_index.py",
+        "scripts/replay_m027_end_to_end_mixed_replay.py",
+        "data/article_corpora/<next-milestone-corpus>/chunk-events.jsonl",
+        "data/article_corpora/<next-milestone-corpus>/chunk-summary.json"
+      ],
+      "module_refs": [
+        "pageindex_semantic_chunk_evidence",
+        "current_pipeline_and_end_to_end_replay"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R024",
+          "impact": "Adds chunk/pre-KG preprocessing evidence without claiming KG import readiness."
+        },
+        {
+          "id": "R029",
+          "impact": "Provides evidence paths and chunk package metrics needed by future import-ready package checks."
+        },
+        {
+          "id": "R050",
+          "impact": "Moves toward deterministic pre-KG manifests with stable IDs, source spans, candidate links, review states, and kg_import_allowed=false."
+        }
+      ],
+      "acceptance_signals": [
+        "Chunk IDs, section anchors, bounds, source spans, and repair diagnostics are recorded.",
+        "Parser-ready variants with zero chunks fail closed with explicit diagnostics.",
+        "Retrieval-only chunks remain distinct from import-eligible chunks.",
+        "chunk_ready_claimed remains false for unreplayed or insufficient refs."
+      ],
+      "blocks_until_complete": [
+        "graph_readiness_review_package",
+        "graph_import_boundary_hardening"
+      ]
+    },
+    {
+      "rank": 5,
+      "option_id": "graph_readiness_review_package",
+      "title": "Graph-readiness reviewer package generation and independent review gate",
+      "recommendation": "Do after chunking replay produces complete evidence paths.",
+      "risk": "high",
+      "dependency_state": "Requires source, parser, chunk, evidence-path, and source-span coverage for each candidate ref.",
+      "why_ranked_here": "This is necessary before any trusted KG claim, but it is high-risk because a false positive could authorize graph-import eligibility. It must remain a review package and gate, not an import operation.",
+      "audit_evidence": [
+        "S03 graph_readiness_review claim_state=future-scope with next action to create reviewer packets from chunk evidence and require independent review before import eligibility.",
+        "S05 E06_chunking_to_graph_readiness_review continuity_state=not_ready_for_trusted_kg_claim.",
+        "S04 R051 and R052 are gated_future_scope until review/AI-related validation fixtures exist."
+      ],
+      "likely_touched_files_or_modules": [
+        "src/arxiv_archive/evidence.py",
+        "src/arxiv_archive/graph_readiness_export.py",
+        "src/arxiv_archive/graph_readiness_review.py",
+        "tests/test_graph_readiness_export.py",
+        "tests/test_graph_readiness_review.py",
+        "data/article_corpora/<next-milestone-corpus>/graph-readiness-review/**",
+        "data/article_corpora/<next-milestone-corpus>/graph-readiness-events.jsonl"
+      ],
+      "module_refs": [
+        "graph_readiness_export_and_independent_review",
+        "pageindex_semantic_chunk_evidence"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R027",
+          "impact": "Provides the graph-readiness quality review evidence required before positive readiness claims."
+        },
+        {
+          "id": "R029",
+          "impact": "Establishes the independent review gate needed before import-ready typed packages are accepted."
+        },
+        {
+          "id": "R050",
+          "impact": "Produces review-state manifests while preserving kg_import_allowed=false until gates pass."
+        },
+        {
+          "id": "R051",
+          "impact": "Can later host schema-validated review fixtures, but remains gated until no-import authorization boundaries are proven."
+        },
+        {
+          "id": "R052",
+          "impact": "Can later supply deterministic benchmark baselines before any optimizer activation recommendation."
+        }
+      ],
+      "acceptance_signals": [
+        "Reviewer packets include source spans, evidence paths, chunk metrics, and explicit unsafe-to-claim reasons.",
+        "Independent review decision events are required before any trusted_kg_import_allowed transition.",
+        "Refs lacking source, parser, chunk, or reviewer evidence remain refused.",
+        "kg_readiness_claimed remains false without completed independent review."
+      ],
+      "blocks_until_complete": [
+        "graph_import_boundary_hardening"
+      ]
+    },
+    {
+      "rank": 6,
+      "option_id": "graph_import_boundary_hardening",
+      "title": "Graph import boundary hardening and fail-closed rehearsal",
+      "recommendation": "Do last, and only as no-write rehearsal until review gates pass.",
+      "risk": "high",
+      "dependency_state": "Requires completed graph-readiness review and import contract metrics; must not bypass no-write constraints.",
+      "why_ranked_here": "Import boundary work is important but should not lead the next implementation milestone. M030 evidence says graph import is unsafe-to-claim, so this option should harden refusal/no-write behavior before any real import path is enabled.",
+      "audit_evidence": [
+        "S05 B03_retrieval_only_not_graph_import_ready: M027 baseline and replay summaries keep graph_import_allowed=false, trusted_kg_import_allowed=false, ladybugdb_written=false, and production_import_attempted=false.",
+        "S03 graph_import_boundary claim_state=unsafe-to-claim with next action to use fail-closed import rehearsal only after graph-readiness review passes.",
+        "S05 E07_graph_readiness_review_to_graph_import_boundary continuity_state=fail_closed_no_import_attempted."
+      ],
+      "likely_touched_files_or_modules": [
+        "src/arxiv_archive/chunk_import_contract.py",
+        "src/arxiv_archive/import_boundary_rehearsal.py",
+        "src/arxiv_archive/staging/import_boundary.py",
+        "tests/test_import_ready_contract.py",
+        "tests/test_import_boundary_rehearsal.py",
+        "data/article_corpora/<next-milestone-corpus>/import-boundary-rehearsal-summary.json"
+      ],
+      "module_refs": [
+        "fail_closed_import_contract_and_rehearsal",
+        "graph_readiness_export_and_independent_review"
+      ],
+      "requirements_advanced": [
+        {
+          "id": "R029",
+          "impact": "Hardens the final gate for import-ready typed packages without claiming production import readiness."
+        },
+        {
+          "id": "R050",
+          "impact": "Preserves kg_import_allowed=false unless all import contract and review gates pass."
+        },
+        {
+          "id": "R040",
+          "impact": "Keeps graph/LadybugDB write risk bounded by explicit go/no-go decisions and failure-mode analysis."
+        }
+      ],
+      "acceptance_signals": [
+        "import_ready=false or import_eligible_chunk_count=0 blocks graph import deterministically.",
+        "trusted_kg_import_allowed=false keeps graph_import_allowed=false.",
+        "ladybugdb_written=false and production_import_attempted=false remain invariant in no-write rehearsal.",
+        "Any write-capable path fails closed rather than attempting LadybugDB writes from retrieval-only chunks."
+      ],
+      "blocks_until_complete": []
+    }
+  ],
+  "recommended_next_milestone_shape": {
+    "title": "Catalog-backed replay to graph-readiness refusal boundary",
+    "strategy": "Implement the first safe vertical path through catalog registration, acquisition replay, parser/conversion replay, chunk evidence, and graph-readiness review package generation while preserving no-write graph/import boundaries.",
+    "candidate_slices": [
+      {
+        "slice_id": "S01",
+        "title": "Metadata-only catalog remediation",
+        "covers_options": [
+          "catalog_coverage_remediation"
+        ],
+        "acceptance_criteria": [
+          "stanford:cs224n:gradient-notes and arxiv:2605.29548 exist as metadata-only catalog rows.",
+          "Catalog index validation passes.",
+          "No network fetch, parser, chunk, KG readiness, graph write, or production persistence claim is made."
+        ]
+      },
+      {
+        "slice_id": "S02",
+        "title": "Catalog-backed source acquisition and loader evidence replay",
+        "covers_options": [
+          "catalog_backed_acquisition_replay"
+        ],
+        "acceptance_criteria": [
+          "Replay emits acquisition events and summaries for all four requested identities or typed blockers.",
+          "Loader evidence links every successful artifact to catalog identity, source path, provenance, and diagnostics."
+        ]
+      },
+      {
+        "slice_id": "S03",
+        "title": "Parser/conversion replay with refusal diagnostics",
+        "covers_options": [
+          "parser_conversion_replay"
+        ],
+        "acceptance_criteria": [
+          "Parser-ready artifacts produce verified converted text artifacts.",
+          "Metadata-only and not-parser-ready variants remain explicit fail-closed refusals."
+        ]
+      },
+      {
+        "slice_id": "S04",
+        "title": "Chunk evidence replay and graph-readiness package",
+        "covers_options": [
+          "chunking_replay",
+          "graph_readiness_review_package"
+        ],
+        "acceptance_criteria": [
+          "Chunk packages include stable IDs, section anchors, source spans, evidence paths, and diagnostics.",
+          "Reviewer packets are generated but kg_import_allowed remains false until independent review completes."
+        ]
+      },
+      {
+        "slice_id": "S05",
+        "title": "No-write graph import boundary rehearsal",
+        "covers_options": [
+          "graph_import_boundary_hardening"
+        ],
+        "acceptance_criteria": [
+          "Import contract refusal/no-write states are deterministic and tested.",
+          "ladybugdb_written=false and production_import_attempted=false remain true invariants for this milestone."
+        ]
+      }
+    ],
+    "out_of_scope_until_later": [
+      "Production graph import or LadybugDB writes.",
+      "Trusted KG import approval without completed independent graph-readiness review.",
+      "DSPy, RLM, MiniMax, or optimizer activation beyond explicitly gated fixtures.",
+      "Future 30-paper deviation scans or automated +10 validation-batch loops."
+    ]
+  },
+  "fail_closed_constraints": [
+    "source_acquisition_completed=false for M030 selection gaps until real local captures exist.",
+    "parser_ready_claimed=false for unreplayed M030 refs.",
+    "chunk_ready_claimed=false for unreplayed M030 refs.",
+    "kg_readiness_claimed=false without completed independent review.",
+    "graph_write_attempted=false.",
+    "production_persistence_attempted=false.",
+    "ladybugdb_written=false unless a future explicitly approved write-capable milestone changes the boundary."
+  ],
+  "verification_contract": {
+    "json_validity": "uv run python -m json.tool doc/architecture/m030_next_implementation_roadmap.json",
+    "health_signal": "Roadmap recommendations link to M030 audit evidence, module/function references, requirement IDs, and fail-closed constraints.",
+    "failure_signal": "Any option missing evidence-backed module/function references, dependencies, requirement impact, or graph/import no-write constraints is not ready for handoff."
+  }
+}
