@@ -20,13 +20,16 @@ import sys
 import tempfile
 import time
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
 from arxiv_archive.chunking.chunker import parse_markdown_structure
-from arxiv_archive.graph_readiness_export import CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION
+from arxiv_archive.graph_readiness_export import (
+    CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION,
+)
 from arxiv_archive.graph_readiness_export import SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION
 from arxiv_archive.graph_readiness_review import generate_review_bundles, validate_review_artifacts
 
@@ -62,7 +65,7 @@ EXPECTED_FALSE_FLAGS = {
     "vectors_included",
     "raw_payload_embedded_in_metadata",
 }
-FAIL_CLOSED_FLAGS = {flag: False for flag in sorted(EXPECTED_FALSE_FLAGS)}
+FAIL_CLOSED_FLAGS = dict.fromkeys(sorted(EXPECTED_FALSE_FLAGS), False)
 FORBIDDEN_PAYLOAD_KEYS = {
     "text",
     "raw_text",
