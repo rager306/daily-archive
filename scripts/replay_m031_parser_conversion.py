@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 import time
@@ -290,6 +291,7 @@ def extract_pdf_text(path: Path) -> tuple[str, dict[str, Any], dict[str, int], s
 
 def extract_html_text(path: Path) -> tuple[str, dict[str, Any], dict[str, int]]:
     markup = path.read_text(encoding="utf-8", errors="replace")[:MAX_TEXT_CHARS]
+    fallback_stub = "deterministic fallback capture" in markup.lower()
     soup = BeautifulSoup(markup, "html.parser")
     for tag in soup(["script", "style", "noscript", "svg", "nav", "header", "footer"]):
         tag.decompose()
@@ -300,8 +302,11 @@ def extract_html_text(path: Path) -> tuple[str, dict[str, Any], dict[str, int]]:
     if not text_parts and article:
         text_parts = [article.get_text(" ", strip=True)]
     text = clean_text("\n".join(part for part in text_parts if part))[:MAX_TEXT_CHARS]
-    structure = {"paragraph_count": len(paragraphs), "heading_count": len(headings), "article_tag_count": len(soup.find_all("article"))}
-    return text, text_quality(text), structure
+    quality = text_quality(text, warning="captured fallback HTML stub is not parser-ready content" if fallback_stub else None)
+    if fallback_stub:
+        quality["status"] = "low_quality"
+    structure = {"paragraph_count": len(paragraphs), "heading_count": len(headings), "article_tag_count": len(soup.find_all("article")), "fallback_stub_detected": int(fallback_stub)}
+    return text, quality, structure
 
 
 def verify_source(row: Mapping[str, Any], source_path: Path) -> tuple[bool, str | None, int, str | None]:
@@ -420,6 +425,9 @@ def replay_conversion(*, selection_path: Path, loader_summary_path: Path, source
     loader_summary = load_json_object(loader_summary_path)
     rows = validate_inputs(selection, loader_summary)
     output_dir.mkdir(parents=True, exist_ok=True)
+    converted_root = output_dir / CONVERTED_TEXT_DIR_NAME
+    if converted_root.exists():
+        shutil.rmtree(converted_root)
     return [convert_row(row, source_dir=source_dir, output_dir=output_dir, index=index) for index, row in enumerate(rows)]
 
 
@@ -484,8 +492,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "",
         f"- Schema: `{summary.get('schema_version')}`",
         f"- Status: `{summary.get('status')}`",
-        f"- Row count: {summary.get('row_count')}`",
-        f"- Parser-ready converted rows: {summary.get('parser_ready_count')}`",
+        f"- Row count: {summary.get('row_count')}",
+        f"- Parser-ready converted rows: {summary.get('parser_ready_count')}",
         f"- Counts: `{dict(counts)}`",
         "- Network fetch attempted: `False`",
         "- arxiv2md invoked: `False`",

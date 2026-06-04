@@ -274,6 +274,36 @@ def test_parser_conversion_replay_refuses_low_quality_metadata_blocked_unsafe_an
     assert missing["safe_path"] == "missing/source/original.pdf"
 
 
+def test_parser_conversion_replay_refuses_real_fallback_html_stub_and_removes_stale_converted_text(tmp_path: Path) -> None:
+    selection, loader_summary, source_root, output_dir = _write_inputs(tmp_path)
+    fallback_path = source_root / "arxiv/cs-cl/2507.19457/source/article.html"
+    fallback_path.write_text(
+        "<html><body><h1>GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning</h1>"
+        "<p>Deterministic fallback capture for arxiv_html; live acquisition failed with HTTPError.</p>"
+        "<p>Canonical URL: https://arxiv.org/abs/2507.19457</p>"
+        "<p>This local source preserves the smoke-corpus loader contract without embedding payload text in metadata.</p>"
+        "</body></html>",
+        encoding="utf-8",
+    )
+    loader_payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    html_row = next(row for row in loader_payload["results"] if row["source_role"] == "arxiv_html")
+    html_row["sha256"] = sha256_file(fallback_path)
+    html_row["byte_size"] = fallback_path.stat().st_size
+    _write_json(loader_summary, loader_payload)
+    stale = output_dir / "converted-text" / "arxiv_cs-cl_2507.19457" / "arxiv_html.txt"
+    _write(stale, "stale parser-ready html should be removed")
+
+    assert main(["--selection", str(selection), "--loader-summary", str(loader_summary), "--source-dir", str(source_root), "--output-dir", str(output_dir)]) == 0
+    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
+    html = _row(summary, "arxiv_html")
+
+    assert html["status"] == "low_quality"
+    assert html["diagnostic_code"] == "converted_text_low_quality"
+    assert html["parser_ready"] is False
+    assert html["bounded_extraction"]["fallback_stub_detected"] == 1
+    assert not stale.exists()
+
+
 def test_parser_conversion_replay_metadata_and_reports_do_not_embed_raw_payloads(tmp_path: Path) -> None:
     summary, _diagnostics, report, output_dir = _run(tmp_path)
     metadata = (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
