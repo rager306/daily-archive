@@ -1,0 +1,255 @@
+{
+  "artifact_kind": "m031_final_progression_and_continuity_checkpoint",
+  "diagnostic_contract": {
+    "required_row_count": 7,
+    "required_stage_order": [
+      "url_intake",
+      "article_catalog",
+      "source_acquisition",
+      "loader_evidence",
+      "parser_conversion",
+      "chunking",
+      "graph_readiness_review",
+      "graph_import_boundary"
+    ],
+    "stable_failure_codes": [
+      "M031_CONTINUITY_INPUT_MISSING",
+      "M031_CONTINUITY_INVALID_JSON",
+      "M031_CONTINUITY_INVALID_JSONL",
+      "M031_CONTINUITY_ROW_COUNT",
+      "M031_CONTINUITY_STAGE_EVIDENCE",
+      "M031_IMPORT_BOUNDARY_REFUSAL_ARTIFACT_MISSING",
+      "M031_IMPORT_BOUNDARY_PERMISSIVE",
+      "M031_UNSAFE_FAIL_CLOSED_FLAG",
+      "M031_COMPLETED_REVIEW_WITHOUT_VERDICT",
+      "M031_RAW_PAYLOAD_LEAKAGE"
+    ]
+  },
+  "fail_closed_flags": {
+    "chunk_text_included": false,
+    "embeddings_included": false,
+    "graph_import_allowed": false,
+    "graph_write_attempted": false,
+    "ladybugdb_written": false,
+    "network_fetch_attempted": false,
+    "production_import_attempted": false,
+    "production_persistence_attempted": false,
+    "raw_text_included": false,
+    "trusted_kg_import_allowed": false,
+    "vectors_included": false
+  },
+  "failure_modes_gate_q5": [
+    "Filesystem: missing JSON/JSONL/Markdown artifacts fail with M031_CONTINUITY_INPUT_MISSING before writes.",
+    "Malformed artifacts: invalid JSON/JSONL fail with M031_CONTINUITY_INVALID_JSON or M031_CONTINUITY_INVALID_JSONL.",
+    "Stale counts or rows: missing seven-row/stage evidence fails with M031_CONTINUITY_ROW_COUNT or M031_CONTINUITY_STAGE_EVIDENCE.",
+    "Permissive graph/import/LadybugDB flags fail with M031_UNSAFE_FAIL_CLOSED_FLAG or M031_IMPORT_BOUNDARY_PERMISSIVE.",
+    "Completed-review claims without PASS/FLAG/REPAIR/BLOCKER verdict evidence fail with M031_COMPLETED_REVIEW_WITHOUT_VERDICT."
+  ],
+  "load_profile_gate_q6": {
+    "expected_load": "7 progression rows, 8 stages per row, 8 source/checkpoint artifacts, 7 import refusal diagnostics",
+    "protection": "single-pass row joins by deterministic keys, bounded local files, no raw payload reads, no remote calls, no background processes, no database writes",
+    "ten_x_breakpoint": "local JSON/Markdown serialization and recursive metadata scanning saturate first at about 70 rows; there is no network, subprocess, model, graph, or LadybugDB runtime path"
+  },
+  "milestone_id": "M031-vwpd8e",
+  "negative_tests_gate_q7": [
+    "missing stage evidence",
+    "missing progression row",
+    "unsafe permissive flags",
+    "raw payload leakage",
+    "missing import-boundary refusal artifacts",
+    "completed-review claim without verdict evidence"
+  ],
+  "progression_matrix_path": "data/article_corpora/m031-catalog-backed-replay-v1/progression-matrix.json",
+  "review_verdict_state": {
+    "completed_review_event_count": 0,
+    "event_count": 2,
+    "verdict_event_count": 0
+  },
+  "row_count": 7,
+  "schema_version": "m031-process-continuity-audit.v1",
+  "selection_id": "m031-catalog-backed-replay-v1",
+  "slice_id": "S05",
+  "source_artifacts": [
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+      "role": "url intake and article catalog selection"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/source-acquisition-summary.json",
+      "role": "source acquisition evidence"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/loader-evidence-summary.json",
+      "role": "loader evidence"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/conversion-quality/conversion-quality-summary.json",
+      "role": "parser conversion replay"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/chunk-evidence-summary.json",
+      "role": "chunk/evidence replay"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/independent-review-events.jsonl",
+      "role": "pending independent review events"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-summary.json",
+      "role": "refusal-only import rehearsal summary"
+    },
+    {
+      "path": "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-diagnostics.jsonl",
+      "role": "per-candidate import refusal diagnostics"
+    }
+  ],
+  "stage_contract": [
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/selection.json"
+      ],
+      "failure_modes": [
+        "missing requested ref",
+        "typed catalog blocker suppressed",
+        "network fetch attempted"
+      ],
+      "owner": "S01/S02 catalog-backed selection",
+      "stage_id": "url_intake",
+      "verifiers": [
+        "scripts/verify_m031_catalog_backed_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+        "data/article_corpora/m031-catalog-backed-replay-v1/replay-closeout-summary.json"
+      ],
+      "failure_modes": [
+        "catalog JSON absent",
+        "index path drift",
+        "placeholder treated as cataloged"
+      ],
+      "owner": "article catalog index lookup",
+      "stage_id": "article_catalog",
+      "verifiers": [
+        "scripts/verify_m031_catalog_backed_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/source-acquisition-summary.json"
+      ],
+      "failure_modes": [
+        "missing local source path",
+        "hash/size drift",
+        "unexpected network fetch"
+      ],
+      "owner": "S02 local source acquisition replay",
+      "stage_id": "source_acquisition",
+      "verifiers": [
+        "scripts/verify_m031_catalog_backed_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/loader-evidence-summary.json"
+      ],
+      "failure_modes": [
+        "loader row absent",
+        "metadata-only PDF treated as parsed text",
+        "raw payload embedded"
+      ],
+      "owner": "S02 loader evidence replay",
+      "stage_id": "loader_evidence",
+      "verifiers": [
+        "scripts/verify_m031_catalog_backed_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/conversion-quality/conversion-quality-summary.json",
+        "data/article_corpora/m031-catalog-backed-replay-v1/parser-conversion-closeout-summary.json"
+      ],
+      "failure_modes": [
+        "parser-ready count drift",
+        "low-quality HTML promoted",
+        "permissive graph flag"
+      ],
+      "owner": "S03 parser conversion replay",
+      "stage_id": "parser_conversion",
+      "verifiers": [
+        "scripts/verify_m031_parser_conversion_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/chunk-evidence-summary.json",
+        "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence-closeout-summary.json"
+      ],
+      "failure_modes": [
+        "missing zero-chunk refusal",
+        "chunk text leaked",
+        "import-eligible chunks claimed"
+      ],
+      "owner": "S04 chunk evidence replay",
+      "stage_id": "chunking",
+      "verifiers": [
+        "scripts/verify_m031_chunk_evidence_replay.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/independent-review-events.jsonl",
+        "data/article_corpora/m031-catalog-backed-replay-v1/graph-readiness-review/independent-review-summary.md",
+        "data/article_corpora/m031-catalog-backed-replay-v1/graph-readiness-review/arxiv_cs-cl_2507.19457_arxiv_pdf-review.md"
+      ],
+      "failure_modes": [
+        "completed review claimed without verdict",
+        "review placeholders accepted",
+        "structural route label treated as semantic approval"
+      ],
+      "owner": "S04 independent review handoff",
+      "stage_id": "graph_readiness_review",
+      "verifiers": [
+        "arxiv_archive.graph_readiness_review validate-only",
+        "scripts/verify_m031_process_continuity_audit.py"
+      ]
+    },
+    {
+      "evidence": [
+        "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-summary.json",
+        "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-diagnostics.jsonl",
+        "data/article_corpora/m031-catalog-backed-replay-v1/import-boundary-rehearsal/import-boundary-report.md"
+      ],
+      "failure_modes": [
+        "missing refusal artifact",
+        "accepted/import-eligible count above zero",
+        "LadybugDB write flag true"
+      ],
+      "owner": "S05 refusal-only import boundary rehearsal",
+      "stage_id": "graph_import_boundary",
+      "verifiers": [
+        "scripts/replay_m031_import_boundary_rehearsal.py",
+        "scripts/verify_m031_process_continuity_audit.py"
+      ]
+    }
+  ],
+  "stage_order": [
+    "url_intake",
+    "article_catalog",
+    "source_acquisition",
+    "loader_evidence",
+    "parser_conversion",
+    "chunking",
+    "graph_readiness_review",
+    "graph_import_boundary"
+  ],
+  "structural_route_label_notice": "ok_for_graph and trusted_graph route labels are structural states only while independent semantic review remains incomplete; they are not graph import approval.",
+  "unsafe_claims_to_preserve": [
+    "Do not claim parser readiness for low-quality, metadata-only, blocked, or placeholder-pruned rows.",
+    "Do not claim chunk readiness for zero-chunk refusal rows.",
+    "Do not treat ok_for_graph or trusted_graph labels as semantic graph approval before independent review verdict evidence exists.",
+    "Do not enable graph_import_allowed, trusted_kg_import_allowed, production_import_attempted, graph_write_attempted, production_persistence_attempted, or ladybugdb_written.",
+    "Do not embed raw article text, chunk text, PDF bytes, HTML, embeddings, vectors, secrets, or optimizer traces in checkpoint artifacts."
+  ]
+}
