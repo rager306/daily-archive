@@ -35,16 +35,16 @@ EXPECTED_URLS = {
     },
     "https://arxiv.org/abs/2605.26099": {
         "identity": "arxiv:2605.26099",
-        "catalog_status": "missing_from_article_catalog",
+        "catalog_status": "already_cataloged",
         "prior_selection_status": "already_in_m028_selection",
     },
 }
 EXPECTED_COUNTS = {
     "url_refs": 4,
     "unique_normalized_identities": 4,
-    "already_in_article_catalog": 1,
+    "already_in_article_catalog": 2,
     "already_in_m028_selection": 1,
-    "missing_from_article_catalog": 3,
+    "missing_from_article_catalog": 2,
     "new_to_m028_selection": 3,
 }
 FALSE_SELECTION_FLAGS = {
@@ -186,12 +186,12 @@ def validate_report(report_path: Path, selection: dict[str, Any]) -> list[str]:
         if expected_phrase not in text:
             errors.append(f"M030_INTAKE_REPORT_STATUS: report missing phrase {expected_phrase!r}")
     required_phrases = [
-        "only one is already fully present in `article_catalog`",
+        "two identities are now represented in `article_catalog`",
         "does not claim source acquisition",
         "parser readiness",
         "chunk readiness",
         "graph readiness",
-        "split pipeline state",
+        "stale missing-status drift",
     ]
     for phrase in required_phrases:
         if phrase not in text:
@@ -269,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sys.stdout.write(
         "M030 requested-ref intake validation passed: "
-        "4 refs, 1 cataloged, 3 missing from catalog, graph/import claims fail-closed.\n"
+        "4 refs, 2 cataloged, 2 missing from catalog, graph/import claims fail-closed.\n"
     )
     return 0
 
