@@ -604,10 +604,10 @@ def main(argv: list[str] | None = None) -> int:
         atomic_write_text(args.write_report, report)
         for artifact_path in (args.write_summary, args.write_diagnostics, args.write_report):
             assert_metadata_artifact_is_redacted(artifact_path)
-        print(json.dumps({"status": summary["status"], "counts": summary["counts"], "summary": args.write_summary.as_posix()}, sort_keys=True))
+        sys.stdout.write(json.dumps({"status": summary["status"], "counts": summary["counts"], "summary": args.write_summary.as_posix()}, sort_keys=True) + "\n")
         return 0 if summary["counts"]["failed"] == 0 else 1
     except AcquisitionError as exc:
-        print(
+        sys.stderr.write(
             json.dumps(
                 {
                     "status": "failed",
@@ -617,8 +617,8 @@ def main(argv: list[str] | None = None) -> int:
                     "article_ref": exc.article_ref,
                 },
                 sort_keys=True,
-            ),
-            file=sys.stderr,
+            )
+            + "\n"
         )
         return 2
 

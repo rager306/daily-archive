@@ -14,8 +14,9 @@ import json
 import os
 import sys
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
-from typing import Any, Mapping
+from typing import Any
 
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S02"
@@ -531,7 +532,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_selection(args.source_selection, args.catalog, args.index)
         if not args.validate_only:
             atomic_write_json(args.output, payload)
-        print(
+        sys.stdout.write(
             json.dumps(
                 {
                     "status": "passed",
@@ -541,10 +542,11 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 sort_keys=True,
             )
+            + "\n"
         )
         return 0
     except SelectionError as exc:
-        print(
+        sys.stderr.write(
             json.dumps(
                 {
                     "status": "failed",
@@ -554,8 +556,8 @@ def main(argv: list[str] | None = None) -> int:
                     "article_ref": exc.article_ref,
                 },
                 sort_keys=True,
-            ),
-            file=sys.stderr,
+            )
+            + "\n"
         )
         return 2
 

@@ -11,19 +11,28 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from build_m031_catalog_backed_replay_selection import build_selection, main  # noqa: E402
+from replay_m031_catalog_backed_acquisition import (
+    build_summary as build_acquisition_summary,  # noqa: E402
+)
 from replay_m031_catalog_backed_acquisition import main as replay_main  # noqa: E402
 from replay_m031_catalog_backed_acquisition import replay_selection, sha256_file  # noqa: E402
 from replay_m031_catalog_backed_loader_evidence import (  # noqa: E402
     LoaderEvidenceError,
     assert_fail_closed_flags,
-    build_summary as build_loader_summary,
-    main as loader_main,
     replay_loader_evidence,
 )
+from replay_m031_catalog_backed_loader_evidence import (
+    build_summary as build_loader_summary,
+)
+from replay_m031_catalog_backed_loader_evidence import (
+    main as loader_main,
+)
+from verify_m031_catalog_backed_replay import CloseoutError, verify_contract  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_m031_catalog_backed_replay_selection.py"
 REPLAY_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_acquisition.py"
 LOADER_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_loader_evidence.py"
+CLOSEOUT_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_m031_catalog_backed_replay.py"
 REAL_SOURCE_SELECTION = Path("data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json")
 REAL_CATALOG = Path("data/article_catalog/catalog.json")
 REAL_INDEX = Path("data/article_catalog/index.json")
@@ -338,6 +347,43 @@ def _replay_fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
             "selection_id": "m031-catalog-backed-replay-v1",
             "milestone_id": "M031-vwpd8e",
             "slice_id": "S02",
+            "counts": {
+                "requested_ref_count": 4,
+                "catalog_backed_count": 3,
+                "typed_catalog_blocker_count": 1,
+                "silent_missing_count": 0,
+                "source_variant_count": 6,
+            },
+            "requested_refs": [
+                {"ref_id": "m029-ref-001", "identity": "arxiv:2507.19457", "url": "https://arxiv.org/abs/2507.19457"},
+                {
+                    "ref_id": "m029-ref-002",
+                    "identity": "stanford:cs224n:gradient-notes",
+                    "url": "https://web.stanford.edu/class/cs224n/readings/gradient-notes.pdf",
+                },
+                {"ref_id": "m029-ref-003", "identity": "arxiv:2605.29548", "url": "https://arxiv.org/abs/2605.29548"},
+                {"ref_id": "m029-ref-004", "identity": "arxiv:2605.26099", "url": "https://arxiv.org/abs/2605.26099"},
+            ],
+            "safety_flags": {
+                "metadata_only_selection": True,
+                "network_fetch_attempted": False,
+                "source_acquisition_completed": False,
+                "raw_article_text_embedded": False,
+                "raw_article_html_embedded": False,
+                "raw_pdf_bytes_embedded": False,
+                "binary_payload_embedded": False,
+                "base64_payload_embedded": False,
+                "parser_ready_claimed": False,
+                "chunk_ready_claimed": False,
+                "kg_readiness_claimed": False,
+                "graph_import_allowed": False,
+                "production_ladybugdb_write_allowed": False,
+                "trusted_kg_import_allowed": False,
+                "production_import_attempted": False,
+                "ladybugdb_written": False,
+                "graph_write_attempted": False,
+                "production_persistence_attempted": False,
+            },
             "articles": [
                 {
                     "identity": "arxiv:2507.19457",
@@ -833,3 +879,240 @@ def test_replay_m031_loader_cli_writes_summary_diagnostics_report(tmp_path: Path
     assert summary["counts"]["loader_blocked"] == 4
     assert "missing_local_source_path" in diagnostics_path.read_text(encoding="utf-8")
     assert "## Failure Modes" in report_path.read_text(encoding="utf-8")
+
+
+def _fixture_closeout_bundle(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+    selection, catalog_root, source_dir = _replay_fixture_tree(tmp_path)
+    acquisition_rows = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=source_dir)
+    acquisition_summary = build_acquisition_summary(
+        acquisition_rows,
+        selection_path=selection,
+        catalog_root=catalog_root,
+        output_dir=source_dir,
+        duration_ms=0,
+    )
+    acquisition_summary_path = tmp_path / "source-acquisition-summary.json"
+    _write_json(acquisition_summary_path, acquisition_summary)
+    loader_dir = tmp_path / "loader-evidence"
+    loader_rows = replay_loader_evidence(
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary_path,
+        source_dir=source_dir,
+        output_dir=loader_dir,
+    )
+    loader_summary = build_loader_summary(
+        loader_rows,
+        selection_path=selection,
+        acquisition_summary_path=acquisition_summary_path,
+        source_dir=source_dir,
+        output_dir=loader_dir,
+        duration_ms=0,
+    )
+    loader_summary_path = tmp_path / "loader-evidence-summary.json"
+    _write_json(loader_summary_path, loader_summary)
+    return selection, acquisition_summary_path, loader_summary_path, source_dir, loader_dir
+
+
+def test_verify_m031_closeout_cli_writes_passed_summary_diagnostics_and_report(tmp_path: Path) -> None:
+    summary_path = tmp_path / "replay-closeout-summary.json"
+    diagnostics_path = tmp_path / "replay-closeout-diagnostics.jsonl"
+    report_path = tmp_path / "replay-closeout-report.md"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CLOSEOUT_SCRIPT),
+            "--selection",
+            "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+            "--acquisition-summary",
+            "data/article_corpora/m031-catalog-backed-replay-v1/source-acquisition-summary.json",
+            "--loader-summary",
+            "data/article_corpora/m031-catalog-backed-replay-v1/loader-evidence-summary.json",
+            "--source-dir",
+            "data/article_corpora/m031-catalog-backed-replay-v1/source",
+            "--loader-dir",
+            "data/article_corpora/m031-catalog-backed-replay-v1/loader-evidence",
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["status"] == "passed"
+    assert summary["requested_ref_count"] == 4
+    assert summary["catalog_backed_count"] == 3
+    assert summary["typed_catalog_blocker_count"] == 1
+    assert summary["counts"]["captured_acquisition_rows"] == 3
+    assert summary["counts"]["loader_attempted"] == 3
+    assert summary["counts"]["loader_blocked"] == 4
+    assert "closeout_contract_passed" in diagnostics_path.read_text(encoding="utf-8")
+    report = report_path.read_text(encoding="utf-8")
+    assert "Parser readiness, conversion readiness, chunk readiness" in report
+    assert "## Failure Modes" in report
+    assert "## Load Profile" in report
+    assert "## Negative Tests" in report
+    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report
+    assert "<html" not in serialized.lower()
+    assert "base64," not in serialized.lower()
+    assert "GEPA: Reflective Prompt" not in serialized
+
+
+def test_verify_m031_closeout_rejects_omitted_blocked_row(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    payload["results"] = [row for row in payload["results"] if row["identity"] != "arxiv:2605.26099"]
+    payload["counts"] = {
+        "loader_attempted": 3,
+        "loaded": 2,
+        "loaded_metadata_only": 1,
+        "failed": 0,
+        "loader_blocked": 3,
+    }
+    _write_json(loader_summary, payload)
+
+    with pytest.raises(CloseoutError, match="expected 7 terminal rows"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_selected_variant_without_acquisition_state(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(acquisition_summary.read_text(encoding="utf-8"))
+    payload["results"] = [row for row in payload["results"] if row["variant_id"] != "abs"]
+    payload["counts"] = {"captured": 2, "blocked": 4, "failed": 0}
+    _write_json(acquisition_summary, payload)
+
+    with pytest.raises(CloseoutError, match="expected 7 terminal rows"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_loader_blocker_missing(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    blocker = next(row for row in payload["results"] if row["identity"] == "stanford:cs224n:gradient-notes")
+    blocker["status"] = "loaded"
+    blocker["loader_attempted"] = False
+    blocker["counts"] = payload.get("counts")
+    payload["counts"] = {
+        "loader_attempted": 3,
+        "loaded": 3,
+        "loaded_metadata_only": 1,
+        "failed": 0,
+        "loader_blocked": 3,
+    }
+    _write_json(loader_summary, payload)
+
+    with pytest.raises(CloseoutError, match="non-captured acquisition row is not a loader blocker"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_loader_acquisition_mismatch(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    attempted = next(row for row in payload["results"] if row["variant_id"] == "html")
+    attempted["loader_attempted"] = False
+    payload["counts"]["loader_attempted"] = 2
+    _write_json(loader_summary, payload)
+
+    with pytest.raises(CloseoutError, match="loader attempts do not match captured acquisition rows"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_loader_event_text_leakage(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    event_path = loader_dir / "arxiv" / "cs-cl" / "2507.19457" / "events.jsonl"
+    event_path.write_text('{"event":"source.load_completed","text":"fixture article html bytes"}\n', encoding="utf-8")
+
+    with pytest.raises(CloseoutError, match="metadata artifact is not redacted"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+@pytest.mark.parametrize(
+    ("flag", "value"),
+    [
+        ("graph_import_allowed", True),
+        ("production_import_attempted", True),
+        ("ladybugdb_written", True),
+    ],
+)
+def test_verify_m031_closeout_rejects_unsafe_true_flags(tmp_path: Path, flag: str, value: bool) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    payload[flag] = value
+    _write_json(loader_summary, payload)
+
+    with pytest.raises(CloseoutError, match="unsafe safety flag"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_stale_hash(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"changed bytes")
+
+    with pytest.raises(CloseoutError, match="captured hash mismatch"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
+
+
+def test_verify_m031_closeout_rejects_path_escape(tmp_path: Path) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    payload = json.loads(loader_summary.read_text(encoding="utf-8"))
+    payload["results"][0]["event_path"] = "../escape/events.jsonl"
+    _write_json(loader_summary, payload)
+
+    with pytest.raises(CloseoutError, match="unsafe relative path"):
+        verify_contract(
+            selection_path=selection,
+            acquisition_summary_path=acquisition_summary,
+            loader_summary_path=loader_summary,
+            source_dir=source_dir,
+            loader_dir=loader_dir,
+        )
