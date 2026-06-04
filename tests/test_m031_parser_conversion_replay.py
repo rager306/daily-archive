@@ -12,7 +12,8 @@ fitz = pytest.importorskip("fitz")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from replay_m031_parser_conversion import main, sha256_file  # noqa: E402
-from verify_m031_parser_conversion_replay import main as verify_main, verify  # noqa: E402
+from verify_m031_parser_conversion_replay import main as verify_main  # noqa: E402
+from verify_m031_parser_conversion_replay import verify  # noqa: E402
 
 
 def _write(path: Path, value: str | bytes) -> Path:

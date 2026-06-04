@@ -370,7 +370,7 @@ def build_closeout_summary(conversion_summary: Mapping[str, Any], findings: list
         "ladybugdb_written": False,
         "graph_write_attempted": False,
         "production_persistence_attempted": False,
-        "fail_closed_safety_flags": {flag: False for flag in sorted(EXPECTED_FALSE_FLAGS)},
+        "fail_closed_safety_flags": dict.fromkeys(sorted(EXPECTED_FALSE_FLAGS), False),
     }
 
 
