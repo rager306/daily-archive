@@ -35,7 +35,16 @@ def _safety_flags() -> dict[str, bool]:
         "vectors_included": False,
         "secrets_included": False,
         "optimizer_traces_included": False,
+        "network_fetch_attempted": False,
+        "raw_payload_embedded_in_metadata": False,
+        "chunk_ready_claimed_for_non_parser_ready_rows": False,
+        "graph_import_allowed": False,
+        "trusted_kg_import_allowed": False,
+        "kg_readiness_claimed": False,
+        "graph_write_attempted": False,
         "ladybugdb_written": False,
+        "production_ladybugdb_write_allowed": False,
+        "production_persistence_attempted": False,
         "production_import_attempted": False,
     }
 
@@ -189,6 +198,117 @@ def build_import_boundary_rehearsal_from_benchmark(
         "recommendation_status": summary.get("recommendation_status"),
     }
     return rehearsal
+
+
+def build_m031_import_boundary_rehearsal(
+    *,
+    summary_path: str | Path,
+    closeout_summary_path: str | Path,
+    graph_readiness_package_paths: list[str | Path] | tuple[str | Path, ...],
+    independent_review_events_path: str | Path,
+    rehearsal_id: str = "m031-s05-refusal-only-import-boundary",
+) -> dict[str, Any]:
+    """Build the M031 refusal-only import-boundary rehearsal from S04 artifacts.
+
+    S04 can contain structural route/state labels that look graph-ready, but the
+    independent graph-readiness output contract is still pending. This adapter
+    therefore emits one rejected candidate per S04 row: parser-ready packages are
+    refused until a completed independent review exists, and non-parser-ready
+    rows preserve their zero-chunk refusal diagnostic codes. The resulting
+    contract is metadata-only and uses the same fail-closed validator as the M005
+    negative rehearsal path.
+    """
+    summary = _read_json_object(Path(summary_path))
+    closeout_summary = _read_json_object(Path(closeout_summary_path))
+    review_events = _read_jsonl_objects(Path(independent_review_events_path))
+    graph_packages = [_read_json_object(Path(path)) for path in graph_readiness_package_paths]
+    graph_packages_by_key = {str(package.get("package_key") or package.get("paper_id")): package for package in graph_packages}
+    completed_review_package_ids = _completed_review_package_ids(review_events)
+
+    candidates: list[ImportCandidate] = []
+    for row_index, row in enumerate(_list_of_dicts(summary.get("results")), start=1):
+        package_id = str(row.get("package_key") or row.get("identity") or f"m031-row-{row_index}")
+        if row.get("parser_ready") is True and row.get("status") == "chunked":
+            graph_package = graph_packages_by_key.get(package_id, {})
+            output_completed = bool(graph_package.get("output_contract_completed"))
+            review_completed = package_id in completed_review_package_ids or bool(row.get("independent_review_completed"))
+            refused_for_review = not (output_completed and review_completed)
+            reason = "completed_independent_graph_readiness_review_required" if refused_for_review else "positive_import_blocked"
+            candidate = ImportCandidate(
+                candidate_id=canonical_import_candidate_id(method_id="m031_graph_readiness", refusal_reason=reason, index=row_index),
+                method_id="m031_graph_readiness",
+                package_id=package_id,
+                candidate_type="graph_readiness_package",
+                route=_single_key_or_none(graph_package.get("counts_by_route")) or _string_or_none(row.get("source_role")),
+                state=_single_key_or_none(graph_package.get("counts_by_state")) or _string_or_none(row.get("terminal_state")),
+                import_eligible=False,
+                refusal_reasons=(reason,),
+                remediation_hints=("independent_graph_readiness_review_required", "complete_output_contract_before_import"),
+            ).to_contract()
+            candidate.update(
+                {
+                    "review_state": graph_package.get("review_state") or row.get("review_status"),
+                    "output_contract_completed": output_completed,
+                    "independent_review_completed": review_completed,
+                    "source_json_path": row.get("json_path"),
+                    "chunk_count": int(row.get("chunk_count") or graph_package.get("chunk_count") or 0),
+                }
+            )
+        else:
+            reason = str(row.get("diagnostic_code") or row.get("refusal_code") or "non_parser_ready_zero_chunk_refusal")
+            candidate = ImportCandidate(
+                candidate_id=canonical_import_candidate_id(method_id="m031_zero_chunk_refusal", refusal_reason=reason, index=row_index),
+                method_id="m031_zero_chunk_refusal",
+                package_id=package_id,
+                candidate_type="zero_chunk_refusal",
+                route=_string_or_none(row.get("source_role")),
+                state=_string_or_none(row.get("terminal_state") or row.get("status")),
+                import_eligible=False,
+                refusal_reasons=(reason,),
+                remediation_hints=("repair_parser_ready_source_before_chunking",),
+            ).to_contract()
+            candidate.update(
+                {
+                    "review_state": row.get("review_status"),
+                    "output_contract_completed": False,
+                    "independent_review_completed": bool(row.get("independent_review_completed")),
+                    "source_json_path": row.get("json_path"),
+                    "chunk_count": int(row.get("chunk_count") or 0),
+                }
+            )
+        candidates.append(candidate)
+
+    contract = {
+        "schema_version": SCHEMA_VERSION,
+        "rehearsal_id": rehearsal_id,
+        "source_benchmark_id": str(summary.get("selection_id") or "m031-catalog-backed-replay-v1"),
+        "candidate_count": len(candidates),
+        "accepted_count": sum(1 for candidate in candidates if candidate["accepted"] is True),
+        "rejected_count": sum(1 for candidate in candidates if candidate["rejected"] is True),
+        "candidates": candidates,
+        "refusal_counts": _merge_refusals(candidates),
+        "recommendation": "positive_import_blocked",
+        "remediation_hints": [
+            "complete_independent_graph_readiness_review",
+            "keep_trusted_kg_import_disabled_until_review_completion",
+        ],
+        "caveats": ["m031_refusal_only_import_boundary_rehearsal", "metadata_only_no_write_rehearsal"],
+        "source_m031_summary": {
+            "row_count": summary.get("row_count"),
+            "parser_ready_row_count": summary.get("parser_ready_row_count"),
+            "zero_chunk_refusal_count": summary.get("zero_chunk_refusal_count"),
+            "package_count": summary.get("package_count"),
+            "graph_readiness_package_count": summary.get("graph_readiness_package_count"),
+            "pending_graph_readiness_review_count": closeout_summary.get("pending_graph_readiness_review_count"),
+            "independent_review_completed_count": closeout_summary.get("independent_review_completed_count"),
+            "trusted_kg_import_allowed": closeout_summary.get("trusted_kg_import_allowed"),
+            "graph_import_allowed": closeout_summary.get("graph_import_allowed"),
+            "production_import_attempted": closeout_summary.get("production_import_attempted"),
+            "ladybugdb_written": closeout_summary.get("ladybugdb_written"),
+        },
+        **_safety_flags(),
+    }
+    return contract
 
 
 def write_import_boundary_rehearsal_run(
@@ -429,6 +549,19 @@ def _missing_source_caveats(value: Any) -> list[str]:
     return [f"{reason}:{count}" for reason, count in _int_counts(value).items()]
 
 
+def _completed_review_package_ids(events: list[dict[str, Any]]) -> set[str]:
+    package_ids: set[str] = set()
+    for event in events:
+        if event.get("independent_review_completed") is not True or event.get("output_contract_completed") is not True:
+            continue
+        package_id = _string_or_none(event.get("paper_id"))
+        if package_id:
+            package_ids.add(package_id)
+        for selected_id in _string_list(event.get("selected_paper_ids")):
+            package_ids.add(selected_id)
+    return package_ids
+
+
 def _remediation_hint(reason: str) -> str:
     if "baseline" in reason:
         return "replace_baseline_with_reviewed_structure_aware_candidate"
@@ -477,6 +610,7 @@ __all__ = [
     "ImportCandidate",
     "ImportBoundaryRehearsal",
     "build_import_boundary_rehearsal_from_benchmark",
+    "build_m031_import_boundary_rehearsal",
     "write_import_boundary_rehearsal_run",
     "validate_import_boundary_rehearsal",
 ]

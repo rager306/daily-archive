@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+import copy
+from pathlib import Path
+
+from arxiv_archive.staging.import_boundary import (
+    TRUSTED_IMPORT_USE,
+    build_m031_import_boundary_rehearsal,
+    validate_import_boundary_rehearsal,
+)
+
+CORPUS_DIR = Path("data/article_corpora/m031-catalog-backed-replay-v1")
+CHUNK_EVIDENCE_DIR = CORPUS_DIR / "chunk-evidence"
+SUMMARY_PATH = CHUNK_EVIDENCE_DIR / "chunk-evidence-summary.json"
+CLOSEOUT_PATH = CORPUS_DIR / "chunk-evidence-closeout-summary.json"
+GRAPH_PACKAGE_PATH = (
+    CHUNK_EVIDENCE_DIR
+    / "packages"
+    / "arxiv_cs-cl_2507.19457_arxiv_pdf"
+    / "graph-readiness-package.json"
+)
+REVIEW_EVENTS_PATH = CHUNK_EVIDENCE_DIR / "independent-review-events.jsonl"
+
+
+def _m031_contract() -> dict[str, object]:
+    return build_m031_import_boundary_rehearsal(
+        summary_path=SUMMARY_PATH,
+        closeout_summary_path=CLOSEOUT_PATH,
+        graph_readiness_package_paths=[GRAPH_PACKAGE_PATH],
+        independent_review_events_path=REVIEW_EVENTS_PATH,
+    )
+
+
+def test_build_m031_import_boundary_rehearsal_rejects_parser_ready_and_zero_chunk_rows() -> None:
+    contract = _m031_contract()
+
+    validation = validate_import_boundary_rehearsal(contract)
+
+    assert validation.valid_rehearsal is True
+    assert contract["rehearsal_id"] == "m031-s05-refusal-only-import-boundary"
+    assert contract["source_benchmark_id"] == "m031-catalog-backed-replay-v1"
+    assert contract["candidate_count"] == 7
+    assert contract["accepted_count"] == 0
+    assert contract["rejected_count"] == 7
+    assert contract["trusted_kg_import_allowed"] is False
+    assert contract["graph_import_allowed"] is False
+    assert contract["production_ladybugdb_write_allowed"] is False
+    assert contract["production_import_attempted"] is False
+    assert contract["ladybugdb_written"] is False
+    assert contract["refusal_counts"] == {
+        "completed_independent_graph_readiness_review_required": 1,
+        "non_parser_ready_zero_chunk_refusal:catalog_placeholder_pruned_no_article_record": 1,
+        "non_parser_ready_zero_chunk_refusal:converted_text_low_quality": 1,
+        "non_parser_ready_zero_chunk_refusal:metadata_only_refused": 2,
+        "non_parser_ready_zero_chunk_refusal:missing_local_source_path": 2,
+    }
+
+
+def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_as_refused() -> None:
+    contract = _m031_contract()
+
+    parser_ready = next(
+        candidate
+        for candidate in contract["candidates"]
+        if candidate["package_id"] == "arxiv_cs-cl_2507.19457_arxiv_pdf"
+    )
+
+    assert parser_ready["route"] == "retrieval_only"
+    assert parser_ready["state"] == "ok_for_retrieval_only"
+    assert parser_ready["accepted"] is False
+    assert parser_ready["rejected"] is True
+    assert parser_ready["import_eligible"] is False
+    assert parser_ready["trusted_kg_import_allowed"] is False
+    assert parser_ready["kg_readiness_claimed"] is False
+    assert parser_ready["refusal_reasons"] == ["completed_independent_graph_readiness_review_required"]
+    assert "independent_graph_readiness_review_required" in parser_ready["remediation_hints"]
+    assert TRUSTED_IMPORT_USE not in parser_ready["allowed_uses"]
+    assert TRUSTED_IMPORT_USE in parser_ready["excluded_uses"]
+
+
+def test_build_m031_import_boundary_rehearsal_is_metadata_only_and_has_consistent_counts() -> None:
+    contract = _m031_contract()
+
+    forbidden_payload_fragments = ("do not expose me", "token-value", "normalized_markdown", "char_start", "char_end")
+    rendered = repr(contract)
+
+    assert all(fragment not in rendered for fragment in forbidden_payload_fragments)
+    assert contract["candidate_count"] == len(contract["candidates"])
+    assert contract["accepted_count"] == sum(1 for c in contract["candidates"] if c["accepted"] is True)
+    assert contract["rejected_count"] == sum(1 for c in contract["candidates"] if c["rejected"] is True)
+    assert all(candidate["raw_text_included"] is False for candidate in contract["candidates"])
+    assert all(candidate["chunk_text_included"] is False for candidate in contract["candidates"])
+    assert all(candidate["embeddings_included"] is False for candidate in contract["candidates"])
+    assert all(candidate["vectors_included"] is False for candidate in contract["candidates"])
+    assert all(candidate["production_import_attempted"] is False for candidate in contract["candidates"])
+    assert all(candidate["ladybugdb_written"] is False for candidate in contract["candidates"])
+
+
+def test_validate_m031_rehearsal_rejects_unsafe_graph_import_flags() -> None:
+    contract = _m031_contract()
+    unsafe = copy.deepcopy(contract)
+    unsafe["trusted_kg_import_allowed"] = True
+    unsafe["graph_import_allowed"] = True
+    unsafe["production_ladybugdb_write_allowed"] = True
+    unsafe["candidates"][0]["trusted_kg_import_allowed"] = True
+    unsafe["candidates"][0]["kg_readiness_claimed"] = True
+
+    validation = validate_import_boundary_rehearsal(unsafe)
+
+    assert validation.valid_rehearsal is False
+    assert validation.refusal_counts["unsafe_trusted_kg_import_allowed"] == 2
+    assert validation.refusal_counts["unsafe_graph_import_allowed"] == 1
+    assert validation.refusal_counts["unsafe_production_ladybugdb_write_allowed"] == 1
+    assert validation.refusal_counts["unsafe_kg_readiness_claimed"] == 1
+
+
+def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_to_refuse() -> None:
+    contract = _m031_contract()
+
+    parser_ready = next(
+        candidate
+        for candidate in contract["candidates"]
+        if candidate["candidate_type"] == "graph_readiness_package"
+    )
+
+    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0
+    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1
+    assert parser_ready["review_state"] == "pending_independent_graph_readiness_review"
+    assert parser_ready["output_contract_completed"] is False
+    assert parser_ready["independent_review_completed"] is False
+    assert "completed_independent_graph_readiness_review_required" in parser_ready["refusal_reasons"]
