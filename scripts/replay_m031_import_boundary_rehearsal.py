@@ -14,7 +14,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from arxiv_archive.staging.import_boundary import (
     build_m031_import_boundary_rehearsal,
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
             output_dir=args.output_dir,
         )
     except RehearsalReplayError as exc:
-        print(str(exc), file=sys.stderr)
+        sys.stderr.write(f"{exc}\n")
         return 2
     return 0
 
@@ -158,9 +158,12 @@ def run_replay(
         encoding="utf-8",
     )
     report_path_out.write_text(report, encoding="utf-8")
-    print(f"Wrote {summary_path_out}")
-    print(f"Wrote {diagnostics_path_out}")
-    print(f"Wrote {report_path_out}")
+    sys.stdout.write(
+        "M031 import-boundary rehearsal generated and validated: "
+        f"summary={summary_path_out.as_posix()} "
+        f"diagnostics={diagnostics_path_out.as_posix()} "
+        f"report={report_path_out.as_posix()}\n"
+    )
     return {
         "summary_path": summary_path_out,
         "diagnostics_path": diagnostics_path_out,

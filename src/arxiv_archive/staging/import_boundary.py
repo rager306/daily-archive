@@ -13,7 +13,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.identity.canonicalization import canonical_import_candidate_id, canonical_package_id
+from arxiv_archive.identity.canonicalization import (
+    canonical_import_candidate_id,
+    canonical_package_id,
+)
 
 SCHEMA_VERSION = "m005-negative-import-boundary-rehearsal.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"

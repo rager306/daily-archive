@@ -12,8 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -400,7 +399,6 @@ def build_progression_matrix(inputs: Mapping[str, Any], *, import_diagnostics: S
     loader = inputs["loader"]
     conversion = inputs["conversion"]
     chunk = inputs["chunk"]
-    import_summary = inputs["import_summary"]
     refs_by_identity, variants_by_identity_role = _selection_indexes(selection)
     acquisition_by_key = rows_by_key(acquisition.get("results"))
     loader_by_key = rows_by_key(loader.get("results"))
@@ -818,7 +816,6 @@ def render_progression_matrix_md(matrix: Mapping[str, Any]) -> str:
     for row in rows:
         if not isinstance(row, Mapping):
             continue
-        reasons = ", ".join(str(item) for item in row.get("import_refusal_reasons", [])) or "none"
         lines.append(
             "| {row_id} | `{identity}` | `{source_role}` | `{package_id}` | {parser_ready} | {chunk_count} | `{review_state}` | `{import_boundary_state}` | {reasons} |".format(
                 row_id=row.get("row_id"),
