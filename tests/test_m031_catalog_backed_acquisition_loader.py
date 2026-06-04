@@ -11,8 +11,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from build_m031_catalog_backed_replay_selection import build_selection, main  # noqa: E402
+from replay_m031_catalog_backed_acquisition import main as replay_main  # noqa: E402
+from replay_m031_catalog_backed_acquisition import replay_selection, sha256_file  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_m031_catalog_backed_replay_selection.py"
+REPLAY_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_acquisition.py"
 REAL_SOURCE_SELECTION = Path("data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json")
 REAL_CATALOG = Path("data/article_catalog/catalog.json")
 REAL_INDEX = Path("data/article_catalog/index.json")
@@ -308,3 +311,265 @@ def test_build_m031_exposes_typed_blocker_diagnostics(tmp_path: Path) -> None:
             "fail_closed_safety_flags": payload["safety_flags"],
         }
     ]
+
+
+def _replay_fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
+    catalog_root = tmp_path / "article_catalog"
+    article_path = catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "article.json"
+    source_dir = article_path.parent / "source"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    (source_dir / "article.html").write_bytes(b"fixture article html bytes")
+    (source_dir / "original.pdf").write_bytes(b"%fixture pdf bytes")
+    (source_dir / "abs.html").write_bytes(b"fixture abs page bytes")
+    _write_json(article_path, {"schema_version": "article.v00.01"})
+    selection_path = tmp_path / "selection.json"
+    _write_json(
+        selection_path,
+        {
+            "schema_version": "m031-catalog-backed-replay-selection.v1",
+            "selection_id": "m031-catalog-backed-replay-v1",
+            "milestone_id": "M031-vwpd8e",
+            "slice_id": "S02",
+            "articles": [
+                {
+                    "identity": "arxiv:2507.19457",
+                    "requested_ref_id": "m029-ref-001",
+                    "requested_url": "https://arxiv.org/abs/2507.19457",
+                    "article_ref": "arxiv/cs-cl/2507.19457",
+                    "article_key": "2507.19457",
+                    "article_path": "article_catalog/arxiv/cs-cl/2507.19457/article.json",
+                    "source_variants": [
+                        {
+                            "variant_id": "html",
+                            "source_role": "arxiv_html",
+                            "local_path": "source/article.html",
+                            "url": "https://arxiv.org/html/2507.19457v2",
+                            "media_type": "text/html",
+                            "is_metadata_only": False,
+                            "requires_conversion": False,
+                        },
+                        {
+                            "variant_id": "pdf",
+                            "source_role": "arxiv_pdf",
+                            "local_path": "source/original.pdf",
+                            "url": "https://arxiv.org/pdf/2507.19457",
+                            "media_type": "application/pdf",
+                            "is_metadata_only": False,
+                            "requires_conversion": True,
+                        },
+                        {
+                            "variant_id": "abs",
+                            "source_role": "arxiv_abs_page",
+                            "local_path": "source/abs.html",
+                            "url": "https://arxiv.org/abs/2507.19457",
+                            "media_type": "text/html",
+                            "is_metadata_only": True,
+                            "requires_conversion": False,
+                        },
+                    ],
+                },
+                {
+                    "identity": "stanford:cs224n:gradient-notes",
+                    "requested_ref_id": "m029-ref-002",
+                    "requested_url": "https://web.stanford.edu/class/cs224n/readings/gradient-notes.pdf",
+                    "article_ref": "stanford/cs224n/gradient-notes",
+                    "article_key": "gradient-notes",
+                    "article_path": "article_catalog/stanford/cs224n/gradient-notes/article.json",
+                    "source_variants": [
+                        {
+                            "variant_id": "external-pdf",
+                            "source_role": "external_pdf",
+                            "local_path": None,
+                            "url": "https://web.stanford.edu/class/cs224n/readings/gradient-notes.pdf",
+                            "media_type": "application/pdf",
+                            "is_metadata_only": False,
+                            "requires_conversion": True,
+                        }
+                    ],
+                },
+                {
+                    "identity": "arxiv:2605.29548",
+                    "requested_ref_id": "m029-ref-003",
+                    "requested_url": "https://arxiv.org/abs/2605.29548",
+                    "article_ref": "arxiv/mixed-source/2605.29548",
+                    "article_key": "2605.29548",
+                    "article_path": "article_catalog/arxiv/mixed-source/2605.29548/article.json",
+                    "source_variants": [
+                        {
+                            "variant_id": "abs-metadata",
+                            "source_role": "arxiv_abs_page",
+                            "local_path": None,
+                            "url": "https://arxiv.org/abs/2605.29548",
+                            "media_type": "text/html",
+                            "is_metadata_only": True,
+                            "requires_conversion": False,
+                        },
+                        {
+                            "variant_id": "pdf-metadata",
+                            "source_role": "arxiv_pdf",
+                            "local_path": None,
+                            "url": "https://arxiv.org/pdf/2605.29548",
+                            "media_type": "application/pdf",
+                            "is_metadata_only": False,
+                            "requires_conversion": True,
+                        },
+                    ],
+                },
+            ],
+            "catalog_blockers": [
+                {
+                    "identity": "arxiv:2605.26099",
+                    "requested_ref_id": "m029-ref-004",
+                    "requested_url": "https://arxiv.org/abs/2605.26099",
+                    "blocker_code": "catalog_placeholder_pruned_no_article_record",
+                    "evidence": "index has no article.json-backed row",
+                    "source_role": "arxiv_abs_url",
+                }
+            ],
+        },
+    )
+    return selection_path, catalog_root, tmp_path / "source"
+
+
+def test_replay_m031_real_acquisition_captures_local_artifacts_and_blocks_metadata_rows(tmp_path: Path) -> None:
+    output_dir = tmp_path / "source"
+    summary_path = tmp_path / "source-acquisition-summary.json"
+    diagnostics_path = tmp_path / "source-acquisition-diagnostics.jsonl"
+    report_path = tmp_path / "source-acquisition-report.md"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPLAY_SCRIPT),
+            "--selection",
+            "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+            "--catalog-root",
+            "data/article_catalog",
+            "--output-dir",
+            str(output_dir),
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["counts"] == {"captured": 3, "blocked": 4, "failed": 0}
+    assert summary["network_fetch_attempted_count"] == 0
+    assert summary["graph_import_allowed"] is False
+    assert summary["production_ladybugdb_write_allowed"] is False
+    assert summary["ladybugdb_written"] is False
+    captured = [row for row in summary["results"] if row["status"] == "captured"]
+    assert {row["local_path"] for row in captured} == {
+        "arxiv/cs-cl/2507.19457/source/article.html",
+        "arxiv/cs-cl/2507.19457/source/original.pdf",
+        "arxiv/cs-cl/2507.19457/source/abs.html",
+    }
+    for row in captured:
+        artifact = output_dir / row["local_path"]
+        assert artifact.exists()
+        assert row["sha256"] == sha256_file(artifact)
+        assert row["byte_size"] == artifact.stat().st_size
+    blocked_codes = [row["diagnostic_code"] for row in summary["results"] if row["status"] == "blocked"]
+    assert blocked_codes.count("missing_local_source_path") == 3
+    assert "catalog_placeholder_pruned_no_article_record" in blocked_codes
+    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report_path.read_text(encoding="utf-8")
+    assert "<html" not in serialized.lower()
+    assert "</html" not in serialized.lower()
+    assert "base64," not in serialized.lower()
+
+
+def test_replay_m031_fixture_handles_null_external_pdf_and_typed_blocker(tmp_path: Path) -> None:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+
+    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+
+    assert [row["status"] for row in results].count("captured") == 3
+    assert [row["status"] for row in results].count("blocked") == 4
+    external = next(row for row in results if row["identity"] == "stanford:cs224n:gradient-notes")
+    assert external["source_role"] == "external_pdf"
+    assert external["diagnostic_code"] == "missing_local_source_path"
+    blocker = next(row for row in results if row["identity"] == "arxiv:2605.26099")
+    assert blocker["diagnostic_code"] == "catalog_placeholder_pruned_no_article_record"
+    assert blocker["article_ref"] is None
+
+
+def test_replay_m031_blocks_unsafe_catalog_source_path(tmp_path: Path) -> None:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+    payload = json.loads(selection.read_text(encoding="utf-8"))
+    payload["articles"][0]["source_variants"][0]["local_path"] = "../escape.html"
+    _write_json(selection, payload)
+
+    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+
+    unsafe = next(row for row in results if row["variant_id"] == "html")
+    assert unsafe["status"] == "blocked"
+    assert unsafe["diagnostic_code"] == "unsafe_catalog_source_path"
+    assert not (output_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").exists()
+
+
+def test_replay_m031_blocks_absent_local_source_artifact(tmp_path: Path) -> None:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+    (catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").unlink()
+
+    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+
+    missing = next(row for row in results if row["variant_id"] == "html")
+    assert missing["status"] == "blocked"
+    assert missing["diagnostic_code"] == "local_source_missing"
+    assert missing["local_path"] == "arxiv/cs-cl/2507.19457/source/article.html"
+
+
+def test_replay_m031_fails_empty_local_source_artifact(tmp_path: Path) -> None:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+    (catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"")
+
+    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+
+    empty = next(row for row in results if row["variant_id"] == "html")
+    assert empty["status"] == "failed"
+    assert empty["diagnostic_code"] == "empty_local_source"
+
+
+def test_replay_m031_cli_writes_redacted_summary_diagnostics_and_report(tmp_path: Path) -> None:
+    selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
+    summary_path = tmp_path / "summary.json"
+    diagnostics_path = tmp_path / "diagnostics.jsonl"
+    report_path = tmp_path / "report.md"
+
+    assert replay_main(
+        [
+            "--selection",
+            str(selection),
+            "--catalog-root",
+            str(catalog_root),
+            "--output-dir",
+            str(output_dir),
+            "--write-summary",
+            str(summary_path),
+            "--write-diagnostics",
+            str(diagnostics_path),
+            "--write-report",
+            str(report_path),
+        ]
+    ) == 0
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["counts"] == {"captured": 3, "blocked": 4, "failed": 0}
+    assert summary["fail_closed_safety_flags"]["graph_import_allowed"] is False
+    assert "missing_local_source_path" in diagnostics_path.read_text(encoding="utf-8")
+    report = report_path.read_text(encoding="utf-8")
+    assert "## Failure Modes" in report
+    assert "## Load Profile" in report
+    assert "## Negative Tests" in report
+    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report
+    assert "<html" not in serialized.lower()
+    assert "</html" not in serialized.lower()
+    assert "base64," not in serialized.lower()
