@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import copy
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 from arxiv_archive.staging.import_boundary import (
@@ -129,3 +132,95 @@ def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_
     assert parser_ready["output_contract_completed"] is False
     assert parser_ready["independent_review_completed"] is False
     assert "completed_independent_graph_readiness_review_required" in parser_ready["refusal_reasons"]
+
+
+def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(tmp_path: Path) -> None:
+    output_dir = tmp_path / "import-boundary-rehearsal"
+
+    result = subprocess.run(
+        [sys.executable, "scripts/replay_m031_import_boundary_rehearsal.py", "--output-dir", str(output_dir)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((output_dir / "import-boundary-summary.json").read_text(encoding="utf-8"))
+    diagnostics = [
+        json.loads(line)
+        for line in (output_dir / "import-boundary-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    report = (output_dir / "import-boundary-report.md").read_text(encoding="utf-8")
+
+    assert "candidates" not in summary
+    assert summary["candidate_count"] == 7
+    assert summary["accepted_count"] == 0
+    assert summary["import_eligible_count"] == 0
+    assert summary["rejected_count"] == 7
+    assert summary["valid_rehearsal"] is True
+    assert summary["diagnostic_code_counts"] == {"M031_IMPORT_BOUNDARY_REFUSED": 7}
+    assert summary["trusted_kg_import_allowed"] is False
+    assert summary["graph_import_allowed"] is False
+    assert summary["production_import_attempted"] is False
+    assert summary["ladybugdb_written"] is False
+    assert len(diagnostics) == 7
+    assert all(record["diagnostic_code"] == "M031_IMPORT_BOUNDARY_REFUSED" for record in diagnostics)
+    assert all(record["blocks_import"] is True for record in diagnostics)
+    assert all(record["accepted"] is False for record in diagnostics)
+    assert all(record["import_eligible"] is False for record in diagnostics)
+    assert all(record["json_path"].startswith("$.candidates[") for record in diagnostics)
+    assert "accepted/import-eligible candidates: 0" in report
+    assert "LadybugDB writes: false" in report
+    assert "normalized_markdown" not in repr(summary) + repr(diagnostics) + report
+
+
+def test_replay_m031_import_boundary_cli_fails_closed_before_writes_when_closeout_is_not_passed(tmp_path: Path) -> None:
+    closeout = json.loads(CLOSEOUT_PATH.read_text(encoding="utf-8"))
+    closeout["status"] = "failed"
+    bad_closeout_path = tmp_path / "bad-closeout-summary.json"
+    bad_closeout_path.write_text(json.dumps(closeout), encoding="utf-8")
+    output_dir = tmp_path / "import-boundary-rehearsal"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/replay_m031_import_boundary_rehearsal.py",
+            "--closeout-summary",
+            str(bad_closeout_path),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "M031_CLOSEOUT_NOT_PASSED" in result.stderr
+    assert not (output_dir / "import-boundary-summary.json").exists()
+    assert not (output_dir / "import-boundary-diagnostics.jsonl").exists()
+    assert not (output_dir / "import-boundary-report.md").exists()
+
+
+def test_replay_m031_import_boundary_cli_fails_closed_when_review_events_are_absent(tmp_path: Path) -> None:
+    empty_events_path = tmp_path / "independent-review-events.jsonl"
+    empty_events_path.write_text("", encoding="utf-8")
+    output_dir = tmp_path / "import-boundary-rehearsal"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/replay_m031_import_boundary_rehearsal.py",
+            "--independent-review-events",
+            str(empty_events_path),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "M031_REVIEW_EVENTS_ABSENT" in result.stderr
+    assert not output_dir.exists()
