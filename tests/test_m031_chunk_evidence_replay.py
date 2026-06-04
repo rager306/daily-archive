@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from replay_m031_chunk_evidence import build_review_corpus, main, sha256_file  # noqa: E402
+from verify_m031_chunk_evidence_replay import main as verify_closeout_main  # noqa: E402
 from arxiv_archive.graph_readiness_review import validate_review_artifacts  # noqa: E402
 
 
@@ -173,6 +174,47 @@ def _run(project: Path, selection: Path, conversion_summary: Path, closeout: Pat
             project.as_posix(),
         ]
     )
+
+
+def _run_verify(project: Path, selection: Path, conversion_summary: Path, closeout: Path, output: Path) -> int:
+    corpus = output.parent
+    return verify_closeout_main(
+        [
+            "--selection",
+            selection.as_posix(),
+            "--conversion-summary",
+            conversion_summary.as_posix(),
+            "--s03-closeout-summary",
+            closeout.as_posix(),
+            "--chunk-summary",
+            (output / "chunk-evidence-summary.json").as_posix(),
+            "--chunk-diagnostics",
+            (output / "chunk-evidence-diagnostics.jsonl").as_posix(),
+            "--chunk-report",
+            (output / "chunk-evidence-report.md").as_posix(),
+            "--review-events",
+            (output / "independent-review-events.jsonl").as_posix(),
+            "--review-dir",
+            (corpus / "graph-readiness-review").as_posix(),
+            "--review-summary",
+            (corpus / "graph-readiness-review" / "independent-review-summary.md").as_posix(),
+            "--project-root",
+            project.as_posix(),
+            "--write-summary",
+            (corpus / "chunk-evidence-closeout-summary.json").as_posix(),
+            "--write-diagnostics",
+            (corpus / "chunk-evidence-closeout-diagnostics.jsonl").as_posix(),
+            "--write-report",
+            (corpus / "chunk-evidence-closeout-report.md").as_posix(),
+        ]
+    )
+
+
+def _closeout_findings(output: Path) -> list[dict[str, Any]]:
+    diagnostics_path = output.parent / "chunk-evidence-closeout-diagnostics.jsonl"
+    if not diagnostics_path.exists():
+        return []
+    return [json.loads(line) for line in diagnostics_path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tmp_path: Path) -> None:
@@ -361,3 +403,90 @@ def test_chunk_evidence_replay_rejects_permissive_closeout_flags(tmp_path: Path,
     captured = capsys.readouterr()
     assert "unsafe_closeout_flag" in captured.err
     assert not (output / "chunk-evidence-summary.json").exists()
+
+
+def test_chunk_evidence_closeout_verifier_writes_passed_summary(tmp_path: Path) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    assert _run(project, selection, conversion_summary, closeout, output) == 0
+
+    assert _run_verify(project, selection, conversion_summary, closeout, output) == 0
+
+    closeout_summary = json.loads((output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8"))
+    closeout_report = (output.parent / "chunk-evidence-closeout-report.md").read_text(encoding="utf-8")
+    assert closeout_summary["status"] == "passed"
+    assert closeout_summary["failure_count"] == 0
+    assert closeout_summary["row_count"] == 7
+    assert closeout_summary["parser_ready_row_count"] == 1
+    assert closeout_summary["zero_chunk_refusal_count"] == 6
+    assert closeout_summary["package_count"] == 1
+    assert closeout_summary["graph_readiness_package_count"] == 1
+    assert closeout_summary["chunk_count"] > 0
+    assert closeout_summary["evidence_path_count"] == closeout_summary["chunk_count"]
+    assert closeout_summary["graph_import_allowed"] is False
+    assert closeout_summary["ladybugdb_written"] is False
+    assert _closeout_findings(output) == []
+    assert "## Failure Modes" in closeout_report
+    assert "## Load Profile" in closeout_report
+    assert "## Negative Tests" in closeout_report
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_code"),
+    [
+        ("stale_closeout", "s03_closeout_not_passed"),
+        ("missing_package", "missing_structure_package"),
+        ("corrupt_package", "malformed_structure_package"),
+        ("missing_evidence_path", "missing_chunk_evidence_path"),
+        ("malformed_review_event", "malformed_review_event"),
+        ("fabricated_review_event", "fabricated_completed_review_event"),
+        ("payload_leak", "metadata_payload_key_leakage"),
+        ("summary_import_flag", "unsafe_safety_flag_true"),
+        ("graph_ladybugdb_flag", "unsafe_safety_flag_true"),
+    ],
+)
+def test_chunk_evidence_closeout_verifier_negative_failures(tmp_path: Path, mutate: str, expected_code: str) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, closeout_payload = _fixture(tmp_path)
+    assert _run(project, selection, conversion_summary, closeout, output) == 0
+    package_path = output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json"
+    graph_path = output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "graph-readiness-package.json"
+    summary_path = output / "chunk-evidence-summary.json"
+    events_path = output / "independent-review-events.jsonl"
+
+    if mutate == "stale_closeout":
+        closeout_payload["status"] = "failed"
+        closeout_payload["failure_count"] = 1
+        _write_json(closeout, closeout_payload)
+    elif mutate == "missing_package":
+        package_path.unlink()
+    elif mutate == "corrupt_package":
+        package_path.write_text("{not-json", encoding="utf-8")
+    elif mutate == "missing_evidence_path":
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["chunks"][0].pop("source_span")
+        _write_json(package_path, package)
+    elif mutate == "malformed_review_event":
+        events_path.write_text("{not-json\n", encoding="utf-8")
+    elif mutate == "fabricated_review_event":
+        with events_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"event": "independent_review.verdict", "output_contract_completed": True}) + "\n")
+    elif mutate == "payload_leak":
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["raw_text"] = "Local Parser Ready Paper"
+        _write_json(summary_path, summary)
+    elif mutate == "summary_import_flag":
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["graph_import_allowed"] = True
+        _write_json(summary_path, summary)
+    elif mutate == "graph_ladybugdb_flag":
+        graph_package = json.loads(graph_path.read_text(encoding="utf-8"))
+        graph_package["ladybugdb_written"] = True
+        _write_json(graph_path, graph_package)
+
+    assert _run_verify(project, selection, conversion_summary, closeout, output) == 1
+    closeout_summary = json.loads((output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8"))
+    findings = _closeout_findings(output)
+    assert closeout_summary["status"] == "failed"
+    assert closeout_summary["failure_count"] >= 1
+    assert any(finding["diagnostic_code"] == expected_code for finding in findings)
+    assert all(finding.get("severity") for finding in findings)
+    assert all(finding.get("json_path") for finding in findings)
