@@ -300,7 +300,7 @@ def verify(args: argparse.Namespace) -> list[dict[str, Any]]:
     summary_path = Path(args.replay_summary)
     diagnostics_path = Path(args.replay_diagnostics)
     report_path = Path(args.replay_report)
-    runtime_summary_path = summary_path.with_name("runtime-smoke-summary.json")
+    runtime_summary_path = Path(args.compare_runtime_smoke) if args.compare_runtime_smoke else summary_path.with_name("runtime-smoke-summary.json")
     corpus_dir = summary_path.parent
     artifact_root = corpus_dir.parents[2] if len(corpus_dir.parents) >= 3 else ROOT
     selection = load_json(selection_path)
@@ -331,6 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replay-summary", required=True)
     parser.add_argument("--replay-diagnostics", required=True)
     parser.add_argument("--replay-report", required=True)
+    parser.add_argument("--compare-runtime-smoke")
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
     return parser

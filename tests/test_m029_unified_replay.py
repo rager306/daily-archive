@@ -144,6 +144,8 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         str(corpus / "replay-diagnostics.jsonl"),
         "--replay-report",
         str(corpus / "replay-report.md"),
+        "--compare-runtime-smoke",
+        str(runtime_summary),
         "--require-no-network",
         "--require-no-import-flags",
     ]
