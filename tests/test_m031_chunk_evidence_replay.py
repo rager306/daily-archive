@@ -9,7 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from replay_m031_chunk_evidence import main, sha256_file  # noqa: E402
+from replay_m031_chunk_evidence import build_review_corpus, main, sha256_file  # noqa: E402
+from arxiv_archive.graph_readiness_review import validate_review_artifacts  # noqa: E402
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> Path:
@@ -184,6 +185,11 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
     report = (output / "chunk-evidence-report.md").read_text(encoding="utf-8")
     structure_package = json.loads((output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json").read_text(encoding="utf-8"))
     graph_package = json.loads((output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "graph-readiness-package.json").read_text(encoding="utf-8"))
+    review_corpus = json.loads((output / "review-corpus.json").read_text(encoding="utf-8"))
+    review_events = [json.loads(line) for line in (output / "independent-review-events.jsonl").read_text(encoding="utf-8").splitlines()]
+    review_dir = output.parent / "graph-readiness-review"
+    review_markdown = (review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md").read_text(encoding="utf-8")
+    review_summary = (review_dir / "independent-review-summary.md").read_text(encoding="utf-8")
 
     assert summary["row_count"] == 7
     assert summary["chunked_parser_ready_row_count"] == 1
@@ -192,6 +198,9 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
     assert summary["package_count"] == 1
     assert summary["graph_readiness_package_count"] == 1
     assert summary["pending_graph_readiness_review_count"] == 1
+    assert summary["graph_readiness_review_blocker_count"] == 0
+    assert summary["independent_review_completed_count"] == 0
+    assert summary["automated_state_is_structural_only"] is True
     assert summary["import_eligible_chunk_count"] == 0
     assert summary["graph_import_allowed"] is False
     assert summary["trusted_kg_import_allowed"] is False
@@ -204,11 +213,34 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
     assert graph_package["review_state"] == "pending_independent_graph_readiness_review"
     assert graph_package["output_contract_completed"] is False
     assert graph_package["validation"]["import_ready"] is False
+    chunked_row = [row for row in summary["results"] if row["status"] == "chunked"][0]
+    assert chunked_row["review_status"] == "pending_review"
+    assert chunked_row["independent_review_completed"] is False
+    assert chunked_row["automated_state_is_structural_only"] is True
+    assert chunked_row["import_eligible_chunk_count"] == 0
+    assert review_corpus["document_count"] == 1
+    assert review_corpus["documents"][0]["paper_id"] == "arxiv_cs-cl_2507.19457_arxiv_pdf"
+    assert review_corpus["documents"][0]["review_status"] == "pending_review"
+    assert review_corpus["documents"][0]["independent_review_completed"] is False
+    assert review_corpus["documents"][0]["import_eligible_count"] == 0
+    assert any(event["event"] == "independent_review.requested" for event in review_events)
+    assert any(event["event"] == "independent_review.summary" for event in review_events)
+    assert all(event.get("event") != "independent_review.verdict" for event in review_events)
+    assert all(event.get("output_contract_completed") is False for event in review_events)
+    assert all(event.get("raw_text_included") is False for event in review_events)
+    assert "Reviewer Output Contract" in review_markdown
+    assert "bounded replay evidence" in review_markdown
+    assert "Independent reviewer verdicts are still required" in review_summary
+    assert validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl").ok
+    assert not validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl", require_completed_review=True).ok
     assert "Local Parser Ready Paper" not in json.dumps(summary)
     assert "Local Parser Ready Paper" not in json.dumps(diagnostics)
     assert "Local Parser Ready Paper" not in json.dumps(structure_package)
     assert "Local Parser Ready Paper" not in json.dumps(graph_package)
+    assert "Local Parser Ready Paper" not in json.dumps(review_corpus)
+    assert "Local Parser Ready Paper" not in json.dumps(review_events)
     assert "metadata-only" in report
+    assert "Review corpus" in report
 
 
 @pytest.mark.parametrize(
@@ -259,6 +291,64 @@ def test_chunk_evidence_replay_negative_fail_closed_cases(tmp_path: Path, capsys
     captured = capsys.readouterr()
     assert expected_code in captured.err
     assert not (output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json").exists()
+
+
+def test_review_handoff_validation_fails_when_review_markdown_is_deleted(tmp_path: Path) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    assert _run(project, selection, conversion_summary, closeout, output) == 0
+    review_dir = output.parent / "graph-readiness-review"
+    (review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md").unlink()
+
+    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl")
+
+    assert not validation.ok
+    assert any("No review bundle files" in diagnostic for diagnostic in validation.diagnostics)
+    summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
+    assert summary["import_eligible_chunk_count"] == 0
+    assert summary["graph_import_allowed"] is False
+
+
+def test_review_handoff_rejects_stale_placeholder_and_fabricated_completed_verdict(tmp_path: Path) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    assert _run(project, selection, conversion_summary, closeout, output) == 0
+    review_dir = output.parent / "graph-readiness-review"
+    review_path = review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md"
+    review_path.write_text("Reviewer Verdict Placeholder", encoding="utf-8")
+
+    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl")
+
+    assert not validation.ok
+    assert any("stale placeholder" in diagnostic for diagnostic in validation.diagnostics)
+
+    with (output / "independent-review-events.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"event": "independent_review.verdict", "verdict": "PASS", "output_contract_completed": False}) + "\n")
+    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl", require_completed_review=True)
+    assert not validation.ok
+    assert any("output_contract_completed=true" in diagnostic for diagnostic in validation.diagnostics)
+    summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
+    assert summary["independent_review_completed_count"] == 0
+    assert summary["trusted_kg_import_allowed"] is False
+
+
+def test_review_corpus_refuses_non_parser_ready_rows_and_blocks_missing_graph_package(tmp_path: Path) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    assert _run(project, selection, conversion_summary, closeout, output) == 0
+    summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
+    diagnostics = summary["results"]
+    chunked = [row for row in diagnostics if row["status"] == "chunked"][0]
+    (project / chunked["graph_readiness_package_path"]).unlink()
+
+    corpus, blocker_events = build_review_corpus(diagnostics=diagnostics, output_dir=output, project_root=project, run_id="test-run")
+
+    assert corpus["document_count"] == 0
+    assert len(blocker_events) == 1
+    assert blocker_events[0]["event"] == "independent_review.blocker"
+    assert blocker_events[0]["diagnostic_code"] == "missing_graph_readiness_package"
+    assert chunked["review_status"] == "review_blocked_missing_graph_readiness_package"
+    assert all(row["status"] != "chunked" or row.get("review_corpus_paper_id") is None for row in diagnostics)
+    assert all(row["chunk_count"] == 0 for row in diagnostics if row["status"] == "zero_chunk_refused")
+    assert corpus["import_eligible_count"] == 0
+    assert corpus["trusted_kg_import_allowed"] is False
 
 
 def test_chunk_evidence_replay_rejects_permissive_closeout_flags(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

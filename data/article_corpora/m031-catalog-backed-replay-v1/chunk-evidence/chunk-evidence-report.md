@@ -24,7 +24,15 @@ The replay is bounded to the seven S03 conversion rows and reads converted text 
 
 ## Negative Tests
 
-Covered by `tests/test_m031_chunk_evidence_replay.py`: converted hash mismatch, converted path outside project root, fallback HTML parser-ready promotion, stale/failing S03 closeout, missing converted artifact, raw payload marker redaction, and zero eligibility/fail-closed graph/import flags.
+Covered by `tests/test_m031_chunk_evidence_replay.py`: converted hash mismatch, converted path outside project root, fallback HTML parser-ready promotion, stale/failing S03 closeout, missing converted artifact, missing graph-readiness package blocker event, deleted review Markdown verifier failure, stale placeholder/completed-verdict rejection, non-parser-ready review corpus refusal, raw payload marker redaction, and zero eligibility/fail-closed graph/import flags.
+
+## Graph-Readiness Review Handoff
+
+- Review corpus: `data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/review-corpus.json`
+- Review events: `data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence/independent-review-events.jsonl`
+- Review summary: `data/article_corpora/m031-catalog-backed-replay-v1/graph-readiness-review/independent-review-summary.md`
+- Independent review completed: `0`
+- Automated state is structural only: `True`
 
 ## Results
 
