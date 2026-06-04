@@ -9,6 +9,7 @@ from typing import Any
 SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_article_catalog.py"
 WRAPPER_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m027_mixed_source_catalog.py"
 REGISTER_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m027_mixed_source_corpus.py"
+REGISTER_M029_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m029_missing_metadata_refs.py"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 
 
@@ -499,3 +500,97 @@ def test_registration_command_writes_six_rows_idempotently_and_preserves_existin
     assert "raw_text_payload" not in before
     assert "raw_binary_payload" not in before
     assert all(row.get("network_fetch_attempted") is False for row in selection["articles"])
+
+
+def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_closed_flags(tmp_path: Path) -> None:
+    catalog_root = tmp_path / "article_catalog"
+    catalog_root.mkdir(parents=True)
+    preserved_ref = "arxiv/cs-ai/2512.24601"
+    preserved_entry = {
+        "article_ref": preserved_ref,
+        "article_key": "2512.24601",
+        "source_code": "arxiv",
+        "coarse_topic_code": "cs-ai",
+        "canonical_url": "https://arxiv.org/abs/2512.24601",
+        "primary_source_role": "arxiv_html",
+        "content_fallback_roles": ["arxiv_pdf"],
+        "metadata_roles": ["arxiv_abs_page"],
+        "article_path": f"article_catalog/{preserved_ref}/article.json",
+        "title": "Recursive Language Models",
+    }
+    index_payload = {
+        "schema_version": "article-catalog-index.v00.01",
+        "catalog_schema_version": "article-catalog.v00.01",
+        "article_schema_version": "article.v00.01",
+        "index_id": "temp_index",
+        "generated_from": "article_catalog/",
+        "lookup_policy": {"cli_must_use_index": True, "full_tree_scan_allowed": False, "refresh_command_rebuilds_index": True},
+        "articles": [preserved_entry],
+        "indexes": _build_indexes([preserved_entry]),
+        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+    }
+    catalog_payload = {
+        "schema_version": "article-catalog.v00.01",
+        "article_schema_version": "article.v00.01",
+        "root": "data/article_catalog",
+        "sources": [
+            {
+                "source_code": "arxiv",
+                "source_type": "preprint_server",
+                "allowed_source_roles": ["arxiv_abs_page", "arxiv_pdf"],
+            }
+        ],
+        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+    }
+    (catalog_root / "catalog.json").write_text(json.dumps(catalog_payload, indent=2), encoding="utf-8")
+    (catalog_root / "index.json").write_text(json.dumps(index_payload, indent=2), encoding="utf-8")
+
+    command = [sys.executable, str(REGISTER_M029_SCRIPT), "--write", "--catalog-root", str(catalog_root)]
+    first = subprocess.run(command, capture_output=True, check=False, text=True)
+    assert first.returncode == 0, first.stderr
+    assert "duplicate_normalized_identity" not in first.stderr
+    assert "unsafe_article_ref" not in first.stderr
+    assert "missing_metadata" not in first.stderr
+    assert "unsafe_readiness_or_persistence_flag" not in first.stderr
+    before = (catalog_root / "index.json").read_text(encoding="utf-8")
+    second = subprocess.run(command, capture_output=True, check=False, text=True)
+    assert second.returncode == 0, second.stderr
+    assert (catalog_root / "index.json").read_text(encoding="utf-8") == before
+
+    index_after = json.loads(before)
+    refs = {row["article_ref"]: row for row in index_after["articles"]}
+    assert preserved_ref in refs
+    assert "stanford/cs224n/gradient-notes" in refs
+    assert "arxiv/mixed-source/2605.29548" in refs
+    assert refs["stanford/cs224n/gradient-notes"]["normalized_identity"] == "stanford:cs224n:gradient-notes"
+    assert refs["arxiv/mixed-source/2605.29548"]["normalized_identity"] == "arxiv:2605.29548"
+    assert index_after["indexes"]["by_source_code"]["stanford"] == ["stanford/cs224n/gradient-notes"]
+
+    catalog_after = json.loads((catalog_root / "catalog.json").read_text(encoding="utf-8"))
+    assert any(source["source_code"] == "stanford" for source in catalog_after["sources"])
+
+    serialized = json.dumps(
+        {
+            "catalog": catalog_after,
+            "index": index_after,
+            "articles": [
+                json.loads((catalog_root / refs["stanford/cs224n/gradient-notes"]["article_path"]).read_text(encoding="utf-8")),
+                json.loads((catalog_root / refs["arxiv/mixed-source/2605.29548"]["article_path"]).read_text(encoding="utf-8")),
+            ],
+        },
+        sort_keys=True,
+    )
+    forbidden_snippets = [
+        "trusted_kg_import_allowed\": true",
+        "production_ladybugdb_write_allowed\": true",
+        "raw_text_embedded\": true",
+        "raw_binary_embedded\": true",
+        "production_import_attempted\": true",
+        "ladybugdb_written\": true",
+        "network_fetch_attempted\": true",
+        "parser_readiness_claimed\": true",
+        "chunk_readiness_claimed\": true",
+        "graph_readiness_claimed\": true",
+    ]
+    for snippet in forbidden_snippets:
+        assert snippet not in serialized
