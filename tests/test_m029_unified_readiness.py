@@ -176,6 +176,8 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         str(corpus / "readiness-report.md"),
         "--require-no-network",
         "--require-no-import-flags",
+        "--check-dedupe-rule",
+        "--check-provenance",
     ]
     return run_args, verify_args, corpus
 
@@ -226,3 +228,22 @@ def test_unified_readiness_verifier_detects_count_drift(tmp_path: Path, monkeypa
 
     assert verify_main(verify_args) == 1
     assert "ready_count_mismatch" in capsys.readouterr().err
+
+
+def test_unified_readiness_verifier_writes_t02_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_args, verify_args, corpus = _fixture_args(tmp_path)
+    verify_summary_path = corpus / "readiness-verify-summary.json"
+    assert synthesize_main(run_args) == 0
+
+    assert verify_main([*verify_args, "--write-verify-summary", str(verify_summary_path)]) == 0
+
+    verify_summary = json.loads(verify_summary_path.read_text(encoding="utf-8"))
+    assert verify_summary["status"] == "passed"
+    assert verify_summary["article_count"] == 2
+    assert verify_summary["ready_count"] == 1
+    assert verify_summary["partial_count"] == 1
+    assert verify_summary["checks"]["dedupe_rule"] is True
+    assert verify_summary["checks"]["provenance"] is True
+    assert verify_summary["provenance_source_counts"] == {"M025": 1, "M027": 1, "M030": 1}
+    assert verify_summary["diagnostics"] == []

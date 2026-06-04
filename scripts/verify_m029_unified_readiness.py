@@ -241,6 +241,52 @@ def check_selection_alignment(selection: Mapping[str, Any], rows: Sequence[Mappi
     return problems
 
 
+def check_dedupe_rule(selection: Mapping[str, Any], summary: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], path: Path) -> list[dict[str, Any]]:
+    problems: list[dict[str, Any]] = []
+    selected = selection_by_article(selection)
+    identity_counts = Counter(article_key_for(row) for row in rows)
+    duplicate_identities = sorted(identity for identity, count in identity_counts.items() if count > 1)
+    if duplicate_identities:
+        problems.append(diagnostic("duplicate_readiness_identity", f"readiness rows contain duplicate article identities: {duplicate_identities}", path=path))
+    if summary.get("article_count") != len(selected):
+        problems.append(diagnostic("dedupe_article_count_mismatch", "summary article_count must equal one row per selected article_ref/identity_key", path=path, json_path="$.article_count"))
+    if summary.get("unique_identity_count") != len(selected):
+        problems.append(diagnostic("unique_identity_count_mismatch", "unique_identity_count must equal the deduped selection count", path=path, json_path="$.unique_identity_count"))
+    dedupe_rule = str(summary.get("dedupe_rule") or "")
+    if "article_ref/identity_key" not in dedupe_rule or "provenance_sources" not in dedupe_rule:
+        problems.append(diagnostic("dedupe_rule_missing_required_terms", "dedupe rule must name article_ref/identity_key and provenance_sources", path=path, json_path="$.dedupe_rule"))
+    return problems
+
+
+def check_provenance(selection: Mapping[str, Any], summary: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], path: Path) -> list[dict[str, Any]]:
+    problems: list[dict[str, Any]] = []
+    expected_counts: Counter[str] = Counter()
+    row_counts: Counter[str] = Counter()
+    for article in selection_by_article(selection).values():
+        sources = article.get("provenance_sources")
+        if not isinstance(sources, list) or not sources:
+            problems.append(diagnostic("selection_missing_provenance_sources", "selection article must preserve provenance_sources", path=path, article_ref=str(article.get("article_ref") or article.get("identity_key"))))
+            continue
+        expected_counts.update(str(source) for source in sources)
+    for row in rows:
+        sources = row.get("provenance_sources")
+        if not isinstance(sources, list) or not sources:
+            problems.append(diagnostic("readiness_missing_provenance_sources", "readiness row must preserve provenance_sources", path=path, article_ref=str(row.get("article_ref") or row.get("identity_key"))))
+            continue
+        row_counts.update(str(source) for source in sources)
+    summary_counts = summary.get("provenance_source_counts")
+    if dict(sorted(expected_counts.items())) != summary_counts:
+        problems.append(diagnostic("selection_provenance_count_mismatch", "summary provenance_source_counts do not match selected articles", path=path, json_path="$.provenance_source_counts"))
+    if dict(sorted(row_counts.items())) != summary_counts:
+        problems.append(diagnostic("readiness_provenance_count_mismatch", "summary provenance_source_counts do not match readiness rows", path=path, json_path="$.provenance_source_counts"))
+    return problems
+
+
+def write_verify_summary(path: Path, payload: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def check_runtime_and_replay_parity(summary: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], path: Path) -> list[dict[str, Any]]:
     problems: list[dict[str, Any]] = []
     status_counts = Counter(str(row.get("readiness_status", "unknown")) for row in rows)
@@ -318,32 +364,55 @@ def run(args: argparse.Namespace) -> int:
     problems.extend(check_summary_shape(summary, summary_path))
     problems.extend(check_decision(summary, decision, decision_path))
     problems.extend(check_selection_alignment(selection, rows, summary_path))
+    if args.check_dedupe_rule:
+        problems.extend(check_dedupe_rule(selection, summary, rows, summary_path))
+    if args.check_provenance:
+        problems.extend(check_provenance(selection, summary, rows, summary_path))
     problems.extend(check_runtime_and_replay_parity(summary, rows, summary_path))
     if args.require_no_network or args.require_no_import_flags:
         problems.extend(check_fail_closed(summary, decision, rows, summary_path))
     problems.extend(check_report(report, summary, report_path))
     problems.extend(check_artifact_paths(rows, artifact_root, summary_path))
+    verify_summary = {
+        "schema_version": DIAGNOSTIC_SCHEMA_VERSION,
+        "milestone_id": MILESTONE_ID,
+        "slice_id": SLICE_ID,
+        "selection_id": SELECTION_ID,
+        "status": "failed" if problems else "passed",
+        "article_count": summary.get("article_count"),
+        "decision": decision.get("decision"),
+        "ready_count": summary.get("ready_count"),
+        "partial_count": summary.get("partial_count"),
+        "blocked_count": summary.get("blocked_count"),
+        "zero_chunk_count": summary.get("zero_chunk_count"),
+        "block_reason_counts": summary.get("block_reason_counts"),
+        "provenance_source_counts": summary.get("provenance_source_counts"),
+        "dedupe_rule": summary.get("dedupe_rule"),
+        "checks": {
+            "summary_shape": True,
+            "decision_alignment": True,
+            "selection_alignment": True,
+            "dedupe_rule": bool(args.check_dedupe_rule),
+            "provenance": bool(args.check_provenance),
+            "runtime_and_replay_parity": True,
+            "fail_closed": bool(args.require_no_network or args.require_no_import_flags),
+            "report": True,
+            "artifact_paths": True,
+        },
+        "unsafe_flag_count": sum(1 for row in rows for _flag in row_unsafe_flags(row)) + len(row_unsafe_flags(summary)) + len(row_unsafe_flags(decision)),
+        "diagnostics": problems,
+        "summary_path": rel(summary_path),
+        "decision_path": rel(decision_path),
+        "report_path": rel(report_path),
+    }
+    if args.write_verify_summary:
+        write_verify_summary(Path(args.write_verify_summary), verify_summary)
     if problems:
         sys.stderr.write("unified readiness verification failed:\n")
         for problem in problems:
             sys.stderr.write(json.dumps(problem, sort_keys=True) + "\n")
         return 1
-    sys.stdout.write(
-        json.dumps(
-            {
-                "status": "passed",
-                "article_count": summary.get("article_count"),
-                "decision": decision.get("decision"),
-                "ready_count": summary.get("ready_count"),
-                "partial_count": summary.get("partial_count"),
-                "summary_path": rel(summary_path),
-                "decision_path": rel(decision_path),
-                "report_path": rel(report_path),
-            },
-            sort_keys=True,
-        )
-        + "\n"
-    )
+    sys.stdout.write(json.dumps(verify_summary, sort_keys=True) + "\n")
     return 0
 
 
@@ -355,6 +424,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--readiness-report", required=True)
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
+    parser.add_argument("--check-dedupe-rule", action="store_true")
+    parser.add_argument("--check-provenance", action="store_true")
+    parser.add_argument("--write-verify-summary")
     return parser
 
 
