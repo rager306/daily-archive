@@ -1,0 +1,381 @@
+{
+  "schema_version": "m030-module-function-readiness-report.v1",
+  "milestone_id": "M030-abwhdm",
+  "slice_id": "S03",
+  "task_id": "T02",
+  "created_at": "2026-06-04",
+  "source_inventory": "doc/architecture/m030_pipeline_module_inventory.json",
+  "source_selection": "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json",
+  "scope_boundary": {
+    "behavior_changed": false,
+    "runtime_replay_performed": false,
+    "readiness_report_only": true,
+    "graph_write_attempted": false,
+    "production_persistence_attempted": false
+  },
+  "selection_summary": {
+    "selection_id": "m029-pipeline-architecture-audit-v1",
+    "requested_refs": 4,
+    "already_cataloged": [
+      "arxiv:2507.19457",
+      "arxiv:2605.26099"
+    ],
+    "missing_from_article_catalog": [
+      "stanford:cs224n:gradient-notes",
+      "arxiv:2605.29548"
+    ],
+    "safety_flags": {
+      "loader_owns_selection": false,
+      "network_availability_checked": true,
+      "source_acquisition_completed": false,
+      "raw_article_text_embedded": false,
+      "binary_payload_embedded": false,
+      "parser_ready_claimed": false,
+      "chunk_ready_claimed": false,
+      "kg_readiness_claimed": false,
+      "graph_write_attempted": false,
+      "production_persistence_attempted": false
+    }
+  },
+  "stages": [
+    {
+      "stage": "url_intake",
+      "label": "URL intake",
+      "module_id": "m030_requested_ref_intake",
+      "module_inventory_status": "covered",
+      "claim_state": "ready",
+      "rationale": "The bounded URL selection exists, preserves four requested refs, and keeps downstream unsafe claims false.",
+      "primary_functions_classes": [
+        "scripts/verify_m030_requested_ref_intake.py:validate_selection",
+        "scripts/verify_m030_requested_ref_intake.py:validate_report",
+        "scripts/verify_m030_requested_ref_intake.py:validate_catalog_status",
+        "scripts/verify_m030_requested_ref_intake.py:validate_m028_status"
+      ],
+      "unsafe_to_claim_functions": [],
+      "tests_verifiers": [
+        "scripts/verify_m030_requested_ref_intake.py --validate-only"
+      ],
+      "observability": [
+        "Stable M030_INTAKE_* diagnostic codes",
+        "Success line reports refs/cataloged/missing counts and fail-closed status"
+      ],
+      "next_actions": [
+        "Use selection_id m029-pipeline-architecture-audit-v1 as the input contract for catalog/replay work.",
+        "Keep unsafe_claims false until each downstream stage has replay evidence for the selected refs."
+      ]
+    },
+    {
+      "stage": "article_catalog",
+      "label": "Article catalog",
+      "module_id": "metadata_only_catalog_registration",
+      "module_inventory_status": "covered",
+      "claim_state": "partial",
+      "rationale": "2 of 4 requested refs are cataloged; 2 still require metadata-only registration before acquisition replay.",
+      "primary_functions_classes": [
+        "scripts/register_m027_mixed_source_corpus.py:ArticleSpec",
+        "scripts/register_m027_mixed_source_corpus.py:_default_arxiv_strategy",
+        "scripts/register_m027_mixed_source_corpus.py:_default_arxiv_variants",
+        "scripts/register_m027_mixed_source_corpus.py:_article_record",
+        "scripts/register_m027_mixed_source_corpus.py:_selection_payload",
+        "scripts/register_m027_mixed_source_corpus.py:register"
+      ],
+      "unsafe_to_claim_functions": [
+        "scripts/register_m027_mixed_source_corpus.py:ArticleSpec",
+        "scripts/register_m027_mixed_source_corpus.py:_default_arxiv_strategy",
+        "scripts/register_m027_mixed_source_corpus.py:_default_arxiv_variants",
+        "scripts/register_m027_mixed_source_corpus.py:_article_record",
+        "scripts/register_m027_mixed_source_corpus.py:_selection_payload",
+        "scripts/register_m027_mixed_source_corpus.py:register"
+      ],
+      "tests_verifiers": [
+        "tests/test_m027_mixed_source_catalog.py",
+        "tests/test_article_catalog_schema.py",
+        "scripts/verify_m025_article_catalog.py"
+      ],
+      "observability": [
+        "Registration diagnostics include selection_id, article_ref, seed_url, fail_closed_safety_flags, and network_fetch_attempted=false"
+      ],
+      "next_actions": [
+        "Register metadata-only catalog rows for stanford:cs224n:gradient-notes and arxiv:2605.29548.",
+        "Rebuild/validate article_catalog index rows and keep network_fetch_attempted=false during registration."
+      ]
+    },
+    {
+      "stage": "source_acquisition",
+      "label": "Source acquisition",
+      "module_id": "mixed_source_capture_boundary",
+      "module_inventory_status": "covered",
+      "claim_state": "blocked",
+      "rationale": "The acquisition boundary is implemented, but M030 requested refs cannot be replayed end-to-end until missing catalog records exist.",
+      "primary_functions_classes": [
+        "scripts/capture_m027_mixed_source_sources.py:FetchResponse",
+        "scripts/capture_m027_mixed_source_sources.py:default_fetcher",
+        "scripts/capture_m027_mixed_source_sources.py:fixture_response_fetcher",
+        "scripts/capture_m027_mixed_source_sources.py:target_path_for_variant",
+        "scripts/capture_m027_mixed_source_sources.py:diagnostic_result",
+        "scripts/verify_m027_source_acquisition_boundary.py:validate_captured_variant"
+      ],
+      "unsafe_to_claim_functions": [
+        "scripts/capture_m027_mixed_source_sources.py:FetchResponse",
+        "scripts/capture_m027_mixed_source_sources.py:default_fetcher",
+        "scripts/capture_m027_mixed_source_sources.py:fixture_response_fetcher",
+        "scripts/capture_m027_mixed_source_sources.py:target_path_for_variant",
+        "scripts/capture_m027_mixed_source_sources.py:diagnostic_result",
+        "scripts/verify_m027_source_acquisition_boundary.py:validate_captured_variant"
+      ],
+      "tests_verifiers": [
+        "tests/test_m027_source_acquisition_boundary.py",
+        "scripts/verify_m027_source_acquisition_boundary.py"
+      ],
+      "observability": [
+        "Per-variant diagnostics with diagnostic_code, status, sha256, byte_size, media_type, and safety flags",
+        "Summary counts for captured/blocked/failed"
+      ],
+      "next_actions": [
+        "After catalog registration, replay controlled acquisition for the two missing refs and include already-cataloged refs in replay scope.",
+        "Persist loader/acquisition events and summary artifacts with source_artifact_captured updated only from real local captures."
+      ]
+    },
+    {
+      "stage": "loader_evidence",
+      "label": "Loader evidence",
+      "module_id": "local_ingestion_loader_and_evidence_bridge",
+      "module_inventory_status": "covered",
+      "claim_state": "partial",
+      "rationale": "Loader evidence bridge exists, but evidence for the full requested set depends on catalog registration plus acquisition replay.",
+      "primary_functions_classes": [
+        "src/arxiv_archive/ingestion/loader.py:FullTextSource",
+        "src/arxiv_archive/ingestion/loader.py:FullTextIngestionResult",
+        "src/arxiv_archive/ingestion/loader.py:ArticleLoadSource",
+        "src/arxiv_archive/ingestion/loader.py:ArticleLoadResult",
+        "src/arxiv_archive/ingestion/loader.py:ingest_full_text",
+        "src/arxiv_archive/ingestion/loader.py:load_article_source",
+        "src/arxiv_archive/article_evidence_bridge.py:build_article_evidence_bundle_from_load_events"
+      ],
+      "unsafe_to_claim_functions": [
+        "src/arxiv_archive/ingestion/loader.py:FullTextSource",
+        "src/arxiv_archive/ingestion/loader.py:FullTextIngestionResult",
+        "src/arxiv_archive/ingestion/loader.py:ArticleLoadSource",
+        "src/arxiv_archive/ingestion/loader.py:ArticleLoadResult",
+        "src/arxiv_archive/ingestion/loader.py:ingest_full_text",
+        "src/arxiv_archive/ingestion/loader.py:load_article_source",
+        "src/arxiv_archive/article_evidence_bridge.py:build_article_evidence_bundle_from_load_events"
+      ],
+      "tests_verifiers": [
+        "tests/test_full_text_ingestion.py",
+        "tests/test_article_evidence_bridge.py"
+      ],
+      "observability": [
+        "FullTextQualityReport counters and warnings",
+        "ArticleLoadResult duration_ms, warning_count, outcome, failure_reason, source_id, checksum"
+      ],
+      "next_actions": [
+        "Run loader replay against all four requested identities after acquisition artifacts exist.",
+        "Verify every successful load has provenance, source path, diagnostics, and fail-closed safety flags."
+      ]
+    },
+    {
+      "stage": "parser_conversion",
+      "label": "Parser/conversion",
+      "module_id": "conversion_quality_and_parser_boundary",
+      "module_inventory_status": "covered",
+      "claim_state": "blocked",
+      "rationale": "Parser/conversion quality checks exist, but parser readiness is explicitly false for this selection and cannot be claimed before local source replay.",
+      "primary_functions_classes": [
+        "scripts/convert_m027_source_quality_boundary.py:verify_source_bytes",
+        "scripts/convert_m027_source_quality_boundary.py:converted_text_path",
+        "scripts/verify_m027_conversion_quality_boundary.py:verify",
+        "scripts/verify_m027_conversion_quality_boundary.py:validate_row_semantics",
+        "src/arxiv_archive/parsing/parser.py:parse_article",
+        "src/arxiv_archive/parsing/parser.py:_fallback_article"
+      ],
+      "unsafe_to_claim_functions": [
+        "scripts/convert_m027_source_quality_boundary.py:verify_source_bytes",
+        "scripts/convert_m027_source_quality_boundary.py:converted_text_path",
+        "scripts/verify_m027_conversion_quality_boundary.py:verify",
+        "scripts/verify_m027_conversion_quality_boundary.py:validate_row_semantics",
+        "src/arxiv_archive/parsing/parser.py:parse_article",
+        "src/arxiv_archive/parsing/parser.py:_fallback_article"
+      ],
+      "tests_verifiers": [
+        "tests/test_m027_conversion_quality_boundary.py",
+        "scripts/verify_m027_conversion_quality_boundary.py",
+        "tests/test_page_index.py"
+      ],
+      "observability": [
+        "diagnostic_code per conversion row",
+        "quality status/counters and structure_counts",
+        "source and converted payload hashes/byte sizes",
+        "Failure Modes, Load Profile, and Negative Tests report sections required by verifier"
+      ],
+      "next_actions": [
+        "Classify the Stanford PDF through the local PDF parser path and record conversion diagnostics.",
+        "Replay arXiv PDF/HTML conversion quality for arxiv:2605.29548 and the already-cataloged arXiv refs."
+      ]
+    },
+    {
+      "stage": "chunking",
+      "label": "Chunking",
+      "module_id": "pageindex_semantic_chunk_evidence",
+      "module_inventory_status": "covered",
+      "claim_state": "future-scope",
+      "rationale": "Chunking modules and verifiers exist, but chunk readiness for these refs must wait for parser/conversion evidence.",
+      "primary_functions_classes": [
+        "src/arxiv_archive/indexing/page_index.py:build_page_index",
+        "src/arxiv_archive/indexing/page_index.py:build_page_index_from_parsed",
+        "src/arxiv_archive/evidence.py:SemanticChunk",
+        "src/arxiv_archive/evidence.py:EvidencePath",
+        "src/arxiv_archive/evidence.py:build_semantic_chunks",
+        "src/arxiv_archive/evidence.py:build_evidence_paths",
+        "src/arxiv_archive/evidence.py:validate_evidence_path"
+      ],
+      "unsafe_to_claim_functions": [
+        "src/arxiv_archive/indexing/page_index.py:build_page_index",
+        "src/arxiv_archive/indexing/page_index.py:build_page_index_from_parsed",
+        "src/arxiv_archive/evidence.py:SemanticChunk",
+        "src/arxiv_archive/evidence.py:EvidencePath",
+        "src/arxiv_archive/evidence.py:build_semantic_chunks",
+        "src/arxiv_archive/evidence.py:build_evidence_paths",
+        "src/arxiv_archive/evidence.py:validate_evidence_path"
+      ],
+      "tests_verifiers": [
+        "tests/test_evidence_paths.py",
+        "tests/test_page_index.py",
+        "scripts/replay_m027_end_to_end_mixed_replay.py"
+      ],
+      "observability": [
+        "PageIndex validation_warnings",
+        "SemanticChunk provenance fields",
+        "EvidencePath validation_warnings",
+        "Replay chunk_count and evidence_path_count"
+      ],
+      "next_actions": [
+        "Run PageIndex/semantic chunk evidence only after parser output is available and classified as usable.",
+        "Check chunk IDs, section anchors, bounds, and repair diagnostics before claiming chunk readiness."
+      ]
+    },
+    {
+      "stage": "graph_readiness_review",
+      "label": "Graph-readiness review",
+      "module_id": "graph_readiness_export_and_independent_review",
+      "module_inventory_status": "covered",
+      "claim_state": "future-scope",
+      "rationale": "Graph-readiness review/export tooling exists, but KG readiness is false until chunk evidence receives independent review.",
+      "primary_functions_classes": [
+        "src/arxiv_archive/graph_readiness_export.py:export_corpus",
+        "src/arxiv_archive/graph_readiness_export.py:build_package_from_manifest_document",
+        "src/arxiv_archive/graph_readiness_export.py:_graph_ready_chunks",
+        "src/arxiv_archive/graph_readiness_export.py:_evidence_path_refs",
+        "src/arxiv_archive/graph_readiness_export.py:_report",
+        "src/arxiv_archive/graph_readiness_review.py:generate_review_bundles",
+        "src/arxiv_archive/graph_readiness_review.py:select_review_papers",
+        "src/arxiv_archive/graph_readiness_review.py:render_review_bundle",
+        "src/arxiv_archive/graph_readiness_review.py:validate_review_artifacts"
+      ],
+      "unsafe_to_claim_functions": [
+        "src/arxiv_archive/graph_readiness_export.py:export_corpus",
+        "src/arxiv_archive/graph_readiness_export.py:build_package_from_manifest_document",
+        "src/arxiv_archive/graph_readiness_export.py:_graph_ready_chunks",
+        "src/arxiv_archive/graph_readiness_export.py:_evidence_path_refs",
+        "src/arxiv_archive/graph_readiness_export.py:_report",
+        "src/arxiv_archive/graph_readiness_review.py:generate_review_bundles",
+        "src/arxiv_archive/graph_readiness_review.py:select_review_papers",
+        "src/arxiv_archive/graph_readiness_review.py:render_review_bundle",
+        "src/arxiv_archive/graph_readiness_review.py:validate_review_artifacts"
+      ],
+      "tests_verifiers": [
+        "tests/test_graph_readiness_export.py",
+        "tests/test_graph_readiness_review.py",
+        "uv run python -m arxiv_archive.graph_readiness_review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review"
+      ],
+      "observability": [
+        "Graph readiness route events",
+        "Summary package counts/states",
+        "Independent review request and summary events",
+        "Stable review artifact validation diagnostics"
+      ],
+      "next_actions": [
+        "Create reviewer packets from chunk evidence and require independent graph-readiness review before import eligibility.",
+        "Record unsafe-to-claim reasons for any ref lacking source, parser, chunk, or reviewer evidence."
+      ]
+    },
+    {
+      "stage": "graph_import_boundary",
+      "label": "Graph import boundary",
+      "module_id": "fail_closed_import_contract_and_rehearsal",
+      "module_inventory_status": "covered",
+      "claim_state": "unsafe-to-claim",
+      "rationale": "Import contract/rehearsal code is covered, but graph_write_attempted and production_persistence_attempted are false; no LadybugDB/import claim is safe.",
+      "primary_functions_classes": [
+        "src/arxiv_archive/chunk_import_contract.py:validate_import_ready_package",
+        "src/arxiv_archive/chunk_import_contract.py:validation_to_dict",
+        "src/arxiv_archive/chunk_import_contract.py:ContractValidationResult.import_ready",
+        "src/arxiv_archive/staging/import_boundary.py:ImportCandidate",
+        "src/arxiv_archive/staging/import_boundary.py:ImportBoundaryRehearsal",
+        "src/arxiv_archive/staging/import_boundary.py:build_import_boundary_rehearsal_from_benchmark",
+        "src/arxiv_archive/staging/import_boundary.py:validate_import_boundary_rehearsal",
+        "src/arxiv_archive/staging/import_boundary.py:write_import_boundary_rehearsal_run"
+      ],
+      "unsafe_to_claim_functions": [
+        "src/arxiv_archive/chunk_import_contract.py:validate_import_ready_package",
+        "src/arxiv_archive/chunk_import_contract.py:validation_to_dict",
+        "src/arxiv_archive/chunk_import_contract.py:ContractValidationResult.import_ready",
+        "src/arxiv_archive/staging/import_boundary.py:ImportCandidate",
+        "src/arxiv_archive/staging/import_boundary.py:ImportBoundaryRehearsal",
+        "src/arxiv_archive/staging/import_boundary.py:build_import_boundary_rehearsal_from_benchmark",
+        "src/arxiv_archive/staging/import_boundary.py:validate_import_boundary_rehearsal",
+        "src/arxiv_archive/staging/import_boundary.py:write_import_boundary_rehearsal_run"
+      ],
+      "tests_verifiers": [
+        "tests/test_import_ready_contract.py",
+        "tests/test_import_boundary_rehearsal.py"
+      ],
+      "observability": [
+        "refusal_counts by stable reason",
+        "diagnostics with object_id/object_type/route and blocks_import",
+        "import_ready=false, production_import_attempted=false, ladybugdb_written=false metadata"
+      ],
+      "next_actions": [
+        "Use fail-closed import rehearsal only after graph-readiness review passes.",
+        "Do not write LadybugDB or production graph state from this readiness report."
+      ]
+    },
+    {
+      "stage": "cross_stage_replay",
+      "label": "Cross-stage replay",
+      "module_id": "current_pipeline_and_end_to_end_replay",
+      "module_inventory_status": "covered",
+      "claim_state": "blocked",
+      "rationale": "End-to-end replay is blocked by partial catalog coverage and absent source/parser/chunk/graph evidence for the full requested set.",
+      "primary_functions_classes": [
+        "scripts/replay_m027_current_pipeline_baseline.py:replay_baseline",
+        "scripts/replay_m027_current_pipeline_baseline.py:run_current_pipeline",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:replay_end_to_end",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:run_boundaries",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:build_readiness_decision"
+      ],
+      "unsafe_to_claim_functions": [
+        "scripts/replay_m027_current_pipeline_baseline.py:replay_baseline",
+        "scripts/replay_m027_current_pipeline_baseline.py:run_current_pipeline",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:replay_end_to_end",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:run_boundaries",
+        "scripts/replay_m027_end_to_end_mixed_replay.py:build_readiness_decision"
+      ],
+      "tests_verifiers": [
+        "tests/test_m027_current_pipeline_baseline.py",
+        "tests/test_m027_end_to_end_mixed_replay.py",
+        "scripts/verify_m027_current_pipeline_baseline.py"
+      ],
+      "observability": [
+        "input_artifacts/output_artifacts with hashes",
+        "diagnostic_counts and baseline_comparison_counts",
+        "events replay_started/variant_replayed/replay_completed",
+        "failure_modes/load_profile embedded in summaries and reports"
+      ],
+      "next_actions": [
+        "Run a continuous replay from catalog registration through graph-readiness review once upstream blockers are cleared.",
+        "Treat any missing stage artifact as a failure to claim full pipeline readiness."
+      ]
+    }
+  ]
+}
