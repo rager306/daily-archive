@@ -16,9 +16,10 @@ import os
 import re
 import sys
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 ARTICLE_SCHEMA_VERSION = "article.v00.01"
@@ -615,13 +616,13 @@ def main(argv: list[str] | None = None) -> int:
             "fail_closed_safety_flags": FAIL_CLOSED_SAFETY_FLAGS,
             "message": str(exc),
         }
-        print(json.dumps(error, sort_keys=True), file=sys.stderr)
+        sys.stderr.write(f"{json.dumps(error, sort_keys=True)}\n")
         return 1
 
     for diagnostic in diagnostics:
         stream = sys.stderr if diagnostic.get("level") == "error" else sys.stdout
-        print(json.dumps(diagnostic, sort_keys=True), file=stream)
-    print(json.dumps(summary, sort_keys=True))
+        stream.write(f"{json.dumps(diagnostic, sort_keys=True)}\n")
+    sys.stdout.write(f"{json.dumps(summary, sort_keys=True)}\n")
     return 1 if any(diagnostic.get("level") == "error" for diagnostic in diagnostics) else 0
 
 

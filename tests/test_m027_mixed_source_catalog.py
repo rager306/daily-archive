@@ -10,6 +10,7 @@ SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_article_catalog.py"
 WRAPPER_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m027_mixed_source_catalog.py"
 REGISTER_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m027_mixed_source_corpus.py"
 REGISTER_M029_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m029_missing_metadata_refs.py"
+VERIFY_M030_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m030_requested_ref_intake.py"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 
 
@@ -594,3 +595,60 @@ def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_close
     ]
     for snippet in forbidden_snippets:
         assert snippet not in serialized
+
+
+def test_m030_requested_ref_intake_closeout_baseline_is_current() -> None:
+    root = Path(__file__).parents[1]
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_M030_SCRIPT),
+            "--selection",
+            str(root / "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json"),
+            "--report",
+            str(root / "data/article_corpora/m029-pipeline-architecture-audit-v1/intake-report.md"),
+            "--catalog-index",
+            str(root / "data/article_catalog/index.json"),
+            "--m028-selection",
+            str(root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"),
+            "--validate-only",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "4 refs, 3 cataloged, 1 typed catalog blocker" in result.stdout
+
+
+def test_m030_requested_ref_intake_rejects_unsafe_claims(tmp_path: Path) -> None:
+    root = Path(__file__).parents[1]
+    selection = json.loads(
+        (root / "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json").read_text(encoding="utf-8")
+    )
+    selection["refs"][0]["unsafe_claims"]["graph_ready_claimed"] = True
+    unsafe_selection = tmp_path / "selection.json"
+    unsafe_selection.write_text(json.dumps(selection, indent=2), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(VERIFY_M030_SCRIPT),
+            "--selection",
+            str(unsafe_selection),
+            "--report",
+            str(root / "data/article_corpora/m029-pipeline-architecture-audit-v1/intake-report.md"),
+            "--catalog-index",
+            str(root / "data/article_catalog/index.json"),
+            "--m028-selection",
+            str(root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"),
+            "--validate-only",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 1
+    assert "M030_INTAKE_UNSAFE_CLAIMS" in result.stderr

@@ -25,26 +25,28 @@ EXPECTED_URLS = {
     },
     "https://web.stanford.edu/class/cs224n/readings/gradient-notes.pdf": {
         "identity": "stanford:cs224n:gradient-notes",
-        "catalog_status": "missing_from_article_catalog",
+        "catalog_status": "already_cataloged",
         "prior_selection_status": "not_in_m028_selection",
     },
     "https://arxiv.org/abs/2605.29548": {
         "identity": "arxiv:2605.29548",
-        "catalog_status": "missing_from_article_catalog",
+        "catalog_status": "already_cataloged",
         "prior_selection_status": "not_in_m028_selection",
     },
     "https://arxiv.org/abs/2605.26099": {
         "identity": "arxiv:2605.26099",
-        "catalog_status": "already_cataloged",
+        "catalog_status": "typed_catalog_blocker",
         "prior_selection_status": "already_in_m028_selection",
     },
 }
 EXPECTED_COUNTS = {
     "url_refs": 4,
     "unique_normalized_identities": 4,
-    "already_in_article_catalog": 2,
+    "already_in_article_catalog": 3,
     "already_in_m028_selection": 1,
-    "missing_from_article_catalog": 2,
+    "missing_from_article_catalog": 0,
+    "typed_catalog_blockers": 1,
+    "cataloged_or_typed_blocked": 4,
     "new_to_m028_selection": 3,
 }
 FALSE_SELECTION_FLAGS = {
@@ -80,6 +82,10 @@ def _catalog_identities(index: dict[str, Any]) -> set[str]:
     identities: set[str] = set()
     for article in index.get("articles", []):
         if not isinstance(article, dict):
+            continue
+        normalized_identity = article.get("normalized_identity")
+        if isinstance(normalized_identity, str):
+            identities.add(normalized_identity)
             continue
         source = article.get("source_code")
         key = article.get("article_key")
@@ -149,6 +155,12 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
             errors.append(f"M030_INTAKE_PRIOR_SELECTION_STATUS: {url} expected {expected['prior_selection_status']}")
         if ref.get("reachability_status") != "available_http_200":
             errors.append(f"M030_INTAKE_REACHABILITY: {url} must preserve available_http_200")
+        if expected["catalog_status"] == "typed_catalog_blocker":
+            blocker = ref.get("typed_blocker")
+            if not isinstance(blocker, dict):
+                errors.append(f"M030_INTAKE_TYPED_BLOCKER: {url} typed_blocker must be an object")
+            elif blocker.get("code") != "catalog_placeholder_pruned_no_article_record":
+                errors.append(f"M030_INTAKE_TYPED_BLOCKER: {url} must preserve placeholder-pruned blocker code")
         claims = ref.get("unsafe_claims")
         if not isinstance(claims, dict):
             errors.append(f"M030_INTAKE_UNSAFE_CLAIMS: {url} unsafe_claims must be an object")
@@ -162,6 +174,13 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
         errors.append(f"M030_INTAKE_MISSING_URLS: missing {missing_urls}")
     if len(seen_identities) != EXPECTED_COUNTS["unique_normalized_identities"]:
         errors.append("M030_INTAKE_IDENTITIES: expected 4 unique normalized identities")
+    represented = sum(
+        1
+        for ref in refs
+        if isinstance(ref, dict) and ref.get("catalog_status") in {"already_cataloged", "typed_catalog_blocker"}
+    )
+    if represented != EXPECTED_COUNTS["cataloged_or_typed_blocked"]:
+        errors.append("M030_INTAKE_CLOSEOUT: all 4 refs must be cataloged or explicitly typed blockers")
 
     flags = selection.get("safety_flags")
     if not isinstance(flags, dict):
@@ -182,16 +201,22 @@ def validate_report(report_path: Path, selection: dict[str, Any]) -> list[str]:
         if url not in text:
             errors.append(f"M030_INTAKE_REPORT_URL: report missing {url}")
         status = expected["catalog_status"]
-        expected_phrase = "already in `article_catalog`" if status == "already_cataloged" else "missing from `article_catalog`"
+        if status == "already_cataloged":
+            expected_phrase = "already in `article_catalog`"
+        elif status == "typed_catalog_blocker":
+            expected_phrase = "typed catalog blocker"
+        else:
+            expected_phrase = "missing from `article_catalog`"
         if expected_phrase not in text:
             errors.append(f"M030_INTAKE_REPORT_STATUS: report missing phrase {expected_phrase!r}")
     required_phrases = [
-        "two identities are now represented in `article_catalog`",
+        "three identities are now represented in `article_catalog`",
+        "one identity is an explicit typed catalog blocker",
         "does not claim source acquisition",
         "parser readiness",
         "chunk readiness",
         "graph readiness",
-        "stale missing-status drift",
+        "stale M030 S01 assessment is superseded",
     ]
     for phrase in required_phrases:
         if phrase not in text:
@@ -215,6 +240,8 @@ def validate_catalog_status(selection: dict[str, Any], catalog_index: dict[str, 
             errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked cataloged but absent from catalog index")
         if status == "missing_from_article_catalog" and identity in catalog_ids:
             errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked missing but present in catalog index")
+        if status == "typed_catalog_blocker" and identity in catalog_ids:
+            errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked typed blocker but present in catalog index")
     return errors
 
 
@@ -269,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sys.stdout.write(
         "M030 requested-ref intake validation passed: "
-        "4 refs, 2 cataloged, 2 missing from catalog, graph/import claims fail-closed.\n"
+        "4 refs, 3 cataloged, 1 typed catalog blocker, graph/import claims fail-closed.\n"
     )
     return 0
 
