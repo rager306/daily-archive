@@ -214,7 +214,13 @@ def test_positive_cli_writes_requested_outputs_under_validation_remediation(tmp_
 
     assert exit_code == 0
     assert json.loads(evidence_out.read_text(encoding="utf-8"))["s02_assessment_reconciliation"]["fresh_65_pass_evidence_present"] is True
-    assert "M031 Validation Remediation Dossier" in report_out.read_text(encoding="utf-8")
+    report = report_out.read_text(encoding="utf-8")
+    assert "M031 Validation Remediation Dossier" in report
+    assert "## Reader Action" in report
+    assert "Fresh `65 passed` evidence present: `True`" in report
+    assert "## Forbidden Claims" in report
+    assert "S06 does not enable production graph import or LadybugDB writes" in report
+    assert "## Milestone Validation Handoff Snippets" in report
     assert json.loads(summary_out.read_text(encoding="utf-8"))["status"] == "passed"
     diagnostic_rows = [json.loads(line) for line in diagnostics_out.read_text(encoding="utf-8").splitlines()]
     assert [row["code"] for row in diagnostic_rows].count("M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_RECONCILED") == 1

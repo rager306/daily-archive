@@ -572,7 +572,15 @@ def render_report(evidence: Mapping[str, Any], diagnostics: Sequence[Mapping[str
     codes = Counter(str(row.get("code")) for row in diagnostics)
     code_lines = "\n".join(f"- `{code}`: {count}" for code, count in sorted(codes.items())) or "- None"
     reconciliation = evidence.get("s02_assessment_reconciliation", {}) if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping) else {}
+    source_artifacts = evidence.get("source_artifacts", {}) if isinstance(evidence.get("source_artifacts"), Mapping) else {}
+    boundary = evidence.get("graph_import_boundary", {}) if isinstance(evidence.get("graph_import_boundary"), Mapping) else {}
+    rerun_inputs = evidence.get("rerun_ready_validation_inputs", {}) if isinstance(evidence.get("rerun_ready_validation_inputs"), Mapping) else {}
     gates = evidence.get("quality_gates", {}) if isinstance(evidence.get("quality_gates"), Mapping) else {}
+    source_lines = "\n".join(f"- `{key}`: `{value}`" for key, value in sorted(source_artifacts.items())) or "- None"
+    fresh_sources = ", ".join(f"`{path}`" for path in reconciliation.get("fresh_65_pass_evidence_sources", []) if isinstance(path, str)) or "None"
+    requirement_claims = "\n".join(f"- {row.get('safe_claim')}" for row in req_rows if isinstance(row, Mapping) and row.get("safe_claim")) or "- None"
+    class_claims = "\n".join(f"- {row.get('safe_claim')}" for row in class_rows if isinstance(row, Mapping) and row.get("safe_claim")) or "- None"
+    command_lines = "\n".join(f"- `{command}`" for command in rerun_inputs.get("commands", []) if isinstance(command, str)) or "- `uv run python scripts/verify_m031_validation_remediation.py --validate-only`"
     failure_modes = "\n".join(f"- {item}" for item in gates.get("failure_modes_q5", []) if isinstance(item, str))
     negative_tests = "\n".join(f"- {item}" for item in gates.get("negative_tests_q7", []) if isinstance(item, str))
     load_profile = gates.get("load_profile_q6", {}) if isinstance(gates.get("load_profile_q6"), Mapping) else {}
@@ -583,10 +591,19 @@ Milestone: `{MILESTONE_ID}`
 Selection: `{SELECTION_ID}`
 Metadata-only: true
 
+## Reader Action
+
+Use this dossier as the M031 validation-rerun input for S06. Read the evidence JSON for machine-checkable rows, read this report for the human handoff, and do not interpret any row as graph-import approval or global requirement validation.
+
+## Source Artifact Audit
+
+{source_lines}
+
 ## S02 Assessment Reconciliation
 
 - Stale S02 assessment failure detected: `{reconciliation.get('stale_s02_assessment_failure_detected')}`
-- Fresh 65-pass evidence present: `{reconciliation.get('fresh_65_pass_evidence_present')}`
+- Fresh `65 passed` evidence present: `{reconciliation.get('fresh_65_pass_evidence_present')}`
+- Fresh `65 passed` evidence sources: {fresh_sources}
 - Full-repo pytest collection debt classified outside S02 UAT: `{(reconciliation.get('full_repo_pytest_collection_debt') or {}).get('classified_outside_s02_uat') if isinstance(reconciliation.get('full_repo_pytest_collection_debt'), Mapping) else None}`
 
 ## Requirement Coverage
@@ -601,9 +618,34 @@ Metadata-only: true
 |---|---|---|
 {class_lines}
 
+## Safe Claims
+
+### Requirement claims
+{requirement_claims}
+
+### Verification-class claims
+{class_claims}
+
+### Graph/import boundary claim
+- {boundary.get('safe_claim')}
+
+## Forbidden Claims
+
+- Do not claim that S06 validates global requirement status for R024/R027/R029/R040/R050.
+- Do not assert graph-import readiness, KG-import readiness, trusted fact promotion, or production-import authorization for M031.
+- Do not claim completed-review evidence exists when the independent review events still enforce refusal.
+- Do not claim network fetches, model calls, raw article payload handling, production graph import, or LadybugDB writes occurred.
+
 ## Fail-Closed Safety
 
-Graph/import/LadybugDB/production/model/network/write activity remains false. Requirement status changes are not performed.
+S06 does not enable production graph import or LadybugDB writes. Graph/import/LadybugDB/production/model/network/write activity remains false, accepted/import-eligible counts remain zero, and requirement status changes are not performed.
+
+## Milestone Validation Handoff Snippets
+
+- S02 stale assessment closeout: stale S02 assessment failure is reconciled by fresh `65 passed` S02 summary/UAT evidence, while unrelated full-repo pytest collection debt remains outside scoped S02 UAT.
+- Requirement coverage: R024/R027/R029/R040/R050 have M031-scoped remediation coverage rows only; `validated` and `validation_claim_allowed` remain false.
+- Verification classes: Contract, Integration, Operational, and UAT rows are covered for validation rerun using metadata-only evidence paths.
+- Safety boundary: no raw article text, chunk text, vectors, embeddings, model traces, network traces, write traces, secrets, PDF bytes, or base64 payloads are included.
 
 ## Stable Diagnostics
 
@@ -620,9 +662,9 @@ Graph/import/LadybugDB/production/model/network/write activity remains false. Re
 ## Negative Tests
 {negative_tests}
 
-## Rerun Command
+## Rerun Commands
 
-`uv run python scripts/verify_m031_validation_remediation.py --validate-only`
+{command_lines}
 """
 
 
