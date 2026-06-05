@@ -1,0 +1,964 @@
+{
+  "file name" : "original.pdf",
+  "number of pages" : 63,
+  "author" : "Akide Liu; Jinbo Xing; Chaojie Mao; Ye Li; Zeyu Zhang; Yefei He; Weijie Wang; Zihan Wang; Yu Liu; Gholamreza Haffari; Bohan Zhuang",
+  "title" : "ReCA: Multi-Shot Long Video Extrapolation via Recursive Context Allocation",
+  "creation date" : null,
+  "modification date" : null,
+  "kids" : [ {
+    "type" : "heading",
+    "pdfua_tag" : "H1",
+    "id" : 13,
+    "level" : "Doctitle",
+    "page number" : 1,
+    "bounding box" : [ 14.04, 218.24, 36.36, 573.76 ],
+    "heading level" : 1,
+    "font" : "Times-Roman",
+    "font size" : 20.0,
+    "text color" : "[0.5, 0.5, 0.5]",
+    "content" : "arXiv:2605.26525v1[cs.CV]26May2026"
+  }, {
+    "type" : "image",
+    "pdfua_tag" : "Figure",
+    "id" : 1,
+    "page number" : 1,
+    "bounding box" : [ 495.762, 746.751, 541.133, 764.891 ],
+    "alt_source" : "missing",
+    "source" : "original_images/imageFile1.png"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H2",
+    "id" : 3,
+    "level" : "Subtitle",
+    "page number" : 1,
+    "bounding box" : [ 92.647, 659.056, 497.803, 701.828 ],
+    "heading level" : 2,
+    "font" : "OptimisticDisp-Bd",
+    "font size" : 18.183,
+    "text color" : "[0.0]",
+    "content" : "ReCA: Multi-Shot Long Video Extrapolation via Recursive Context Allocation"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 4,
+    "page number" : 1,
+    "bounding box" : [ 92.208, 626.872, 497.475, 652.209 ],
+    "font" : "OptimisticDisp-Bd",
+    "font size" : 8.767,
+    "text color" : "[0.38039, 0.36078, 0.92941]",
+    "content" : "Akide Liu1,2,3,‡, Jinbo Xing2,†, Chaojie Mao2, Ye Li3, Zeyu Zhang3, Yefei He3, Weijie Wang3, Zihan Wang4, Yu Liu2, Gholamreza Haffari1, Bohan Zhuang3,†"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 5,
+    "page number" : 1,
+    "bounding box" : [ 92.25, 609.814, 518.255, 623.197 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.38039, 0.39609, 0.4902]",
+    "content" : "1Monash University 2Tongyi Lab, Alibaba Group 3Zhejiang University 4University of Queensland"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 6,
+    "page number" : 1,
+    "bounding box" : [ 91.481, 368.104, 521.282, 596.219 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.12158, 0.13333, 0.2]",
+    "content" : "Minute-scale cinematic video generation is a central challenge for generative video models. Existing paradigms address only fragments of this challenge: single-shot extrapolation preserves an anchor but lacks cinematic structure, while multi-shot storytelling imposes structure yet remains free to invent its visual states rather than continue an observed one. We define Multi-Shot Video Extrapolation (MSVE), a task that extends an observed frame or clip into a sequence of cinematically structured shots while preserving anchor state and advancing narrative intent. This setting operates under the finite per-call generation budget of short-video models. We identify three coupled bottlenecks: (1) global planners over-specify unsupported details from full screenplays; (2) shot-level prompts dilute task-relevant state when carrying the complete story; (3) temporal chaining turns generated frames into a lossy memory in which identity, scene, object, and action state decay. MSVE reveals that long-video failure is not merely a limitation of context length, but a failure of context allocation. We propose Recursive Context Allocation (ReCA), an inference-time framework that allocates context hierarchically across planning and generation. ReCA recursively decomposes MSVE into context-bounded subproblems, invokes frozen generators at leaf nodes, and propagates structured state updates across time. To evaluate this setting, we further propose MSVE-Bench and NB-Q, a source-grounded protocol with prompts purpose-built for 3–5 minute long-video generation, a regime not addressed by existing short-clip benchmarks. Compared to previous methods, ReCA improves average normalized score by 8–16% over the strongest competing controller and improves multi-shot consistency metrics by 28–43%. View the project page at https://reca.vmv.re."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 7,
+    "page number" : 1,
+    "bounding box" : [ 92.647, 356.849, 171.142, 368.138 ],
+    "font" : "SFRM0900",
+    "font size" : 8.966,
+    "text color" : "[0.12158, 0.13333, 0.2]",
+    "content" : "Date: May 27, 2026"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 8,
+    "page number" : 1,
+    "bounding box" : [ 70.866, 308.886, 161.082, 325.152 ],
+    "font" : "OptimisticDisp-Bd",
+    "font size" : 12.625,
+    "text color" : "[0.38039, 0.36078, 0.92941]",
+    "content" : "1 Introduction"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 9,
+    "page number" : 1,
+    "bounding box" : [ 70.358, 133.425, 543.066, 301.375 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "Minute-scale cinematic video generation is a central challenge for generative video models. Recent systems synthesize compelling short clips and extend them through image-to-video continuation, clip stitching, memory mechanisms, or language-based planning (Ho et al., 2022b; Singer et al., 2022; Ho et al., 2022a; Hong et al., 2022; Blattmann et al., 2023; Bar-Tal et al., 2024; Kondratyuk et al., 2023; Yang et al., 2024; Polyak et al., 2024; Lin et al., 2024), but minute-scale cinematic videos are not merely longer clips: they are structured sequences of shots in which characters, objects, scenes, viewpoints, and narrative events evolve across cuts. Existing paradigms capture only part of this requirement: single-shot extrapolation preserves an observed anchor but produces one continuous take without cinematic structure (Ni et al., 2023; Chen et al., 2023; Khachatryan et al., 2023; Xing et al., 2023; Guo et al., 2023; Yin et al., 2023), while multi-shot storytelling and text-to-multi-shot generation introduce shot structure but begin from text and are free to invent the visual world rather than continue an observed one (Villegas et al., 2022; Lin et al., 2023; Kara et al., 2025; Wu et al., 2025; Wang et al., 2025b; Long et al., 2024; Hong et al., 2023; Zhou et al., 2024; Gong et al., 2023). This leaves a task gap: current settings either preserve an observed world without multi-shot structure, or impose multi-shot structure without source-grounded extrapolation."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 10,
+    "page number" : 1,
+    "bounding box" : [ 70.358, 91.582, 542.519, 128.025 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "We introduce Multi-Shot Video Extrapolation (MSVE), a source-grounded long-video generation task that unifies these two requirements. Given an observed visual anchor v0, a narrative intent c, a target duration T, and a short-video generator G with finite per-call duration and conditioning budgets, MSVE asks a system to"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 12,
+    "page number" : 1,
+    "bounding box" : [ 70.866, 64.562, 297.167, 85.37 ],
+    "font" : "SFRM0800",
+    "font size" : 7.97,
+    "text color" : "[0.0]",
+    "content" : "†Corresponding Author ‡Note: Akide Liu is an intern at Tongyi Lab, Alibaba Group."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 33,
+    "page number" : 2,
+    "bounding box" : [ 337.879, 662.918, 379.758, 707.723 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.584,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "Script A traveler arrives at a mountain lake. They set up camp. Sunset falls. Night by the fire."
+  }, {
+    "type" : "text block",
+    "id" : 30,
+    "page number" : 2,
+    "bounding box" : [ 78.466, 676.224, 119.414, 702.282 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 5,
+      "page number" : 2,
+      "bounding box" : [ 78.931, 669.244, 118.949, 709.261 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile2.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 8,
+      "page number" : 2,
+      "bounding box" : [ 80.327, 694.61, 82.703, 700.536 ],
+      "font" : "TimesNewRomanPS-ItalicMT",
+      "font size" : 5.351,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "v"
+    } ]
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 22,
+    "level" : "1",
+    "page number" : 2,
+    "bounding box" : [ 217.77, 696.006, 296.993, 701.932 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Extrapolated continuation (one shot)"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 37,
+    "level" : "1",
+    "page number" : 2,
+    "bounding box" : [ 458.679, 694.144, 520.457, 700.07 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Generated shots (free world)"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 20,
+    "page number" : 2,
+    "bounding box" : [ 144.701, 674.916, 180.662, 696.039 ],
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "Single-Shot Extrapolation Model"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 35,
+    "page number" : 2,
+    "bounding box" : [ 404.187, 674.916, 434.432, 696.039 ],
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "Multi-Shot Storytelling Model"
+  }, {
+    "type" : "text block",
+    "id" : 23,
+    "page number" : 2,
+    "bounding box" : [ 205.962, 668.314, 229.228, 694.371 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 1,
+      "page number" : 2,
+      "bounding box" : [ 205.032, 668.779, 230.159, 693.906 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile3.png"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 24,
+    "page number" : 2,
+    "bounding box" : [ 229.694, 668.314, 252.959, 694.371 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 2,
+      "page number" : 2,
+      "bounding box" : [ 228.763, 668.779, 253.89, 693.906 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile4.png"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 25,
+    "page number" : 2,
+    "bounding box" : [ 253.425, 668.314, 276.69, 694.371 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 3,
+      "page number" : 2,
+      "bounding box" : [ 252.494, 668.779, 277.621, 693.906 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile5.png"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 26,
+    "page number" : 2,
+    "bounding box" : [ 277.156, 668.314, 300.421, 694.371 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 4,
+      "page number" : 2,
+      "bounding box" : [ 276.225, 668.779, 301.352, 693.906 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile6.png"
+    } ]
+  }, {
+    "type" : "image",
+    "pdfua_tag" : "Figure",
+    "id" : 49,
+    "page number" : 2,
+    "bounding box" : [ 455.129, 676.54, 471.36, 692.771 ],
+    "alt_source" : "missing",
+    "source" : "original_images/imageFile7.png"
+  }, {
+    "type" : "image",
+    "pdfua_tag" : "Figure",
+    "id" : 50,
+    "page number" : 2,
+    "bounding box" : [ 472.849, 676.54, 489.079, 692.771 ],
+    "alt_source" : "missing",
+    "source" : "original_images/imageFile8.png"
+  }, {
+    "type" : "image",
+    "pdfua_tag" : "Figure",
+    "id" : 51,
+    "page number" : 2,
+    "bounding box" : [ 490.568, 676.54, 506.798, 692.771 ],
+    "alt_source" : "missing",
+    "source" : "original_images/imageFile9.png"
+  }, {
+    "type" : "image",
+    "pdfua_tag" : "Figure",
+    "id" : 52,
+    "page number" : 2,
+    "bounding box" : [ 508.138, 676.54, 524.517, 692.771 ],
+    "alt_source" : "missing",
+    "source" : "original_images/imageFile10.png"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 27,
+    "page number" : 2,
+    "bounding box" : [ 302.283, 678.072, 308.791, 685.286 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 6.514,
+    "text color" : "[0.2666056454181671, 0.2666056454181671, 0.2666056454181671]",
+    "content" : "···"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 40,
+    "page number" : 2,
+    "bounding box" : [ 456.578, 669.998, 522.566, 675.667 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Shot 1 Shot 2 Shot 3 Shot 4"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 18,
+    "page number" : 2,
+    "bounding box" : [ 85.7, 668.087, 109.92, 674.013 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Observed v"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 29,
+    "level" : "2",
+    "page number" : 2,
+    "bounding box" : [ 82.234, 648.028, 230.822, 654.212 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.6972609758377075, 0.23144884407520294, 0.23144884407520294]",
+    "content" : "✘ Misses: shot transitions, narrative progression, long-range state."
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H5",
+    "id" : 48,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 328.386, 648.028, 475.542, 654.212 ],
+    "heading level" : 5,
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.6972609758377075, 0.23144884407520294, 0.23144884407520294]",
+    "content" : "✘ Misses: visual anchor v — free to invent identity, scene, style."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 15,
+    "page number" : 2,
+    "bounding box" : [ 158.013, 631.641, 461.683, 638.34 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 6.049,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "(a) Single-Shot Extrapolation (b) Multi-Shot Storytelling"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 99,
+    "page number" : 2,
+    "bounding box" : [ 515.753, 624.347, 530.068, 630.273 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "OURS"
+  }, {
+    "type" : "text block",
+    "id" : 100,
+    "page number" : 2,
+    "bounding box" : [ 85.446, 598.982, 126.394, 622.248 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 9,
+      "page number" : 2,
+      "bounding box" : [ 85.911, 599.447, 125.928, 621.782 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile11.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 14,
+      "page number" : 2,
+      "bounding box" : [ 86.842, 615.041, 92.097, 621.372 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.351,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "v₀"
+    } ]
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H5",
+    "id" : 63,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 326.806, 613.595, 433.607, 619.778 ],
+    "heading level" : 5,
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.584,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Adaptive multi-shot continuation, anchored to v"
+  }, {
+    "type" : "text block",
+    "id" : 102,
+    "page number" : 2,
+    "bounding box" : [ 229.228, 587.814, 285.531, 611.545 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 15,
+      "page number" : 2,
+      "bounding box" : [ 229.694, 584.092, 285.066, 615.268 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile12.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 18,
+      "page number" : 2,
+      "bounding box" : [ 231.089, 604.389, 236.495, 610.057 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "S1"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 21,
+      "page number" : 2,
+      "bounding box" : [ 276.778, 589.034, 281.896, 594.702 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "35"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 105,
+    "page number" : 2,
+    "bounding box" : [ 286.927, 587.814, 306.47, 611.545 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 22,
+      "page number" : 2,
+      "bounding box" : [ 287.389, 588.28, 306.008, 611.08 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile13.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 25,
+      "page number" : 2,
+      "bounding box" : [ 289.007, 604.389, 294.412, 610.057 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "S2"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 28,
+      "page number" : 2,
+      "bounding box" : [ 297.549, 589.034, 302.668, 594.702 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "12"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 108,
+    "page number" : 2,
+    "bounding box" : [ 307.866, 587.814, 413.028, 611.545 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 29,
+      "page number" : 2,
+      "bounding box" : [ 308.332, 588.21, 412.562, 611.092 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile14.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 32,
+      "page number" : 2,
+      "bounding box" : [ 309.779, 604.389, 315.184, 610.057 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "S3"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 35,
+      "page number" : 2,
+      "bounding box" : [ 403.903, 589.034, 409.022, 594.702 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "65"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 111,
+    "page number" : 2,
+    "bounding box" : [ 414.424, 587.814, 443.273, 611.545 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 36,
+      "page number" : 2,
+      "bounding box" : [ 414.868, 588.28, 442.828, 611.08 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile15.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 39,
+      "page number" : 2,
+      "bounding box" : [ 416.132, 604.389, 421.537, 610.057 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "S4"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 42,
+      "page number" : 2,
+      "bounding box" : [ 434.367, 589.034, 439.485, 594.702 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "18"
+    } ]
+  }, {
+    "type" : "text block",
+    "id" : 114,
+    "page number" : 2,
+    "bounding box" : [ 444.669, 587.814, 533.544, 611.545 ],
+    "kids" : [ {
+      "type" : "image",
+      "pdfua_tag" : "Figure",
+      "id" : 43,
+      "page number" : 2,
+      "bounding box" : [ 445.134, 588.213, 533.079, 611.093 ],
+      "alt_source" : "missing",
+      "source" : "original_images/imageFile16.png"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 46,
+      "page number" : 2,
+      "bounding box" : [ 446.595, 604.389, 452.001, 610.057 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "S5"
+    }, {
+      "type" : "paragraph",
+      "pdfua_tag" : "P",
+      "id" : 49,
+      "page number" : 2,
+      "bounding box" : [ 524.572, 589.034, 529.691, 594.702 ],
+      "font" : "TimesNewRomanPS-BoldMT",
+      "font size" : 5.118,
+      "text color" : "[1.0, 1.0, 1.0]",
+      "content" : "55"
+    } ]
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H4",
+    "id" : 59,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 163.568, 596.743, 199.022, 603.442 ],
+    "heading level" : 4,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "MSVE Model"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 54,
+    "page number" : 2,
+    "bounding box" : [ 92.68, 590.845, 116.899, 596.77 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Observed v"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H6",
+    "id" : 103,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 281.896, 589.034, 283.887, 594.702 ],
+    "heading level" : 6,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 5.118,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "s"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H6",
+    "id" : 106,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 302.668, 589.034, 304.659, 594.702 ],
+    "heading level" : 6,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 5.118,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "s"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H6",
+    "id" : 109,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 409.022, 589.034, 411.013, 594.702 ],
+    "heading level" : 6,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 5.118,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "s"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H6",
+    "id" : 112,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 439.485, 589.034, 441.477, 594.702 ],
+    "heading level" : 6,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 5.118,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "s"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H6",
+    "id" : 115,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 529.691, 589.034, 531.682, 594.702 ],
+    "heading level" : 6,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 5.118,
+    "text color" : "[1.0, 1.0, 1.0]",
+    "content" : "s"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 61,
+    "page number" : 2,
+    "bounding box" : [ 153.847, 539.245, 206.306, 590.049 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "Outer planner — chooses #shots & per-shot duration Inner planner — finegrained state & camera Validator — checks identity / events / continuity"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 101,
+    "page number" : 2,
+    "bounding box" : [ 238.811, 581.123, 276.16, 586.792 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "father's engraving"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 104,
+    "page number" : 2,
+    "bounding box" : [ 287.146, 581.123, 305.961, 586.792 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "11:58 f…"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 107,
+    "page number" : 2,
+    "bounding box" : [ 342.671, 581.123, 378.114, 586.792 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "back repair room"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 110,
+    "page number" : 2,
+    "bounding box" : [ 414.271, 581.123, 442.087, 586.792 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "rainy street…"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 113,
+    "page number" : 2,
+    "bounding box" : [ 459.995, 581.123, 518.284, 586.792 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.118,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "blue clock-tower destination"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 56,
+    "page number" : 2,
+    "bounding box" : [ 82.654, 563.341, 123.399, 585.345 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.584,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "Intent Continue v : father's engraving"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 65,
+    "page number" : 2,
+    "bounding box" : [ 316.395, 565.718, 446.394, 571.643 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.478522926568985, 0.30981919169425964, 0.10986495763063431]",
+    "content" : "cross-shot identity / scene / object / action / style consistency"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 57,
+    "level" : "2",
+    "page number" : 2,
+    "bounding box" : [ 82.654, 525.65, 128.299, 562.079 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.584,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "→ 11:58 flicker → back repair room → rainy street exit → blue clock-tower destination."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 67,
+    "page number" : 2,
+    "bounding box" : [ 229.228, 552.223, 326.815, 558.149 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.351,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Adaptive shot → chunk → segment hierarchy"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 69,
+    "page number" : 2,
+    "bounding box" : [ 252.032, 544.322, 494.283, 550.244 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.348,
+    "text color" : "[0.22754253447055817, 0.1411154419183731, 0.062745101749897]",
+    "content" : "shot · S1 shot · S2 shot · S3 shot · S4 shot · S5"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 75,
+    "page number" : 2,
+    "bounding box" : [ 239.803, 536.97, 514.736, 542.38 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 4.885,
+    "text color" : "[0.22754253447055817, 0.1411154419183731, 0.062745101749897]",
+    "content" : "chunk chunk chunk chunk chunk chunk chunk chunk chunk chunk"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 86,
+    "page number" : 2,
+    "bounding box" : [ 331.8, 524.821, 430.964, 530.487 ],
+    "font" : "TimesNewRomanPS-ItalicMT",
+    "font size" : 5.116,
+    "text color" : "[0.2666056454181671, 0.2666056454181671, 0.2666056454181671]",
+    "content" : "↑ shot · chunk · segment — adaptive granularity instead of a fixed 5 s grid"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H3",
+    "id" : 88,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 83.119, 503.176, 113.624, 512.452 ],
+    "heading level" : 3,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.22754253447055817, 0.1411154419183731, 0.062745101749897]",
+    "content" : "1 Adaptive"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H3",
+    "id" : 91,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 236.048, 503.176, 312.417, 512.452 ],
+    "heading level" : 3,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.22754253447055817, 0.1411154419183731, 0.062745101749897]",
+    "content" : "2 Single-frame extrapolation"
+  }, {
+    "type" : "heading",
+    "pdfua_tag" : "H3",
+    "id" : 94,
+    "level" : "Subtitle",
+    "page number" : 2,
+    "bounding box" : [ 388.984, 503.176, 509.211, 512.452 ],
+    "heading level" : 3,
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.22754253447055817, 0.1411154419183731, 0.062745101749897]",
+    "content" : "3 Multi-view, multi-angle dynamic generation"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 89,
+    "page number" : 2,
+    "bounding box" : [ 83.119, 487.494, 220.106, 501.588 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Per-shot duration is decided by the model, not a fixed grid short beats stay short (12s), long beats can breathe (65s)."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 92,
+    "page number" : 2,
+    "bounding box" : [ 236.048, 487.494, 369.125, 501.588 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Anchored to one observed frame v — the model continues this exact world, not an invented one."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 95,
+    "page number" : 2,
+    "bounding box" : [ 388.984, 487.494, 523.43, 501.588 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.13330282270908356, 0.13330282270908356, 0.13330282270908356]",
+    "content" : "Across shots, camera, location and viewpoint change freely; identity, scene, objects, action and style stay consistent."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 97,
+    "level" : "3",
+    "page number" : 2,
+    "bounding box" : [ 82.234, 472.139, 223.34, 478.322 ],
+    "font" : "TimesNewRomanPSMT",
+    "font size" : 5.584,
+    "text color" : "[0.18432898819446564, 0.48242923617362976, 0.3020065724849701]",
+    "content" : "✓ Keeps: identity · scene · objects · action · style across shots."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 16,
+    "page number" : 2,
+    "bounding box" : [ 220.78, 456.218, 391.224, 462.916 ],
+    "font" : "TimesNewRomanPS-BoldMT",
+    "font size" : 6.049,
+    "text color" : "[0.06665141135454178, 0.06665141135454178, 0.06665141135454178]",
+    "content" : "(c) MSVE — Anchored Adaptive Multi-Shot Extrapolation (Ours)"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 116,
+    "page number" : 2,
+    "bounding box" : [ 70.866, 406.437, 541.138, 445.347 ],
+    "font" : "SFRM0900",
+    "font size" : 8.966,
+    "text color" : "[0.0]",
+    "content" : "Figure 1 Multi-Shot Video Extrapolation (MSVE). (a) Single-shot extrapolation extends an anchor into one continuous take but lacks cinematic structure. (b) Multi-shot storytelling imposes shot structure but does not preserve an observed anchor. (c) MSVE combines both: from v0, c, and T the system generates an adaptive shot sequence {si}ni=1 with"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 117,
+    "page number" : 2,
+    "bounding box" : [ 70.866, 390.223, 541.136, 412.47 ],
+    "font" : "SFRM0900",
+    "font size" : 8.966,
+    "text color" : "[0.0]",
+    "content" : "i di = T that preserves anchor state, advances the narrative, and produces plausible transitions under a finite per-call budget."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 118,
+    "page number" : 2,
+    "bounding box" : [ 70.866, 370.684, 107.414, 383.217 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "generate"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 120,
+    "page number" : 2,
+    "bounding box" : [ 325.61, 365.207, 330.535, 372.18 ],
+    "font" : "CMMI7",
+    "font size" : 6.974,
+    "text color" : "[0.0]",
+    "content" : "n"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 119,
+    "page number" : 2,
+    "bounding box" : [ 243.867, 344.932, 299.297, 363.84 ],
+    "font" : "CMMI10",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "V = {si}ni=1,"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 122,
+    "page number" : 2,
+    "bounding box" : [ 336.928, 351.259, 368.131, 361.968 ],
+    "font" : "CMMI10",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "di = T,"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 121,
+    "page number" : 2,
+    "bounding box" : [ 321.62, 340.999, 334.526, 347.972 ],
+    "font" : "CMR7",
+    "font size" : 6.974,
+    "text color" : "[0.0]",
+    "content" : "i=1"
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 123,
+    "page number" : 2,
+    "bounding box" : [ 70.508, 252.981, 542.523, 337.245 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "where the number of shots, shot boundaries, shot durations, and per-shot conditioning states are chosen by the system. A valid output must preserve the anchor state in v0 (including identity, scene layout, objects, style, and physical configuration) while advancing the narrative intent, maintaining cross-shot consistency, and producing plausible transitions. Thus, MSVE reduces to single-shot continuation when n = 1, and to text-to-multi-shot storytelling when the observed anchor is removed; the full task requires both anchored extrapolation and adaptive multi-shot progression. Figure 1 positions MSVE against single-shot extrapolation and multi-shot storytelling."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 124,
+    "page number" : 2,
+    "bounding box" : [ 70.866, 139.407, 542.523, 247.581 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "MSVE exposes a failure mode that is obscured when long video generation is framed only as increasing duration or context length. The failure of long video generation is not primarily a limitation of context length, but a failure of context allocation. More prompt text, more generated history, or more detailed plans do not necessarily provide more usable state to the next generation call. This mirrors findings in long-context language modeling, where nominal context windows can diverge sharply from usable context (Liu et al., 2023a; Hsieh et al., 2024; Bertsch et al., 2025; Bai et al., 2023b; Zhang et al., 2024; Wang et al., 2024a; Packer et al., 2023; Jiang et al., 2023, 2024). In video generation, the problem is harder because the relevant state is multimodal and temporal: identity, layout, object status, action progress, camera state, narrative goals, and transition constraints must be selected and refreshed across calls."
+  }, {
+    "type" : "paragraph",
+    "pdfua_tag" : "P",
+    "id" : 125,
+    "page number" : 2,
+    "bounding box" : [ 70.358, 61.699, 543.07, 134.007 ],
+    "font" : "SFRM1000",
+    "font size" : 9.963,
+    "text color" : "[0.0]",
+    "content" : "We identify three coupled bottlenecks. First, the global planning bottleneck: conditioning a planner on a full screenplay often leads to over-specified details unsupported by the observed anchor, causing the plan to drift away from the source world. Second, the shot-level context bottleneck: passing the complete story or character bank into every shot dilutes the small set of state variables that the current shot must preserve. Third, the temporal chaining bottleneck: using the previous generated frame or clip as the sole memory turns generation into a lossy state-propagation process, where identity, scene, object, and action consistency decay over time."
+  } ]
+}

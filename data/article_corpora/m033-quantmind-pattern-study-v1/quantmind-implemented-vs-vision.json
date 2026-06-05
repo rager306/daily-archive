@@ -1,0 +1,152 @@
+{
+  "schema_version": "m033.quantmind.implemented-vs-vision.v1",
+  "created_at_epoch": 1780655485,
+  "status": "implemented-vs-vision-mapped",
+  "implemented_or_usable_patterns": [
+    {
+      "name": "configs",
+      "status": "implemented",
+      "evidence": [
+        "quantmind/configs/base.py",
+        "quantmind/configs/paper.py"
+      ],
+      "notes": "BaseFlowCfg, BaseInput, PaperFlowCfg, PaperInput variants exist."
+    },
+    {
+      "name": "preprocess.fetch",
+      "status": "implemented",
+      "evidence": [
+        "preprocess/fetch/arxiv.py",
+        "preprocess/fetch/http.py",
+        "preprocess/fetch/local.py"
+      ],
+      "notes": "Fetch layer returns bytes/metadata; can use network for arXiv/HTTP, local file reads for local input."
+    },
+    {
+      "name": "preprocess.format",
+      "status": "implemented-partial",
+      "evidence": [
+        "preprocess/format/pdf.py",
+        "preprocess/format/html.py"
+      ],
+      "notes": "PDF uses PyMuPDF plain text, HTML uses trafilatura; high-fidelity PDF/markdown engines are future/optional."
+    },
+    {
+      "name": "paper_flow",
+      "status": "implemented-runtime-requires-LLM",
+      "evidence": [
+        "quantmind/flows/paper.py"
+      ],
+      "notes": "Fetches/formats input and calls OpenAI Agents SDK Agent(output_type=Paper)."
+    },
+    {
+      "name": "batch_run",
+      "status": "implemented-stateless",
+      "evidence": [
+        "quantmind/flows/batch.py"
+      ],
+      "notes": "Bounded concurrency over flow inputs; memory= is intentionally forbidden in MVP."
+    },
+    {
+      "name": "magic resolver",
+      "status": "implemented-runtime-requires-LLM",
+      "evidence": [
+        "quantmind/magic.py"
+      ],
+      "notes": "Introspects flow signature and calls OpenAI Agents SDK to resolve typed input/cfg."
+    },
+    {
+      "name": "BaseKnowledge provenance",
+      "status": "implemented-pattern",
+      "evidence": [
+        "quantmind/knowledge/_base.py"
+      ],
+      "notes": "SourceRef, ExtractionRef, Citation, as_of, confidence, tags, content_hash."
+    },
+    {
+      "name": "TreeKnowledge",
+      "status": "implemented-pattern",
+      "evidence": [
+        "quantmind/knowledge/_tree.py"
+      ],
+      "notes": "Hierarchical node graph with root, children, citations, summary/content; PageIndex-style navigation pattern."
+    },
+    {
+      "name": "Paper and PaperKnowledgeCard",
+      "status": "implemented-pattern",
+      "evidence": [
+        "quantmind/knowledge/paper.py"
+      ],
+      "notes": "Paper is TreeKnowledge; PaperKnowledgeCard is FlattenKnowledge summary card linked by paper_id."
+    }
+  ],
+  "not_ready_or_aspirational": [
+    {
+      "name": "GraphKnowledge",
+      "status": "placeholder-not-implemented",
+      "evidence": [
+        "quantmind/knowledge/_graph.py"
+      ],
+      "notes": "Subclassing raises NotImplementedError; graph edges are future design intent."
+    },
+    {
+      "name": "storage layer",
+      "status": "missing-from-package",
+      "evidence": [
+        "package tree lacks quantmind/storage"
+      ],
+      "notes": "Docs may describe storage, but current package tree has no storage implementation."
+    },
+    {
+      "name": "retrieval API / RAG runtime",
+      "status": "missing-from-package",
+      "evidence": [
+        "package tree lacks retrievers/rag modules"
+      ],
+      "notes": "README mentions RAG/DeepResearch/Data MCP as vision, not current implemented package layer."
+    },
+    {
+      "name": "memory / mind",
+      "status": "placeholder-or-roadmap",
+      "evidence": [
+        "BaseFlowCfg memory_dir, flows/_runner no-op archive, README PR6/PR7 notes"
+      ],
+      "notes": "memory accepted as opaque placeholder; no production memory/store layer."
+    },
+    {
+      "name": "production semantic KG",
+      "status": "not-production-ready",
+      "evidence": [
+        "GraphKnowledge placeholder, missing storage/retrieval"
+      ],
+      "notes": "No production KG layer suitable for daily-archive adoption."
+    },
+    {
+      "name": "embedding docs",
+      "status": "stale-doc-risk",
+      "evidence": [
+        "docs/EMBEDDINGS.md references quantmind.config and quantmind.llm while pyproject forbids transitional packages"
+      ],
+      "notes": "Useful conceptually, but not implementation proof."
+    }
+  ],
+  "quality_risks": [
+    "README/docs vision outpaces current package implementation.",
+    "Version mismatch: pyproject 0.2.0 versus __init__ 0.0.1.",
+    "Python mismatch: README badge 3.8+ versus pyproject >=3.10.",
+    "Some BaseFlowCfg fields are not fully enforced in current runner path.",
+    "Core extraction is LLM-agent based, not deterministic non-LLM indexing."
+  ],
+  "classification": {
+    "as_architecture_pattern_source": "recommended",
+    "as_runtime_dependency_for_M033": "not_recommended",
+    "as_production_rag_kb": "not_ready",
+    "as_graph_knowledge_platform": "not_ready"
+  },
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false
+  }
+}

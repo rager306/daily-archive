@@ -1,0 +1,555 @@
+{
+  "schema": "m033.current_artifact_contracts.v1",
+  "generated_at": "2026-06-05T07:32:47.369786+00:00",
+  "source_milestone": "M031-vwpd8e",
+  "stages": [
+    {
+      "stage": "catalog_intake",
+      "inputs": [
+        "data/article_catalog/index.json",
+        "data/article_catalog/catalog.json"
+      ],
+      "outputs": [
+        "selection.json"
+      ],
+      "key_contract": [
+        "requested refs",
+        "catalog_backed_count",
+        "typed blockers",
+        "metadata-only safety flags"
+      ],
+      "downstream_consumers": [
+        "source_acquisition",
+        "loader_evidence"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/selection.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "articles",
+          "catalog_blockers",
+          "catalog_schema_version",
+          "counts",
+          "diagnostics",
+          "index_schema_version",
+          "milestone_id",
+          "provenance",
+          "requested_refs",
+          "safety_flags",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "source_selection_schema_version"
+        ],
+        "counts": {
+          "requested_ref_count": 4,
+          "catalog_backed_count": 3,
+          "typed_catalog_blocker_count": 1,
+          "silent_missing_count": 0,
+          "source_variant_count": 6
+        },
+        "selected_flags": {
+          "safety_flags": {
+            "metadata_only_selection": true,
+            "network_fetch_attempted": false,
+            "source_acquisition_completed": false,
+            "raw_article_text_embedded": false,
+            "raw_article_html_embedded": false,
+            "raw_pdf_bytes_embedded": false,
+            "binary_payload_embedded": false,
+            "base64_payload_embedded": false,
+            "parser_ready_claimed": false,
+            "chunk_ready_claimed": false,
+            "kg_readiness_claimed": false,
+            "graph_import_allowed": false,
+            "production_ladybugdb_write_allowed": false,
+            "trusted_kg_import_allowed": false,
+            "production_import_attempted": false,
+            "ladybugdb_written": false,
+            "graph_write_attempted": false,
+            "production_persistence_attempted": false
+          }
+        }
+      },
+      "all_outputs_exist": true
+    },
+    {
+      "stage": "source_acquisition",
+      "inputs": [
+        "selection.json",
+        "data/article_catalog/**/article.json",
+        "local source artifacts"
+      ],
+      "outputs": [
+        "source-acquisition-summary.json",
+        "source-acquisition-diagnostics.jsonl",
+        "source-acquisition-report.md"
+      ],
+      "key_contract": [
+        "captured local paths",
+        "sha256",
+        "byte size",
+        "terminal blockers",
+        "no network fetch"
+      ],
+      "downstream_consumers": [
+        "loader_evidence",
+        "parser_conversion"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/source-acquisition-summary.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "chunk_ready_claimed",
+          "counts",
+          "duration_ms",
+          "fail_closed_safety_flags",
+          "generated_at",
+          "graph_import_allowed",
+          "graph_write_attempted",
+          "input_paths",
+          "kg_readiness_claimed",
+          "ladybugdb_written",
+          "milestone_id",
+          "network_fetch_allowed",
+          "network_fetch_attempted_count",
+          "output_paths",
+          "parser_ready_claimed",
+          "per_identity_terminal_state_counts",
+          "per_role_terminal_state_counts",
+          "production_import_attempted",
+          "production_ladybugdb_write_allowed",
+          "production_persistence_attempted",
+          "raw_binary_embedded",
+          "raw_payload_embedded_in_metadata",
+          "raw_text_embedded",
+          "results",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "status",
+          "trusted_kg_import_allowed",
+          "variant_or_blocker_count"
+        ],
+        "counts": {
+          "captured": 3,
+          "blocked": 4,
+          "failed": 0
+        },
+        "selected_flags": {
+          "graph_import_allowed": false,
+          "trusted_kg_import_allowed": false,
+          "production_import_attempted": false,
+          "ladybugdb_written": false,
+          "graph_write_attempted": false,
+          "production_persistence_attempted": false,
+          "status": "completed_with_diagnostics",
+          "fail_closed_safety_flags": {
+            "metadata_only_acquisition": true,
+            "network_fetch_attempted": false,
+            "raw_article_text_embedded": false,
+            "raw_article_html_embedded": false,
+            "raw_pdf_bytes_embedded": false,
+            "binary_payload_embedded": false,
+            "base64_payload_embedded": false,
+            "parser_ready_claimed": false,
+            "chunk_ready_claimed": false,
+            "kg_readiness_claimed": false,
+            "graph_import_allowed": false,
+            "production_ladybugdb_write_allowed": false,
+            "trusted_kg_import_allowed": false,
+            "production_import_attempted": false,
+            "ladybugdb_written": false,
+            "graph_write_attempted": false,
+            "production_persistence_attempted": false
+          }
+        }
+      },
+      "all_outputs_exist": true
+    },
+    {
+      "stage": "loader_evidence",
+      "inputs": [
+        "selection.json",
+        "source-acquisition-summary.json"
+      ],
+      "outputs": [
+        "loader-evidence-summary.json",
+        "loader-evidence-diagnostics.jsonl",
+        "loader-evidence-report.md"
+      ],
+      "key_contract": [
+        "loaded rows",
+        "metadata-only loaded rows",
+        "loader blockers",
+        "failed=0"
+      ],
+      "downstream_consumers": [
+        "parser_conversion"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/loader-evidence-summary.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "chunk_ready_claimed",
+          "counts",
+          "duration_ms",
+          "fail_closed_safety_flags",
+          "generated_at",
+          "graph_import_allowed",
+          "graph_write_attempted",
+          "input_paths",
+          "kg_readiness_claimed",
+          "ladybugdb_written",
+          "loader_row_count",
+          "milestone_id",
+          "network_fetch_allowed",
+          "network_fetch_attempted_count",
+          "output_paths",
+          "parser_ready_claimed",
+          "per_identity_loader_state_counts",
+          "per_role_loader_state_counts",
+          "production_import_attempted",
+          "production_ladybugdb_write_allowed",
+          "production_persistence_attempted",
+          "raw_binary_embedded",
+          "raw_payload_embedded_in_metadata",
+          "raw_text_embedded",
+          "results",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "status",
+          "trusted_kg_import_allowed"
+        ],
+        "counts": {
+          "loader_attempted": 3,
+          "loaded": 2,
+          "loaded_metadata_only": 1,
+          "failed": 0,
+          "loader_blocked": 4
+        },
+        "selected_flags": {
+          "graph_import_allowed": false,
+          "trusted_kg_import_allowed": false,
+          "production_import_attempted": false,
+          "ladybugdb_written": false,
+          "graph_write_attempted": false,
+          "production_persistence_attempted": false,
+          "status": "completed_with_diagnostics",
+          "fail_closed_safety_flags": {
+            "metadata_only_loader_evidence": true,
+            "network_fetch_attempted": false,
+            "raw_article_text_embedded": false,
+            "raw_article_html_embedded": false,
+            "raw_pdf_bytes_embedded": false,
+            "binary_payload_embedded": false,
+            "base64_payload_embedded": false,
+            "parser_ready_claimed": false,
+            "chunk_ready_claimed": false,
+            "kg_readiness_claimed": false,
+            "graph_import_allowed": false,
+            "production_ladybugdb_write_allowed": false,
+            "trusted_kg_import_allowed": false,
+            "production_import_attempted": false,
+            "ladybugdb_written": false,
+            "graph_write_attempted": false,
+            "production_persistence_attempted": false
+          }
+        }
+      },
+      "all_outputs_exist": true
+    },
+    {
+      "stage": "parser_conversion",
+      "inputs": [
+        "loader-evidence-summary.json",
+        "captured local source artifacts"
+      ],
+      "outputs": [
+        "conversion-quality/conversion-quality-summary.json",
+        "parser-conversion-closeout-summary.json",
+        "converted-text/*.txt"
+      ],
+      "key_contract": [
+        "parser-ready converted text only for usable artifacts",
+        "refusal diagnostics",
+        "hashes",
+        "no graph/chunk claims"
+      ],
+      "downstream_consumers": [
+        "chunk_evidence"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/parser-conversion-closeout-summary.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "conversion_status_counts",
+          "diagnostic_code_counts",
+          "fail_closed_safety_flags",
+          "failure_count",
+          "graph_import_allowed",
+          "graph_write_attempted",
+          "ladybugdb_written",
+          "milestone_id",
+          "network_fetch_attempted",
+          "parser_ready_count",
+          "production_import_attempted",
+          "production_persistence_attempted",
+          "row_count",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "source_slice_id",
+          "status",
+          "trusted_kg_import_allowed"
+        ],
+        "counts": null,
+        "selected_flags": {
+          "graph_import_allowed": false,
+          "trusted_kg_import_allowed": false,
+          "production_import_attempted": false,
+          "ladybugdb_written": false,
+          "graph_write_attempted": false,
+          "production_persistence_attempted": false,
+          "network_fetch_attempted": false,
+          "status": "passed",
+          "fail_closed_safety_flags": {
+            "arxiv2md_invoked": false,
+            "base64_payload_embedded": false,
+            "binary_payload_embedded": false,
+            "chunk_ready_claimed": false,
+            "external_cache_read": false,
+            "external_cache_written": false,
+            "graph_import_allowed": false,
+            "graph_write_attempted": false,
+            "kg_readiness_claimed": false,
+            "ladybugdb_written": false,
+            "md_converter_invoked": false,
+            "network_fetch_attempted": false,
+            "parser_ready_claimed_without_conversion": false,
+            "production_import_attempted": false,
+            "production_ladybugdb_write_allowed": false,
+            "production_persistence_attempted": false,
+            "raw_article_html_embedded": false,
+            "raw_article_text_embedded": false,
+            "raw_binary_embedded": false,
+            "raw_payload_embedded_in_metadata": false,
+            "raw_pdf_bytes_embedded": false,
+            "raw_text_embedded": false,
+            "trusted_kg_import_allowed": false
+          }
+        }
+      },
+      "all_outputs_exist": false
+    },
+    {
+      "stage": "chunk_evidence",
+      "inputs": [
+        "parser-conversion-closeout-summary.json",
+        "converted text path/hash"
+      ],
+      "outputs": [
+        "chunk-evidence/chunk-evidence-summary.json",
+        "chunk-evidence-closeout-summary.json"
+      ],
+      "key_contract": [
+        "stable chunk ids",
+        "section anchors",
+        "source spans",
+        "zero-chunk refusals"
+      ],
+      "downstream_consumers": [
+        "graph_readiness_handoff",
+        "no_write_import_boundary"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/chunk-evidence-closeout-summary.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "automated_state_is_structural_only",
+          "chunk_count",
+          "diagnostic_code_counts",
+          "evidence_path_count",
+          "fail_closed_safety_flags",
+          "failure_count",
+          "graph_import_allowed",
+          "graph_readiness_package_count",
+          "graph_write_attempted",
+          "independent_review_completed_count",
+          "ladybugdb_written",
+          "milestone_id",
+          "network_fetch_attempted",
+          "package_count",
+          "parser_ready_row_count",
+          "pending_graph_readiness_review_count",
+          "production_import_attempted",
+          "production_persistence_attempted",
+          "row_count",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "source_slice_id",
+          "status",
+          "trusted_kg_import_allowed",
+          "zero_chunk_refusal_count"
+        ],
+        "counts": null,
+        "selected_flags": {
+          "graph_import_allowed": false,
+          "trusted_kg_import_allowed": false,
+          "production_import_attempted": false,
+          "ladybugdb_written": false,
+          "graph_write_attempted": false,
+          "production_persistence_attempted": false,
+          "network_fetch_attempted": false,
+          "status": "passed",
+          "fail_closed_safety_flags": {
+            "chunk_ready_claimed_for_non_parser_ready_rows": false,
+            "chunk_text_included": false,
+            "embeddings_included": false,
+            "graph_import_allowed": false,
+            "graph_write_attempted": false,
+            "kg_readiness_claimed": false,
+            "ladybugdb_written": false,
+            "network_fetch_attempted": false,
+            "production_import_attempted": false,
+            "production_ladybugdb_write_allowed": false,
+            "production_persistence_attempted": false,
+            "raw_payload_embedded_in_metadata": false,
+            "raw_text_included": false,
+            "trusted_kg_import_allowed": false,
+            "vectors_included": false
+          }
+        }
+      },
+      "all_outputs_exist": true
+    },
+    {
+      "stage": "graph_readiness_handoff",
+      "inputs": [
+        "chunk-evidence summary",
+        "review corpus"
+      ],
+      "outputs": [
+        "graph-readiness-review/*.md",
+        "independent-review-summary.md"
+      ],
+      "key_contract": [
+        "pending independent review",
+        "require completed review before import eligibility"
+      ],
+      "downstream_consumers": [
+        "no_write_import_boundary"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/graph-readiness-review/independent-review-summary.md",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "_load_error"
+        ],
+        "counts": null,
+        "selected_flags": {}
+      },
+      "all_outputs_exist": false
+    },
+    {
+      "stage": "no_write_import_boundary",
+      "inputs": [
+        "graph readiness packets",
+        "chunk evidence closeout"
+      ],
+      "outputs": [
+        "import-boundary-rehearsal/import-boundary-summary.json",
+        "s05-closeout-summary.json",
+        "m031-continuity-audit.json"
+      ],
+      "key_contract": [
+        "accepted_count=0",
+        "import_eligible_count=0",
+        "ladybugdb_written=false",
+        "production_import_attempted=false"
+      ],
+      "downstream_consumers": [
+        "milestone validation",
+        "M033 comparison baseline"
+      ],
+      "primary_artifact": "data/article_corpora/m031-catalog-backed-replay-v1/s05-closeout-summary.json",
+      "primary_artifact_summary": {
+        "exists": true,
+        "keys": [
+          "accepted_count",
+          "chunk_text_included",
+          "completed_review_refusal_in_force",
+          "diagnostic_code_counts",
+          "embeddings_included",
+          "fail_closed_flags",
+          "failure_count",
+          "failure_modes_gate_q5",
+          "graph_import_allowed",
+          "graph_write_attempted",
+          "import_eligible_count",
+          "import_refusal_diagnostic_count",
+          "independent_review_completed_count",
+          "ladybugdb_written",
+          "load_profile_gate_q6",
+          "milestone_id",
+          "model_call_attempted",
+          "negative_tests_gate_q7",
+          "network_fetch_attempted",
+          "production_import_attempted",
+          "production_persistence_attempted",
+          "progression_row_count",
+          "progression_stage_count_per_row",
+          "raw_text_included",
+          "recovery_commands",
+          "rejected_import_candidate_count",
+          "required_continuity_sections_present",
+          "s04_graph_readiness_package_count",
+          "s04_row_count",
+          "s04_zero_chunk_refusal_count",
+          "schema_version",
+          "selection_id",
+          "slice_id",
+          "source_artifacts",
+          "status",
+          "trusted_kg_import_allowed",
+          "vectors_included"
+        ],
+        "counts": null,
+        "selected_flags": {
+          "graph_import_allowed": false,
+          "trusted_kg_import_allowed": false,
+          "production_import_attempted": false,
+          "ladybugdb_written": false,
+          "graph_write_attempted": false,
+          "production_persistence_attempted": false,
+          "network_fetch_attempted": false,
+          "model_call_attempted": false,
+          "import_eligible_count": 0,
+          "accepted_count": 0,
+          "status": "passed"
+        }
+      },
+      "all_outputs_exist": true
+    }
+  ],
+  "comparison_contract": {
+    "external_tools_must_preserve": [
+      "source path/hash provenance",
+      "stage-specific typed blockers",
+      "diagnostic codes",
+      "no silent partial success",
+      "no graph/import/LadybugDB flags"
+    ],
+    "external_tools_may_improve": [
+      "layout extraction",
+      "table structure",
+      "figure/caption extraction",
+      "bibliography/citation parsing",
+      "reading order",
+      "section hierarchy",
+      "coordinate spans"
+    ]
+  }
+}

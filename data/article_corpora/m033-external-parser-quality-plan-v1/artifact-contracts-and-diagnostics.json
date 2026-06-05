@@ -1,0 +1,123 @@
+{
+  "schema_version": "m033.external_parser_quality.artifact_contracts_diagnostics.v1",
+  "generated_at_epoch": 1780660183,
+  "status": "complete",
+  "artifact_tree": {
+    "run_manifest.json": "selected corpus, local source paths, sha256, size, article keys, class labels, no-network setting",
+    "backend-preflight.json": "GROBID/OpenDataLoader versions, health, image/cache inventory, network-disabled behavior",
+    "per-paper/<article_key>/grobid.tei.xml": "raw TEI sidecar candidate, not graph-ready",
+    "per-paper/<article_key>/opendataloader/original.json": "layout/OCR/table sidecar candidate, fixed upstream schema",
+    "per-paper/<article_key>/typed-candidates.json": "Adaptix/daily-archive typed candidate summaries with candidate_only flags",
+    "per-paper/<article_key>/quality-review.json": "reviewed metric results and typed failures per quality dimension",
+    "review-packets/<article_key>/": "candidate graph-readiness review inputs, not import eligibility",
+    "events.jsonl": "bounded diagnostics with no secrets and no raw article bodies",
+    "summary.json": "aggregate pass/fail, blocker taxonomy, and false safety flags"
+  },
+  "json_shape_expectations": {
+    "all_json": "must include schema_version or schema/status equivalent, generated timestamp when produced, source references where applicable, and safety_flags on aggregate verdict artifacts",
+    "candidate_outputs": "must include candidate_only=true and never import_eligible=true",
+    "events": "one JSON object per line with event, phase/task, article_key when applicable, diagnostic code for failures, and no raw article body text"
+  },
+  "logging_rules": [
+    "No secrets in artifacts or logs",
+    "No raw article bodies in diagnostics or aggregate summaries",
+    "Use excerpts only when bounded/redacted and justified",
+    "Record hashes/paths/IDs instead of full content"
+  ],
+  "diagnostic_taxonomy": [
+    {
+      "code": "missing_local_source",
+      "class": "source_acquisition",
+      "meaning": "selected row lacks safe local PDF/source path"
+    },
+    {
+      "code": "unsafe_or_stale_source_hash",
+      "class": "source_acquisition",
+      "meaning": "source hash missing, mismatched, or stale"
+    },
+    {
+      "code": "backend_unhealthy",
+      "class": "runtime_preflight",
+      "meaning": "GROBID/OpenDataLoader backend health check failed"
+    },
+    {
+      "code": "model_cache_missing_no_network",
+      "class": "runtime_preflight",
+      "meaning": "required cache absent while no-network mode is enforced"
+    },
+    {
+      "code": "tei_parse_failed",
+      "class": "grobid_quality",
+      "meaning": "GROBID returned invalid or unusable TEI"
+    },
+    {
+      "code": "bibliography_quality_below_gate",
+      "class": "grobid_quality",
+      "meaning": "reference/citation/header quality below threshold"
+    },
+    {
+      "code": "layout_quality_below_gate",
+      "class": "opendataloader_quality",
+      "meaning": "reading order/layout/coordinate quality below threshold"
+    },
+    {
+      "code": "table_fidelity_below_gate",
+      "class": "opendataloader_quality",
+      "meaning": "table structure/cell/caption quality below threshold"
+    },
+    {
+      "code": "ocr_quality_below_gate",
+      "class": "opendataloader_quality",
+      "meaning": "OCR control did not meet adequacy threshold"
+    },
+    {
+      "code": "adaptix_mapping_failed",
+      "class": "adapter_contract",
+      "meaning": "fixed parser output could not be mapped to typed candidates"
+    },
+    {
+      "code": "invalid_evidence_path",
+      "class": "evidence_contract",
+      "meaning": "candidate anchor lacks stable source hash/path/span/coordinate linkage"
+    },
+    {
+      "code": "low_quality_source",
+      "class": "refusal_preservation",
+      "meaning": "substantive body/source quality inadequate despite parser output"
+    },
+    {
+      "code": "review_packet_incomplete",
+      "class": "review_boundary",
+      "meaning": "review packet missing completed review/output contract"
+    },
+    {
+      "code": "graph_readiness_postcheck_failed",
+      "class": "review_boundary",
+      "meaning": "graph-readiness review validate-only post-check failed"
+    }
+  ],
+  "no_write_import_rehearsal": {
+    "required": true,
+    "accepted_count": 0,
+    "import_eligible_count": 0,
+    "ladybugdb_write_attempts": 0,
+    "graph_import_allowed": false
+  },
+  "typed_blocker_required_for": [
+    "missing source",
+    "backend health failure",
+    "missing model cache under no-network",
+    "adapter mapping failure",
+    "quality gate failure",
+    "review packet incomplete",
+    "graph-readiness post-check failure"
+  ],
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "schema": "m033.opendataloader.probe_verdict.v1",
+  "generated_at": "2026-06-05T08:30:02Z",
+  "verdict": "hybrid-sidecar-candidate",
+  "rationale": "All three selected PDFs processed successfully with the hybrid docling-fast backend and produced JSON/Markdown/HTML/Text outputs without Java-only fallback. The outputs show useful sidecar potential for layout-aware parsing and evidence anchoring, but OCR-on-scanned-PDF and table fidelity remain unproven and no graph-readiness/import claim is made.",
+  "references": {
+    "quality_summary": "data/article_corpora/m033-opendataloader-pdf-probe-v1/opendataloader-quality-summary.json",
+    "run_summary": "data/article_corpora/m033-opendataloader-pdf-probe-v1/opendataloader-run-summary.json",
+    "model_cache_inventory": "data/article_corpora/m033-opendataloader-pdf-probe-v1/model-cache-inventory.json"
+  },
+  "operational_requirements": {
+    "python_venv": "/root/vendor-source/opendataloader-pdf/python/opendataloader-pdf/.venv-py313-build-check",
+    "python_version": "3.13.12",
+    "java": "OpenJDK 17.0.19",
+    "maven": "Apache Maven 3.8.7",
+    "hybrid_backend": "opendataloader-pdf-hybrid --port 5002",
+    "model_cache": [
+      {
+        "repo": "docling-project/docling-layout-heron",
+        "path": "/root/.cache/huggingface/hub/models--docling-project--docling-layout-heron",
+        "exists": true,
+        "snapshot": "8f39ad3c0b4c58e9c2d2c84a38465abf757272d8",
+        "size_bytes": 171764747
+      },
+      {
+        "repo": "docling-project/docling-models",
+        "path": "/root/.cache/huggingface/hub/models--docling-project--docling-models",
+        "exists": true,
+        "snapshot": null,
+        "size_bytes": 358236863
+      }
+    ],
+    "network_dependency_if_cache_absent": true,
+    "runtime_cost_ms_total": 576872
+  },
+  "remaining_evidence_gaps": [
+    "No scanned/image-only PDF was included, so OCR quality remains not proven.",
+    "No independent table ground truth was used, so table fidelity is qualitative only.",
+    "Outputs are candidate evidence only and are not graph-ready or import-eligible.",
+    "Need a larger probe before production adoption or sidecar schema commitment."
+  ],
+  "contract_mapping": [
+    {
+      "daily_archive_contract": "SourceRef",
+      "mapping": "Supported as candidate sidecar input: each output can be tied to manifest article_key, source_path, sha256, local PDF provenance, and generated output paths.",
+      "status": "mapped",
+      "remaining_gap": "Need stable schema for storing OpenDataLoader output references without copying large payloads into KG artifacts."
+    },
+    {
+      "daily_archive_contract": "EvidencePath",
+      "mapping": "Partially supported: JSON includes page/layout metadata and bounding boxes, so evidence anchors can be derived from output elements plus source PDF hash.",
+      "status": "mapped_with_review_required",
+      "remaining_gap": "Need deterministic element-id/path convention and review before using as evidence paths."
+    },
+    {
+      "daily_archive_contract": "PageIndex",
+      "mapping": "Promising sidecar candidate: JSON/Markdown expose headings, page metadata, reading-order text, and layout blocks useful for page/section indexing.",
+      "status": "sidecar_candidate",
+      "remaining_gap": "Need compare against current PageIndex expectations and decide how tables/figures become nodes."
+    },
+    {
+      "daily_archive_contract": "SemanticChunk",
+      "mapping": "Candidate input only: Markdown/text can seed chunks, but chunk boundaries must still pass daily-archive chunk/evidence validation and refusal handling.",
+      "status": "candidate_only",
+      "remaining_gap": "No direct promotion to SemanticChunk without chunk replay and source-span validation."
+    },
+    {
+      "daily_archive_contract": "table artifact",
+      "mapping": "Partial candidate: table-like signals are present, but no ground-truth table fidelity benchmark was run.",
+      "status": "needs_quality_gate",
+      "remaining_gap": "Need table-specific benchmark/review before accepting table structures."
+    },
+    {
+      "daily_archive_contract": "refusal diagnostic",
+      "mapping": "Runtime diagnostics are usable: command, exit code, backend health, fallback usage, cache dependency, stderr/stdout excerpts, and per-paper status are captured.",
+      "status": "mapped",
+      "remaining_gap": "Need normalize OpenDataLoader runtime errors into daily-archive diagnostic codes if integrated."
+    },
+    {
+      "daily_archive_contract": "graph-readiness packet",
+      "mapping": "Not satisfied by parser output alone. Outputs can become reviewer packet candidates only after mapping/review.",
+      "status": "not_graph_ready",
+      "remaining_gap": "Independent graph-readiness review remains required; no import eligibility claim."
+    }
+  ],
+  "graph_import_allowed": false,
+  "ladybugdb_written": false,
+  "production_import_attempted": false
+}

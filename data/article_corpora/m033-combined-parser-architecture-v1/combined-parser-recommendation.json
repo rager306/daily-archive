@@ -1,0 +1,148 @@
+{
+  "schema_version": "m033.combined_parser.recommendation.v1",
+  "generated_at_epoch": 1780659883,
+  "verdict": "recommended-bounded-combined-sidecar-architecture",
+  "candidate_only": true,
+  "production_adoption_authorized": false,
+  "runtime_dependency_adoption_authorized": false,
+  "rationale": "Prior slices support combining complementary sidecars behind daily-archive-owned contracts: GROBID for scholarly TEI/bibliography/citations, OpenDataLoader for layout/OCR/table/coordinate candidates, Adaptix for typed adapter mapping, and quant-mind for architecture patterns only.",
+  "component_responsibilities": [
+    {
+      "component": "GROBID",
+      "recommended_role": "scholarly_tei_sidecar",
+      "owns": [
+        "header/title/authors/abstract candidates",
+        "section and TEI hierarchy candidates",
+        "bibliography entries",
+        "citation/reference markers"
+      ],
+      "must_not_own": [
+        "table fidelity proof",
+        "OCR replacement",
+        "graph-readiness decision",
+        "LadybugDB import trigger"
+      ],
+      "adapter_boundary": "TEI-to-daily-archive candidate adapter with source/ref anchors and bibliography/citation review gates"
+    },
+    {
+      "component": "OpenDataLoader-style extraction",
+      "recommended_role": "layout_ocr_table_coordinate_sidecar",
+      "owns": [
+        "page/layout blocks",
+        "bounding boxes and page coordinates",
+        "reading-order candidates",
+        "table/figure/layout candidates",
+        "backend diagnostics and model-cache state"
+      ],
+      "must_not_own": [
+        "bibliography authority",
+        "semantic fact promotion",
+        "graph-ready chunks without daily-archive validation",
+        "production import eligibility"
+      ],
+      "adapter_boundary": "fixed JSON/Markdown/HTML/Text outputs become candidate sidecar artifacts only"
+    },
+    {
+      "component": "Adaptix",
+      "recommended_role": "typed_adapter_layer",
+      "owns": [
+        "structural mapping from fixed OpenDataLoader JSON into typed candidate summaries",
+        "shape/type validation for adapter outputs",
+        "explicit candidate_only flags"
+      ],
+      "must_not_own": [
+        "semantic validation",
+        "reading-order correctness",
+        "table fidelity",
+        "source-span truth",
+        "graph readiness"
+      ],
+      "adapter_boundary": "post-processing layer after parser output, before daily-archive validators/review packets"
+    },
+    {
+      "component": "quant-mind patterns",
+      "recommended_role": "architecture_pattern_source",
+      "owns": [
+        "TreeKnowledge/PageIndex inspiration",
+        "PaperKnowledgeCard summary-card split",
+        "SourceRef/Citation/ExtractionRef provenance ideas",
+        "fetch-format-flow separation",
+        "bounded batch concurrency",
+        "typed resolver guardrails"
+      ],
+      "must_not_own": [
+        "runtime dependency",
+        "OpenAI/API extraction proof",
+        "GraphKnowledge/storage/retrieval/RAG platform",
+        "semantic KG implementation"
+      ],
+      "adapter_boundary": "ideas reimplemented under daily-archive-owned schemas, never imported as runtime dependency in this track"
+    },
+    {
+      "component": "daily-archive",
+      "recommended_role": "contract_validator_review_owner",
+      "owns": [
+        "SourceRef/EvidencePath/PageIndex/SemanticChunk contracts",
+        "diagnostic taxonomy",
+        "review packet completion",
+        "graph-readiness review",
+        "no-write import rehearsal",
+        "final adoption decision"
+      ],
+      "must_not_own": [
+        "blind trust in parser sidecar output",
+        "positive import eligibility from parser success alone"
+      ],
+      "adapter_boundary": "all parser sidecars terminate in candidate artifacts until validators and independent review complete"
+    }
+  ],
+  "recommended_flow": [
+    "source acquisition proves local PDF/source path, hash, size, and catalog identity",
+    "GROBID produces scholarly TEI sidecar candidates",
+    "OpenDataLoader-style backend produces layout/OCR/table/page-coordinate sidecar candidates",
+    "Adaptix maps fixed OpenDataLoader JSON into typed daily-archive candidate summaries",
+    "quant-mind-inspired schemas guide PageIndex/tree/card/provenance design under daily-archive ownership",
+    "daily-archive validators normalize diagnostics and reject low-quality/unsafe/stale/source-span failures",
+    "completed review packet may be prepared for graph-readiness review; parser output alone is never import eligibility"
+  ],
+  "rejected_alternatives": [
+    {
+      "alternative": "GROBID-only parser replacement",
+      "reason": "GROBID is strong for scholarly TEI/bibliography/citations but does not prove table fidelity, OCR replacement, or layout-coordinate completeness."
+    },
+    {
+      "alternative": "OpenDataLoader-only parser replacement",
+      "reason": "OpenDataLoader provides layout/OCR/table/page candidates but not scholarly bibliography authority or graph-ready semantic contracts."
+    },
+    {
+      "alternative": "Adaptix as semantic validator",
+      "reason": "Adaptix validates structure and mapping shape; it cannot validate reading order, table fidelity, source spans, or factual correctness."
+    },
+    {
+      "alternative": "quant-mind runtime adoption",
+      "reason": "quant-mind requires OpenAI/API/network-coupled flows for its live pipeline and has placeholder/missing GraphKnowledge/storage/retrieval/RAG layers."
+    },
+    {
+      "alternative": "direct parser-to-LadybugDB import",
+      "reason": "M033 is research only; graph-readiness review and no-write import rehearsal remain independent blockers."
+    }
+  ],
+  "synthesis_matrix": "data/article_corpora/m033-combined-parser-architecture-v1/synthesis-evidence-matrix.json",
+  "required_before_implementation": [
+    "future bounded quality plan from S06",
+    "TEI adapter contract tests",
+    "OpenDataLoader schema/element-id convention",
+    "source-span/coordinate anchoring review",
+    "bibliography/citation quality eval",
+    "layout/table/OCR quality eval",
+    "graph-readiness review post-check remains independent"
+  ],
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false
+  }
+}

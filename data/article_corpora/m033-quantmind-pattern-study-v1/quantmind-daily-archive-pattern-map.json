@@ -1,0 +1,105 @@
+{
+  "schema_version": "m033.quantmind.daily-archive-pattern-map.v1",
+  "created_at_epoch": 1780655545,
+  "status": "pattern-map-complete",
+  "classification": "pattern-source-not-dependency",
+  "patterns_to_adopt": [
+    {
+      "quantmind_pattern": "TreeKnowledge / TreeNode",
+      "daily_archive_mapping": "PageIndex-style root/section/subsection/leaf hierarchy",
+      "adopt_as": "schema-pattern",
+      "why": "Matches M033 need for section hierarchy and navigable paper structure better than flat chunks alone.",
+      "constraints": [
+        "daily-archive must preserve source spans and refusal diagnostics",
+        "leaf content cannot become graph-ready without review",
+        "embeddings are coarse prefilter only, not reasoning replacement"
+      ]
+    },
+    {
+      "quantmind_pattern": "Paper + PaperKnowledgeCard split",
+      "daily_archive_mapping": "Full paper tree plus flat summary/index card for dashboard/filtering/search prefilter",
+      "adopt_as": "schema-pattern",
+      "why": "Separates deep retrieval over tree from lightweight metadata/summary card.",
+      "constraints": [
+        "summary card remains candidate artifact until review",
+        "bibliographic facts should consume GROBID/metadata evidence with provenance"
+      ]
+    },
+    {
+      "quantmind_pattern": "SourceRef / Citation / ExtractionRef",
+      "daily_archive_mapping": "SourceRef/EvidencePath/provenance primitives with content hash, page/offset/tree node anchors, flow/model metadata",
+      "adopt_as": "provenance-pattern",
+      "why": "Reinforces M031/M033 no-bare-string provenance and auditability goals.",
+      "constraints": [
+        "quote/content values should not leak into diagnostics",
+        "source anchors must be validated independently"
+      ]
+    },
+    {
+      "quantmind_pattern": "preprocess.fetch + preprocess.format + flow separation",
+      "daily_archive_mapping": "source_acquisition -> parser_conversion -> candidate extraction boundaries",
+      "adopt_as": "pipeline-boundary-pattern",
+      "why": "Cleanly separates byte acquisition, format conversion, and knowledge extraction.",
+      "constraints": [
+        "daily-archive should keep typed blockers for low-quality/no-substantive-body sources",
+        "parser output alone does not imply chunk or graph readiness"
+      ]
+    },
+    {
+      "quantmind_pattern": "batch_run bounded concurrency",
+      "daily_archive_mapping": "bounded per-paper probe/extraction fanout with explicit success/failure counts",
+      "adopt_as": "execution-pattern",
+      "why": "Useful lightweight concurrency primitive; memory= prohibition is a good race-hazard guardrail.",
+      "constraints": [
+        "diagnostics must avoid raw text/secrets",
+        "stateful memory accumulation should be serial or explicitly synchronized"
+      ]
+    },
+    {
+      "quantmind_pattern": "magic resolver schema introspection guardrails",
+      "daily_archive_mapping": "typed input resolution without inventing paths/URLs",
+      "adopt_as": "guardrail-pattern-only",
+      "why": "The instruction “never invent file paths or URLs” matches daily-archive catalog/source safety principles.",
+      "constraints": [
+        "do not adopt runtime resolver now because it calls OpenAI Agents",
+        "prefer deterministic CLI/API validation for production"
+      ]
+    }
+  ],
+  "items_to_reject_or_defer": [
+    {
+      "item": "quantmind as production dependency",
+      "reason": "Runtime depends on OpenAI Agents/API and missing storage/retrieval/graph layers; integration risk medium/high."
+    },
+    {
+      "item": "paper_flow runtime in M033",
+      "reason": "Would call model/network paths and test LLM extraction rather than architecture pattern fit."
+    },
+    {
+      "item": "GraphKnowledge",
+      "reason": "Placeholder only; subclassing blocked by NotImplementedError."
+    },
+    {
+      "item": "storage/retrieval/RAG layers",
+      "reason": "Not implemented in current package tree."
+    },
+    {
+      "item": "PyMuPDF PDF formatter as parser upgrade",
+      "reason": "Plain-text extraction only; daily-archive already needs higher quality parser/layout/OCR evidence from GROBID/OpenDataLoader paths."
+    }
+  ],
+  "combined_m033_context": {
+    "grobid_role": "scholarly TEI sidecar candidate for metadata, sections, bibliography, citation markers",
+    "opendataloader_role": "layout/table/OCR candidate sidecar with typed Adaptix adapter proof",
+    "quantmind_role": "schema and architecture pattern source for tree/card/provenance boundaries",
+    "s05_implication": "Combine parser sidecars with daily-archive-owned typed contracts and validators; do not adopt quant-mind runtime or graph platform."
+  },
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false
+  }
+}

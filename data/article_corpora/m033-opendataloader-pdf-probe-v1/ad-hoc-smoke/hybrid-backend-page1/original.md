@@ -1,0 +1,22 @@
+![](<original_images/imageFile1.png>)
+
+# ReCA: Multi-Shot Long Video Extrapolation via Recursive Context Allocation
+
+Akide Liu 1,2,3, ‡ , Jinbo Xing 2, † , Chaojie Mao 2 , Ye Li 3 , Zeyu Zhang 3 , Yefei He 3 , Weijie Wang 3 , Zihan Wang 4 , Yu Liu 2 , Gholamreza Haffari 1 , Bohan Zhuang 3, †
+
+1 Monash University 2 Tongyi Lab, Alibaba Group 3 Zhejiang University 4 University of Queensland
+
+Minute-scale cinematic video generation is a central challenge for generative video models. Existing paradigms address only fragments of this challenge: single-shot extrapolation preserves an anchor but lacks cinematic structure, while multi-shot storytelling imposes structure yet remains free to invent its visual states rather than continue an observed one. We define Multi-Shot Video Extrapolation (MSVE), a task that extends an observed frame or clip into a sequence of cinematically structured shots while preserving anchor state and advancing narrative intent. This setting operates under the finite per-call generation budget of short-video models. We identify three coupled bottlenecks: (1) global planners over-specify unsupported details from full screenplays; (2) shot-level prompts dilute task-relevant state when carrying the complete story; (3) temporal chaining turns generated frames into a lossy memory in which identity, scene, object, and action state decay. MSVE reveals that long-video failure is not merely a limitation of context length, but a failure of context allocation. We propose Recursive Context Allocation (ReCA), an inference-time framework that allocates context hierarchically across planning and generation. ReCA recursively decomposes MSVE into context-bounded subproblems, invokes frozen generators at leaf nodes, and propagates structured state updates across time. To evaluate this setting, we further propose MSVE-Bench and NB-Q , a source-grounded protocol with prompts purpose-built for 3 – 5 minute long-video generation, a regime not addressed by existing short-clip benchmarks. Compared to previous methods, ReCA improves average normalized score by 8–16% over the strongest competing controller and improves multi-shot consistency metrics by 28–43%. View the project page at https://reca.vmv.re . Date: May 27, 2026
+
+# 1 Introduction
+
+Minute-scale cinematic video generation is a central challenge for generative video models. Recent systems synthesize compelling short clips and extend them through image-to-video continuation, clip stitching, memory mechanisms, or language-based planning ( Ho et al. , 2022b ; Singer et al. , 2022 ; Ho et al. , 2022a ; Hong et al. , 2022 ; Blattmann et al. , 2023 ; Bar-Tal et al. , 2024 ; Kondratyuk et al. , 2023 ; Yang et al. , 2024 ; Polyak et al. , 2024 ; Lin et al. , 2024 ), but minute-scale cinematic videos are not merely longer clips: they are structured sequences of shots in which characters, objects, scenes, viewpoints, and narrative events evolve across cuts. Existing paradigms capture only part of this requirement: single-shot extrapolation preserves an observed anchor but produces one continuous take without cinematic structure ( Ni et al. , 2023 ; Chen et al. , 2023 ; Khachatryan et al. , 2023 ; Xing et al. , 2023 ; Guo et al. , 2023 ; Yin et al. , 2023 ), while multi-shot storytelling and text-to-multi-shot generation introduce shot structure but begin from text and are free to invent the visual world rather than continue an observed one ( Villegas et al. , 2022 ; Lin et al. , 2023 ; Kara et al. , 2025 ; Wu et al. , 2025 ; Wang et al. , 2025b ; Long et al. , 2024 ; Hong et al. , 2023 ; Zhou et al. , 2024 ; Gong et al. , 2023 ). This leaves a task gap: current settings either preserve an observed world without multi-shot structure, or
+
+impose multi-shot structure without source-grounded extrapolation.
+
+We introduce Multi-Shot Video Extrapolation (MSVE), a source-grounded long-video generation task that unifies these two requirements. Given an observed visual anchor v 0 , a narrative intent c , a target duration T , and a short-video generator G with finite per-call duration and conditioning budgets, MSVE asks a system to
+
+† Corresponding Author ‡
+
+Note: Akide Liu is an intern at Tongyi Lab, Alibaba Group.
+

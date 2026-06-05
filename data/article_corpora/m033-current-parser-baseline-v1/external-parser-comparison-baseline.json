@@ -1,0 +1,119 @@
+{
+  "schema": "m033.external_parser_comparison_baseline.v1",
+  "generated_at": "2026-06-05T07:34:31.948780+00:00",
+  "inputs": {
+    "entrypoints_schema": "m033.current_pipeline_entrypoints.v1",
+    "contracts_schema": "m033.current_artifact_contracts.v1",
+    "safety_schema": "m033.refusal_and_safety_boundaries.v1"
+  },
+  "matrix": [
+    {
+      "capability": "scholarly_metadata_and_bibliography",
+      "current_baseline": "Limited in M031 parser/conversion replay; bibliography/citation extraction is not the current baseline strength.",
+      "current_evidence": [
+        "parser_conversion stage artifacts",
+        "graph_readiness_handoff requires review"
+      ],
+      "external_question_grobid": "Can GROBID TEI provide reliable title/authors/abstract/references/citations with stable source anchors?",
+      "external_question_opendataloader": "Does OpenDataLoader expose bibliography blocks or only visual/layout text?",
+      "quant_mind_pattern_question": "Can PaperKnowledgeCard and provenance schemas represent bibliographic summary cards?",
+      "must_preserve": [
+        "SourceRef hash/path provenance",
+        "pending review before graph claims"
+      ]
+    },
+    {
+      "capability": "section_hierarchy_and_page_index",
+      "current_baseline": "Current replay can produce parser-ready text and chunks, but external research must assess richer section hierarchy and PageIndex-like structure.",
+      "current_evidence": [
+        "parser_conversion",
+        "chunk_evidence"
+      ],
+      "external_question_grobid": "Does TEI section structure map cleanly to PageIndex nodes and section anchors?",
+      "external_question_opendataloader": "Does layout output preserve headings, reading order, and page/block coordinates?",
+      "quant_mind_pattern_question": "Can TreeKnowledge inspire root/section/leaf hierarchy and summary-card split?",
+      "must_preserve": [
+        "source spans",
+        "section anchors",
+        "zero-chunk refusal for non-ready rows"
+      ]
+    },
+    {
+      "capability": "tables_and_layout",
+      "current_baseline": "M031 safety notes treat table/figure/layout handling as not globally validated; this is a key improvement target.",
+      "current_evidence": [
+        "R027 remains active",
+        "R050 remains active"
+      ],
+      "external_question_grobid": "What table/figure support exists and where is it weak?",
+      "external_question_opendataloader": "Can OCR/layout/table recognition produce machine-readable table artifacts and coordinates?",
+      "quant_mind_pattern_question": "Which typed knowledge/card pattern could represent table candidates without graph import?",
+      "must_preserve": [
+        "candidate artifact review state",
+        "no trusted fact promotion"
+      ]
+    },
+    {
+      "capability": "reading_order_and_ocr_quality",
+      "current_baseline": "Low-quality source detection exists; non-empty text is explicitly insufficient.",
+      "current_evidence": [
+        "low_quality_source",
+        "no_substantive_body refusal"
+      ],
+      "external_question_grobid": "How does GROBID handle scanned/poor OCR PDFs?",
+      "external_question_opendataloader": "Can OCR backend improve scanned/layout-heavy PDFs and expose health/failure diagnostics?",
+      "quant_mind_pattern_question": "Does fetch/format separation help isolate OCR quality from knowledge extraction?",
+      "must_preserve": [
+        "typed low-quality diagnostics",
+        "backend health/blocker state"
+      ]
+    },
+    {
+      "capability": "provenance_and_evidence_paths",
+      "current_baseline": "M031 requires paths, hashes, source spans, diagnostics, and no-write flags through the chain.",
+      "current_evidence": [
+        "current-artifact-contracts.json",
+        "refusal-and-safety-boundaries.json"
+      ],
+      "external_question_grobid": "Can TEI elements be linked back to page/offset/source spans?",
+      "external_question_opendataloader": "Can layout blocks/tables expose coordinates usable as EvidencePath anchors?",
+      "quant_mind_pattern_question": "Can SourceRef/Citation/ExtractionRef patterns improve our schema without adopting the framework?",
+      "must_preserve": [
+        "local path",
+        "sha256",
+        "diagnostic code",
+        "graph flags false"
+      ]
+    },
+    {
+      "capability": "runtime_complexity_and_local_first_operation",
+      "current_baseline": "Current replay is local artifact-based and no-write; external services must be treated as probes.",
+      "current_evidence": [
+        "M031 validation pass",
+        "R040 safety-wrapped infrastructure constraint"
+      ],
+      "external_question_grobid": "What Java/service/container/runtime burden is required?",
+      "external_question_opendataloader": "Which backend is required: built-in, docling, hancom, hancom-ai, or typed blocker?",
+      "quant_mind_pattern_question": "Which patterns can be adapted without runtime dependency or LLM extraction coupling?",
+      "must_preserve": [
+        "bounded local probe",
+        "no production adoption from research alone"
+      ]
+    }
+  ],
+  "downstream_use": {
+    "S02_GROBID": "Answer GROBID-specific questions in the matrix.",
+    "S03_OpenDataLoader": "Run 3-PDF probe and score against matrix capabilities.",
+    "S04_quant_mind": "Extract patterns answering pattern questions without dependency adoption.",
+    "S05_synthesis": "Choose GROBID-only, OpenDataLoader-only, combined sidecar, or reject/further probe."
+  },
+  "global_safety_constraints": {
+    "graph_import_allowed": false,
+    "trusted_kg_import_allowed": false,
+    "production_import_attempted": false,
+    "production_persistence_attempted": false,
+    "ladybugdb_written": false,
+    "graph_write_attempted": false,
+    "model_call_required_for_parser_probe": false
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "m033.grobid.runtime-readiness.v1",
+  "created_at_epoch": 1780654373,
+  "selected_runtime": "docker-crf-service",
+  "selected_image": "grobid/grobid:0.9.0-crf",
+  "service_url": "http://127.0.0.1:8070",
+  "native_build_requirement": {
+    "jdk_required": "OpenJDK 21+",
+    "local_java_summary": "openjdk version \"17.0.19\" 2026-04-21",
+    "local_javac_summary": "javac 17.0.19",
+    "native_build_recommended_for_s02": false,
+    "reason": "Vendored GROBID build.gradle uses JavaLanguageVersion.of(21), while local runtime is Java 17; Docker avoids changing host JDK for bounded research."
+  },
+  "docker": {
+    "docker_cli": {
+      "command": "docker --version 2>&1",
+      "exit_code": 0,
+      "output": "Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.2"
+    },
+    "docker_daemon": {
+      "command": "docker info --format '{{json .ServerVersion}} {{json .Architecture}} {{json .OSType}}' 2>&1",
+      "exit_code": 0,
+      "output": "\"29.1.3\" \"x86_64\" \"linux\""
+    },
+    "image_inspect": {
+      "command": "docker image inspect grobid/grobid:0.9.0-crf --format '{{.Id}} {{.Size}}' 2>/dev/null",
+      "exit_code": 0,
+      "output": "sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849 500836194"
+    },
+    "daemon_available": true,
+    "image_present_at_t01_artifact_write": true,
+    "pull_in_progress_or_required": false,
+    "image_inspect_after_pull": {
+      "command": "docker image inspect grobid/grobid:0.9.0-crf --format '{{.Id}} {{.Size}}'",
+      "exit_code": 0,
+      "output": "sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849 500836194"
+    },
+    "image_present_after_pull": true
+  },
+  "docker_options": {
+    "crf": {
+      "image": "grobid/grobid:0.9.0-crf",
+      "approx_size": "~500MB",
+      "recommended_for_s02": true,
+      "why": "Enough for API/TEI/contract-shape probe."
+    },
+    "full": {
+      "image": "grobid/grobid:0.9.0-full",
+      "approx_size": "~8GB",
+      "recommended_for_s02": false,
+      "why": "Better bibliography/citation accuracy but heavier; record as future accuracy follow-up."
+    }
+  },
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false
+  },
+  "updated_at_epoch": 1780654389
+}

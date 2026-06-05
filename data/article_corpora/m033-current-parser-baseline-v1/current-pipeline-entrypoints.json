@@ -1,0 +1,210 @@
+{
+  "schema": "m033.current_pipeline_entrypoints.v1",
+  "generated_at": "2026-06-05T07:31:37.155731+00:00",
+  "source": "M033 S01 T01 GitNexus-informed repository inventory",
+  "no_code_modified": true,
+  "stages": [
+    {
+      "stage": "catalog_intake",
+      "role": "Bound requested refs to article catalog rows or typed catalog blockers before any source/parser work.",
+      "entrypoints": [
+        {
+          "path": "scripts/build_m031_catalog_backed_replay_selection.py",
+          "kind": "script",
+          "produces": [
+            "selection.json"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/register_m029_missing_metadata_refs.py",
+          "kind": "script",
+          "produces": [
+            "metadata-only article.json records"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m030_requested_ref_intake.py",
+          "kind": "verifier",
+          "produces": [
+            "intake diagnostics"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "S01/M031 shows catalog gaps become typed blockers, not silent success."
+    },
+    {
+      "stage": "source_acquisition",
+      "role": "Copy or reference safe local source artifacts and convert unavailable rows to typed blockers.",
+      "entrypoints": [
+        {
+          "path": "scripts/replay_m031_catalog_backed_acquisition.py",
+          "kind": "script",
+          "produces": [
+            "source-acquisition-summary.json",
+            "source-acquisition-diagnostics.jsonl"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/replay_m027_current_pipeline_baseline.py",
+          "kind": "script",
+          "symbol": "replay_baseline",
+          "produces": [
+            "current pipeline baseline replay evidence"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "No network fetch is assumed for M031/M033 baseline comparison."
+    },
+    {
+      "stage": "loader_evidence",
+      "role": "Load only captured local artifacts and align all non-captured acquisition rows to loader blockers.",
+      "entrypoints": [
+        {
+          "path": "scripts/replay_m031_catalog_backed_loader_evidence.py",
+          "kind": "script",
+          "symbol": "loader_result_for_capture",
+          "produces": [
+            "loader-evidence-summary.json",
+            "loader-evidence-diagnostics.jsonl"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m029_unified_loader_runtime_smoke.py",
+          "kind": "verifier",
+          "symbol": "verify",
+          "produces": [
+            "loader runtime smoke verification"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "Loader evidence is not parser/chunk/graph readiness."
+    },
+    {
+      "stage": "parser_conversion",
+      "role": "Convert only usable local artifacts and emit refusal diagnostics for unsafe, missing, metadata-only, external-only, or low-quality variants.",
+      "entrypoints": [
+        {
+          "path": "scripts/replay_m031_parser_conversion.py",
+          "kind": "script",
+          "produces": [
+            "conversion-quality-summary.json",
+            "converted-text/*.txt"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m031_parser_conversion_replay.py",
+          "kind": "verifier",
+          "produces": [
+            "parser-conversion-closeout-summary.json"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/convert_m029_unified_source_quality_boundary.py",
+          "kind": "script",
+          "symbol": "run_conversion",
+          "produces": [
+            "unified conversion quality artifacts"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m029_unified_conversion_quality_boundary.py",
+          "kind": "verifier",
+          "symbol": "verify",
+          "produces": [
+            "conversion quality verification"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "Non-empty extracted text is not sufficient; low_quality_source remains a first-class refusal state."
+    },
+    {
+      "stage": "chunk_evidence",
+      "role": "Chunk only parser-ready converted text and emit zero-chunk refusals for non-ready rows.",
+      "entrypoints": [
+        {
+          "path": "scripts/replay_m031_chunk_evidence.py",
+          "kind": "script",
+          "produces": [
+            "chunk-evidence-summary.json",
+            "per-row chunk/evidence paths"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m031_chunk_evidence_replay.py",
+          "kind": "verifier",
+          "produces": [
+            "chunk evidence closeout summary/report"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "Chunks are candidate evidence and do not imply import eligibility."
+    },
+    {
+      "stage": "graph_readiness_handoff",
+      "role": "Create reviewer packets only from chunk evidence and require independent completed review before import eligibility.",
+      "entrypoints": [
+        {
+          "path": "python module arxiv_archive.graph_readiness_review",
+          "kind": "module/verifier",
+          "command": "uv run python -m arxiv_archive.graph_readiness_review --validate-only --require-completed-review",
+          "produces": [
+            "review completion validation"
+          ],
+          "exists": null
+        }
+      ],
+      "notes": "Pending review packets are not graph-ready facts."
+    },
+    {
+      "stage": "no_write_import_boundary",
+      "role": "Rehearse import eligibility in no-write fail-closed mode and preserve graph/import/LadybugDB flags false.",
+      "entrypoints": [
+        {
+          "path": "scripts/verify_m031_s05_closeout.py",
+          "kind": "verifier",
+          "produces": [
+            "s05-closeout-summary.json",
+            "s05-closeout-diagnostics.jsonl"
+          ],
+          "exists": true
+        },
+        {
+          "path": "scripts/verify_m031_process_continuity_audit.py",
+          "kind": "verifier",
+          "symbol": "build_progression_matrix",
+          "produces": [
+            "m031-continuity-audit.json"
+          ],
+          "exists": true
+        }
+      ],
+      "notes": "Accepted/import-eligible counts remain zero unless prior gates explicitly pass in a future milestone."
+    }
+  ],
+  "downstream_consumers": [
+    "M033/S02",
+    "M033/S03",
+    "M033/S04",
+    "M033/S05",
+    "M033/S06"
+  ],
+  "safety_summary": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "parser_success_is_graph_readiness": false
+  }
+}

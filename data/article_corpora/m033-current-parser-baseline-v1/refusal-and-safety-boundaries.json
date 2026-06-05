@@ -1,0 +1,98 @@
+{
+  "schema": "m033.refusal_and_safety_boundaries.v1",
+  "generated_at": "2026-06-05T07:33:36.615211+00:00",
+  "source": "M031 validation plus M033 S01 baseline planning",
+  "boundaries": [
+    {
+      "boundary": "catalog_intake",
+      "refusal_or_blocker_states": [
+        "typed_catalog_blocker",
+        "silent_missing_count must remain 0"
+      ],
+      "why": "A requested ref without a safe catalog row must not silently advance into acquisition.",
+      "external_parser_implication": "External tools cannot repair catalog identity gaps; they need a selected local source or typed blocker."
+    },
+    {
+      "boundary": "source_acquisition",
+      "refusal_or_blocker_states": [
+        "missing_source",
+        "metadata_only",
+        "external_pdf_without_safe_local_path",
+        "unsafe_path"
+      ],
+      "why": "Acquisition must prove safe local artifacts with hashes and sizes before loader/parser work.",
+      "external_parser_implication": "OpenDataLoader/GROBID probes should use local PDFs with sha256 and no network fetch by default."
+    },
+    {
+      "boundary": "loader_evidence",
+      "refusal_or_blocker_states": [
+        "loader_blocker",
+        "not_captured_by_acquisition",
+        "metadata_only_loaded_row"
+      ],
+      "why": "Only captured local artifacts should become loaded candidates; non-captured rows stay blocked.",
+      "external_parser_implication": "Parser probes must preserve which rows were actually loadable versus metadata-only controls."
+    },
+    {
+      "boundary": "parser_conversion",
+      "refusal_or_blocker_states": [
+        "low_quality_source",
+        "no_substantive_body",
+        "unsafe_input",
+        "missing_source",
+        "external_only",
+        "catalog_gap"
+      ],
+      "why": "Non-empty markdown or HTTP/PDF success is insufficient; usable body text and source quality must be checked.",
+      "external_parser_implication": "External parser output must be judged for reading order, body substance, section structure, and diagnostic clarity."
+    },
+    {
+      "boundary": "chunk_evidence",
+      "refusal_or_blocker_states": [
+        "zero_chunk_refusal",
+        "parser_not_ready",
+        "stale_source_hash",
+        "invalid_source_span"
+      ],
+      "why": "Chunking only follows parser-ready converted artifacts with stable source linkage.",
+      "external_parser_implication": "Layout/table outputs must map to source spans before they can influence chunk/evidence contracts."
+    },
+    {
+      "boundary": "graph_readiness_review",
+      "refusal_or_blocker_states": [
+        "pending_review",
+        "missing_completed_review",
+        "output_contract_completed_not_true"
+      ],
+      "why": "Reviewer packets are not import eligibility without independent completed review.",
+      "external_parser_implication": "OpenDataLoader/GROBID artifacts can at most create candidate reviewer inputs in M033."
+    },
+    {
+      "boundary": "no_write_import",
+      "refusal_or_blocker_states": [
+        "import_eligible_count=0",
+        "accepted_count=0",
+        "graph_import_allowed=false"
+      ],
+      "why": "M031 established a no-write import rehearsal; parser improvements do not authorize LadybugDB writes.",
+      "external_parser_implication": "All M033 artifacts must keep production import and LadybugDB write flags false."
+    }
+  ],
+  "global_flags_required_false": {
+    "graph_import_allowed": false,
+    "trusted_kg_import_allowed": false,
+    "production_import_attempted": false,
+    "production_persistence_attempted": false,
+    "ladybugdb_written": false,
+    "graph_write_attempted": false,
+    "model_call_required_for_parser_probe": false
+  },
+  "forbidden_positive_claims": [
+    "production graph readiness",
+    "positive KG import eligibility",
+    "LadybugDB write readiness",
+    "trusted KG fact promotion",
+    "parser output is graph-ready by default"
+  ],
+  "evaluation_rule": "Classify failures as implementation defects, formal artifact conflicts, requirement framing issues, or validation policy issues before changing code."
+}

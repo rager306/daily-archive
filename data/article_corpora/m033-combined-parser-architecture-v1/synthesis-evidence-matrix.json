@@ -1,0 +1,178 @@
+{
+  "schema_version": "m033.combined_parser.synthesis_evidence_matrix.v1",
+  "generated_at_epoch": 1780659832,
+  "status": "complete",
+  "synthesis_basis": "S01/S02/S03/S04/S07 completed artifacts only; no external runtime rerun.",
+  "entries": [
+    {
+      "slice": "S01",
+      "name": "Current Parser Baseline Map",
+      "verdict": "baseline-established",
+      "role": "Defines current parser/conversion/refusal contracts used to compare external tools.",
+      "strengths": [
+        "explicit refusal boundaries",
+        "source/locality/hash expectations",
+        "graph-readiness review and no-write boundaries"
+      ],
+      "gaps_or_limits": [
+        "baseline is comparison substrate, not a new parser implementation"
+      ],
+      "downstream_implication": "All sidecar candidates must map to SourceRef/EvidencePath/PageIndex/SemanticChunk/review boundaries before graph claims.",
+      "safety_flags": {
+        "graph_import_allowed": false,
+        "ladybugdb_written": false,
+        "production_import_attempted": false,
+        "import_eligible": false,
+        "trusted_kg_import_allowed": false,
+        "graph_write_attempted": false
+      },
+      "evidence_paths": [
+        "data/article_corpora/m033-current-parser-baseline-v1/external-parser-comparison-baseline.md",
+        "data/article_corpora/m033-current-parser-baseline-v1/refusal-and-safety-boundaries.md"
+      ]
+    },
+    {
+      "slice": "S02",
+      "name": "GROBID Scholarly Parsing Study",
+      "verdict": "grobid-scholarly-sidecar-candidate",
+      "role": "Scholarly TEI sidecar candidate for metadata, headers, sections, bibliography, citation/ref markers, and TEI structure.",
+      "strengths": [
+        "3/3 PDFs processed through Docker CRF service",
+        "TEI/fulltext service shape confirmed",
+        "bibliography/citation-oriented output"
+      ],
+      "gaps_or_limits": [
+        "standalone graph-ready parser",
+        "table-fidelity proof",
+        "OCR replacement proof",
+        "production import eligibility",
+        "LadybugDB write trigger",
+        "TEI-to-daily-archive adapter contract tests",
+        "source span/coordinate anchoring review",
+        "bibliography/citation quality comparison with full/DL image if accuracy matters",
+        "graph-readiness review gate remains independent"
+      ],
+      "downstream_implication": "Use as scholarly structure sidecar behind TEI adapter and independent review; not table/OCR/graph-readiness proof.",
+      "safety_flags": {
+        "graph_import_allowed": false,
+        "ladybugdb_written": false,
+        "production_import_attempted": false,
+        "import_eligible": false,
+        "trusted_kg_import_allowed": false,
+        "graph_write_attempted": false
+      },
+      "evidence_paths": [
+        "data/article_corpora/m033-grobid-probe-v1/grobid-probe-verdict.json",
+        "data/article_corpora/m033-grobid-probe-v1/grobid-contract-mapping.md"
+      ]
+    },
+    {
+      "slice": "S03",
+      "name": "OpenDataLoader OCR Layout Table Probe",
+      "verdict": "hybrid-sidecar-candidate",
+      "role": "Layout/OCR/table/coordinate sidecar candidate via hybrid docling-fast backend over local PDFs.",
+      "strengths": [
+        "3/3 PDFs processed successfully",
+        "JSON/Markdown/HTML/Text artifacts produced",
+        "layout/page/bounding-box candidates useful for EvidencePath/PageIndex review"
+      ],
+      "gaps_or_limits": [
+        "No scanned/image-only PDF was included, so OCR quality remains not proven.",
+        "No independent table ground truth was used, so table fidelity is qualitative only.",
+        "Outputs are candidate evidence only and are not graph-ready or import-eligible.",
+        "Need a larger probe before production adoption or sidecar schema commitment."
+      ],
+      "downstream_implication": "Use for candidate layout/table/page evidence only; OCR/table fidelity and source-span quality require larger future quality gates.",
+      "safety_flags": {
+        "graph_import_allowed": false,
+        "ladybugdb_written": false,
+        "production_import_attempted": false,
+        "import_eligible": false,
+        "trusted_kg_import_allowed": false,
+        "graph_write_attempted": false
+      },
+      "evidence_paths": [
+        "data/article_corpora/m033-opendataloader-pdf-probe-v1/opendataloader-probe-verdict.json",
+        "data/article_corpora/m033-opendataloader-pdf-probe-v1/opendataloader-contract-mapping.md"
+      ]
+    },
+    {
+      "slice": "S07",
+      "name": "Adaptix OpenDataLoader Adapter Probe",
+      "verdict": "adaptix-adapter-candidate",
+      "role": "Typed adapter candidate mapping fixed OpenDataLoader JSON into daily-archive candidate summaries.",
+      "strengths": [
+        "3 OpenDataLoader JSON outputs mapped",
+        "error_count=0",
+        "candidate summaries preserve candidate_only boundaries"
+      ],
+      "gaps_or_limits": [
+        "structural mapping is not semantic validation",
+        "does not prove reading order, table fidelity, source-span correctness, or graph readiness"
+      ],
+      "downstream_implication": "Keep Adaptix as post-processing adapter layer after fixed parser output, followed by daily-archive validators and review gates.",
+      "safety_flags": {
+        "graph_import_allowed": false,
+        "ladybugdb_written": false,
+        "production_import_attempted": false,
+        "import_eligible": false,
+        "trusted_kg_import_allowed": false,
+        "graph_write_attempted": false
+      },
+      "evidence_paths": [
+        "data/article_corpora/m033-opendataloader-adaptix-probe-v1/adaptix-adapter-summary.json"
+      ]
+    },
+    {
+      "slice": "S04",
+      "name": "QuantMind Architecture Pattern Study",
+      "verdict": "pattern-source-not-dependency",
+      "role": "Architecture pattern source for TreeKnowledge/PageIndex, PaperKnowledgeCard, provenance, pipeline separation, bounded concurrency, and resolver guardrails.",
+      "strengths": [
+        "implemented-vs-vision boundary documented",
+        "TreeKnowledge/PaperKnowledgeCard/provenance patterns identified",
+        "runtime dependency explicitly rejected"
+      ],
+      "gaps_or_limits": [
+        "M033 runtime dependency",
+        "production RAG/KB platform",
+        "semantic KG implementation",
+        "graph import trigger",
+        "OpenAI/API extraction proof",
+        "daily-archive-owned schemas and validators",
+        "deterministic parser quality evals",
+        "storage/retrieval design independent of quant-mind",
+        "graph-readiness review remains independent"
+      ],
+      "downstream_implication": "Use patterns only under daily-archive-owned schemas; do not adopt quant-mind runtime, GraphKnowledge, storage, retrieval, RAG, or OpenAI/API flow.",
+      "safety_flags": {
+        "graph_import_allowed": false,
+        "ladybugdb_written": false,
+        "production_import_attempted": false,
+        "import_eligible": false,
+        "trusted_kg_import_allowed": false,
+        "graph_write_attempted": false
+      },
+      "evidence_paths": [
+        "data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-pattern-verdict.json",
+        "data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-daily-archive-pattern-map.md"
+      ]
+    }
+  ],
+  "expected_verdicts": [
+    "baseline-established",
+    "grobid-scholarly-sidecar-candidate",
+    "hybrid-sidecar-candidate",
+    "adaptix-adapter-candidate",
+    "pattern-source-not-dependency"
+  ],
+  "candidate_only": true,
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false
+  }
+}

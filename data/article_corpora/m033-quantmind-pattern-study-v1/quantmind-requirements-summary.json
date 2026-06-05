@@ -1,0 +1,73 @@
+{
+  "schema_version": "m033.quantmind.requirements-summary.v1",
+  "created_at_epoch": 1780655424,
+  "source": "S04-RESEARCH.md plus read-only /root/vendor-source/quant-mind context",
+  "package": {
+    "name": "quantmind",
+    "pyproject_version": "0.2.0",
+    "init_version": "0.0.1",
+    "version_mismatch": true
+  },
+  "runtime_requirements": {
+    "python_requires": ">=3.10",
+    "readme_badge_claim": "Python 3.8+",
+    "python_version_mismatch": true,
+    "package_manager": "uv recommended",
+    "docker_or_compose_found": false,
+    "container_required": false
+  },
+  "core_dependencies": [
+    "arxiv",
+    "pyyaml",
+    "numpy>=2.2.4",
+    "openai>=1.68.2",
+    "openai-agents>=0.14",
+    "pydantic>=2.0.0",
+    "pymupdf>=1.23.0",
+    "python-dotenv>=1.0.0",
+    "httpx[socks]>=0.28.1",
+    "litellm>=1.74.0.post1",
+    "jinja2>=3.0.0",
+    "trafilatura>=1.10",
+    "pillow>=10.1.0,<11.0.0"
+  ],
+  "optional_full_dependencies": [
+    "marker-pdf>=0.2.0",
+    "beautifulsoup4>=4.12.0",
+    "sentence-transformers>=2.2.0"
+  ],
+  "env_requirements": {
+    "OPENAI_API_KEY": "required for live paper_flow / magic resolver model calls",
+    "LLAMA_CLOUD_API_KEY": "documented optional/parser-related key",
+    "QUANTMIND_LOG_LEVEL": "optional",
+    "QUANTMIND_DATA_DIR": "optional"
+  },
+  "runtime_decision": {
+    "decision": "do-not-run-live-quantmind-runtime-in-M033-S04",
+    "recommended_s04_mode": "static architecture pattern study",
+    "do_not_run": [
+      "paper_flow",
+      "resolve_magic_input against a real model",
+      "arxiv/http network fetches",
+      "OpenAI Agents SDK calls",
+      "embedding provider calls"
+    ],
+    "why": [
+      "M033 S04 needs architecture-pattern classification, not extraction quality proof",
+      "paper_flow depends on OpenAI Agents runtime and may call OpenAI APIs",
+      "arxiv/http inputs can fetch from network",
+      "GraphKnowledge/storage/retrieval/memory are not production-ready in current package",
+      "Running would require secrets and widen scope without answering S04 core question"
+    ]
+  },
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false,
+    "model_call_required_for_pattern_study": false,
+    "network_required_for_pattern_study": false
+  }
+}

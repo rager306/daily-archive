@@ -1,0 +1,83 @@
+{
+  "schema_version": "m033.external_parser_quality.future_probe_scope.v1",
+  "generated_at_epoch": 1780660093,
+  "status": "complete",
+  "derived_from_recommendation": "recommended-bounded-combined-sidecar-architecture",
+  "future_milestone_intent": "Run a bounded quality evaluation of the combined sidecar architecture before any implementation/adoption decision.",
+  "corpus_classes": [
+    {
+      "class": "native_digital_arxiv_pdf",
+      "purpose": "baseline scholarly PDF with text layer and common section/reference structure",
+      "minimum_count": 3
+    },
+    {
+      "class": "long_appendix_or_supplement_heavy_pdf",
+      "purpose": "stress reading order, page indexing, references, and large-document runtime",
+      "minimum_count": 2
+    },
+    {
+      "class": "table_heavy_pdf",
+      "purpose": "evaluate table detection, cell structure, caption linkage, and coordinate anchors",
+      "minimum_count": 2
+    },
+    {
+      "class": "figure_or_layout_heavy_pdf",
+      "purpose": "evaluate layout blocks, figures, captions, and multi-column reading order",
+      "minimum_count": 2
+    },
+    {
+      "class": "scanned_or_image_only_control_pdf",
+      "purpose": "separate OCR capability from normal text-layer extraction and require typed blocker if unsupported",
+      "minimum_count": 1
+    },
+    {
+      "class": "known_low_quality_or_metadata_only_control",
+      "purpose": "verify low_quality_source/no_substantive_body refusals still fire",
+      "minimum_count": 1
+    }
+  ],
+  "source_locality_controls": [
+    "All inputs must be repo-local or staged under a documented artifact root with sha256, byte size, and source provenance.",
+    "Default execution mode is no-network; any network requirement must become a typed blocker or explicit preflight finding, not an implicit fetch.",
+    "Model/backend caches must be inventoried before parser execution; missing cache cannot silently download during quality gate.",
+    "No API keys are required for the planned parser-quality probe; quant-mind runtime remains excluded."
+  ],
+  "backend_and_cache_preflight": [
+    "GROBID image/version/service health",
+    "OpenDataLoader hybrid backend health",
+    "Docling/HuggingFace cache inventory",
+    "network-disabled behavior",
+    "per-paper runtime and fallback/blocker capture"
+  ],
+  "excluded_production_actions": [
+    "production parser integration",
+    "dependency adoption into runtime path",
+    "graph import",
+    "LadybugDB write",
+    "positive import eligibility claim",
+    "OpenAI/API quant-mind runtime",
+    "unreviewed parser-to-SemanticChunk promotion"
+  ],
+  "s05_validation_gate_inputs": [
+    "GROBID TEI adapter contract tests",
+    "GROBID bibliography/citation/header quality evaluation",
+    "OpenDataLoader backend/cache/no-network preflight",
+    "OpenDataLoader OCR/layout/table fidelity evaluation",
+    "Adaptix typed adapter contract coverage",
+    "TreeKnowledge/PageIndex/PaperKnowledgeCard/provenance schema fit review",
+    "EvidencePath source-span and coordinate anchoring tests",
+    "low_quality_source/no_substantive_body refusal preservation",
+    "review packet completion and graph-readiness review post-check",
+    "no-write import rehearsal with all graph/import flags false"
+  ],
+  "not_executed_in_M033": true,
+  "candidate_only": true,
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false,
+    "import_eligible": false,
+    "trusted_kg_import_allowed": false,
+    "graph_write_attempted": false
+  }
+}

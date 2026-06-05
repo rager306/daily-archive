@@ -153,15 +153,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation.
 - Notes: Traceability cleanup: M023-vk5wb2/S04 owns benchmark fixtures and metrics before any DSPy or optimizer recommendation. S02 and S03 provide deterministic and MiniMax-assisted outputs for comparison, and S05 consumes the metric evidence for a DSPy readiness/no-go gate. DSPy or optimizer behavior must not be activated before evaluation fixtures and metrics exist.
 
-### R053 — External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
-- Class: quality-attribute
-- Status: active
-- Description: External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
-- Why it matters: The project needs better scientific article parsing, layout/table extraction, bibliography handling, and evidence traceability, but M031 proved that parser output must remain candidate evidence until reviewed and fail-closed.
-- Source: user-directed M032 external parser research plan after M031
-- Primary owning slice: M032
-- Validation: A bounded 3-PDF probe records input hashes, backend health, commands, output artifacts, quality review, mapping to daily-archive contracts, and explicit no graph import / no LadybugDB write flags.
-
 ## Validated
 
 ### R001 — CLI help info
@@ -541,6 +532,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by src/arxiv_archive/candidate_locators.py, tests/test_candidate_locators.py (12 focused tests), S02 module guard, S03 deterministic 10-paper batch guard, independent review, remediation verification, and final guard m021-final-guard-ok. Final batch: 10 papers, 26 locators, 20 ambiguous spans, 10 overlap diagnostics, 0 import-eligible locators, 0 fact promotions.
 - Notes: M021 implemented deterministic candidate locator generation and bounded batch rehearsal. Independent review initially flagged path-dependent span hashes and missing overlap diagnostics; both were remediated before final closeout. Positive KG import and LadybugDB writes remain blocked.
 
+### R053 — External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
+- Class: quality-attribute
+- Status: validated
+- Description: External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
+- Why it matters: The project needs better scientific article parsing, layout/table extraction, bibliography handling, and evidence traceability, but M031 proved that parser output must remain candidate evidence until reviewed and fail-closed.
+- Source: user-directed M032 external parser research plan after M031
+- Primary owning slice: M032
+- Validation: Validated by completed milestone M033-732r1t: S01 baseline, S02 GROBID study, S03 OpenDataLoader hybrid probe, S04 quant-mind pattern study, S07 Adaptix adapter probe, S05 combined recommendation, and S06 bounded quality plan. Fresh verifiers/tests/Ruff and milestone validation passed; all graph/import/write safety flags remained false.
+- Notes: M033 recommends `recommended-bounded-combined-sidecar-architecture` as bounded research output only. No production parser integration, dependency adoption, graph import, LadybugDB write, or import eligibility is authorized.
+
 ## Deferred
 
 ## Out of Scope
@@ -601,11 +602,11 @@ This file is the explicit capability and coverage contract for the project.
 | R050 | core-capability | active | M023-vk5wb2/S02 | M023-vk5wb2/S01,M023-vk5wb2/S04,M023-vk5wb2/S05 | A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false. |
 | R051 | integration | active | M023-vk5wb2/S03 | M023-vk5wb2/S01,M023-vk5wb2/S02,M023-vk5wb2/S05 | A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization. |
 | R052 | quality-attribute | active | M023-vk5wb2/S04 | M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05 | A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation. |
-| R053 | quality-attribute | active | M032 | none | A bounded 3-PDF probe records input hashes, backend health, commands, output artifacts, quality review, mapping to daily-archive contracts, and explicit no graph import / no LadybugDB write flags. |
+| R053 | quality-attribute | validated | M032 | none | Validated by completed milestone M033-732r1t: S01 baseline, S02 GROBID study, S03 OpenDataLoader hybrid probe, S04 quant-mind pattern study, S07 Adaptix adapter probe, S05 combined recommendation, and S06 bounded quality plan. Fresh verifiers/tests/Ruff and milestone validation passed; all graph/import/write safety flags remained false. |
 
 ## Coverage Summary
 
-- Active requirements: 15
+- Active requirements: 14
 - Mapped to slices: 6
-- Validated: 38 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
+- Validated: 39 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053)
 - Unmapped active requirements: 3
