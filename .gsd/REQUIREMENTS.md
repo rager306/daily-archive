@@ -46,7 +46,7 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: future-validation-milestone
 - Supporting slices: M003-km5fty/S01-S10
 - Validation: Re-scoped boundary preserved by M022 S05 final gate: packet_count=6, import_allowed=false, semantic_ready_for_kg=false, production_import_attempted=false, ladybugdb_written=false, recommendation=human_semantic_review_or_bounded_repair_only. M022 advances the safety/review gate only; it does not validate 20-document or one-week staged KG graph quality.
-- Notes: M025 S11 scope reconciliation: advanced by five-article local preprocessing replay and readiness-for-larger-preprocessing evidence only; remains active for staged 10-document, 20-document, and one-week scientific KG validation plus graph-quality analysis.
+- Notes: M025 S11 scope reconciliation: advanced by five-article local preprocessing replay and readiness-for-larger-preprocessing evidence only; remains active for staged 10-document, 20-document, and one-week scientific KG validation plus graph-quality analysis. M031 S07 scope reconciliation: M031 advances only the bounded refusal-boundary continuity layer for selected refs through catalog/acquisition/loader/parser/chunk/reviewer-packet/no-write import refusal evidence. It does not validate 10-document, 20-document, or one-week staged KG graph quality, so R024 remains active and broader than M031.
 
 ### R027 — Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.
 - Class: quality-attribute
@@ -56,7 +56,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-feedback-after-S10-chunk-review
 - Primary owning slice: M004
 - Validation: Partial bounded advancement in M022: S01-S05 produced stable source/locator/span IDs, source-hash coverage, route/review/repair diagnostics, reviewer packet artifacts, and final no-import guard with import_allowed=false and semantic_ready_for_kg=false. Full validation still requires a dedicated graph-readiness quality benchmark/acceptance pass before KG validation or scaling resumes.
-- Notes: M025 S11 scope reconciliation: advanced by preprocessing diagnostics, redaction checks, and boundary traceability; remains active because positive graph-readiness acceptance is still not proven by M025.
+- Notes: M025 S11 scope reconciliation: advanced by preprocessing diagnostics, redaction checks, and boundary traceability; remains active because positive graph-readiness acceptance is still not proven by M025. M031 S07 scope reconciliation: M031 advances graph-readiness quality only as a fail-closed refusal boundary: parser-ready converted artifact, refusal diagnostics, chunk/evidence package, pending reviewer packet, and no import eligibility without completed independent review. It does not prove full graph-readiness acceptance, so R027 remains active.
 
 ### R029 — Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.
 - Class: quality-attribute
@@ -66,7 +66,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user-directed post-M004 chunking deepening
 - Primary owning slice: M005-dlko4z
 - Validation: Partial bounded validation in M022: typed reviewer packet handoff/final gate verified stable packet/review/repair/route diagnostics for six targets with final schema m022-final-gate.v1, pending_review=6, importable_count=0, semantic_ready_count=0, raw_text_embedded_count=0, and unsafe_counters_zero=True. This is not a positive import-ready package validation.
-- Notes: M025 S11 scope reconciliation: advanced by traceable smoke-corpus chunks and PageIndex/source-provenance diagnostics; remains active because import-ready typed packages, independent semantic review, and import eligibility are still not proven.
+- Notes: M025 S11 scope reconciliation: advanced by traceable smoke-corpus chunks and PageIndex/source-provenance diagnostics; remains active because import-ready typed packages, independent semantic review, and import eligibility are still not proven. M031 S07 scope reconciliation: M031 produces graph-readiness handoff packages and verifies import_eligible_count=0 under a no-write boundary. This is a negative/refusal proof, not a positive import-ready typed chunk package validation, so R029 remains active.
 
 ### R031 — Before drawing broader chunking/import-readiness conclusions, validation must expand from the 10-paper gold corpus to a 30-paper deviation scan that compares distributions, outliers, missing-source rates, route/refusal patterns, and new failure modes without authorizing production KG import.
 - Class: quality-attribute
@@ -129,7 +129,7 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M023-vk5wb2/S02
 - Supporting slices: M023-vk5wb2/S01,M023-vk5wb2/S04,M023-vk5wb2/S05
 - Validation: A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false.
-- Notes: Traceability cleanup: M023-vk5wb2 is the planned milestone that implements the former next-milestone article artifact detection requirement. S02 owns the deterministic CLI; S01 supplies the contract, S04 supplies metrics, and S05 supplies the final no-import scaffold gate. This requirement remains explicitly pre-import: production LadybugDB writes, trusted fact promotion, embeddings/vector readiness, and unattended scaling remain blocked.
+- Notes: Traceability cleanup: M023-vk5wb2 is the planned milestone that implements the former next-milestone article artifact detection requirement. S02 owns the deterministic CLI; S01 supplies the contract, S04 supplies metrics, and S05 supplies the final no-import scaffold gate. This requirement remains explicitly pre-import: production LadybugDB writes, trusted fact promotion, embeddings/vector readiness, and unattended scaling remain blocked. M031 S07 scope reconciliation: M031 advances continuity and refusal-boundary evidence for selected refs but does not globally close the deterministic artifact-detection CLI requirement.
 
 ### R051 — MiniMax may assist article artifact detection only as a bounded structured helper with forced tool calls, local schema validation, redacted inputs, and non-authoritative outputs.
 - Class: integration
@@ -152,6 +152,15 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05
 - Validation: A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation.
 - Notes: Traceability cleanup: M023-vk5wb2/S04 owns benchmark fixtures and metrics before any DSPy or optimizer recommendation. S02 and S03 provide deterministic and MiniMax-assisted outputs for comparison, and S05 consumes the metric evidence for a DSPy readiness/no-go gate. DSPy or optimizer behavior must not be activated before evaluation fixtures and metrics exist.
+
+### R053 — External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
+- Class: quality-attribute
+- Status: active
+- Description: External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.
+- Why it matters: The project needs better scientific article parsing, layout/table extraction, bibliography handling, and evidence traceability, but M031 proved that parser output must remain candidate evidence until reviewed and fail-closed.
+- Source: user-directed M032 external parser research plan after M031
+- Primary owning slice: M032
+- Validation: A bounded 3-PDF probe records input hashes, backend health, commands, output artifacts, quality review, mapping to daily-archive contracts, and explicit no graph import / no LadybugDB write flags.
 
 ## Validated
 
@@ -592,10 +601,11 @@ This file is the explicit capability and coverage contract for the project.
 | R050 | core-capability | active | M023-vk5wb2/S02 | M023-vk5wb2/S01,M023-vk5wb2/S04,M023-vk5wb2/S05 | A CLI command can process bounded source manifests or validation batch state, produce per-paper artifact manifests and run summaries with stable IDs, source spans, candidate links, review states, provenance, and explicit kg_import_allowed=false. |
 | R051 | integration | active | M023-vk5wb2/S03 | M023-vk5wb2/S01,M023-vk5wb2/S02,M023-vk5wb2/S05 | A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization. |
 | R052 | quality-attribute | active | M023-vk5wb2/S04 | M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05 | A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation. |
+| R053 | quality-attribute | active | M032 | none | A bounded 3-PDF probe records input hashes, backend health, commands, output artifacts, quality review, mapping to daily-archive contracts, and explicit no graph import / no LadybugDB write flags. |
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 14
+- Active requirements: 15
+- Mapped to slices: 6
 - Validated: 38 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049)
-- Unmapped active requirements: 0
+- Unmapped active requirements: 3

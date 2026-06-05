@@ -2,82 +2,70 @@
 
 ## What This Is
 
-daily-archive is a local-first arXiv research ingestion and scientific knowledge-graph project. It provides a cron-safe CLI for daily arXiv analysis, persists machine-readable JSON artifacts for Hermes-style agents, and has a LadybugDB graph-vector foundation for storing analyzed papers, embeddings, graph relations, graph metrics, paper-level recommendations, and fixture-level scientific KG records.
-
-The active direction is M003: evolve the paper-level LadybugDB foundation into a traceable Scientific Hybrid Graph RAG and RLM navigation base with full-text ingestion, PageIndex document navigation, chunks, claims, scientific entities, evidence paths, hybrid retrieval baselines, evaluation fixtures, and bounded read/draft-only RLM workflows.
+daily-archive is a local-first arXiv research ingestion and scientific knowledge-graph project. It builds deterministic paper-processing evidence chains before any production graph import is allowed: catalog records, source acquisition, loader evidence, parser/conversion diagnostics, chunks, graph-readiness reviewer packets, and fail-closed no-write import boundaries.
 
 ## Core Value
 
-A future agent should be able to ingest scientific papers locally, inspect durable artifacts, query a traceable scientific knowledge graph, and explain recommendations through evidence paths rather than opaque similarity scores.
+A future agent should be able to ingest scientific papers locally, inspect durable artifacts, compare parser/chunker quality, and only advance toward Scientific KG / LadybugDB import when evidence is traceable, reviewed, and explicitly authorized.
 
 ## Project Shape
 
 - **Complexity:** complex
-- **Why:** The project spans cron-safe CLI contracts, local artifact persistence, embeddings, an embedded graph-vector database, retrieval evaluation, and staged agent/RLM workflows.
+- **Why:** The project spans local artifact persistence, source acquisition, parser/conversion quality, evidence paths, review packets, graph-readiness gates, and LadybugDB safety boundaries.
 
 ## Current State
 
-- **M001 complete:** Cron-safe arXiv daily analysis CLI for Hermes with JSON sessions, daily artifacts, per-paper artifacts, overview aggregates, queue state, empty-day behavior, failure visibility, and idempotent reruns.
-- **M002 complete:** LadybugDB graph-vector foundation with 512-dimensional embeddings, schema/ingestion path, graph analytics, paper-level hybrid recommendations, network-independent tests, and corrected architecture direction away from the old HelixDB framing.
-- **M003 active:** Scientific Hybrid Graph RAG and RLM Navigation Base. S01-S05 are complete: full-text ingestion, PageIndex, SemanticChunk/EvidencePath, scientific extraction contracts, and LadybugDB SCI KG fixture persistence. Current active slice is **S06: Hybrid retrieval baseline**.
+- M031-vwpd8e is complete: **Catalog Backed Replay to Graph Readiness Refusal Boundary**.
+- M031 established a bounded selected-ref chain: catalog/intake → acquisition → loader → parser/conversion → chunk/evidence → graph-readiness handoff → no-write import refusal.
+- M031 validation round 1 is `pass` after S07 resolved round 0 needs-attention at the evaluation layer.
+- S07 documented that the stale S02 direct `FAIL` assessment is historical artifact conflict superseded by S06/S07 scoped evidence for M031 validation.
+- R024, R027, R029, and R050 remain active globally; M031 advanced them only within refusal-boundary scope and did not claim positive graph/import readiness.
 
-GSD metadata has been repaired after drift: M001 and M002 historical DB rows were reconstructed from available summaries, manifest fragments, and git history; M003 active roadmap was restored from `.gsd/state-manifest.json` and current slice artifacts. Treat `.gsd/STATE.md`, `.gsd/milestones/M003-km5fty/M003-km5fty-ROADMAP.md`, and current slice summaries as the active planning state.
+## Current Research Direction
 
-## Architecture / Key Patterns
+The next project question is whether article parsing/conversion quality and throughput can be improved by studying external PDF-processing and paper-knowledge frameworks:
 
-```text
-arxiv_archive CLI (Typer)
-  -> run_analysis() [pure DailyAnalysis boundary]
-      -> ArxivClient
-      -> KeywordExtractor
-      -> ScoringEngine
-      -> Embedder (512-dim vectors)
-  -> JSON/session writers
-      -> ~/research/ops/sessions/{date}.json
-      -> ~/research/ops/queue/{date}.json
-      -> ~/research/analysis/{date}/papers.json
-      -> ~/research/analysis/{date}/scored.json
-      -> ~/research/analysis/{date}/overview.json
-      -> ~/research/papers/{arxiv-id}/paper.json
-      -> ~/research/papers/{arxiv-id}/scored.json
-  -> LadybugDB foundation
-      -> paper-level graph schema
-      -> embedding storage
-      -> transaction-safe graph upserts
-      -> graph metrics
-      -> paper-level hybrid recommendations
-  -> M003 scientific KG layer
-      -> full-text ingestion
-      -> PageIndexNode hierarchy
-      -> SemanticChunk + EvidencePath contracts
-      -> Claim + ScientificEntity + ScientificRelation drafts
-      -> LadybugDB SCI KG fixture schema and transaction-safe upsert
-      -> planned S06 hybrid retrieval baseline
-```
+- `opendataloader-pdf` from `https://github.com/opendataloader-project/opendataloader-pdf`
+- GROBID from `https://github.com/kermitt2/grobid`
+- `quant-mind` from `https://github.com/LLMQuant/quant-mind`
 
-Established patterns:
+The core research goals are:
 
-- Public CLI contract is verified through subprocess tests against `uv run python -m arxiv_archive`.
-- `run_analysis()` is the pure normalized boundary; side-effectful storage is behind explicit writer functions.
-- JSON serialization uses explicit serializer functions for Rust-portable, language-neutral artifacts.
-- Queue state records cron/Hermes lifecycle transitions: `running` -> `done` / `empty` / `failed`.
-- LadybugDB writes should remain transaction-safe, parameterized, and single-writer aware.
-- SCI KG payloads are validated before opening LadybugDB write transactions.
-- M003 normal tests must not require live arXiv, PDF downloads, live embeddings, LLM calls, Telegram, or external services unless explicitly marked as real smoke tests.
-- DSPy and RLM work remain gated until S07 evaluation metrics and benchmark fixtures exist.
+1. Compare opendataloader-pdf and GROBID with daily-archive's current parser/conversion/refusal pipeline.
+2. Test the claim: for scientific-article RAG contexts, teams often combine GROBID for deep scholarly parsing and bibliography with OpenDataLoader-style tooling for layout and tables.
+3. Assess whether that combination is feasible here and how much complexity it adds.
+4. Evaluate processed article quality using current daily-archive outputs, opendataloader-pdf outputs, and GROBID outputs under a bounded, artifact-backed protocol.
+5. Extract architecture patterns from quant-mind without adopting it wholesale: TreeKnowledge, PaperKnowledgeCard, provenance schemas, fetch/format separation, bounded batch flows, magic input resolution, and clear separation between realized code and aspirational README claims.
+
+This is research/probe work only: no production graph import, no LadybugDB writes, no positive graph-readiness claims, and no adoption of external frameworks before compatibility, quality, and safety boundaries are proven.
+
+## Safety Boundaries
+
+- Do not treat parsed text existence as graph readiness.
+- Do not infer quality from non-empty output alone; low-quality source diagnostics remain necessary.
+- External parser probes must remain local, bounded, reproducible, and artifact-backed.
+- Positive KG import remains blocked until independent completed review and an in-scope import authorization milestone.
+- quant-mind should be treated as an architecture-pattern source and experimental reference, not as a production RAG/Knowledge Base dependency.
 
 ## Capability Contract
 
-See `.gsd/REQUIREMENTS.md` for the explicit capability contract, requirement status, and coverage mapping. Active M003 requirements include R019-R023 for hybrid retrieval, evaluation gating, DSPy constraints, and bounded RLM prototypes.
+See `.gsd/REQUIREMENTS.md` for the explicit capability contract, active/validated status, and requirement coverage mapping.
 
 ## Milestone Sequence
 
-- [x] M001: Cron-safe arXiv article analysis for Hermes — stable daily CLI, JSON artifacts, queue state, and cron-safe behavior.
-- [x] M002: LadybugDB Graph-Vector Scientific KG Foundation — embedded graph-vector storage, embeddings, graph analytics, and paper-level hybrid recommendations.
-- [ ] M003-km5fty: Scientific Hybrid Graph RAG and RLM Navigation Base — full-text ingestion, PageIndex, chunks, claims, evidence paths, hybrid retrieval, evaluation, DSPy boundaries, and bounded RLM navigation.
+- [x] M001: Cron-safe arXiv article analysis for Hermes — Stable daily CLI, JSON artifacts, queue state, and cron-safe behavior.
+- [x] M002: LadybugDB Graph-Vector Scientific KG Foundation — Embedded graph-vector storage, embeddings, graph analytics, and paper-level hybrid recommendations.
+- [x] M031-vwpd8e: Catalog Backed Replay to Graph Readiness Refusal Boundary — Bounded catalog-backed replay chain through no-write graph import refusal with validation round 1 pass.
+- [ ] M032: External Parser and Paper-Knowledge Architecture Research — Vendor and index opendataloader-pdf, GROBID, and quant-mind; compare parser/output contracts, evaluate combination complexity, and identify reusable architecture patterns.
 
 ## Active Next Step
 
-Execute **M003-km5fty / S06 / T01: Add hybrid retrieval contract tests**.
+Use GitNexus to study `opendataloader-pdf`, GROBID, `quant-mind`, and `daily-archive` side by side. Produce a research artifact that answers: what each project actually implements, how it compares to current daily-archive boundaries, whether GROBID + OpenDataLoader-style combination is practical, what quality evaluation should be run, and which quant-mind architecture patterns are worth adapting.
 
-S06/T01 should create RED contract tests in `tests/test_hybrid_retrieval.py`: build an in-memory LadybugDB SCI KG fixture through S05 storage helpers, attach deterministic fixture vectors in test code, and assert vector-only, graph-only, and hybrid retrieval output shapes. The expected first failure is missing retrieval module/public API, while upstream S05/S04/S03 contracts should remain intact.
+## Important Artifacts
+
+- M031 validation: `.gsd/milestones/M031-vwpd8e/M031-vwpd8e-VALIDATION.md`
+- M031 summary: `.gsd/milestones/M031-vwpd8e/M031-vwpd8e-SUMMARY.md`
+- S07 assessment reconciliation: `.gsd/milestones/M031-vwpd8e/slices/S07/S07-ASSESSMENT.md`
+- Requirements contract: `.gsd/REQUIREMENTS.md`
+- Vendor source roots: `/root/vendor-source/opendataloader-pdf`, `/root/vendor-source/grobid`, `/root/vendor-source/quant-mind`
