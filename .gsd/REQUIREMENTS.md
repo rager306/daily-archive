@@ -153,6 +153,33 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation.
 - Notes: Traceability cleanup: M023-vk5wb2/S04 owns benchmark fixtures and metrics before any DSPy or optimizer recommendation. S02 and S03 provide deterministic and MiniMax-assisted outputs for comparison, and S05 consumes the metric evidence for a DSPy readiness/no-go gate. DSPy or optimizer behavior must not be activated before evaluation fixtures and metrics exist.
 
+### R054 — Provide a durable lazy async sidecar pipeline for article processing jobs.
+- Class: core-capability
+- Status: active
+- Description: Provide a durable lazy async sidecar pipeline for article processing jobs.
+- Why it matters: M033 introduced multiple sidecar candidates that run at different speeds and can fail independently. The project needs persistent queues/statuses so source acquisition, GROBID, OpenDataLoader, Adaptix mapping, validation, review packet creation, and graph-readiness review can run lazily, resume after failures, and avoid unnecessary recomputation.
+- Source: M033 follow-up discussion
+- Primary owning slice: future pipeline orchestration milestone
+- Validation: A future milestone defines and verifies persisted job/artifact state with statuses, input/output hashes, dependency readiness, stale detection, and resume/retry behavior.
+
+### R055 — Track sidecar job lifecycle, retries, typed blockers, and backend/cache health explicitly.
+- Class: failure-visibility
+- Status: active
+- Description: Track sidecar job lifecycle, retries, typed blockers, and backend/cache health explicitly.
+- Why it matters: GROBID, OpenDataLoader, Adaptix, and future review stages have distinct latency, runtime dependencies, and failure modes. Failures such as unhealthy backend, missing model cache, unstable network, stale source hash, adapter mapping failure, or low-quality output must become typed state, not lost in logs or in-memory batches.
+- Source: M033 follow-up discussion
+- Primary owning slice: future pipeline orchestration milestone
+- Validation: A future verifier proves per-job status, attempt count, retry_after, last_error_code, output_paths, backend/cache health, and dead-letter/terminal blocker states are persisted and queryable.
+
+### R056 — Parser sidecar outputs must remain candidate evidence until daily-archive validators, review packets, and graph-readiness review pass.
+- Class: constraint
+- Status: active
+- Description: Parser sidecar outputs must remain candidate evidence until daily-archive validators, review packets, and graph-readiness review pass.
+- Why it matters: M033 confirmed that GROBID, OpenDataLoader, Adaptix, and quant-mind patterns are useful but not graph-ready or import-eligible by themselves. The orchestration layer must preserve no-write/no-import safety and prevent parser success from becoming semantic KG promotion.
+- Source: M033 follow-up discussion
+- Primary owning slice: future pipeline orchestration milestone
+- Validation: All future sidecar pipeline artifacts keep graph_import_allowed=false, ladybugdb_written=false, production_import_attempted=false, and import_eligible=false until a separately authorized graph-readiness/import milestone changes those flags with evidence.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -542,6 +569,56 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by completed milestone M033-732r1t: S01 baseline, S02 GROBID study, S03 OpenDataLoader hybrid probe, S04 quant-mind pattern study, S07 Adaptix adapter probe, S05 combined recommendation, and S06 bounded quality plan. Fresh verifiers/tests/Ruff and milestone validation passed; all graph/import/write safety flags remained false.
 - Notes: M033 recommends `recommended-bounded-combined-sidecar-architecture` as bounded research output only. No production parser integration, dependency adoption, graph import, LadybugDB write, or import eligibility is authorized.
 
+### R057 — Future sidecar-pipeline roadmap must include explicit architecture brainstorm and decision gates at key irreversible points.
+- Class: constraint
+- Status: validated
+- Description: Future sidecar-pipeline roadmap must include explicit architecture brainstorm and decision gates at key irreversible points.
+- Why it matters: Post-M033 work has several high-coupling choices: durable state model, queue/worker model, artifact dependency graph, retry semantics, sidecar lifecycle, review boundary, and later agent-worker boundary. These should be decided deliberately before implementation slices lock in the wrong abstraction.
+- Source: Post-M033 architecture discussion
+- Primary owning slice: future pipeline orchestration milestone
+- Validation: Validated by M034: ROADMAP-GATES.md defines mandatory architecture gates for universal KB scope, GraphDB evaluation, state model, queue semantics, artifact dependency graph, failure taxonomy, sidecar lifecycle, review boundary, graph-readiness handoff, and agent boundary; verify_m034_roadmap_gates.py passes.
+- Notes: M034 satisfies the roadmap-gate documentation requirement. Future implementation still needs to execute the gates.
+
+### R058 — Post-M033 ADR package must root every sidecar and orchestration decision in the overall daily-archive mission: local-first scientific paper evidence chains before any Scientific KG or LadybugDB import.
+- Class: constraint
+- Status: validated
+- Description: Post-M033 ADR package must root every sidecar and orchestration decision in the overall daily-archive mission: local-first scientific paper evidence chains before any Scientific KG or LadybugDB import.
+- Why it matters: A pipeline-only ADR set can drift into implementation mechanics and forget the project's core purpose: traceable, reviewed, fail-closed progression from article sources to candidate evidence to graph-readiness, not parser adoption for its own sake.
+- Source: User correction during M034 planning
+- Primary owning slice: M034-kuei9y/S01
+- Validation: Validated by M034: ADR-000 Universal KB North Star grounds M034 decisions in the project mission, separates generic universal-KB primitives from scientific-paper first-domain adapters, and final verification passes.
+- Notes: Superseded/narrowed paper-only wording by universal-KB-with-scientific-articles-first framing.
+
+### R059 — Do not lock the future knowledge graph database choice to LadybugDB before a dedicated GraphDB evaluation compares viable local-first candidates.
+- Class: constraint
+- Status: validated
+- Description: Do not lock the future knowledge graph database choice to LadybugDB before a dedicated GraphDB evaluation compares viable local-first candidates.
+- Why it matters: The project needs to consider license terms, local operation, performance, graph-vector capabilities, Python/tooling ergonomics, persistence model, query language, deployment complexity, and future scalability across LadybugDB, FalkorDB, HelixDB, and other candidates before choosing the durable knowledge substrate.
+- Source: User correction during M034 planning
+- Primary owning slice: M034-kuei9y/S01
+- Validation: Validated by M034: ADR-002 Defer Final GraphDB Selection explicitly keeps LadybugDB/FalkorDB/HelixDB/other selection open and requires future comparison before any final substrate choice; final package verifier passes.
+- Notes: This validates non-lock-in, not GraphDB evaluation itself. A future milestone must perform the actual comparison.
+
+### R060 — Frame the architecture around a universal local-first knowledge base, with scientific articles as the primary current domain and proving ground.
+- Class: core-capability
+- Status: validated
+- Description: Frame the architecture around a universal local-first knowledge base, with scientific articles as the primary current domain and proving ground.
+- Why it matters: Parser, provenance, evidence, review, and knowledge-card/tree contracts should not be overfit to arXiv papers if the intended direction is a broader knowledge base. Scientific articles remain the main near-term focus, but architecture should separate generic knowledge-ingestion primitives from paper-specific adapters and quality gates.
+- Source: User correction during M034 planning
+- Primary owning slice: M034-kuei9y/S01
+- Validation: Validated by M034: ADR-000, PRD.md, FUNCTIONAL-REQUIREMENTS.md, NON-FUNCTIONAL-REQUIREMENTS.md, and CONTRACTS.md frame the architecture as a local-first universal KB with scientific articles as primary first domain; final verifier passes.
+- Notes: Scientific-article domain remains the first proving ground; future non-paper domains remain open questions.
+
+### R061 — M034 must audit all existing GSD requirements and decisions for mutual consistency with the universal knowledge-base ADR package before closeout.
+- Class: quality-attribute
+- Status: validated
+- Description: M034 must audit all existing GSD requirements and decisions for mutual consistency with the universal knowledge-base ADR package before closeout.
+- Why it matters: The project has accumulated many requirements and decisions across scientific KG, parser quality, MiniMax/DSPy, validation batches, LadybugDB, and sidecar pipeline work. A new ADR package can only prevent drift if it reconciles existing Rxxx and Dxxx records, identifies contradictions or superseded assumptions, and routes corrections through explicit discussion or new superseding decisions rather than silently rewriting history.
+- Source: User correction during M034 planning
+- Primary owning slice: M034-kuei9y/S06
+- Validation: Validated by M034 S01 and final package verification: all 61 requirements and 67 decisions were inventoried and classified across 128 records; 15 needs-clarification routes were captured; verify_m034_rd_consistency_audit.py and verify_m034_decision_package.py pass.
+- Notes: No immediate blocking conflict-needs-user-decision records remained after false-positive refinement; future ADRs/implementation must continue honoring the route plan.
+
 ## Deferred
 
 ## Out of Scope
@@ -603,10 +680,18 @@ This file is the explicit capability and coverage contract for the project.
 | R051 | integration | active | M023-vk5wb2/S03 | M023-vk5wb2/S01,M023-vk5wb2/S02,M023-vk5wb2/S05 | A bounded MiniMax adapter is wired into the artifact detection CLI behind an explicit flag, validated by tests and fixture runs proving forced tool-call request shape, local schema validation, refusal of unsafe payloads, redacted diagnostics, and no KG import authorization. |
 | R052 | quality-attribute | active | M023-vk5wb2/S04 | M023-vk5wb2/S02,M023-vk5wb2/S03,M023-vk5wb2/S05 | A benchmark fixture set and metric report exist for artifact detection precision, recall, span coverage, link correctness, section lineage correctness, raw leakage rate, and review burden; the final gate either blocks or explicitly scopes any DSPy optimizer activation. |
 | R053 | quality-attribute | validated | M032 | none | Validated by completed milestone M033-732r1t: S01 baseline, S02 GROBID study, S03 OpenDataLoader hybrid probe, S04 quant-mind pattern study, S07 Adaptix adapter probe, S05 combined recommendation, and S06 bounded quality plan. Fresh verifiers/tests/Ruff and milestone validation passed; all graph/import/write safety flags remained false. |
+| R054 | core-capability | active | future pipeline orchestration milestone | none | A future milestone defines and verifies persisted job/artifact state with statuses, input/output hashes, dependency readiness, stale detection, and resume/retry behavior. |
+| R055 | failure-visibility | active | future pipeline orchestration milestone | none | A future verifier proves per-job status, attempt count, retry_after, last_error_code, output_paths, backend/cache health, and dead-letter/terminal blocker states are persisted and queryable. |
+| R056 | constraint | active | future pipeline orchestration milestone | none | All future sidecar pipeline artifacts keep graph_import_allowed=false, ladybugdb_written=false, production_import_attempted=false, and import_eligible=false until a separately authorized graph-readiness/import milestone changes those flags with evidence. |
+| R057 | constraint | validated | future pipeline orchestration milestone | none | Validated by M034: ROADMAP-GATES.md defines mandatory architecture gates for universal KB scope, GraphDB evaluation, state model, queue semantics, artifact dependency graph, failure taxonomy, sidecar lifecycle, review boundary, graph-readiness handoff, and agent boundary; verify_m034_roadmap_gates.py passes. |
+| R058 | constraint | validated | M034-kuei9y/S01 | none | Validated by M034: ADR-000 Universal KB North Star grounds M034 decisions in the project mission, separates generic universal-KB primitives from scientific-paper first-domain adapters, and final verification passes. |
+| R059 | constraint | validated | M034-kuei9y/S01 | none | Validated by M034: ADR-002 Defer Final GraphDB Selection explicitly keeps LadybugDB/FalkorDB/HelixDB/other selection open and requires future comparison before any final substrate choice; final package verifier passes. |
+| R060 | core-capability | validated | M034-kuei9y/S01 | none | Validated by M034: ADR-000, PRD.md, FUNCTIONAL-REQUIREMENTS.md, NON-FUNCTIONAL-REQUIREMENTS.md, and CONTRACTS.md frame the architecture as a local-first universal KB with scientific articles as primary first domain; final verifier passes. |
+| R061 | quality-attribute | validated | M034-kuei9y/S06 | none | Validated by M034 S01 and final package verification: all 61 requirements and 67 decisions were inventoried and classified across 128 records; 15 needs-clarification routes were captured; verify_m034_rd_consistency_audit.py and verify_m034_decision_package.py pass. |
 
 ## Coverage Summary
 
-- Active requirements: 14
+- Active requirements: 17
 - Mapped to slices: 6
-- Validated: 39 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053)
-- Unmapped active requirements: 3
+- Validated: 44 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061)
+- Unmapped active requirements: 6
