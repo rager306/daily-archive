@@ -65,17 +65,24 @@ The verifier runs stable M034 ADR package checks, M035 Universal KB tests, ruff,
 
 M035 does not select a final GraphDB, authorize production graph import, authorize parser output as truth, or introduce agentic orchestration. MiniMax-M3-512k is helper/tool metadata only for Anthropic-compatible paths; it is not source-of-truth authority.
 
-## M036 Real-Corpus No-Write Smoke
+## M036/M037 Real-Corpus No-Write Smoke Command Surface
 
-M036 starts the transition from fixture-only rehearsal to existing local real article artifacts. The current proof command is:
+M036 starts the transition from fixture-only rehearsal to existing local real article artifacts. M037 consolidates that workflow behind one module command surface:
+
+```bash
+uv run python -m arxiv_archive.universal_kb_smoke all --limit 5 --profile fast
+uv run python -m arxiv_archive.universal_kb_smoke verify --profile full
+```
+
+The legacy verifier remains available as a compatibility wrapper:
 
 ```bash
 python3 scripts/verify_m036_real_corpus_no_write_smoke.py
 ```
 
-The verifier reruns the M035 proof, selects 5 local article records, runs them through candidate, queue, diagnostic review, helper trace, and readiness handoff steps, and writes continuity artifacts under `artifacts/m036-real-corpus-no-write-smoke/`.
+The verifier selects 5 local article records, runs them through candidate, queue, diagnostic review, helper trace, and readiness handoff steps, and writes continuity artifacts under `artifacts/m036-real-corpus-no-write-smoke/`.
 
-Expected safety result remains `graph_write_allowed=false`, `promotion_allowed=false`, `production_import_attempted=false`, and `import_eligible=false`. Current continuity blockers are diagnostic only: legacy or missing article safety flag shape and missing loader evidence for one selected record. These blockers must prevent GraphDB/import/promotion claims until resolved or explicitly addressed by a future ADR/milestone.
+Expected safety result remains `graph_write_allowed=false`, `promotion_allowed=false`, `production_import_attempted=false`, and `import_eligible=false`. Current continuity blockers are diagnostic only: legacy or missing article safety flag shape and missing loader evidence for one selected record. These blockers must prevent GraphDB/import/promotion claims until resolved or explicitly addressed by a future ADR/milestone. M037 intentionally does not expand beyond 5 articles; 10-30 article expansion waits for the next milestone after this control surface is consolidated.
 
 ## Open Questions and Closure Evidence
 
