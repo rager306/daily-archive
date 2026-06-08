@@ -81,6 +81,36 @@ production_import_attempted=false
 
 These artifacts are rehearsal evidence only. They are not GraphDB writes, import recommendations, production queue state, or model approval authority.
 
+## M036 real-corpus no-write smoke
+
+M036 moves the M035 prototype from fixture-only rehearsal to a small local real-corpus smoke over existing article catalog artifacts. It is still no-network and no-write.
+
+Run the current smoke and continuity audit with:
+
+```bash
+python3 scripts/verify_m036_real_corpus_no_write_smoke.py
+```
+
+The verifier selects 5 local article records, runs them through candidate, queue, diagnostic review, helper trace, and readiness handoff steps, then writes:
+
+```text
+artifacts/m036-real-corpus-no-write-smoke/manifest.json
+artifacts/m036-real-corpus-no-write-smoke/run/summary.json
+artifacts/m036-real-corpus-no-write-smoke/audit.json
+artifacts/m036-real-corpus-no-write-smoke/audit.md
+```
+
+Expected safety result:
+
+```text
+graph_write_allowed=false
+promotion_allowed=false
+production_import_attempted=false
+import_eligible=false
+```
+
+Current continuity blockers are diagnostic only and block import/promotion claims: legacy or missing article safety flag shape, plus missing loader evidence for one selected record. M036 does not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration.
+
 ## Setup
 
 ```bash

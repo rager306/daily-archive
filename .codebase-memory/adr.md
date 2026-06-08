@@ -65,6 +65,18 @@ The verifier runs stable M034 ADR package checks, M035 Universal KB tests, ruff,
 
 M035 does not select a final GraphDB, authorize production graph import, authorize parser output as truth, or introduce agentic orchestration. MiniMax-M3-512k is helper/tool metadata only for Anthropic-compatible paths; it is not source-of-truth authority.
 
+## M036 Real-Corpus No-Write Smoke
+
+M036 starts the transition from fixture-only rehearsal to existing local real article artifacts. The current proof command is:
+
+```bash
+python3 scripts/verify_m036_real_corpus_no_write_smoke.py
+```
+
+The verifier reruns the M035 proof, selects 5 local article records, runs them through candidate, queue, diagnostic review, helper trace, and readiness handoff steps, and writes continuity artifacts under `artifacts/m036-real-corpus-no-write-smoke/`.
+
+Expected safety result remains `graph_write_allowed=false`, `promotion_allowed=false`, `production_import_attempted=false`, and `import_eligible=false`. Current continuity blockers are diagnostic only: legacy or missing article safety flag shape and missing loader evidence for one selected record. These blockers must prevent GraphDB/import/promotion claims until resolved or explicitly addressed by a future ADR/milestone.
+
 ## Open Questions and Closure Evidence
 
 Open questions are tracked in `doc/architecture/m034-universal-kb/OPEN-QUESTIONS.md`. They are not accepted decisions and must not be treated as authorization.
