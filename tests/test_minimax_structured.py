@@ -33,6 +33,7 @@ def test_builds_forced_anthropic_tool_request_and_validates_tool_input() -> None
 
     assert request.endpoint == "https://api.minimax.io/anthropic/v1/messages"
     assert request.auth_header == "X-Api-Key"
+    assert request.body["model"] == "MiniMax-M3-512k"
     assert request.body["tool_choice"] == {"type": "tool", "name": "record_review"}
     assert request.body["tools"][0]["input_schema"] == _schema()
     assert request.body["temperature"] > 0

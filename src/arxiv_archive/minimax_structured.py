@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT = "https://api.minimax.io/anthropic/v1/messages"
-DEFAULT_MINIMAX_MODEL = "MiniMax-M2.7-highspeed"
+DEFAULT_MINIMAX_MODEL = "MiniMax-M3-512k"
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_TEMPERATURE = 0.2
 RAW_CORPUS_MARKERS: tuple[str, ...] = (

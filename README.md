@@ -1,8 +1,85 @@
-# arxiv-daily-archive
+# daily-archive
 
-Daily digest of top-10 research papers from arXiv cs.* categories.
+`daily-archive` is evolving into a **local-first Universal Knowledge Base** built from durable, traceable evidence chains. Scientific papers and arXiv-style article workflows are the first domain and proving ground, not the final boundary of the system.
 
-Pipeline: **Record → Reduce → Score → Summarize → Deliver**
+The current runnable product is still the research-paper daily archive pipeline. M034 establishes the north-star architecture for moving from that first-domain pipeline toward a Universal KB without allowing parser, sidecar, adapter, or LLM output to become graph truth by accident.
+
+## Current first-domain runtime
+
+The current CLI processes research papers from arXiv categories and produces local session artifacts and optional delivery output.
+
+```text
+Record    -> arXiv API (feedparser) — fetch papers for date/categories
+Reduce    -> Semantic Scholar (citations) + YAKE (keywords)
+Score     -> weighted scoring: citations, recency, novelty, preference
+Summarize -> MiniMax LLM: HEADLINE / WHAT_IT_DOES / WHY_IT_MATTERS / ANALOGY
+Deliver   -> Telegram channel + local session log
+```
+
+These integrations are **domain/runtime surfaces**, not authorization to treat external services or parser output as Universal KB truth.
+
+## Universal KB safety boundaries
+
+M034 defines the binding safety baseline for future implementation work:
+
+- `graph_import_allowed=false`
+- `graphdb_written=false`
+- `ladybugdb_written=false`
+- `production_import_attempted=false`
+- `import_eligible=false`
+
+Core rules:
+
+- Scientific articles are the first domain; the architecture must not overfit to PDF/arXiv-only assumptions.
+- Parser, sidecar, adapter, and LLM outputs are candidate evidence only.
+- No direct extractor/parser/sidecar/LLM to GraphDB write path is allowed.
+- GraphDB selection remains deferred.
+- Agentic orchestration remains deferred until deterministic contracts, queues, and review gates exist.
+- No review packet means no readiness handoff; no readiness handoff means no import recommendation.
+
+Authoritative documents:
+
+- `doc/adr/m034/ADR-000-universal-kb-north-star.md`
+- `doc/adr/m034/ADR-INDEX.md`
+- `doc/contracts/m034-universal-kb/SAFETY-INVARIANTS.md`
+- `doc/contracts/m034-universal-kb/CONTRACTS.md`
+- `doc/architecture/m034-universal-kb/OPEN-QUESTIONS.md`
+- `doc/architecture/m034-universal-kb/NEXT-MILESTONE-HANDOFF.md`
+
+## M035 executable no-write prototype
+
+M035 adds an executable local prototype for the M034 safety rules:
+
+- frozen stdlib dataclass contracts in `src/arxiv_archive/universal_kb_contracts.py`;
+- local SQLite durable queue in `src/arxiv_archive/universal_kb_queue.py`;
+- Adaptix sidecar boundary mapping in `src/arxiv_archive/universal_kb_sidecar_boundary.py`;
+- diagnostic-only review assistance in `src/arxiv_archive/universal_kb_review_assistance.py`;
+- no-write readiness handoff in `src/arxiv_archive/universal_kb_substrate_rehearsal.py`;
+- integrated metadata-only rehearsal in `src/arxiv_archive/universal_kb_rehearsal.py`.
+
+The current MiniMax helper default is `MiniMax-M3-512k` for Anthropic-compatible helper/tool paths. Live S06 evidence showed that exact id works on the Anthropic-compatible endpoint and may return `MiniMax-M3` as the normalized model name; the tested OpenAI-compatible endpoint accepts `MiniMax-M3` and rejects exact `MiniMax-M3-512k`.
+
+Run the full local M035 verification with:
+
+```bash
+python3 scripts/verify_m035_universal_kb_prototype.py
+```
+
+The verifier runs stable M034 ADR package checks, M035 Universal KB tests, ruff, and a fresh artifact inspection under:
+
+```text
+artifacts/m035-universal-kb-prototype/rehearsal/
+```
+
+Expected safety result:
+
+```text
+graph_write_allowed=false
+promotion_allowed=false
+production_import_attempted=false
+```
+
+These artifacts are rehearsal evidence only. They are not GraphDB writes, import recommendations, production queue state, or model approval authority.
 
 ## Setup
 
@@ -10,37 +87,39 @@ Pipeline: **Record → Reduce → Score → Summarize → Deliver**
 uv sync --all-extras
 ```
 
-Requires environment variables:
-- `MINIMAX_API_KEY` — MiniMax API key for summarization
-- `TELEGRAM_BOT_TOKEN` — Telegram bot token (optional, for delivery)
-- `TELEGRAM_CHAT_ID` — Telegram chat ID (optional, for delivery)
+Environment variables used by the current first-domain runtime:
 
-## Run
+- `MINIMAX_API_KEY` — MiniMax API key for summarization and structured helper experiments.
+- `TELEGRAM_BOT_TOKEN` — optional Telegram bot token for delivery.
+- `TELEGRAM_CHAT_ID` — optional Telegram chat ID for delivery.
+
+Never commit or log secret values.
+
+## Run the current paper pipeline
 
 ```bash
 # Process papers for a specific date
 uv run python -m arxiv_archive --date 2026-05-15
 
-# Or with explicit options
-MINIMAX_API_KEY=your-key uv run python -m arxiv_archive --date 2026-05-15 --json
+# Or with explicit JSON output
+uv run python -m arxiv_archive --date 2026-05-15 --json
 ```
 
-## Architecture
+Output sessions are saved to:
 
-```
-Record    → arXiv API (feedparser) — fetch papers for date/categories
-Reduce    → Semantic Scholar (citations) + YAKE (keywords)
-Score     → Weighted scoring: citations, recency, novelty, preference
-Summarize → MiniMax LLM: HEADLINE / WHAT_IT_DOES / WHY_IT_MATTERS / ANALOGY
-Deliver   → Telegram channel + local session log
+```text
+~/.research/ops/sessions/{date}.md
 ```
 
-### Paper Conversion
+## Paper conversion path
 
 Papers are converted to Markdown using:
 
-1. **arxiv2md** (primary, <1 sec) — parses ar5iv HTML via REST API
-2. **Marker** (fallback, 10 min timeout) — PDF OCR, only for pre-2020 papers
+1. **arxiv2md** — primary fast path, parses ar5iv HTML via REST API.
+2. **Marker** — fallback OCR/PDF path for cases where the primary conversion is missing or low quality.
+3. **PyMuPDF repair paths** — used in later graph-readiness work when local PDFs are available and Marker is unavailable.
+
+Do not infer conversion success from HTTP 200 or non-empty markdown alone. Real-corpus validation has shown that arxiv2md can return abstract-page navigation markdown without substantive body text.
 
 ## Development
 
@@ -57,25 +136,27 @@ uv run ruff check src/ tests/
 uv run pyrefly check src/
 ```
 
-## Project Structure
+## Project structure
 
-```
+```text
 src/arxiv_archive/
 ├── __init__.py
-├── __main__.py      # CLI entry point
-├── arxiv_client.py  # Record: fetch from arXiv API
-├── semantic_scholar.py  # Reduce: enrich with citations
-├── keyword_extractor.py # Reduce: extract keywords (YAKE)
-├── scoring.py       # Score: rank papers
-├── summarizer.py    # Summarize: MiniMax LLM
-├── md_converter.py  # Convert: arxiv2md + Marker fallback
-├── pdf_downloader.py # Download PDFs to cache
-└── telegram_sender.py # Deliver: send to Telegram
+├── __main__.py              # CLI entry point
+├── arxiv_client.py          # Record: fetch from arXiv API
+├── semantic_scholar.py      # Reduce: enrich with citations
+├── keyword_extractor.py     # Reduce: extract keywords with YAKE
+├── scoring.py               # Score: rank papers
+├── summarizer.py            # Summarize: MiniMax LLM
+├── md_converter.py          # Convert: arxiv2md + fallback paths
+├── pdf_downloader.py        # Download PDFs to cache
+├── article_artifacts.py     # Fail-closed artifact manifest validation
+├── chunk_import_contract.py # Import-readiness contract validation
+└── minimax_structured.py    # Structured-output helper boundaries
 ```
 
-## Research Directory
+## Preferences
 
-Pipeline reads preferences from `~/.research/self/preferences.json`:
+Example topic-weight preference file:
 
 ```json
 {
@@ -90,4 +171,14 @@ Pipeline reads preferences from `~/.research/self/preferences.json`:
 }
 ```
 
-Output sessions saved to `~/.research/ops/sessions/{date}.md`.
+## Current implementation direction
+
+The next implementation direction is the M035 durable evidence pipeline prototype:
+
+1. executable Universal KB contracts and `SafetyFlags`;
+2. local SQLite durable queue prototype;
+3. Adaptix boundary mapping for sidecar JSON;
+4. structured review assistance without approval authority;
+5. no-write substrate rehearsal and architecture guards.
+
+Until a future explicit graph-promotion milestone supersedes M034, all Universal KB prototype work must remain metadata-only and no-write with respect to production graph import.

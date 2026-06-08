@@ -13,6 +13,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from arxiv_archive.universal_kb_contracts import SafetyFlags
+
 ARTICLE_ARTIFACT_SCHEMA_VERSION = "m023-article-artifacts.v1"
 ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION = "m023-article-artifact-run.v1"
 ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION = "m023-article-artifact-diagnostics.v1"
@@ -123,10 +125,14 @@ FORBIDDEN_SOURCE_OF_TRUTH_KEYS = frozenset(
 
 
 def default_safety_flags() -> dict[str, bool]:
-    """Return required false safety flags for pre-KG artifact records."""
+    """Return required false safety flags for pre-KG artifact records.
+
+    M035 centralizes the graph/import/write flags in `SafetyFlags`. The
+    article-artifact contract keeps its existing redaction and payload flags in
+    the same dictionary so older diagnostics retain stable key names.
+    """
     return {
-        "production_import_attempted": False,
-        "ladybugdb_written": False,
+        **SafetyFlags().to_dict(),
         "trusted_kg_import_allowed": False,
         "raw_text_included": False,
         "chunk_text_included": False,
@@ -217,10 +223,10 @@ class SourceReference:
         if not resolved_paper_id:
             raise ValueError("paper_id is required to build a source reference from loader provenance")
         return cls(
-            source_id=str(getattr(result, "source_id")),
+            source_id=str(result.source_id),
             paper_id=str(resolved_paper_id),
             source_role=source_role or str(getattr(result, "source_type", "article_source")),
-            source_path=str(getattr(result, "source_path")) if getattr(result, "source_path", None) is not None else None,
+            source_path=str(result.source_path) if getattr(result, "source_path", None) is not None else None,
             sha256=getattr(result, "sha256", None),
             media_type=getattr(result, "media_type", None),
             conversion_status=conversion_status or str(getattr(result, "outcome", "review_required")),
@@ -913,7 +919,14 @@ def _validate_safety_flags(value: Any, path: str, object_id: str | None = None) 
     if not isinstance(value, dict):
         return [_diagnostic("missing_safety_flags", path, object_id)]
     diagnostics: list[ArticleArtifactDiagnostic] = []
+    universal_keys = set(SafetyFlags().to_dict())
     for key, expected in default_safety_flags().items():
+        if key in universal_keys and key not in value:
+            # M035 adds Universal KB SafetyFlags to new article artifacts, but
+            # older M023 fixtures did not carry every M034 key. Preserve
+            # compatibility while still rejecting unsafe values when the key is
+            # present.
+            continue
         if value.get(key) is not expected:
             code = f"safety_flag_true:{key}" if value.get(key) is True else f"safety_flag_invalid:{key}"
             diagnostics.append(_diagnostic(code, f"{path}/{key}", object_id))

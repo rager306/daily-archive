@@ -33,7 +33,7 @@ Paper to summarize:
 Title: {title}
 Abstract: {abstract}"""
 
-MODEL = "MiniMax-M2.7-highspeed"
+MODEL = "MiniMax-M3-512k"
 MAX_TOKENS = 1024
 TEMPERATURE = 0.7
 
@@ -41,8 +41,8 @@ TEMPERATURE = 0.7
 class MiniMaxSummarizer:
     """Summarizer using MiniMax's Anthropic-compatible API.
 
-    Uses the MiniMax-M2.7-highspeed model to generate structured
-    summaries of AI research papers.
+    Uses the MiniMax-M3-512k Anthropic-compatible model path to generate
+    structured summaries of AI research papers.
 
     Requires environment variables:
         ANTHROPIC_API_KEY: MiniMax API key

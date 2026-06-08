@@ -2,13 +2,15 @@
 
 Source documents: `doc/adr/m034/` and supporting M034 docs under `doc/architecture/m034-universal-kb/`, `doc/contracts/m034-universal-kb/`, `doc/product/`, `doc/requirements/m034-universal-kb/`, and `doc/validation/m034-universal-kb/`.
 
-## PURPOSE
+## Purpose
 
-daily-archive is a local-first universal knowledge base. Scientific papers/articles are the primary first domain and proving ground, but the architecture must not overfit to arXiv/PDF/paper-only assumptions.
+`daily-archive` is a local-first universal knowledge base. Scientific papers and arXiv-style article workflows are the primary first domain and proving ground, but the architecture must not overfit to arXiv, PDF, scientific-paper-only, RAG-only, or direct parser-to-GraphDB assumptions.
+
+The current runnable product remains the research-paper daily archive pipeline. That runtime uses arXiv, Semantic Scholar, MiniMax, Telegram, arxiv2md, Marker/PyMuPDF, and local session artifacts as first-domain/domain-specific surfaces. These integrations are not the north-star architecture and do not authorize graph promotion.
 
 The system should build durable, traceable evidence chains before graph promotion. Parser, sidecar, adapter, and LLM outputs are candidate evidence only until deterministic validation and review boundaries mark them eligible. Graph import and production writes remain explicitly unauthorized unless a future milestone changes that with evidence.
 
-Binding safety defaults from M034:
+## Binding Safety Defaults
 
 ```text
 graph_import_allowed=false
@@ -18,66 +20,67 @@ production_import_attempted=false
 import_eligible=false
 ```
 
-## STACK
+The authoritative safety baseline is `doc/contracts/m034-universal-kb/SAFETY-INVARIANTS.md`.
 
-Current project stack is Python-first with local fixtures, verifiers, and generated artifacts. Scientific KG work currently uses deterministic tests, local artifacts, explicit review/readiness gates, and no-write boundaries.
+## Non-Authorization Rules
 
-Knowledge substrate choice is intentionally deferred. LadybugDB, FalkorDB, HelixDB, and other candidates remain open for comparison. LadybugDB must not be treated as the final production GraphDB until a dedicated evaluation milestone compares license, locality, graph-vector needs, performance, portability, operational burden, and safety boundary integration.
+- Parser, sidecar, adapter, and LLM outputs are candidate evidence only.
+- No direct extractor/parser/sidecar/LLM to GraphDB write path is allowed.
+- No direct extractor/parser/sidecar/LLM to LadybugDB, FalkorDB, HelixDB, or any other GraphDB is allowed.
+- GraphDB selection remains deferred until a dedicated comparison milestone or ADR closes the evidence requirements.
+- Agentic orchestration remains deferred until deterministic contracts, durable queues, review gates, and safe traces exist.
+- No review packet means no readiness handoff.
+- No readiness handoff means no import recommendation.
+- No explicit future graph-promotion milestone means no GraphDB write.
 
-External parser/sidecar candidates from M033 are not production dependencies:
+## ADR Decisions
 
-- GROBID: scholarly sidecar candidate for TEI, metadata, references, citations.
-- OpenDataLoader PDF: hybrid sidecar candidate for layout/OCR/tables/coordinates with backend/cache lifecycle concerns.
-- Adaptix: adapter candidate for typed structural adaptation, not semantic validation.
-- quant-mind: pattern source only, not runtime dependency.
+- ADR-000: Universal KB North Star. daily-archive is a local-first Universal KB; scientific articles are the first domain and proving ground.
+- ADR-002: Defer Final GraphDB Selection. LadybugDB, FalkorDB, HelixDB, and other candidates remain open until a comparison evaluates license, locality, graph/vector needs, performance, portability, operational burden, export/recovery, and safety-boundary integration.
+- ADR-003: Durable Lazy Async Evidence Pipeline. Build persistent jobs, dependency/stale detection, retry/resume, typed failures, and artifact traces before scaling sidecar processing.
+- ADR-004: Sidecars as Candidate Evidence Producers. GROBID, OpenDataLoader, Adaptix, and future extractors produce candidates, not semantic truth, graph readiness, or import eligibility.
+- ADR-005: No direct extractor/parser/sidecar/LLM to GraphDB path. Promotion must pass through candidate, validation, review, readiness, and explicit authorization boundaries.
+- ADR-006: Agent Boundary. LLM/agent helpers may provide bounded diagnostics later, but are not current orchestrators, reviewers with approval authority, or graph-promotion authorities.
+- ADR-007: Quant-mind Pattern Source Not Runtime Dependency. Use quant-mind for architecture patterns only; do not adopt its paper_flow, OpenAI Agents runtime, GraphKnowledge, or in-memory batch model as production dependency now.
 
-## ARCHITECTURE
+## M035 Executable Prototype Closure
 
-Accepted M034 ADRs:
+M035 turns the M034 safety package into executable local contracts and a metadata-only rehearsal:
 
-- ADR-000: Universal KB north star. The core architecture is a local-first universal KB; scientific articles are first domain adapters, not the whole product.
-- ADR-003: Durable lazy async evidence pipeline. Build durable job/artifact state, lazy recompute, retry/resume, and observable status before scale or agents.
-- ADR-004: Sidecars as candidate evidence producers. Sidecars produce evidence packets, never graph truth.
-- ADR-005: No direct extractor/parser/sidecar/LLM to GraphDB path. Promotion must pass through validation, review, readiness, and explicit authorization.
-- ADR-006: Agent boundary. Agents are optional future bounded helpers/reviewers/summarizers/triage workers, not current core orchestrators or graph-promotion authorities.
-- ADR-007: quant-mind pattern source, not runtime dependency.
+1. README, ADR support docs, and this memory summary now frame `daily-archive` as a local-first Universal KB with scientific articles as the first domain.
+2. Core contracts live in `src/arxiv_archive/universal_kb_contracts.py` as frozen stdlib dataclasses with fail-closed `SafetyFlags`.
+3. The durable prototype queue lives in `src/arxiv_archive/universal_kb_queue.py` as a local SQLite/WAL state machine with dependency gates, leases, heartbeats, retry/stale handling, and `job_events`.
+4. Adaptix remains an anti-corruption boundary in `src/arxiv_archive/universal_kb_sidecar_boundary.py`; external sidecar JSON cannot widen authority.
+5. Structured LLM help lives in `src/arxiv_archive/universal_kb_review_assistance.py` as diagnostics-only packets and sanitized `ToolInvocationRecord` traces.
+6. No-write substrate rehearsal and ADR-005 static guards live in `src/arxiv_archive/universal_kb_substrate_rehearsal.py` and `tests/test_universal_kb_architecture_guards.py`.
+7. The integrated metadata-only rehearsal lives in `src/arxiv_archive/universal_kb_rehearsal.py` and writes local inspection artifacts under `artifacts/m035-universal-kb-prototype/rehearsal/` when verified.
 
-Deferred ADR:
+Run the current proof with:
 
-- ADR-002: Final GraphDB selection remains deferred pending comparison of LadybugDB, FalkorDB, HelixDB, and other candidates.
+```bash
+python3 scripts/verify_m035_universal_kb_prototype.py
+```
 
-Core architecture contracts from M034:
+The verifier runs stable M034 ADR package checks, M035 Universal KB tests, ruff, and artifact inspection. The expected artifact proof is `graph_write_allowed=false`, `promotion_allowed=false`, and `production_import_attempted=false`.
 
-- Separate generic universal-KB primitives from paper-domain adapters.
-- Persist state for jobs, artifacts, evidence, review packets, and readiness handoff.
-- Model artifact dependencies so stale downstream outputs can be detected lazily.
-- Use explicit status transitions and failure taxonomy.
-- Keep graph-readiness handoff no-write unless future authorization changes safety flags.
-- Introduce KnowledgeSubstratePort or equivalent abstraction before binding to any GraphDB.
+M035 does not select a final GraphDB, authorize production graph import, authorize parser output as truth, or introduce agentic orchestration. MiniMax-M3-512k is helper/tool metadata only for Anthropic-compatible paths; it is not source-of-truth authority.
 
-## PATTERNS
+## Open Questions and Closure Evidence
 
-M034 establishes these durable patterns:
+Open questions are tracked in `doc/architecture/m034-universal-kb/OPEN-QUESTIONS.md`. They are not accepted decisions and must not be treated as authorization.
 
-1. Audit first: before drafting new architecture ADRs, audit existing Rxxx/Dxxx for conflicts, historical scope, clarification needs, and supersession routes.
-2. Decision package as artifact set: ADRs, PRD, requirements, contracts, invariants, status matrix, failure taxonomy, dependency model, roadmap gates, open questions, and verifier must travel together.
-3. Mermaid-assisted ADRs: prose and tables are authoritative; Mermaid is optional, bounded, and only for readability around context maps, safety gates, status transitions, option comparisons, and contract relationships. Every ADR should include LLM Reading Notes.
-4. Fail-closed sidecars: sidecar/parser success creates candidate evidence, not import eligibility.
-5. Verifier-first docs: every decision package should have a one-command verifier and explicit reader/UAT checks.
-6. Open questions are not accepted decisions and do not authorize implementation.
+Current closure routes:
 
-## TRADEOFFS
+- GraphDB choice: requires comparison matrix over candidate graph stores and safety-boundary integration evidence.
+- Durable state: M035 prototypes SQLite first with persisted job state, resume/retry, leases or equivalent claim semantics, stale detection, typed failure records, and deterministic tests.
+- Worker shape: requires no-write sidecar worker simulation evidence before generic versus per-sidecar commitment.
+- First non-paper domain: remains future planning after paper-domain stabilization.
+- LLM/agent helper entry: requires structured-output helper contracts, redaction rules, ToolInvocationRecord traces, and tests proving no helper approval or graph import authority.
+- Review approval: requires explicit review state machine and proof that no review packet means no readiness handoff and no import recommendation.
 
-M034 chose documentation hardening and decision clarity before implementation. This delays coding the durable sidecar pipeline but prevents architecture drift, paper-only overfitting, accidental GraphDB lock-in, parser-as-truth shortcuts, and premature agent orchestration.
+## LLM Reading Notes
 
-GraphDB deferral preserves optionality but requires a future comparison gate before graph substrate work. The no-direct-write rule adds ceremony but protects against unsafe import paths and keeps evidence/review/provenance inspectable.
-
-Agents are deferred as orchestrators because deterministic queue/status/tool-chain contracts are not yet in place. They may become bounded helpers only after contracts, tools, observability, and failure modes exist.
-
-## PHILOSOPHY
-
-Prefer local-first, inspectable, deterministic, fail-closed architecture. Evidence must be traceable before it becomes knowledge. Scientific papers are the first domain because they stress citations, provenance, extraction quality, and review boundaries, but the system should generalize to other knowledge domains.
-
-Do not infer authorization from successful extraction, non-empty parser output, passing tests, or available GraphDB tooling. Authorization must be explicit, documented, and verified.
-
-Recommended next milestone from M034: Durable Evidence Pipeline Prototype Planning. Start with state model, queue semantics, artifact dependency/stale detection, no-write sidecar worker simulation, retry/resume/failure verification, and review packet/readiness handoff in no-write mode.
+- Binding decision: treat Universal KB and fail-closed evidence chains as the north-star architecture.
+- Do not infer: final GraphDB choice, graph write authorization, parser-as-truth, LLM approval authority, or agentic orchestration.
+- Safe next action: implement no-write executable contracts, queue state, boundary adapters, review diagnostics, guard tests, and metadata-only rehearsal.
+- Blocked until future ADR/milestone: production graph import, final GraphDB selection, accepted semantic knowledge promotion, and autonomous agent orchestration.

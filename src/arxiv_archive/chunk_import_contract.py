@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from arxiv_archive.universal_kb_contracts import SafetyFlags
+
 EXPECTED_CONTRACT_VERSION = "import-ready-chunk-contract.v1"
 EXPECTED_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"
 GRAPH_READY_STATE = "ok_for_graph"
@@ -197,6 +199,7 @@ def validation_to_dict(result: ContractValidationResult) -> dict[str, Any]:
         "refused_chunk_count": result.refused_chunk_count,
         "refusal_counts": result.refusal_counts,
         "diagnostics": [diagnostic.__dict__ for diagnostic in result.diagnostics],
+        "safety_flags": SafetyFlags().to_dict(),
         "raw_text_included": False,
         "embeddings_included": False,
         "ladybugdb_written": False,
