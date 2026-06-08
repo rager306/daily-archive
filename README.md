@@ -123,6 +123,26 @@ import_eligible=false
 
 Current continuity blockers are diagnostic only and block import/promotion claims: legacy or missing article safety flag shape, plus missing loader evidence for one selected record. M036/M037 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, agentic orchestration, or expanding beyond 5 articles. The 10-30 article expansion is intentionally deferred until after this control surface is consolidated.
 
+## Governance memory bridge
+
+M038 uses a hybrid governance-memory workflow:
+
+| Layer | Role |
+|---|---|
+| GSD `.gsd/REQUIREMENTS.md` and `.gsd/DECISIONS.md` | Canonical requirement and decision lifecycle. |
+| ADR docs under `doc/adr/` | Canonical architecture decisions and binding notes. |
+| GitNexus | Mandatory code-impact analysis before edits and change-scope checks before commits. |
+| codebase-memory MCP | Fast semantic ADR/R/D recall mirror only; never canonical. |
+
+Refresh the codebase-memory governance mirror after changing GSD requirements, GSD decisions, or ADR docs:
+
+```bash
+uv run python scripts/sync_codebase_memory_governance.py
+uv run python scripts/sync_codebase_memory_governance.py --check
+```
+
+The generated mirror lives at `.codebase-memory/adr.md`. If it conflicts with `.gsd/` or `doc/adr/`, treat the mirror as stale and regenerate it. Do not use codebase-memory MCP as the source of truth for `R###`, `D###`, GraphDB authorization, import eligibility, or fact promotion.
+
 ## Setup
 
 ```bash

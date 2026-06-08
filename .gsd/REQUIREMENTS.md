@@ -619,6 +619,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M034 S01 and final package verification: all 61 requirements and 67 decisions were inventoried and classified across 128 records; 15 needs-clarification routes were captured; verify_m034_rd_consistency_audit.py and verify_m034_decision_package.py pass.
 - Notes: No immediate blocking conflict-needs-user-decision records remained after false-positive refinement; future ADRs/implementation must continue honoring the route plan.
 
+### R062 — Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth.
+- Class: operability
+- Status: validated
+- Description: Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth.
+- Why it matters: Agents need quick recall of requirements, decisions, ADR relationships, and safety constraints, but stale memory must not override GSD registers or documented ADRs.
+- Source: M038 planning
+- Primary owning slice: M038-hdx112
+- Supporting slices: M034,M035,M036,M037
+- Validation: M038 generated `.codebase-memory/adr.md` from canonical GSD/ADR artifacts via `scripts/sync_codebase_memory_governance.py`; tests verify D075/R062/ADR-005 markers, source-of-truth warning, stale check behavior, and secret/payload rejection. MCP readback via `codebase-memory-mcp cli manage_adr '{"project":"root-daily-archive","action":"list"}'` contains D075, R062, ADR-005, GSD canonical warning, and codebase-memory MCP mirror wording.
+- Notes: Validated as a non-canonical fast recall mirror only. GSD remains canonical for requirements/decisions; ADR docs remain canonical for architecture; GitNexus remains mandatory for code-impact and change-scope safety.
+
 ## Deferred
 
 ## Out of Scope
@@ -688,10 +699,11 @@ This file is the explicit capability and coverage contract for the project.
 | R059 | constraint | validated | M034-kuei9y/S01 | none | Validated by M034: ADR-002 Defer Final GraphDB Selection explicitly keeps LadybugDB/FalkorDB/HelixDB/other selection open and requires future comparison before any final substrate choice; final package verifier passes. |
 | R060 | core-capability | validated | M034-kuei9y/S01 | none | Validated by M034: ADR-000, PRD.md, FUNCTIONAL-REQUIREMENTS.md, NON-FUNCTIONAL-REQUIREMENTS.md, and CONTRACTS.md frame the architecture as a local-first universal KB with scientific articles as primary first domain; final verifier passes. |
 | R061 | quality-attribute | validated | M034-kuei9y/S06 | none | Validated by M034 S01 and final package verification: all 61 requirements and 67 decisions were inventoried and classified across 128 records; 15 needs-clarification routes were captured; verify_m034_rd_consistency_audit.py and verify_m034_decision_package.py pass. |
+| R062 | operability | validated | M038-hdx112 | M034,M035,M036,M037 | M038 generated `.codebase-memory/adr.md` from canonical GSD/ADR artifacts via `scripts/sync_codebase_memory_governance.py`; tests verify D075/R062/ADR-005 markers, source-of-truth warning, stale check behavior, and secret/payload rejection. MCP readback via `codebase-memory-mcp cli manage_adr '{"project":"root-daily-archive","action":"list"}'` contains D075, R062, ADR-005, GSD canonical warning, and codebase-memory MCP mirror wording. |
 
 ## Coverage Summary
 
 - Active requirements: 17
 - Mapped to slices: 6
-- Validated: 44 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061)
+- Validated: 45 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062)
 - Unmapped active requirements: 6
