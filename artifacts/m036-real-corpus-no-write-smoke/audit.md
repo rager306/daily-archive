@@ -1,10 +1,12 @@
 # M036 Real Corpus No Write Smoke Audit
 
-- Articles: 5
-- Completed handoffs: 5
-- Ready queue jobs: 5
-- Source refs present: 5/5
-- Loader refs present: 4/5
+- Articles: 10
+- Completed handoffs: 10
+- Ready queue jobs: 10
+- Source refs present: 10/10
+- Loader refs present: 5/10
+- Loader absence explicit: 5/10
+- Continuity artifacts present: 10/10
 - Artifact sets complete: true
 
 ## Safety
@@ -16,13 +18,13 @@
 
 ## Diagnostics
 
-- missing_loader_evidence: 1
-- safety_flags_missing_or_not_false: 5
+- article_safety_flags_explicit_false: 10
+- loader_evidence_absent_explicit: 5
+- loader_evidence_present: 5
 
 ## Blockers for Import
 
-- missing_loader_evidence
-- legacy_or_missing_article_safety_flags
+- none for no-write smoke scope
 
 ## Next safe step
 

@@ -17,6 +17,8 @@ from scripts.select_m036_real_corpus_smoke_batch import select_entries
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE_DIR = ROOT / "artifacts" / "m036-real-corpus-no-write-smoke"
 PROFILES = frozenset({"fast", "full"})
+MIN_SMOKE_ARTICLES = 3
+MAX_SMOKE_ARTICLES = 30
 FORBIDDEN_PAYLOAD_TERMS = (
     "api_key",
     "secret_value",
@@ -69,11 +71,8 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def write_manifest(path: Path, *, limit: int) -> dict[str, Any]:
-    if limit < 3 or limit > 30:
-        raise ValueError("limit must be between 3 and 30")
-    # M037 intentionally does not expand past the current 5-article smoke.
-    if limit > 5:
-        raise ValueError("M037 consolidation must not expand beyond 5 articles")
+    if limit < MIN_SMOKE_ARTICLES or limit > MAX_SMOKE_ARTICLES:
+        raise ValueError(f"limit must be between {MIN_SMOKE_ARTICLES} and {MAX_SMOKE_ARTICLES}")
     entries = select_entries(limit)
     if len(entries) < 3:
         raise ValueError(f"only selected {len(entries)} usable articles; need at least 3")
@@ -200,8 +199,10 @@ def run_verify(*, profile: str = "fast", paths: SmokePaths | None = None) -> dic
     if not resolved_paths.manifest.exists() or not resolved_paths.run_summary.exists() or not resolved_paths.audit_json.exists():
         raise FileNotFoundError("smoke manifest, run summary, and audit artifacts must exist before verify")
     result = summarize(paths=resolved_paths, profile=profile)
-    if result["article_count"] < 3 or result["article_count"] > 5:
-        raise AssertionError("M037 smoke verification must cover between 3 and at most 5 articles")
+    if result["article_count"] < MIN_SMOKE_ARTICLES or result["article_count"] > MAX_SMOKE_ARTICLES:
+        raise AssertionError(
+            f"smoke verification must cover between {MIN_SMOKE_ARTICLES} and {MAX_SMOKE_ARTICLES} articles"
+        )
     if result["completed_handoff_count"] != result["article_count"]:
         raise AssertionError("smoke must complete all selected handoffs")
     return result

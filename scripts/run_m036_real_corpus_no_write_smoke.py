@@ -25,6 +25,9 @@ from arxiv_archive.universal_kb_review_assistance import (  # noqa: E402
 from arxiv_archive.universal_kb_substrate_rehearsal import NoWriteSubstrateRehearsal  # noqa: E402
 
 FALSE_SAFETY_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
+CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"
+LEGACY_SAFETY_DIAGNOSTIC = "safety_flags_missing_or_not_false"
+LEGACY_LOADER_DIAGNOSTIC = "missing_loader_evidence"
 FORBIDDEN_PAYLOAD_TERMS = (
     "api_key",
     "secret_value",
@@ -89,6 +92,68 @@ def build_candidate(article: dict[str, Any]) -> CandidatePacket:
     )
 
 
+def source_refs(evidence_refs: tuple[str, ...]) -> list[str]:
+    return [ref for ref in evidence_refs if "/source/" in ref or ref.endswith("/article.json")]
+
+
+def loader_refs(evidence_refs: tuple[str, ...]) -> list[str]:
+    return [ref for ref in evidence_refs if "/loader/" in ref]
+
+
+def normalized_diagnostics(article: dict[str, Any], *, has_loader_refs: bool) -> list[str]:
+    legacy_diagnostics = {LEGACY_SAFETY_DIAGNOSTIC, LEGACY_LOADER_DIAGNOSTIC}
+    diagnostics = [
+        str(value)
+        for value in article.get("diagnostics", ())
+        if str(value).strip() and str(value) not in legacy_diagnostics
+    ]
+    diagnostics.append("loader_evidence_present" if has_loader_refs else "loader_evidence_absent_explicit")
+    diagnostics.append("article_safety_flags_explicit_false")
+    return diagnostics
+
+
+def build_continuity_metadata(
+    article: dict[str, Any],
+    *,
+    candidate: CandidatePacket,
+    handoff_payload: dict[str, Any],
+) -> dict[str, Any]:
+    evidence_refs = tuple(str(ref) for ref in candidate.evidence_refs)
+    article_loader_refs = loader_refs(evidence_refs)
+    article_source_refs = source_refs(evidence_refs)
+    safety_flags = {
+        "graph_write_allowed": handoff_payload["graph_write_allowed"],
+        "promotion_allowed": handoff_payload["promotion_allowed"],
+        "production_import_attempted": handoff_payload["production_import_attempted"],
+        "import_eligible": False,
+    }
+    assert_false_flags(safety_flags, label=f"{candidate.candidate_id} continuity")
+    return {
+        "schema_version": CONTINUITY_SCHEMA_VERSION,
+        "article_key": article.get("article_key"),
+        "candidate_id": candidate.candidate_id,
+        "candidate_type": candidate.candidate_type,
+        "safety_flags": safety_flags,
+        "source_evidence": {
+            "status": "present" if article_source_refs else "absent",
+            "refs": article_source_refs,
+            "ref_count": len(article_source_refs),
+        },
+        "loader_evidence": {
+            "status": "present" if article_loader_refs else "absent_explicit",
+            "refs": article_loader_refs,
+            "ref_count": len(article_loader_refs),
+            "diagnostic": None if article_loader_refs else "loader_evidence_absent_explicit",
+        },
+        "diagnostics": normalized_diagnostics(article, has_loader_refs=bool(article_loader_refs)),
+        "import_eligibility": {
+            "import_eligible": False,
+            "reason": "real_corpus_no_write_smoke_continuity_only",
+        },
+        "metadata_only": True,
+    }
+
+
 def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
     article_flags = article.get("safety_flags") if isinstance(article.get("safety_flags"), dict) else {}
     assert_false_flags(article_flags, label=str(article.get("article_key") or article.get("candidate_id")))
@@ -142,13 +207,20 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
     write_json(article_dir / "queue_inspect.json", queue_inspect)
     handoff_payload = handoff.to_dict()
     write_json(article_dir / "readiness_handoff.json", handoff_payload)
+    continuity = build_continuity_metadata(article, candidate=candidate, handoff_payload=handoff_payload)
+    write_json(article_dir / "continuity.json", continuity)
 
     return {
         "article_key": article.get("article_key"),
         "candidate_id": candidate.candidate_id,
         "queue_status": queue_inspect["job"]["status"],
-        "diagnostics": list(diagnostics),
+        "diagnostics": continuity["diagnostics"],
         "artifact_dir": str(article_dir),
+        "continuity_ref": f"artifact:{(article_dir / 'continuity.json').as_posix()}",
+        "source_ref_count": continuity["source_evidence"]["ref_count"],
+        "loader_ref_count": continuity["loader_evidence"]["ref_count"],
+        "loader_evidence_status": continuity["loader_evidence"]["status"],
+        "safety_flags": continuity["safety_flags"],
         "graph_write_allowed": handoff_payload["graph_write_allowed"],
         "promotion_allowed": handoff_payload["promotion_allowed"],
         "production_import_attempted": handoff_payload["production_import_attempted"],

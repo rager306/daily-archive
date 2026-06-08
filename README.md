@@ -83,12 +83,12 @@ These artifacts are rehearsal evidence only. They are not GraphDB writes, import
 
 ## Universal KB smoke command surface
 
-M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidates the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts.
+M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidated the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts. M040 normalized per-article continuity metadata and expanded the no-write smoke to 10 articles.
 
 Routine fast smoke:
 
 ```bash
-uv run python -m arxiv_archive.universal_kb_smoke all --limit 5 --profile fast
+uv run python -m arxiv_archive.universal_kb_smoke all --limit 10 --profile fast
 ```
 
 Full pre-commit proof, including the M035 verifier:
@@ -121,7 +121,7 @@ production_import_attempted=false
 import_eligible=false
 ```
 
-Current continuity blockers are diagnostic only and block import/promotion claims: legacy or missing article safety flag shape, plus missing loader evidence for one selected record. M036/M037 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, agentic orchestration, or expanding beyond 5 articles. The 10-30 article expansion is intentionally deferred until after this control surface is consolidated.
+Current M040 continuity metadata is normalized: every selected article has metadata-only `continuity.json`, explicit false safety flags, source evidence status, and loader evidence status. Loader absence is represented as explicit diagnostic metadata for no-write smoke continuity; it does not authorize import. M036-M040 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration. The current expanded proof is a 10-article no-write batch with `graph_write_allowed=false`, `promotion_allowed=false`, `production_import_attempted=false`, `import_eligible=false`, and no continuity blockers.
 
 ## Governance memory bridge
 
