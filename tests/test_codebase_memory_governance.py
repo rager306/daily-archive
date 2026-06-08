@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -24,8 +25,11 @@ def test_current_digest_contains_hybrid_governance_markers() -> None:
     assert "GitNexus remains mandatory" in digest
     assert "codebase-memory MCP | Fast semantic ADR/R/D recall mirror | no" in digest
     assert "D075" in digest
+    assert "D076" in digest
     assert "R062" in digest
+    assert "R063" in digest
     assert "ADR-005 blocks direct extractor" in digest
+    assert ".codebase-memory/governance-graph.json" in digest
 
 
 def test_parse_requirements_extracts_compact_index_fields() -> None:
@@ -91,6 +95,41 @@ def test_render_digest_rejects_secret_shaped_content() -> None:
         )
 
 
+def test_generate_graph_contains_required_typed_nodes_and_edges() -> None:
+    graph = sync.generate_graph()
+
+    assert graph["schema_version"] == "governance-graph/v1"
+    assert graph["mirror_only"] is True
+    node_ids = {node["id"] for node in graph["nodes"]}
+    edge_keys = {(edge["source"], edge["relationship"], edge["target"]) for edge in graph["edges"]}
+
+    assert {"D075", "D076", "R062", "R063", "ADR-005", "M038", "M039"} <= node_ids
+    assert ("D076", "extends", "D075") in edge_keys
+    assert ("D076", "implements", "R063") in edge_keys
+    assert ("R063", "owned_by", "M039") in edge_keys
+    assert ("ADR-005", "blocks", "SAFETY-NO-DIRECT-GRAPHDB-WRITES") in edge_keys
+
+
+def test_render_graph_is_valid_json() -> None:
+    rendered = sync.render_graph(sync.generate_graph())
+
+    parsed = json.loads(rendered)
+    assert parsed["source_of_truth_warning"].startswith("GSD remains canonical")
+
+
+def test_validate_graph_rejects_missing_required_edge() -> None:
+    graph = sync.generate_graph()
+    graph["edges"] = [
+        edge
+        for edge in graph["edges"]
+        if (edge["source"], edge["relationship"], edge["target"])
+        != ("D076", "extends", "D075")
+    ]
+
+    with pytest.raises(ValueError, match="missing required edges"):
+        sync.validate_graph(graph)
+
+
 def test_render_digest_rejects_forbidden_payload_terms() -> None:
     with pytest.raises(ValueError, match="forbidden payload term"):
         sync.render_digest(
@@ -110,7 +149,19 @@ def test_render_digest_rejects_forbidden_payload_terms() -> None:
 
 def test_check_digest_fails_when_output_is_stale(tmp_path: Path) -> None:
     output = tmp_path / "adr.md"
+    graph_output = tmp_path / "governance-graph.json"
     output.write_text("stale\n", encoding="utf-8")
+    graph_output.write_text(sync.render_graph(sync.generate_graph()), encoding="utf-8")
 
-    with pytest.raises(SystemExit, match="is stale"):
-        sync.check_digest(output)
+    with pytest.raises(SystemExit, match="stale governance mirror artifacts"):
+        sync.check_outputs(output, graph_output)
+
+
+def test_check_outputs_fails_when_graph_is_stale(tmp_path: Path) -> None:
+    output = tmp_path / "adr.md"
+    graph_output = tmp_path / "governance-graph.json"
+    output.write_text(sync.generate_digest(), encoding="utf-8")
+    graph_output.write_text("{}\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="governance-graph.json"):
+        sync.check_outputs(output, graph_output)

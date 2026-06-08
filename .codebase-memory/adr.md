@@ -79,6 +79,7 @@
 | R060 | validated | M034-kuei9y/S01 | User correction during M034 planning | Frame the architecture around a universal local-first knowledge base, with scientific articles as the primary current domain and proving ground. |
 | R061 | validated | M034-kuei9y/S06 | User correction during M034 planning | M034 must audit all existing GSD requirements and decisions for mutual consistency with the universal knowledge-base ADR package before closeout. |
 | R062 | validated | M038-hdx112 | M038 planning | Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth. |
+| R063 | validated | M039-7o4yf1 | M039 planning | Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical. |
 
 ## Decision Index
 
@@ -159,6 +160,7 @@
 | D073 | M035-xr6jjf S03 research correction | architecture | How should M035 use SQLite for the durable evidence pipeline queue after current best-practice review? | Keep SQLite as a local-first durable prototype queue with WAL, short transactions, lease owner, heartbeat, retry-after, computed stale recovery, contract-version stale detection, and persisted job events; explicitly do not treat it as a distributed production queue. |
 | D074 | M035-xr6jjf S06 MiniMax model research | library | Which MiniMax model id should M035 helper paths use after live MiniMax-M3-512k research? | Use 'MiniMax-M3-512k' as the Anthropic-compatible helper/tool model default, document that Anthropic responses normalize it to 'MiniMax-M3', and use 'MiniMax-M3' for OpenAI-compatible calls unless a fresh probe proves the exact 'MiniMax-M3-512k' id works there. |
 | D075 | M038 planning | governance-memory | How to integrate codebase-memory MCP into the governance workflow | Use a hybrid model: GSD remains canonical for requirements and decisions, GitNexus remains mandatory for code impact/change safety, and codebase-memory MCP stores a fast ADR/R/D recall mirror generated from canonical artifacts. |
+| D076 | M039 planning | governance-memory | How to add typed ADR/R/D graph semantics on top of codebase-memory MCP | Generate a typed governance graph projection artifact from canonical GSD/ADR sources and expose it through codebase-memory-indexed files now; reserve direct MCP graph-edge ingestion for a future upgrade when codebase-memory implements runtime/custom edge creation. |
 
 ## ADR Index
 
@@ -172,6 +174,10 @@
 | ADR-006 | Accepted | `doc/adr/m034/ADR-006-agent-boundary.md` | Agent Boundary |
 | ADR-007 | Accepted | `doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md` | Quant-mind Pattern Source Not Runtime Dependency |
 
+## Typed Graph Projection
+
+The graph-shaped projection lives in `.codebase-memory/governance-graph.json`. It is generated mirror state, not canonical state, and exists for codebase-memory search/readback and future typed ingestion once supported.
+
 ## ADR Relationship Graph Notes
 
 - ADR-000 establishes the Universal KB north-star scope and prevents overfitting to arXiv, PDFs, scientific papers, or RAG-only assumptions.
@@ -181,7 +187,9 @@
 - M036 validates the no-write smoke on 5 real local article artifacts.
 - M037 consolidates the smoke control surface without changing ADR-005 or expanding beyond 5 articles.
 - D075 chooses the hybrid governance model: GSD canonical, GitNexus code-safety, codebase-memory fast recall mirror.
+- D076 adds typed graph projection artifacts because codebase-memory MCP custom edge ingestion is not yet implemented.
 - R062 requires this generated mirror to stay non-canonical and verifiable.
+- R063 requires the typed graph projection to expose verifiable ADR/R/D nodes and edges while preserving source-of-truth boundaries.
 
 ## Refresh Commands
 

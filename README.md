@@ -141,7 +141,9 @@ uv run python scripts/sync_codebase_memory_governance.py
 uv run python scripts/sync_codebase_memory_governance.py --check
 ```
 
-The generated mirror lives at `.codebase-memory/adr.md`. If it conflicts with `.gsd/` or `doc/adr/`, treat the mirror as stale and regenerate it. Do not use codebase-memory MCP as the source of truth for `R###`, `D###`, GraphDB authorization, import eligibility, or fact promotion.
+The generated mirror lives at `.codebase-memory/adr.md`. M039 also generates `.codebase-memory/governance-graph.json`, a typed governance graph projection with Requirement, Decision, ADR, Milestone, SafetyBoundary, and generated Artifact nodes plus explicit relationship edges. The graph projection is useful for agent navigation and codebase-memory-indexed search/readback, but it is still generated mirror state, not canonical state.
+
+Current codebase-memory MCP `ingest_traces` reports that runtime edge creation is not implemented, so M039 does not claim native custom graph ingestion. Use the JSON projection until codebase-memory exposes a supported typed node/edge ingestion API. If generated governance files conflict with `.gsd/` or `doc/adr/`, treat them as stale and regenerate them. Do not use codebase-memory MCP as the source of truth for `R###`, `D###`, GraphDB authorization, import eligibility, or fact promotion.
 
 ## Setup
 
