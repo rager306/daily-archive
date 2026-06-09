@@ -163,6 +163,7 @@
 | D075 | M038 planning | governance-memory | How to integrate codebase-memory MCP into the governance workflow | Use a hybrid model: GSD remains canonical for requirements and decisions, GitNexus remains mandatory for code impact/change safety, and codebase-memory MCP stores a fast ADR/R/D recall mirror generated from canonical artifacts. |
 | D076 | M039 planning | governance-memory | How to add typed ADR/R/D graph semantics on top of codebase-memory MCP | Generate a typed governance graph projection artifact from canonical GSD/ADR sources and expose it through codebase-memory-indexed files now; reserve direct MCP graph-edge ingestion for a future upgrade when codebase-memory implements runtime/custom edge creation. |
 | D077 | M041 planning | real-corpus-expansion | How to expand the next validation batch for connectivity checks | Use a mixed 20-30 article no-write batch: retain the current 10 normalized articles, add fresh arXiv articles, and add reference-linked candidate articles when references can be discovered safely; keep all graph/import/promotion flags false. |
+| D078 | M043-cqiqeq | sidecar-evidence | How combined parser sidecar outputs should be represented after M043 | Use candidate-only sidecar comparison packets with explicit ready/replay/blocker statuses, prior artifact references, source summaries, and false graph/import/promotion flags. |
 
 ## ADR Index
 
