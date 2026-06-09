@@ -83,7 +83,7 @@ These artifacts are rehearsal evidence only. They are not GraphDB writes, import
 
 ## Universal KB smoke command surface
 
-M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidated the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts. M040 normalized per-article continuity metadata and expanded the no-write smoke to 10 articles. M041 adds a separate mixed 20-article connectivity smoke with 10 retained baseline articles, 5 articles linked from already loaded sources, and 5 Hermes review-section articles.
+M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidated the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts. M040 normalized per-article continuity metadata and expanded the no-write smoke to 10 articles. M041 adds a separate mixed 20-article connectivity smoke with 10 retained baseline articles, 5 articles linked from already loaded sources, and 5 Hermes review-section articles. M042 adds no-write linked metadata repair and connectivity group readiness reports over that M041 corpus.
 
 Routine fast smoke for the normalized 10-article baseline:
 
@@ -121,6 +121,23 @@ artifacts/m041-mixed-connectivity-smoke/audit.json
 artifacts/m041-mixed-connectivity-smoke/report.md
 ```
 
+M042 readiness commands for the mixed corpus:
+
+```bash
+uv run python scripts/repair_m042_linked_metadata.py --no-network
+uv run python scripts/audit_m042_connectivity_groups.py
+```
+
+M042 readiness evidence:
+
+```text
+artifacts/m042-linked-metadata-readiness/repair-report.json
+artifacts/m042-linked-metadata-readiness/connectivity-audit.json
+artifacts/m042-linked-metadata-readiness/readiness-report.md
+```
+
+No graph import is authorized by M042. The current M042 connectivity audit has one 6-article local-reference component, 14 isolated articles, and a 5-article Hermes co-selection group that does not count as reference edges.
+
 Expected safety result:
 
 ```text
@@ -130,7 +147,7 @@ production_import_attempted=false
 import_eligible=false
 ```
 
-Current continuity metadata is normalized: every selected article has metadata-only `continuity.json`, explicit false safety flags, source evidence status, and loader evidence status. Loader absence is represented as explicit diagnostic metadata for no-write smoke continuity; it does not authorize import. M036-M041 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration. The current baseline proof is a 10-article no-write batch with no continuity blockers. The current connectivity proof is a 20-article mixed no-write batch with reference-linked and Hermes review-section articles, no blockers, and all write/import/promotion flags false. Some linked candidates may have deferred metadata because arXiv rate-limited API access; that caveat is explicit and remains non-importable.
+Current continuity metadata is normalized: every selected article has metadata-only `continuity.json`, explicit false safety flags, source evidence status, and loader evidence status. Loader absence is represented as explicit diagnostic metadata for no-write smoke continuity; it does not authorize import. M036-M042 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration. The current baseline proof is a 10-article no-write batch with no continuity blockers. The current connectivity proof is a 20-article mixed no-write batch with reference-linked and Hermes review-section articles, no blockers, and all write/import/promotion flags false. M042 confirms the 5 reference-linked records have fetched identity metadata and linked-from evidence, but graph import remains blocked because connectivity is limited and ADR-005 still applies.
 
 ## Governance memory bridge
 
