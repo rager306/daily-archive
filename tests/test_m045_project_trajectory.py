@@ -123,3 +123,59 @@ def test_render_markdown_contains_dimensions_and_next_actions(tmp_path, monkeypa
     assert "module_code" in markdown
     assert "Next actions" in markdown
     assert "codebase-memory snapshot provided" in markdown
+
+
+def test_reverse_adr_audit_clear_on_clean_project(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    # Clean project: empty src/ and artifacts/ (or no files). Audit should be clear.
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root)
+
+    assert "reverse_adr_audit" in report["dimensions"]
+    assert report["dimensions"]["reverse_adr_audit"]["status"] == "clear"
+    assert report["dimensions"]["reverse_adr_audit"]["flags"] == []
+    assert report["reverse_adr_audit_details"]["status"] == "clear"
+    assert report["reverse_adr_audit_details"]["rule_count"] == 8
+
+
+def test_reverse_adr_audit_flags_ladybugdb_import_in_src(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    # Inject a violation: third-party `import ladybugdb` in src/.
+    (root / "src").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "violator.py").write_text(
+        "import ladybugdb\nfrom ladybugdb import conn\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root)
+
+    assert report["dimensions"]["reverse_adr_audit"]["status"] == "violations"
+    rule_ids = report["reverse_adr_audit_details"]["violations"]
+    rule_id_set = {v["rule_id"] for v in rule_ids}
+    assert "no_ladybugdb_import_in_src" in rule_id_set
+    # And it must be flagged in drift_flags with high severity.
+    assert any(
+        flag["flag"] == "reverse_adr_audit_no_ladybugdb_import_in_src" and flag["severity"] == "high"
+        for flag in report["drift_flags"]
+    )
+    # Verdict should be blocked.
+    assert report["verdict"] == "blocked"
+
+
+def test_reverse_adr_audit_flags_import_eligible_true_in_artifacts(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    (root / "artifacts" / "m999-bad").mkdir(parents=True, exist_ok=True)
+    (root / "artifacts" / "m999-bad" / "candidate.json").write_text(
+        json.dumps({"candidate_id": "x", "import_eligible": True}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root)
+
+    assert report["dimensions"]["reverse_adr_audit"]["status"] == "violations"
+    rule_id_set = {v["rule_id"] for v in report["reverse_adr_audit_details"]["violations"]}
+    assert "no_import_eligible_true_in_artifacts" in rule_id_set
+    assert report["verdict"] == "blocked"

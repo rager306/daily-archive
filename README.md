@@ -189,6 +189,29 @@ artifacts/m044-grobid-architecture-guardrail/final-report.md
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
+Pre-commit hooks (mandatory M044 architecture guardrail):
+
+```bash
+bash scripts/install-precommit.sh
+```
+
+This installs pre-commit into your uv environment and configures the git hook. From then on, every commit that touches `scripts/verify_*.py`, `src/arxiv_archive/universal_kb_*.py`, `src/arxiv_archive/graph_readiness_*.py`, `doc/adr/`, or `.gsd/{DECISIONS,REQUIREMENTS}.md` runs:
+
+- **M044 architecture guardrail** (D079) — mandatory, blocks the commit if drift is detected.
+- **M045 trajectory check** (D080) — advisory, prints drift report but does not fail the commit.
+
+A GitHub Action (`.github/workflows/architecture-guardrail.yml`) runs the same checks on push and pull_request to master. M044 fails the merge; M045 surfaces drift as a workflow annotation.
+
+Bypass only in emergency: `git commit --no-verify`.
+
+M047 architecture guardrail enforcement and reverse ADR audit (QW-2 of M046 roadmap):
+
+- `.pre-commit-config.yaml` enforces M044 architecture guardrail (mandatory) and M045 trajectory check (advisory) on relevant file changes.
+- `.github/workflows/architecture-guardrail.yml` runs the same checks on push and pull_request; M044 blocks merge, M045 surfaces drift as workflow annotation.
+- `scripts/install-precommit.sh` is the one-step installer.
+- `scripts/check_project_trajectory.py` extended with `reverse_adr_audit` dimension (8 rules anchored to ADR-002/005/007/R029).
+- `tests/test_m045_project_trajectory.py` covers clear baseline + 2 violation cases.
+
 M046 synthesis package over M033 to M045:
 
 ```text

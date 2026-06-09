@@ -1,0 +1,60 @@
+# Pre-commit hooks for daily-archive
+#
+# This config enforces the M044 architecture guardrail (D079) and
+# the M045 trajectory check (D080) before each commit. Both are
+# mandatory preflights per the project ADR/decision register.
+#
+# Install:
+#   bash scripts/install-precommit.sh
+#
+# Bypass in emergency only:
+#   git commit --no-verify
+
+# Pin to a stable pre-commit version. Update deliberately.
+minimum_pre_commit_version: "3.5.0"
+
+# Use the local uv environment to run Python verifiers.
+default_language_version:
+  python: python3
+
+# Run on every commit (default) and manual `pre-commit run --all-files`.
+default_stages: [pre-commit]
+
+repos:
+  # Local repository: M044 architecture guardrail (D079 mandatory).
+  - repo: local
+    hooks:
+      - id: m044-architecture-guardrail
+        name: M044 architecture guardrail (D079)
+        # M044 verifier is the binding safety net for any sidecar /
+        # graph-readiness work. Run it on every commit that touches
+        # sidecar / parser / queue / graph code, ADR files, or
+        # universal_kb_*.py modules.
+        entry: uv run python scripts/verify_m044_sidecar_architecture_guardrail.py
+        language: system
+        # Run on changes to the relevant surface; otherwise pass.
+        files: ^(scripts/verify_m044.*|src/arxiv_archive/universal_kb_.*\.py|src/arxiv_archive/graph_readiness.*\.py|doc/adr/.*\.md|\.gsd/(DECISIONS|REQUIREMENTS)\.md)
+        pass_filenames: false
+        # Always run when matching files change; do not skip.
+        always_run: false
+        # Fail the commit if M044 verifier reports drift.
+        fail_fast: false
+        # Show the full verifier output on failure.
+        verbose: true
+        # Limit runtime to avoid hanging CI.
+        timeout: 120
+
+  # Local repository: M045 trajectory check (D080) — advisory, never blocks.
+  # Re-runs the trajectory check on a tight scope and reports drift as info.
+  - repo: local
+    hooks:
+      - id: m045-trajectory-check
+        name: M045 trajectory check (D080, advisory)
+        entry: uv run python scripts/check_project_trajectory.py --output-dir /tmp/gsd-precommit-trajectory
+        language: system
+        # Run only on changes to .gsd/ or doc/adr/ (state surface).
+        files: ^(\.gsd/.*|doc/adr/.*\.md)$
+        pass_filenames: false
+        always_run: false
+        # This is advisory: do not fail the commit, just print output.
+        stages: [pre-commit]

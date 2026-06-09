@@ -37,7 +37,7 @@ The project has a **clean separation** between canonical (GSD, ADRs) and derived
 
 **Strengths:** the M034 template is a model other projects could copy. The LLM Reading Notes section is increasingly a 2026 standard.
 
-**Gaps:** ADR-001 (Scientific Papers as First Domain) is **Planned** since M034 but never drafted. This is a real gap because the claim "scientific articles as first domain" is implicit in ADR-000 but not isolated in its own decision.
+**Gaps:** ADR-001 (Scientific Papers as First Domain) is **Planned** since M034 but never drafted. This is a real gap because the claim "scientific articles as first domain" is implicit in ADR-000 but not isolated in its own decision. **Resolved in M046-3b7gp0 QW-1 (D081):** `doc/adr/ADR-001-scientific-papers-as-first-domain.md` accepted, all 8 ADRs now binding or deferred (zero Planned).
 
 **Recommendation 1:** Draft ADR-001 (Scientific Papers as First Domain) in a future milestone. The risk of not having it is that the implicit claim is not auditable, and the supersedes chain from ADR-000 is weakened. **Priority: medium.** **Anchor: R060, R058.**
 
@@ -91,9 +91,9 @@ The project has a **clean separation** between canonical (GSD, ADRs) and derived
 
 **Strengths:** this is the **leading** dimension. The combination of 5× false defaults + prohibited-claim scan + architecture guardrail + reverse ADR audit is rare in any project, let alone a research one.
 
-**Gaps:** reverse ADR audit is manual. The M044 guardrail is a one-shot check, not continuous.
+**Gaps:** reverse ADR audit is manual. The M044 guardrail is a one-shot check, not continuous. **Resolved in M047-96puxn:** reverse ADR audit is now an 8-rule dimension in M045 trajectory check; M044 guardrail runs on every pre-commit (mandatory) and on every push/PR via GitHub Action.
 
-**Recommendation 4:** Wire the M044 architecture guardrail as a **pre-commit hook** and add reverse ADR audit to the M045 trajectory check as a routine dimension. **Priority: medium.** **Anchor: D079, D080, ADR-005.**
+**Recommendation 4:** Wire the M044 architecture guardrail as a **pre-commit hook** and add reverse ADR audit to the M045 trajectory check as a routine dimension. **Priority: medium.** **Anchor: D079, D080, ADR-005.** **Resolved in M047-96puxn:** `.pre-commit-config.yaml` (M044 mandatory, M045 advisory), `.github/workflows/architecture-guardrail.yml` (CI), `scripts/install-precommit.sh`, and `scripts/check_project_trajectory.py` extended with `reverse_adr_audit` dimension (8 rules anchored to ADR-002/005/007/R029). Tests: `tests/test_m045_project_trajectory.py` covers clear baseline + 2 violation cases.
 
 ### 2.5 Trajectory Check vs Per-Topic Guardrails — LEADING (2026 PATTERN)
 
@@ -161,13 +161,13 @@ The project has a **clean separation** between canonical (GSD, ADRs) and derived
 | Hidden global state | LOW RISK | SQLite queue is explicit, no globals in contracts |
 | Implicit authorship of facts | LOW RISK | M035 review assistance has no LLM approval authority (ADR-006) |
 | Documentation rot | MEDIUM RISK | 326-file template-rerender (fixed in M046 chore commit) is evidence of rot risk |
-| Architecture drift | LOW RISK | M044 guardrail, M045 trajectory check, 0 violations found |
+| Architecture drift | LOW RISK | M044 guardrail (now pre-commit + CI), M045 trajectory check (8 dimensions, 0 violations) |
 
 ## 4. Known Gaps and Risks
 
 | Gap | Risk | Mitigation |
 |---|---|---|
-| ADR-001 (Scientific Papers as First Domain) never drafted | Implicit claim not auditable | Recommendation 1 |
+| ADR-001 (Scientific Papers as First Domain) never drafted | Implicit claim not auditable | Recommendation 1, **resolved in M046 QW-1 (D081)** |
 | M044 guardrail not pre-commit-enforced | Drift possible between commits | Recommendation 4 |
 | codebase-memory MCP does not implement runtime edge creation | Typed graph is artifact-only | D076; monitor MCP roadmap |
 | DSPy optimizer remains disabled | No benchmark-driven improvement | R020, R021, R041 — gate is intentional |

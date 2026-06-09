@@ -1,0 +1,110 @@
+name: Architecture Guardrail
+
+# Daily-archive architecture guardrail (per M044 / D079 and M045 / D080).
+#
+# This workflow runs on every push and pull_request to master.
+# It enforces the binding safety contract before any code change can
+# be merged: M044 architecture guardrail (mandatory) and M045
+# trajectory check (advisory, surfaces drift).
+#
+# If M044 fails, the PR cannot be merged. M045 drift is reported
+# as a workflow annotation but does not block.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+# Cancel previous runs on the same ref to save CI minutes.
+concurrency:
+  group: architecture-guardrail-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  m044-guardrail:
+    name: M044 Architecture Guardrail (mandatory)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Run M044 architecture guardrail
+        id: m044
+        run: |
+          uv run python scripts/verify_m044_sidecar_architecture_guardrail.py
+        # exit code 0 = pass, 1 = fail (mandatory)
+
+      - name: Upload M044 evidence on success
+        if: success()
+        run: |
+          mkdir -p artifacts/m044-grobid-architecture-guardrail
+          echo "M044 architecture guardrail passed on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > artifacts/m044-grobid-architecture-guardrail/ci-run.txt
+          cat artifacts/m044-grobid-architecture-guardrail/ci-run.txt
+
+  m045-trajectory:
+    name: M045 Trajectory Check (advisory)
+    runs-on: ubuntu-latest
+    # Only run if M044 passes.
+    needs: m044-guardrail
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Run M045 trajectory check
+        id: m045
+        run: |
+          uv run python scripts/check_project_trajectory.py \
+            --output-dir artifacts/m045-project-trajectory/ci-run
+          # Always exits 0 unless the report verdict is "blocked" (high drift).
+
+      - name: Annotate drift
+        if: always()
+        run: |
+          if [ -f artifacts/m045-project-trajectory/ci-run/trajectory-report.md ]; then
+            VERDICT=$(grep -E "^- Verdict:" artifacts/m045-project-trajectory/ci-run/trajectory-report.md | head -1 || true)
+            echo "::notice::Trajectory check: ${VERDICT}"
+          else
+            echo "::warning::Trajectory report not produced."
+          fi
+
+      - name: Upload M045 trajectory report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trajectory-report
+          path: artifacts/m045-project-trajectory/ci-run/trajectory-report.{json,md}
+          if-no-files-found: ignore
+          retention-days: 14

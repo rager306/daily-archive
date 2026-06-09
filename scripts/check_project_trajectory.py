@@ -21,7 +21,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "project-trajectory"
-DIMENSIONS = ("architecture", "functionality", "module_code", "evidence", "safety", "operations", "next_gate")
+DIMENSIONS = ("architecture", "functionality", "module_code", "evidence", "safety", "operations", "next_gate", "reverse_adr_audit")
 PROHIBITED_PATTERNS = {
     "graph_import_authorized": re.compile(r"(?i)(graph import|GraphDB import|LadybugDB import).{0,80}(authorized|allowed|enabled)"),
     "fact_promotion_allowed": re.compile(r"(?i)(fact promotion|promoted facts).{0,80}(authorized|allowed|enabled)"),
@@ -163,6 +163,134 @@ def dimension(status: str, evidence: list[str], flags: list[str] | None = None) 
     return {"status": status, "evidence": evidence, "flags": flags or []}
 
 
+# Reverse ADR audit: code-level checks that the binding ADRs are honoured
+# in actual code, not just in narrative. Each rule has an anchor ADR/R and
+# a severity (high = blocking, medium = drift_risk).
+#
+# An anchor ADR/R is a binding decision. A violation here is a binding breach.
+REVERSE_ADR_AUDIT_RULES: list[dict[str, Any]] = [
+    {
+        "id": "no_ladybugdb_import_in_src",
+        "anchor": "ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB)",
+        "severity": "high",
+        "scan": "src/",
+        "pattern": r"^\s*import\s+ladybugdb\b",
+        "exclude_paths": ("src/arxiv_archive/ladybug_client.py",),
+        "rationale": "Third-party `ladybugdb` library must not be imported; only the substrate-port wrapper `ladybug_client.py` is allowed (substrate rehearsal per M035).",
+    },
+    {
+        "id": "no_falkordb_import_in_src",
+        "anchor": "ADR-002 (Defer Final GraphDB Selection)",
+        "severity": "high",
+        "scan": "src/",
+        "pattern": r"^\s*(?:from|import)\s+falkordb\b",
+        "rationale": "GraphDB selection is deferred. FalkorDB is a candidate, not adopted.",
+    },
+    {
+        "id": "no_helixdb_import_in_src",
+        "anchor": "ADR-002 (Defer Final GraphDB Selection)",
+        "severity": "high",
+        "scan": "src/",
+        "pattern": r"^\s*(?:from|import)\s+helixdb\b",
+        "rationale": "GraphDB selection is deferred. HelixDB is a candidate, not adopted.",
+    },
+    {
+        "id": "no_quantmind_runtime_import",
+        "anchor": "ADR-007 (Quant-mind Pattern Source Not Runtime Dependency)",
+        "severity": "high",
+        "scan": "src/",
+        "pattern": r"^\s*(?:from|import)\s+(?:quantmind|quant_mind|llmquant)\b",
+        "rationale": "quant-mind is a pattern source only, not a runtime dependency.",
+    },
+    {
+        "id": "no_graph_import_allowed_true_in_artifacts",
+        "anchor": "ADR-005 (No Direct Extractor to GraphDB Path)",
+        "severity": "high",
+        "scan": "artifacts/",
+        "pattern": r"\"graph_import_allowed\"\s*:\s*true",
+        "rationale": "graph_import_allowed must remain false until a future explicit graph promotion milestone.",
+    },
+    {
+        "id": "no_production_import_attempted_true_in_artifacts",
+        "anchor": "ADR-005 (No Direct Extractor to GraphDB Path)",
+        "severity": "high",
+        "scan": "artifacts/",
+        "pattern": r"\"production_import_attempted\"\s*:\s*true",
+        "rationale": "production_import_attempted must remain false until a future explicit graph promotion milestone.",
+    },
+    {
+        "id": "no_import_eligible_true_in_artifacts",
+        "anchor": "R029 (Import-ready typed chunk package), ADR-005",
+        "severity": "high",
+        "scan": "artifacts/",
+        "pattern": r"\"import_eligible\"\s*:\s*true",
+        "rationale": "import_eligible must remain false until independent review and a future graph promotion milestone.",
+    },
+    {
+        "id": "no_ladybugdb_written_true_in_artifacts",
+        "anchor": "ADR-002, ADR-005",
+        "severity": "high",
+        "scan": "artifacts/",
+        "pattern": r"\"ladybugdb_written\"\s*:\s*true",
+        "rationale": "ladybugdb_written must remain false until GraphDB selection is finalized (ADR-002 deferred).",
+    },
+]
+
+
+def reverse_adr_audit(root: Path) -> dict[str, Any]:
+    """Run the 8-rule reverse ADR audit on the codebase.
+
+    Returns a dict with keys:
+      - status: "clear" | "violations"
+      - violations: list of {rule_id, anchor, file, line, snippet}
+      - evidence: list of scanned roots and rule count
+    """
+    violations: list[dict[str, str]] = []
+    evidence: list[str] = []
+
+    for rule in REVERSE_ADR_AUDIT_RULES:
+        scan_root = root / rule["scan"]
+        if not scan_root.exists():
+            evidence.append(f"{rule['id']}: scan root {rule['scan']} not found")
+            continue
+        if not evidence or not evidence[-1].startswith(rule["scan"]):
+            evidence.append(f"{rule['scan'].rstrip('/')}/ (rule: {rule['id']}, anchor: {rule['anchor']})")
+        try:
+            pattern = re.compile(rule["pattern"], flags=re.MULTILINE)
+        except re.error as exc:
+            violations.append({"rule_id": rule["id"], "anchor": rule["anchor"], "file": "<pattern>", "line": "0", "snippet": f"pattern error: {exc}"})
+            continue
+        exclude = set(rule.get("exclude_paths") or ())
+        for path in scan_root.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix not in {".py", ".json", ".md"}:
+                continue
+            try:
+                rel = str(path.relative_to(root))
+            except ValueError:
+                continue
+            if rel in exclude:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for match in pattern.finditer(text):
+                line_no = text[: match.start()].count("\n") + 1
+                snippet = text.splitlines()[line_no - 1].strip() if line_no - 1 < len(text.splitlines()) else ""
+                violations.append({
+                    "rule_id": rule["id"],
+                    "anchor": rule["anchor"],
+                    "file": rel,
+                    "line": str(line_no),
+                    "snippet": snippet[:200],
+                })
+
+    status = "clear" if not violations else "violations"
+    return {"status": status, "violations": violations, "evidence": evidence, "rule_count": len(REVERSE_ADR_AUDIT_RULES)}
+
+
 def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = None) -> dict[str, Any]:
     paths = Paths.from_root(root)
     requirements_text = read_text(paths.requirements)
@@ -176,6 +304,7 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
     git = git_status(root)
     governance = governance_summary(graph)
     cbm = load_json(codebase_memory_snapshot) if codebase_memory_snapshot else {}
+    audit = reverse_adr_audit(root)
 
     drift_flags: list[dict[str, Any]] = []
     if not governance.get("node_count"):
@@ -189,6 +318,13 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
         drift_flags.append({"flag": "missing_next_gate", "severity": "medium", "evidence": "README.md"})
     if git.get("changed_files", 0) > 0:
         drift_flags.append({"flag": "uncommitted_changes_present", "severity": "info", "evidence": f"{git['changed_files']} files"})
+    for violation in audit["violations"]:
+        drift_flags.append({
+            "flag": f"reverse_adr_audit_{violation['rule_id']}",
+            "severity": "high",
+            "evidence": f"{violation['file']}:{violation['line']}",
+            "snippet": violation["snippet"],
+        })
 
     safety_flags = [flag["flag"] for flag in drift_flags if flag["severity"] == "high"]
     verdict = "blocked" if safety_flags else ("drift_risk" if any(flag["severity"] == "medium" for flag in drift_flags) else "on_track")
@@ -229,6 +365,11 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             ["README.md", "recent milestone summaries"],
             [flag["flag"] for flag in drift_flags if flag["flag"] == "missing_next_gate"],
         ),
+        "reverse_adr_audit": dimension(
+            "clear" if audit["status"] == "clear" else "violations",
+            [f"rule_count={audit['rule_count']}", *audit["evidence"][:5]],
+            [v["rule_id"] for v in audit["violations"]],
+        ),
     }
 
     report = {
@@ -249,6 +390,7 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             "snapshot": cbm,
         },
         "next_actions": derive_next_actions(drift_flags, latest),
+        "reverse_adr_audit_details": audit,
         "derived_not_canonical": True,
         "graph_write_allowed": False,
         "promotion_allowed": False,
