@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Profile GPT Researcher and AI-Researcher
+# T01: Profiled GPT Researcher and AI-Researcher for daily-archive applicability and safety boundaries.
 
 Profile GPT Researcher and AI-Researcher from authoritative sources. Focus on architecture, source acquisition, provenance/citation handling, review gates, autonomy boundaries, failure modes, and reusable/non-goal patterns for daily-archive.
 

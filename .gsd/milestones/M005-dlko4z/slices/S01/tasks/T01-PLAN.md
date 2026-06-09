@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Define import ready chunk contract
+# T01: Defined the versioned import-ready chunk package contract for M005.
 
 Create a versioned import-ready chunk contract document under S01 that defines package objects, required fields, enums, invariants, refusal states, redaction rules, and downstream import boundaries. Base it on M004/S11 research but make it concrete enough for code and tests.
 

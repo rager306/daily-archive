@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Assess MiniMax bounded callability probe
+# T02: MiniMax probe built a safe no-call synthetic payload; key is present but live call was deferred.
 
 Determine whether a bounded live MiniMax call can be run safely. If a required key is missing, use secure_env_collect before any live probe; otherwise record skipped status. Probe must use redacted non-production input and never include raw paper/chunk text.
 

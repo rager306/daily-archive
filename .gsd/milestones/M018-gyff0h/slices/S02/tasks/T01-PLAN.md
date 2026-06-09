@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Map ML package references
+# T01: Mapped ML package references and classified direct torch/transformers source imports as absent.
 
 Search repo source/tests/docs for direct references to torch, torchvision, transformers, accelerate, docling, and conversion paths. Produce a sanitized reachability JSON artifact with file:line references and package ownership classification.
 

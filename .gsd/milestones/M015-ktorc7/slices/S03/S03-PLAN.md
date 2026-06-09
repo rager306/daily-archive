@@ -1,4 +1,4 @@
-# S03: Corrected MiniMax verdict
+# S03: S03
 
 **Goal:** Review corrected MiniMax remediation evidence and issue precise final verdict.
 **Demo:** After S03, M015 gives corrected recommendations and updates R043.
@@ -24,12 +24,12 @@ Closes M015 and updates R043.
 
 ## Tasks
 
-- [x] **T01: Independent remediation review** `est:small`
+- [x] **T01: Independent remediation review passed after fixing report discoverability.** `est:small`
   Review M015 remediation evidence for correctness, evidence hygiene, and whether it truly resolves the user's criticism.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S03/run-evidence/m015-independent-review.md`
   - Verify: test -s .gsd/milestones/M015-ktorc7/slices/S03/run-evidence/m015-independent-review.md
 
-- [x] **T02: Write final corrected verdict** `est:small`
+- [x] **T02: Final M015 verdict corrected M014: MiniMax structured output is viable via Anthropic tool calls; Token Plan API remains still needs distinct key/session.** `est:small`
   Write final corrected MiniMax recommendation and update R043 with validation/limitations.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S03/run-evidence/final-m015-guard.json`, `.gsd/milestones/M015-ktorc7/slices/S03/m015-final-recommendation.md`
   - Verify: uv run python - <<'PY'

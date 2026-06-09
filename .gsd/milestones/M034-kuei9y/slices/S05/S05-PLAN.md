@@ -26,17 +26,17 @@ Feeds roadmap implementation gates and future verifier design.
 
 ## Tasks
 
-- [x] **T01: Draft core contracts and safety invariants** `est:medium`
+- [x] **T01: Drafted the core contract inventory and safety invariants for M034.** `est:medium`
   Create CONTRACTS.md and SAFETY-INVARIANTS.md covering generic universal-KB contracts, paper-specific specializations, GraphDB portability, and fail-closed safety flags.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/CONTRACTS.md`, `.gsd/milestones/M034-kuei9y/decision-package/SAFETY-INVARIANTS.md`
   - Verify: Check both files include required contract names, `KnowledgeSubstratePort`, paper-specific sidecar contracts, and safety defaults.
 
-- [x] **T02: Draft status matrix failure taxonomy and dependency model** `est:medium`
+- [x] **T02: Drafted the status matrix, failure taxonomy, and artifact dependency model.** `est:medium`
   Create STATUS-MATRIX.md, FAILURE-TAXONOMY.md, and ARTIFACT-DEPENDENCY-MODEL.md describing status transitions, retryable/terminal/blocked failures, stale detection, sidecar dependency graph, and redacted diagnostics.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/STATUS-MATRIX.md`, `.gsd/milestones/M034-kuei9y/decision-package/FAILURE-TAXONOMY.md`, `.gsd/milestones/M034-kuei9y/decision-package/ARTIFACT-DEPENDENCY-MODEL.md`
   - Verify: Check files include pending/ready/running/succeeded/failed_retryable/failed_terminal/blocked/stale/needs_review statuses, failure codes, sidecar dependency graph, and redaction constraints.
 
-- [x] **T03: Verify S05 contracts and invariants** `est:small`
+- [x] **T03: Added and passed the verifier for M034 contracts, invariants, statuses, failures, and dependency model.** `est:small`
   Implement and run a verifier for contracts/invariants/status/failure/dependency artifacts, checking required contract names, safety flags, status transitions, failure classes, dependency model, GraphDB portability, and Mermaid readability limits.
   - Files: `scripts/verify_m034_contracts_invariants.py`
   - Verify: `uv run python scripts/verify_m034_contracts_invariants.py --package-dir .gsd/milestones/M034-kuei9y/decision-package && uv run ruff check scripts/verify_m034_contracts_invariants.py`

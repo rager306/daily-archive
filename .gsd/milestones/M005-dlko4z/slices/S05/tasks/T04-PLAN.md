@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Run source asset preservation dry run
+# T04: Ran the S05 source asset preservation dry-run with linked multimodal asset records.
 
 Run the source asset preservation and multimodal manifest dry-run over the 10-paper gold corpus. Write per-paper manifests, a redacted run summary, and JSONL diagnostics under S05 run evidence. Confirm all machine artifacts contain only paths/hashes/provenance/linkage/safety flags, not raw content.
 

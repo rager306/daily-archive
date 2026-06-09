@@ -1,4 +1,4 @@
-# S03: MiniMax synthetic smoke-test decision
+# S03: S03
 
 **Goal:** Advance MiniMax from no-call dry run to an explicit bounded smoke-test decision, and run only if safety/approval constraints are satisfied.
 **Demo:** A MiniMax synthetic smoke-test artifact records whether a live synthetic call was run or intentionally deferred, with exact auth/header/schema findings if run.
@@ -25,12 +25,12 @@ Provides MiniMax callability evidence or a precise blocker for final recommendat
 
 ## Tasks
 
-- [x] **T01: Run or defer MiniMax synthetic smoke test** `est:medium`
+- [x] **T01: MiniMax synthetic smoke test succeeded with HTTP 200 using synthetic-only input.** `est:medium`
   Determine whether explicit approval and environment allow a MiniMax synthetic live smoke test. If approval is absent, record deferral; if present, run one tiny synthetic call without raw paper/chunk text.
   - Files: `.gsd/milestones/M013-tdtle0/slices/S03/run-evidence/minimax-smoke-test.json`
   - Verify: test -s .gsd/milestones/M013-tdtle0/slices/S03/run-evidence/minimax-smoke-test.json
 
-- [x] **T02: Write MiniMax smoke-test guard** `est:small`
+- [x] **T02: Wrote MiniMax smoke-test guard: callability proven for synthetic prompt; orchestration/import remain blocked.** `est:small`
   Write MiniMax smoke-test guard with callability status, schema validation status, and blocked behaviors.
   - Files: `.gsd/milestones/M013-tdtle0/slices/S03/run-evidence/minimax-smoke-test-guard.json`
   - Verify: test -s .gsd/milestones/M013-tdtle0/slices/S03/run-evidence/minimax-smoke-test-guard.json && uv run python - <<'PY'

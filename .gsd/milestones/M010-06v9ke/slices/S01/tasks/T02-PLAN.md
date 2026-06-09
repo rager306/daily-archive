@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Select next plus ten manifest
+# T02: Selected the M010 next +10 manifest with 0 prior overlap and 0/10 upfront Markdown/PDF availability.
 
 Select the first 10 deterministic candidate IDs after exclusions and write the M010 manifest plus rationale.
 

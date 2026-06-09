@@ -1,4 +1,4 @@
-# S03: Structure aware chunk model implementation
+# S03: S03
 
 **Goal:** Implement deterministic structure-aware chunk construction that emits typed parent-child chunks with canonical normalized-Markdown source spans, route eligibility, and contract-shaped package output suitable for later benchmark and import rehearsal gates.
 **Demo:** After this slice, a structure-aware chunk model emits typed parent-child chunks with provenance and route eligibility.
@@ -26,27 +26,27 @@ S03 consumes S01's import-ready chunk contract and S02's baseline evidence. It s
 
 ## Tasks
 
-- [x] **T01: Define structure aware chunking model** `est:medium`
+- [x] **T01: Defined the S03 structure-aware chunking model skeleton and redacted contract package output.** `est:medium`
   Define the S03 structure-aware chunking module interface and core dataclasses for structural elements, chunks, source spans, hierarchy links, route eligibility, and package output. Keep the API deterministic and independent of LLM calls or production KG writes.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T02: Parse markdown structure with canonical spans** `est:large`
+- [x] **T02: Parsed canonical Markdown into typed structural elements with absolute normalized-Markdown spans.** `est:large`
   Implement deterministic parsing from canonical normalized Markdown into structural elements with absolute character spans and parent-child hierarchy. Cover headings, paragraphs, references, tables, figures/captions, and equation-like blocks where detectable without LLMs.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T03: Assign routes states and refusal reasons** `est:large`
+- [x] **T03: Assigned conservative routes, states, chunk types, and refusal reasons to structure-aware chunks.** `est:large`
   Assign deterministic chunk types, routes, quality states, allowed/excluded uses, and refusal reasons from structural element classes. Ensure references, administrative/front-matter, tables, figures, equations, method sections, and retrieval-only prose are routed conservatively.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T04: Validate structure aware packages on gold corpus** `est:large`
+- [x] **T04: Validated structure-aware packages over the gold corpus and wrote redacted run evidence.** `est:large`
   Build S01 contract-shaped packages from structure-aware chunks and validate them with the existing import contract validator. Add a CLI or callable dry-run path that writes redacted structure-aware package diagnostics for the gold corpus without writing production KG data.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-package-diagnostics.jsonl
 
-- [x] **T05: Report and review structure aware implementation** `est:medium`
+- [x] **T05: Reported S03 structure-aware implementation and passed independent review after adding chunk-level redacted evidence.** `est:medium`
   Write the S03 implementation report and run independent review over the structure-aware package outputs. The report must compare against the S02 baseline boundary without claiming final KG import readiness or production persistence.
   - Files: `.gsd/milestones/M005-dlko4z/slices/S03/structure-aware-implementation-report.md`, `.gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-review-summary.md`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S03/structure-aware-implementation-report.md && test -s .gsd/milestones/M005-dlko4z/slices/S03/run-evidence/structure-aware-review-summary.md

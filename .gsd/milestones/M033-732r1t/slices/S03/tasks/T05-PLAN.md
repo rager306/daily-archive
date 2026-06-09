@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T05: Review OpenDataLoader hybrid and fallback output quality
+# T05: Reviewed OpenDataLoader hybrid output quality across all three probe PDFs.
 
 Evaluate generated hybrid docling-fast outputs, Java-only fallback outputs, or blockers for each PDF against the S01 comparison baseline. Score or mark not-applicable for section hierarchy, reading order, tables, figures/captions, bibliography, OCR quality, coordinate/layout metadata, markdown usefulness, JSON usefulness, and failure diagnostics. Clearly separate observed hybrid quality, observed Java-only fallback quality, and dimensions still not proven by the probe. Record runtime/model-cache cost: cache paths, approximate sizes, first-run network dependency if cache absent, and whether cached models were used. Record qualitative examples without embedding large raw paper payloads.
 

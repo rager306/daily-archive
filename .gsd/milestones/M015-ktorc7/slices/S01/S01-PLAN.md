@@ -1,4 +1,4 @@
-# S01: Token Plan remains access remediation
+# S01: S01
 
 **Goal:** Debug MiniMax Token Plan remains access with available ordinary and Token Plan keys across endpoint/header/method variants.
 **Demo:** After S01, we know which key/header/method combinations work or fail for Token Plan remains and whether a Token Plan Key is needed.
@@ -24,7 +24,7 @@ Provides corrected limit-check verdict to S03.
 
 ## Tasks
 
-- [x] **T01: Run Token Plan access matrix** `est:medium`
+- [x] **T01: Ran Token Plan remains matrix; no true API remains success, and collected Token Plan key matched the ordinary API key.** `est:medium`
   Run sanitized Token Plan remains endpoint matrix across available key variables, GET/POST, Bearer/X-Api-Key, and minimax/minimaxi host variants where safe.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S01/run-evidence/token-plan-access-matrix.json`
   - Verify: uv run python - <<'PY'
@@ -37,7 +37,7 @@ assert d['matrix_count'] >= 8
 print('token-plan-access-matrix-ok')
 PY
 
-- [x] **T02: Write Token Plan access verdict** `est:small`
+- [x] **T02: Wrote corrected Token Plan access verdict: UI works; API remains is still unverified with available key material.** `est:small`
   Write Token Plan access verdict explaining whether API-based remains checking is now proven and how user should check limits.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S01/run-evidence/token-plan-access-guard.json`, `.gsd/milestones/M015-ktorc7/slices/S01/token-plan-access-remediation.md`
   - Verify: uv run python - <<'PY'

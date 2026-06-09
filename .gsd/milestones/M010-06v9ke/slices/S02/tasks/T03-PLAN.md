@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T03: Refresh preflight and quota gate
+# T03: Materialized two acquired replacements and produced a final 10/10 source-ready M010 batch state.
 
 Rerun final preflight, build quota-fill evidence, and if quota remains short produce bounded top-up plan/blocker. S03 may proceed only if final source-ready quota is 10.
 

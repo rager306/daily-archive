@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Implement bounded source acquisition helper
+# T02: Implemented the bounded source acquisition helper and tests.
 
 Implement a reusable 30-paper source acquisition/audit helper or script that attempts Markdown/PDF acquisition for missing papers using bounded project mechanisms. It must write per-paper redacted diagnostics and avoid raw text in JSON/JSONL.
 

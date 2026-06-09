@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define structure aware chunking model
+# T01: Defined the S03 structure-aware chunking model skeleton and redacted contract package output.
 
 Define the S03 structure-aware chunking module interface and core dataclasses for structural elements, chunks, source spans, hierarchy links, route eligibility, and package output. Keep the API deterministic and independent of LLM calls or production KG writes.
 

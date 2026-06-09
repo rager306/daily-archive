@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write final corrected verdict
+# T02: Final M015 verdict corrected M014: MiniMax structured output is viable via Anthropic tool calls; Token Plan API remains still needs distinct key/session.
 
 Write final corrected MiniMax recommendation and update R043 with validation/limitations.
 

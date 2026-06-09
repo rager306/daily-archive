@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Finalize deterministic locator recommendation
+# T02: Finalized M021 recommendation and guard.
 
 Write final M021 guard and recommendation, update R049, and run final verification before milestone closeout.
 

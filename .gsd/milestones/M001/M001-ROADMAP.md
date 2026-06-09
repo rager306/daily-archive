@@ -13,19 +13,19 @@
 ## Slices
 
 - [x] **S01: S01** `risk:medium` `depends:[]`
-  > After this: Agent can run top-level help and command help and see project purpose, Hermes usage, options, artifacts, exit codes, examples and out-of-scope items.
+  > After this: After this: Agent can run top-level help and command help and see project purpose, Hermes usage, options, artifacts, exit codes, examples and out-of-scope items.
 
 - [x] **S02: S02** `risk:high` `depends:[]`
-  > After this: CLI can analyze a specified date through existing arXiv, keyword and scoring code and produce a normalized daily analysis object including empty-day handling.
+  > After this: After this: CLI can analyze a specified date through existing arXiv, keyword and scoring code and produce a normalized daily analysis object including empty-day handling.
 
 - [x] **S03: S03** `risk:high` `depends:[]`
-  > After this: After a run, Hermes can read `~/research/ops/sessions/YYYY-MM-DD.json`; daily analysis files include full papers, scored papers and overview skeleton.
+  > After this: After this: After a run, Hermes can read `~/research/ops/sessions/YYYY-MM-DD.json`; daily analysis files include full papers, scored papers and overview skeleton.
 
 - [x] **S04: S04** `risk:medium` `depends:[]`
-  > After this: For each analyzed article, local reusable files are created; overview shows category counts, top keywords, top papers and score breakdowns for interest calibration.
+  > After this: After this: For each analyzed article, local reusable files are created; overview shows category counts, top keywords, top papers and score breakdowns for interest calibration.
 
 - [x] **S05: S05** `risk:high` `depends:[]`
-  > After this: A verification run proves help, successful JSON output, empty day, failed state and same-date rerun behavior; pytest and ruff pass.
+  > After this: After this: A verification run proves help, successful JSON output, empty day, failed state and same-date rerun behavior; pytest and ruff pass.
 
 ## Boundary Map
 

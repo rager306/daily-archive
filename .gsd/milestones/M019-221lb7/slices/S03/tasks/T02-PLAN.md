@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Review and validate R047
+# T02: Validated R047 after independent recommendation review passed.
 
 Run independent review of the comparative recommendation, update R047, and close M019 if the review agrees the spike is evidence-backed and no unsafe adoption is proposed.
 

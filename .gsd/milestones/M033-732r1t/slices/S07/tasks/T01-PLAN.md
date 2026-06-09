@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T01: Implement Adaptix OpenDataLoader typed adapter probe
+# T01: Implemented and ran an Adaptix-based typed adapter probe over OpenDataLoader S03 JSON outputs.
 
 Create a small script that defines typed dataclasses for the OpenDataLoader document and common elements, configures Adaptix name mappings for fields such as `file name`, `number of pages`, `page number`, and `bounding box`, loads S03 `original.json` files, preserves unknown fields as extras where useful, computes element/type/page/table/figure/heading metrics, and writes review-only adapter summary plus diagnostics. The script must not modify OpenDataLoader, rerun the backend, write LadybugDB, or claim graph readiness.
 

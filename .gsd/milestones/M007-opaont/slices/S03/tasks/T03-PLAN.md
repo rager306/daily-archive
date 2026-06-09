@@ -4,7 +4,7 @@ estimated_files: 5
 skills_used: []
 ---
 
-# T03: Run bounded validation scan dry run
+# T03: Ran the M007 validation-batch scan dry run and produced scan/delta/outlier evidence.
 
 Run bounded scan dry run over the S02 30-paper batch state and write M007 scan/delta/outlier artifacts plus a short report. Verify zero import eligibility, no production writes, and expected 4,289 chunks.
 

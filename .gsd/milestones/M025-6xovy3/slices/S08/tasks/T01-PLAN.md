@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define final replay contract
+# T01: Defined the final preprocessing replay contract fixture and executable contract tests for no-network, per-article final replay artifacts.
 
 Define and test the final end-to-end replay contract for the fixed 5 article corpus. The contract must require catalog/index/selection inputs, no-network execution, per-article final artifact references, baseline comparison categories, and no graph import or production write flags.
 

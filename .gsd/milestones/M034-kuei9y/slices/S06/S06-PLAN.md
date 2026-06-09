@@ -26,17 +26,17 @@ Prepares the next milestone handoff from documentation hardening into prototype 
 
 ## Tasks
 
-- [x] **T01: Draft roadmap gates and next milestone outline** `est:medium`
+- [x] **T01: Drafted roadmap gates and the next milestone handoff for post-M034 implementation planning.** `est:medium`
   Create ROADMAP-GATES.md and NEXT-MILESTONE-HANDOFF.md with architecture gates, options, decision criteria, required artifacts, and a suggested next prototype milestone sequence.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/ROADMAP-GATES.md`, `.gsd/milestones/M034-kuei9y/decision-package/NEXT-MILESTONE-HANDOFF.md`
   - Verify: Check roadmap gates include universal KB, GraphDB evaluation, state model, queue semantics, dependency graph, failure taxonomy, sidecar lifecycle, review boundary, readiness handoff, and agent boundary.
 
-- [x] **T02: Draft conflict resolution and open questions register** `est:medium`
+- [x] **T02: Drafted the conflict-resolution plan and open-question register for M034.** `est:medium`
   Create CONFLICT-RESOLUTION-PLAN.md and OPEN-QUESTIONS.md routing all 15 S01 needs-clarification findings into resolved-by-ADR, deferred-with-rationale, requirement-update-needed, superseding-decision-needed, or user-discussion-needed categories.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/CONFLICT-RESOLUTION-PLAN.md`, `.gsd/milestones/M034-kuei9y/decision-package/OPEN-QUESTIONS.md`
   - Verify: Check every S01 needs-clarification route appears in the conflict-resolution plan and open questions are separate from accepted decisions.
 
-- [x] **T03: Verify S06 roadmap gates and conflict resolution** `est:small`
+- [x] **T03: Added and passed the verifier for M034 roadmap gates and conflict-resolution artifacts.** `est:small`
   Implement and run a verifier checking all required gates, no-authorization markers, conflict route coverage, open-question separation, and next-handoff content.
   - Files: `scripts/verify_m034_roadmap_gates.py`
   - Verify: `uv run python scripts/verify_m034_roadmap_gates.py --package-dir .gsd/milestones/M034-kuei9y/decision-package && uv run ruff check scripts/verify_m034_roadmap_gates.py`

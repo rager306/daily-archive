@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Map AI Scientist and prismAId sources
+# T02: Mapped The AI Scientist and prismAId authoritative sources and disambiguated prismAId.
 
 Search for authoritative sources for The AI Scientist and prismAId. Capture repo/doc/paper URLs, ownership signals, license if visible, and source confidence.
 

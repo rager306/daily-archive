@@ -1,4 +1,4 @@
-# S02: Bounded source acquisition for thirty paper scan
+# S02: S02
 
 **Goal:** Attempt bounded source acquisition/conversion for the 20 expansion papers missing Markdown, persist redacted diagnostics, and make the 30-paper corpus ready or explicitly blocked per paper for later deviation analysis.
 **Demo:** After this slice, the 20 missing-Markdown expansion papers have bounded acquisition/conversion attempts with redacted diagnostics, and the 30-paper corpus is either source-ready or explicitly blocked per paper.
@@ -25,17 +25,17 @@ Consumes S01 corpus manifest and availability diagnostics. Produces source acqui
 
 ## Tasks
 
-- [x] **T01: Define bounded source acquisition plan** `est:small`
+- [x] **T01: Defined the bounded source acquisition plan for the 20 missing-Markdown expansion papers.** `est:small`
   Inspect existing full-text/download/conversion code paths and define a bounded acquisition plan for the 20 missing-Markdown papers. The plan should prefer already-supported project mechanisms and avoid unbounded Marker/LLM/optimizer behavior.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md && grep -q 'bounded' .gsd/milestones/M006-638rza/slices/S02/source-acquisition-plan.md
 
-- [x] **T02: Implement bounded source acquisition helper** `est:large`
+- [x] **T02: Implemented the bounded source acquisition helper and tests.** `est:large`
   Implement a reusable 30-paper source acquisition/audit helper or script that attempts Markdown/PDF acquisition for missing papers using bounded project mechanisms. It must write per-paper redacted diagnostics and avoid raw text in JSON/JSONL.
   - Files: `src/arxiv_archive/thirty_paper_source_scan.py`, `tests/test_thirty_paper_source_scan.py`
   - Verify: uv run pytest tests/test_thirty_paper_source_scan.py -q && uv run ruff check src/arxiv_archive/thirty_paper_source_scan.py tests/test_thirty_paper_source_scan.py
 
-- [x] **T03: Run source acquisition for missing papers** `est:large`
+- [x] **T03: Ran bounded source acquisition and brought the 30-paper corpus to 30/30 Markdown-ready.** `est:large`
   Run the bounded acquisition/conversion helper over the 20 missing-Markdown expansion papers. Persist updated availability summary and diagnostics under S02 run-evidence.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisition-summary.json`, `.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisition-diagnostics.jsonl`
   - Verify: uv run python - <<'PY'
@@ -50,7 +50,7 @@ assert Path('.gsd/milestones/M006-638rza/slices/S02/run-evidence/source-acquisit
 print(summary)
 PY
 
-- [x] **T04: Report source readiness delta** `est:small`
+- [x] **T04: Reported that the 30-paper corpus is now Markdown-ready for S03 deviation analysis.** `est:small`
   Write a readiness delta report showing what changed after acquisition attempts, which papers are still blocked, and whether S03 can run a full 30-paper deviation analysis or must separate source blockers from chunking results.
   - Files: `.gsd/milestones/M006-638rza/slices/S02/source-acquisition-report.md`
   - Verify: test -s .gsd/milestones/M006-638rza/slices/S02/source-acquisition-report.md && uv run python - <<'PY'

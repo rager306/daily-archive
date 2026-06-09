@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Build combined compatibility matrix
+# T01: Built integration matrix: both DSPy and MiniMax are future bounded-probe candidates only, not production activations.
 
 Build a combined compatibility matrix comparing DSPy and MiniMax roles, current status, next safe probes, blocked behaviors, and activation preconditions.
 

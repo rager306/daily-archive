@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Write final semantic gate recommendation
+# T01: Wrote final M011 recommendation: PASS negative gate, import still blocked pending chunk-span provenance.
 
 Write final M011 recommendation and guard stating that the semantic gate passed as a negative readiness gate and defining the next required evidence for any future positive import rehearsal.
 

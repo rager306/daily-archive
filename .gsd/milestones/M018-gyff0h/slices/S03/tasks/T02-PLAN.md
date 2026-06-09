@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Review and validate R046
+# T02: Validated R046 after independent security review passed.
 
 Run independent security review of the final triage artifacts and update R046 with validation evidence. Close M018 if the review agrees no immediate hotfix is required.
 

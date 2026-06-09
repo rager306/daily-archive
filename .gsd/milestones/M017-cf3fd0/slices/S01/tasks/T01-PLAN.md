@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Synthesize Manus MiniMax research
+# T01: Attempted Manus research ingestion via Jina and documented that the substantive content is not currently extractable.
 
 Attempt Manus share extraction with Jina read/json/html modes for https://manus.im/share/TSUZT2btrNfwnq5TXXDQm9, summarize accessible content or document access limitation, and map implications to M017 design.
 

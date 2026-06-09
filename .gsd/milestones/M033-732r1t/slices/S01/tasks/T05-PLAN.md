@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T05: Validate baseline artifact completeness
+# T05: Validated S01 baseline artifact completeness for downstream external parser research.
 
 Perform a final artifact completeness check for S01: all expected JSON/Markdown artifacts exist, contain the required stage names and safety/no-import language, and point to downstream consumers. Record a closeout checklist for S01 without running external tools or changing code.
 

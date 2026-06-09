@@ -1,4 +1,4 @@
-# S04: Review quota-filled first new plus ten batch
+# S04: S04
 
 **Goal:** Independently review the quota-filled first new +10 batch evidence and produce a recommendation for the next validation step.
 **Demo:** After this slice, independent review says whether the quota-filled first new +10 batch is good enough to continue another +10, needs fixes, or blocks progression.
@@ -25,17 +25,17 @@ Consumes S01 selection, S02 source preflight/acquisition, and S03 quota/scan art
 
 ## Tasks
 
-- [x] **T01: Review quota-filled new plus ten evidence** `est:medium`
+- [x] **T01: Independent review flagged top-up automation and stale metadata gaps while accepting current M008 scan as safe operational evidence.** `est:medium`
   Run independent review of M008 S01-S03 artifacts. Focus on whether quota-fill evidence is meaningful, source readiness is honestly represented, scan artifacts are redacted, and claims do not exceed evidence.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S04/run-evidence/new-plus-ten-review-summary.md`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S04/run-evidence/new-plus-ten-review-summary.md && grep -Fq 'Verdict:' .gsd/milestones/M008-c9zb94/slices/S04/run-evidence/new-plus-ten-review-summary.md
 
-- [x] **T02: Write final recommendation** `est:small`
+- [x] **T02: Wrote final recommendation: close M008, but add bounded top-up automation before another +10.** `est:small`
   Write final recommendation based on review: continue another +10, add bounded top-up automation first, or block progression. Keep import and production writes blocked.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S04/new-plus-ten-final-recommendation.md`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S04/new-plus-ten-final-recommendation.md && grep -Fq 'positive KG import remains blocked' .gsd/milestones/M008-c9zb94/slices/S04/new-plus-ten-final-recommendation.md
 
-- [x] **T03: Run final review guards** `est:small`
+- [x] **T03: Final S04 guard passed and records the FLAG review plus next-batch top-up requirement.** `est:small`
   Run final artifact guards for M008 S04 and milestone-ready status: quota accepted count, scan count, import gate, no-write/no-import flags, and review/recommendation presence.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S04/run-evidence/final-review-guard.json`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S04/run-evidence/final-review-guard.json && uv run python - <<'PY'

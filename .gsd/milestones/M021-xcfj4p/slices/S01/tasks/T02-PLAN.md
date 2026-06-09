@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Record implementation impact map
+# T02: Recorded implementation impact map and additive edit boundary.
 
 Run GitNexus context and impact analysis for relevant existing symbols before implementation. Record affected callers/processes and proposed edit targets. The expected plan is to add a new module and tests, with minimal or no edits to existing symbols.
 

@@ -1,4 +1,4 @@
-# S03: Comparative synthesis and recommendation
+# S03: S03
 
 **Goal:** Synthesize profiles into a comparative matrix and next-step recommendation for Scientific KG work.
 **Demo:** After S03, daily-archive has an actionable recommendation: which patterns to reuse, which to reject, and how this affects the KG candidate-locator roadmap.
@@ -24,12 +24,12 @@ Closes spike and points to candidate locators/chunk-span provenance or targeted 
 
 ## Tasks
 
-- [x] **T01: Write comparative matrix and recommendation** `est:60m`
+- [x] **T01: Wrote final research-agent comparative matrix and recommendation.** `est:60m`
   Synthesize the four S02 profiles into a comparative matrix covering architecture, source acquisition, provenance, review gates, autonomy, failure modes, reusable patterns, and non-goals. Write final recommendation for daily-archive's next KG/provenance milestone.
   - Files: `.gsd/milestones/M019-221lb7/slices/S03/research-agent-comparative-matrix.md`, `.gsd/milestones/M019-221lb7/slices/S03/run-evidence/final-research-agent-spike-guard.json`
   - Verify: uv run python inline assertions over final guard and matrix
 
-- [x] **T02: Review and validate R047** `est:45m`
+- [x] **T02: Validated R047 after independent recommendation review passed.** `est:45m`
   Run independent review of the comparative recommendation, update R047, and close M019 if the review agrees the spike is evidence-backed and no unsafe adoption is proposed.
   - Files: `.gsd/milestones/M019-221lb7/slices/S03/run-evidence/independent-recommendation-review.md`, `.gsd/REQUIREMENTS.md`
   - Verify: uv run python inline assertions over review, guard, and R047 evidence

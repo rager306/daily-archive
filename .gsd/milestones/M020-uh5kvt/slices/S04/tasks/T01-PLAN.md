@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Independent locator semantic review
+# T01: Completed independent semantic review for M020 locator artifacts.
 
 Run an independent review over the S01-S03 artifacts. The reviewer should evaluate protocol sufficiency, one-paper fixture meaningfulness, small-batch ambiguity, redaction/safety boundaries, and whether future work should implement deterministic locators, improve chunking, or create review packets before any positive import gate.
 

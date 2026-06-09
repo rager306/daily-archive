@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define source asset manifest contract
+# T01: Defined the redacted source asset manifest contract and validator.
 
 Define dataclasses and validators for source artifacts, preserved files, asset records, and per-paper multimodal manifests. Include stable ids, source paths, workspace-relative paths, sha256, byte size, media type, provenance, source spans/chunk ids, extraction state, and redaction/no-import flags. Add tests for redaction, required fields, hash metadata, and assets-not-KG-facts boundaries.
 

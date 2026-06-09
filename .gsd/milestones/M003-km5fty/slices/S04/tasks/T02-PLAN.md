@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Implement scientific extraction contract models
+# T02: Implemented deterministic scientific extraction contract dataclasses and baseline validators.
 
 Implement `src/arxiv_archive/scientific_extraction.py` with dataclasses for `Claim`, `ScientificEntity`, `ScientificRelation`, and `ExtractionPatch`. Add deterministic ID helpers and baseline validators for evidence presence, confidence range, schema version, and provenance. Done when initial extraction contract tests pass with no LLM/DSPy/storage calls.
 

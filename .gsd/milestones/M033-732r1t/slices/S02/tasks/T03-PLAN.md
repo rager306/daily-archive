@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Analyze GROBID TEI and map to daily-archive candidate contracts
+# T03: Mapped GROBID TEI outputs to daily-archive candidate contracts with a fail-closed scholarly sidecar verdict.
 
 Parse/summarize the GROBID TEI outputs for scholarly structure: title/header/abstract/body sections, references, citation markers, figures/tables, and coordinate hints. Compare those fields with daily-archive SourceRef/EvidencePath/PageIndex/SemanticChunk needs and write a candidate-only contract mapping verdict.
 

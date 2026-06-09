@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Independent remediation review
+# T01: Independent remediation review passed after fixing report discoverability.
 
 Review M015 remediation evidence for correctness, evidence hygiene, and whether it truly resolves the user's criticism.
 

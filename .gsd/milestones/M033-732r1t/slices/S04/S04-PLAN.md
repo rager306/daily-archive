@@ -25,22 +25,22 @@ S04 must provide repo-local artifacts under `data/article_corpora/m033-quantmind
 
 ## Tasks
 
-- [x] **T01: Record quant-mind requirements and no-runtime decision** `est:small`
+- [x] **T01: Recorded quant-mind requirements and the S04 no-runtime decision.** `est:small`
   Create a repo-local requirements assessment from the S04 research direction and read-only vendor context. Record Python/dependency/API-key requirements, absence of Docker/compose, OpenAI Agents runtime dependency, and why S04 should not run `paper_flow` or live extraction. Preserve fail-closed safety flags.
   - Files: `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-requirements-summary.json`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-runtime-decision.md`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-pattern-events.jsonl`
   - Verify: Fresh command validates requirements summary and runtime decision exist, include Python/API/runtime/no-run facts, and keep graph/import/write safety flags false.
 
-- [x] **T02: Map implemented code versus README and design vision** `est:medium`
+- [x] **T02: Mapped quant-mind implemented code versus README/design vision.** `est:medium`
   Create an implemented-vs-aspirational map for quant-mind. Confirm implemented layers such as configs, flows, knowledge, preprocess, batch, and magic; record placeholder/missing layers such as GraphKnowledge, storage, retrieval API, memory, production KG/RAG, and stale embedding docs. Use read-only vendor source context but store only repo-local findings.
   - Files: `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-implemented-vs-vision.json`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-implemented-vs-vision.md`
   - Verify: Fresh command validates the map exists and marks GraphKnowledge/storage/retrieval/memory as not production-ready while marking TreeKnowledge/PaperKnowledgeCard/provenance as implemented patterns.
 
-- [x] **T03: Map quant-mind patterns to daily-archive contracts** `est:medium`
+- [x] **T03: Mapped quant-mind reusable patterns to daily-archive contracts with a pattern-source verdict.** `est:medium`
   Map reusable quant-mind patterns to daily-archive contracts and existing M033 findings. Focus on TreeKnowledge to PageIndex, PaperKnowledgeCard to flat summary/index card, Citation/SourceRef/ExtractionRef to EvidencePath/provenance, fetch-format-flow separation to parser pipeline boundaries, batch_run to bounded concurrency, and magic resolver guardrails to typed input resolution. Record what to adopt as pattern and what to reject as dependency/runtime.
   - Files: `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-daily-archive-pattern-map.json`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-daily-archive-pattern-map.md`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-pattern-verdict.json`
   - Verify: Fresh command validates pattern map and verdict exist, classify quant-mind as `pattern-source-not-dependency`, and keep `graph_import_allowed`, `ladybugdb_written`, `production_import_attempted`, and `import_eligible` false.
 
-- [x] **T04: Validate and close quant-mind pattern study** `est:small`
+- [x] **T04: Added and passed a validate-only closeout checker for the quant-mind pattern study.** `est:small`
   Add a validate-only closeout checker for S04 artifacts and run the full acceptance gate. The closeout must verify the no-runtime decision, implemented-vs-vision separation, pattern-source verdict, and fail-closed safety flags.
   - Files: `scripts/verify_m033_quantmind_pattern_study.py`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-closeout-summary.json`, `data/article_corpora/m033-quantmind-pattern-study-v1/quantmind-closeout-report.md`
   - Verify: `uv run python scripts/verify_m033_quantmind_pattern_study.py --study-dir data/article_corpora/m033-quantmind-pattern-study-v1 && uv run ruff check scripts/verify_m033_quantmind_pattern_study.py` exits 0.

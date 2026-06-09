@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Capture vulnerability audit summary
+# T02: Captured sanitized dependency audit summary for torch/transformers vulnerability debt.
 
 Run a sanitized dependency vulnerability audit focused on current environment/dependency graph. Summarize advisory package names, counts, installed versions, and fix availability without dumping raw vulnerable payloads or environment secrets.
 

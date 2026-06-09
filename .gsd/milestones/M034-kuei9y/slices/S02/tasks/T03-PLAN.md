@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify S02 ADR package
+# T03: Added and passed the verifier for the M034 ADR template and north-star package.
 
 Implement and run a verifier for the ADR template/index/north-star package, checking template sections, ADR-000 sections, safety markers, R/D references, Mermaid readability constraints, and S01 audit consumption.
 

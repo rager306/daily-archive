@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Draft functional and non-functional requirements
+# T02: Drafted the functional and non-functional requirements package for universal evidence orchestration.
 
 Create FUNCTIONAL-REQUIREMENTS.md and NON-FUNCTIONAL-REQUIREMENTS.md. Separate generic universal-KB requirements from scientific-paper first-domain requirements and include acceptance criteria.
 

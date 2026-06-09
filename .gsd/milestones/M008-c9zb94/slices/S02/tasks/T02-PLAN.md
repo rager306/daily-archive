@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Run bounded source acquisition if needed
+# T02: Bounded acquisition made the new +10 batch 10/10 Markdown-ready via arxiv2md.
 
 If initial preflight is not source-ready, run bounded Markdown acquisition over the new +10 manifest using existing source acquisition helper. Prefer fast arxiv2md first; do not run unbounded conversion loops. Persist acquisition summary and diagnostics.
 

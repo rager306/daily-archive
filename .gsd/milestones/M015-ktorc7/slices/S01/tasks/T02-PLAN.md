@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write Token Plan access verdict
+# T02: Wrote corrected Token Plan access verdict: UI works; API remains is still unverified with available key material.
 
 Write Token Plan access verdict explaining whether API-based remains checking is now proven and how user should check limits.
 

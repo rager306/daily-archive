@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Record quant-mind requirements and no-runtime decision
+# T01: Recorded quant-mind requirements and the S04 no-runtime decision.
 
 Create a repo-local requirements assessment from the S04 research direction and read-only vendor context. Record Python/dependency/API-key requirements, absence of Docker/compose, OpenAI Agents runtime dependency, and why S04 should not run `paper_flow` or live extraction. Preserve fail-closed safety flags.
 

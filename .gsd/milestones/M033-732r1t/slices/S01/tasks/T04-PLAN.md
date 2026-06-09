@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Create external parser comparison baseline matrix
+# T04: Created the external parser comparison baseline matrix for GROBID, OpenDataLoader, and quant-mind research.
 
 Synthesize T01-T03 into a comparison matrix for GROBID, OpenDataLoader, and quant-mind research. Identify current strengths, weaknesses, missing capabilities, and exact questions external tools must answer for layout, tables, figures/captions, bibliography/citations, OCR, reading order, section hierarchy, source spans, Markdown/JSON quality, runtime complexity, and provenance.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Select representative gold corpus
+# T02: Selected the representative M005 gold corpus from the existing ten-paper M004 validation set.
 
 Select the representative gold corpus for chunking/import benchmarks from existing real-paper artifacts. Include target paper IDs, why each paper is selected, expected hard cases, and required artifact paths. Keep this as a manifest, not a broad corpus run.
 

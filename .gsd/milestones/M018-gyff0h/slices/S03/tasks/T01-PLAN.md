@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Write final dependency security triage
+# T01: Wrote final dependency security triage recommending Docling fallback isolation before broad ML upgrades.
 
 Synthesize S01/S02 into a final dependency security triage report. Recommend whether to update, remove, isolate, or defer torch/transformers and Docling fallback. Include severity, exploitability, affected path, and follow-up milestone recommendation.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Run final hardening guard
+# T03: Final hardening guard passed with FLAG review and explicit next-batch gates.
 
 Run final guard across provenance, verifier, lineage, and top-up artifacts plus focused tests.
 

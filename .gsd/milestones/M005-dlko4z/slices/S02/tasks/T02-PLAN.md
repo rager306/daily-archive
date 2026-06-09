@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Run baseline over gold corpus
+# T02: Ran the baseline chunk measurement over the gold corpus and proved current chunks are retrieval-only, not import-ready.
 
 Run the baseline package builder over the S01 gold corpus manifest. Emit JSON diagnostics for each paper and aggregate summary. The run must record missing artifact blockers, not silently skip papers; it must keep `raw_text_included=false`, `embeddings_included=false`, `production_import_attempted=false`, and `ladybugdb_written=false`.
 

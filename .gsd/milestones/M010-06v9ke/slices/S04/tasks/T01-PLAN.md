@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Independent artifact review
+# T01: Independent review passed M010 as operational-only validation evidence.
 
 Dispatch an independent reviewer over the M010 selection, source readiness, scan, provenance, and guard artifacts. Persist the review summary without raw paper/chunk text.
 

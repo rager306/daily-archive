@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Draft roadmap gates and next milestone outline
+# T01: Drafted roadmap gates and the next milestone handoff for post-M034 implementation planning.
 
 Create ROADMAP-GATES.md and NEXT-MILESTONE-HANDOFF.md with architecture gates, options, decision criteria, required artifacts, and a suggested next prototype milestone sequence.
 

@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Define artifact contracts, diagnostics, and failure taxonomy
+# T03: Defined future artifact contracts, diagnostics, failure taxonomy, and rollback/no-adoption criteria.
 
 Specify the artifact tree, JSON schemas or schema-shape expectations, diagnostic event taxonomy, no-secret/no-raw-text logging rule, typed blocker states, no-write import rehearsal expectations, rollback conditions, and adoption-decision thresholds for the future milestone.
 

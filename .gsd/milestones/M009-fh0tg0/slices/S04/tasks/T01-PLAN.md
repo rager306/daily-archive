@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Implement bounded top up planner
+# T01: Implemented bounded quota top-up planning with explicit shortage/blocker reporting.
 
 Add bounded top-up planning helpers that consume current batch state plus candidate inventory/readiness metadata and produce a redacted top-up report. The helper should not acquire sources; it plans deterministic replacements within max_candidates_to_consider and computes scan_allowed.
 

@@ -1,4 +1,4 @@
-# S03: Run provenance verified next plus ten scan
+# S03: S03
 
 **Goal:** Run the materialized M010 source-ready batch scan with active M010 lineage, real provenance entry, and verify-artifacts freshness proof.
 **Demo:** After this slice, the next +10 scan artifacts are active-lineage stamped and verified fresh by provenance.
@@ -27,7 +27,7 @@ Consumes S02 source-ready batch state and produces scan/provenance/freshness art
 
 ## Tasks
 
-- [x] **T01: Run active lineage scan** `est:medium`
+- [x] **T01: Ran the active-lineage M010 scan: 10 papers, 1,477 chunks, 7 outliers, zero import-eligible chunks.** `est:medium`
   Run validation-batch scan over the materialized S02 source-ready batch state with active M010 milestone lineage. Persist scan response, summary, diagnostics, delta, outlier, manifest, and report.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/validation-scan-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/delta-report.json`, `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/outlier-report.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S03/run-evidence/validation-scan-summary.json && uv run python - <<'PY'
@@ -41,7 +41,7 @@ assert s['ladybugdb_written'] is False
 print('active-lineage-scan-ok')
 PY
 
-- [x] **T02: Record and verify scan provenance** `est:medium`
+- [x] **T02: Recorded real scan provenance and verified the corrected M010 scan artifacts as fresh.** `est:medium`
   Create a real scan provenance JSONL entry for the S03 scan inputs/outputs with expected milestone_id and batch_id metadata, then run verify-artifacts and persist freshness report.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/scan-provenance.jsonl`, `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/scan-freshness-report.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S03/run-evidence/scan-freshness-report.json && uv run python - <<'PY'
@@ -52,7 +52,7 @@ assert r['verdict']=='fresh'
 print('scan-provenance-fresh-ok')
 PY
 
-- [x] **T03: Write scan report and final guard** `est:small`
+- [x] **T03: Wrote the S03 scan report and guard proving fresh active-lineage operational scan evidence.** `est:small`
   Run final S03 scan guard across quota, scan counts, active lineage, provenance freshness, and safety flags. Write validation scan report.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S03/validation-scan-report.md`, `.gsd/milestones/M010-06v9ke/slices/S03/run-evidence/scan-guard.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S03/run-evidence/scan-guard.json && uv run python - <<'PY'

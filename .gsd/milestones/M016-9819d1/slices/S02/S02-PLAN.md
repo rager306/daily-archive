@@ -1,4 +1,4 @@
-# S02: 9router compatible live limit probe
+# S02: S02
 
 **Goal:** Run corrected MiniMax limit probe using 9router endpoint order and parser rules.
 **Demo:** After S02, M016 has corrected MiniMax limit-check verdict using 9router algorithm.
@@ -24,7 +24,7 @@ Updates R044 and closes M016 with corrected limit verdict.
 
 ## Tasks
 
-- [x] **T01: Run 9router-compatible limit probe** `est:small`
+- [x] **T01: Ran 9router-compatible MiniMax limit probe; global API remains is verified via the `api.minimax.io` coding_plan fallback.** `est:small`
   Run live MiniMax limit probe using exactly the 9router endpoint order and success criteria for minimax and minimax-cn where applicable.
   - Files: `.gsd/milestones/M016-9819d1/slices/S02/run-evidence/9router-compatible-limit-probe.json`
   - Verify: uv run python - <<'PY'
@@ -39,7 +39,7 @@ assert d['success_criteria']['requires_base_resp_status_zero'] is True
 print('9router-compatible-limit-probe-ok')
 PY
 
-- [x] **T02: Write M016 final limit verdict** `est:small`
+- [x] **T02: Final M016 guard verifies global MiniMax API remains through the 9router fallback endpoint and overturns M015's limit verdict.** `est:small`
   Write final M016 guard and recommendation, update R044 with corrected verdict.
   - Files: `.gsd/milestones/M016-9819d1/slices/S02/run-evidence/final-m016-guard.json`, `.gsd/milestones/M016-9819d1/slices/S02/m016-final-recommendation.md`
   - Verify: uv run python - <<'PY'

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Audit overlap and source preview
+# T03: Audited the new +10 manifest: no M006 overlap, 1/10 Markdown-ready before S02.
 
 Run an overlap/source preview guard against M006 corpus and write a short availability report. Confirm no overlap and no raw text leakage.
 

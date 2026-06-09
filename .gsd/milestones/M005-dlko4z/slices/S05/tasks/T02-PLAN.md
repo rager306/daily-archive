@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Preserve source PDF and Markdown files
+# T02: Implemented deterministic source PDF/Markdown preservation with hash manifests and redacted missing-source diagnostics.
 
 Implement deterministic preservation of source PDFs and normalized Markdown from gold-corpus required paths into a per-paper workspace under S05 run evidence. Preserve files by copy with stable names, sha256 hashes, byte sizes, source provenance, and media type. Missing files should be recorded as redacted diagnostics instead of raising opaque errors.
 

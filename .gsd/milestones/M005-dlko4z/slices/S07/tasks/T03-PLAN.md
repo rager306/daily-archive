@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Run negative import boundary rehearsal
+# T03: Ran the negative import boundary rehearsal and wrote redacted S07 evidence.
 
 Run the negative isolated import rehearsal over current M005 artifacts and write redacted run summary plus rejection diagnostics. Confirm accepted imports are zero, rejected candidates match benchmark counts, and all no-write safety flags remain false.
 

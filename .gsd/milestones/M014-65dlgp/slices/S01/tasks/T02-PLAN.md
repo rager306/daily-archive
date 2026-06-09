@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Probe Token Plan remains endpoint safely
+# T02: Probed Token Plan remains endpoint safely; current key returned HTTP 403 with raw response redacted.
 
 Call MiniMax Token Plan remains endpoint if the existing key can access it, persist only sanitized response shape/status/keys and no token values or raw body.
 

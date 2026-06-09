@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T02: Replay separated evidence artifacts
+# T02: Replayed separated metadata-safe evidence artifacts for the fixed five-article corpus with per-article assets, tables, links, identity, and event logs.
 
 Implement or adapt a local evidence replay command that reads the fixed corpus outputs from S06 and writes separate assets, tables, links, and identity artifacts per article. Unsupported evidence types must produce diagnostics rather than silent empty outputs. The command must read the catalog index and corpus selection at runtime and fail clearly if expected S06 chunking artifacts are absent.
 

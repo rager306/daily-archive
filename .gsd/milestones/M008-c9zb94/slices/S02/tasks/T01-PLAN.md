@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Run initial batch init and preflight
+# T01: Initialized and preflighted the new +10 batch; only 1/10 is initially Markdown-ready.
 
 Run validation-batch init and initial preflight against the M008 new +10 manifest. Persist init/preflight responses and summarize initial readiness without acquisition.
 

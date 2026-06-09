@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Create correction and discussion queue
+# T03: Created the correction and discussion queue for all S01 audit clarifications.
 
 Create a correction checklist and open-conflicts queue from the audit findings. Distinguish requirement updates, superseding decisions, deferred clarifications, and user-discussion items without mutating old decisions silently.
 

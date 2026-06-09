@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Add claim entity relation contract tests
+# T01: Added red contract tests for S04 Claim, ScientificEntity, ScientificRelation, and ExtractionPatch APIs.
 
 Create red contract tests for `Claim`, `ScientificEntity`, `ScientificRelation`, and extraction patch/draft models over S03 EvidencePath fixtures. Tests must define stable IDs, confidence fields, provenance, evidence-path references, schema/extractor version fields, and validation diagnostics for missing evidence and invalid confidence. Done when tests fail for missing extraction-contract implementation while S03 evidence tests still pass.
 

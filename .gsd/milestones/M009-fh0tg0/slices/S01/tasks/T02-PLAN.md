@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Test provenance and freshness behavior
+# T02: Added provenance/freshness unit tests covering redaction, hash matching, stale/missing outputs, and unsafe flags.
 
 Add unit tests covering fingerprint redaction, provenance entry creation, append/read JSONL, freshness pass, output mutation stale failure, missing output failure, unsafe safety flags, and entry selection.
 

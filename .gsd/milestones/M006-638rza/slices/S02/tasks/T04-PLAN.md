@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T04: Report source readiness delta
+# T04: Reported that the 30-paper corpus is now Markdown-ready for S03 deviation analysis.
 
 Write a readiness delta report showing what changed after acquisition attempts, which papers are still blocked, and whether S03 can run a full 30-paper deviation analysis or must separate source blockers from chunking results.
 

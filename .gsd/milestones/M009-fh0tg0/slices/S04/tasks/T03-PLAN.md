@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Run top up regression and sample evidence
+# T03: Generated top-up pass and bounded-shortage sample artifacts and ran regression.
 
 Generate S04 sample evidence for a successful top-up plan and a blocked shortage plan, then run focused regression.
 

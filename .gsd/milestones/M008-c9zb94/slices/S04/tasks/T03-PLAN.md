@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Run final review guards
+# T03: Final S04 guard passed and records the FLAG review plus next-batch top-up requirement.
 
 Run final artifact guards for M008 S04 and milestone-ready status: quota accepted count, scan count, import gate, no-write/no-import flags, and review/recommendation presence.
 

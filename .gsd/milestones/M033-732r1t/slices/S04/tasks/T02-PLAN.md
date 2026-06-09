@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Map implemented code versus README and design vision
+# T02: Mapped quant-mind implemented code versus README/design vision.
 
 Create an implemented-vs-aspirational map for quant-mind. Confirm implemented layers such as configs, flows, knowledge, preprocess, batch, and magic; record placeholder/missing layers such as GraphKnowledge, storage, retrieval API, memory, production KG/RAG, and stale embedding docs. Use read-only vendor source context but store only repo-local findings.
 

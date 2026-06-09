@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write final recommendation and update R042
+# T02: Final M014 recommendation validates real MiniMax helper probes and Token Plan limit visibility while keeping production blocked.
 
 Write final M014 recommendation and guard, update R042, and validate milestone readiness.
 

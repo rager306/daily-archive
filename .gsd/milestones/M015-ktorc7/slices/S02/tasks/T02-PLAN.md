@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write structured-output verdict
+# T02: Wrote corrected MiniMax structured-output verdict: use Anthropic forced tool calls with schema validation.
 
 Write structured-output verdict naming which MiniMax interface should be used for helper adapter and what controls are required.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Install DSPy in isolated temp environment
+# T01: Installed DSPy in an isolated temporary venv without mutating project dependency files.
 
 Create a temporary isolated Python environment outside the project, install DSPy from local `/root/vendor-source/dspy` or equivalent, and record dependency resolution without editing daily-archive dependency files.
 

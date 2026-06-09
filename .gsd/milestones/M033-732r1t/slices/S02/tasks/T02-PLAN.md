@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T02: Run bounded GROBID CRF TEI probe on local PDFs
+# T02: Ran a bounded GROBID CRF TEI probe on the three local S03 PDFs.
 
 Start or reuse a local GROBID CRF Docker service on port 8070, health-check it, submit the three S03 local PDF candidates to `/api/processFulltextDocument`, and store TEI XML plus per-paper request diagnostics. If service startup fails, write a fail-closed blocker artifact and stop before claiming parser output evidence.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Audit source availability for thirty papers
+# T02: Audited source availability and found the first major deviation: 20 expansion papers lack Markdown source artifacts.
 
 Audit local availability for the 30 selected papers: normalized Markdown, original PDF, research workspace, and known derived artifacts. Summarize missing-source patterns separately from chunking/import-model issues. External filesystem roots may be inspected during execution but only redacted status/path metadata is written.
 

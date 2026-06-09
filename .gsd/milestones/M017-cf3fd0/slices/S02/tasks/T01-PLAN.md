@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Implement MiniMax usage limit helper
+# T01: Implemented and tested the dev-only MiniMax usage/remains helper with 9router semantics and sanitized diagnostics.
 
 Implement a dev-only MiniMax usage/remains helper module with pure parsing/request-building primitives and sanitized summaries. Cover 9router endpoint order, provider status success, token_plan used-count semantics, coding_plan remaining-count semantics, key alias mapping, and no raw response/exact quota/secret persistence with tests.
 

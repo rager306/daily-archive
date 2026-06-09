@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Implement batch scan workflow helpers
+# T01: Implemented batch scan workflow helpers and redacted delta/outlier artifact generation.
 
 Extend workflow helpers with scan orchestration around the existing thirty-paper deviation scanner. The helper should build scan inputs from batch state, call redacted scanner logic, write validation-scan artifacts, and update batch phase without importing KG facts or writing LadybugDB.
 

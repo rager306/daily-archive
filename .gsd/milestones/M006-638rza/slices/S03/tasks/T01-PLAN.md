@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Implement thirty paper deviation scanner
+# T01: Implemented the 30-paper deviation scanner and tests.
 
 Implement a deterministic 30-paper deviation analysis helper that consumes the M006 manifest and available Markdown sources, reuses structure-aware chunking/package diagnostics where possible, and writes redacted per-paper metrics. The helper must not serialize raw Markdown/chunk text.
 

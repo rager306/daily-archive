@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Profile The AI Scientist and prismAId
+# T02: Profiled The AI Scientist and prismAId for daily-archive applicability and safety boundaries.
 
 Profile The AI Scientist and prismAId from authoritative sources. Focus on architecture, source acquisition, provenance/citation handling, review gates, autonomy boundaries, failure modes, and reusable/non-goal patterns for daily-archive.
 

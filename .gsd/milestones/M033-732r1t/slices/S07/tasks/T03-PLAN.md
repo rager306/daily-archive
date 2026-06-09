@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Verify real S03 adapter run and close bounded verdict
+# T03: Verified the real Adaptix adapter run and closed the bounded adapter verdict.
 
 Add a validate-only verifier for adapter artifacts and run the full T01/T02 verification sequence over the S03 outputs. The verifier should check three per-paper results, JSON/JSONL parseability, candidate-only verdict, safety flags false, non-empty report, and no production graph/import claims. Close the slice with a clear verdict for S05 synthesis.
 

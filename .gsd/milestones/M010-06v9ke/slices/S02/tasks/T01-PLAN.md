@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Run initial M010 init and preflight
+# T01: Initialized and preflighted M010 next +10; initial readiness is 0/10.
 
 Run validation-batch init and initial preflight for M010 S01 manifest. Persist responses and initial preflight artifacts.
 

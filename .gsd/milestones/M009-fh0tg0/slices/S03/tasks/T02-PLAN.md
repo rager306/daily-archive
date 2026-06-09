@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Verify artifact lineage metadata
+# T02: Extended freshness verification to catch artifact milestone/batch metadata mismatches.
 
 Extend provenance freshness verification to optionally check expected artifact metadata fields, then add tests proving mismatched milestone/batch metadata fails.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Generate one-paper locator fixture
+# T01: Generated a one-paper candidate locator fixture for 2001.00281v1.
 
 Select one M011/M010 source-backed target and generate a candidate locator fixture under the S01 protocol. The fixture should use source path/hash and exact redacted coordinates only, with locator states that remain review-only and import-disabled.
 

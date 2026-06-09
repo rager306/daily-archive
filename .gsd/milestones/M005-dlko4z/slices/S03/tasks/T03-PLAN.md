@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Assign routes states and refusal reasons
+# T03: Assigned conservative routes, states, chunk types, and refusal reasons to structure-aware chunks.
 
 Assign deterministic chunk types, routes, quality states, allowed/excluded uses, and refusal reasons from structural element classes. Ensure references, administrative/front-matter, tables, figures, equations, method sections, and retrieval-only prose are routed conservatively.
 

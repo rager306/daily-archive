@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Validate and close combined architecture recommendation
+# T04: Added and passed the S05 validate-only closeout checker.
 
 Add a validate-only closeout checker for S05 artifacts and run the acceptance gate. It must reject missing slice evidence, unsafe flags, production adoption wording, graph-readiness claims, or missing responsibility boundaries.
 

@@ -1,4 +1,4 @@
-# S04: Review gated next plus ten evidence
+# S04: S04
 
 **Goal:** Independently review M010 S01-S03 evidence and produce a final recommendation for whether the next +10 batch is accepted as operational evidence and whether any further scaling remains blocked.
 **Demo:** After this slice, independent review decides whether evidence permits another gated batch, requires hardening, or blocks progression.
@@ -26,12 +26,12 @@ Consumes S01 selection, S02 source readiness/top-up, and S03 scan/provenance art
 
 ## Tasks
 
-- [x] **T01: Independent artifact review** `est:medium`
+- [x] **T01: Independent review passed M010 as operational-only validation evidence.** `est:medium`
   Dispatch an independent reviewer over the M010 selection, source readiness, scan, provenance, and guard artifacts. Persist the review summary without raw paper/chunk text.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S04/run-evidence/m010-independent-review-summary.md`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S04/run-evidence/m010-independent-review-summary.md
 
-- [x] **T02: Write final recommendation and guard** `est:small`
+- [x] **T02: Wrote final M010 recommendation: PASS as operational-only validation evidence, with import and scaling still blocked.** `est:small`
   Write final M010 recommendation and guard based on review findings, including accepted evidence, limitations, and next-blocked surfaces.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S04/m010-final-recommendation.md`, `.gsd/milestones/M010-06v9ke/slices/S04/run-evidence/final-m010-guard.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S04/run-evidence/final-m010-guard.json && uv run python - <<'PY'

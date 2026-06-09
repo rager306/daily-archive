@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Implement benchmark adapters
+# T02: Implemented deterministic benchmark adapters for baseline, structure-aware, and simple section-window estimate methods.
 
 Implement deterministic benchmark adapters for existing S02 baseline evidence, S03/S04/S05 structure-aware evidence, and one bounded candidate that uses preserved normalized Markdown/source spans to estimate simple section-window chunking diagnostics. Do not add heavy dependencies or execute Chonkie/LlamaIndex/LangChain yet; record them as later benchmark candidates unless explicitly installed and bounded.
 

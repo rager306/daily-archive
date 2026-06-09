@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Write profile index
+# T03: Wrote S02 profile index and completeness guard.
 
 Run a profile completeness guard over all four profile artifacts and write an S02 profile index report summarizing profile confidence and known gaps.
 

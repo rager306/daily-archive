@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Finalize preprocessing replay report
+# T03: Finalized the S08 replay report and readiness decision, classifying all five articles as blocked by missing baseline while preserving no-network and no-write safety evidence.
 
 Write the final S08 report and machine-readable readiness decision. The report must compare final outputs against the baseline, classify behaviors as preserved/improved/regressed/blocked, summarize diagnostics, and explicitly state that M025 makes no graph readiness claim.
 

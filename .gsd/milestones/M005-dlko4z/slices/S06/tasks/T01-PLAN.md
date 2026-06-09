@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define chunking benchmark contract
+# T01: Defined the redacted chunking benchmark contract and validator.
 
 Define a benchmark result contract for chunking methods. Include method id, input corpus, per-paper metrics, aggregate metrics, route/type/state/refusal counts, source-span coverage, parent/reference coverage, annotation coverage, asset-linkage coverage, import eligibility counts, missing-source caveats, and redaction/no-write flags. Add tests for metric aggregation and redaction boundaries.
 

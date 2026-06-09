@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Map GPT Researcher and AI-Researcher sources
+# T01: Mapped GPT Researcher and AI-Researcher authoritative sources.
 
 Search for authoritative sources for GPT Researcher and AI-Researcher. Capture repo/doc/paper URLs, ownership signals, license if visible, and source confidence.
 

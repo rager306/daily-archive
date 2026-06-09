@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify candidate locator module
+# T03: Verified the candidate locator module and wrote S02 guard evidence.
 
 Run focused verification and diagnostics for changed files, including pytest, ruff, and LSP diagnostics if available.
 

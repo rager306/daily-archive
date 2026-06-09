@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Write MiniMax smoke-test guard
+# T02: Wrote MiniMax smoke-test guard: callability proven for synthetic prompt; orchestration/import remain blocked.
 
 Write MiniMax smoke-test guard with callability status, schema validation status, and blocked behaviors.
 

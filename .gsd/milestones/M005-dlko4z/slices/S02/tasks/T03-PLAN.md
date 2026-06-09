@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Create baseline review samples
+# T03: Generated bounded baseline review samples for the six-paper inner review set.
 
 Generate bounded review samples for the six-paper inner review minimum where artifacts are available, and explicit blocker records where they are not. Review samples may include bounded snippets only in markdown review artifacts; machine JSON/JSONL diagnostics must remain redacted.
 

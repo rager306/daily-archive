@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write M016 final limit verdict
+# T02: Final M016 guard verifies global MiniMax API remains through the 9router fallback endpoint and overturns M015's limit verdict.
 
 Write final M016 guard and recommendation, update R044 with corrected verdict.
 

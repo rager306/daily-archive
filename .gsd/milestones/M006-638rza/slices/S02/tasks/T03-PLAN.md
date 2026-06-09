@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Run source acquisition for missing papers
+# T03: Ran bounded source acquisition and brought the 30-paper corpus to 30/30 Markdown-ready.
 
 Run the bounded acquisition/conversion helper over the 20 missing-Markdown expansion papers. Persist updated availability summary and diagnostics under S02 run-evidence.
 

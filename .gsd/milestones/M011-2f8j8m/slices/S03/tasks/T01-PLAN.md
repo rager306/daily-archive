@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Independent semantic gate review
+# T01: Independent review passed M011 as a negative semantic gate: import remains blocked pending chunk-span evidence.
 
 Dispatch an independent reviewer over M011 S01-S02 artifacts. Persist a review summary with PASS or FLAG, concrete findings, and recommendation without raw paper/chunk text.
 

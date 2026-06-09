@@ -1,4 +1,4 @@
-# S02: One-paper locator fixture
+# S02: S02
 
 **Goal:** Exercise the locator protocol on one paper fixture to prove the contract can represent useful candidate evidence without promoting facts.
 **Demo:** After S02, one known paper has candidate locators with exact chunk-span/source-span provenance under the S01 contract and import disabled.
@@ -25,12 +25,12 @@ One-paper output feeds small-batch rehearsal design in S03.
 
 ## Tasks
 
-- [x] **T01: Generate one-paper locator fixture** `est:60m`
+- [x] **T01: Generated a one-paper candidate locator fixture for 2001.00281v1.** `est:60m`
   Select one M011/M010 source-backed target and generate a candidate locator fixture under the S01 protocol. The fixture should use source path/hash and exact redacted coordinates only, with locator states that remain review-only and import-disabled.
   - Files: `.gsd/milestones/M020-uh5kvt/slices/S02/one-paper-locator-fixture.json`, `.gsd/milestones/M020-uh5kvt/slices/S02/one-paper-locator-report.md`
   - Verify: uv run python inline fixture schema and safety assertions
 
-- [x] **T02: Validate one-paper locator fixture** `est:45m`
+- [x] **T02: Validated the one-paper locator fixture and semantic spot-check boundary.** `est:45m`
   Validate the one-paper fixture against the protocol guard and perform a targeted semantic spot check that records only categorical judgments and coordinates, not raw text.
   - Files: `.gsd/milestones/M020-uh5kvt/slices/S02/run-evidence/one-paper-locator-guard.json`, `.gsd/milestones/M020-uh5kvt/slices/S02/one-paper-semantic-spot-check.md`
   - Verify: uv run python inline guard assertions and no-raw-payload scan

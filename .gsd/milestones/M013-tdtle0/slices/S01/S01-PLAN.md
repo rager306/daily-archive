@@ -1,4 +1,4 @@
-# S01: DSPy isolated dependency probe
+# S01: S01
 
 **Goal:** Check DSPy dependency and import feasibility in isolation without mutating project runtime dependencies or enabling optimizers.
 **Demo:** An isolated DSPy dependency probe artifact reports install/import/no-LM status and whether Predict/Evaluate can be exercised without external LM calls.
@@ -24,17 +24,17 @@ Provides dependency readiness evidence for optimizer applicability and final rec
 
 ## Tasks
 
-- [x] **T01: Install DSPy in isolated temp environment** `est:medium`
+- [x] **T01: Installed DSPy in an isolated temporary venv without mutating project dependency files.** `est:medium`
   Create a temporary isolated Python environment outside the project, install DSPy from local `/root/vendor-source/dspy` or equivalent, and record dependency resolution without editing daily-archive dependency files.
   - Files: `.gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-dependency-install.json`
   - Verify: test -s .gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-dependency-install.json
 
-- [x] **T02: Run DSPy no-LM synthetic probe** `est:medium`
+- [x] **T02: Ran DSPy no-LM probe: import succeeded, Predict failed closed without LM, static Evaluate succeeded.** `est:medium`
   If isolated install succeeds, run synthetic no-LM DSPy import/Predict/Evaluate probe. Confirm no LM, optimizer, file write, production import, or LadybugDB write occurs.
   - Files: `.gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-no-lm-probe.json`
   - Verify: test -s .gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-no-lm-probe.json
 
-- [x] **T03: Write DSPy dependency readiness guard** `est:small`
+- [x] **T03: Wrote DSPy dependency readiness guard allowing optional/dev prototype but blocking production runtime and optimizers.** `est:small`
   Write a dependency readiness guard summarizing whether DSPy can proceed to optional/dev prototype, and what remains blocked.
   - Files: `.gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-dependency-guard.json`
   - Verify: test -s .gsd/milestones/M013-tdtle0/slices/S01/run-evidence/dspy-dependency-guard.json && uv run python - <<'PY'

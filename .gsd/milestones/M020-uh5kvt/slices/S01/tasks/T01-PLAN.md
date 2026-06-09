@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Draft locator protocol contract
+# T01: Defined the M020 candidate locator and chunk-span provenance protocol contract.
 
 Draft a protocol contract for candidate locators and chunk-span provenance. Define locator identity fields, source ledger fields, chunk/source coordinate fields, candidate evidence fields, uncertainty labels, review queue reasons, and explicit non-fact/import-disabled safety semantics.
 

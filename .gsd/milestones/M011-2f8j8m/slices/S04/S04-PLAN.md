@@ -1,4 +1,4 @@
-# S04: Final semantic import readiness recommendation
+# S04: S04
 
 **Goal:** Synthesize semantic gate evidence into a final import-readiness recommendation and update requirements accordingly.
 **Demo:** A final recommendation states whether positive import remains blocked and what exact next milestone is justified by the semantic evidence.
@@ -24,7 +24,7 @@ Consumes S03 review and closes M011 with validated or active requirement outcome
 
 ## Tasks
 
-- [x] **T01: Write final semantic gate recommendation** `est:small`
+- [x] **T01: Wrote final M011 recommendation: PASS negative gate, import still blocked pending chunk-span provenance.** `est:small`
   Write final M011 recommendation and guard stating that the semantic gate passed as a negative readiness gate and defining the next required evidence for any future positive import rehearsal.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S04/m011-final-recommendation.md`, `.gsd/milestones/M011-2f8j8m/slices/S04/run-evidence/final-semantic-gate-guard.json`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S04/run-evidence/final-semantic-gate-guard.json && uv run python - <<'PY'
@@ -37,7 +37,7 @@ assert g['positive_import_blocked'] is True
 print('final-semantic-gate-guard-ok')
 PY
 
-- [x] **T02: Update requirement and verify final gate** `est:small`
+- [x] **T02: Updated R038 and verified the final M011 negative semantic gate evidence.** `est:small`
   Update R038 and run final milestone artifact verification before milestone validation/completion.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S04/run-evidence/final-verification.json`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S04/run-evidence/final-verification.json

@@ -4,7 +4,7 @@ estimated_files: 5
 skills_used: []
 ---
 
-# T03: Run quota-gated validation scan
+# T03: Ran the quota-gated scan for the new +10 batch; it produced 1,591 chunks, 6 outliers, and zero import-eligible chunks.
 
 Run validation-batch scan over the quota-filled S02 state and write scan/delta/outlier artifacts plus a scan report. Include quota-fill evidence and PDF caveat in the report.
 

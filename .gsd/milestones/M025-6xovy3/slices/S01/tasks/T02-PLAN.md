@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T02: Create catalog scaffold and initial index
+# T02: Created the M025 reusable article catalog scaffold, initial index, schemas, corpus selection, and local-only verifier.
 
 Implement the durable catalog scaffold and initial selection writer for the M025 mixed-source corpus. Create local catalog directories using `source_code/coarse_topic_code/article_key`, write `data/article_catalog/catalog.json`, create the initial `data/article_catalog/index.json` from the fixture seed, and create `data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json`. This task proves the CLI/verifier can create the first index as part of scaffold initialization; it must not yet rely on rebuilding from discovered article records.
 

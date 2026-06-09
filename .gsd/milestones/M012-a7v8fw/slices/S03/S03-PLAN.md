@@ -1,4 +1,4 @@
-# S03: Integration boundary matrix
+# S03: S03
 
 **Goal:** Map DSPy and MiniMax findings onto the current pipeline boundaries, artifact contracts, and post-M011 chunk-span/candidate-locator needs.
 **Demo:** A combined integration matrix shows where DSPy and MiniMax could fit, what each requires, and which gates must pass before activation.
@@ -24,12 +24,12 @@ Consumes S01 and S02 research and provides synthesis input for final recommendat
 
 ## Tasks
 
-- [x] **T01: Build combined compatibility matrix** `est:medium`
+- [x] **T01: Built integration matrix: both DSPy and MiniMax are future bounded-probe candidates only, not production activations.** `est:medium`
   Build a combined compatibility matrix comparing DSPy and MiniMax roles, current status, next safe probes, blocked behaviors, and activation preconditions.
   - Files: `.gsd/milestones/M012-a7v8fw/slices/S03/integration-boundary-matrix.md`, `.gsd/milestones/M012-a7v8fw/slices/S03/run-evidence/integration-matrix.json`
   - Verify: test -s .gsd/milestones/M012-a7v8fw/slices/S03/run-evidence/integration-matrix.json
 
-- [x] **T02: Write integration guard** `est:small`
+- [x] **T02: Wrote integration guard blocking production activation and naming the next safe probes.** `est:small`
   Write a failure-mode and activation-precondition guard that proves DSPy and MiniMax remain disabled in the production process and identifies exact next probes.
   - Files: `.gsd/milestones/M012-a7v8fw/slices/S03/run-evidence/integration-guard.json`
   - Verify: test -s .gsd/milestones/M012-a7v8fw/slices/S03/run-evidence/integration-guard.json && uv run python - <<'PY'

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Write optimizer applicability guard
+# T03: Wrote optimizer guard: KNN/Labeled few-shot are possible-dev later; all optimizer execution remains blocked now.
 
 Write optimizer guard proving no optimizer was run and summarizing which optimizer families are future-only versus blocked.
 

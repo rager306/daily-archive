@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Finalize M020 recommendation and guard
+# T02: Finalized M020 recommendation and guard.
 
 Write final M020 guard and recommendation, update R048, and validate milestone safety invariants before completion.
 

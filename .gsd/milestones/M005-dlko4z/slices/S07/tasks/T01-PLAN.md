@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define negative import rehearsal contract
+# T01: Defined the negative import rehearsal contract and validator for S07.
 
 Define an isolated import rehearsal contract and validator for negative import boundary evidence. Include accepted/rejected counts, refusal reasons, package/method ids, no-write flags, redaction flags, and remediation hints. Add tests showing import-ineligible chunks/assets are rejected and raw/embedding/write leakage is blocked.
 

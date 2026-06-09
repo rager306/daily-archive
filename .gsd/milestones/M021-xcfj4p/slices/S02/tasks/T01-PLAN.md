@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Write candidate locator tests
+# T01: Added candidate locator tests covering diagnostics and safety invariants.
 
 Write failing tests for deterministic candidate locator generation, source hash mismatch, broad-signal ambiguity, missing signal, forbidden payload detection, coordinate validation, and no-import safety flags.
 

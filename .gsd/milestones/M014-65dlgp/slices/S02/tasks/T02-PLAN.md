@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Write MiniMax real-test guard
+# T02: Wrote MiniMax real-test guard: real helper probe can continue only with schema validation and retry controls.
 
 Write a real-test guard that summarizes pass/flag outcomes, schema reliability, redaction hygiene, and blocked scopes.
 

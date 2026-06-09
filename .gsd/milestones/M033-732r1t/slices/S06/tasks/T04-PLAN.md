@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Validate and close bounded quality plan
+# T04: Added and passed the S06 validate-only quality-plan closeout checker.
 
 Add a validate-only closeout checker for S06 artifacts and run the acceptance gate. It must reject missing quality dimensions, missing no-write/no-import boundaries, permissive flags, or any claim that M033 authorized production integration.
 

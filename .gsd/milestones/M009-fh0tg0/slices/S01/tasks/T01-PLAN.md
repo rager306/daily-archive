@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Implement provenance primitives
+# T01: Implemented isolated validation-batch provenance and freshness primitives.
 
 Create validation_batch_provenance module with file fingerprinting, argv redaction, git commit lookup, provenance entry construction, JSONL append/read, entry selection, and freshness report generation/writing. Keep it independent of CLI wiring.
 

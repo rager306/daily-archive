@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Validate deterministic batch guard
+# T03: Validated deterministic batch guard and recommendation.
 
 Validate the S03 batch guard and compare key metrics against M020, especially ambiguity, missing signals, and import-disabled safety flags.
 

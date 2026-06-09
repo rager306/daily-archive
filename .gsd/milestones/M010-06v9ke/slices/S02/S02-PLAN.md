@@ -1,4 +1,4 @@
-# S02: Preflight and bounded top up source quota
+# S02: S02
 
 **Goal:** Run init/preflight and bounded source acquisition for the M010 next +10, then use quota/top-up gates to reach source-ready quota or block scan explicitly.
 **Demo:** After this slice, the selected batch has source-ready quota 10/10 or an explicit bounded shortage blocker.
@@ -26,7 +26,7 @@ Consumes S01 manifest and produces a final source-ready batch-state, quota/top-u
 
 ## Tasks
 
-- [x] **T01: Run initial M010 init and preflight** `est:small`
+- [x] **T01: Initialized and preflighted M010 next +10; initial readiness is 0/10.** `est:small`
   Run validation-batch init and initial preflight for M010 S01 manifest. Persist responses and initial preflight artifacts.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/init-response.json`, `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/initial-source-preflight-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/initial-source-preflight-diagnostics.jsonl`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S02/run-evidence/initial-source-preflight-summary.json && uv run python - <<'PY'
@@ -39,7 +39,7 @@ assert s['ladybugdb_written'] is False
 print('initial-preflight-ok')
 PY
 
-- [x] **T02: Run bounded M010 source acquisition** `est:medium`
+- [x] **T02: Bounded acquisition made M010 8/10 Markdown-ready; 2 papers still need top-up or block handling.** `est:medium`
   Run bounded fast-only source acquisition for selected M010 papers. Persist acquisition summary/diagnostics; do not use unbounded conversion.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/source-acquisition-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/source-acquisition-diagnostics.jsonl`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S02/run-evidence/source-acquisition-summary.json && uv run python - <<'PY'
@@ -52,7 +52,7 @@ assert s['ladybugdb_written'] is False
 print('source-acquisition-ok')
 PY
 
-- [x] **T03: Refresh preflight and quota gate** `est:medium`
+- [x] **T03: Materialized two acquired replacements and produced a final 10/10 source-ready M010 batch state.** `est:medium`
   Rerun final preflight, build quota-fill evidence, and if quota remains short produce bounded top-up plan/blocker. S03 may proceed only if final source-ready quota is 10.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/source-preflight-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/quota-fill-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S02/run-evidence/top-up-summary.json`, `.gsd/milestones/M010-06v9ke/slices/S02/source-readiness-report.md`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S02/run-evidence/quota-fill-summary.json && uv run python - <<'PY'

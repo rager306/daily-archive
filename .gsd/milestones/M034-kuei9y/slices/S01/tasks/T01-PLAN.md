@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T01: Extract GSD requirement and decision inventory
+# T01: Extracted the complete GSD requirement and decision inventory for M034 conflict auditing.
 
 Build a deterministic inventory from `.gsd/REQUIREMENTS.md` and `.gsd/DECISIONS.md`, preserving IDs, statuses, descriptions/decisions, choices, rationale, and source context where available. Output compact JSON and a counts report under the M034 decision package directory.
 

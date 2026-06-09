@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Implement relation and extraction patch validators
+# T03: Added relation and extraction patch validator coverage for endpoints, unsupported types, duplicate IDs, mismatches, and evidence warnings.
 
 Add relation and patch validators that reject invalid relation endpoints, unsupported relation types, paper mismatches between entities/claims/evidence, and evidence paths that fail S03 validation. Add tests for valid fixture drafts and invalid endpoint/mismatch cases. Done when S05 can use the patch contract as a pre-storage validation boundary.
 

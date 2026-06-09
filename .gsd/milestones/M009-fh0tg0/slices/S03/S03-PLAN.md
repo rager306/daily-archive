@@ -1,4 +1,4 @@
-# S03: Active scan lineage metadata
+# S03: S03
 
 **Goal:** Fix validation-batch scan lineage metadata so scan artifacts carry the active milestone/batch context and provenance verification can catch lineage mismatches.
 **Demo:** After this slice, validation scan summaries identify M009/M008-style active milestone and batch context instead of stale M006 metadata.
@@ -25,17 +25,17 @@ Consumes S01/S02 provenance verifier primitives and updates validation-batch sca
 
 ## Tasks
 
-- [x] **T01: Add active scan lineage metadata** `est:medium`
+- [x] **T01: Added active milestone/batch lineage metadata to validation-batch scan artifacts.** `est:medium`
   Add active lineage metadata support to validation-batch scan artifact production. Keep compatibility with existing scanner outputs, but ensure validation-batch summary/delta/outlier artifacts expose active milestone_id and batch_id.
   - Files: `src/arxiv_archive/validation_batch_workflow.py`
   - Verify: uv run pytest tests/test_validation_batch_scan_workflow.py tests/test_validation_batch_cli_scan.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py
 
-- [x] **T02: Verify artifact lineage metadata** `est:medium`
+- [x] **T02: Extended freshness verification to catch artifact milestone/batch metadata mismatches.** `est:medium`
   Extend provenance freshness verification to optionally check expected artifact metadata fields, then add tests proving mismatched milestone/batch metadata fails.
   - Files: `src/arxiv_archive/validation_batch_provenance.py`, `tests/test_validation_batch_provenance.py`
   - Verify: uv run pytest tests/test_validation_batch_provenance.py -q && uv run ruff check src/arxiv_archive/validation_batch_provenance.py tests/test_validation_batch_provenance.py
 
-- [x] **T03: Run lineage regression and sample evidence** `est:small`
+- [x] **T03: Generated lineage pass/mismatch sample reports and ran focused regression.** `est:small`
   Generate S03 sample scan/freshness evidence showing active M009 lineage and a negative lineage mismatch report.
   - Files: `.gsd/milestones/M009-fh0tg0/slices/S03/run-evidence/lineage-pass-report.json`, `.gsd/milestones/M009-fh0tg0/slices/S03/run-evidence/lineage-mismatch-report.json`
   - Verify: uv run pytest tests/test_validation_batch_provenance.py tests/test_validation_batch_scan_workflow.py tests/test_validation_batch_cli_scan.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py src/arxiv_archive/validation_batch_provenance.py tests/test_validation_batch_provenance.py && test -s .gsd/milestones/M009-fh0tg0/slices/S03/run-evidence/lineage-pass-report.json && test -s .gsd/milestones/M009-fh0tg0/slices/S03/run-evidence/lineage-mismatch-report.json

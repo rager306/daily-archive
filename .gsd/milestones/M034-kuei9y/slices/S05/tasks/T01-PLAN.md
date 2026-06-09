@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Draft core contracts and safety invariants
+# T01: Drafted the core contract inventory and safety invariants for M034.
 
 Create CONTRACTS.md and SAFETY-INVARIANTS.md covering generic universal-KB contracts, paper-specific specializations, GraphDB portability, and fail-closed safety flags.
 

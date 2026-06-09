@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Review import model contract
+# T04: Reviewed and hardened the import-ready chunk contract until independent review passed.
 
 Write the S01 review rubric and run an independent review of the contract, corpus manifest, and validator tests. The review must check for missing import fields, overbroad claims, count-only validation, raw-text leakage risk, and whether the corpus covers hard chunking cases.
 

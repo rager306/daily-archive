@@ -1,4 +1,4 @@
-# S04: Review and final recommendation
+# S04: S04
 
 **Goal:** Review deterministic locator outputs and close the milestone with next-step recommendation.
 **Demo:** After S04, independent review decides whether deterministic locators are useful enough for reviewer packets/chunk repair next, still not positive import.
@@ -24,12 +24,12 @@ Determines next KG milestone after deterministic implementation.
 
 ## Tasks
 
-- [x] **T01: Independent deterministic locator review** `est:45m`
+- [x] **T01: Completed independent review and remediated concrete locator gaps.** `est:45m`
   Run independent review over M021 design, module/tests, S03 batch artifact/guard, and M020 comparison. Assess reproducibility, safety, ambiguity diagnostics, and whether next work should be chunk/structure repair, reviewer packets, route heuristics, or positive import.
   - Files: `.gsd/milestones/M021-xcfj4p/slices/S04/independent-deterministic-locator-review.md`
   - Verify: review artifact contains PASS/FLAG verdict and recommendation
 
-- [x] **T02: Finalize deterministic locator recommendation** `est:45m`
+- [x] **T02: Finalized M021 recommendation and guard.** `est:45m`
   Write final M021 guard and recommendation, update R049, and run final verification before milestone closeout.
   - Files: `.gsd/milestones/M021-xcfj4p/slices/S04/run-evidence/final-deterministic-locator-guard.json`, `.gsd/milestones/M021-xcfj4p/slices/S04/final-deterministic-locator-recommendation.md`
   - Verify: uv run python inline final guard assertions

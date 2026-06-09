@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Generate small-batch locator rehearsal
+# T01: Generated the small-batch locator rehearsal over 10 M011 targets.
 
 Generate a bounded small-batch candidate locator rehearsal over existing M011 targets using the S01 protocol and S02 fixture shape. Record per-paper source/hash/coordinate diagnostics, locator counts, and failure-mode categories without raw source text.
 

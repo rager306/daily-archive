@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Draft conflict resolution and open questions register
+# T02: Drafted the conflict-resolution plan and open-question register for M034.
 
 Create CONFLICT-RESOLUTION-PLAN.md and OPEN-QUESTIONS.md routing all 15 S01 needs-clarification findings into resolved-by-ADR, deferred-with-rationale, requirement-update-needed, superseding-decision-needed, or user-discussion-needed categories.
 

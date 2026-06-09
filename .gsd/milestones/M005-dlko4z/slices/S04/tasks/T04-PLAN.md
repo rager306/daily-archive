@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T04: Run annotation dry run on gold corpus
+# T04: Ran the annotation sidecar dry-run over the gold corpus and wrote redacted S04 evidence artifacts.
 
 Run the annotation sidecar dry-run over the gold corpus and write redacted annotation summary plus package diagnostics. Confirm annotation counts and warnings are present while all import/no-write safety flags remain false.
 

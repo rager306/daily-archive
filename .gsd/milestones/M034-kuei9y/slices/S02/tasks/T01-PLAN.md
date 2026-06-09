@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Finalize ADR template and ADR index conventions
+# T01: Finalized the ADR template convention and created the M034 ADR index.
 
 Review the physical `ADR-TEMPLATE.md`, ensure it includes the full Mermaid-assisted enhanced structure and readability rules, and create an ADR index stub that records the template requirement and planned ADR set.
 

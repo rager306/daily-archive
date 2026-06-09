@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Write final recommendation
+# T02: Wrote final recommendation: close M008, but add bounded top-up automation before another +10.
 
 Write final recommendation based on review: continue another +10, add bounded top-up automation first, or block progression. Keep import and production writes blocked.
 

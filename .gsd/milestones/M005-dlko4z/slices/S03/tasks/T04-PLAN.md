@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T04: Validate structure aware packages on gold corpus
+# T04: Validated structure-aware packages over the gold corpus and wrote redacted run evidence.
 
 Build S01 contract-shaped packages from structure-aware chunks and validate them with the existing import contract validator. Add a CLI or callable dry-run path that writes redacted structure-aware package diagnostics for the gold corpus without writing production KG data.
 

@@ -26,17 +26,17 @@ Feeds PRD, requirements, contracts, roadmap, and closeout with accepted, rejecte
 
 ## Tasks
 
-- [x] **T01: Draft GraphDB and no-direct-write ADRs** `est:medium`
+- [x] **T01: Drafted the GraphDB deferral and no-direct-GraphDB-write ADRs.** `est:medium`
   Draft ADR-002 deferred GraphDB selection and ADR-005 no direct extractor/parser/sidecar to GraphDB path. Both must use the template, reference S01 audit findings, include R/D impact tables, and preserve safety non-authorization.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/ADR-002-defer-final-graphdb-selection.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-005-no-direct-extractor-to-graphdb-path.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-INDEX.md`
   - Verify: Run marker checks that ADR-002 and ADR-005 include required template sections, GraphDB candidates, safety flags, R/D references, and Mermaid diagram counts within limits.
 
-- [x] **T02: Draft evidence pipeline sidecar quant-mind and agent ADRs** `est:large`
+- [x] **T02: Drafted the formal ADRs for pipeline, sidecar, quant-mind, and agent boundaries.** `est:large`
   Draft ADR-003 durable lazy async evidence pipeline, ADR-004 sidecars as candidate evidence producers, ADR-006 agent boundary, and ADR-007 quant-mind pattern source not runtime dependency. Each ADR must use the template and route relevant S01 clarification items.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/ADR-003-durable-lazy-async-evidence-pipeline.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-004-sidecars-as-candidate-evidence-producers.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-006-agent-boundary.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-007-quantmind-pattern-source-not-runtime-dependency.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-INDEX.md`
   - Verify: Run marker checks that all four ADRs include required template sections, safety non-authorization, R/D impact, LLM Reading Notes, and bounded Mermaid usage.
 
-- [x] **T03: Verify S03 formal ADR package** `est:small`
+- [x] **T03: Added and passed the verifier for the formal M034 ADR package.** `est:small`
   Implement and run a verifier for all S03 ADRs and the ADR index, checking template sections, status/binding levels, GraphDB deferral, safety markers, R/D references, Mermaid limits, and S01 audit route coverage.
   - Files: `scripts/verify_m034_formal_adr_package.py`
   - Verify: `uv run python scripts/verify_m034_formal_adr_package.py --package-dir .gsd/milestones/M034-kuei9y/decision-package && uv run ruff check scripts/verify_m034_formal_adr_package.py`

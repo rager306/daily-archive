@@ -1,4 +1,4 @@
-# S02: MiniMax usage limit helper
+# S02: S02
 
 **Goal:** Implement sanitized MiniMax usage/remains helper using M016/9router semantics.
 **Demo:** After S02, the project has a tested dev-only MiniMax limit helper contract.
@@ -24,7 +24,7 @@ Provides limit observability for bounded helper usage; does not call MiniMax liv
 
 ## Tasks
 
-- [x] **T01: Implement MiniMax usage limit helper** `est:medium`
+- [x] **T01: Implemented and tested the dev-only MiniMax usage/remains helper with 9router semantics and sanitized diagnostics.** `est:medium`
   Implement a dev-only MiniMax usage/remains helper module with pure parsing/request-building primitives and sanitized summaries. Cover 9router endpoint order, provider status success, token_plan used-count semantics, coding_plan remaining-count semantics, key alias mapping, and no raw response/exact quota/secret persistence with tests.
   - Files: `src/arxiv_archive/minimax_usage.py`, `tests/test_minimax_usage.py`, `.gsd/milestones/M017-cf3fd0/slices/S02/run-evidence/minimax-usage-helper-guard.json`
   - Verify: uv run pytest tests/test_minimax_usage.py -q && uv run ruff check src/arxiv_archive/minimax_usage.py tests/test_minimax_usage.py && uv run python - <<'PY'

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Parse markdown structure with canonical spans
+# T02: Parsed canonical Markdown into typed structural elements with absolute normalized-Markdown spans.
 
 Implement deterministic parsing from canonical normalized Markdown into structural elements with absolute character spans and parent-child hierarchy. Cover headings, paragraphs, references, tables, figures/captions, and equation-like blocks where detectable without LLMs.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Write scan report and final guard
+# T03: Wrote the S03 scan report and guard proving fresh active-lineage operational scan evidence.
 
 Run final S03 scan guard across quota, scan counts, active lineage, provenance freshness, and safety flags. Write validation scan report.
 

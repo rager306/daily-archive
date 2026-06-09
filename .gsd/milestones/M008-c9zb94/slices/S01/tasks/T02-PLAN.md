@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Select new plus ten manifest
+# T02: Selected the deterministic first new +10 corpus manifest.
 
 Apply the deterministic selection rule to choose exactly 10 new paper IDs and write the M008 manifest plus rationale. The manifest should be compatible with validation-batch init.
 

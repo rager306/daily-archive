@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Wire validation batch scan CLI
+# T02: Wired validation-batch scan CLI to redacted scan/delta/outlier artifact generation.
 
 Wire `validation-batch scan` to the scan workflow helper. It should require a source-ready state path, write scan/delta/outlier artifacts, and keep review/resume as non-zero stubs.
 

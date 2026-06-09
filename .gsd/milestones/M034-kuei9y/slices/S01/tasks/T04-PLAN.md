@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T04: Verify S01 audit package
+# T04: Added and verified the M034 R/D consistency audit verifier.
 
 Implement and run a local verifier for the S01 audit package, checking source coverage, classification coverage, conflict routing, safety invariant presence, and no silent mutation policy. Produce verifier output suitable for GSD closeout.
 

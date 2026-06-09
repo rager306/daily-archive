@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify S04 PRD and requirements
+# T03: Added and passed the verifier for the M034 PRD and requirements package.
 
 Implement and run a verifier for PRD and requirement artifacts, checking required sections, ADR references, generic/paper split, safety markers, acceptance criteria, and S01 audit clarification coverage.
 

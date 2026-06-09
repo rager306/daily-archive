@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Implement contract validator fixtures
+# T03: Implemented executable import-ready chunk contract validation fixtures.
 
 Add a small contract validator module and tests for package invariants. The validator should reject raw text/embedding leakage, missing stable IDs, missing source spans for graph-eligible chunks, unresolved parent/source references, and invalid import states. It should validate synthetic fixtures only in S01.
 

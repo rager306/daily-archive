@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Run or defer MiniMax synthetic smoke test
+# T01: MiniMax synthetic smoke test succeeded with HTTP 200 using synthetic-only input.
 
 Determine whether explicit approval and environment allow a MiniMax synthetic live smoke test. If approval is absent, record deferral; if present, run one tiny synthetic call without raw paper/chunk text.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Run 9router-compatible limit probe
+# T01: Ran 9router-compatible MiniMax limit probe; global API remains is verified via the `api.minimax.io` coding_plan fallback.
 
 Run live MiniMax limit probe using exactly the 9router endpoint order and success criteria for minimax and minimax-cn where applicable.
 

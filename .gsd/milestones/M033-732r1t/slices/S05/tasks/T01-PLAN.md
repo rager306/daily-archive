@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Compile prior slice evidence into synthesis matrix
+# T01: Compiled completed S01/S02/S03/S04/S07 evidence into the S05 synthesis matrix.
 
 Read completed S01/S02/S03/S04/S07 artifacts and create a machine-readable evidence matrix summarizing verdicts, strengths, gaps, safety flags, and downstream implications. This is synthesis only; do not rerun external tools.
 

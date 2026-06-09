@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Link annotation sidecars to asset records
+# T03: Linked annotation sidecar diagnostics to redacted non-fact asset records.
 
 Use S04 annotation sidecar diagnostics to create redacted asset-link records for table, figure, equation, reference, and metadata-related chunks. Link each asset candidate to paper id, chunk id, route/type/state, source span, source artifact, and extraction state. Do not create KG facts, embeddings, base64 payloads, or raw table/figure text.
 

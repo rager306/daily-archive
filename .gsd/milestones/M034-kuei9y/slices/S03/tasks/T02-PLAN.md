@@ -4,7 +4,7 @@ estimated_files: 5
 skills_used: []
 ---
 
-# T02: Draft evidence pipeline sidecar quant-mind and agent ADRs
+# T02: Drafted the formal ADRs for pipeline, sidecar, quant-mind, and agent boundaries.
 
 Draft ADR-003 durable lazy async evidence pipeline, ADR-004 sidecars as candidate evidence producers, ADR-006 agent boundary, and ADR-007 quant-mind pattern source not runtime dependency. Each ADR must use the template and route relevant S01 clarification items.
 

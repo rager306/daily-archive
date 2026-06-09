@@ -1,4 +1,4 @@
-# S01: Semantic review corpus selection
+# S01: S01
 
 **Goal:** Select bounded semantic review targets from M010 chunks/outliers without embedding raw paper or chunk text in artifacts.
 **Demo:** A redacted semantic review corpus manifest exists, pointing to source files by path/hash/span and M010 scan evidence by artifact path, with leakage guard passing.
@@ -24,12 +24,12 @@ Consumes M010 S02 source-ready batch and S03 scan/outlier artifacts; provides a 
 
 ## Tasks
 
-- [x] **T01: Inspect M010 reviewable metadata** `est:small`
+- [x] **T01: Inspected M010 reviewable metadata and recorded a no-payload schema summary for S01 selection.** `est:small`
   Inspect M010 scan/outlier artifact schemas and identify which metadata fields can support redacted semantic review selection without raw text.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/schema-inspection.json`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/schema-inspection.json
 
-- [x] **T02: Build redacted semantic review set** `est:medium`
+- [x] **T02: Built the M011 semantic review target set: 10 redacted targets with source paths and hashes.** `est:medium`
   Build deterministic redacted review-set manifest with a bounded mix of M010 outliers and non-outlier controls, carrying source path/hash/span metadata only.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/semantic-review-targets.json`, `.gsd/milestones/M011-2f8j8m/slices/S01/semantic-review-selection-rationale.md`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/semantic-review-targets.json && uv run python - <<'PY'
@@ -42,7 +42,7 @@ assert m['chunk_text_included'] is False
 print('semantic-review-targets-ok')
 PY
 
-- [x] **T03: Verify redaction and reproducibility guard** `est:small`
+- [x] **T03: Verified the M011 S01 review set guard: 10 targets, 7 outliers, 3 controls, no raw payload keys.** `est:small`
   Run leakage and reproducibility guard over S01 artifacts, then write final selection guard.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/selection-guard.json`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S01/run-evidence/selection-guard.json && uv run python - <<'PY'

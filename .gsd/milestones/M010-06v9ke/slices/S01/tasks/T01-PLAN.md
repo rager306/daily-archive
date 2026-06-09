@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Build prior exclusion and candidate inventory
+# T01: Built the M010 candidate inventory: 790 eligible papers after excluding 40 prior validation IDs.
 
 Build prior-corpus exclusion set from M006 and M008 manifests and a redacted candidate inventory from local/cache paper metadata. Do not include raw text.
 

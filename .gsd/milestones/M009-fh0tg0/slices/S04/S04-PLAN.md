@@ -1,4 +1,4 @@
-# S04: Bounded quota top-up automation
+# S04: S04
 
 **Goal:** Implement bounded quota top-up behavior so underfilled validation batches deterministically select replacement candidates or explicitly block scan.
 **Demo:** After this slice, an underfilled validation batch deterministically draws replacements up to a bounded limit or blocks scan with a shortage report.
@@ -25,17 +25,17 @@ Consumes quota-fill helper, candidate inventory, and source readiness. Produces 
 
 ## Tasks
 
-- [x] **T01: Implement bounded top up planner** `est:medium`
+- [x] **T01: Implemented bounded quota top-up planning with explicit shortage/blocker reporting.** `est:medium`
   Add bounded top-up planning helpers that consume current batch state plus candidate inventory/readiness metadata and produce a redacted top-up report. The helper should not acquire sources; it plans deterministic replacements within max_candidates_to_consider and computes scan_allowed.
   - Files: `src/arxiv_archive/validation_batch_workflow.py`
   - Verify: uv run pytest tests/test_validation_batch_quota_fill.py tests/test_validation_batch_top_up.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py tests/test_validation_batch_top_up.py
 
-- [x] **T02: Test bounded top up behavior** `est:medium`
+- [x] **T02: Added bounded top-up tests for success, shortage, duplicate exclusion, and blocker diagnostics.** `est:medium`
   Add tests for top-up planning: already full quota, underfilled with enough replacements, underfilled with max-attempt shortage, duplicate/selected candidate exclusion, and redaction/safety flags.
   - Files: `tests/test_validation_batch_top_up.py`
   - Verify: uv run pytest tests/test_validation_batch_top_up.py tests/test_validation_batch_quota_fill.py -q && uv run ruff check tests/test_validation_batch_top_up.py src/arxiv_archive/validation_batch_workflow.py
 
-- [x] **T03: Run top up regression and sample evidence** `est:small`
+- [x] **T03: Generated top-up pass and bounded-shortage sample artifacts and ran regression.** `est:small`
   Generate S04 sample evidence for a successful top-up plan and a blocked shortage plan, then run focused regression.
   - Files: `.gsd/milestones/M009-fh0tg0/slices/S04/run-evidence/top-up-pass-summary.json`, `.gsd/milestones/M009-fh0tg0/slices/S04/run-evidence/top-up-blocked-summary.json`
   - Verify: uv run pytest tests/test_validation_batch_top_up.py tests/test_validation_batch_quota_fill.py tests/test_validation_batch_scan_workflow.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py tests/test_validation_batch_top_up.py && test -s .gsd/milestones/M009-fh0tg0/slices/S04/run-evidence/top-up-pass-summary.json && test -s .gsd/milestones/M009-fh0tg0/slices/S04/run-evidence/top-up-blocked-summary.json

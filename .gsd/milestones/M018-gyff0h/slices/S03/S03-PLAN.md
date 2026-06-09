@@ -1,4 +1,4 @@
-# S03: Dependency security triage recommendation
+# S03: S03
 
 **Goal:** Produce final triage: update, remove, isolate, or defer each vulnerable ML package with rationale and verification.
 **Demo:** After S03, the project has an actionable dependency security recommendation and R046 is validated or explicitly blocked.
@@ -24,12 +24,12 @@ Closes M018 with a recommendation for follow-up remediation if needed.
 
 ## Tasks
 
-- [x] **T01: Write final dependency security triage** `est:60m`
+- [x] **T01: Wrote final dependency security triage recommending Docling fallback isolation before broad ML upgrades.** `est:60m`
   Synthesize S01/S02 into a final dependency security triage report. Recommend whether to update, remove, isolate, or defer torch/transformers and Docling fallback. Include severity, exploitability, affected path, and follow-up milestone recommendation.
   - Files: `.gsd/milestones/M018-gyff0h/slices/S03/dependency-security-triage.md`, `.gsd/milestones/M018-gyff0h/slices/S03/run-evidence/final-dependency-security-guard.json`
   - Verify: uv run python inline assertions over final-dependency-security-guard.json
 
-- [x] **T02: Review and validate R046** `est:45m`
+- [x] **T02: Validated R046 after independent security review passed.** `est:45m`
   Run independent security review of the final triage artifacts and update R046 with validation evidence. Close M018 if the review agrees no immediate hotfix is required.
   - Files: `.gsd/milestones/M018-gyff0h/slices/S03/run-evidence/independent-security-review.md`, `.gsd/REQUIREMENTS.md`
   - Verify: uv run python inline assertions over review and guard artifacts

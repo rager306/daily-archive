@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Report deviations against M005 baseline
+# T03: Reported 30-paper deviation patterns against the M005 baseline.
 
 Compare 30-paper distributions against M005 S06/S07 baseline. Identify new/high-frequency refusal patterns, route shifts, per-paper outliers, conversion-method caveats, source/PDF caveats, and any changed implications for remediation.
 

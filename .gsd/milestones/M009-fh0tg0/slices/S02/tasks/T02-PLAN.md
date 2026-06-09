@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Test freshness verifier CLI
+# T02: Added freshness verifier CLI tests for fresh, stale, missing, input-mutation, and redaction cases.
 
 Add CLI tests for verify-artifacts fresh pass, report writing, stale mutation failure, missing output failure, input mutation failure, and redaction of raw fixture content.
 

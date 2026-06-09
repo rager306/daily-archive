@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Classify requirement and decision consistency
+# T02: Classified every GSD requirement and decision against the universal-KB ADR frame.
 
 Classify every Rxxx and Dxxx record against the proposed universal-KB architecture, GraphDB deferral, sidecar/evidence boundaries, parser-as-candidate invariant, no-direct-GraphDB-write rule, and agent-boundary rule. Produce JSON and markdown audit artifacts with per-record categories and findings.
 

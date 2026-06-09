@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Write MiniMax compatibility guard
+# T03: MiniMax guard written: optional helper probe possible later, orchestration/import/direct PDF blocked.
 
 Synthesize MiniMax findings into a compatibility guard with go/no-go, preconditions, adapter implications, and blocked orchestrator/source-of-truth behavior.
 

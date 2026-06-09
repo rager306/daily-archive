@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Document 9router MiniMax usage algorithm
+# T01: Documented 9router’s MiniMax usage algorithm and found the exact M015 endpoint omission.
 
 Write source-backed report and JSON summary for 9router MiniMax usage implementation.
 

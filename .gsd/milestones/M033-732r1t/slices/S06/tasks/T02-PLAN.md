@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Specify quality metrics and acceptance gates
+# T02: Specified measurable quality metrics and acceptance gates for the future combined-parser probe.
 
 Define measurable metrics and pass/fail gates for GROBID TEI/bibliography/citation quality, OpenDataLoader layout/OCR/table/coordinate quality, Adaptix adapter contract mapping, TreeKnowledge/PageIndex/card schema fit, source-span anchoring, reading order, low-quality source detection, and review packet completion.
 

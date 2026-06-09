@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Run bounded M010 source acquisition
+# T02: Bounded acquisition made M010 8/10 Markdown-ready; 2 papers still need top-up or block handling.
 
 Run bounded fast-only source acquisition for selected M010 papers. Persist acquisition summary/diagnostics; do not use unbounded conversion.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Write hardening recommendation
+# T02: Wrote final recommendation: next +10 may proceed only with explicit provenance, lineage, and top-up gates.
 
 Write final recommendation: whether to proceed to the next reviewed +10 batch, and under what required invocation gates.
 

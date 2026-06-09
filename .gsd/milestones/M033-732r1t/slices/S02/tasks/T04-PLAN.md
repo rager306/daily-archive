@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Validate and close GROBID bounded study
+# T04: Added and ran a validate-only closeout checker for the GROBID bounded probe.
 
 Add a validate-only closeout checker for S02 artifacts and run the full S02 acceptance gate. The closeout must pass whether the service produced TEI outputs or produced a typed service blocker, but it must reject any permissive graph/import safety flag.
 

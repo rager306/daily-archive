@@ -1,4 +1,4 @@
-# S01: Token Plan limits and quota observability
+# S01: S01
 
 **Goal:** Document MiniMax Token Plan quotas, rate limits, subscription budget posture, and usage visibility mechanisms.
 **Demo:** After S01, we know where and how to inspect Token Plan quotas/limits and current operational rules.
@@ -25,12 +25,12 @@ S01 feeds S02 with safe test envelope and S03 with limit-operability evidence.
 
 ## Tasks
 
-- [x] **T01: Document Token Plan limits and usage visibility** `est:small`
+- [x] **T01: Documented MiniMax Token Plan quotas, usage visibility, and rate-limit caveats.** `est:small`
   Use current MiniMax docs to write Token Plan quota/limit report, including usage page, remains endpoint, quota tiers, rate limits, reset rules, and production caveat.
   - Files: `.gsd/milestones/M014-65dlgp/slices/S01/token-plan-limits-report.md`, `.gsd/milestones/M014-65dlgp/slices/S01/run-evidence/token-plan-docs-summary.json`
   - Verify: test -s .gsd/milestones/M014-65dlgp/slices/S01/token-plan-limits-report.md && test -s .gsd/milestones/M014-65dlgp/slices/S01/run-evidence/token-plan-docs-summary.json
 
-- [x] **T02: Probe Token Plan remains endpoint safely** `est:small`
+- [x] **T02: Probed Token Plan remains endpoint safely; current key returned HTTP 403 with raw response redacted.** `est:small`
   Call MiniMax Token Plan remains endpoint if the existing key can access it, persist only sanitized response shape/status/keys and no token values or raw body.
   - Files: `.gsd/milestones/M014-65dlgp/slices/S01/run-evidence/token-plan-remains-probe.json`
   - Verify: uv run python - <<'PY'
@@ -44,7 +44,7 @@ assert d['endpoint'].endswith('/v1/token_plan/remains')
 print('token-plan-remains-probe-ok')
 PY
 
-- [x] **T03: Write Token Plan limits guard** `est:small`
+- [x] **T03: Wrote Token Plan limits guard: budget non-blocking, platform limits still apply, S02 capped to bounded calls.** `est:small`
   Synthesize S01 guard: budget non-blocking due subscription, platform limits still respected, and real test envelope for S02.
   - Files: `.gsd/milestones/M014-65dlgp/slices/S01/run-evidence/token-plan-limits-guard.json`
   - Verify: uv run python - <<'PY'

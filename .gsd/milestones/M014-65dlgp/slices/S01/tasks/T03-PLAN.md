@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Write Token Plan limits guard
+# T03: Wrote Token Plan limits guard: budget non-blocking, platform limits still apply, S02 capped to bounded calls.
 
 Synthesize S01 guard: budget non-blocking due subscription, platform limits still respected, and real test envelope for S02.
 

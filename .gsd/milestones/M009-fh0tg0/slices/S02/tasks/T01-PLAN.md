@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Add verify artifacts CLI command
+# T01: Added the additive `validation-batch verify-artifacts` CLI command.
 
 Add `validation-batch verify-artifacts` CLI command using S01 provenance helpers. The command should accept provenance log, optional run-id, batch-id, command, optional report path, and --json; return exit 0 only on fresh verdict.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Define deterministic annotation sidecars
+# T01: Defined deterministic annotation sidecars that serialize safely without becoming KG facts.
 
 Define annotation sidecar dataclasses and contract serialization for deterministic chunk annotations. Include annotation id, paper id, chunk id, method, annotation type, values, confidence class, warnings, and `promoted_to_fact=false`.
 

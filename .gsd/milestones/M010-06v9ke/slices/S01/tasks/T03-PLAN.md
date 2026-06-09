@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Write availability report and selection guard
+# T03: Wrote the M010 availability report and guard: 10 selected, 0 prior overlap, 0/10 upfront Markdown/PDF.
 
 Write availability report and run final S01 guards: selected count, overlap count, source availability counts, and safety flags.
 

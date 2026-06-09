@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Apply redacted semantic judgments
+# T02: Applied redacted semantic judgments: 7 repair_required, 3 retrieval_only, 0 import candidates.
 
 Apply the rubric to every S01 target using redacted M010 metadata and source path/hash provenance. Persist categorical judgments without raw source text or claim text.
 

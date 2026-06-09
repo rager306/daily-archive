@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Review quota-filled new plus ten evidence
+# T01: Independent review flagged top-up automation and stale metadata gaps while accepting current M008 scan as safe operational evidence.
 
 Run independent review of M008 S01-S03 artifacts. Focus on whether quota-fill evidence is meaningful, source readiness is honestly represented, scan artifacts are redacted, and claims do not exceed evidence.
 

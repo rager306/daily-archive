@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Run lineage regression and sample evidence
+# T03: Generated lineage pass/mismatch sample reports and ran focused regression.
 
 Generate S03 sample scan/freshness evidence showing active M009 lineage and a negative lineage mismatch report.
 

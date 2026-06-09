@@ -1,4 +1,4 @@
-# S02: MiniMax structured JSON remediation
+# S02: S02
 
 **Goal:** Debug MiniMax structured output using Anthropic-compatible recommended API, tool calls, and OpenAI-compatible structured options.
 **Demo:** After S02, we know whether MiniMax supports structured output reliably via prompt JSON, reasoning split, response_format, or tool calls.
@@ -26,7 +26,7 @@ Provides corrected structured-output verdict to S03.
 
 ## Tasks
 
-- [x] **T01: Run structured-output API matrix** `est:medium`
+- [x] **T01: Ran structured-output matrix; Anthropic forced tool call schema-validated, correcting M014's prompt-JSON false negative.** `est:medium`
   Run live MiniMax structured-output matrix with sanitized artifacts: Anthropic text, Anthropic forced tool, OpenAI reasoning_split, OpenAI response_format variants.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S02/run-evidence/minimax-structured-output-matrix.json`
   - Verify: uv run python - <<'PY'
@@ -40,7 +40,7 @@ assert d['secrets_logged'] is False
 print('minimax-structured-output-matrix-ok')
 PY
 
-- [x] **T02: Write structured-output verdict** `est:small`
+- [x] **T02: Wrote corrected MiniMax structured-output verdict: use Anthropic forced tool calls with schema validation.** `est:small`
   Write structured-output verdict naming which MiniMax interface should be used for helper adapter and what controls are required.
   - Files: `.gsd/milestones/M015-ktorc7/slices/S02/run-evidence/minimax-structured-output-guard.json`, `.gsd/milestones/M015-ktorc7/slices/S02/minimax-structured-output-remediation.md`
   - Verify: uv run python - <<'PY'

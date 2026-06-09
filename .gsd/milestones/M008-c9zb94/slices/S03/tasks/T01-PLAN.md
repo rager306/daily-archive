@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Implement quota fill gate helpers
+# T01: Implemented and tested the quota-fill gate helpers for validation batches.
 
 Implement quota-fill helper functions and tests. The helper should classify source-ready selected papers as accepted, mark unready papers as rejected/needs_replacement, and compute shortage_count. It should support deterministic future replacement metadata but not perform unbounded acquisition in this task.
 

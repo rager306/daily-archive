@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Write final recommendation and update R039
+# T02: Wrote final M012 recommendation: both tools are compatible only for future bounded probes, not activation.
 
 Write final M012 recommendation and guard with separate DSPy and MiniMax go/no-go/precondition verdicts, then update R039.
 

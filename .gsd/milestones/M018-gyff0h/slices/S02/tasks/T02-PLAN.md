@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T02: Classify runtime exposure
+# T02: Classified runtime exposure as medium when bounded source acquisition processes external PDFs, otherwise low/dormant.
 
 Inspect the active conversion/runtime files identified by T01 and classify whether vulnerable ML packages are reachable from CLI/runtime paths that process untrusted PDFs or other external inputs. Write a human-readable reachability report.
 

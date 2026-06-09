@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Document GROBID runtime requirements and service readiness
+# T01: Documented GROBID runtime requirements and confirmed the CRF Docker image is ready for the bounded S02 probe.
 
 Confirm local Java/Docker/runtime facts, record native-vs-Docker requirements from vendored GROBID docs, and attempt to prepare the recommended CRF Docker service path. If Docker image pull/start is blocked, record a typed blocker rather than weakening scope. Read-only research context: `/root/vendor-source/grobid/doc/Install-Grobid.md`, `/root/vendor-source/grobid/doc/Grobid-docker.md`, `/root/vendor-source/grobid/Readme.md`.
 

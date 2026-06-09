@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Add PageIndex navigation and validation helpers
+# T03: Added PageIndex navigation lookup helpers and structural validation diagnostics.
 
 Add navigation helpers and tests for locating sections by title, computing stable Paper -> PageIndexNode paths, walking NEXT links, and validating parent/child/NEXT consistency. Keep helpers pure and fixture-local. Done when downstream S03 can attach chunks to stable node IDs without inspecting parser internals.
 

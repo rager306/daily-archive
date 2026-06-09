@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T01: Inventory ML dependency graph
+# T01: Captured sanitized ML dependency inventory and transitive path from docling to torch/transformers.
 
 Inspect Python dependency declarations and lockfile summaries for torch/transformers ownership. Run sanitized package inventory commands using uv without modifying dependencies. Write a dependency inventory artifact under S01 run-evidence.
 

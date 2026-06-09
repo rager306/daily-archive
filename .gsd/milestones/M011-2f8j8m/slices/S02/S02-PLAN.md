@@ -1,4 +1,4 @@
-# S02: Semantic rubric and redacted judgments
+# S02: S02
 
 **Goal:** Define and apply a semantic review rubric that judges whether selected M010 targets are extraction-ready, retrieval-only, repair-required, or rejected without embedding raw source text.
 **Demo:** A review rubric and redacted judgment packet are available for the selected targets, with decisions expressed as categories and source references rather than raw text.
@@ -24,12 +24,12 @@ Consumes S01 review targets and produces redacted per-target judgments for S03 i
 
 ## Tasks
 
-- [x] **T01: Define semantic import-readiness rubric** `est:small`
+- [x] **T01: Defined a conservative semantic import-readiness rubric that blocks import candidates without chunk-level span provenance.** `est:small`
   Write a semantic import-readiness rubric that can classify targets as import_candidate, retrieval_only, repair_required, or reject, with explicit blockers for missing chunk spans and no trusted claim text.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S02/semantic-review-rubric.md`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S02/semantic-review-rubric.md
 
-- [x] **T02: Apply redacted semantic judgments** `est:medium`
+- [x] **T02: Applied redacted semantic judgments: 7 repair_required, 3 retrieval_only, 0 import candidates.** `est:medium`
   Apply the rubric to every S01 target using redacted M010 metadata and source path/hash provenance. Persist categorical judgments without raw source text or claim text.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S02/run-evidence/redacted-semantic-judgments.json`, `.gsd/milestones/M011-2f8j8m/slices/S02/semantic-judgment-summary.md`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S02/run-evidence/redacted-semantic-judgments.json && uv run python - <<'PY'
@@ -42,7 +42,7 @@ assert j['trusted_facts_created'] is False
 print('redacted-semantic-judgments-ok')
 PY
 
-- [x] **T03: Verify judgment consistency and leakage guard** `est:small`
+- [x] **T03: Verified S02 judgment guard: all targets judged, no raw payload keys, no positive import recommendation.** `est:small`
   Run consistency and leakage guard over the rubric and judgments, including class counts, blocker counts, and no-write/no-import safety flags.
   - Files: `.gsd/milestones/M011-2f8j8m/slices/S02/run-evidence/semantic-judgment-guard.json`
   - Verify: test -s .gsd/milestones/M011-2f8j8m/slices/S02/run-evidence/semantic-judgment-guard.json && uv run python - <<'PY'

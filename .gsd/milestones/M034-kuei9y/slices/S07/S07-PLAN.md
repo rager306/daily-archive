@@ -25,12 +25,12 @@ Completes the documentation package and makes it ready for the next tool-driven 
 
 ## Tasks
 
-- [x] **T01: Create final decision package summary** `est:small`
+- [x] **T01: Created the final M034 decision package summary.** `est:small`
   Create DECISION-PACKAGE-SUMMARY.md summarizing the ADR set, PRD, requirements, contracts, gates, open questions, safety invariants, and next milestone recommendation.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/DECISION-PACKAGE-SUMMARY.md`
   - Verify: Check summary references all major package artifacts and safety defaults.
 
-- [x] **T02: Verify complete M034 decision package** `est:small`
+- [x] **T02: Added and passed the final verifier for the complete M034 decision package.** `est:small`
   Implement and run a final verifier that composes all prior verifiers and checks the final summary/handoff artifacts, safety defaults, accepted/deferred ADR statuses, and package completeness.
   - Files: `scripts/verify_m034_decision_package.py`
   - Verify: `uv run python scripts/verify_m034_decision_package.py --package-dir .gsd/milestones/M034-kuei9y/decision-package --requirements .gsd/REQUIREMENTS.md --decisions .gsd/DECISIONS.md && uv run ruff check scripts/verify_m034_*.py`

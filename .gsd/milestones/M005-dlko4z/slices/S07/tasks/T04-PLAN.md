@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Review and report negative import rehearsal
+# T04: Reported and reviewed the negative import-boundary rehearsal with positive KG import still blocked.
 
 Write a remediation report and independent review summary for the negative rehearsal. State exactly what is proven, why positive import remains blocked, and what future slice would need to create a reviewed import-eligible subset.
 

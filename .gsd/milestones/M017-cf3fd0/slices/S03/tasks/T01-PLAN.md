@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Implement MiniMax structured helper boundary
+# T01: Implemented and tested the MiniMax structured helper boundary with forced tool calls and local schema validation.
 
 Implement a dev-only MiniMax structured helper boundary with pure request-building and response-validation primitives. Cover forced Anthropic tool-call payload shape, local input_schema validation, prompt-only JSON rejection, raw corpus payload blocking, non-authoritative outputs, and sanitized diagnostics with tests. Use global skill `minimax-safe-helper` as reference.
 

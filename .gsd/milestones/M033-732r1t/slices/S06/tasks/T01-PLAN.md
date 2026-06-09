@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Define bounded future probe scope and corpus strategy
+# T01: Defined the bounded future parser-quality probe scope and corpus strategy.
 
 After S05 is complete, create the future quality milestone scope from the S05 recommendation: selected corpus classes, golden/fixture paper types, required source-locality controls, no-network defaults, model/backend cache checks, and excluded production actions.
 

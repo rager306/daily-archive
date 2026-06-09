@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Run real bounded MiniMax helper probes
+# T01: Ran four real MiniMax helper probes: HTTP 200 for all, strict JSON and redacted helper succeeded with schema-validation caveats.
 
 Run bounded live MiniMax helper probes: strict JSON, redacted KG helper decision, and deliberate schema/length edge. Persist sanitized metadata only.
 

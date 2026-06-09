@@ -1,4 +1,4 @@
-# S03: Quota fill gate and scan new plus ten batch
+# S03: S03
 
 **Goal:** Add a quota-fill gate for the new +10 batch, prove the current batch reaches 10 accepted source-ready papers, then run validation-batch scan only if the quota gate passes.
 **Demo:** After this slice, the new +10 batch has a quota-fill gate artifact proving accepted_ready_count=10 before scan, then scan/delta/outlier artifacts, or a clear blocker if quota cannot be filled.
@@ -26,12 +26,12 @@ Consumes S02 final source-ready batch state and S01 candidate inventory. Produce
 
 ## Tasks
 
-- [x] **T01: Implement quota fill gate helpers** `est:medium`
+- [x] **T01: Implemented and tested the quota-fill gate helpers for validation batches.** `est:medium`
   Implement quota-fill helper functions and tests. The helper should classify source-ready selected papers as accepted, mark unready papers as rejected/needs_replacement, and compute shortage_count. It should support deterministic future replacement metadata but not perform unbounded acquisition in this task.
   - Files: `src/arxiv_archive/validation_batch_workflow.py`, `tests/test_validation_batch_quota_fill.py`
   - Verify: uv run pytest tests/test_validation_batch_quota_fill.py tests/test_validation_batch_workflow.py -q && uv run ruff check src/arxiv_archive/validation_batch_workflow.py tests/test_validation_batch_quota_fill.py
 
-- [x] **T02: Write current batch quota fill artifact** `est:small`
+- [x] **T02: Wrote the M008 quota-fill artifact proving 10/10 accepted source-ready papers before scan.** `est:small`
   Generate quota-fill summary and diagnostics for the current M008 new +10 batch from the final S02 preflight state. Because current batch is 10/10 ready, no replacements should be needed, but the artifact must prove that before scan.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/quota-fill-summary.json`, `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/quota-fill-diagnostics.jsonl`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S03/run-evidence/quota-fill-summary.json && uv run python - <<'PY'
@@ -45,7 +45,7 @@ assert s['raw_text_included'] is False
 print('quota-fill-ok')
 PY
 
-- [x] **T03: Run quota-gated validation scan** `est:medium`
+- [x] **T03: Ran the quota-gated scan for the new +10 batch; it produced 1,591 chunks, 6 outliers, and zero import-eligible chunks.** `est:medium`
   Run validation-batch scan over the quota-filled S02 state and write scan/delta/outlier artifacts plus a scan report. Include quota-fill evidence and PDF caveat in the report.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/validation-scan-summary.json`, `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/validation-scan-diagnostics.jsonl`, `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/delta-report.json`, `.gsd/milestones/M008-c9zb94/slices/S03/run-evidence/outlier-report.json`, `.gsd/milestones/M008-c9zb94/slices/S03/validation-scan-report.md`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S03/run-evidence/validation-scan-summary.json && uv run python - <<'PY'

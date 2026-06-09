@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Run thirty paper deviation scan
+# T02: Ran the 30-paper deviation scan and produced redacted evidence for 4,289 chunks across 30 papers.
 
 Run the 30-paper deviation scanner and persist summary plus per-paper diagnostics under S03 run-evidence. Confirm all 30 Markdown-ready papers are represented and no safety flags are enabled.
 

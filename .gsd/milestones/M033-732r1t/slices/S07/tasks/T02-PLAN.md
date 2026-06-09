@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Add focused tests for adapter mapping and safety flags
+# T02: Added focused tests for Adaptix mapping and fail-closed adapter safety.
 
 Add tests that exercise Adaptix loading against a small fixture with OpenDataLoader field names, verify aliases and bounding boxes map correctly, verify malformed documents fail closed with diagnostics, and verify generated summaries keep graph/import/LadybugDB flags false. Keep tests local-only and independent of the hybrid backend.
 

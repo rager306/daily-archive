@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Test bounded top up behavior
+# T02: Added bounded top-up tests for success, shortage, duplicate exclusion, and blocker diagnostics.
 
 Add tests for top-up planning: already full quota, underfilled with enough replacements, underfilled with max-attempt shortage, duplicate/selected candidate exclusion, and redaction/safety flags.
 

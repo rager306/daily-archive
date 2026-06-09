@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Independent compatibility review
+# T01: Independent review passed M012 compatibility artifacts while keeping production activation blocked.
 
 Independently review the M012 S01-S03 compatibility artifacts for rigor, source coverage, and whether final go/no-go recommendations are justified.
 

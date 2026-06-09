@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Draft ADR-000 universal KB north star
+# T02: Drafted ADR-000 as the binding universal-KB north-star decision.
 
 Create the north-star ADR using the template. It must define daily-archive as a local-first universal knowledge base, keep scientific articles as the first proving domain, separate generic primitives from paper-specific adapters, preserve evidence-chain promotion, defer GraphDB selection, and explicitly state safety non-authorizations.
 

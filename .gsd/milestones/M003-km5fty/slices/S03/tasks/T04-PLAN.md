@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Run S03 quality gates and regression smoke
+# T04: Ran final S03 evidence-path regression, lint, diagnostics, and public CLI help smoke successfully.
 
 Run final S03 regression gates: evidence-path tests, PageIndex tests, S01 ingestion tests, analysis regression, CLI contract smoke, Ruff on touched files, and public module help smoke. Record limitations for S04 and S05: no claims/entities, no embeddings, no LadybugDB persistence, and simple deterministic chunking only. Done when S03 is ready for closeout and requirements restoration can follow.
 

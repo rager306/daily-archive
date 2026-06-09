@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Document complexity risks and unresolved validation gates
+# T03: Documented combined-architecture complexity risks and unresolved validation gates for S06.
 
 Write the risk/unknowns and validation-gate artifact: runtime burdens, model cache risks, full-DL GROBID future accuracy option, layout/table fidelity gaps, source-span anchoring, bibliography/citation quality, reading order/OCR quality, review packet requirements, and no-write import boundary. This feeds S06 directly.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Define semantic import-readiness rubric
+# T01: Defined a conservative semantic import-readiness rubric that blocks import candidates without chunk-level span provenance.
 
 Write a semantic import-readiness rubric that can classify targets as import_candidate, retrieval_only, repair_required, or reject, with explicit blockers for missing chunk spans and no trusted claim text.
 

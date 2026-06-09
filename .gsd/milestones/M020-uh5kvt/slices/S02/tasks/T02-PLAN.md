@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Validate one-paper locator fixture
+# T02: Validated the one-paper locator fixture and semantic spot-check boundary.
 
 Validate the one-paper fixture against the protocol guard and perform a targeted semantic spot check that records only categorical judgments and coordinates, not raw text.
 

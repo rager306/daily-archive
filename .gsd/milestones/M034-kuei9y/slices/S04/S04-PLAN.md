@@ -26,17 +26,17 @@ Provides implementation-ready scope for contract design and roadmap slices.
 
 ## Tasks
 
-- [x] **T01: Draft PRD for universal evidence orchestration** `est:medium`
+- [x] **T01: Drafted the PRD for universal evidence orchestration.** `est:medium`
   Create PRD.md describing the product scope, users, workflows, goals, non-goals, acceptance criteria, and safety boundaries for universal-KB evidence orchestration with scientific-paper first-domain adapters.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/PRD.md`
   - Verify: Check PRD includes goals, non-goals, users, workflows, safety boundaries, generic vs paper-specific scope, and references ADR-000/002/003/004/005/006/007.
 
-- [x] **T02: Draft functional and non-functional requirements** `est:medium`
+- [x] **T02: Drafted the functional and non-functional requirements package for universal evidence orchestration.** `est:medium`
   Create FUNCTIONAL-REQUIREMENTS.md and NON-FUNCTIONAL-REQUIREMENTS.md. Separate generic universal-KB requirements from scientific-paper first-domain requirements and include acceptance criteria.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/FUNCTIONAL-REQUIREMENTS.md`, `.gsd/milestones/M034-kuei9y/decision-package/NON-FUNCTIONAL-REQUIREMENTS.md`
   - Verify: Check requirement docs include queue/status/retry/lazy/dependency/review/readiness/safety items, local-first/reproducibility/redaction/observability/GraphDB portability/resumability NFRs, and acceptance criteria.
 
-- [x] **T03: Verify S04 PRD and requirements** `est:small`
+- [x] **T03: Added and passed the verifier for the M034 PRD and requirements package.** `est:small`
   Implement and run a verifier for PRD and requirement artifacts, checking required sections, ADR references, generic/paper split, safety markers, acceptance criteria, and S01 audit clarification coverage.
   - Files: `scripts/verify_m034_prd_requirements.py`
   - Verify: `uv run python scripts/verify_m034_prd_requirements.py --package-dir .gsd/milestones/M034-kuei9y/decision-package && uv run ruff check scripts/verify_m034_prd_requirements.py`

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Build redacted semantic review set
+# T02: Built the M011 semantic review target set: 10 redacted targets with source paths and hashes.
 
 Build deterministic redacted review-set manifest with a bounded mix of M010 outliers and non-outlier controls, carrying source path/hash/span metadata only.
 

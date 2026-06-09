@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Document refusal diagnostics and safety boundaries
+# T03: Documented the current refusal diagnostics and fail-closed safety boundaries for external parser probes.
 
 Summarize the current fail-closed model: low-quality source handling, metadata-only rows, missing-source blockers, unsafe path checks, parser-ready/chunk-ready refusal rules, graph-readiness review requirements, no-write import flags, and forbidden positive claims. Separate implementation evidence from requirement scope so external parser outputs remain candidate evidence only.
 

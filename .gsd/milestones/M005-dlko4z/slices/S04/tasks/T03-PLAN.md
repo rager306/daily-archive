@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Validate annotation contract boundaries
+# T03: Validated annotation sidecar contract boundaries and blocked nested raw-text leakage.
 
 Validate that annotation sidecars satisfy the S01 contract: all chunk references resolve, redaction holds, `promoted_to_fact=false`, and no annotation creates import eligibility. Include negative tests for unresolved chunks, promoted facts, and raw text leakage.
 

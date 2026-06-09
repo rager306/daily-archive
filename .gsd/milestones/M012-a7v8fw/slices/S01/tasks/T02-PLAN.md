@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Assess DSPy local compatibility and minimal probe
+# T02: DSPy local probe found version 3.2.1 but import is currently blocked by missing `cloudpickle`.
 
 Inspect local environment and DSPy source for install/import feasibility. If safe and dependency is available, run an import/version/minimal dry-run probe that does not call external LMs or optimizers. Otherwise document why probe is skipped.
 

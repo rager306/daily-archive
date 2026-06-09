@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Run Token Plan access matrix
+# T01: Ran Token Plan remains matrix; no true API remains success, and collected Token Plan key matched the ordinary API key.
 
 Run sanitized Token Plan remains endpoint matrix across available key variables, GET/POST, Bearer/X-Api-Key, and minimax/minimaxi host variants where safe.
 

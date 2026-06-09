@@ -1,4 +1,4 @@
-# S01: CLI run provenance log
+# S01: S01
 
 **Goal:** Add a safe, additive provenance/freshness module that can record validation CLI run metadata and verify recorded file hashes without changing existing CLI behavior yet.
 **Demo:** After this slice, a validation-batch run can emit a commit-safe provenance log entry tying command execution to input and output hashes.
@@ -26,7 +26,7 @@ Provides library primitives for S02 CLI verifier and later command integration.
 
 ## Tasks
 
-- [x] **T01: Implement provenance primitives** `est:medium`
+- [x] **T01: Implemented isolated validation-batch provenance and freshness primitives.** `est:medium`
   Create validation_batch_provenance module with file fingerprinting, argv redaction, git commit lookup, provenance entry construction, JSONL append/read, entry selection, and freshness report generation/writing. Keep it independent of CLI wiring.
   - Files: `src/arxiv_archive/validation_batch_provenance.py`
   - Verify: uv run python - <<'PY'
@@ -41,12 +41,12 @@ assert 'abc' not in str(redact_cli_args(['cmd','--api-key','abc']))
 print('provenance-primitives-ok')
 PY
 
-- [x] **T02: Test provenance and freshness behavior** `est:medium`
+- [x] **T02: Added provenance/freshness unit tests covering redaction, hash matching, stale/missing outputs, and unsafe flags.** `est:medium`
   Add unit tests covering fingerprint redaction, provenance entry creation, append/read JSONL, freshness pass, output mutation stale failure, missing output failure, unsafe safety flags, and entry selection.
   - Files: `tests/test_validation_batch_provenance.py`
   - Verify: uv run pytest tests/test_validation_batch_provenance.py -q && uv run ruff check src/arxiv_archive/validation_batch_provenance.py tests/test_validation_batch_provenance.py
 
-- [x] **T03: Run regression and sample provenance artifacts** `est:small`
+- [x] **T03: Generated sample provenance/freshness artifacts and verified regression tests.** `est:small`
   Run regression checks to ensure new module does not alter existing validation-batch workflow behavior, then write S01 sample run-log/freshness artifacts for review.
   - Files: `.gsd/milestones/M009-fh0tg0/slices/S01/run-evidence/sample-cli-run-log.jsonl`, `.gsd/milestones/M009-fh0tg0/slices/S01/run-evidence/sample-freshness-report.json`
   - Verify: uv run pytest tests/test_validation_batch_provenance.py tests/test_validation_batch_workflow.py -q && uv run ruff check src/arxiv_archive/validation_batch_provenance.py tests/test_validation_batch_provenance.py && test -s .gsd/milestones/M009-fh0tg0/slices/S01/run-evidence/sample-cli-run-log.jsonl && test -s .gsd/milestones/M009-fh0tg0/slices/S01/run-evidence/sample-freshness-report.json

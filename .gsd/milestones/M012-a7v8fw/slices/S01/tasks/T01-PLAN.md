@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Research DSPy sources and 2026 practices
+# T01: Researched DSPy compatibility and best practices; result is optional/dev only, no production activation.
 
 Use GitNexus project context, `../vendor-source/dspy`, and current external research to document DSPy package/API, signatures/modules/metrics/evaluation, optimizer discipline, observability, and production best practices relevant to Scientific KG extraction.
 

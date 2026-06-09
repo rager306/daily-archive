@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Run regression and sample provenance artifacts
+# T03: Generated sample provenance/freshness artifacts and verified regression tests.
 
 Run regression checks to ensure new module does not alter existing validation-batch workflow behavior, then write S01 sample run-log/freshness artifacts for review.
 

@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Map quant-mind patterns to daily-archive contracts
+# T03: Mapped quant-mind reusable patterns to daily-archive contracts with a pattern-source verdict.
 
 Map reusable quant-mind patterns to daily-archive contracts and existing M033 findings. Focus on TreeKnowledge to PageIndex, PaperKnowledgeCard to flat summary/index card, Citation/SourceRef/ExtractionRef to EvidencePath/provenance, fetch-format-flow separation to parser pipeline boundaries, batch_run to bounded concurrency, and magic resolver guardrails to typed input resolution. Record what to adopt as pattern and what to reject as dependency/runtime.
 

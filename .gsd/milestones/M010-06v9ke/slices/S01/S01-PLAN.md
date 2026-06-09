@@ -1,4 +1,4 @@
-# S01: Select next gated plus ten corpus
+# S01: S01
 
 **Goal:** Select the next deterministic +10 paper corpus excluding prior M006 and M008 validation corpora, with redacted availability evidence.
 **Demo:** After this slice, a new +10 manifest exists with no overlap against M006 or M008 and a redacted availability report.
@@ -26,7 +26,7 @@ Produces the manifest consumed by S02 init/preflight/top-up.
 
 ## Tasks
 
-- [x] **T01: Build prior exclusion and candidate inventory** `est:small`
+- [x] **T01: Built the M010 candidate inventory: 790 eligible papers after excluding 40 prior validation IDs.** `est:small`
   Build prior-corpus exclusion set from M006 and M008 manifests and a redacted candidate inventory from local/cache paper metadata. Do not include raw text.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S01/run-evidence/next-plus-ten-candidate-inventory.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S01/run-evidence/next-plus-ten-candidate-inventory.json && uv run python - <<'PY'
@@ -39,7 +39,7 @@ assert s['raw_text_included'] is False
 print('candidate-inventory-ok')
 PY
 
-- [x] **T02: Select next plus ten manifest** `est:small`
+- [x] **T02: Selected the M010 next +10 manifest with 0 prior overlap and 0/10 upfront Markdown/PDF availability.** `est:small`
   Select the first 10 deterministic candidate IDs after exclusions and write the M010 manifest plus rationale.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S01/next-plus-ten-corpus-manifest.json`, `.gsd/milestones/M010-06v9ke/slices/S01/next-plus-ten-selection-rationale.md`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S01/next-plus-ten-corpus-manifest.json && uv run python - <<'PY'
@@ -52,7 +52,7 @@ assert s['raw_text_included'] is False
 print('manifest-ok')
 PY
 
-- [x] **T03: Write availability report and selection guard** `est:small`
+- [x] **T03: Wrote the M010 availability report and guard: 10 selected, 0 prior overlap, 0/10 upfront Markdown/PDF.** `est:small`
   Write availability report and run final S01 guards: selected count, overlap count, source availability counts, and safety flags.
   - Files: `.gsd/milestones/M010-06v9ke/slices/S01/next-plus-ten-availability-report.md`, `.gsd/milestones/M010-06v9ke/slices/S01/run-evidence/selection-guard.json`
   - Verify: test -s .gsd/milestones/M010-06v9ke/slices/S01/run-evidence/selection-guard.json && uv run python - <<'PY'

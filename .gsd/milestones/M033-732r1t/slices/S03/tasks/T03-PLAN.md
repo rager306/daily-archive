@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Promote Java-only and hybrid smoke evidence into formal run setup
+# T03: Promoted Java-only and hybrid smoke evidence into formal OpenDataLoader run setup.
 
 Create formal smoke/setup artifacts from the prepared Python 3.13 wrapper, hybrid docling-fast backend, Java-only fallback, direct JAR fallback, and Hugging Face model cache. Re-run or validate smoke conversions on the first selected manifest PDF: one Java-only fast-mode conversion and one hybrid docling-fast conversion with `--hybrid-url http://127.0.0.1:5002`. Start the backend on demand, verify `/health`, verify expected model cache paths exist before or after startup, run the hybrid smoke, and stop the backend after capture. Capture command metadata, cwd, runtime mode, backend mode, exit code, duration, output paths, stderr/stdout summary, model-cache paths/sizes/snapshot IDs, first-run download/cache notes, and typed blockers. Treat `opendataloader-pdf` with no input returning usage exit 2 as non-blocking CLI behavior, not a failed build.
 

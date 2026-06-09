@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T03: Run chunking benchmark dry run
+# T03: Ran the redacted chunking benchmark dry-run across three bounded methods.
 
 Run the benchmark over the 10-paper gold corpus and write redacted aggregate summary plus per-paper/method diagnostics. Confirm all import/no-write flags remain false and no raw text/chunk text/embeddings are serialized.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Design deterministic locator module
+# T01: Designed the deterministic candidate locator implementation boundary.
 
 Inspect existing evidence, import-boundary, validation, and CLI patterns. Produce a design note for the candidate locator module API, data structures, diagnostics, safety flags, and tests. Include explicit non-goals and no-import semantics.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Generate sidecars from chunk metadata
+# T02: Generated deterministic annotation sidecars from chunk metadata and added annotation diagnostics.
 
 Generate deterministic sidecar annotations from structural chunk metadata, including section role, route hint, structural type, table/figure/equation/reference flags, and review blockers. Do not inspect or persist raw chunk text.
 

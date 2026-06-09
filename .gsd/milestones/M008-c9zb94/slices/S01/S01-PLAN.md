@@ -1,4 +1,4 @@
-# S01: Select first new plus ten corpus
+# S01: S01
 
 **Goal:** Select exactly 10 new paper IDs for the first real expansion batch, excluding all M006 corpus papers, and document the deterministic selection rule plus source availability preview.
 **Demo:** After this slice, there is a deterministic next-10 manifest that excludes all M006 papers and explains why each paper was selected.
@@ -25,7 +25,7 @@ Consumes M006 30-paper manifest and local research/cache inventory; produces M00
 
 ## Tasks
 
-- [x] **T01: Build candidate inventory** `est:small`
+- [x] **T01: Built a redacted candidate inventory with 800 non-M006 candidates.** `est:small`
   Survey existing local research/cache inventory (`/root/.research/papers` and `/root/.arxiv_cache`) plus the M006 manifest to identify candidate paper IDs not already in the 30-paper corpus. Produce a compact candidate inventory summary without raw text.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S01/run-evidence/new-plus-ten-candidate-inventory.json`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S01/run-evidence/new-plus-ten-candidate-inventory.json && uv run python - <<'PY'
@@ -38,7 +38,7 @@ assert s['raw_text_included'] is False
 print('candidate-inventory-ok')
 PY
 
-- [x] **T02: Select new plus ten manifest** `est:small`
+- [x] **T02: Selected the deterministic first new +10 corpus manifest.** `est:small`
   Apply the deterministic selection rule to choose exactly 10 new paper IDs and write the M008 manifest plus rationale. The manifest should be compatible with validation-batch init.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S01/new-plus-ten-corpus-manifest.json`, `.gsd/milestones/M008-c9zb94/slices/S01/new-plus-ten-selection-rationale.md`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S01/new-plus-ten-corpus-manifest.json && uv run python - <<'PY'
@@ -52,7 +52,7 @@ assert m['raw_text_included'] is False
 print('new-plus-ten-manifest-ok')
 PY
 
-- [x] **T03: Audit overlap and source preview** `est:small`
+- [x] **T03: Audited the new +10 manifest: no M006 overlap, 1/10 Markdown-ready before S02.** `est:small`
   Run an overlap/source preview guard against M006 corpus and write a short availability report. Confirm no overlap and no raw text leakage.
   - Files: `.gsd/milestones/M008-c9zb94/slices/S01/new-plus-ten-availability-report.md`
   - Verify: test -s .gsd/milestones/M008-c9zb94/slices/S01/new-plus-ten-availability-report.md && uv run python - <<'PY'

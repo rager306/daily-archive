@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Record and verify scan provenance
+# T02: Recorded real scan provenance and verified the corrected M010 scan artifacts as fresh.
 
 Create a real scan provenance JSONL entry for the S03 scan inputs/outputs with expected milestone_id and batch_id metadata, then run verify-artifacts and persist freshness report.
 

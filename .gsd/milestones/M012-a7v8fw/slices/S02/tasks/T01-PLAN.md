@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Research MiniMax official API requirements
+# T01: Researched MiniMax compatibility from official docs; result is optional helper only, no live call or production activation.
 
 Use official MiniMax docs starting at https://platform.minimax.io/docs/api-reference/api-overview to document auth, base URL, model families, text/image/audio/video capabilities, structured output/tool support if available, rate/cost considerations, and SDK/API invocation shape.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Verify artifact to ingestion boundary for PageIndex consumers
+# T03: Verified the stored paper artifact path can feed the full-text ingestion boundary for future PageIndex consumers.
 
 Wire the ingestion boundary to existing stored paper artifact assumptions without changing the public daily CLI. Add tests proving a stored paper id plus deterministic local source path can produce an ingestion result ready for PageIndex construction, and document the S01 boundary in module docstrings or test names. Run targeted tests plus lint on the new production module. Done when future S02 can consume the result shape without touching M001 cron artifacts.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Run deterministic bounded batch rehearsal
+# T02: Ran deterministic bounded batch rehearsal over M011 targets.
 
 Run the deterministic batch helper on the M011 bounded targets and persist M021 S03 run evidence with richer ambiguity diagnostics than M020.
 

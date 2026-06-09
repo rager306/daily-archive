@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Build rehearsal candidates from benchmark artifacts
+# T02: Built S07 rehearsal candidates from S06 benchmark artifacts without raw-content access or graph writes.
 
 Implement adapters that read current S06 benchmark diagnostics and S05/S04/S03 package artifacts to create isolated import rehearsal candidates. The adapter should preserve method/package identity and refusal context but never load raw source files or attempt graph writes.
 

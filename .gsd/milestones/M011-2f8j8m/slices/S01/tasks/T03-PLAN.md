@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify redaction and reproducibility guard
+# T03: Verified the M011 S01 review set guard: 10 targets, 7 outliers, 3 controls, no raw payload keys.
 
 Run leakage and reproducibility guard over S01 artifacts, then write final selection guard.
 

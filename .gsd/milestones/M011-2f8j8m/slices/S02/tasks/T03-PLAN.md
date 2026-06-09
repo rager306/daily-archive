@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify judgment consistency and leakage guard
+# T03: Verified S02 judgment guard: all targets judged, no raw payload keys, no positive import recommendation.
 
 Run consistency and leakage guard over the rubric and judgments, including class counts, blocker counts, and no-write/no-import safety flags.
 

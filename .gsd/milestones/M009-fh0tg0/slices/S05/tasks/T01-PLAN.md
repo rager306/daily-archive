@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Review hardening evidence
+# T01: Independent review flagged that M009 hardening is useful but still requires explicit next-batch runbook gates.
 
 Run independent review over M009 S01-S04 code and artifacts. Focus on whether provenance/freshness/top-up hardening is enough to permit another reviewed +10 batch.
 

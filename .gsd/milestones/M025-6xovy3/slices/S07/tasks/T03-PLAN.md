@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Finalize evidence boundary report
+# T03: Finalized the S07 evidence boundary report and machine-readable summary with metadata-safe counts, provenance, redaction, diagnostics, and fail-closed safety validation.
 
 Validate the separated evidence artifacts and write the S07 report. The report must summarize per-article counts, missing/unsupported evidence diagnostics, provenance coverage, redaction checks, and no-import/no-write safety state.
 

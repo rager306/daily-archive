@@ -1,4 +1,4 @@
-# S04: Chunk annotation sidecars
+# S04: S04
 
 **Goal:** Add deterministic annotation sidecars over structure-aware chunks to support routing, review, and benchmark analysis without promoting annotations to KG facts or authorizing import readiness.
 **Demo:** After this slice, chunks have deterministic sidecar annotations useful for routing and review, without becoming KG facts.
@@ -26,22 +26,22 @@ S04 consumes S03 structure-aware chunk package outputs and emits annotation side
 
 ## Tasks
 
-- [x] **T01: Define deterministic annotation sidecars** `est:medium`
+- [x] **T01: Defined deterministic annotation sidecars that serialize safely without becoming KG facts.** `est:medium`
   Define annotation sidecar dataclasses and contract serialization for deterministic chunk annotations. Include annotation id, paper id, chunk id, method, annotation type, values, confidence class, warnings, and `promoted_to_fact=false`.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T02: Generate sidecars from chunk metadata** `est:large`
+- [x] **T02: Generated deterministic annotation sidecars from chunk metadata and added annotation diagnostics.** `est:large`
   Generate deterministic sidecar annotations from structural chunk metadata, including section role, route hint, structural type, table/figure/equation/reference flags, and review blockers. Do not inspect or persist raw chunk text.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T03: Validate annotation contract boundaries** `est:medium`
+- [x] **T03: Validated annotation sidecar contract boundaries and blocked nested raw-text leakage.** `est:medium`
   Validate that annotation sidecars satisfy the S01 contract: all chunk references resolve, redaction holds, `promoted_to_fact=false`, and no annotation creates import eligibility. Include negative tests for unresolved chunks, promoted facts, and raw text leakage.
   - Files: `tests/test_structure_aware_chunking.py`, `src/arxiv_archive/structure_aware_chunking.py`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && uv run ruff check src/arxiv_archive/structure_aware_chunking.py tests/test_structure_aware_chunking.py
 
-- [x] **T04: Run annotation dry run on gold corpus** `est:medium`
+- [x] **T04: Ran the annotation sidecar dry-run over the gold corpus and wrote redacted S04 evidence artifacts.** `est:medium`
   Run the annotation sidecar dry-run over the gold corpus and write redacted annotation summary plus package diagnostics. Confirm annotation counts and warnings are present while all import/no-write safety flags remain false.
   - Files: `src/arxiv_archive/structure_aware_chunking.py`, `tests/test_structure_aware_chunking.py`, `.gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-summary.json`, `.gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-package-diagnostics.jsonl`
   - Verify: uv run pytest tests/test_structure_aware_chunking.py tests/test_chunk_import_contract.py -q && test -s .gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-summary.json && test -s .gsd/milestones/M005-dlko4z/slices/S04/run-evidence/annotation-package-diagnostics.jsonl

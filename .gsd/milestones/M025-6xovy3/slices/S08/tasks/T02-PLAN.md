@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T02: Run final local preprocessing replay
+# T02: Ran the final local preprocessing replay over all five selected articles and persisted per-article final artifacts plus replay events.
 
 Implement or adapt the final local preprocessing replay command. It must read `data/article_catalog/catalog.json`, `data/article_catalog/index.json`, and the M025 corpus selection; it must reuse local artifacts from earlier slices; it must fail if a network fetch would be required during replay; and it must write final per-article artifacts and metrics.
 

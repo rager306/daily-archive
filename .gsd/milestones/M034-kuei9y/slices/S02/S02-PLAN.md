@@ -26,17 +26,17 @@ Provides the architecture frame and ADR format that all later ADRs, PRD sections
 
 ## Tasks
 
-- [x] **T01: Finalize ADR template and ADR index conventions** `est:small`
+- [x] **T01: Finalized the ADR template convention and created the M034 ADR index.** `est:small`
   Review the physical `ADR-TEMPLATE.md`, ensure it includes the full Mermaid-assisted enhanced structure and readability rules, and create an ADR index stub that records the template requirement and planned ADR set.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/ADR-TEMPLATE.md`, `.gsd/milestones/M034-kuei9y/decision-package/ADR-INDEX.md`
   - Verify: Check that the template includes required sections 0-14, Mermaid readability rules, special diagram blocks, and LLM Reading Notes; check ADR index references the template path.
 
-- [x] **T02: Draft ADR-000 universal KB north star** `est:medium`
+- [x] **T02: Drafted ADR-000 as the binding universal-KB north-star decision.** `est:medium`
   Create the north-star ADR using the template. It must define daily-archive as a local-first universal knowledge base, keep scientific articles as the first proving domain, separate generic primitives from paper-specific adapters, preserve evidence-chain promotion, defer GraphDB selection, and explicitly state safety non-authorizations.
   - Files: `.gsd/milestones/M034-kuei9y/decision-package/ADR-000-universal-kb-north-star.md`
   - Verify: Check ADR-000 contains all required template sections, at least one Mermaid context or evidence-chain diagram, R/D impact tables, safety non-authorization, and LLM Reading Notes.
 
-- [x] **T03: Verify S02 ADR package** `est:small`
+- [x] **T03: Added and passed the verifier for the M034 ADR template and north-star package.** `est:small`
   Implement and run a verifier for the ADR template/index/north-star package, checking template sections, ADR-000 sections, safety markers, R/D references, Mermaid readability constraints, and S01 audit consumption.
   - Files: `scripts/verify_m034_adr_template_and_north_star.py`
   - Verify: `uv run python scripts/verify_m034_adr_template_and_north_star.py --package-dir .gsd/milestones/M034-kuei9y/decision-package && uv run ruff check scripts/verify_m034_adr_template_and_north_star.py`

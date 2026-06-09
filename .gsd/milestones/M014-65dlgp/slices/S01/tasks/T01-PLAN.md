@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Document Token Plan limits and usage visibility
+# T01: Documented MiniMax Token Plan quotas, usage visibility, and rate-limit caveats.
 
 Use current MiniMax docs to write Token Plan quota/limit report, including usage page, remains endpoint, quota tiers, rate limits, reset rules, and production caveat.
 

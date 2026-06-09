@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Run S01 quality gates and regression smoke
+# T04: Ran final S01 regression, lint, diagnostics, and public CLI help smoke successfully.
 
 Run final S01 quality gates and record any known limitations for downstream S02. Execute targeted ingestion tests, relevant regression tests, Ruff on touched files, and public CLI help smoke to ensure the full-text contract did not alter M001/M002 public surfaces. Done when all commands pass and the slice is ready for execution closeout.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T03: Write DSPy compatibility guard
+# T03: DSPy guard written: optional/dev prototype allowed later, production runtime and optimizers blocked now.
 
 Synthesize DSPy findings into a compatibility guard with go/no-go, preconditions, and blocked behaviors for S03 matrix.
 

@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Run structured-output API matrix
+# T01: Ran structured-output matrix; Anthropic forced tool call schema-validated, correcting M014's prompt-JSON false negative.
 
 Run live MiniMax structured-output matrix with sanitized artifacts: Anthropic text, Anthropic forced tool, OpenAI reasoning_split, OpenAI response_format variants.
 

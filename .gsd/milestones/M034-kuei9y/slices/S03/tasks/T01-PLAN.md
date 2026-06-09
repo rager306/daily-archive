@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Draft GraphDB and no-direct-write ADRs
+# T01: Drafted the GraphDB deferral and no-direct-GraphDB-write ADRs.
 
 Draft ADR-002 deferred GraphDB selection and ADR-005 no direct extractor/parser/sidecar to GraphDB path. Both must use the template, reference S01 audit findings, include R/D impact tables, and preserve safety non-authorization.
 

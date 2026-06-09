@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Add active scan lineage metadata
+# T01: Added active milestone/batch lineage metadata to validation-batch scan artifacts.
 
 Add active lineage metadata support to validation-batch scan artifact production. Keep compatibility with existing scanner outputs, but ensure validation-batch summary/delta/outlier artifacts expose active milestone_id and batch_id.
 

@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T06: Map OpenDataLoader probe results to daily-archive contracts
+# T06: Mapped OpenDataLoader hybrid probe results to daily-archive contracts with a bounded sidecar-candidate verdict.
 
 Create a contract mapping matrix from OpenDataLoader hybrid outputs, Java-only fallback outputs, or blockers to daily-archive SourceRef, EvidencePath, PageIndex, SemanticChunk, table artifact, refusal diagnostic, and graph-readiness packet boundaries. Classify the bounded tool verdict as `hybrid-sidecar-candidate`, `java-only-candidate`, `needs-larger-hybrid-probe`, `blocked-by-runtime`, or `reject-for-now`. The verdict must remain bounded research only and must not claim graph readiness, production import eligibility, or LadybugDB write readiness. Include backend/cache operational requirements in the verdict: Python 3.13 venv, hybrid extras, server lifecycle, Hugging Face cache paths, cache size, and network dependency if cache is absent.
 

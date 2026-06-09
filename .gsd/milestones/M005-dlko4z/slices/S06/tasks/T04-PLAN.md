@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Generate benchmark review samples
+# T04: Generated redacted chunking benchmark review samples and review index.
 
 Generate bounded redacted benchmark review samples that let an independent reviewer inspect method differences without exposing raw paper text. Include representative per-paper/method rows, route/type/refusal/asset-linkage deltas, missing-source caveats, and recommendation rationale.
 

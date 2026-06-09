@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Draft PRD for universal evidence orchestration
+# T01: Drafted the PRD for universal evidence orchestration.
 
 Create PRD.md describing the product scope, users, workflows, goals, non-goals, acceptance criteria, and safety boundaries for universal-KB evidence orchestration with scientific-paper first-domain adapters.
 

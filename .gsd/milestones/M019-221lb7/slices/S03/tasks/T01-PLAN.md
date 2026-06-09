@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Write comparative matrix and recommendation
+# T01: Wrote final research-agent comparative matrix and recommendation.
 
 Synthesize the four S02 profiles into a comparative matrix covering architecture, source acquisition, provenance, review gates, autonomy, failure modes, reusable patterns, and non-goals. Write final recommendation for daily-archive's next KG/provenance milestone.
 

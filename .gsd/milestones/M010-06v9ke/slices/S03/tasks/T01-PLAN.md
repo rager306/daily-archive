@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T01: Run active lineage scan
+# T01: Ran the active-lineage M010 scan: 10 papers, 1,477 chunks, 7 outliers, zero import-eligible chunks.
 
 Run validation-batch scan over the materialized S02 source-ready batch state with active M010 milestone lineage. Persist scan response, summary, diagnostics, delta, outlier, manifest, and report.
 

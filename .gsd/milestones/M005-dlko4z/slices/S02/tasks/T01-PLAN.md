@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Build baseline package validator
+# T01: Built the S02 baseline package validator for current chunking.
 
 Implement a read-only baseline package builder that maps current available paper/full-text/PageIndex chunk artifacts into S01 import-ready package dictionaries and runs `validate_import_ready_package`. It should be conservative: missing source spans, unresolved parents, missing artifacts, or current chunks without graph-grade metadata should become structured diagnostics rather than guessed fixes.
 

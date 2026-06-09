@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Add bounded batch helper
+# T01: Added deterministic bounded batch helper for M011-style targets.
 
 Add module-level helper(s) and tests for building a deterministic candidate locator batch from M011-style target records. The helper must preserve source path/hash checks, route specs, per-paper summaries, and no-import safety flags.
 

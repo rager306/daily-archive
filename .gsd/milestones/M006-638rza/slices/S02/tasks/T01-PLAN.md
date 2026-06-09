@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Define bounded source acquisition plan
+# T01: Defined the bounded source acquisition plan for the 20 missing-Markdown expansion papers.
 
 Inspect existing full-text/download/conversion code paths and define a bounded acquisition plan for the 20 missing-Markdown papers. The plan should prefer already-supported project mechanisms and avoid unbounded Marker/LLM/optimizer behavior.
 

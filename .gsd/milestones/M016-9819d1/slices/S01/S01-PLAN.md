@@ -1,4 +1,4 @@
-# S01: 9router MiniMax usage algorithm
+# S01: S01
 
 **Goal:** Extract 9router MiniMax usage/remains implementation and tests into source-backed report.
 **Demo:** After S01, we know exactly how 9router checks MiniMax limits.
@@ -25,7 +25,7 @@ Feeds S02 corrected probe.
 
 ## Tasks
 
-- [x] **T01: Document 9router MiniMax usage algorithm** `est:small`
+- [x] **T01: Documented 9router’s MiniMax usage algorithm and found the exact M015 endpoint omission.** `est:small`
   Write source-backed report and JSON summary for 9router MiniMax usage implementation.
   - Files: `.gsd/milestones/M016-9819d1/slices/S01/9router-minimax-usage-report.md`, `.gsd/milestones/M016-9819d1/slices/S01/run-evidence/9router-minimax-usage-summary.json`
   - Verify: uv run python - <<'PY'

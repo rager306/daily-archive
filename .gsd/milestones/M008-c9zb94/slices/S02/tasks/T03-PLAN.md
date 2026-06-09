@@ -4,7 +4,7 @@ estimated_files: 4
 skills_used: []
 ---
 
-# T03: Refresh final preflight and report readiness
+# T03: Final preflight confirms the new +10 batch is 10/10 Markdown-ready with 0 blockers.
 
 Rerun validation-batch preflight after bounded acquisition, write final preflight artifacts and source readiness report. If any Markdown remains missing, mark S03 blocked rather than scanning.
 

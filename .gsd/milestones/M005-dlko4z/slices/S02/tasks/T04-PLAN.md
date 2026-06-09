@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Report baseline chunk quality
+# T04: Reported S02 baseline chunk quality and passed independent review.
 
 Write the S02 baseline report and run independent review. The report must state current chunking import-readiness failures, missing-artifact blockers, route/state/refusal distributions, and explicit non-claims: no improved chunking yet, no production import, no final import readiness, no broad corpus scaling.
 

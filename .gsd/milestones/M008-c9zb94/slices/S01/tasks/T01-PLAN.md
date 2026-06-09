@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Build candidate inventory
+# T01: Built a redacted candidate inventory with 800 non-M006 candidates.
 
 Survey existing local research/cache inventory (`/root/.research/papers` and `/root/.arxiv_cache`) plus the M006 manifest to identify candidate paper IDs not already in the 30-paper corpus. Produce a compact candidate inventory summary without raw text.
 

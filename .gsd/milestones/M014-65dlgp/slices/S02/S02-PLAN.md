@@ -1,4 +1,4 @@
-# S02: MiniMax real bounded helper probes
+# S02: S02
 
 **Goal:** Run real MiniMax live API helper probes using bounded synthetic/redacted inputs and sanitized artifacts.
 **Demo:** After S02, MiniMax has been exercised with real bounded helper-style API calls and sanitized evidence.
@@ -25,7 +25,7 @@ S02 produces callability/schema evidence for S03 recommendation.
 
 ## Tasks
 
-- [x] **T01: Run real bounded MiniMax helper probes** `est:medium`
+- [x] **T01: Ran four real MiniMax helper probes: HTTP 200 for all, strict JSON and redacted helper succeeded with schema-validation caveats.** `est:medium`
   Run bounded live MiniMax helper probes: strict JSON, redacted KG helper decision, and deliberate schema/length edge. Persist sanitized metadata only.
   - Files: `.gsd/milestones/M014-65dlgp/slices/S02/run-evidence/minimax-real-helper-probes.json`
   - Verify: uv run python - <<'PY'
@@ -41,7 +41,7 @@ assert d['raw_project_text_included'] is False
 print('minimax-real-helper-probes-ok')
 PY
 
-- [x] **T02: Write MiniMax real-test guard** `est:small`
+- [x] **T02: Wrote MiniMax real-test guard: real helper probe can continue only with schema validation and retry controls.** `est:small`
   Write a real-test guard that summarizes pass/flag outcomes, schema reliability, redaction hygiene, and blocked scopes.
   - Files: `.gsd/milestones/M014-65dlgp/slices/S02/run-evidence/minimax-real-test-guard.json`
   - Verify: uv run python - <<'PY'

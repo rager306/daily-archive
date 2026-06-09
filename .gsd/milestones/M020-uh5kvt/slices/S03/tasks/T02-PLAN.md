@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Validate small-batch locator guard
+# T02: Validated the small-batch locator guard and review recommendation.
 
 Validate the small-batch rehearsal guard, including missing/ambiguous/conflicting span metrics, import-disabled semantics, no raw payload keys, and next-step recommendation for S04 review.
 

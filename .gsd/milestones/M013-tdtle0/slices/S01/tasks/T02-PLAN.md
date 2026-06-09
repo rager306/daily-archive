@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T02: Run DSPy no-LM synthetic probe
+# T02: Ran DSPy no-LM probe: import succeeded, Predict failed closed without LM, static Evaluate succeeded.
 
 If isolated install succeeds, run synthetic no-LM DSPy import/Predict/Evaluate probe. Confirm no LM, optimizer, file write, production import, or LadybugDB write occurs.
 

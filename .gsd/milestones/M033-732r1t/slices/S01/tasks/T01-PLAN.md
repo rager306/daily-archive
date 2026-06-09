@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T01: Inventory current parser pipeline entrypoints
+# T01: Inventoried the current daily-archive parser pipeline entrypoints for external parser comparison.
 
 Use GitNexus and repository evidence to identify the current daily-archive scripts/modules/tests that participate in catalog intake, source acquisition, loader evidence, parser/conversion, chunk/evidence replay, graph-readiness package generation, and no-write import refusal. Record file paths, symbol/process names where available, stage ownership, and what each entrypoint produces. Do not edit code.
 

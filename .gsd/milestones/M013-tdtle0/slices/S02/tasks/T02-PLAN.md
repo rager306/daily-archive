@@ -4,7 +4,7 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T02: Assess optimizer applicability
+# T02: Assessed DSPy optimizers: 2 possible-dev, 6 future-only, 3 blocked, 8 not applicable now.
 
 Assess each optimizer's applicability to daily-archive Scientific KG extraction, including metric/devset needs, cost/risk, and allowed/blocked status.
 

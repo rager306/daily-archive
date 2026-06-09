@@ -26,27 +26,27 @@ Produces the baseline contract consumed by S02, S03, S04, S05, and S06. It does 
 
 ## Tasks
 
-- [x] **T01: Inventory current parser pipeline entrypoints** `est:45m`
+- [x] **T01: Inventoried the current daily-archive parser pipeline entrypoints for external parser comparison.** `est:45m`
   Use GitNexus and repository evidence to identify the current daily-archive scripts/modules/tests that participate in catalog intake, source acquisition, loader evidence, parser/conversion, chunk/evidence replay, graph-readiness package generation, and no-write import refusal. Record file paths, symbol/process names where available, stage ownership, and what each entrypoint produces. Do not edit code.
   - Files: `data/article_corpora/m033-current-parser-baseline-v1/current-pipeline-entrypoints.json`, `data/article_corpora/m033-current-parser-baseline-v1/current-pipeline-entrypoints.md`
   - Verify: Manual review — file exists and is non-empty
 
-- [x] **T02: Map existing stage artifacts and contracts** `est:45m`
+- [x] **T02: Mapped the current M031 artifact contracts by stage for external parser comparison.** `est:45m`
   Build a stage-by-stage artifact contract map from M031 and current data: catalog/intake, acquisition, loader evidence, parser/conversion, chunk/evidence, graph-readiness reviewer packets, continuity audit, and no-write import rehearsal. For each stage, record inputs, outputs, key fields, expected counters, hashes/provenance, and downstream consumers.
   - Files: `data/article_corpora/m033-current-parser-baseline-v1/current-artifact-contracts.json`, `data/article_corpora/m033-current-parser-baseline-v1/current-artifact-contracts.md`
   - Verify: Manual review — file exists and is non-empty
 
-- [x] **T03: Document refusal diagnostics and safety boundaries** `est:35m`
+- [x] **T03: Documented the current refusal diagnostics and fail-closed safety boundaries for external parser probes.** `est:35m`
   Summarize the current fail-closed model: low-quality source handling, metadata-only rows, missing-source blockers, unsafe path checks, parser-ready/chunk-ready refusal rules, graph-readiness review requirements, no-write import flags, and forbidden positive claims. Separate implementation evidence from requirement scope so external parser outputs remain candidate evidence only.
   - Files: `data/article_corpora/m033-current-parser-baseline-v1/refusal-and-safety-boundaries.json`, `data/article_corpora/m033-current-parser-baseline-v1/refusal-and-safety-boundaries.md`
   - Verify: Manual review — file exists and is non-empty
 
-- [x] **T04: Create external parser comparison baseline matrix** `est:40m`
+- [x] **T04: Created the external parser comparison baseline matrix for GROBID, OpenDataLoader, and quant-mind research.** `est:40m`
   Synthesize T01-T03 into a comparison matrix for GROBID, OpenDataLoader, and quant-mind research. Identify current strengths, weaknesses, missing capabilities, and exact questions external tools must answer for layout, tables, figures/captions, bibliography/citations, OCR, reading order, section hierarchy, source spans, Markdown/JSON quality, runtime complexity, and provenance.
   - Files: `data/article_corpora/m033-current-parser-baseline-v1/external-parser-comparison-baseline.json`, `data/article_corpora/m033-current-parser-baseline-v1/external-parser-comparison-baseline.md`
   - Verify: Manual review — file exists and is non-empty
 
-- [x] **T05: Validate baseline artifact completeness** `est:20m`
+- [x] **T05: Validated S01 baseline artifact completeness for downstream external parser research.** `est:20m`
   Perform a final artifact completeness check for S01: all expected JSON/Markdown artifacts exist, contain the required stage names and safety/no-import language, and point to downstream consumers. Record a closeout checklist for S01 without running external tools or changing code.
   - Files: `data/article_corpora/m033-current-parser-baseline-v1/current-baseline-closeout.json`, `data/article_corpora/m033-current-parser-baseline-v1/current-baseline-closeout.md`
   - Verify: Manual review — file exists and is non-empty

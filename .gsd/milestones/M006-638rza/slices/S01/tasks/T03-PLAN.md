@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Report thirty paper corpus readiness
+# T03: Reported 30-paper corpus readiness and found source acquisition is required for a meaningful full scan.
 
 Write the S01 availability/rationale report, highlighting whether 30 papers are viable for S02, which missing-source gaps are expected blockers, and what deviation categories are likely to be interesting.
 

@@ -4,7 +4,7 @@ estimated_files: 3
 skills_used: []
 ---
 
-# T04: Run OpenDataLoader hybrid probe on three PDFs with Java-only fallback
+# T04: Ran the OpenDataLoader hybrid probe on all three selected PDFs without needing Java-only fallback.
 
 Run OpenDataLoader against the three selected PDFs. Prefer Python 3.13 wrapper with `--hybrid docling-fast --hybrid-url http://127.0.0.1:5002`; start the backend on demand, health-check it, confirm the expected Hugging Face model cache paths, and stop it after the run. If hybrid startup or per-paper hybrid processing fails, fall back to Java-only fast mode for that paper and record both the hybrid blocker and fallback result. Persist per-paper outputs under a stable artifact directory. Capture json, markdown, html, and text outputs where supported, plus command metadata, exit code, duration, output sizes, runtime mode, backend mode, fallback use, model-cache notes, and diagnostics.
 

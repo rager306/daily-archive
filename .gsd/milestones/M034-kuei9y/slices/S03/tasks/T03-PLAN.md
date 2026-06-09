@@ -4,7 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T03: Verify S03 formal ADR package
+# T03: Added and passed the verifier for the formal M034 ADR package.
 
 Implement and run a verifier for all S03 ADRs and the ADR index, checking template sections, status/binding levels, GraphDB deferral, safety markers, R/D references, Mermaid limits, and S01 audit route coverage.
 
