@@ -189,6 +189,30 @@ artifacts/m044-grobid-architecture-guardrail/final-report.md
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
+M046 synthesis package over M033 to M045:
+
+```text
+artifacts/m046-synthesis/00-INDEX.md
+artifacts/m046-synthesis/01-north-star.md
+artifacts/m046-synthesis/02-architecture-layers.md
+artifacts/m046-synthesis/03-adr-decisions.md
+artifacts/m046-synthesis/04-module-map.md
+artifacts/m046-synthesis/05-evidence-safety.md
+artifacts/m046-synthesis/06-trajectory-ops.md
+artifacts/m046-synthesis/07-2026-assessment.md
+```
+
+M046 is a synthesis-only milestone: it produces 8 self-contained artifacts over the M033-M045 evolution. It does not authorize graph import, GraphDB selection, parser adoption, or agentic orchestration. M046 added D081 (ADR-001 acceptance) and a new architecture layer: scientific articles as first domain (ADR-001, Accepted in M046 QW-1).
+
+After M046:
+
+- 8 ADRs all binding or deferred (zero Planned); ADR-001 (Scientific Papers as First Domain) joins the register.
+- 2026 best-practices assessment covers 7 categories with 7 actionable recommendations (medium/low priority).
+- Reverse ADR audit: 0 violations at code level.
+- Next gate (per M045 follow-ups, unchanged by M046): bounded local PDF acquisition for the 5 linked target records.
+
+M046 roadmap proposal (not yet executed): Quick wins (M044 pre-commit, trajectory severity tuning) → parallel tracks A (Agent/Bounded AI) and B (Graph/First-domain validation) → convergence at M057 (first positive graph-readiness attempt) or M058 (explicit deferral).
+
 M045 unified trajectory preflight for planning and closeout:
 
 ```bash

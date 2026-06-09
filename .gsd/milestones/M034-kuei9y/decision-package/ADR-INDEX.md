@@ -26,12 +26,12 @@ Template constraints:
 - `Rejected` — option explicitly rejected for current scope.
 - `Superseded` — replaced by a later ADR or GSD decision.
 
-## Planned ADRs
+## ADR Register
 
 | ADR | Title | Status | Binding Level | Scope | Related R/D | Notes |
 |---|---|---|---|---|---|---|
 | ADR-000 | Universal KB North Star | Accepted | binding | universal-kb / safety | R024,R027,R029,R040,R050,R054-R061,D065-D067 | Establishes project frame: universal local-first KB, scientific articles as first proving domain. |
-| ADR-001 | Scientific Papers as First Domain | Planned | binding | universal-kb / evidence-pipeline | R024,R027,R029,R031,R033,R050,R060 | Clarifies paper-domain requirements as first-domain validation, not the only KB domain. |
+| ADR-001 | Scientific Papers as First Domain | Accepted | binding | universal-kb / paper-domain | R024,R027,R029,R031,R033,R050,R058,R060 | Isolates first-domain framing from ADR-000; defines second-domain trigger; clarifies paper-domain validation constraints. Drafted and accepted in M046-3b7gp0 QW-1 follow-up (2026-06-09, D081). |
 | ADR-002 | Defer Final GraphDB Selection | Deferred | binding non-lock-in | graphdb | R019,R056,R059,D012,D061,D065 | Keeps LadybugDB/FalkorDB/HelixDB/other choice open pending comparison. |
 | ADR-003 | Durable Lazy Async Evidence Pipeline | Accepted | directional | evidence-pipeline | R054,R055,R057,D063 | Defines durable queue/status/retry/artifact direction before implementation. |
 | ADR-004 | Sidecars as Candidate Evidence Producers | Accepted | binding | sidecar / safety | R056,D061,D062,D063 | GROBID/OpenDataLoader/Adaptix produce candidates, not graph-ready truth. |
@@ -49,7 +49,7 @@ The ADR package must consume:
 - `open-conflicts-for-user.md`
 - `correction-routes.json`
 
-Current S01 counts:
+Current S01 counts (as of M034 closeout):
 
 - Requirements: 61
 - Decisions: 67
@@ -58,6 +58,13 @@ Current S01 counts:
 - Historical scope only: 78
 - Needs clarification: 15
 - Blocking conflicts needing immediate user decision: 0
+
+Post-M046 QW-1 update (2026-06-09):
+
+- ADRs: 8 (7 drafted in M034 + 1 added in M046 QW-1) — all Accepted or Deferred, **zero Planned**
+- ADR-001 status: Planned → Accepted (D081)
+- Supersedes chain: ADR-000 → ADR-001 (paper-first domain isolated)
+- M046 synthesis package updated: 03-adr-decisions.md ADR-001 row reflects new status
 
 ## Non-Authorization Reminder
 
