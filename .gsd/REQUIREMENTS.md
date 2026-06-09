@@ -652,6 +652,15 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat.
 - Notes: Validated for no-write connectivity smoke only. It does not authorize graph import, fact promotion, production writes, or treating deferred linked metadata as graph-ready evidence.
 
+### R065 — Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.
+- Class: operability
+- Status: validated
+- Description: Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.
+- Why it matters: The project has many local verifiers and decisions, but agents can still lose the overall trajectory across compressed sessions. A single trajectory check should optimize existing controls rather than proliferating narrow guardrails.
+- Source: user request after M044
+- Validation: M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence.
+- Notes: Validated as a derived trajectory preflight, not a replacement for GSD, ADRs, GitNexus, or governance mirrors.
+
 ## Deferred
 
 ## Out of Scope
@@ -724,10 +733,11 @@ This file is the explicit capability and coverage contract for the project.
 | R062 | operability | validated | M038-hdx112 | M034,M035,M036,M037 | M038 generated `.codebase-memory/adr.md` from canonical GSD/ADR artifacts via `scripts/sync_codebase_memory_governance.py`; tests verify D075/R062/ADR-005 markers, source-of-truth warning, stale check behavior, and secret/payload rejection. MCP readback via `codebase-memory-mcp cli manage_adr '{"project":"root-daily-archive","action":"list"}'` contains D075, R062, ADR-005, GSD canonical warning, and codebase-memory MCP mirror wording. |
 | R063 | operability | validated | M039-7o4yf1 | M038-hdx112 | M039 generated `.codebase-memory/governance-graph.json` from canonical GSD/ADR artifacts with typed nodes and edges. Verifier evidence: sync/check passed for markdown and graph artifacts, 10 graph tests passed, ruff passed, JSON parsed, required D075/D076/R062/R063/ADR-005/M038/M039 nodes and D076/D075/R063/ADR-005 edges were asserted, codebase-memory MCP readback/search found graph projection markers after fast index refresh, and `ingest_traces` confirmed runtime edge creation is not implemented so native custom graph claims are avoided. |
 | R064 | core-capability | validated | M041-8k3kv4 | M040-4flhk6 | M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat. |
+| R065 | operability | validated | none | none | M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence. |
 
 ## Coverage Summary
 
 - Active requirements: 17
 - Mapped to slices: 6
-- Validated: 47 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064)
+- Validated: 48 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065)
 - Unmapped active requirements: 6

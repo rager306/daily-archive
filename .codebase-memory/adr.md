@@ -81,6 +81,7 @@
 | R062 | validated | M038-hdx112 | M038 planning | Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth. |
 | R063 | validated | M039-7o4yf1 | M039 planning | Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical. |
 | R064 | validated | M041-8k3kv4 | M041 planning | The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable. |
+| R065 | validated | unassigned | user request after M044 | Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution. |
 
 ## Decision Index
 
@@ -165,6 +166,7 @@
 | D077 | M041 planning | real-corpus-expansion | How to expand the next validation batch for connectivity checks | Use a mixed 20-30 article no-write batch: retain the current 10 normalized articles, add fresh arXiv articles, and add reference-linked candidate articles when references can be discovered safely; keep all graph/import/promotion flags false. |
 | D078 | M043-cqiqeq | sidecar-evidence | How combined parser sidecar outputs should be represented after M043 | Use candidate-only sidecar comparison packets with explicit ready/replay/blocker statuses, prior artifact references, source summaries, and false graph/import/promotion flags. |
 | D079 | M044-qq02k8 | sidecar-architecture-guardrail | How future parser/sidecar work should avoid drifting from accepted architecture decisions | Require the M044 sidecar architecture guardrail context pack and verifier before GROBID, OpenDataLoader, Adaptix, quant-mind, sidecar packet, or graph-readiness execution. |
+| D080 | M045-4s8e44 | trajectory-governance | How agents should preserve overall project trajectory across sessions and milestones | Use a unified project trajectory checker as a planning and closeout preflight, composing GSD/ADR/governance/GitNexus/codebase-memory evidence instead of adding narrow one-off guardrails. |
 
 ## ADR Index
 

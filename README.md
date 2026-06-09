@@ -189,6 +189,23 @@ artifacts/m044-grobid-architecture-guardrail/final-report.md
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
+M045 unified trajectory preflight for planning and closeout:
+
+```bash
+uv run python scripts/check_project_trajectory.py --output-dir artifacts/m045-project-trajectory/current --codebase-memory-snapshot artifacts/m045-project-trajectory/codebase-memory-snapshot.json
+```
+
+M045 trajectory evidence:
+
+```text
+artifacts/m045-project-trajectory/current/trajectory-report.json
+artifacts/m045-project-trajectory/current/trajectory-report.md
+```
+
+The trajectory report is derived, not canonical. It composes `.gsd/`, ADR docs, governance mirrors, recent milestone summaries, git state, and an optional codebase-memory MCP snapshot. Use it before planning and before closeout to check architecture, functionality, module/code movement, evidence, safety, operations, and next gate. codebase-memory is recall/navigation only; canonical facts remain in GSD, ADR docs, and GitNexus evidence.
+
+Next gate: bounded local PDF acquisition for the five linked target records, then rerun live GROBID/OpenDataLoader/Adaptix candidate packets under the trajectory preflight.
+
 Expected safety result:
 
 ```text
