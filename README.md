@@ -156,6 +156,39 @@ artifacts/m043-combined-sidecar-probe/architecture-fit-report.md
 
 No graph import is authorized by M043. GROBID remains target-blocked without a configured live service URL; five linked target articles remain PDF-parser-blocked until bounded local PDF acquisition exists. OpenDataLoader PDF and Adaptix are locally available for the baseline path, and quant-mind remains a pattern source only, not a runtime dependency.
 
+M044 architecture guardrail preflight for sidecar or graph-readiness work:
+
+```bash
+uv run python scripts/verify_m044_sidecar_architecture_guardrail.py
+```
+
+M044 guardrail evidence:
+
+```text
+artifacts/m044-grobid-architecture-guardrail/architecture-context-pack.json
+artifacts/m044-grobid-architecture-guardrail/architecture-context-pack.md
+```
+
+Run this before GROBID/OpenDataLoader/Adaptix/quant-mind sidecar execution so M033/M034/M043 decisions are checked from artifacts, not remembered from chat context.
+
+M044 also starts local GROBID CRF and leaves it running for follow-up sidecar work:
+
+```text
+service_url=http://127.0.0.1:8070
+bg_shell_process_id=099f0de5
+image=grobid/grobid:0.9.0-crf
+```
+
+M044 live GROBID evidence:
+
+```text
+artifacts/m044-grobid-architecture-guardrail/grobid-service-readiness.json
+artifacts/m044-grobid-architecture-guardrail/live-grobid-candidate-packets.json
+artifacts/m044-grobid-architecture-guardrail/final-report.md
+```
+
+Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
+
 Expected safety result:
 
 ```text

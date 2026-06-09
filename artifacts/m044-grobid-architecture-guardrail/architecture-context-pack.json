@@ -1,0 +1,69 @@
+{
+  "graph_write_allowed": false,
+  "import_eligible": false,
+  "mandatory_decisions": [
+    {
+      "id": "M033",
+      "rule": "Use bounded combined sidecar architecture; external parsers are candidate evidence only, not parser replacement or import path."
+    },
+    {
+      "id": "ADR-003",
+      "rule": "Use durable lazy async evidence pipeline direction; do not rely on in-memory batch or agent runtime as reliability model."
+    },
+    {
+      "id": "ADR-004",
+      "rule": "Treat GROBID, OpenDataLoader, Adaptix, and future extractors as candidate evidence producers only."
+    },
+    {
+      "id": "ADR-005",
+      "rule": "No direct extractor/sidecar/LLM/parser writes to GraphDB; import/promotion remains blocked without future ADR gate."
+    },
+    {
+      "id": "ADR-007",
+      "rule": "Use quant-mind as architecture pattern source only; do not adopt quant-mind runtime dependency now."
+    },
+    {
+      "id": "D078",
+      "rule": "Represent combined sidecar outputs as candidate-only sidecar comparison packets with ready/replay/blocker statuses and false graph/import/promotion flags."
+    }
+  ],
+  "pack_id": "m044-sidecar-architecture-context-v1",
+  "production_import_attempted": false,
+  "prohibited_claims": [
+    "graph_import_authorized",
+    "production_import_authorized",
+    "fact_promotion_allowed",
+    "sidecar_success_as_semantic_truth",
+    "quant_mind_runtime_adopted",
+    "raw_payload_promoted"
+  ],
+  "promotion_allowed": false,
+  "purpose": "Prevent architecture drift before GROBID/OpenDataLoader/Adaptix/quant-mind sidecar or graph-readiness work.",
+  "required_packet_flags": {
+    "candidate_only": true,
+    "graph_write_allowed": false,
+    "import_eligible": false,
+    "production_import_attempted": false,
+    "promotion_allowed": false
+  },
+  "required_preflight_commands": [
+    "uv run python scripts/verify_m044_sidecar_architecture_guardrail.py"
+  ],
+  "required_systems": [
+    "current_baseline",
+    "grobid",
+    "opendataloader_pdf",
+    "adaptix",
+    "quant_mind_patterns",
+    "combined_architecture"
+  ],
+  "source_refs": {
+    "adr_003": "doc/adr/m034/ADR-003-durable-lazy-async-evidence-pipeline.md",
+    "adr_004": "doc/adr/m034/ADR-004-sidecars-as-candidate-evidence-producers.md",
+    "adr_005": "doc/adr/m034/ADR-005-no-direct-extractor-to-graphdb-path.md",
+    "adr_007": "doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md",
+    "decisions": ".gsd/DECISIONS.md",
+    "m033_summary": ".gsd/milestones/M033-732r1t/M033-732r1t-SUMMARY.md",
+    "m043_fit": "artifacts/m043-combined-sidecar-probe/architecture-fit-report.md"
+  }
+}
