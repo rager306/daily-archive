@@ -83,9 +83,9 @@ These artifacts are rehearsal evidence only. They are not GraphDB writes, import
 
 ## Universal KB smoke command surface
 
-M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidated the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts. M040 normalized per-article continuity metadata and expanded the no-write smoke to 10 articles.
+M036 proved a 5-article real-corpus no-write smoke over existing article catalog artifacts. M037 consolidated the control surface so routine work uses one module command instead of separate selector, runner, audit, and verifier scripts. M040 normalized per-article continuity metadata and expanded the no-write smoke to 10 articles. M041 adds a separate mixed 20-article connectivity smoke with 10 retained baseline articles, 5 articles linked from already loaded sources, and 5 Hermes review-section articles.
 
-Routine fast smoke:
+Routine fast smoke for the normalized 10-article baseline:
 
 ```bash
 uv run python -m arxiv_archive.universal_kb_smoke all --limit 10 --profile fast
@@ -103,13 +103,22 @@ The legacy command remains as a compatibility wrapper:
 python3 scripts/verify_m036_real_corpus_no_write_smoke.py
 ```
 
-The smoke writes:
+The normalized baseline smoke writes:
 
 ```text
 artifacts/m036-real-corpus-no-write-smoke/manifest.json
 artifacts/m036-real-corpus-no-write-smoke/run/summary.json
 artifacts/m036-real-corpus-no-write-smoke/audit.json
 artifacts/m036-real-corpus-no-write-smoke/audit.md
+```
+
+The mixed connectivity smoke evidence lives separately:
+
+```text
+artifacts/m041-mixed-connectivity-smoke/manifest.json
+artifacts/m041-mixed-connectivity-smoke/run/summary.json
+artifacts/m041-mixed-connectivity-smoke/audit.json
+artifacts/m041-mixed-connectivity-smoke/report.md
 ```
 
 Expected safety result:
@@ -121,7 +130,7 @@ production_import_attempted=false
 import_eligible=false
 ```
 
-Current M040 continuity metadata is normalized: every selected article has metadata-only `continuity.json`, explicit false safety flags, source evidence status, and loader evidence status. Loader absence is represented as explicit diagnostic metadata for no-write smoke continuity; it does not authorize import. M036-M040 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration. The current expanded proof is a 10-article no-write batch with `graph_write_allowed=false`, `promotion_allowed=false`, `production_import_attempted=false`, `import_eligible=false`, and no continuity blockers.
+Current continuity metadata is normalized: every selected article has metadata-only `continuity.json`, explicit false safety flags, source evidence status, and loader evidence status. Loader absence is represented as explicit diagnostic metadata for no-write smoke continuity; it does not authorize import. M036-M041 do not authorize GraphDB selection, GraphDB writes, production import, fact promotion, or agentic orchestration. The current baseline proof is a 10-article no-write batch with no continuity blockers. The current connectivity proof is a 20-article mixed no-write batch with reference-linked and Hermes review-section articles, no blockers, and all write/import/promotion flags false. Some linked candidates may have deferred metadata because arXiv rate-limited API access; that caveat is explicit and remains non-importable.
 
 ## Governance memory bridge
 

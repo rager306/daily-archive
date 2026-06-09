@@ -641,6 +641,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M039 generated `.codebase-memory/governance-graph.json` from canonical GSD/ADR artifacts with typed nodes and edges. Verifier evidence: sync/check passed for markdown and graph artifacts, 10 graph tests passed, ruff passed, JSON parsed, required D075/D076/R062/R063/ADR-005/M038/M039 nodes and D076/D075/R063/ADR-005 edges were asserted, codebase-memory MCP readback/search found graph projection markers after fast index refresh, and `ingest_traces` confirmed runtime edge creation is not implemented so native custom graph claims are avoided.
 - Notes: Validated as artifact-first typed projection only. GSD and ADR docs remain canonical; codebase-memory custom edge ingestion remains future work pending MCP support.
 
+### R064 — The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable.
+- Class: core-capability
+- Status: validated
+- Description: The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable.
+- Why it matters: The next validation stage needs to test both scale and early connectivity while preserving no-write/no-import safety boundaries.
+- Source: M041 planning
+- Primary owning slice: M041-8k3kv4
+- Supporting slices: M040-4flhk6
+- Validation: M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat.
+- Notes: Validated for no-write connectivity smoke only. It does not authorize graph import, fact promotion, production writes, or treating deferred linked metadata as graph-ready evidence.
+
 ## Deferred
 
 ## Out of Scope
@@ -712,10 +723,11 @@ This file is the explicit capability and coverage contract for the project.
 | R061 | quality-attribute | validated | M034-kuei9y/S06 | none | Validated by M034 S01 and final package verification: all 61 requirements and 67 decisions were inventoried and classified across 128 records; 15 needs-clarification routes were captured; verify_m034_rd_consistency_audit.py and verify_m034_decision_package.py pass. |
 | R062 | operability | validated | M038-hdx112 | M034,M035,M036,M037 | M038 generated `.codebase-memory/adr.md` from canonical GSD/ADR artifacts via `scripts/sync_codebase_memory_governance.py`; tests verify D075/R062/ADR-005 markers, source-of-truth warning, stale check behavior, and secret/payload rejection. MCP readback via `codebase-memory-mcp cli manage_adr '{"project":"root-daily-archive","action":"list"}'` contains D075, R062, ADR-005, GSD canonical warning, and codebase-memory MCP mirror wording. |
 | R063 | operability | validated | M039-7o4yf1 | M038-hdx112 | M039 generated `.codebase-memory/governance-graph.json` from canonical GSD/ADR artifacts with typed nodes and edges. Verifier evidence: sync/check passed for markdown and graph artifacts, 10 graph tests passed, ruff passed, JSON parsed, required D075/D076/R062/R063/ADR-005/M038/M039 nodes and D076/D075/R063/ADR-005 edges were asserted, codebase-memory MCP readback/search found graph projection markers after fast index refresh, and `ingest_traces` confirmed runtime edge creation is not implemented so native custom graph claims are avoided. |
+| R064 | core-capability | validated | M041-8k3kv4 | M040-4flhk6 | M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat. |
 
 ## Coverage Summary
 
 - Active requirements: 17
 - Mapped to slices: 6
-- Validated: 46 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063)
+- Validated: 47 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064)
 - Unmapped active requirements: 6

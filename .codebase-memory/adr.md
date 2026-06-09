@@ -80,6 +80,7 @@
 | R061 | validated | M034-kuei9y/S06 | User correction during M034 planning | M034 must audit all existing GSD requirements and decisions for mutual consistency with the universal knowledge-base ADR package before closeout. |
 | R062 | validated | M038-hdx112 | M038 planning | Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth. |
 | R063 | validated | M039-7o4yf1 | M039 planning | Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical. |
+| R064 | validated | M041-8k3kv4 | M041 planning | The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable. |
 
 ## Decision Index
 
@@ -161,6 +162,7 @@
 | D074 | M035-xr6jjf S06 MiniMax model research | library | Which MiniMax model id should M035 helper paths use after live MiniMax-M3-512k research? | Use 'MiniMax-M3-512k' as the Anthropic-compatible helper/tool model default, document that Anthropic responses normalize it to 'MiniMax-M3', and use 'MiniMax-M3' for OpenAI-compatible calls unless a fresh probe proves the exact 'MiniMax-M3-512k' id works there. |
 | D075 | M038 planning | governance-memory | How to integrate codebase-memory MCP into the governance workflow | Use a hybrid model: GSD remains canonical for requirements and decisions, GitNexus remains mandatory for code impact/change safety, and codebase-memory MCP stores a fast ADR/R/D recall mirror generated from canonical artifacts. |
 | D076 | M039 planning | governance-memory | How to add typed ADR/R/D graph semantics on top of codebase-memory MCP | Generate a typed governance graph projection artifact from canonical GSD/ADR sources and expose it through codebase-memory-indexed files now; reserve direct MCP graph-edge ingestion for a future upgrade when codebase-memory implements runtime/custom edge creation. |
+| D077 | M041 planning | real-corpus-expansion | How to expand the next validation batch for connectivity checks | Use a mixed 20-30 article no-write batch: retain the current 10 normalized articles, add fresh arXiv articles, and add reference-linked candidate articles when references can be discovered safely; keep all graph/import/promotion flags false. |
 
 ## ADR Index
 
