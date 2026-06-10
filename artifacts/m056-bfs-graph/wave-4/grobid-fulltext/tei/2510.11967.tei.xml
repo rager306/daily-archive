@@ -1,0 +1,2267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Scaling Long-Horizon LLM Agent via Context-Folding</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-15">October 15, 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+							<email>sunnweiwei@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Miao</forename><surname>Lu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhan</forename><surname>Ling</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xuesong</forename><surname>Yao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiecao</forename><surname>Chen</surname></persName>
+							<email>jiecao.chen@bytedance.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">ByteDance Seed</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Scaling Long-Horizon LLM Agent via Context-Folding</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-15">October 15, 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">389CBA1ABDB6A5013C9F0C46C35B8DBD</idno>
+					<idno type="arXiv">arXiv:2510.11967v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language model (LLM) agents are fundamentally constrained by context length on longhorizon tasks. We introduce Context-Folding, a framework that empowers agents to actively manage their working context. An agent can procedurally branch into a sub-trajectory to handle a subtask and then fold it upon completion, collapsing the intermediate steps while retaining a concise summary of the outcome. To make this behavior learnable, we develop an end-to-end reinforcement learning framework FoldGRPO with specific process rewards to encourage effective task decomposition and context management. On complex long-horizon tasks (Deep Research and SWE), our folding agent matches or outperforms the ReAct baselines while using an active context 10× smaller and significantly outperforms models that rely on summarization-based context management.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language model (LLM) agents have shown remarkable capabilities in tackling complex, long-horizon problems that require extensive interaction with an environment, such as deep research <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b31">32]</ref> and agentic coding <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b30">31]</ref>. The length of tasks agents can complete is argued to be growing exponentially, with a doubling time of about 7 months <ref type="bibr" target="#b19">[20]</ref>.</p><p>However, scaling LLM agents to even longer horizons is fundamentally constrained by the design of agentic frameworks <ref type="bibr" target="#b34">[35]</ref>. These frameworks linearly accumulate the entire interaction history (reasoning, tool calls, and observations) into a single, ever-expanding context, which incurs long-context challenges as horizons scale: (1) degraded performance, as LLMs struggle to utilize relevant information in exceedingly long contexts <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b27">28]</ref>; and (2) poor efficiency, stemming from the quadratic scaling of attention mechanisms and the growing overhead of managing the KV-cache <ref type="bibr" target="#b12">[13]</ref>.</p><p>Existing approaches to scale long-horizon LLM agents largely fall into two classes: (1) Summary-based methods, which trigger a post-hoc summarization stage when the working context is full <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b42">43]</ref>. While this compresses the context, it can abruptly disrupt the agent's working context and reasoning flow, which may lead to sub-optimal results. (2) Multi-agent systems, which distribute tasks across specialized agents to manage context length <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41]</ref>. Yet, these systems typically depend on handcrafted, problem-specific workflows that are difficult to generalize and resist end-to-end optimization. In this paper, we propose Context Folding: an agentic mechanism that allows the model to actively manage its working context. Specifically, the agent manages its context using two special actions: (i) a branch action to create a temporary sub-trajectory for a localized subtask; and (ii) a return action to summarize the outcome and rejoin the main thread, after which the intermediate steps within the branch are "folded"-removed from the context -leaving only a concise summary from the return call. Figure <ref type="figure" target="#fig_0">1</ref> illustrates this process on deep research and agentic coding tasks, where the agent offloads token-intensive actions (e.g., web search or codebase exploration) into branches and preserves only key findings and insights for high-level reasoning. Compared with existing methods, context folding enables an agentic approach to active context management, where the agent's short-term context remains undisrupted and long-term context is automatically managed.</p><p>Based on the context-folding framework, we propose a novel end-to-end reinforcement learning algorithm for training LLM agents on complex, long-horizon tasks. The key innovation is FoldGRPO, which augments the standard GRPO by incorporating (i) dynamic folded LLM contexts and (ii) dense, token-level process rewards that directly guide context folding behavior. Specifically, our RL algorithm teaches the model how to effectively decompose a problem into localized sub-tasks for branching, guided by an Unfolded Token Penalty that discourages token-heavy operations in the main context. Furthermore, it learns to maintain focus within a sub-task via an Out-of-Scope Penalty, and to preserve crucial information in its summaries to aid the final objective. By mastering these skills, the agent can handle vastly longer interaction histories, allowing our framework to scale the agent's effective horizon and improve overall system efficiency.</p><p>We evaluate our approach on two long-horizon benchmarks, BrowseComp-Plus <ref type="bibr" target="#b5">[6]</ref> and SWE-Bench Verified <ref type="bibr" target="#b10">[11]</ref>, where our agent achieves strong performance with remarkable efficiency. Despite using a compact 32K active token budget managed with maximum of 10 branches, our agent, the Folding Agent, achieves pass@1 scores of 62.0% and 58.0% respectively, surpassing baselines that require a massive 327K context window and significantly outperforming methods based on context summarization. The effectiveness of our method is rooted in reinforcement learning, which provides absolute improvements of 20.0% on BrowseComp-Plus and 8.8% on SWE-Bench. Further analysis reveals that our agent learns to invoke more tool calls and generate longer outputs to handle complex problems, and can scale to larger token budgets at inference time to tackle even more challenging tasks. Together, these results indicate that learning to actively manage context, rather than merely extending or heuristically compressing it, is a principled path toward scalable long-horizon agency. In summary, our contributions are threefold:</p><p>(i) We introduce Context Folding, a mechanism that enables agents to actively manage their context and mitigate the challenge of linear history growth.</p><p>(ii) We present FoldGRPO, a reinforcement learning framework with dynamic folded LLM contexts and dense process rewards that trains agents to effectively acquire the capability of context folding.</p><p>(iii) We demonstrate promising performance on long-horizon benchmarks, highlighting our approach as a scalable and extensible path toward stronger LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Vanilla Formulation</head><p>Given a question q, an agent generates a multi-turn interaction trajectory denoted as</p><formula xml:id="formula_0">τ := (a 1 , o 1 , a 2 , o 2 , . . . , a T , o T ),</formula><p>where a i is the LLM output at step i (including reasoning and tool call ), and o i is the corresponding tool-call result. The vanilla ReAct-style agent <ref type="bibr" target="#b34">[35]</ref> models the interaction as following,</p><formula xml:id="formula_1">p ReAct θ (τ | q) = i∈[T ] π θ a i | q, (a 1 , o 1 , . . . , a i-1 , o i-1 ) ,</formula><p>which appends the entire interaction history to the context at each time of LLM generation. However, in long-horizon agentic tasks like deep research and agentic coding, τ can accumulate rapidly due to extensive interactions and become prohibitively long which exceeds the working context limit. Also, when the context is expanding, the reasoning and instruction following capability of the model may drop, posing further challenges for the agent to complete the long-horizon task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Our Method: Context Folding</head><p>To address the challenge, we introduce context folding, a mechanism that allows the agent to actively manage its working context via branching and folding. Specifically, we design two tools that the agent can call for context management. Starting from a main thread to solve question q, it can:</p><p>(i) branch(description, prompt): branch from main thread to use a separate working context to complete a sub-task q ′ for solving q. Here description is a brief summary of the sub-task, and prompt is a detailed instruction for this branch. The tool returns a template message indicating that the branch was created.</p><p>(ii) return(message): fold the context generated in this branch and return to the main thread. The message describes the outcome of this branch. Upon calling this tool, the agent context then switches back to the main thread, appended with the templated message from the branch.</p><p>With these two tools, the agent can actively manage its context by (i) branching a separate working context to solve an independent sub-task, and (ii) folding the intermediate steps in the branch, and resuming back to the main thread by appending only the result of the branch. To put it formal, the context-folding agent is modeled as following,</p><formula xml:id="formula_2">p Context Fold θ (τ | q) := i∈[T ] π θ a i | q, F (τ &lt;i ) .<label>(1)</label></formula><p>Here τ &lt;i = (a 1 , o 1 , . . . , a i-1 , o i-1 ) denotes the complete history of all the action-observation pairs before step i, F is the context manager that folds the interaction history between branch and return tool calls. We illustrate the process using the following example, where the context manager folds all the action-observation pairs in previous branches: Inference efficiency. During inference, the agent manages a context KV-cache: when return action is called, it rolls back the KV-cache to the corresponding branch position, where the context prefix matches that before calling the branch action. This makes our context folding approach efficient in terms of inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instantiation: plan-execution.</head><p>To instantiate context folding for long-horizon tasks, we adopt a plan-execution framework, where the agent alternates between two states: (i) Planning State: The agent performs high-level reasoning in the main thread, decomposes the task, and decides when to initiate a branch for a sub-task. In this state, token-intensive tool use is discouraged to keep the main context focused on high-level strategies. (ii) Execution State: The agent operates within an active branch to complete its assigned sub-task. To maintain a clear structure and prevent nested complexity, creating new branches is disabled while in execution state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">FoldGRPO: End-to-End RL for Context-Folding Agent</head><p>To optimize the context folding agent, in this section, we introduce an end-to-end RL training framework, namely, Folded-context Group Relative Policy Optimization (FoldGRPO). FoldGRPO jointly optimizes the entire interaction trajectory including the main thread and those sub-task branches, while it folds the rollout history according to the context folding modeling (1) to maintain a compact working context during training. Moreover, FoldGRPO features a novel process reward design to efficiently guide the training of the branching behavior of the agent. We first introduce the overall algorithm design in Section 2.3.1 and we present the process reward design in Section 2.3.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.1">Overall Algorithm Design</head><p>In each training step of FoldGRPO, for task q from training dataset D, G trajectories (τ 1 , τ 2 , • • • , τ G ) are sampled from the old policy π old according to the context folding model (1). Each complete trajectory, e.g.,</p><formula xml:id="formula_3">τ i = (a i,1 , o i,1 , • • • , a i,T , o i,T ), is a sequence of tokens defined as τ i = [τ i,1 , • • • , τ i,|τi| ].</formula><p>Each trajectory τ i has a final reward R i ∈ {0, 1}, following the recipe of RL from verifiable rewards (RLVR).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Learning objective.</head><p>The learning objective of FoldGRPO is defined as:</p><formula xml:id="formula_4">J FoldGRPO = E q∼D, {τ i } G i=1 ∼π old (•|q)   1 G i=1 |τi| G i=1 |τ i | t=1 min ri,t(θ) Ai,t, clip ri,t(θ), 1 -ϵ low , 1 + ϵ high Ai,t   ,</formula><p>where the importance sampling ratio and the group relative advantage estimator <ref type="bibr" target="#b24">[25]</ref> are given by</p><formula xml:id="formula_5">r i,t (θ) = π θ (τ i,t | q, F (τ i,&lt;t )) π θ old (τ i,t | q, F (τ i,&lt;t )) • 1 LLM τi,t , A i,t = clip(R i + Q i,t , 0, 1) -mean({R i } G i=1 ) std({R i } G i=1 )</formula><p>.</p><p>Here 1 LLM τi,t ensures that only those LLM generated tokens are optimized and the tokens from tool observations are masked. In the following, we explain two key features of FoldGRPO highlighted in red.</p><p>(i) Context folding. Unlike vanilla multi-turn LLM RL algorithms that append the entire interaction history to context when optimizing the policy, FoldGRPO applies context manager F(•) to the history τ i,&lt;t which folds the context for token τ i,t based on the branch-return actions.</p><p>(ii) Process reward signal. In the calculation of advantage A i,t , a token-level process reward Q i,t is added to regularize the model's branch-return behavior, which is detailed in the next section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.2">Process Reward Design</head><p>In RLVR, the agent is typically optimized through a standard binary outcome reward based on task success or failure. However, we empirically observe that this sparse reward signal is insufficient for learning effective context folding. Specifically, two critical failure modes emerge: (i) The agent fails to plan strategically, leaving token-intensive operations unfolded in the main context, which quickly exhausts the available token budget.</p><p>(ii) The agent struggles with proper branch management, often failing to return from a sub-branch after a sub-task is completed and instead continuing the subsequent work within that same branch. To effectively optimize the folding agent, we introduce token-level process rewards separately to main-trajectory tokens and branch-trajectory tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Unfolded token penalty.</head><p>When total context length of the main thread exceeds 50% of the working context limit, we apply Q i,t = -1 to all the tokens in the main thread, except those tokens in the turns that create a branch. This penalizes the agent for performing token-heavy actions outside a branch in the main thread, and encourages the agent to perform those actions in separate branches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Out-scope penalty.</head><p>For each branch, we employ GPT-5-nano to judge -based on the branch prompt and the returned message -whether the agent has conducted actions outside the specified sub-tasks. If so, we apply Q i,t = -0.2 to all the tokens in this branch to penalize such out of scope behavior. This encourages the agent to only perform the exact sub-task given to the current branch.</p><p>Failure penalty. We apply Q i,t = -1 to all the tokens in a failed tool call turn. In all other cases, Q i,t = 0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">How does Context Folding Connect to Other Methods?</head><p>Relationship to multi-agent systems. Context folding can be interpreted as a specific formulation of a general multi-agent system, where the main agent delegates sub-tasks to sub-agents. Compared to popular multi-agent systems <ref type="bibr" target="#b8">[9]</ref>, our design differs in the following ways: (i) Context folding does not adopt predefined sub-agents; instead, sub-agents are created by the main agent on the fly; (ii) All the agents share the same context prefix, making it KV-cache friendly, (iii) The main and the sub agents interleave rather than operating in parallel.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relationship to context-summarization-based method.</head><p>Compared with heuristic summarization-based context management <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b37">38]</ref>, which discards details at arbitrary points, context folding can be viewed as a learnable summarization mechanism aligned with sub-task boundaries. This ensures that reasoning is preserved during execution and is only compacted once its utility is realized.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiment</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Datasets</head><p>We conduct experiment on two representative long-horizon agent tasks: deep research, and agentic software engineering:</p><p>Deep Research. We use BrowseComp-Plus (BC-Plus) <ref type="bibr" target="#b5">[6]</ref>, which supplements the original BrowseComp data with a verified corpus. We use Qwen3-Embed-8B as the retriever. Since the quality of training data is crucial for the BrowseComp task but existing datasets are typically not open-sourced <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b23">24]</ref>, we split BrowseComp-Plus into training and evaluation sets to decouple the effect of data distribution. Our split includes 680 instances for training and 150 for evaluation. For deep research, the tools are search(query, topk) and open_page(url), and the reward is based on official LLM-based judger <ref type="bibr" target="#b5">[6]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agentic SWE.</head><p>We use SWE-Bench Verified (SWEB-V) <ref type="bibr" target="#b10">[11]</ref> as the evaluation set. To collect training data, we roll out the baseline agent<ref type="foot" target="#foot_0">foot_0</ref> eight times on a subset of the open-source datasets SWE-Gym <ref type="bibr" target="#b22">[23]</ref> and SWE-Rebench <ref type="bibr" target="#b3">[4]</ref>, and retain the instances where the success rate is between 0 and 87.5%, resulting in 740 instances. In SWE, the tools are execute_bash, str_replace_editor, and think <ref type="bibr" target="#b30">[31]</ref>, and the reward is based on running unit test in instance-specific sandbox environment.</p><p>We classify test instances for both tasks into three difficulty levels: easy, medium, and hard. For BrowseComp-Plus, classification is determined by running a ReAct agent 8 times on each instance. An instance is labeled easy if its acc@8 score is ≥ 87.5%, hard if its score is 0%, and medium otherwise, resulting in 50 instances for each level. For SWE-Bench Verified, classification is based on the original dataset's time-to-resolve metric: easy (≤15 min, 194 instances), medium (15 min -1 hour, 261 instances), and hard (≥1 hour, 45 instances).</p><p>See Appendix B for the details of system prompt of each datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Implementation</head><p>We use Seed-OSS-36B-Instruct<ref type="foot" target="#foot_1">foot_1</ref> as the base LLM and conduct RL training on it. For RL training, we build on VeRL and set the rollout batch size to 32, group size to 8, ppo batch size of 128, learning rate to 1 × 10 -6 , no KL term, clip high to 0.28, and clip low to 0.2. We employ asynchronous rollout with a maximum off-policy step of 5. During training, we implement the context folding operation F by constructing separate causally conditioned contexts for each branch to improve training efficiency (See Appendix A for more details.). We train model for 50 steps (about 2 epochs). For the fold agent, we set the LLM maximum context length to 32,768. We allow up to 10 branches, resulting in a theoretical maximum of 327,680 tokens. During inference we employ greedy decoding (i.e, temperature = 0).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Baselines</head><p>We compare against the following baselines:</p><p>ReAct Agent <ref type="bibr" target="#b35">[36]</ref>, which keeps all context. We consider different context lengths for comparison: (a) shortcontext, which has 32,768 tokens, equivalent to our context length; (b) medium-context, which has intermediate lengths, e.g., 65,536 and 131,072; (c) long-context, which has 327,680 tokens, equivalent to our maximum total token cost.</p><p>Summary Agent <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b37">38]</ref>, which invokes a summary when the context is full. We set the maximum context length to 32,768 and allow for 10 summary session for a fair comparison.</p><p>BrowseComp-Plus SWE-Bench Verified Model Peak Length Max #Token Pass@1 Tool Calls Pass@1 Tool Calls ReAct Agent with 100B+ LLM GPT-5 327K 327K 0.793 14.2 0.718 42.6 GPT-4.1 327K 327K 0.640 5.6 0.486 28.7 DeepSeek-V3.1 327K 327K 0.613 10.6 0.610 53.2 GLM-4.5-Air 327K 327K 0.566 11.1 0.576 51.2 Qwen3-235B-A22B 327K 327K 0.560 12.8 0.344 32.1 ReAct Agent Seed-OSS-36B 32K 32K 0.286 (-19.2) 3.8 0.436 (-11.6) 25.8 + RL (GRPO) 32K 32K 0.446 (-3.2) 5.5 0.480 (-7.2) 27.8 Seed-OSS-36B ψ 327K 327K 0.478 (+0.0) 10.8 0.552 (+0.0) 49.5 + RL (GRPO) 327K 327K 0.540 (+6.2) 10.2 0.574 (+2.2) 55.4 Summary Agent Seed-OSS-36B 32K 32K × 10 0.386 (-9.2) 17.4 0.488 (-6.4) 77.0 + RL (GRPO) 32K 32K × 10 0.527 (+4.9) 18.0 0.550 (-0.2) 74.9 Folding Agent (Ours) Seed-OSS-36B 32K 32K × 10 0.420 (-5.8) 12.9 0.492 (-6.0) 72.8 + RL (GRPO) 32K 32K × 10 0.567 (+8.9) 16.0 0.564 (+1.2) 79.5 + RL (FoldGRPO) 32K 32K × 10 0.620 (+14.2) 19.2 0.580 (+2.8) 96.5 Table 1 Performance on BrowseComp-Plus (N=150) and SWE-Bench Verified (N=500). Boldface indicates the best-performing 36B models. Numbers in parentheses indicate improvement or reduction compared to 327K ReAct agent Seed-OSS-36B baseline ψ .  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Main Results</head><p>Table <ref type="table">1</ref> summarizes our main results on the BrowseComp-Plus and SWE-Bench Verified datasets. Our findings highlight the critical role of reinforcement learning in unlocking the capabilities of context folding. Initially, without performing RL, the context folding agent already surpasses the 32K-context ReAct and context summarization baselines, though it does not yet match the performance of the long-context ReAct agent. After RL training, our agent's performance improves significantly, with a pass@1 of 0.620 on BrowseComp-Plus (+20%) and 0.580 on SWE-Bench Verified (+8.8%). Our agent not only outperforms all baselines, including the long-context ReAct agent with same 327K max length, but also achieves performance comparable to agents built on much larger 100B+ parameter models.</p><p>Further analysis reveals two key insights. First, an ablation study confirms that our proposed FoldGRPO is crucial, yielding significantly better performance than the baseline GRPO algorithm (eg, +7.7% on BrowseComp and +1.6% on SWE-Bench). Second, the performance gains correlate with an increased frequency of tool calls, which RL training further encourages. This suggests our framework enables the agent to conduct a more thorough exploration of the environment to discover more robust solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Performance by Task Difficulty</head><p>Figure <ref type="figure" target="#fig_3">3</ref> breaks down agent performance by task difficulty, comparing scores before and after reinforcement learning. The results clearly show that RL training yields consistent performance gains across easy, medium, and hard instances. Most notably, the improvements are significantly larger for the medium and hard subsets. This finding underscores our agent's enhanced capability to handle complex problems that require more sophisticated long-context management.</p><p>Figure <ref type="figure" target="#fig_5">4</ref> shows the agent's learning dynamics during RL training on BrowseComp-Plus. As training progresses, the agent steadily increases its tool calls, branch creation, response tokens, and number of pages searched. This growth is most pronounced on harder instances. For example, on the hard subset, response length rises from about 100K to over 160K tokens. These results show that the agent learns to allocate more interaction and computation to complex problems, adopting a more adaptive and effective problem-solving strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation of RL Algorithm</head><p>To understand how our proposed FoldGRPO shapes agent behavior, we analyze the key statistics in Table <ref type="table">2</ref>. These metrics include the task completion rate within the context limit (Finish), main trajectory length (Main Len), the accuracy of sub-trajectories staying on-topic (Scope), and the number of branches created (# Branch). We can see that, training with a standard GRPO baseline produces poor behaviors: agents show a lower Finish rate, generate overly long trajectories, and lose focus in sub-tasks, reflected in reduced Scope accuracy. This indicates a failure to manage context effectively.</p><p>By contrast, our FoldGRPO corrects these issues. It encourages focused branching, sharply boosting both Scope accuracy and Finish rate. Most notably, it cuts the main trajectory to about 8K tokens while processing over 100K in total-achieving over 90% context compression and demonstrating the agent's ability to condense long interactions into a compact, useful history.</p><p>BrowseComp-Plus SWE-Bench Verified Finish Main Len Scope # Branch Finish Main Len Scope # Branch Folding Agent (Seed-OSS-36B) 0.806 12,195 0.774 3.51 0.781 47,475 0.473 3.05 + RL (GRPO) 0.738 22,285 0.762 3.88 0.612 48,908 0.419 3.80 + RL (FoldGRPO) 0.935 7,752 0.895 4.98 0.962 8,885 0.754 5.90 Table 2 Model behavior statistics of different optimization methods. FoldGRPO encourages focused branching and condensed main context, boosting both scope accuracy and finish rate. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Performance by Context Length</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.1">Effect of Context Length</head><p>To examine how performance scales with context length, we evaluated our method on BrowseComp while varying the number of branches from 0 to 16. As shown in Figure <ref type="figure" target="#fig_6">5</ref> (left), our method consistently surpasses ReAct, and reinforcement learning provides further gains. However, performance plateaus beyond 320K tokens because most task instances are already completed, and additional context provides limited benefit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.2">Effect of Task Complexity</head><p>Following Zhou et al. <ref type="bibr" target="#b42">[43]</ref>, we increase task complexity by combining multiple questions into a single compound query that the agent must answer in one session (see Figure <ref type="figure">6</ref> for an example). Figure <ref type="figure" target="#fig_6">5</ref> (right) shows the results for tasks with 1 to 50 combined questions. For this setting, we allow unlimited branching and set the context limit for ReAct to 1M tokens. As task complexity increases, the benefit of context folding becomes more apparent, demonstrating strong length generalization. Notably, although our agent was trained on tasks requiring at most 10 branches, it adaptively uses an average of 32.6 branches to solve tasks with 50 questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Further Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.1">Case Study</head><p>Figure <ref type="figure" target="#fig_7">7</ref> shows qualitative examples of our context folding agent on BrowseComp-Plus. Given a query about finding a research publication with specific conditions, the agent first explores the high-level topic and identifies a candidate. It then searches to verify conditions, gaining key insights but failing to confirm all requirements. Next, it expands the search scope and finds the correct answer. In this process, 4 branches compress the full 107K-token context to just 6K.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 6</head><p>An example of the model's input and output for the combined-questions experiment described in Section 4.4.2.</p><p>In this example, 3 easy questions are combined to form a harder question.</p><p>branch: Find publication with specific authors and topics search: cultural traditions scientific processes culinary innovations[…] search: assistant professor West Bengal culinary traditions scientific […] open: <ref type="url" target="https://hithaldia.in/faculty/ft_faculty/RSD/index.htm">https://hithaldia.in/faculty/ft_faculty/RSD/index.htm</ref> search: Thakur R.K. Biswas P.K. Singh M. Das R.S. cultural traditions […] search: Plant-Based Functional Foods and Phytochemicals From […] search: Thakur R.K. Biswas P.K. Singh M. Ph.D. authors return: Value-Added Products with Bioactive Compounds from Fruit […] search: Thakur R.K. Value-Added Products with Bioactive Compounds […] search: Thakur R.K. "Value-Added Products with Bioactive Compounds[…] search: Rahel Suchintita Das three authors cultural traditions scientific […] search: Rahel Suchintita Das publications Google Scholar search: "Value-Added Products with Bioactive Compounds from Fruit […] return: Confirmed Rahel Suchintita Das is an assistant professor in West […] branch: author count and Ph.D. status branch: Confirm Das's Ph.D. and co-author details search: Rahel Suchintita Das Haldia Institute of Technology faculty profile&lt; search: Thakur R.K. Value-Added Products with Bioactive Compounds […] search: Biswas P.K. Food Technology Ph.D. West Bengal search: "Value-Added Products with Bioactive Compounds from Fruit […] search: Rahel Suchintita Das publications three authors cultural […] return: searches for co-au thor Ph.D. credentials but found no definitive results […] branch: Expand search for three-author publications search: assistant professor West Bengal food science publications before June […] open: <ref type="url" target="https://ouci.dntb.gov.ua/en/works/l1wAegO7/">https://ouci.dntb.gov.ua/en/works/l1wAegO7/</ref> search: The Fundamentals of Bread Making: The Science of Bread publication date return: Identified a publication meeting all criteria with definitive verification […]</p><p>done: The Fundamentals of Bread Making: The Science of Bread   a higher score, possibly because the task characteristics are more depth-first in nature. Other tasks with a breadth-first structure (eg WideSearch <ref type="bibr" target="#b32">[33]</ref>) may be more promising for studying parallelism in LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.2">Training Speed</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>The rapid evolution of LLM agents is driven by a push toward greater autonomy in complex, long-horizon tasks <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b41">42]</ref>. Built on agentic architectures that integrate planning, memory, and tool use <ref type="bibr" target="#b29">[30]</ref>, research has advanced from simple sequential reasoning to dynamic, multi-path strategies for exploration and problem-solving <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b36">37]</ref>. Yet this progress has revealed a key bottleneck: the finite and costly nature of an agent's working context <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b34">35]</ref>.</p><p>Context management strategies fall into two main paradigms: context summarization, where agents offload and retrieve information from external memory stores <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b42">43]</ref>, and multi-agent collaboration, where tasks are divided among specialized agents with focused contexts <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41]</ref>. Both paradigms frame context management as an architectural or retrieval problem, leaving a gap for an integrated approach where it becomes a learned cognitive skill rather than an external feature.</p><p>Reinforcement learning (RL) effectively grounds agents through environmental or human feedback <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b38">39]</ref>, but has focused mainly on extrinsic task success <ref type="bibr" target="#b6">[7]</ref>. The training of intrinsic skills-such as how an agent manages its own working memory-remains a underexplored research area. Our work contributes to this emerging frontier by framing context management as a learnable skill and using process-level rewards to teach it directly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusions and Future Work</head><p>In this paper, we introduced context folding, an agentic mechanism for managing long-horizon trajectories by selectively folding ephemeral sub-trajectories while preserving only essential decision-relevant information. Coupled with our reinforcement learning framework, context folding enables efficient credit assignment across tree-structured trajectories and achieves significant improvements in long-horizon coding and deep-research tasks. Empirical results on two long-context tasks demonstrate that folding allows agents to match or exceed the performance of baselines with larger context windows, while improving efficiency and stability relative to summary-based condensation. Several promising future directions include multi-layer context folding, which develops hierarchical folding strategies where folds themselves can be further folded for deeper compression.</p><p>1. Deconstruct the Query: * Analyze the user's prompt to identify the core question(s). * Isolate key entities, concepts, and the relationships between them. * Explicitly list all constraints, conditions, and required data points (e.g., dates, quantities, specific names). ↩→ 2. Hypothesize &amp; Brainstorm: * Based on your knowledge, brainstorm potential search vectors, keywords, synonyms, and related topics that could yield relevant information. ↩→ * Consider multiple angles of inquiry to approach the problem. 3. Verification Checklist: * Create a Verification Checklist based on the query's constraints and required data points. This checklist will be your guide throughout the process and used for final verification. ↩→ Phase 2: Iterative Research &amp; Discovery Tool Usage: * Tools: * `search`: Use for broad discovery of sources and to get initial snippets. * `open_page`: Mandatory follow-up for any promising `search`result. Snippets are insufficient; you must analyze the full context of the source document. ↩→ * Query Strategy: * Start with moderately broad queries to map the information landscape. Narrow your focus as you learn more. ↩→ * Do not repeat the exact same query. If a query fails, rephrase it or change your angle of attack. * Execute a minimum of 5 tool calls for simple queries and up to 50 tool calls for complex ones. Do not terminate prematurely. ↩→ * Post-Action Analysis: After every tool call, briefly summarize the key findings from the result, extract relevant facts, and explicitly state how this new information affects your next step in the OODA loop. ↩→ * &lt;IMPORTANT&gt;Never simulate tool call output&lt;IMPORTANT&gt; You will execute your research plan using an iterative OODA loop (Observe, Orient, Decide, Act). 1. Observe: Review all gathered information. Identify what is known and, more importantly, what knowledge gaps remain according to your research plan. ↩→ 2. Orient: Analyze the situation. Is the current line of inquiry effective? Are there new, more promising avenues? Refine your understanding of the topic based on the search results so far. ↩→ 3. Decide: Choose the single most effective next action. This could be a broader query to establish context, a highly specific query to find a key data point, or opening a promising URL. ↩→ 4. Act: Execute the chosen action using the available tools. After the action, return to Observe. Phase 3: Synthesis &amp; Analysis * Continuous Synthesis: Throughout the research process, continuously integrate new information with existing knowledge. Build a coherent narrative and understanding of the topic. ↩→ * Triangulate Critical Data: For any crucial fact, number, date, or claim, you must seek to verify it across at least two independent, reliable sources. Note any discrepancies. ↩→ * Handle Dead Ends: If you are blocked, do not give up. Broaden your search scope, try alternative keywords, or research related contextual information to uncover new leads. Assume a discoverable answer exists and exhaust all reasonable avenues. ↩→ ↩→ * Maintain a "Fact Sheet": Internally, keep a running list of key facts, figures, dates, and their supporting sources. This will be crucial for the final report. ↩→ Phase 4: Verification &amp; Final Report Formulation 1. Systematic Verification: Before writing the final answer, halt your research and review your Verification Checklist created in Phase 1. For each item on the checklist, confirm you have sufficient, well-supported evidence from the documents you have opened. ↩→ ↩→ 2. Mandatory Re-research: If any checklist item is unconfirmed or the evidence is weak, it is mandatory to return to Phase 2 to conduct further targeted research. Do not formulate an answer based on incomplete information. ↩→ ↩→ 3. Never give up, no matter how complex the query, you will not give up until you find the corresponding information. ↩→ 4. Construct the Final Report: * Once all checklist items are confidently verified, synthesize all gathered facts into a comprehensive and well-structured answer. ↩→ * Directly answer the user's original query. * Ensure all claims, numbers, and key pieces of information in your report are clearly supported by the research you conducted. ↩→ B.2 SWE-Bench Workflow Our prompt for SWE-Bench follows OpenHands. Phase 1. READING: read the problem and reword it in clearer terms 1.1 If there are code or config snippets. Express in words any best practices or conventions in them. 1.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details. 1.3 Explain the problem in clear terms. 1.4 Enumerate the steps to reproduce the problem. 1.5 Hightlight any best practices to take into account when testing and fixing the issue Phase 2. RUNNING: install and run the tests on the repository 2.1 Follow the readme 2.2 Install the environment and anything needed 2.2 Iterate and figure out how to run the tests Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions 3.1 Use `grep`to search for relevant methods, classes, keywords and error messages. 3.2 Identify all files related to the problem statement. 3.3 Propose the methods and files to fix the issue and explain why. 3.4 From the possible file locations, select the most likely location to fix the issue. Phase 4. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue. 4.1 Look at existing test files in the repository to understand the test format/structure. 4.2 Create a minimal reproduction script that reproduces the located issue. 4.3 Run the reproduction script to confirm you are reproducing the issue. 4.4 Adjust the reproduction script as necessary. Phase 5. FIX ANALYSIS: state clearly the problem and how to fix it 5.1 State clearly what the problem is. 5.2 State clearly where the problem is located. 5.3 State clearly how the test reproduces the issue. 5.4 State clearly the best practices to take into account in the fix. 5.5 State clearly how to fix the problem. Phase 6. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution. 6.1 Make minimal, focused changes to fix the issue. Phase 7. VERIFICATION: Test your implementation thoroughly. 7.1 Run your reproduction script to verify the fix works. 7.2 Add edge cases to your test script to ensure comprehensive coverage. 7.3 Run existing tests related to the modified code to ensure you haven't broken anything. 8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {{ instance.base_commit }}. ↩→ 8.1 Ensure you've fully addressed all requirements. 8.2 Run any tests in the repository related to: 8.2.1 The issue you are fixing 8.2.2 The files you modified 8.2.3 The functions you changed 8.3 If any tests fail, revise your implementation until all tests pass</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Agent Scaffold</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 BrowseComp-Plus</head><p>Following <ref type="bibr" target="#b5">[6]</ref>, in BrowseComp-Plus the agent can use the following tools: search = { 'type': 'function', 'function': { "name": "search", "description": "Performs a web search: supply a string 'query' and optional 'topk'. The tool retrieves the top 'topk' results (default 10) for the query, returning their docid, url, and document content (may be truncated based on token limits).", ↩→ ↩→ "parameters": { "type": "object", "properties": {</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1</head><label>1</label><figDesc>Figure 1 Examples of context folding in long-horizon tasks: deep research (left) and agentic coding (right).</figDesc><graphic coords="2,70.87,77.95,470.27,272.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 (</head><label>2</label><figDesc>Figure 2 (a) Context Folding: a mechanism that enables the agent to actively manage its context through branching and return. (b) FoldGRPO: end-to-end optimization of context folding agent.</figDesc><graphic coords="4,70.87,77.95,470.26,273.02" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>F a 1 1 , o 4 2 , o 8 , a 9 , o 9 , a 10 , o 10 → a 1</head><label>1142899101</label><figDesc>, o 1 , a 2 , o 2 , a 3 , o 3 , a 4 branch , a 5 , o 5 , a 6 , o 6 , a 7 , o 7 , a 8 branch , o 1 , a 2 , o 4 , a 5 , o 8 , a 9 , o 9 , a 10 , o 10 , so the segments between a 2 and a 4 and between a 5 and a 8 are folded.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3</head><label>3</label><figDesc>Figure<ref type="bibr" target="#b2">3</ref> Agent performance on different data difficulty group. RL training yields consistent performance gains across easy, medium, and hard instances.</figDesc><graphic coords="7,70.87,378.25,470.25,168.23" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>For</head><figDesc>both two baselines, we employ the same base model (i.e., Seed-OSS-36B-Instruct), data, infrastructure, and hyperparameters for RL training. In addition to these directly comparable baselines, we compare our method against previous closed-source and open-source systems on both tasks, including GPT-5, GPT-4.1, DeepSeek-V3.1 (2509), GLM-4.5-Air, and Qwen3-235B-A22B-Instruct-2507.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4</head><label>4</label><figDesc>Figure<ref type="bibr" target="#b3">4</ref> With RL training, we observe an increase in the number of tool calls, branching behavior, total number of tokens, and the number of searched pages.</figDesc><graphic coords="8,73.91,77.95,460.87,134.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5</head><label>5</label><figDesc>Figure 5 Left: Pass@1 vs. agent max context length. Right: Pass@1 vs. number of combined questions. Multiple easy questions are combined into a single harder question to increase problem complexity; a higher number of combined questions indicates more required actions and a longer context to answer them correctly. See Section 4.4.2 for details.</figDesc><graphic coords="9,127.99,183.08,352.69,140.89" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>✓Figure 7</head><label>7</label><figDesc>Figure<ref type="bibr" target="#b6">7</ref> Example of an agent's tool call history and context length. on BrowseComp-Plus.</figDesc><graphic coords="10,369.62,264.75,155.41,232.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8</head><label>8</label><figDesc>Figure 8 shows the stepwise average time for rollout and for each training step. We observe that the 327K ReAct model requires a longer training time per step. Note that we employ async rollout (Appendix A.2), and the rollout time shown here measures only the main thread's time cost on rollout.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>4. 5 . 3 Figure 8</head><label>538</label><figDesc>Figure 8 Training time cost. The figure shows the stepwise average time for rollout and for each training step.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><graphic coords="15,70.87,339.06,470.26,147.10" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Seed-OSS-36B-Instruct with OpenHands and a response length of 65,536.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The authors would thank <rs type="person">Weihua Du</rs>, <rs type="person">Guanghao Ye</rs>, <rs type="person">Joey Hong</rs>, <rs type="person">Bowen Xiao</rs>, <rs type="person">Ting-Han Fan</rs>, <rs type="person">Lingfeng Shen</rs> for valuable discussions and feedback during the preparation of this work.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A Algorithm Implementation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Multi-Trajectories Collection</head><p>For practical implementation of model training, instead of concatenating all sub-trajectories into one sequence, we keep them as separate causally conditioned sequences, as shown above. Therefore, training with context folding is not directly compatible with existing training infrastructures (e.g., in Verl).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Asynchronous Long-Horizon Agent Rollout</head><p>The rollout time of long-horizon agents is imbalanced, which causes a "bubble" in computation, where faster jobs wait for the longest one to finish. In our training setup, we mitigate this by adding an additional standalone rollout process: the main rollout process stops once it completes 95% of the prompts (this hyperparameter is adjusted based on the GPU configuration), and the remaining jobs are handled by the standalone process. The data used for updating the LM include both (i) the 95% of the current batch and (ii) the prompts from the previous step that were completed by the standalone rollout. Note that this part is off-policy; we set the maximum number of off-policy steps to 5 and observe no performance degradation compared to training on fully on-policy data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Prompt Engineering</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 BrowseComp-Plus Workflow</head><p>Our prompt for BrowseComp-Plus is inspired by and modified from Claude Deep-Research. Using Seed-OSS-36B, we found that our system prompt achieves 0.478 accuracy, while the default system prompt in BrowseComp-Plus achieves only around 0.08.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Phase 1: Deconstruction &amp; Strategy</head><p>"query": { "type": "string", "description": "The query string for the search." }, "topk": { "type": "integer", "description": "</p><p>Return the top k pages.", } }, "required": [ "query" ] } } } open_page = { 'type': 'function', 'function': { 'name': 'open_page', 'description': ( "Open a page by docid or URL and return the complete content. " "Provide either 'docid' or 'url'; if both are provided, prefer 'docid'. " "The docid or URL must come from prior search tool results." ), 'parameters': { 'type': 'object', 'properties': { 'docid': { 'type': 'string', 'description': 'Document ID from search results to resolve and fetch.', }, 'url': { 'type': 'string', 'description': 'Absolute URL from search results to fetch.', }, }, 'required': [], }, }, } finish = { 'type': 'function', 'function': { 'name': 'finish', 'description': """Return the final result when you have a definitive answer or cannot progress further.</p><p>Provide a concise answer plus a brief, evidence-grounded explanation.""", ↩→ 'parameters': { 'type': 'object', 'properties': { 'answer': { 'type': 'string', 'description': 'A succinct, final answer.', }, 'explanation': { 'type': 'string', 'description': 'A brief explanation for your final answer. For this section only, cite evidence documents inline by placing their docids in square brackets at the end of sentences (e.g., <ref type="bibr" target="#b19">[20]</ref>). Do not include citations anywhere else.', ↩→ ↩→ }, 'confidence': { 'type': 'string', 'description': 'Confidence: your confidence score between 0% and 100% for your answer', }, }, 'required': ['answer', 'explanation'], }, }, } Following Chen et al. <ref type="bibr" target="#b5">[6]</ref>, the search tool retrieves the topk (default as 10) documents using Qwen3-Embed-8B from the BrowseComp-Plus corpus and displays the first 512 tokens. The open_page tool fetches the full document, which is truncated to the first 4096 tokens. When the agent calls finish, the answer field is used for correctness evaluation.</p><p>The system prompt is as shown in B and the user prompt is question and tool-use description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 SWE-Bench</head><p>In SWE-Bench, we follow OpenHands <ref type="bibr" target="#b0">[1]</ref>, the agent can use the following tools: execute_bash = { 'type': 'function', 'function': { 'name': 'execute_bash', 'description': """Execute a bash command in the terminal. * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py &gt; server.log 2&gt;&amp;1 &amp;`.</p><p>↩→ * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&amp;&amp;`or `;`to chain them together. ↩→ """, 'parameters': { 'type': 'object', 'properties': { 'command': { 'type': 'string', 'description': 'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c`(Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&amp;&amp;`or `;`to chain them together.', ↩→ ↩→ ↩→ }, }, 'required': ['command'], }, }, } str_replace_editor = { 'type': 'function', 'function': { 'name': 'str_replace_editor', 'description': """Custom editing tool for viewing, creating and editing files in plain-text format * State is persistent across command calls and discussions with the user * If `path`is a file, `view`displays the result of applying `cat -n`. If `path`is a directory, `view`lists non-hidden files and directories up to 2 levels deep ↩→ * The `create`command cannot be used if the specified `path`already exists as a file * If a `command`generates a long output, it will be truncated and marked with `&lt;response clipped&gt;* The `undo_edit`command will revert the last edit made to the file at `pathǸ otes for using the `str_replace`command: * The `old_str`parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces! ↩→ * If the `old_str`parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str`to make it unique ↩→ * The `new_str`parameter should contain the edited lines that should replace the `old_str" "", 'parameters': { 'type': 'object', 'properties': { 'command': { 'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.', ↩→ 'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'], 'type': 'string', }, 'path': { 'description': 'Absolute path to file or directory, e.g. `/workspace/file.py`or `/workspace`.', ↩→ 'type': 'string', }, 'file_text': { 'description': 'Required parameter of `create`command, with the content of the file to be created.', ↩→ 'type': 'string', }, 'old_str': { 'description': 'Required parameter of `str_replace`command containing the string in `path`to replace.', ↩→ 'type': 'string', }, 'new_str': { 'description': 'Optional parameter of `str_replace`command containing the new string (if not given, no string will be added). Required parameter of `insert`command containing the string to insert.', ↩→ ↩→ 'type': 'string', }, 'insert_line': { 'description': 'Required parameter of `insert`command. The `new_str`will be inserted AFTER the line `insert_line`of `path`.', ↩→</p><p>'type': 'integer', }, 'view_range': { 'description': 'Optional parameter of `view`command when `path`points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref> will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]`shows all lines from `start_line`to the end of the file.', ↩→ ↩→ ↩→ 'items': {'type': 'integer'}, 'type': 'array', }, }, 'required': ['command', 'path'], }, }, } think = { 'type': 'function', 'function': { 'name': 'think', 'description': """Use the tool to think about something. It will not obtain new information or make any changes to the repository, but just log the thought. Use it when complex reasoning or brainstorming is needed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head><p>Common use cases: 1. When exploring a repository and discovering the source of a bug, call this tool to brainstorm several unique ways of fixing the bug, and assess which change(s) are likely to be simplest and most effective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2.</head><p>After receiving test results, use this tool to brainstorm ways to fix failing tests. 3. When planning a complex refactoring, use this tool to outline different approaches and their tradeoffs. 4. When designing a new feature, use this tool to think through architecture decisions and implementation details.</p><p>↩→ 5. When debugging a complex issue, use this tool to organize your thoughts and hypotheses.</p><p>The tool simply logs your thought process for better transparency and does not execute any code or make changes.</p><p>↩→ """, 'parameters': { 'type': 'object', 'properties': { 'content': {'type': 'string', 'description': 'The content of your thought.'}, }, 'required': ['content'], }, }, } finish = { 'type': 'function', 'function': { 'name': 'finish', 'description': """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task.""", ↩→ 'parameters': { 'type': 'object', 'properties': { 'message': { 'type': 'string', 'description': 'A comprehensive message describing task completion, results achieved, any state changes made, key insights discovered, and other notes.', ↩→ }, }, 'required': [], }, }, } When the agent calls finish, the git diff is fetched from the Docker environment, and the reward is calculated by applying the git diff to the another Docker environment and running the unit tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Context Folding</head><p>For context folding, we implement these tools: branch = { 'type': 'function', 'function': { 'name': 'branch', 'description': """Create a sub-branch to execute a sub-task.""", 'parameters': { 'type': 'object', 'properties': { 'description': { 'description': 'A concise 3-5 word identifier for the sub-task.', 'type': 'string' }, 'prompt': { 'description': 'Clear, compact task prompt: state objectives and critical info to preserve in the response. Be brief and informative.', ↩→ 'type': 'string' }, }, 'required': ['description', 'prompt'], }, }, } return_tool = { 'type': 'function', 'function': { 'name': 'return', 'description': """Finish the interaction when the sub task is complete OR if the assistant cannot proceed further with the task.""", ↩→ 'parameters': { 'type': 'object', 'properties': { 'message': { 'type': 'string', 'description': 'A comprehensive message describing sub task outcome.', }, }, 'required': ['message'], }, }, }</p><p>The branch tool returns a template message, while the return tool rolls back the context to the previous turn that invoked the branch tool and appends a template message that repeats the message field.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Openhands: Context condensation for more efficient ai agents</title>
+		<author>
+			<persName><surname>All-Hands</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dev</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-04">April 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">How we built our multi-agent research system</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">Anthropic. Claude code</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Swe-rebench: An automated pipeline for task collection and decontaminated evaluation of software engineering agents</title>
+		<author>
+			<persName><forename type="first">Ibragim</forename><surname>Badertdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Golubev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maksim</forename><surname>Nekrashevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Shevtsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Karasik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><surname>Andriushchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Trofimova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daria</forename><surname>Litvintseva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Yangel</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2505.20411</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ale</forename><surname>Kubek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torsten</forename><surname>Hoefler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Browsecomp-plus: A more fair and transparent evaluation benchmark of deep-research agent</title>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kshama</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyi</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahel</forename><surname>Sharifymoghaddam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nandan</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Crystina</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2508.06600</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun-Mei</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing-Li</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Li</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiong</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shao-Kang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Xia</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi-Cheng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Jing</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Mei You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxiang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhen Guo Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi-An</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<pubPlace>Ziyang Song, Zizheng Pan</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Zhen Huang, Zhipeng Xu, Zhongyu Zhang, and Zhen Zhang. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Deep research is now available on gemini 2.5 pro experimental</title>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://blog.google/products/gemini/deep-research-gemini-2-5-pro-experimental/" />
+		<imprint>
+			<date type="published" when="2025-02">February 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Hadfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Lien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Scholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ford</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/engineering/multi-agent-research-system" />
+		<title level="m">How we built our multi-agent research system</title>
+		<imprint>
+			<date type="published" when="2025-06-13">June 13 2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2201.07207</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2310.06770</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2503.09516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Transformers are rnns: Fast autoregressive transformers with linear attention</title>
+		<author>
+			<persName><forename type="first">Angelos</forename><surname>Katharopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Vyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaos</forename><surname>Pappas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Franccois</forename><surname>Fleuret</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Long context rag performance of large language models</title>
+		<author>
+			<persName><forename type="first">Quinn</forename><surname>Leng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Portes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Havens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><forename type="middle">A</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Carbin</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2411.03538</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Websailor-v2: Bridging the chasm to proprietary agents via synthetic data and scalable reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongwang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litu</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingchu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xixi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zile</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Towards community-driven agents for machine learning engineering</title>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ameet</forename><surname>Talwalkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2506.20640</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Webthinker: Empowering large reasoning models with deep research capability</title>
+		<author>
+			<persName><forename type="first">Xiaoxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongkang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2504.21776</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Lost in the middle: How language models use long contexts</title>
+		<author>
+			<persName><forename type="first">Nelson</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="157" to="173" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Scaling llm multi-turn rl with end-to-end summarization-based context management</title>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhan</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuesong</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiecao</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2510.06727</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Measuring ai ability to complete long tasks</title>
+		<author>
+			<persName><surname>Metr</surname></persName>
+		</author>
+		<ptr target="https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/" />
+		<imprint>
+			<date type="published" when="2025-03">March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Deep research system card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-02">February 2025</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Introducing chatgpt agent: bridging research and action</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-chatgpt-agent/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Training software engineering agents and verifiers with swe-gym</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navdeep</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2412.21139</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zile</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoxin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanzhong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donglei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baixuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minpeng</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webresearcher</surname></persName>
+		</author>
+		<title level="m">Unleashing unbounded reasoning capability in long-horizon agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Co-bench: Benchmarking language model agents in algorithm search for combinatorial optimization</title>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2504.04310</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Agent kb: Leveraging cross-domain experience for agentic problem solving</title>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianrui</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingting</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinming</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2507.06229</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities</title>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2507.06261</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">(</forename><surname>Linxi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Jim) Fan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2023">2024, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengbang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Hao Ran Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi-Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Rong</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2308.11432</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Openhands: An open platform for ai software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuqiang</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Brennan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Browsecomp: A simple yet challenging benchmark for browsing agents</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Papay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Mckinney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isa</forename><surname>Fulford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2504.12516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Widesearch: Benchmarking agentic broad info-seeking</title>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2508.07999</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Unlocking long-horizon search intelligence via context summarization</title>
+		<author>
+			<persName><forename type="first">Xixi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litu</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongwang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minhao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Resum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Reshaping long-context llm with multi-conv rl-based memory agent</title>
+		<author>
+			<persName><forename type="first">Hongli</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangtao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Qin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memagent</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2507.02259</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">The landscape of agentic reinforcement learning for llms: A survey</title>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hejia</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenfei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zelin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyuan</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songtao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Chain of agents: Large language models collaborating on long-context tasks</title>
+		<author>
+			<persName><forename type="first">Yusen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">Ö</forename><surname>Arik</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2406.02818</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Longagent: Scaling language models to 128k context through multi-agent collaboration</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Zu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanjing</forename><surname>Huang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2402.11550</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Mem1: Learning to synergize memory and reasoning for efficient long-horizon agents</title>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghwan</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alok</forename><surname>Prakash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan Kian Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2506.15841</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

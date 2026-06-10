@@ -1,0 +1,902 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">GameGPT: Multi-agent Collaborative Framework for Game Development</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-07">7 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dake</forename><surname>Chen</surname></persName>
+							<email>dakechen@usc.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haoyang</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+							<email>wanghanbin@mails.x-institute.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunhao</forename><surname>Huo</surname></persName>
+							<email>hhuo@usc.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuzhao</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+							<email>wangjunjie@sz.tsinghua.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Southern California</orgName>
+								<orgName type="institution" key="instit2">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">GameGPT: Multi-agent Collaborative Framework for Game Development</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-07">7 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5761F11E907002F6DD5178EBB49D9524</idno>
+					<idno type="arXiv">arXiv:2310.08067v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The large language model (LLM) based agents have demonstrated their capacity to automate and expedite software development processes. In this paper, we focus on game development and propose a multi-agent collaborative framework, dubbed GameGPT, to automate game development. While many studies have pinpointed hallucination as a primary roadblock for deploying LLMs in production, we identify another concern: redundancy. Our framework presents a series of methods to mitigate both concerns. These methods include dual collaboration and layered approaches with several in-house lexicons, to mitigate the hallucination and redundancy in the planning, task identification, and implementation phases. Furthermore, a decoupling approach is also introduced to achieve code generation with better precision.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Artificial intelligence's applications in game development can be traced back to classic games such as Starcraft and Diablo <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref>. Developers have consistently required AI systems for crafting interactive virtual worlds and characters. These systems have become standard in the development of such interactive platforms. Early game AI research emphasizes controlling non-player characters (NPCs) and pathfinding <ref type="bibr" target="#b3">[4]</ref>. With the advancement of natural language processing (NLP), some pioneering works that focus on generating levels using the deep learning technique have emerged. A representative is MarioGPT <ref type="bibr" target="#b4">[5]</ref>, which successfully generates levels in Super Mario Bros by fine-tuning GPT2 <ref type="bibr" target="#b5">[6]</ref>.</p><p>Recently, transformer-based large language models (LLMs) have achieved substantial advancements, making notable strides in both natural language processing and computer vision <ref type="bibr">[7-9, 6, 10-12]</ref>. The training of LLMs is a multi-phase process. The initial phase involves training these models on extensive corpora, fostering the acquisition of fundamental language capabilities. In the subsequent phase, which is of considerable significance, the models are fine-tuned via data for a diverse of NLP tasks that are delineated through instructions <ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref><ref type="bibr" target="#b15">[16]</ref>. This instruction tuning enhances the models' ability to generalize across a wide range of applications, leading to noteworthy zero-shot performance on unseen tasks. Lastly, the reinforcement learning from human feedback (RLHF) phase guarantees the models' structural integrity and reliability <ref type="bibr" target="#b16">[17]</ref>. More importantly, this phase also grants the model the capacity to generate content that emulates human style, thereby enhancing its versatility as an agent.</p><p>Moreover, the advancement of LLMs has catalyzed the utilization of agents in automating software development processes. Various studies have explored the deployment of a single LLM-based agent to perform diverse tasks. AutoGPT, for instance, employs an LLM agent to tackle real-world decisionmaking tasks <ref type="bibr" target="#b17">[18]</ref>, while HuggingGPT employs a single LLM as a controller to orchestrate the completion of complicated AI tasks <ref type="bibr" target="#b18">[19]</ref>. Despite these approaches relying on a sole LLM agent, they incorporate reviewer roles to refine decision-making. In AutoGPT, a secondary opinion is obtained from a supervised learner to augment performance, and HuggingGPT integrates GPT-4 as a critic to evaluate decision accuracy. Furthermore, multiple works utilize multiple agents in their frameworks to make LLM competent for complex tasks <ref type="bibr" target="#b19">[20]</ref><ref type="bibr" target="#b20">[21]</ref><ref type="bibr" target="#b21">[22]</ref><ref type="bibr" target="#b22">[23]</ref><ref type="bibr" target="#b23">[24]</ref>. MetaGPT <ref type="bibr" target="#b20">[21]</ref> introduces a multi-agent framework, which can be used for automating the development of various software. CHATDEV <ref type="bibr" target="#b19">[20]</ref> presents a novel software development framework that harnesses agents to enhance collaboration among the various roles involved in the software development process.</p><p>When employing LLM agents for automated software development, these studies encounter inherent limitations associated with LLMs, notably the issue of hallucination. This challenge manifests particularly during the planning and code generation phases <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b19">20]</ref>. Distinct from generic software development, the game development industry operates under a stringent demand to keep up with the trends, necessitating heightened precision and conciseness throughout the development process for optimal efficiency. Moreover, tuning and employing one single LLM to serve the whole development cycle of game development without hallucination and high precision is impractical and costly. As a result, the framework requires multiple critic and reviewer roles to effectively mitigate the hallucinatory tendencies inherent in language models. Furthermore, in the context of game development, we identify an additional limitation of LLMs, that of redundancy. Particularly in the game development domain, LLMs can generate unnecessary and uninformative tasks or code snippets.</p><p>To effectively address both hallucination and redundancy, the GameGPT framework strategically employs a combination of approaches, including dual collaboration, instruction tuning through in-house lexicons, and code decoupling. Notably, dual collaboration involves the interaction between LLMs and small expert deep learning models, alongside the collaborative engagement between execution roles and review roles. These synergistic have empirically demonstrated their effectiveness for mitigating both hallucination and redundancy within the framework. In summary, our contributions are as follows:</p><p>• We introduce an innovative multi-agent framework tailored to facilitate automated game development.</p><p>• Beyond hallucination, we identify the issue of redundancy inherent to LLM-based agents in the context of game development.</p><p>• To address the hallucination and redundancy concerns of LLMs within game development, several mitigations including dual collaboration and code decoupling are proposed.</p><p>• Empirical results demonstrate the GameGPT's capability in effective decision-making and decision-rectifying throughout the game development process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">GameGPT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Overview</head><p>The GameGPT framework is designed as a specialized multi-agent system for game development. To address the limitations of the LLM and the temporal constraints of game development, we integrate multiple agents with distinct roles into the framework. This integration aims to enhance precision and scalability. The scalability aspect of GameGPT offers the potential to create games of medium to large sizes. Moreover, GameGPT operates in a collaborative manner, exhibiting a dual collaboration approach. Firstly, it involves cooperation between the LLMs and smaller expert models dedicated to specific tasks, thereby enhancing the decision-making process. Secondly, collaboration occurs among agents assigned different roles, contributing to the decision-rectification and minimizing the hallucination of LLMs.</p><p>Figure <ref type="figure" target="#fig_0">1</ref> provides an overview of the proposed GameGPT framework, which operates through five distinct stages: game development planning, task classification, code generation, task execution, and result summarization. Upon receiving a client's request, the game development manager initiates the game development planning stage, resulting in the creation of a task list. Subsequently, game development engineers utilize smaller expert models to accurately determine the task type and its associated parameters. Following this, game engine engineers proceed to generate code and scripts in alignment with the designated game engineer. Throughout the initial three stages, three critics are incorporated to mitigate concerns related to hallucination and redundancy. Concluding these stages, the game engine testing engineer undertakes the execution of tasks and subsequently produces a comprehensive result summary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Multi-agent Framework</head><p>In GameGPT, each agent maintains a private memory system and can access the shared public discussion to acquire the necessary information for guiding their decision-making process. For agent i at time step t, this process can be formally represented as follows:</p><formula xml:id="formula_0">p θi (O it |M it , P t ),<label>(1)</label></formula><p>where p θi corresponds to the LLM or an expert model associated with agent i, O it denotes the output or deliverable produced by the agent i at time step t, and M it and P t refer to its private memory and the requisite public record up to time step t, respectively.</p><p>The presence of multiple agents with distinct roles is crucial in GameGPT due to the unique characteristics of the game development industry and the limitations of LLMs. Given that game development cycles typically span several months, relying on a solitary agent with comprehensive memory and contextual information would render language models, including LLMs, inefficient. This approach could also result in scalability challenges as projects become more complicated over time. Furthermore, considering the limitations on the number of tokens processed by LLMs, employing a solitary agent with an all-encompassing memory for large-scale game development projects is not pragmatic. Additionally, the inherent issues of hallucination and redundancy observed in LLMs underscore the significance of collaboration among multiple agents, particularly those with critic roles. This collaboration is significant in mitigating the challenges posed by LLM hallucination and redundancy. GameGPT utilizes a diverse set of roles to facilitate its operations, including responsibilities across the game development cycle. These roles comprise the game content designer, game development manager, plan reviewer, game development engineer, task reviewer, game engine engineer, code reviewer, and game engine testing engineer. Each of these roles works on distinct missions throughout the game development process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Game Development Planning</head><p>The initial phase of GameGPT, upon receiving a user request, involves generating a task plan. This planning phase stands as one of the pivotal steps, greatly influencing the seamless progression of the entire development process. Orchestrated by an LLM-based game development manager, this phase entails proposing an initial plan that is subsequently disassembled into a list of tasks. Notably, due to the limitations inherent in LLMs, this initial plan often exhibits instances of hallucinations, which give rise to unexpected tasks, and include redundant tasks that are uninformative or unnecessary. To address these challenges, we present four strategies designed to alleviate these concerns. All four strategies are orthogonal to each other and can be layered to achieve better effectiveness.</p><p>Game Genre Classification with Template The first strategy is to perform classification for the incoming request, aimed at discerning the genre intended for the game. Presently, the GameGPT framework accommodates development for five distinct game genres, namely, [e.g., action, strategy, role-playing, simulation, and adventure]. For each genre, we provide a standardized plan template, guiding the game development manager in completing the template with relevant information. By adopting this approach, the frequency of redundant tasks is notably reduced, while simultaneously mitigating the likelihood of hallucination occurrences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Plan Review</head><p>The second strategy involves the engagement of a plan reviewer which is another LLM-based agent. This plan reviewer operates through strategically crafted prompts, facilitating a comprehensive review of the task plan. Its primary objective is to minimize occurrences of hallucination and redundancy. The plan reviewer assesses the plan and furnishes feedback, aiming to refine and enhance its precision, efficiency, and conciseness. The insights provided by the plan reviewer serve as input to the game development manager, empowering the shaping of a task plan that is notably more accurate and refined.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instruction Tuning the Language Model for Planning</head><p>The third approach aims to tune and tailor the LLM of the game development manager for game development planning through specialized instructions. This fine-tuning process endeavors to yield a plan that is both more accurate and concise.</p><p>To facilitate this, we collect and consolidate an in-house dataset comprising numerous input-output pairs. While these pairs do not conform to a standardized format concerning length or structure, they uniformly revolve around requests for game development. The corresponding outputs are supplied by adept game development practitioners. By adopting this approach, we effectively bridge the gap between the LLM's general linguistic capabilities and its aptitude for game development planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Presentation and Rectification</head><p>The fourth and final strategy serves as a safety net within the planning phase. Throughout the planning process, the game development manager consistently shares interim outcomes with the users on the frontend interface, enabling them to remain informed about ongoing developments. To augment this, an interactive method is integrated, empowering users to actively review, rectify, and enhance the plan in accordance with their expectations. This approach safeguards alignment between the devised plan and the users' desires.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Game Development Task Classification</head><p>The process of task Classification within GameGPT demands a high accuracy in identifying both the task type and its corresponding arguments. Consequently, to ensure the accuracy of this phase, the agent of the game development engineer role is allocated. This role is supported by the utilization of two expert models, which collaboratively engage in task classification. This collaborative approach enhances the accuracy and effectiveness of task and argument identification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Classifier and Task Argument Identifier</head><p>To circumvent the hallucination of language models and enhance the accuracy of the task classification, we provide a list of possible types of tasks in game development. In order to perform the classification, a BERT model is employed to effectively categorize each task. The BERT model has been trained with an in-house dataset. This dataset contains data entries uniquely tailored to the tasks of game development. The input is a task drawn from the predetermined list, while the output corresponds to the task's designated category.</p><p>Identifying the argument involves another LLM. The agent provides a template that corresponds to the identified task type and subsequently prompts the LLM to populate this template. The incorporation of the template can elevate the accuracy of argument identification and significantly reduce the hallucination.</p><p>Task Type and Argument Review In this phase, a task reviewer reviewer agent is empolyed. It is prompted to double-confirm that the identified type and argument of each class are reasonable. The review process includes if the task type is in the predetermined range and is the best fit for the corresponding task. It also involves reviewing the argument list and see if it aligns with the task. In some scenarios where inferring the argument based on the contextual task information and the user's request is unfeasible, GameGPT adopts a proactive approach. The task reviewer engages the user by initiating a prompt on the frontend interface and requests additional information necessary for the argument. This interactive method ensures the completeness of argument details even in instances where automated inference falls short.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Dependency and Execution Sequence</head><p>The task reviewer agent is also responsible for discerning task dependencies and constructing a directed acyclic graph that encapsulates these relationships. Subsequent to the establishment of this graph, a breadth-first search algorithm is employed to traverse it. The traversal yields a determined sequence for task execution. This process ensures an orderly and systematic execution of tasks in accordance with their dependencies, resulting in a coherent and structured development progression.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">Code generation</head><p>Generating lengthy code scripts with an LLM inherently carries a greater risk of encountering hallucinations and redundancy. In response, we introduce a novel approach to decoupling the code for game design, simplifying the inference process for the LLM and consequently mitigating both hallucination and redundancy.</p><p>Decouple the Script for Game Development The hallucination and redundancy tend to be more frequent when generating lengthy scripts. In response, our proposed framework introduces a novel decoupling approach specifically designed for game development, aimed at separating the Lua script.</p><p>To achieve this, we strategically divide the expected script into numerous code snippets of manageable length for LLM processing. This decoupling approach significantly eases the work of LLM and thereby mitigates the occurrence of hallucination and redundancy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Post Decoupling In-context Inference</head><p>In <ref type="bibr" target="#b9">[10]</ref>, an effective inference method called in-contextlearning to mitigate hallucination is proposed. In GameGPT, we adopt a similar post-training strategy built upon our decoupling method. As our decoupling approach breaks down task-related code into smaller code snippets, we no longer depend on lengthy example scripts for inference. Instead, we incorporate multiple example snippets into the prompt, effectively reducing both hallucination and redundancy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Candidate selection Moreover, another technique integrated into</head><p>GameGPT to counteract hallucinations involves generating a set of K code snippets for each task. These snippets are subsequently tested within a virtual environment and simultaneously presented to the user. Both the testing process and user feedback are leveraged to identify and eliminate problematic candidates, leaving only the most viable option for execution. This approach serves to further minimize the occurrence of hallucinations.</p><p>Instruction Tuning Furthermore, we have collected an in-house lexicon comprising an extensive repository of code snippets designed for game development. Each of these snippets is annotated by labelers, providing clear instructions that specify their intended purpose. This high-quality lexicon serves as a valuable resource for fine-tuning our model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Review and Enhancement</head><p>Following the code generation by the game engine engineer, a code reviewer agent is engaged to thoroughly review and inspect the codebase. The code reviewer performs a comprehensive assessment, actively seeking out any instances of deviation from the original request or unintended hallucinations present within the code. Upon thorough scrutiny, the code reviewer not only flags potential discrepancies but also furnishes recommendations for refining the code, ultimately yielding a more reasonable version. Subsequent to the review process, the revised code, along with the code reviewer's feedback, is shared with both the game engine engineer and the user through the frontend interface. If the user deems it necessary, they can provide suggestions for code revision directly via the frontend interface. These suggestions are relayed to the code reviewer, who subsequently assesses and incorporates them as appropriate, fostering a collaborative and iterative approach to code enhancement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.6">Game Development Task Execution and Result Summary</head><p>Once the code generation and enhancement are finished, the responsibility transitions to a game engine testing engineer, tasked with executing the generated tasks. During this phase, the testing engineer adheres to the execution sequence formulated in the preceding stage. The execution process involves sending the code of each individual task to the game engine. Subsequently, the testing engineer performs the execution and keeps track of the logs during the execution. Upon the completion of all tasks specified in the execution sequence, the testing engineer consolidates all the logs generated throughout the execution process. This compilation results in the creation of a succinct and comprehensive summary, which is then presented to the user through the frontend interface.</p><p>Additionally, the testing engineer also identifies and reports any observed tracebacks during the execution. These tracebacks serve as critical indicators that may necessitate adjustments to the execution or code, enabling the refinement of the overall process and contributing to the generation of a polished end product.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of the proposed framework</figDesc><graphic coords="3,108.00,72.00,435.61,169.89" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><graphic coords="2,108.00,72.00,396.01,372.25" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Human-Level AI&apos;s Killer Application: Interactive Computer Games</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Laird</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vanlent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI magazine</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="15" to="15" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">General Video Game Ai: Competition, Challenges And Opportunities</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Perez-Liebana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Samothrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Togelius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schaul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lucas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Leveraging machine learning for game development</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">H</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://blog.research.google/2021/03/leveraging-machine-learning-for-game.html?m=1" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dębiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dennison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Farhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hashme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1912.06680</idno>
+		<title level="m">Dota 2 With Large Scale Deep Reinforcement Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">MarioGPT: Open-Ended Text2Level Generation Through Large Language Models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sudhakaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>González-Duque</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Glanois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Freiberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Najarro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Risi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Language Models Are Unsupervised Multitask Learners</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Attention Is All You Need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ł</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Improving Language Understanding By Generative Pre-Training</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Salimans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Bert: Pre-Training Of Deep Bidirectional Transformers For Language Understanding</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Language Models Are Few-Shot Learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Llama: Open And Efficient Foundation Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Vicuna: An Open-Source Chatbot Impressing Gpt-4 With 90%* Chatgpt Quality</title>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<ptr target="https://vicuna.lmsys.org" />
+		<imprint>
+			<date type="published" when="2023-04">April 2023</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring Massive Multitask Language Understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brahma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.11416</idno>
+		<title level="m">Scaling Instruction-Finetuned Language Models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Self-Instruct: Aligning Language Model With Self Generated Instructions</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.12244</idno>
+		<title level="m">Wizardlm: Empowering Large Language Models To Follow Complex Instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Training Language Models To Follow Instructions With Human Feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27" to="730" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Auto-GPT For Online Decision Making: Benchmarks And Additional Opinions</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.02224</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Hugginggpt: Solving Ai Tasks With Chatgpt And Its Friends In Huggingface</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17580</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Communicative Agents For Software Development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K S</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ran</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">MetaGPT: Meta Programming For Multi-Agent Collaborative Framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03442</idno>
+		<title level="m">Generative Agents: Interactive Simulacra Of Human Behavior</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A A K</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ghanem</surname></persName>
+		</author>
+		<title level="m">CAMEL: Communicative Agents For &quot;Mind&quot; Exploration Of Large Scale Language Model Society</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Vo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Durante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Noda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Terzopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.09971</idno>
+		<title level="m">MindAgent: Emergent Gaming Interaction</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

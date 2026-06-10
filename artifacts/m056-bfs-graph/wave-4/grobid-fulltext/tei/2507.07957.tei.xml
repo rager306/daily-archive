@@ -1,0 +1,1174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MIRIX: Multi-Agent Memory System for LLM-Based Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+						</author>
+						<title level="a" type="main">MIRIX: Multi-Agent Memory System for LLM-Based Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">808FA66430145F41F40C311A95CF3F9B</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Although memory capabilities of AI agents are gaining increasing attention, existing solutions remain fundamentally limited. Most rely on flat, narrowly scoped memory components, constraining their ability to personalize, abstract, and reliably recall user-specific information over time. To this end, we introduce MIRIX, a modular, multi-agent memory system that redefines the future of AI memory by solving the field's most critical challenge: enabling language models to truly remember. Unlike prior approaches, MIRIX transcends text to embrace rich visual and multimodal experiences, making memory genuinely useful in real-world scenarios. MIRIX consists of six distinct, carefully structured memory types: Core, Episodic, Semantic, Procedural, Resource Memory, and Knowledge Vault, coupled with a multi-agent framework that dynamically controls and coordinates updates and retrieval. This design enables agents to persist, reason over, and accurately retrieve diverse, long-term user data at scale. We validate MIRIX in two demanding settings. First, on ScreenshotVQA, a challenging multimodal benchmark comprising nearly 20,000 high-resolution computer screenshots per sequence, requiring deep contextual understanding and where no existing memory systems can be applied, MIRIX achieves 35% higher accuracy than the RAG baseline while reducing storage requirements by 99.9%. Second, on LOCOMO, a long-form conversation benchmark with single-modal textual input, MIRIX attains state-of-the-art performance of 85.4%, far surpassing existing baselines. These results show that MIRIX sets a new performance standard for memory-augmented LLM Agents. To allow users to experience our memory system, we provide a packaged application powered by MIRIX. It monitors the screen in real time, builds a personalized memory base, and offers intuitive visualization and secure local storage to ensure privacy.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advancements in large language model (LLM) agents have focused primarily on improving their capabilities in complex task execution-ranging from code debugging and repository management to autonomous web browsing. While these functionalities are crucial, another foundational yet underexplored dimension is memory: the ability of agents to persist, retrieve, and utilize past user-specific information over time. Human cognition relies heavily on memory-recalling conversations, recognizing patterns, and adapting behavior based on prior experience. Analogously, memory mechanisms in LLM agents are essential for delivering consistent, personalized interactions, learning from feedback, and avoiding repetitive queries. However, most LLM-based personal assistants remain stateless beyond their current prompt window, retaining no lasting memory unless context is explicitly re-provided. This limitation hinders their long-term usability, especially in real-world settings where users expect assistants to evolve, recall, and personalize over time <ref type="bibr" target="#b28">[29]</ref>. To address this, a range of memory-augmented systems have been proposed. One common approach is the use of knowledge graphs, as seen in systems like Zep <ref type="bibr" target="#b23">[24]</ref> and Cognee <ref type="bibr" target="#b19">[20]</ref>. These frameworks are well-suited for representing structured relationships between entities but struggle to model sequential events, emotional states, full-length documents, or multi-modal inputs such as images. Another approach involves flattened memory architectures that store and retrieve textual chunks using vector databases. Examples include Letta <ref type="bibr" target="#b21">[22]</ref>, Mem0 <ref type="bibr" target="#b4">[5]</ref>, and ChatGPT's memory system. Letta divides its memory into components-recall memory for conversation history, core memory for preferences, and archival memory for long documents-while ChatGPT focuses primarily on core and recall memories. Mem0 adopts a memory system that contains flattened facts distilled from the user inputs, which serves similar roles as Letta's archival memory while being more distilled. While prevalent, these memory systems face several challenges: (1) Lack of compositional memory structure: Most approaches store all historical data in a single flat store without routing into specialized memory types (e.g., procedural, episodic, semantic), making retrieval inefficient and less accurate. (2) Poor multi-modal support: Text-centric memory mechanisms fail when the majority of the input is nonverbal (e.g., images, interface layouts, maps). (3) Scalability and abstraction: Storing raw inputs, especially images, leads to prohibitive memory requirements, with no effective abstraction layer to summarize and retain only salient information.</p><p>To address the limitations of existing memory systems, we argue that effective Routing and Retrieving are the key capabilities a memory-augmented agent must possess. Most current systems focus primarily on Short-Term and Long-Term Memory <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b24">25]</ref>, with some incorporating Mid-Term Memory <ref type="bibr" target="#b11">[12]</ref>. In contrast, we draw inspiration from works that explore more specialized memory types, including episodic memory <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b0">1]</ref>, semantic memory <ref type="bibr" target="#b14">[15]</ref>, and procedural memory <ref type="bibr" target="#b32">[33]</ref>. Building on these foundations, we propose a more comprehensive architecture consisting of six memory components: Core Memory, Episodic Memory, Semantic Memory, Procedural Memory, Resource Memory, and the Knowledge Vault (As shown in Figure <ref type="figure" target="#fig_0">1</ref>). Episodic Memory stores user-specific events and experiences; Semantic Memory captures concepts and named entities (e.g., the meaning of a new phrase or an understanding of a person); Procedural Memory records step-bystep instructions for performing tasks. Resource Memory is designed to store documents, files, and other media shared by the user. Knowledge Vault holds critical verbatim information that must be preserved exactly, such as addresses, phone numbers, email accounts, and other sensitive facts.</p><p>Each memory component is internally organized using a hierarchical structure. For example, Episodic Memory includes fields such as summary and details, while Semantic Memory organizes information by name and description. Managing this structured and heterogeneous memory is challenging for a single agent. Therefore, we adopt a multi-agent architecture: six Memory Managers for six memory components, and a Meta Memory Manager responsible for task routing. While this memory system can be plugged and connected with other existing agents, we build an extra Chat Agent to demonstrate how we can interact with an agent that has access to our memories. This memory system, which we call MIRIX, is modular and designed as a comprehensive and full memory system for LLM-based agents. Moreover, when interacting with the Chat Agent, we propose an Active Retrieval mechanism, where the agent is required to generate a topic before answering the question or executing the next step, and the retrieved information is inputted into the model in the system prompt. Meanwhile, we design multiple retrieval tools so that the agent can choose appropriate ones in response to different situations.</p><p>We evaluate MIRIX in two experimental settings. First, we introduce a challenging benchmark that requires extracting information and building memory from multimodal input. To this end, we collect between 5,000 and 20,000 high-resolution screenshots spanning one month of computer usage from three PhD students and construct evaluation questions grounded in their visual activity history. This setting demands sophisticated memory modeling and exceeds the capacity of existing long-context models. For example, each screenshot ranges from 2K to 4K resolution depending on the user's monitor, which limits Gemini to processing no more than 500 images at full resolution or approximately 3,600 images when resized to 256×256 pixels. Second, following Mem0 <ref type="bibr" target="#b4">[5]</ref>, we assess performance on the LOCOMO dataset <ref type="bibr" target="#b18">[19]</ref>, which comprises long-form, multi-turn conversations. While each conversation is relatively short (around 26,000 tokens on average), we constrain the Chat Agent to answer questions using only retrieved memories, without access to the original conversation transcripts. This setup enables us to evaluate whether our system can effectively distill and route essential information into memory. In terms of results, because no existing memory systems can handle such a large volume of multimodal input, we compare against retrieval-augmented generation (RAG) baselines and long-context baselines. MIRIX achieves a 35% improvement over RAG baselines while reducing storage requirements by 99.9%, and a 410% improvement over longcontext baselines with a 93.3% reduction in storage. On LOCOMO, MIRIX reaches state-of-the-art performance with an overall accuracy of 85.38%, outperforming the best existing method by 8.0% and approaching the upper bound set by long-context models. To make our memory system more accessible, we also developed a personal assistant powered by MIRIX. With the user's permission to capture screen content, the assistant continuously builds a memory from screenshots and can answer any questions related to this accumulated information. This represents our effort to bring advanced memory capabilities to everyone, enabling users to experience the benefits of our system firsthand.</p><p>Our contributions are summarized as follows:</p><p>• We analyze the limitations of existing memory architectures for LLM-based agents and propose a novel memory system composed of six specialized components and eight different agents.</p><p>• We introduce a new benchmark in which the agent must interpret a large collection of screenshots to build an understanding of user behavior-posing a significant challenge to the memory.</p><p>• Through experiments on our new benchmark and existing benchmark LOCOMO, we demonstrate that MIRIX significantly outperform existing memory systems.</p><p>• To make our approach accessible, we build and release a personal assistant application powered by MIRIX, enabling users to experience advanced memory capabilities in real-world scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Application &amp; Use Cases</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">MIRIX Application</head><p>To demonstrate the full functionality of our memory system, we developed a cross-platform application using React-Electron for the frontend and Uvicorn as the backend server. Moreover, we release the obtained file for direct installation. Within the application, users can activate screen monitoring by selecting the ScreenShots tab. This enables the agent to observe the user's screen activity and dynamically update its memory, gradually building a contextual understanding of the user over time. With the obtained memory, the agent can answer questions related to the memories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Updates</head><p>The application captures a screenshot every 1.5 seconds. To reduce redundancy, images that are visually similar to previously captured ones are discarded. Once 20 unique screenshots are collected, the memory update process is triggered-typically around every 60 seconds. During this process, relevant information is extracted and incorporated into the system's memory components.</p><p>To reduce latency in processing user screenshots, we adopt a streaming upload strategy. Instead of batching and sending 20 images at once, we upload each screenshot immediately upon receiving it from the front-end. By leveraging the Gemini API-which supports loading images via Google Cloud URLs-we can efficiently transmit visual data without waiting for the full batch to accumulate. This approach significantly reduces end-to-end latency from approximately 50 seconds (as observed when using GPT-4 with direct image upload) to under 5 seconds using Gemini.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Chat Interface</head><p>The chat interface allows users to interact with the agent, which has full access to its accumulated memories. As illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, users can query the assistant about past activities, and the agent can respond based on its memory content, enabling more informed and personalized interactions. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Visualization</head><p>After observing the screen for a sufficient period, the agent organizes its knowledge into structured memory components. An example of Semantic Memory (organized into a tree structure) is shown in Figure <ref type="figure" target="#fig_2">3</ref>. We also provide a list view of the memories. An example of Procedural Memory is shown in Figure <ref type="figure" target="#fig_3">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Memory System for Wearable Devices</head><p>The wearable device market has seen rapid growth in recent years, driven by the increasing demand for intelligent, always-available personal assistants. Products like AI-powered glasses (e.g., Meta Ray-Ban, XREAL Air) and AI pins (e.g., Humane, Rabbit R1) aim to integrate seamless interaction into daily life through voice commands, visual capture, and real-time feedback. However, these devices often lack a long-term memory component that allows them to evolve with the user-retaining useful information over time, adapting to personal routines, and referencing past interactions in context-aware ways.</p><p>Our memory system is well-suited for integration into such wearable devices. By continuously collecting and processing data streams such as audio, visual scenes, and user queries, our system enables real-time memory formation. For instance, AI glasses equipped with our memory systems can automatically summarize meetings, remember frequently visited places, recognize recurring visual patterns, and recall previous conversations or tasks. With MIRIX, it can also evolve with the user and build a memory that is specifically made for the user. Moreover, the system's modular memory architecture-including procedural, episodic, semantic, and resource memory-aligns naturally with the needs of lightweight, on-the-go devices. Procedural memory enables the assistant to learn user habits (e.g., daily routes, meeting structures), while semantic memory stores general knowledge about the user's preferences, environment, and routines. Episodic memory captures time-stamped, situational experiences, and can be queried for recalling specific events (e.g., "What did I see at the conference last week?"). Semantic Memory, on the other hand, can help organize the clients someone has seen over the past week and list them in a tree structure with details of their discussions.</p><p>Given the constraints of wearable hardware (limited compute and storage), our design also supports hybrid on-device/cloud memory management. Critical information in Knowledge Vault can be stored locally while large-scale memories such as Resource Memory can be offloaded and retrieved from the cloud on demand.  In summary, our memory system serves as a cognitive backbone for wearable AI agents-enabling personalization, continuity, and intelligence at the edge. As the wearable market matures, embedding persistent, structured memory will be a key differentiator for next-generation AI assistants.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Agent Memory Marketplace</head><p>We envision a future where personal memory-collected and structured through AI agents-becomes a new digital asset class. In the AI era, memory is no longer just a passive log of past events, but an active, evolving knowledge base that can be shared, personalized, and monetized. The Agent Memory Marketplace is our proposal for a decentralized ecosystem where memory is exchanged, reused, and built collaboratively through AI agents.</p><p>We begin with a core belief: human memory will become the most valuable and irreplaceable asset in the age of AI. Unlike static data, memory encompasses lived experiences, subjective context, preferences, and interactions-making it deeply personal, yet highly reusable by intelligent systems. the marketplace is structured into three key layers:</p><p>1. AI Agents Infrastructure. Our technology provides infrastructure for lifetime intelligent, interactive agents. Examples include (1) Personal AI Assistants &amp; Companions: Tailored agents that continuously learn and evolve with the user. (2) AI Wearables: AI agents embedded in decentralized physical infrastructure (e.g., smart glasses, AI pins) that extend memory capture to the real world. (3) Multi-Agent Systems: Collaborative agents with shared memory access, enabling coordination and collective intelligence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Privacy-Preserving Memory Infrastructure</head><p>To support trust and adoption, we aim to build in a robust privacy layer: (1) Encryption Layer: All memories are stored using end-to-end encryption.</p><p>(2) Privacy Control: Fine-grained permissions allow users to choose which parts of their memory to share, trade, or restrict. (3) Decentralized Storage: Memories are stored in a distributed, censorship-resistant infrastructure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Memory Marketplace and Social Function:</head><p>A peer-to-peer ecosystem for sharing, aggregating, and trading memories encoded in AI agents. Use cases include: (1) Memory Social/Trading: Tokenized exchange of memories (e.g., productivity hacks, niche workflows, or life advice). (2) Expert Communities: Collective memory-building for domain-specific expertise such as finance, education, or pet care. (3) Fan Economy and Dating Applications: Users can subscribe to AI personas based on influencer or celebrity memories, allowing fans to interact with memory-rich digital replicas of their favorite personalities. This technology also enables the creation of AI clones for accelerated dating and matching processes, where users can engage with AI agents in interactions before meeting in person.</p><p>In summary, we envision a future where personal memory transcends its traditional role to become an active, valuable digital asset. By combining lifelong AI agents, privacy-preserving infrastructure, and a decentralized marketplace, we aim to create an ecosystem where memories can be securely captured, meaningfully shared, and collectively advanced. This approach not only empowers individuals to benefit from their own experiences but also unlocks new possibilities for collaboration, personalization, and economic value in the AI era.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Memory Components</head><p>We design a modular memory architecture consisting of six distinct components: Core Memory, Episodic Memory, Semantic Memory, Procedural Memory, Resource Memory, and the Knowledge Vault. Each component is structurally and functionally tailored to capture different aspects of user interaction and world knowledge, enabling the agent to retrieve, reason, and act effectively across time and tasks.</p><p>Core Memory Core Memory stores high-priority, persistent information that should always remain visible to the agent when engaging with the user. Inspired by the design of MemGPT <ref type="bibr" target="#b21">[22]</ref>, this memory is divided into two primary blocks: persona and human. The persona block encodes the identity, tone, or behavior profile of the agent, while the human block stores enduring facts about the user such as their name, preferences, and self-identifying attributes (e.g., "User's name is David", "User enjoys Japanese cuisine"). When the memory size exceeds 90% of capacity, the system triggers a controlled rewrite process to maintain compactness without losing critical information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Episodic Memory</head><p>Episodic Memory captures time-stamped events and temporally grounded interactions that reflect the user's behavior, experiences, or activities. It functions as a structured log or calendar, enabling the agent to reason about user routines, recency, and context-aware followups <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b17">18]</ref>. Each entry is defined by the following fields: event_type (e.g., user_message, inferred_result, system_notification), summary (a concise natural language description of the event), details (extended contextual information, including dialog excerpts or inferred states), actor (the origin of the event, either user or assistant), and timestamp (e.g., "2025-03-05 10:15"). This structure allows the agent to temporally index memory and track change over time, such as identifying ongoing tasks or following up on pending actions. Semantic Memory Semantic Memory maintains abstract knowledge and factual information that is independent of specific times or events. This component serves as a knowledge base for general concepts, entities, and relationships -whether about the world or the user's social graph. For example, it may store entries like "Harry Potter is written by J.K. Rowling" or "John is a friend of the user who enjoys jogging and lives in San Francisco." Each entry includes a name (the concept or entity identifier), summary (a concise definition or relationship statement), details (expanded background or contextual explanation), and source (e.g., user_provided, Wikipedia, or inferred from conversation). Unlike episodic memory, semantic entries are intended to persist unless conceptually overwritten and support reasoning over social, geographic, or commonsense knowledge.</p><p>Procedural Memory Procedural Memory stores structured, goal-directed processes such as how-to guides, operational workflows, and interactive scripts. These are neither time-sensitive (episodic) nor abstract facts (semantic) but instead represent actionable knowledge that can be invoked to assist the user with complex tasks. Typical examples include "how to file a travel reimbursement form," "steps to set up a Zoom meeting," or "how to book a restaurant via OpenTable." Each entry includes an entry_type (workflow, guide, or script), a description of the goal or function, and steps expressed as a list of instructions (optionally in JSON or structured format). This memory component supports instructional planning, automation, and decomposition of user goals into sub-tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Resource Memory</head><p>Resource Memory handles full or partial documents, transcripts, or multi-modal files that the user is actively engaged with but do not fit into other memory categories. For instance, if the user is reading a friend's detailed picnic plan or a project proposal document, the agent can store and retrieve that information from Resource Memory. This component enables context continuity in long-running tasks. Each entry includes a title (resource name), summary (brief overview and context), resource_type (e.g., doc, markdown, pdf_text, image, voice_transcript), and the full or excerpted content. This design enables the agent to reference previously seen material, quote from documents, or search within them to aid the user's workflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Knowledge Vault</head><p>The Knowledge Vault serves as a secure repository for verbatim and sensitive information such as credentials, addresses, contact information, and API keys. These entries are not typically relevant to conversation-level reasoning but are crucial for performing authenticated tasks or storing long-term identifiers. Each entry includes an entry_type (e.g., credential, bookmark, contact_info, api_key), a source (e.g., user_provided, github), a sensitivity level (low, medium, high), and the actual secret_value. Entries with high sensitivity are protected via access control and excluded from casual retrieval to prevent misuse or leakage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Active Retrieval and Retrieval Design</head><p>In many memory-augmented systems (e.g., Mem0 <ref type="bibr" target="#b4">[5]</ref>, MemGPT <ref type="bibr" target="#b21">[22]</ref>), memory retrieval must be explicitly triggered. Otherwise, the language model often defaults to its parametric knowledge, which may be outdated or incorrect. For example, suppose the user previously said, "The CEO of Twitter is Linda Yaccarino," and this information was saved in memory. A few days later, when this message is no longer present in the conversation history, the user might ask, "Who is the CEO of Twitter?" In this case, the language model may rely on outdated knowledge and incorrectly respond with "Elon Musk." While explicitly instructing the model to "search your memory" can mitigate such errors, doing so repeatedly is impractical in natural conversations.</p><p>To address this, we propose an Active Retrieval mechanism. As illustrated in Figure <ref type="figure" target="#fig_4">5</ref>, the system operates in two stages: first, the agent generates a current topic based on the input context; second, this topic is used to retrieve relevant memories from each memory component. Retrieved results are then injected into the system prompt. For instance, given the query "Who is the CEO of Twitter?", the agent may infer the topic "CEO of Twitter", which is then used to retrieve the top-10 most relevant entries from each of the six memory components. Retrieved content is tagged according to its source, such as &lt;episodic_memory&gt;... &lt;/episodic_memory&gt;, ensuring the model is aware of both the content and its origin. This automatic retrieval pipeline eliminates the need for explicit user prompts to trigger memory access and ensures the model can incorporate up-to-date, personalized, or contextual information during response generation.</p><p>In addition to Active Retrieval, we support multiple retrieval functions, including embedding_match, bm25_match, and string_match. We are actively expanding this set with more diverse and specialized retrieval strategies, ensuring that each method is well-differentiated so the agent can choose the most appropriate one to invoke based on context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Multi-Agent Workflow</head><p>To manage the dynamic and heterogeneous nature of user interactions, we adopt a modular multiagent architecture. This system orchestrates input processing, memory updating, and information retrieval across six distinct memory components through a coordinated and efficient workflow. The overall system is governed by a central Meta Memory Manager and a set of specialized Memory Managers, each responsible for maintaining one memory type.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Update Workflow</head><p>As illustrated in Figure <ref type="figure" target="#fig_6">7</ref>, when new input is received from the user, the system first automatically performs a search over the memory base. The retrieved information, together with the user input, is passed to the Meta Memory Manager. The Meta Memory Manager then analyzes the content and determines which memory components are relevant, routing the input to the corresponding Memory Managers. These Memory Managers update their respective memories in parallel while ensuring that redundant information is avoided within each memory type. After completing the updates, they report back to the Meta Memory Manager, which finally sends an acknowledgment confirming that the memory update process is complete.</p><p>Conversational Retrieval Workflow For interactive dialogues, the Chat Agent manages natural language communication with the user. To ground its responses in prior knowledge, it first performs an automatic search over the memory base upon receiving a user query. This initial search is a coarse retrieval spanning all six memory components and returns high-level summaries rather than detailed content. The Chat Agent then analyzes the query to determine which memory components warrant more targeted searches and selects appropriate retrieval methods accordingly. After obtaining the relevant results, it consolidates the information and synthesizes the final response. Moreover, if the user's query involves updating memory-for example, providing new facts or corrections-the Chat Agent can interact directly with the corresponding Memory Managers to apply precise updates to specific memory components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Datasets</head><p>ScreenshotVQA We collect a new dataset that contains three PhD students' activities. We created a script that takes a screenshot every second. If the image taken this second is too similar to the last one (similarity &gt; 0.99) then we skip the current image. With this script, three PhD students majored in Computer Science and Physics run the program from a week to a month. The first student is a heavy computer user, which leads to 5,886 images in one day (03/09/2025). The second student uses the computer slightly lighter, leading to 18,178 images for 20 days (05/16/2025-06/06/2025). The third student is the lightest computer user, having 5349 images for over a month (05/02/2025-06/14/2025). Then, with these screenshots, we ask each student to manually create some questions and then we double-check the questions to make sure they are answerable. Eventually, we have 11 questions from the first user, 21 questions from the second user, and 55 questions from the third user.</p><p>LOCOMO Following Mem0 <ref type="bibr" target="#b4">[5]</ref>, we choose LOCOMO dataset for a vertical comparison between MIRIX and existing memory systems. LOCOMO has 10 conversations, where each conversation has 600 dialogues and 26000 tokens on average. There are averagely 200 questions for each conversation, which is suitable for the evaluation for memory systems where we are reuiqred to inject the conversation into the memory and then answer the 200 questions according to the obtained memory. The questions can be classified into multiple categories: single-hop, multi-hop, temporal and open-domain. The dataset also has another category called "adversarial", which is used to test whether the system can identify unanswerable questions. Following Mem0 <ref type="bibr" target="#b4">[5]</ref>, we exclude this category in our setting to provide fair comparisons with the earlier methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Evaluation Metrics and Implementation Details</head><p>Evaluation Metrics In this paper, for both of the above datasets, we mainly consider the metric LLM-as-a-Judge. Specifically, we use GPT-4.1 as the judge to look at the question, answer, and response to predict whether the response addresses the question successfully.</p><p>Implementation Details for ScreenshotVQA Across all experiments, we use the gemini-2.5-flash-preview-04-17 model as the backbone. We selected Gemini because it integrates seamlessly with Google Cloud, enabling asynchronous image uploads and retrieval. This significantly accelerates processing, as each step requires multiple function calls: one to the meta memory manager and between zero and six to the other memory managers.</p><p>Implementation Details for LOCOMO For MIRIX, since every agent needs to call many functions to successfully insert the information into the memory systems, it requires the language model to have strong abilities on function calling. To this end, we use gpt-4.1-mini as our backbone model as it shows a stronger ability than gpt-4o-mini in terms of function calling. This is also revealled in Berkeley Function Calling Benchmark <ref type="bibr" target="#b35">[36]</ref> where gpt-4o-mini has multi-turn overall acc as 22.12, vs the acc of gpt-4.1-mini being 29.75. For LOCOMO dataset, we run the baselines LangMem, RAG-500, Mem0 using the code provided in Mem0<ref type="foot" target="#foot_1">foot_1</ref> with setting MODEL in the .env file as gpt-4.1-mini. Then for Zep, we use the code from their official repo <ref type="foot" target="#foot_2">2</ref> and replace the backbone model with gpt-4.1-mini. For all the baselines, we run their code once, while for MIRIX and Full-Context method, we run three times to report the average scores. We provide the results of each single run in Appendix A. The complete code for our evaluation and the predicted results from various baselines and MIRIX are provided in the public_evaluation branch<ref type="foot" target="#foot_3">foot_3</ref> in our official repository.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Experimental Results on ScreenshotVQA</head><p>For ScreenshotVQA, since existing memory systems such as Letta, Mem0 still lack the ability to process multimodal input, we omit the comparisons with them. We consider the following baselines:</p><p>Gemini. As a long-context baseline, Gemini directly ingests the full set of screenshots to answer the questions. Because the original high-resolution screenshots exceed the model's context window, we resize them to 256×256 pixels, enabling approximately 3,600 images to fit into a single prompt.</p><p>We then include the most recent 3,600 images in the prompt and query the model for an answer. Specifically, we use the gemini-2.5-flash-preview-04-17 model.</p><p>SigLIP. SigLIP serves as a retrieval-augmented baseline. We first use SigLIP to identify the top 50 most relevant images for each query and then prompt Gemini to generate the answer based on these retrieved images. In this setup, we employ google/siglip-so400m-patch14-384 as the retriever and gemini-2.5-flash-preview-04-17 as the language model.</p><p>We evaluate all methods using two metrics: (1) Accuracy, measured via an LLM-as-a-Judge approach comparing the generated responses to ground-truth answers and reporting the average accuracy across the three participants; and (2) Storage, defined as follows-For Gemini, we report the total size of the images after resizing to 256×256. For SigLIP, we report the total size of the original retrieved images in their native 2K-4K resolution. For MIRIX, we use sqlite as the storage backend and report the size of the sqlite.db file containing all extracted information.</p><p>The results are summarized in Table <ref type="table" target="#tab_0">1</ref>. As shown, MIRIX significantly outperforms all existing baselines while requiring substantially less storage. Specifically, because SigLIP retains the full set of high-resolution images, its storage footprint is very large, corresponding to the total size of all images in their original 2K-4K resolution. The long-context baseline (Gemini) reduces this by resizing images to 256×256 pixels, but still incurs considerable storage overhead. In contrast, MIRIX avoids storing raw images altogether and instead maintains only the compact sqlite database of Table <ref type="table">2</ref>: LLM-as-a-Judge scores (%, higher is better) for each question type in the LOCOMO dataset.</p><p>As mentioned in Mem0 <ref type="bibr" target="#b4">[5]</ref>, as the average length in this dataset is only 9k, Full-Context is essentially the upper-bound. Thus recovering the performance of Full-Context shows the advancements of MIRIX.</p><p>extracted information, resulting in a much smaller storage size. Compared to retrieval-augmented generation (RAG) baselines, MIRIX achieves a 35% improvement in accuracy while reducing storage requirements by 99.9%. Relative to the long-context Gemini baseline, MIRIX yields a 410% improvement in accuracy with a 93.3% reduction in storage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Experimental Results on LOCOMO</head><p>We compare MIRIX against the following baselines:</p><p>A-Mem <ref type="bibr" target="#b34">[35]</ref>: A memory system that builds Zettelkasten-style knowledge graphs from user-agent interactions, dynamically linking notes using embedding similarity and LLM reasoning.</p><p>LangMem<ref type="foot" target="#foot_4">foot_4</ref> : LangChain's long-term memory module that extracts and stores salient facts from conversations for later retrieval through retrievers like FAISS or Chroma.</p><p>Zep <ref type="bibr" target="#b23">[24]</ref>: A commercial memory API that constructs a temporal knowledge graph (Graphiti) over user conversations and metadata, designed for fast semantic querying.</p><p>Mem0 <ref type="bibr" target="#b4">[5]</ref>: An open-source memory system that incrementally compresses and stores memory facts using LLM-based summarization, with an optional graph memory extension.</p><p>Memobase<ref type="foot" target="#foot_5">foot_5</ref> : A profile-based memory module that tracks persistent user attributes and preferences to enable long-term personalization.</p><p>All baselines are re-implemented using the same backbone model (gpt-4.1-mini). We also report the results shown in Mem0 <ref type="bibr" target="#b4">[5]</ref> where the backbone model is gpt-4o-mini. The results are shown in Table <ref type="table">2</ref>. From the table, we observe the following:</p><p>Overall: MIRIX achieves the highest average J score, outperforming all baselines by a significant margin. It improves upon the strongest open-source competitor, LangMem, by over 8 points.</p><p>Single-Hop and Temporal: On fact lookup and temporal-ordering tasks, MIRIX shows significantly better performances than baselines, which validates the effectiveness of our hierarchical memory storage. We note that there is a minor gap between MIRIX and the Full-Context baseline on Single-Hop questions. Upon reviewing the results, we identified a major reason for this. In some cases, the questions are ambiguous. For example, consider the question "When is Melanie planning on going camping?" In the conversation history, Melanie stated "We're thinking about going camping next month" in May, which would suggest June as the answer. However, she later mentioned in October, "Absolutely! It really helps me reset and recharge. I love camping trips with my fam, 'cause nature brings such peace and serenity," referring to a more recent trip. Because MIRIX saves the consolidated event "On 19 October 2023, Melanie and her family went camping after their road trip," it tends to prioritize the confirmed occurrence over the earlier plan, leading to discrepancies when the question expects the planned date rather than the actual event. Other similar ambiguities contribute to the slightly lower performance of MIRIX on Single-Hop questions.</p><p>Multi-Hop: MIRIX demonstrates the largest gains in this category, outperforming all baselines by over 24 points. For example, in questions such as "Where did Caroline move from 4 years ago?", where the correct answer is Sweden, the supporting evidence is dispersed across multiple parts of the conversation. One part may state "Caroline moved from her hometown 4 years ago", while an earlier statement establishes that "Caroline's hometown is Sweden". For multi-hop questions like these, MIRIX achieves better performance because it explicitly stores the consolidated event "Caroline moved from her hometown, Sweden, 4 years ago", removing the need to stitch together partial information at query time. In contrast, full-context methods must first retrieve the partial answer "hometown" and then figure out separately that "hometown" refers to "Swedon". These multi-hop questions might be easy for reasoning models like OpenAI-O3, but for non-reasoning models such as gpt-4.1-mini, this additional reasoning step might fail, leading to slightly inferior performance compared with MIRIX.</p><p>Open-Domain: While MIRIX performs well, the margin between ours and the baselines is narrower. This category of questions usually asks the agent "what if" questions, requiring the agent to infer across longer terms. The gap between MIRIX and Full-Context method show the inherent limitation of RAG methods, which is the lack of global understanding. While MIRIX is no longer simple RAG, we still rely on RAG to retrieve important information in the memory, which might lead to the bottleneck of our agent in this category.</p><p>In summary, these results demonstrate that MIRIX delivers state-of-the-art performance on LOCOMO while remaining highly efficient and modular. Its component-specific memory management and intelligent routing are particularly effective for long-range multi-hop reasoning.</p><p>5 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory-Augmented Large Language Models</head><p>A growing body of work focuses on building latentspace memory systems, as characterized in M+ <ref type="bibr" target="#b30">[31]</ref>, where transformer architectures are modified to support memory augmentation. These memory components can reside in various latent forms, including model parameters <ref type="bibr" target="#b29">[30]</ref>, external memory matrices <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b20">21]</ref>, hidden states <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b30">31]</ref>, soft prompts <ref type="bibr" target="#b2">[3]</ref>, and key-value caches <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b36">37]</ref>. While these approaches demonstrate promising results and continue to advance the frontier of latent-space memory, most require retraining the model <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b20">21]</ref>, making them incompatible with powerful closed-source models like GPT-4 or DeepSeek-R1. Additionally, methods based on key-value caching rely on preserving past keys and values, functioning more as long-context methods rather than true memory systems that support abstraction, consolidation, and reasoning over stored experiences <ref type="bibr" target="#b28">[29]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory-Augmented LLM Agents</head><p>Token-level memory remains the dominant approach in current LLM agents <ref type="bibr" target="#b30">[31]</ref>, where past conversational content is stored in raw text form within external databases. Notable examples include commercial systems such as Zep <ref type="bibr" target="#b23">[24]</ref>, Mem0 <ref type="bibr" target="#b4">[5]</ref>, and MemGPT <ref type="bibr" target="#b21">[22]</ref>. These agents perform well on long-term conversational benchmarks <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b33">34]</ref> and document-based retrieval tasks. However, they often fall short in real-world applications due to simplistic memory architectures. Most notably, the absence of modular memory components hinders effective memory routing and leads to inefficiencies in retrieval and usage.</p><p>Various Memory Types Cognitive science broadly categorizes memory into short-term (working) memory and long-term memory <ref type="bibr" target="#b25">[26]</ref>. In the context of LLMs, short-term memory is often mapped to the input context window <ref type="bibr" target="#b13">[14]</ref>, while long-term memory becomes a catch-all category for any information outside the context <ref type="bibr" target="#b30">[31]</ref>. To address this limitation, recent works have proposed finergrained memory architectures. For example, Pink et al. <ref type="bibr" target="#b22">[23]</ref> emphasizes the importance of episodic memory in LLM agents. Other systems incorporate both episodic and semantic memory <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b26">27]</ref>. Semantic memory has also been highlighted as critical for real-world reasoning and abstraction <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b12">13]</ref>. In addition, procedural memory, responsible for learned skills and routine tasks, has been identified as another crucial component <ref type="bibr" target="#b32">[33]</ref>. Despite these advancements, existing methods stop at identifying individual memory types, and they are not formed into a comprehensive memory system.</p><p>Multi-Agent Systems Rather than relying on a monolithic agent, recent advances explore multiagent frameworks where specialized agents coordinate to accomplish complex tasks. Early systems like AutoGPT and BabyAGI <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref> adopt an autonomous planning-execution loop while maintaining a shared memory log. More recent designs introduce role specialization: MetaGPT <ref type="bibr" target="#b10">[11]</ref> mimics a software development team structure, and AgentVerse <ref type="bibr" target="#b3">[4]</ref> assigns agents to specific roles such as planning or evaluation. Cognitive theories also support modularity in memory, particularly distinctions between episodic and semantic types, as emphasized in Liao et al. <ref type="bibr" target="#b16">[17]</ref>. MIRIX builds on these ideas by deploying eight specialized agents, each managing a distinct memory type (e.g., episodic, semantic, procedural), and coordinating to process multi-modal inputs effectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion and Future Work</head><p>In this work, we introduce MIRIX, a novel memory architecture designed to enhance the longterm reasoning and personalization capabilities of LLM-based agents. Unlike existing memory systems that primarily rely on flat storage or limited memory types, MIRIX leverages a structured and compositional approach, incorporating six specialized memory components-Core, Episodic, Semantic, Procedural, Resource, and Knowledge Vault-managed by dedicated Memory Managers under the coordination of a Meta Memory Manager. To rigorously evaluate our system, we introduce a challenging multimodal benchmark based on high-resolution screenshots of real user activity, demonstrating that MIRIX achieves substantial gains in accuracy and storage efficiency compared to both retrieval-augmented generation and long-context baselines. Experiments on the LOCOMO benchmark confirm that MIRIX delivers state-of-the-art performance in long-form conversational settings. Finally, to make these capabilities accessible to a broader audience, we build and release a personal assistant application powered by MIRIX, allowing users to experience consistent, memoryenhanced interactions in everyday scenarios. We hope this work paves the way for more robust, scalable, and human-like memory systems for LLM-based agents. In the future, we aim to build more challenging real-world benchmarks to comprehensively evaluate our system and constantly improve MIRIX and the associated personal assistant application to deliver better experiences to the users.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The six memory components of MIRIX, each providing specialized functionality.</figDesc><graphic coords="2,108.00,72.00,396.00,96.17" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Chat Window</figDesc><graphic coords="4,117.90,72.00,376.18,238.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Tree Structure of an Example Semantic Memory. In this example, the user's Semantic Memory, which stores new concepts and their relationships, is organized hierarchically into multiple categories, such as Social Network and Favorites. Within Favorites, the memory is further divided into more specific classes, including Sports, Pets and Music.</figDesc><graphic coords="5,108.00,72.00,395.98,174.62" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: List View of an Example Procedural Memory.</figDesc><graphic coords="5,108.00,313.19,395.98,211.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Demonstration of Active Retrieval.</figDesc><graphic coords="7,147.60,72.00,316.80,120.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: The Workflow of Memory Update.</figDesc><graphic coords="8,108.00,72.00,396.00,235.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: The Workflow of Responding to the User's Query.</figDesc><graphic coords="9,108.00,72.00,395.99,190.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Experimental Results on ScreenshotVQA.</figDesc><table><row><cell></cell><cell cols="2">Student 1</cell><cell cols="2">Student 2</cell><cell cols="2">Student 3</cell><cell cols="2">Overall</cell></row><row><cell></cell><cell>Acc ↑</cell><cell>Storage↓</cell><cell>Acc ↑</cell><cell>Storage↓</cell><cell>Acc ↑</cell><cell>Storage↓</cell><cell>Acc ↑</cell><cell>Storage↓</cell></row><row><cell>Gemini</cell><cell cols="8">0.0000 142.10MB 0.0952 438.86MB 0.2545 129.14MB 0.1166 236.70MB</cell></row><row><cell cols="2">SigLIP@50 0.3636</cell><cell>22.55GB</cell><cell>0.4138</cell><cell>19.88GB</cell><cell>0.5455</cell><cell>2.82GB</cell><cell>0.4410</cell><cell>15.07GB</cell></row><row><cell>MIRIX</cell><cell cols="5">0.5455 20.57MB 0.5667 19.83MB 0.6727</cell><cell>7.28MB</cell><cell cols="2">0.5950 15.89MB</cell></row><row><cell></cell><cell>Method</cell><cell cols="7">Single Hop Multi-Hop Open Domain Temporal Overall</cell></row><row><cell></cell><cell>A-Mem</cell><cell>39.79</cell><cell></cell><cell>18.85</cell><cell>54.05</cell><cell></cell><cell>49.91</cell><cell>48.38</cell></row><row><cell>gpt-4o-mini</cell><cell>LangMem OpenAI Mem0 Mem0 g Memobase</cell><cell>62.23 63.79 67.13 65.71 63.83</cell><cell></cell><cell>47.92 42.92 51.15 47.19 52.08</cell><cell>71.12 62.29 72.93 75.71 71.82</cell><cell></cell><cell>23.43 21.71 55.51 58.13 80.37</cell><cell>58.10 52.90 66.88 68.44 70.91</cell></row><row><cell></cell><cell>Zep</cell><cell>74.11</cell><cell></cell><cell>66.04</cell><cell>67.71</cell><cell></cell><cell>79.76</cell><cell>75.14</cell></row><row><cell>gpt-4.1-mini</cell><cell>LangMem RAG-500 Zep Mem0 MIRIX</cell><cell>74.47 37.94 79.43 62.41 85.11</cell><cell></cell><cell>61.06 37.69 69.16 57.32 83.70</cell><cell>67.71 48.96 73.96 44.79 65.62</cell><cell></cell><cell>86.92 61.83 83.33 66.47 88.39</cell><cell>78.05 51.62 79.09 62.47 85.38</cell></row><row><cell></cell><cell>Full-Context</cell><cell>88.53</cell><cell></cell><cell>77.70</cell><cell>71.88</cell><cell></cell><cell>92.70</cell><cell>87.52</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Preprint.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_1"><p>https://github.com/mem0ai/mem0/tree/main/evaluation</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>https://github.com/getzep/zep-papers?ref=www.getzep.com/blog</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>https://github.com/Mirix-AI/MIRIX/tree/public_evaluation</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_4"><p>https://github.com/langchain-ai/langmem</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_5"><p>https://github.com/memodb-io/memobase</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Full Experimental Results with Different Runs</head><p>We run MIRIX and Full-Context with gpt-4.1-mini three times and we report the full results in Table <ref type="table">3</ref>. There are variations across different runs, while MIRIX consistently achieves state-of-the-art results. Full predicted results and LLM-Judge scores are provided in the folder <ref type="url" target="https://github.com/Mirix-AI/MIRIX/tree/public_evaluation/public_evaluations/evaluation_metrics">https://github.com/  Mirix-AI/MIRIX/tree/public_evaluation/public_evaluations/evaluation_metrics</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method</head><p>Single Hop Multi-Hop Open Domain Temporal Overall gpt-4o-mini A-Mem 39.79 18.85 54.05 49.91 48.38 LangMem 62.23 47.92 71.12 23.43 58.10 OpenAI 63.79 42.92 62.29 21.71 52.90 Mem0 67.13 51.15 72.93 55.51 66.88 Mem0 g 65.71 47.19 75.71 58.13 68.44 Memobase 63.83 52.08 71.82 80.37 70.91 Zep 74.11 66.04 67.71 79.76 75.14 Full-Context 80.14 46.89 58.33 90.49 77.51 gpt-4.1-mini LangMem 76.24 63.24 63.54 88.11 79.22 RAG-500 37.94 37.69 48.96 61.83 51.62 Mem0 62.41 57.32 44.79 66.47 62.47 MIRIX-Run1 85.46 80.06 64.58 87.16 83.98 MIRIX-Run2 85.46 85.36 64.58 91.32 87.34 MIRIX-Run3 84.40 85.67 67.71 86.68 84.82 Full-Context-Run1 88.30 71.74 72.92 92.98 86.43 Full-Context-Run2 88.29 81.31 71.88 92.50 88.13 Full-Context-Run3 89.01 80.06 70.83 92.63 88.00</p><p>Table <ref type="table">3</ref>: LLM-as-a-Judge scores (%, higher is better) for each question type in the LOCOMO dataset. As mentioned in Mem0 <ref type="bibr" target="#b4">[5]</ref>, as the average length in this dataset is only 9k, Full-Context is almost the upper-bound. Thus recovering the performance of Full-Context shows the advancements of MIRIX.</p><p>For Zep, we only achieve 49.09 overall score with gpt-4.1-mini using the implementation from mem0, we are afraid there might be errors in their implementation, so we skip the results here.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Arigraph: Learning knowledge graph world models with episodic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Petr</forename><surname>Anokhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Semenov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artyom</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Evseev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Kravchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Burtsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgeny</forename><surname>Burnaev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04363</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Recurrent memory transformer</title>
+		<author>
+			<persName><forename type="first">Aydar</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">S</forename><surname>Burtsev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">S</forename><surname>Burtsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigory</forename><forename type="middle">V</forename><surname>Sapunov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2006.11527" />
+		<imprint>
+			<date type="published" when="2006">2006.11527. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Agentverse: A multi-agent framework for autonomous task completion</title>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anika</forename><surname>Patel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19413</idno>
+		<title level="m">Mem0: Building production-ready ai agents with scalable long-term memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Autogpt: Autonomous gpt-4 powered agent</title>
+		<author>
+			<persName><surname>Community</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+	</analytic>
+	<monogr>
+		<title level="j">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><surname>Community</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Babyagi</surname></persName>
+		</author>
+		<ptr target="https://github.com/yoheinakajima/babyagi" />
+		<title level="m">Open-source autonomous ai agent. GitHub repository</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Larimar: Large language models with episodic memory control</title>
+		<author>
+			<persName><forename type="first">Payel</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subhajit</forename><surname>Chaudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elliot</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Melnyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarathkrishna</forename><surname>Swaminathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihui</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélie</forename><forename type="middle">C</forename><surname>Lozano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Kollias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jirí</forename><surname>Vijil Chenthamarakshan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Navrátil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Soham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pin-Yu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML. OpenReview.net</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Cartridges: Lightweight and generalpurpose long context representations via self-study</title>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Sabri Eyuboglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simran</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Zinsley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atri</forename><surname>Tennien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Rudra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mirhoseini</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.06266</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonid</forename><surname>Karlinsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghyun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Krotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rogerio</forename><surname>Feris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Camelot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.13449</idno>
+		<title level="m">Towards large language models with training-free consolidated associative memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Metagpt: Designing a multi-agent ecosystem for task management</title>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lee</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.06326</idno>
+		<title level="m">Memory os of ai agent</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A machine with short-term, episodic, and semantic memory systems</title>
+		<author>
+			<persName><forename type="first">Taewoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Cochez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>François-Lavet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Neerincx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piek</forename><surname>Vossen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="48" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jitang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.02509</idno>
+		<title level="m">Memory, consciousness and large language model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jitang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.02509</idno>
+		<title level="m">Memory, consciousness and large language model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Snapkv: LLM knows what you are looking for before generation</title>
+		<author>
+			<persName><forename type="first">Yuhong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bharat</forename><surname>Venkitesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Acyr</forename><surname>Locatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deming</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.14469</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2404.14469" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">The role of episodic memory in long-term llm agents: A position paper</title>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Su</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aimin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiali</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Echo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.16090</idno>
+		<title level="m">A large language model with temporal episodic memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Evaluating very long-term conversational memory of llm agents</title>
+		<author>
+			<persName><forename type="first">Adyasha</forename><surname>Maharana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Ho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Tulyakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Barbieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Fang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.17753</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Optimizing the interface between knowledge graphs and llms for complex reasoning</title>
+		<author>
+			<persName><forename type="first">Vasilije</forename><surname>Markovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lazar</forename><surname>Obradovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laszlo</forename><surname>Hajdu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jovan</forename><surname>Pavlovic</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.24478</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Leave no context behind: Efficient infinite context transformers with infini-attention</title>
+		<author>
+			<persName><forename type="first">Tsendsuren</forename><surname>Munkhdalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manaal</forename><surname>Faruqui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Gopal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.07143</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">101</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memgpt</surname></persName>
+		</author>
+		<idno>CoRR, abs/2310.08560</idno>
+		<title level="m">Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Position: Episodic memory is the missing piece for long-term llm agents</title>
+		<author>
+			<persName><forename type="first">Mathis</forename><surname>Pink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ai</forename><surname>Vy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Vo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianing</forename><surname>Turek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariya</forename><surname>Huth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toneva</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.06975</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Preston</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Paliychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Beauvais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Chalef</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zep</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.13956</idno>
+		<title level="m">A temporal knowledge graph architecture for agent memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lianlei</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zezhou</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.02441</idno>
+		<title level="m">Cognitive memory in large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Cognitive neuroscience perspective on memory: overview and summary</title>
+		<author>
+			<persName><forename type="first">Sruthi</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdulrahman</forename><surname>Khamaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asthana</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in human neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page">1217093</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Memory and consciousness</title>
+		<author>
+			<persName><forename type="first">Endel</forename><surname>Tulving</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Canadian Psychology/Psychologie canadienne</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">1</biblScope>
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">MEMORYLLM: towards self-updatable large language models</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><forename type="middle">J</forename><surname>Mcauley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML. OpenReview.net</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Towards lifespan cognitive systems</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongtong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nafis</forename><surname>Sadeq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gholamreza</forename><surname>Haffari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><forename type="middle">J</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno>CoRR, abs/2409.13265</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinshuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean O'</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.00487</idno>
+		<title level="m">Selfupdatable large language models with parameter integration</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">M+: Extending memoryllm with scalable long-term memory</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Krotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhe</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Gutfreund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rogerio</forename><surname>Feris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.00592</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Caim: Development and evaluation of a cognitive ai memory framework for long-term interaction with intelligent agents</title>
+		<author>
+			<persName><forename type="first">Rebecca</forename><surname>Westhäußer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frederik</forename><surname>Berenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfgang</forename><surname>Minker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Zepf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.13044</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Schaun</forename><surname>Wheeler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Jeunen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.03434</idno>
+		<title level="m">Procedural memory is not all you need: Bridging cognitive gaps in llm-based agents</title>
+		<meeting>edural memory is not all you need: Bridging cognitive gaps in llm-based agents</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10813</idno>
+		<title level="m">Longmemeval: Benchmarking chat assistants on long-term interactive memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">A-mem: Agentic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Wujiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zujie</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12110</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huanzhi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Cheng-Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<ptr target="https://gorilla.cs.berkeley.edu/blogs/8_berkeley_function_calling_leaderboard.html" />
+		<title level="m">Berkeley function calling leaderboard</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">O: heavy-hitter oracle for efficient generative inference of large language models</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clark</forename><forename type="middle">W</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beidi</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memorybank</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10250</idno>
+		<title level="m">Enhancing large language models with long-term memory</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

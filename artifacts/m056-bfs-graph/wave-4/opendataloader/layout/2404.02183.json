@@ -1,0 +1,5661 @@
+{
+  "layout": {
+    "author": "",
+    "creation date": "D:20240404010736Z",
+    "file name": "2404.02183.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          99.397,
+          731.307,
+          495.883,
+          765.911
+        ],
+        "content": "Self-Organized Agents: A LLM Multi-Agent Framework toward Ultra Large-Scale Code Generation and Optimization",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 24,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.878,
+          667.376,
+          289.206,
+          708.864
+        ],
+        "content": "Yoichi Ishibashi TsukushiAI ishibashi.tsukushiai@gmail.com",
+        "font": "Inconsolatazi4-Regular",
+        "font size": 11.955,
+        "id": 25,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          307.565,
+          667.376,
+          486.893,
+          708.864
+        ],
+        "content": "Yoshimasa Nishimura TsukushiAI nishimura.tsukushiai@gmail.com",
+        "font": "Inconsolatazi4-Regular",
+        "font size": 11.955,
+        "id": 26,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          14.04,
+          237.0,
+          36.36,
+          572.52
+        ],
+        "content": "arXiv:2404.02183v1[cs.SE]2Apr2024",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 67,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          157.758,
+          606.947,
+          202.243,
+          622.501
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 27,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          87.516,
+          249.924,
+          273.781,
+          596.673
+        ],
+        "content": "Recent advancements in automatic code generation using large language model (LLM) agent have brought us closer to the future of automated software development. However, existing single-agent approaches face limitations in generating and improving large-scale, complex codebases due to constraints in context length. To tackle this challenge, we propose Self-Organized multi-Agent framework (SoA), a novel multi-agent framework that enables the scalable and efficient generation and optimization of large-scale code. In SoA, self-organized agents operate independently to generate and modify code components while seamlessly collaborating to construct the overall codebase. A key feature of our framework is the automatic multiplication of agents based on problem complexity, allowing for dynamic scalability. This enables the overall code volume to be increased indefinitely according to the number of agents, while the amount of code managed by each agent remains constant. We evaluate SoA on the HumanEval benchmark and demonstrate that, compared to a single-agent system, each agent in SoA handles significantly less code, yet the overall generated code is substantially greater. Moreover, SoA surpasses the powerful single-agent baseline by 5% in terms of Pass@1 accuracy. 1",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 28,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          223.097,
+          153.68,
+          238.651
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 29,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.473,
+          107.45,
+          290.949,
+          215.439
+        ],
+        "content": "In recent years, research on agents using Large Language Models (LLMs) (Brown et al., 2020; OpenAI, 2023; Touvron et al., 2023), such as ReAct (Yao et al., 2023b), Reflexion (Shinn et al., 2023), Toolformer (Schick et al., 2023), and AutoGPT 2, has been expanding the possibilities of automating human tasks. These advancements have particularly contributed to the rapid development",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 30,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          67.469,
+          290.031,
+          99.201
+        ],
+        "id": 32,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              70.866,
+              77.386,
+              290.031,
+              99.201
+            ],
+            "content": "1Our code will be available at https://github.com/ tsukushiAI/self-organized-agent.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              83.519,
+              67.469,
+              266.836,
+              78.388
+            ],
+            "content": "2https://github.com/Significant-Gravitas/",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 1,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          329.264,
+          612.796,
+          514.656,
+          620.279
+        ],
+        "content": "Single agent Self-organized Agents (SoA)",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 7.127,
+        "id": 39,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          310.237,
+          597.121,
+          387.468,
+          607.495
+        ],
+        "content": "✗Limited scalability",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 41,
+        "level": "2",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          405.42,
+          597.121,
+          532.259,
+          607.495
+        ],
+        "content": "✔Scalable code generation/improvement",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.479,
+        "id": 49,
+        "level": "3",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          405.099,
+          524.772,
+          533.134,
+          598.842
+        ],
+        "id": 34,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          341.139,
+          580.723,
+          360.148,
+          598.734
+        ],
+        "id": 36,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          330.016,
+          542.726,
+          371.271,
+          588.411
+        ],
+        "id": 37,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          306.732,
+          533.567,
+          338.073,
+          548.168
+        ],
+        "content": "Code Size per agent",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 46,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          360.182,
+          528.577,
+          398.488,
+          543.178
+        ],
+        "content": "Max context length",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 61,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          491.808,
+          516.381,
+          530.114,
+          530.983
+        ],
+        "content": "Max context length",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 62,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          337.962,
+          500.305,
+          479.731,
+          526.583
+        ],
+        "content": "! \"",
+        "font": "AppleColorEmoji",
+        "font size": 15.549,
+        "heading level": 2,
+        "id": 51,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[1.0, 1.0, 1.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          464.182,
+          509.09,
+          479.731,
+          524.639
+        ],
+        "id": 52,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          406.236,
+          509.922,
+          437.577,
+          524.524
+        ],
+        "content": "Code Size per agent",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 57,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          337.962,
+          503.22,
+          353.512,
+          518.77
+        ],
+        "id": 50,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          452.7,
+          492.34,
+          504.936,
+          499.653
+        ],
+        "content": "Total Code Size",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 55,
+        "linked content id": 52,
+        "page number": 1,
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          320.159,
+          492.34,
+          372.395,
+          499.653
+        ],
+        "content": "Total Code Size",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.965,
+        "id": 44,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.833,
+          256.082,
+          526.156,
+          483.638
+        ],
+        "content": "Figure 1: Left (single agent): A single agent is solely responsible for the entire implementation. As the codebase grows larger, the load increases for code generation, modification, and memory management, making it difficult to manage and develop. The larger the entire codebase becomes, the more it puts pressure on the context length during self-debugging, limiting the amount of code that can be managed. Right (SoA): The implementation is distributed among multiple agents. The agents are independent; code generation, modification, and memory management are separated from other agents. Each agent manages only its own part, allowing it to focus on the implementation regardless of the complexity of the entire codebase. Furthermore, agents automatically multiply according to the complexity of the problem. This allows for the generation and modification of complex and large-scale code while maintaining a constant amount of code management/generation/modification per agent.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 64,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          122.292,
+          526.217,
+          230.281
+        ],
+        "content": "of automatic code generation techniques in the field of automated application and tool development (Hong et al., 2023; Dong et al., 2023; Huang et al., 2023). Compared to non-agent-based methods (Muennighoff et al., 2023; Li et al., 2023b), these research achievements have led to remarkable performance improvements in automatic code generation (Zhong et al., 2024; Zhou et al., 2023).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 65,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          65.991,
+          526.224,
+          119.783
+        ],
+        "content": "Most recent research has focused on single-agent approaches for code generation. These single-agent code generation methods face limitations, especially in terms of scalability, when the implemen-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 66,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          499.565,
+          290.949,
+          770.145
+        ],
+        "content": "tation becomes complex and requires a large codebase. The main reason for this technical difficulty is that a single agent must manage the entire code generation process alone. For instance, implementing a machine learning algorithm involves several stages, such as data preprocessing, algorithm training, and result evaluation, which include many functions and classes. When these complex components are combined, the codebase inevitably becomes very large. However, there are limitations to the context length of LLMs, and as the number of input tokens increases, the inference performance decreases (Levy et al., 2024; Shaham et al., 2023; Li et al., 2023a). Consistently understanding and generating or modifying appropriate code for such an extensive codebase poses a significant challenge for a single agent in terms of comprehending and managing the context. Consequently, the singleagent approach struggles to efficiently generate and modify code as its complexity and size increase.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 68,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.473,
+          187.933,
+          291.042,
+          499.161
+        ],
+        "content": "To tackle these challenges, we propose a selforganized multi agent framework that can automatically generate and modify large-scale code (Figure 1). Self-organization (Ashby, 1947) is a phenomenon in which living organisms or matter create an orderly, large structure as a result of their individual autonomous behaviors, despite lacking the ability to oversee the entire system. In our framework, self-organized agents, each responsible for different code parts or tasks, independently generate and modify code. With the self-organization of agents, a single agent no longer needs to comprehend the entire codebase, making it possible to scale up large-scale code simply by increasing the number of agents. Another feature of our framework is that agents automatically multiply according to the complexity of the problem, allowing the overall codebase to expand while keeping the amount of code handled by each agent constant. These features enable the dynamic and flexible generation and modification of large-scale code, which was impossible with the traditional single-agent approach.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 69,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.506,
+          65.991,
+          290.949,
+          187.529
+        ],
+        "content": "In our experiments, we evaluated the performance of this framework using HumanEval (Chen et al., 2021), a benchmark for code generation. The results show that our self-organized multi-agent framework outperformed Reflexion (Shinn et al., 2023), an existing powerful code generation agent (§4.1), demonstrating the effectiveness of our approach in generating and modifying code. Furthermore, through a detailed analysis of the experimen-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 70,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          648.606,
+          526.225,
+          770.145
+        ],
+        "content": "tal results, we revealed how agents automatically multiply according to the complexity of the problem, effectively scaling up the overall code volume while keeping the code generation per agent constant (§4.2). These experimental results support the contribution of our framework, which overcomes the scalability issues faced by single-agent approaches and provides a solution capable of handling larger projects.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 71,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          622.575,
+          438.546,
+          638.129
+        ],
+        "content": "2 Code Generation Task",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 72,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          305.804,
+          398.539,
+          526.224,
+          614.922
+        ],
+        "content": "The code generation task involves generating Python functions from docstrings (Chen et al., 2021). In this task, an agent is given a docstring that defines the types of the function’s inputs and expected outputs, as well as the specific requirements that the function should meet. The agent is then required to generate the code for a function that fulfills the specified functionality. The generated code is verified for accuracy using unit tests, and the quality of the code is evaluated based on its ability to pass the test cases. As with previous studies (Shinn et al., 2023; Zhong et al., 2024; Zhou et al., 2023), we use the evaluation metric Pass@1 (Chen et al., 2021), where a problem is considered solved if any of the k code samples pass all test cases.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 73,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          372.508,
+          494.496,
+          388.062
+        ],
+        "content": "3 Self-organized Agent Framework",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 74,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          306.142,
+          229.767,
+          526.219,
+          364.855
+        ],
+        "content": "Our Self-organized Agents (SoA) framework enables efficient implementation of large-scale and complex code by having self-organized agents independently generate and modify small-scale and simple code. In this section, we introduce the important components of SoA, namely the agents and the layers responsible for more abstract processing than the agents, and finally introduce the code generation and modification protocols in the SoA framework.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 75,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          205.473,
+          387.36,
+          219.666
+        ],
+        "content": "3.1 Child Agent",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 5,
+        "id": 76,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          306.142,
+          65.991,
+          526.221,
+          201.078
+        ],
+        "content": "Child agents implement a given function based on its docstrings. As shown in Figure 2, this agent has a simple structure consisting of two elements: an LLM and memory. The LLM generates code from the given docstrings and modifies the code based on the results of unit tests. The memory stores the code generated by the agent itself and retrieves the latest code to be input to the LLM along with the unit test feedback during code modification. If an agent has these minimal specifications, it is possi-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 77,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          716.352,
+          289.868,
+          770.145
+        ],
+        "content": "ble to use an off-the-shelf agents (e.g., Reflexion) as a Child agent. We deliberately use a simple agent to verify the effectiveness of SoA in a simple setup.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 78,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.528,
+          587.635,
+          291.042,
+          709.566
+        ],
+        "content": "Code Generation The main role of Child agents is to generate functions that meet the specifications based on the given function’s docstrings. As shown in Figure 2, the agent follows the instructions to generate the rest of the function and complete it. The completed function implementation is stored in memory, and the unit tests for the function are also stored as they form the basis for future code modifications.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 79,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.473,
+          65.991,
+          290.949,
+          580.849
+        ],
+        "content": "Code Modification: Empowering Child Agents with Self-Organization and Adaptability One of the most remarkable aspects of agents in the SoA framework is their ability to autonomously improve their code based on the state of nearby agents . This process sets SoA apart from traditional agent approaches and showcases the power of self-organization in code modification. While existing agents like Reflexion (Shinn et al., 2023) rely solely on the results of unit tests, Child agents in SoA go beyond this limitation by independently observing the state of their mother agent, such as differences in modifications and feedback. By gathering this invaluable information from their surrounding environment, Child agents can adapt their behavior and make more informed decisions about code modification, even without explicit instructions. The modifications and feedback generated by the Mother agent serve as an important source of information for the Child agents. Armed with these insights, Child agents can more effectively modify their own code, contributing to the overall improvement of the codebase in a way that is both efficient and adaptive. Figure 3 illustrates this process, which begins with the execution of unit tests and the retrieval of the latest implementation from memory. The Child agent then harnesses the power of the LLM to create a code modification proposal, seamlessly combining the information observed from the Mother agent with the test results and the latest implementation details. By storing the modified code in memory, Child agents create a feedback loop that continuously refines and improves the codebase over time. This iterative process, driven by the principles of self-organization and adaptability, enables SoA to tackle complex code modification tasks with efficiency and effectiveness. As Child agents work in harmony with",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 80,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          743.451,
+          524.415,
+          770.145
+        ],
+        "content": "their Mother agent, they contribute to the creation of a more optimized and large codebase.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 81,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          720.541,
+          396.426,
+          734.734
+        ],
+        "content": "3.2 Mother Agent",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 5,
+        "id": 82,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          305.782,
+          500.481,
+          526.319,
+          716.864
+        ],
+        "content": "The Mother is an agent that generates new agents (Mother or Child). Similar to Child agents, the Mother agent independently implements the specific Python function based on its given docstrings. The Mother has memory, code generation capabilities, and self-debugging functions, as same as Child agents. The unique feature of the Mother agent is its ability to generate multiple Child agents according to the complexity of the problem and delegate parts of the implementation to these agents. This structure allows the Mother agent to focus on implementing abstract processes, while the Child agents generated by the Mother agent concentrate on implementing concrete processes. This division of labor enhances the overall efficiency and flexibility of the SoA framework.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 83,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          303.56,
+          526.226,
+          493.237
+        ],
+        "content": "Code Generation We explain the code generation process by the Mother agent using the implementation example of the is_sum_of_odds_ten function shown in Figure 2. The starting point is the function’s docstrings and unit tests, which are memorized for reference in the later self-debugging phase. The first task of the Mother agent is to generate a skeleton of the implementation from the given docstrings, including subfunctions such as get_odd_numbers to extract odd numbers and sum_of_numbers to calculate their sum. The number and types of these subfunctions are automatically determined by the LLM based on the complexity of the problem.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 84,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          100.322,
+          526.222,
+          303.156
+        ],
+        "content": "It is important to note that these subfunctions are unimplemented, and the Mother agent does not directly implement them. Instead, it delegates the implementation of the subfunctions to other agents, allowing the Mother agent to focus on generating the skeleton and streamline its own code generation process. After the docstrings and unit tests for the subfunctions are generated, they are assigned to newly initialized agents for implementation. These agents proceed with the implementation of their respective functions without looking at the internals of the is_sum_of_odds_ten function implemented by the Mother agent. Since agents within the same Mother can work asynchronously, the overall code generation process is streamlined.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 85,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          65.991,
+          526.22,
+          93.078
+        ],
+        "content": "Code Modification The Mother’s code modification is almost the same as the Child’s code modifi-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 86,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.337,
+          759.305,
+          471.799,
+          771.208
+        ],
+        "content": "Child Docstrings Unit test Mother Unit test",
+        "font": "RictyDiminished-Oblique",
+        "font size": 7.438,
+        "id": 88,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          337.392,
+          760.121,
+          374.581,
+          767.931
+        ],
+        "content": "Docstrings",
+        "font": "RictyDiminished-Oblique",
+        "font size": 7.438,
+        "id": 132,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          312.106,
+          725.242,
+          378.139,
+          755.591
+        ],
+        "content": "def is_sum_of_odds_ten(lst): ‘’’ Checks if sum of odd numbers is 10 ’’’ pass",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.717,
+        "id": 104,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.6745098233222961, 0.21568627655506134, 0.23529411852359772]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          82.36,
+          724.106,
+          160.185,
+          754.456
+        ],
+        "content": "def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ‘’' pass",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.717,
+        "id": 155,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.6745098233222961, 0.21568627655506134, 0.23529411852359772]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          404.034,
+          738.831,
+          505.624,
+          744.164
+        ],
+        "content": "assert is_sum_of_odds_ten([1,9]) == True",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.079,
+        "id": 107,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          178.504,
+          737.85,
+          282.634,
+          743.183
+        ],
+        "content": "assert get_odd_numbers([1,2,3]) == [1, 3]",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.079,
+        "id": 157,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          307.022,
+          704.357,
+          328.86,
+          725.048
+        ],
+        "id": 108,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          78.8,
+          704.349,
+          100.638,
+          725.039
+        ],
+        "id": 145,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          433.625,
+          706.057,
+          451.041,
+          712.152
+        ],
+        "content": "Memory",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "id": 100,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          205.404,
+          706.048,
+          222.819,
+          712.144
+        ],
+        "content": "Memory",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "id": 141,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          372.758,
+          700.588,
+          381.466,
+          706.683
+        ],
+        "content": "LLM",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "id": 111,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          144.536,
+          700.58,
+          153.244,
+          706.675
+        ],
+        "content": "LLM",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "id": 148,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          448.72,
+          692.464,
+          478.109,
+          699.322
+        ],
+        "content": "Unit test",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 96,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          220.498,
+          692.456,
+          249.887,
+          699.313
+        ],
+        "content": "Unit test",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 137,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.994,
+          680.767,
+          380.567,
+          694.518
+        ],
+        "content": "STEP1: Generate the skeleton",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 99,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.772,
+          680.759,
+          139.284,
+          694.509
+        ],
+        "content": "STEP1: Generate the code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 140,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          456.864,
+          674.512,
+          469.926,
+          681.369
+        ],
+        "content": "Code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 98,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          228.642,
+          674.504,
+          241.704,
+          681.361
+        ],
+        "content": "Code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 139,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          319.961,
+          638.189,
+          419.737,
+          675.967
+        ],
+        "content": "def is_sum_of_odds_ten(lst): ‘’'Checks if sum of odd numbers is 10 ’’’ odd_numbers = get_odd_numbers(lst) sum_odds = sum_numbers(odd_numbers) return “Yes” if sum_odds == 10 else “No”",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.535,
+        "id": 131,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          91.739,
+          647.614,
+          184.712,
+          675.959
+        ],
+        "content": "def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ‘'' odd_numbers = [n for n in lst",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.535,
+        "id": 152,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.6745098233222961, 0.21568627655506134, 0.23529411852359772]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.008,
+          635.174,
+          93.788,
+          659.293
+        ],
+        "id": 151,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile8.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          301.734,
+          635.174,
+          323.515,
+          659.293
+        ],
+        "id": 122,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile9.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          427.811,
+          643.787,
+          493.119,
+          650.644
+        ],
+        "content": "STEP2: Update memory",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 102,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          199.59,
+          643.778,
+          264.897,
+          650.636
+        ],
+        "content": "STEP2: Update memory",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 143,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          100.81,
+          638.18,
+          166.571,
+          647.659
+        ],
+        "content": "if n % 2 != 0] return odd_numbers",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.535,
+        "id": 153,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          404.552,
+          619.976,
+          413.259,
+          626.071
+        ],
+        "content": "LLM",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "heading level": 6,
+        "id": 128,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H6",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          342.507,
+          607.262,
+          473.123,
+          614.12
+        ],
+        "content": "STEP3: Generate signature and unit tests",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 117,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          316.887,
+          580.52,
+          377.387,
+          602.316
+        ],
+        "content": "def get_odd_numbers(lst): ''' Extracts the odd numbers. ‘’' pass",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.172,
+        "id": 130,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.6745098233222961, 0.21568627655506134, 0.23529411852359772]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          416.253,
+          580.157,
+          487.185,
+          601.953
+        ],
+        "content": "def sum_numbers(lst): ''' Calculates the sum of numbers. ‘’’ pass",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.172,
+        "id": 129,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.6745098233222961, 0.21568627655506134, 0.23529411852359772]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          314.074,
+          571.429,
+          478.814,
+          575.993
+        ],
+        "content": "assert get_odd_numbers([1,2,3]) == [1, 3] assert sum_numbers([1,3]) == 4",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.172,
+        "id": 123,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          318.115,
+          543.346,
+          497.083,
+          549.441
+        ],
+        "content": "child or mother child or mother",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.805,
+        "id": 119,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.557,
+          493.777,
+          526.15,
+          529.691
+        ],
+        "id": 158,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              70.557,
+              493.777,
+              526.15,
+              529.691
+            ],
+            "content": "Figure 2: Overview of code generation. Child agents generate executable Python function from a given docstring. The Mother agent generates the skeleton of the function. The Mother spawns a new initialized agent (Child or Mother) and delegates unimplemented functions.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 231,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          70.866,
+          391.294,
+          289.314,
+          472.185
+        ],
+        "content": "cation (Figure 3). It observes information from the upper Mother and uses it to modify the functions it is responsible for. The only difference is that the feedback it generates and the code before and after modification are used by lower-level agents (Child or Mother).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 159,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          367.676,
+          230.837,
+          381.869
+        ],
+        "content": "3.3 Self-organized Agent Process",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 5,
+        "id": 160,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.473,
+          65.991,
+          291.048,
+          363.669
+        ],
+        "content": "The Self-organized Agent (SoA) framework is a distributed framework in which multiple agents (including Mother agents and Child agents) repeatedly generate and modify functions. The core of this framework lies in the principle of self-organization, where each agent functions independently without the need to directly observe the entire codebase. The hierarchical combination of Mother agents and Child agents forms an agent network that effectively constructs a single large-scale codebase. In this hierarchical structure, Mother agents decompose complex problems into more manageable smaller problems by dividing tasks and delegating them to the agents they have generated. Although each agent is independent, the agents as a whole can work efficiently towards the implementation of a single function. Despite the fact that the amount of code each agent generates, modifies, and manages is always small, the number of agents scales, allowing the amount of code generated to be increased indefinitely according to the difficulty of the problem. Detailed algorithms are presented in",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 161,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.749,
+          459.04,
+          432.109,
+          472.185
+        ],
+        "content": "Algorithm 1 in the appendix.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 162,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          248.966,
+          526.217,
+          452.193
+        ],
+        "content": "Code Generation The code generation process in the SoA framework begins with the function’s docstrings and unit tests. In the initial stage, there is only one initialized Mother agent, which is the root of the tree structure. Based on the input docstrings and unit tests, it generates docstrings and unit tests for subtasks and passes them to other agents it generates (see §3.2). If the tree structure reaches a predetermined depth, the tasks are passed to Child agents; otherwise, they are passed to newly generated Mother agents. By repeatedly proliferating and increasing the number of agents until the last agent, it is possible to generate large-scale code while keeping the amount of code managed by individual agents constant.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 163,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          65.991,
+          526.225,
+          242.119
+        ],
+        "content": "Code Modification Once code generation is complete, the process transitions to the code modification phase. First, the implementations of all agents are combined to create the final implementation. This final implementation is evaluated using the unit tests provided to the root Mother, and feedback is generated from the results. Since there are no agents higher than this root Mother, information from higher-level agents as shown in Figure 3 is not used. The modification process starts based on this feedback and propagates information from the root Mother agent to the Child agents. Each agent updates its implementation based on the received",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 164,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          153.809,
+          761.124,
+          206.193,
+          770.291
+        ],
+        "content": "Upper Mother",
+        "font": "RictyDiminished-Oblique",
+        "font size": 8.731,
+        "id": 184,
+        "level": "6",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          167.576,
+          747.637,
+          200.821,
+          753.983
+        ],
+        "content": "Agent state",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 222,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          129.799,
+          739.054,
+          238.598,
+          745.401
+        ],
+        "content": "(Self-feedbacks, New code, Old code)",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 219,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          89.755,
+          694.973,
+          280.5,
+          737.172
+        ],
+        "id": 166,
+        "level": "5",
+        "number of columns": 2,
+        "number of rows": 3,
+        "page number": 5,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  91.164,
+                  730.171,
+                  154.014,
+                  735.722
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  154.014,
+                  730.171,
+                  279.091,
+                  735.722
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  91.164,
+                  709.046,
+                  154.014,
+                  730.171
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  154.014,
+                  709.046,
+                  279.091,
+                  730.171
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  91.164,
+                  695.603,
+                  154.014,
+                  709.046
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      94.591,
+                      698.215,
+                      136.902,
+                      704.561
+                    ],
+                    "content": "STEP1: Observe",
+                    "font": "RictyDiminished-Oblique",
+                    "font size": 6.044,
+                    "id": 2,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  154.014,
+                  695.603,
+                  279.091,
+                  709.046
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      199.454,
+                      695.416,
+                      245.467,
+                      702.892
+                    ],
+                    "content": "Test Memory",
+                    "font": "RictyDiminished-Oblique",
+                    "font size": 5.373,
+                    "id": 3,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 3,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          72.036,
+          717.461,
+          98.228,
+          726.629
+        ],
+        "content": "Mother",
+        "font": "RictyDiminished-Oblique",
+        "font size": 8.731,
+        "id": 182,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          75.11,
+          700.431,
+          95.322,
+          719.581
+        ],
+        "id": 169,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile10.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          94.591,
+          691.835,
+          127.836,
+          698.181
+        ],
+        "content": "upper agent",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 181,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          196.432,
+          686.329,
+          266.913,
+          695.382
+        ],
+        "content": "result Unit test",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 174,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.487,
+          682.414,
+          139.546,
+          688.056
+        ],
+        "content": "LLM",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.373,
+        "id": 188,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          88.547,
+          451.219,
+          158.058,
+          677.36
+        ],
+        "id": 192,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              88.547,
+              664.633,
+              158.058,
+              677.36
+            ],
+            "content": "STEP2: Generate self-feedbacks",
+            "font": "RictyDiminished-Oblique",
+            "font size": 6.044,
+            "kids": [
+              {
+                "bounding box": [
+                  99.349,
+                  643.642,
+                  173.705,
+                  658.816
+                ],
+                "id": 12,
+                "level": "8",
+                "list items": [
+                  {
+                    "bounding box": [
+                      99.349,
+                      653.716,
+                      172.8,
+                      658.816
+                    ],
+                    "content": "(1) Return a Boolean value.",
+                    "font": "AndaleMono",
+                    "font size": 4.533,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      99.349,
+                      643.642,
+                      173.705,
+                      653.779
+                    ],
+                    "content": "(2) In 'get_odd_numbers', ignore negative numbers.",
+                    "font": "AndaleMono",
+                    "font size": 4.533,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "arabic numbers",
+                "page number": 5,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  247.269,
+                  667.823,
+                  259.358,
+                  674.17
+                ],
+                "content": "Code",
+                "font": "RictyDiminished-Oblique",
+                "font size": 6.044,
+                "id": 14,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  256.893,
+                  591.153,
+                  275.026,
+                  610.26
+                ],
+                "content": "STEP4: Update memory",
+                "font": "RictyDiminished-Oblique",
+                "font size": 6.044,
+                "id": 15,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  215.028,
+                  645.411,
+                  239.205,
+                  651.758
+                ],
+                "content": "Old code",
+                "font": "RictyDiminished-Oblique",
+                "font size": 6.044,
+                "id": 16,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              89.955,
+              451.219,
+              114.132,
+              463.946
+            ],
+            "content": "STEP3: Fix code",
+            "font": "RictyDiminished-Oblique",
+            "font size": 6.044,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          88.547,
+          623.329,
+          112.725,
+          636.056
+        ],
+        "content": "STEP3: Fix code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 168,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          171.792,
+          628.091,
+          179.851,
+          633.733
+        ],
+        "content": "LLM",
+        "font": "RictyDiminished-Oblique",
+        "font size": 5.373,
+        "id": 191,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          133.246,
+          580.037,
+          225.591,
+          615.002
+        ],
+        "content": "def is_sum_of_odds_ten(lst): ‘’'Checks if sum of odd numbers is 10 ’’’ odd_numbers = get_odd_numbers(lst) sum_odds = sum_numbers(odd_numbers) return True if sum_odds == 10 else False",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 4.198,
+        "id": 230,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          117.97,
+          577.826,
+          138.128,
+          600.149
+        ],
+        "id": 229,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile11.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          161.27,
+          555.565,
+          194.514,
+          561.912
+        ],
+        "content": "Agent state",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 226,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.707,
+          539.94,
+          94.534,
+          549.107
+        ],
+        "content": "Child",
+        "font": "RictyDiminished-Oblique",
+        "font size": 8.731,
+        "id": 216,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          207.145,
+          540.177,
+          282.7,
+          546.524
+        ],
+        "content": "To other children/mothers",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 221,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          75.11,
+          522.356,
+          95.322,
+          541.506
+        ],
+        "id": 193,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile12.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          87.618,
+          485.445,
+          157.128,
+          524.456
+        ],
+        "id": 203,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              89.051,
+              511.729,
+              149.495,
+              524.456
+            ],
+            "content": "STEP1: Observe mother agent",
+            "font": "RictyDiminished-Oblique",
+            "font size": 6.044,
+            "kids": [
+              {
+                "bounding box": [
+                  228.419,
+                  518.062,
+                  244.538,
+                  523.704
+                ],
+                "content": "Memory",
+                "font": "RictyDiminished-Oblique",
+                "font size": 5.373,
+                "id": 3,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  130.558,
+                  503.226,
+                  138.617,
+                  508.867
+                ],
+                "content": "LLM",
+                "font": "RictyDiminished-Oblique",
+                "font size": 5.373,
+                "id": 6,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  165.674,
+                  453.398,
+                  173.733,
+                  459.039
+                ],
+                "content": "LLM",
+                "font": "RictyDiminished-Oblique",
+                "font size": 5.373,
+                "id": 8,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0, 0.0, 0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              87.618,
+              485.445,
+              157.128,
+              498.172
+            ],
+            "content": "STEP2: Generate self-feedbacks",
+            "font": "RictyDiminished-Oblique",
+            "font size": 6.044,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          195.503,
+          507.141,
+          265.984,
+          522.574
+        ],
+        "content": "Test result Unit test",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 198,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          246.34,
+          488.635,
+          258.428,
+          494.981
+        ],
+        "content": "Code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 208,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          98.419,
+          469.49,
+          171.871,
+          479.627
+        ],
+        "content": "(1) Ignore numbers that are negative.",
+        "font": "AndaleMono",
+        "font size": 4.533,
+        "id": 206,
+        "level": "8",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          214.099,
+          466.223,
+          238.276,
+          472.57
+        ],
+        "content": "Old code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 210,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          259.938,
+          452.774,
+          278.071,
+          471.881
+        ],
+        "content": "STEP4: Update memory",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.044,
+        "id": 209,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          113.63,
+          413.583,
+          259.703,
+          444.897
+        ],
+        "content": "def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ‘'' odd_numbers = [n for n in lst if n % 2 != 0 and n > 0] return odd_numbers",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.037,
+        "id": 214,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.982,
+          410.273,
+          122.028,
+          442.438
+        ],
+        "id": 213,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile13.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          70.537,
+          149.309,
+          290.791,
+          392.535
+        ],
+        "id": 231,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              70.537,
+              284.89,
+              290.791,
+              392.535
+            ],
+            "content": "Figure 3: Overview of code modification. Agents (Mother/Child) observe the state of Mother (feedback, old code, and updated code) and use this information to improve the functions for which they are responsible. The state of the upper agent is used to modify code by lower agents within the hierarchy. This state propagation promotes collaboration and information sharing throughout the hierarchy, enabling efficient code modification.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  70.866,
+                  179.361,
+                  290.941,
+                  260.252
+                ],
+                "content": "feedback, generates new feedback, and transmits it to lower-level agents (see §3.2). Finally, the Child agents update their own implementations, and the process terminates (see §3.1). This series of processes is repeated until a predetermined maximum number of iterations is reached.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 10.909,
+                "id": 22,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              149.309,
+              153.883,
+              164.863
+            ],
+            "content": "4 Experiments",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "previous list id": 158,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          70.866,
+          112.085,
+          289.136,
+          140.022
+        ],
+        "content": "LLM Selection We used GPT3.5-turbo3 for code generation and feedback generation.4",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 232,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.519,
+          76.498,
+          289.135,
+          99.201
+        ],
+        "content": "3gpt3.5-turbo-1106 4GPT-4 was not selected due to the high experimental cost",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 234,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          66.536,
+          102.984,
+          77.341
+        ],
+        "content": "required.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 235,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.749,
+          607.959,
+          526.318,
+          770.538
+        ],
+        "content": "Baselines We compare SoA with several state-ofthe-art code generation methods including AlphaCode (Li et al., 2022), Incoder (Fried et al., 2023), Codex (Chen et al., 2021), CoT (Wei et al., 2022), and Gemini Pro (Anil et al., 2023). Additionally, we evaluate the performance of various GPT-3.5based agents, such as ChatGPT, Self-Edit (Zhang et al., 2023), and Reflexion (Shinn et al., 2023). These baselines are chosen to represent a diverse range of approaches, including single-agent and multi-agent systems, as well as those with and without self-debugging capabilities.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 236,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.749,
+          407.224,
+          526.318,
+          596.902
+        ],
+        "content": "Agent Configuration To evaluate the effectiveness of the SoA framework, we selected the Reflexion agent as a baseline. Reflexion iteratively modifies code based on the given docstrings and automatically generated unit tests until it reaches the maximum number of iterations or passes the unit tests. The main difference between Reflexion and SoA is that Reflexion is composed of a single agent, while SoA is composed of self-organized multiple agents. In the SoA configuration, we set the maximum number of iterations for the learning loop to 8 and the maximum tree depth to 2. Additionally, following (Shinn et al., 2023), we provided a few-shot trajectory to the LLM.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 237,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          206.49,
+          526.318,
+          396.167
+        ],
+        "content": "Data and Tasks To evaluate the performance of automatic code generation, we used the HumanEval (Chen et al., 2021) benchmark. HumanEval is a set that includes diverse programming problems designed to measure the functional correctness of generated code. We used the Python language set for evaluation and followed the evaluation methodology of Reflexion (Shinn et al., 2023). In this process, multiple test cases are created for each generated code, and n test cases are randomly selected to construct a test suite. This test suite is used to verify whether the generated code functions correctly. We set 6 unit tests for Reflexion and 1 unit test for SoA.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 238,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          179.767,
+          392.204,
+          193.96
+        ],
+        "content": "4.1 Main Results",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 5,
+        "id": 239,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          305.749,
+          65.991,
+          526.224,
+          173.98
+        ],
+        "content": "Table 1 compares the Pass@1 accuracy of the proposed method and the baseline. Comparing SoA with Reflexion, a strong baseline, SoA outperforms Reflexion by 5% in Pass@1. Considering that each agent in SoA does not see the entire code, this is a surprising result. This result suggests that selforganized agents can generate code that functions well as a whole without needing to oversee the",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 240,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          214.822,
+          737.427,
+          253.793,
+          774.35
+        ],
+        "id": 273,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile14.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          88.696,
+          760.182,
+          126.792,
+          768.183
+        ],
+        "content": "Docstrings",
+        "font": "RictyDiminished-Oblique",
+        "font size": 7.619,
+        "id": 333,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          493.05,
+          743.001,
+          508.986,
+          760.648
+        ],
+        "id": 321,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile15.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          438.749,
+          745.912,
+          455.423,
+          757.698
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 284,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          368.905,
+          638.781,
+          394.684,
+          757.306
+        ],
+        "id": 278,
+        "level": "10",
+        "list items": [
+          {
+            "bounding box": [
+              369.745,
+              740.035,
+              394.522,
+              757.306
+            ],
+            "content": "def func2 Unit test",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 5.442,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.9768062829971313, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              368.905,
+              689.421,
+              393.682,
+              706.692
+            ],
+            "content": "def func3 Unit test",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 5.442,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.9768062829971313, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              369.908,
+              638.781,
+              394.684,
+              656.052
+            ],
+            "content": "def func4 Unit test",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 5.442,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.9768062829971313, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          408.892,
+          740.186,
+          426.928,
+          757.275
+        ],
+        "id": 338,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile16.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          470.786,
+          746.737,
+          481.527,
+          756.913
+        ],
+        "id": 249,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile17.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          80.488,
+          747.225,
+          132.735,
+          754.083
+        ],
+        "content": "def function1(x)",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.531,
+        "id": 256,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[1.0, 1.0, 1.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          157.643,
+          743.403,
+          318.758,
+          751.403
+        ],
+        "content": "Agent Skeleton of Code",
+        "font": "RictyDiminished-Oblique",
+        "font size": 7.619,
+        "id": 243,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          411.034,
+          726.793,
+          426.97,
+          744.44
+        ],
+        "id": 337,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile18.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          85.822,
+          721.547,
+          252.225,
+          742.191
+        ],
+        "content": "“”” Docstrings “”” 1. Generate",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 258,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.6352941393852234, 0.11764705926179886, 0.1411764770746231]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          493.05,
+          723.064,
+          508.986,
+          740.711
+        ],
+        "id": 322,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile19.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          438.749,
+          725.392,
+          455.423,
+          737.178
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 287,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          470.786,
+          726.799,
+          481.527,
+          736.975
+        ],
+        "id": 312,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile20.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          263.199,
+          728.167,
+          315.445,
+          735.025
+        ],
+        "content": "def function1(x)",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.531,
+        "id": 247,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[1.0, 1.0, 1.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          282.429,
+          715.541,
+          296.216,
+          722.78
+        ],
+        "content": "……",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.894,
+        "id": 327,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          184.24,
+          703.107,
+          200.567,
+          722.072
+        ],
+        "content": "LLM Memory",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.442,
+        "id": 261,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          85.66,
+          711.806,
+          134.64,
+          718.663
+        ],
+        "content": "# Generate here",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.531,
+        "id": 257,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.3011825680732727, 0.44863051176071167, 0.191378653049469]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          493.673,
+          697.381,
+          509.609,
+          715.028
+        ],
+        "id": 323,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile21.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          264.942,
+          684.264,
+          308.481,
+          712.672
+        ],
+        "id": 251,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              264.942,
+              706.957,
+              308.481,
+              712.672
+            ],
+            "content": "y = function2(x)",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 5.442,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              264.942,
+              684.264,
+              308.481,
+              689.978
+            ],
+            "content": "z = function3(y)",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 5.442,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          438.749,
+          700.196,
+          455.423,
+          711.981
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 290,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          470.786,
+          701.116,
+          481.527,
+          711.292
+        ],
+        "id": 314,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile22.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          408.472,
+          689.383,
+          426.508,
+          706.471
+        ],
+        "id": 300,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile23.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          282.563,
+          693.152,
+          296.35,
+          700.39
+        ],
+        "content": "……",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.894,
+        "id": 328,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          218.755,
+          692.517,
+          252.679,
+          698.993
+        ],
+        "content": "2. Memorize",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.168,
+        "id": 263,
+        "level": "8",
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          166.257,
+          675.243,
+          209.052,
+          697.458
+        ],
+        "id": 334,
+        "kids": [
+          {
+            "bounding box": [
+              168.801,
+              694.422,
+              206.534,
+              699.374
+            ],
+            "content": "def function1(x)",
+            "font": "RictyDiminishedDiscord-Regular",
+            "font size": 4.717,
+            "id": 1,
+            "page number": 6,
+            "pdfua_tag": "P",
+            "text color": "[1.0, 1.0, 1.0]",
+            "type": "paragraph"
+          }
+        ],
+        "page number": 6,
+        "type": "text block"
+      },
+      {
+        "bounding box": [
+          493.673,
+          677.444,
+          509.609,
+          695.09
+        ],
+        "id": 324,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile24.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          411.034,
+          675.314,
+          426.97,
+          692.96
+        ],
+        "id": 339,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile25.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          438.749,
+          679.676,
+          455.423,
+          691.461
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 293,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          470.786,
+          681.179,
+          481.527,
+          691.355
+        ],
+        "id": 316,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile26.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          282.563,
+          668.778,
+          296.35,
+          676.016
+        ],
+        "content": "……",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.894,
+        "id": 329,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          198.139,
+          663.335,
+          250.566,
+          669.811
+        ],
+        "content": "3. Self-debugging",
+        "font": "RictyDiminished-Oblique",
+        "font size": 6.168,
+        "id": 269,
+        "level": "9",
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          493.673,
+          651.756,
+          509.609,
+          669.403
+        ],
+        "id": 325,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile27.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          438.759,
+          654.479,
+          455.433,
+          666.265
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 306,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          471.067,
+          655.496,
+          481.808,
+          665.672
+        ],
+        "id": 318,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile28.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          241.136,
+          632.726,
+          270.298,
+          665.019
+        ],
+        "id": 341,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile29.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          265.152,
+          658.469,
+          316.853,
+          664.183
+        ],
+        "content": "return function4(z)",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.442,
+        "id": 252,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.588,
+          655.085,
+          121.976,
+          661.942
+        ],
+        "content": "Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 6.531,
+        "id": 276,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          409.401,
+          640.328,
+          427.437,
+          657.416
+        ],
+        "id": 304,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile30.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          175.422,
+          649.857,
+          199.912,
+          655.571
+        ],
+        "content": "Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.442,
+        "id": 265,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          493.673,
+          631.819,
+          509.609,
+          649.466
+        ],
+        "id": 326,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile31.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          78.537,
+          643.621,
+          136.951,
+          648.955
+        ],
+        "content": "assert function(1) == 2",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 5.079,
+        "id": 272,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          438.759,
+          633.959,
+          455.433,
+          645.745
+        ],
+        "content": "def func5 Unit test",
+        "font": "RictyDiminishedDiscord-Regular",
+        "font size": 3.628,
+        "id": 309,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          471.067,
+          635.559,
+          481.808,
+          645.735
+        ],
+        "id": 320,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile32.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          411.379,
+          627.713,
+          427.315,
+          645.36
+        ],
+        "id": 340,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2404.02183_images/imageFile33.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          70.866,
+          584.482,
+          525.656,
+          620.397
+        ],
+        "id": 342,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              70.866,
+              584.482,
+              525.656,
+              620.397
+            ],
+            "content": "Figure 4: Overview of the SoA framework. Mother agents and Child agents hierarchically construct a network and perform function generation and modification. Mother agents delegate tasks to other Mother agents or Child agents, and each agent independently executes tasks while effectively implementing a single function as a whole.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 426,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          74.034,
+          549.674,
+          285.964,
+          561.34
+        ],
+        "content": "Method SD SO Pass@1",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 344,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          74.034,
+          504.661,
+          278.977,
+          545.354
+        ],
+        "content": "AlphaCode (Li et al., 2022) ✘ ✘ 17.1 Incoder (Fried et al., 2023) ✘ ✘ 15.2 Codex (Chen et al., 2021) ✘ ✘ 47.0 Gemini Pro (Anil et al., 2023) ✘ ✘ 67.7",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 346,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          116.708,
+          448.61,
+          278.977,
+          499.804
+        ],
+        "content": "CoT (Wei et al., 2022) ✘ ✘ 44.6 ChatGPT ✘ ✘ 57.3 Self-Edit (Zhang et al., 2023) ✔ ✘ 62.2 Reflexion (Shinn et al., 2023) ✔ ✘ 66.5 SoA (ours) ✔ ✔ 71.4",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 349,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          74.034,
+          469.074,
+          104.34,
+          479.879
+        ],
+        "content": "GPT-3.5",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 348,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.557,
+          376.892,
+          290.877,
+          436.717
+        ],
+        "content": "Table 1: Results of SoA and baselines on HumanEval. The score of ChatGPT is taken from Dong et al. (2023). SD indicates whether the agent uses self-debugging with unit tests, while SO denotes whether the agent employs self-organized multi-agent collaboration.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 351,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          327.194,
+          289.139,
+          353.888
+        ],
+        "content": "entire code, by independently implementing the functions assigned to them.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 352,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          301.708,
+          134.815,
+          315.901
+        ],
+        "content": "4.2 Analysis",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 5,
+        "id": 353,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.866,
+          107.344,
+          290.942,
+          296.629
+        ],
+        "content": "One of the most critical aspects of our study is the efficiency of the self-organized multi-agent approach in large-scale code generation. To showcase the superior performance of SoA, we conducted a comprehensive comparative analysis between Reflexion, a state-of-the-art single-agent system, and our proposed multi-agent system. Using the HumanEval benchmark, we meticulously examined the overall scale of the code generated by both systems and the amount of code each agent independently generated and memorized. To ensure a fair comparison, we removed comments and docstrings from the HumanEval results and focused on the number of characters and tokens of pure code.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 354,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          65.991,
+          289.139,
+          106.234
+        ],
+        "content": "Figure 5 presents a visualization of the average amount of code generated by SoA and Reflexion from the perspective of individual functions and",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 355,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.749,
+          129.72,
+          526.318,
+          562.89
+        ],
+        "content": "all functions. In the context of HumanEval, which requires the implementation of a single function, SoA’s code amount is calculated by summing the code generated by each agent, while Reflexion’s code amount is based on a single function. The code amount per function in SoA refers to the code generated by each individual agent, whereas in Reflexion, it is equivalent to the code amount of a single function. The results unequivocally demonstrate SoA’s superiority over Reflexion in terms of the number of tokens per final code and the average number of characters per function. What is remarkable is that despite each agent in SoA handling significantly fewer tokens/characters compared to the single agent in Reflexion, the overall output generated by SoA is substantially greater. This finding underscores the exceptional scalability of SoA, indicating its ability to handle increasingly complex tasks by seamlessly adding more agents to the system. Our results suggest that by increasing the depth of the agent hierarchy and introducing more Mother agents, SoA can generate even larger-scale code by efficiently distributing the workload among multiple agents. As the tree structure becomes deeper, the system exhibits an infinite scaling potential, enabling the generation of increasingly complex and extensive codebases while ensuring that each agent handles a manageable portion of the code. Each agent can maintain a manageable amount of code while theoretically allowing for an indefinite increase in the overall code generation capacity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 356,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          65.991,
+          526.221,
+          119.783
+        ],
+        "content": "This distributed approach empowers SoA to significantly scale up its ability to tackle large-scale and complex coding tasks with remarkable efficiency and high quality, far surpassing the limi-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 357,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          114.66,
+          760.253,
+          251.101,
+          767.35
+        ],
+        "content": "Single agent (Reflexion) Multi agent (SoA)",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 416,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          82.966,
+          748.976,
+          145.22,
+          755.497
+        ],
+        "content": "Single agent (Reflexion)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 379,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.691,
+          748.976,
+          255.945,
+          755.497
+        ],
+        "content": "Single agent (Reflexion)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 367,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          77.39,
+          578.845,
+          85.619,
+          749.189
+        ],
+        "content": "AveragecharactercountAvgGenerated Tokens.#",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 385,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.045,
+          677.27,
+          200.141,
+          749.189
+        ],
+        "content": "AvgGenerated Tokens.#",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 417,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          82.966,
+          740.805,
+          130.937,
+          747.326
+        ],
+        "content": "Multi agents (SoA)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 381,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.691,
+          740.805,
+          241.662,
+          747.326
+        ],
+        "content": "Multi agents (SoA)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 369,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.888,
+          731.366,
+          101.65,
+          737.235
+        ],
+        "content": "100",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 376,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          206.532,
+          731.366,
+          212.373,
+          737.235
+        ],
+        "content": "60",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 364,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          77.39,
+          672.809,
+          83.911,
+          736.371
+        ],
+        "content": "Averagecharactercount",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 371,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          188.115,
+          672.809,
+          194.636,
+          736.371
+        ],
+        "content": "Averagecharactercount",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 360,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          95.807,
+          717.983,
+          101.648,
+          723.852
+        ],
+        "content": "75",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 375,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          206.532,
+          713.522,
+          212.373,
+          719.391
+        ],
+        "content": "40",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 363,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          95.807,
+          704.6,
+          101.648,
+          710.469
+        ],
+        "content": "50",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 374,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          206.532,
+          695.678,
+          212.373,
+          701.547
+        ],
+        "content": "20",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 362,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          95.807,
+          691.217,
+          101.648,
+          697.086
+        ],
+        "content": "25",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 373,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          98.725,
+          677.834,
+          101.646,
+          683.703
+        ],
+        "content": "0",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 372,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          209.45,
+          677.834,
+          212.371,
+          683.703
+        ],
+        "content": "0",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 361,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          121.59,
+          671.145,
+          163.748,
+          677.665
+        ],
+        "content": "Entire codebase",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 377,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          242.529,
+          671.145,
+          264.901,
+          677.665
+        ],
+        "content": "Function",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 365,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          119.994,
+          660.877,
+          164.621,
+          676.398
+        ],
+        "content": "Per a final code (all agents)",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 419,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          234.109,
+          660.877,
+          273.737,
+          676.398
+        ],
+        "content": "Per a function (agent)",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 421,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          82.966,
+          655.012,
+          145.22,
+          661.533
+        ],
+        "content": "Single agent (Reflexion)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 394,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.691,
+          655.012,
+          255.945,
+          661.533
+        ],
+        "content": "Single agent (Reflexion)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 406,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          82.966,
+          646.841,
+          130.937,
+          653.362
+        ],
+        "content": "Multi agents (SoA)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 396,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.691,
+          646.841,
+          241.662,
+          653.362
+        ],
+        "content": "Multi agents (SoA)",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 408,
+        "level": "8",
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10196078568696976, 0.10196078568696976, 0.10196078568696976]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.888,
+          637.402,
+          101.65,
+          643.271
+        ],
+        "content": "400",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 391,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          203.613,
+          637.402,
+          212.375,
+          643.271
+        ],
+        "content": "200",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 403,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          188.115,
+          578.845,
+          194.636,
+          642.407
+        ],
+        "content": "Averagecharactercount",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 398,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          78.523,
+          589.139,
+          85.619,
+          634.622
+        ],
+        "content": "AvgCharacters.",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 412,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.045,
+          589.139,
+          200.141,
+          634.622
+        ],
+        "content": "AvgCharacters.",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 413,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.888,
+          624.019,
+          101.65,
+          629.888
+        ],
+        "content": "300",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 390,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          203.613,
+          624.019,
+          212.375,
+          629.888
+        ],
+        "content": "150",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 402,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.888,
+          610.636,
+          101.65,
+          616.505
+        ],
+        "content": "200",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 389,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          203.613,
+          610.636,
+          212.375,
+          616.505
+        ],
+        "content": "100",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 401,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.888,
+          597.253,
+          101.65,
+          603.122
+        ],
+        "content": "100",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 388,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          206.532,
+          597.253,
+          212.373,
+          603.122
+        ],
+        "content": "50",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 400,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          98.725,
+          583.87,
+          101.646,
+          589.739
+        ],
+        "content": "0",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 387,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          209.45,
+          583.87,
+          212.371,
+          589.739
+        ],
+        "content": "0",
+        "font": "font000000002bb996d1",
+        "font size": 5.253,
+        "id": 399,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          121.59,
+          577.18,
+          163.748,
+          583.701
+        ],
+        "content": "Entire codebase",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 392,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          242.529,
+          577.18,
+          264.901,
+          583.701
+        ],
+        "content": "Function",
+        "font": "font000000002bb996d1",
+        "font size": 5.837,
+        "id": 404,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          119.994,
+          568.001,
+          164.621,
+          583.523
+        ],
+        "content": "Per a final code (all agents)",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 423,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          234.311,
+          568.001,
+          273.94,
+          583.523
+        ],
+        "content": "Per a function (agent)",
+        "font": "Helvetica",
+        "font size": 6.422,
+        "id": 425,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          533.318,
+          290.789,
+          557.277
+        ],
+        "id": 426,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              70.866,
+              533.318,
+              290.789,
+              557.277
+            ],
+            "content": "Figure 5: Comparison of code generation amount between SoA (mulit-agent) and Reflexion (single agent).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "previous list id": 342,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          70.866,
+          466.083,
+          289.317,
+          506.326
+        ],
+        "content": "tations encountered by single-agent systems like Reflexion, where a sole agent is responsible for managing and generating the entire codebase.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 427,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          431.952,
+          159.956,
+          447.506
+        ],
+        "content": "5 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 428,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.473,
+          93.728,
+          290.949,
+          418.898
+        ],
+        "content": "LLM Agents Recent advancements in LLM agents, such as ReAct (Yao et al., 2023b), Reflexion (Shinn et al., 2023), Toolformer (Schick et al., 2023), and Self-Refine (Madaan et al., 2023), have primarily focused on single-agent approaches, where one agent is responsible for both generation and modification tasks. Among these, Reflexion (Shinn et al., 2023) has gained significant attention in the field of code generation due to its outstanding performance. However, despite their strengths, these single-agent approaches face inherent limitations when it comes to generating and modifying large-scale codebases. To address these limitations and push the boundaries of what is possible with LLM agents, we propose SoA, a novel multi-agent framework that harnesses the power of self-organization and collaboration. While we intentionally adopted simple agents for SoA in this work, our framework is flexible enough to incorporate more sophisticated and powerful methods (Zhong et al., 2024; Zhou et al., 2023) and other state-of-the-art LLMs 5, further enhancing its potential for large-scale code generation and modification.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 429,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.519,
+          67.469,
+          167.704,
+          78.388
+        ],
+        "content": "5https://claude.ai/",
+        "font": "Inconsolatazi4-Regular",
+        "font size": 8.966,
+        "id": 431,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.5]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.749,
+          431.819,
+          526.225,
+          770.538
+        ],
+        "content": "Multi-Agent Collaboration for Software Development In recent years, several multi-agentbased approaches have emerged as promising solutions for software development, such as MetaGPT (Hong et al., 2023), ChatDev (Qian et al., 2023), Self-collaboration (Dong et al., 2023), and AgentCoder (Huang et al., 2023). These methods typically personify agents and assign them specific names or occupational roles, such as programmers, project managers, or QA engineers, to allocate tasks. While this approach has shown promise, our method takes a different and more flexible approach. Instead of assigning fixed occupational roles, we subdivide agent capabilities based on code functionality, allowing each agent to demonstrate its expertise without being constrained by predefined roles. This fine-grained task allocation enables more flexible problem-solving and adaptation to the complexity of the software development process. Moreover, by incorporating the concepts of self-organization and self-proliferation, our agents can dynamically scale up the overall code volume based on the difficulty of the problem at hand, providing a highly adaptable and efficient framework for large-scale code generation and modification.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 432,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          154.06,
+          526.318,
+          425.033
+        ],
+        "content": "Macro vs. Micro Perspectives While both multiagent-based methods (Hong et al., 2023; Qian et al., 2023; Dong et al., 2023; Huang et al., 2023) and our proposed SoA framework share the common goal of automating software development, they address different technical aspects of the process. Existing multi-agent methods primarily focus on optimizing the macro structure of software development, such as project management and task allocation. In contrast, our method takes a more micro-level perspective, focusing on the elemental technologies of code generation and modification. These approaches are not mutually exclusive but rather complementary, offering a more comprehensive solution to the challenges faced in automatic software development. By combining the strengths of both macro and micro-level approaches, we can create a powerful and holistic framework that efficiently handles the complexities of large-scale code generation and modification.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 433,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          305.782,
+          65.991,
+          524.749,
+          147.275
+        ],
+        "content": "Prompt Engineering Tree-of-Thought (ToT) (Yao et al., 2023a) and Skeleton of Thought (SoT) (Ning et al., 2023) are prompt engineering techniques that utilize tree-like structures. ToT represents reasoning steps as nodes to explore correct reasoning paths, while SoT",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 434,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          689.254,
+          289.139,
+          770.145
+        ],
+        "content": "generates a skeleton of the answer and completes the contents in parallel to decrease generation latency. In contrast, SoA uses a tree structure with agents as nodes, focusing on their collaboration and self-organization to generate and modify code efficiently.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 435,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          660.789,
+          145.933,
+          676.343
+        ],
+        "content": "6 Conclusion",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 436,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.506,
+          421.463,
+          291.042,
+          651.395
+        ],
+        "content": "In this work, we introduced Self-organized Agents (SoA), a novel multi-agent framework for efficient and scalable automatic code generation and optimization using large language models (LLMs). SoA addresses the limitations of single-agent approaches in handling large-scale, complex codebases by leveraging the power of self-organization and distributed code generation. In SoA, selforganized agents operate independently to generate and modify code components while seamlessly collaborating to construct the overall codebase. A key feature of our framework is the automatic multiplication of agents based on problem complexity, allowing for dynamic scalability and enabling the overall code volume to be increased indefinitely according to the number of agents, while the amount of code managed by each agent remains constant.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 437,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          257.808,
+          290.949,
+          419.994
+        ],
+        "content": "We evaluated SoA on the HumanEval benchmark and demonstrated its superior performance compared to Reflexion, a state-of-the-art singleagent system, with SoA achieving a 5% improvement in terms of Pass@1 accuracy. Furthermore, our in-depth analysis revealed SoA’s remarkable scalability, as each agent in SoA handles significantly less code compared to the single-agent baseline, yet the overall generated code is substantially greater. These results highlight the effectiveness of SoA in generating and optimizing large-scale code efficiently and with high quality.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 438,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.593,
+          94.154,
+          290.943,
+          256.34
+        ],
+        "content": "However, it is essential to acknowledge the limitations of the current implementation of SoA. The framework’s performance may be affected by the choice of LLM and the quality of the generated unit tests. Additionally, SoA has been evaluated on a limited set of programming tasks, and its effectiveness in handling more complex, real-world software development projects remains to be investigated. Furthermore, the communication and collaboration mechanisms among agents in SoA can be further optimized to improve efficiency and fault tolerance.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 439,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          65.991,
+          289.138,
+          92.685
+        ],
+        "content": "Despite these limitations, we believe that the SoA framework has significant potential for future",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 440,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          743.451,
+          524.405,
+          770.145
+        ],
+        "content": "research and development in the field of automatic software development.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 441,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          705.12,
+          361.686,
+          720.674
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 442,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          306.142,
+          490.835,
+          526.067,
+          700.099
+        ],
+        "content": "Rohan Anil, Sebastian Borgeaud, Yonghui Wu, JeanBaptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M. Dai, Anja Hauth, Katie Millican, David Silver, Slav Petrov, Melvin Johnson, Ioannis Antonoglou, Julian Schrittwieser, Amelia Glaese, Jilin Chen, Emily Pitler, Timothy P. Lillicrap, Angeliki Lazaridou, Orhan Firat, James Molloy, Michael Isard, Paul Ronald Barham, Tom Hennigan, Benjamin Lee, Fabio Viola, Malcolm Reynolds, Yuanzhong Xu, Ryan Doherty, Eli Collins, Clemens Meyer, Eliza Rutherford, Erica Moreira, Kareem Ayoub, Megha Goel, George Tucker, Enrique Piqueras, Maxim Krikun, Iain Barr, Nikolay Savinov, Ivo Danihelka, Becca Roelofs, Anaïs White, Anders Andreassen, Tamara von Glehn, Lakshman Yagati, Mehran Kazemi, Lucas Gonzalez, Misha Khalman, Jakub Sygnowski, and et al. 2023. Gemini: A family of highly capable multimodal models. CoRR, abs/2312.11805.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 443,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          447.939,
+          525.655,
+          481.861
+        ],
+        "content": "W Ross Ashby. 1947. Principles of the self-organizing dynamic system. The Journal of general psychology, 37(2):125–128.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 444,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          273.536,
+          526.151,
+          438.965
+        ],
+        "content": "Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M. Ziegler, Jeffrey Wu, Clemens Winter, Christopher Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever, and Dario Amodei. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems 33: Annual Conference on Neural Information Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 445,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          66.257,
+          526.151,
+          264.562
+        ],
+        "content": "Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Pondé de Oliveira Pinto, Jared Kaplan, Harrison Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Joshua Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 446,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          81.775,
+          735.348,
+          290.784,
+          769.27
+        ],
+        "content": "Sutskever, and Wojciech Zaremba. 2021. Evaluating large language models trained on code. CoRR, abs/2107.03374.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 447,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          694.177,
+          290.785,
+          728.099
+        ],
+        "content": "Yihong Dong, Xue Jiang, Zhi Jin, and Ge Li. 2023. Selfcollaboration code generation via chatgpt. CoRR, abs/2304.07590.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 448,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          609.171,
+          290.878,
+          686.928
+        ],
+        "content": "Daniel Fried, Armen Aghajanyan, Jessy Lin, Sida Wang, Eric Wallace, Freda Shi, Ruiqi Zhong, Scott Yih, Luke Zettlemoyer, and Mike Lewis. 2023. Incoder: A generative model for code infilling and synthesis. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 449,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          535.124,
+          290.52,
+          601.922
+        ],
+        "content": "Sirui Hong, Xiawu Zheng, Jonathan Chen, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, Chenyu Ran, Lingfeng Xiao, and Chenglin Wu. 2023. Metagpt: Meta programming for multi-agent collaborative framework. CoRR, abs/2308.00352.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 450,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          482.994,
+          290.785,
+          527.875
+        ],
+        "content": "Dong Huang, Qingwen Bu, Jie M. Zhang, Michael Luck, and Heming Cui. 2023. Agentcoder: Multi-agentbased code generation with iterative testing and optimisation. CoRR, abs/2312.13010.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 451,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          430.865,
+          290.881,
+          475.745
+        ],
+        "content": "Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024. Same task, more tokens: the impact of input length on the reasoning performance of large language models. CoRR, abs/2402.14848.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 452,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.5]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          378.735,
+          290.784,
+          423.616
+        ],
+        "content": "Jiaqi Li, Mengmeng Wang, Zilong Zheng, and Muhan Zhang. 2023a. Loogle: Can long-context language models understand long contexts? CoRR, abs/2311.04939.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 453,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          107.427,
+          290.792,
+          371.486
+        ],
+        "content": "Raymond Li, Loubna Ben Allal, Yangtian Zi, Niklas Muennighoff, Denis Kocetkov, Chenghao Mou, Marc Marone, Christopher Akiki, Jia Li, Jenny Chim, Qian Liu, Evgenii Zheltonozhskii, Terry Yue Zhuo, Thomas Wang, Olivier Dehaene, Mishig Davaadorj, Joel Lamy-Poirier, João Monteiro, Oleh Shliazhko, Nicolas Gontier, Nicholas Meade, Armel Zebaze, Ming-Ho Yee, Logesh Kumar Umapathi, Jian Zhu, Benjamin Lipkin, Muhtasham Oblokulov, Zhiruo Wang, Rudra Murthy V, Jason Stillerman, Siva Sankalp Patel, Dmitry Abulkhanov, Marco Zocca, Manan Dey, Zhihan Zhang, Nour MoustafaFahmy, Urvashi Bhattacharyya, Wenhao Yu, Swayam Singh, Sasha Luccioni, Paulo Villegas, Maxim Kunakov, Fedor Zhdanov, Manuel Romero, Tony Lee, Nadav Timor, Jennifer Ding, Claire Schlesinger, Hailey Schoelkopf, Jan Ebert, Tri Dao, Mayank Mishra, Alex Gu, Jennifer Robinson, Carolyn Jane Anderson, Brendan Dolan-Gavitt, Danish Contractor, Siva Reddy, Daniel Fried, Dzmitry Bahdanau, Yacine Jernite, Carlos Muñoz Ferrandis, Sean Hughes, Thomas Wolf, Arjun Guha, Leandro von Werra, and Harm de Vries. 2023b. Starcoder: may the source be with you! CoRR, abs/2305.06161.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 454,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          66.257,
+          290.787,
+          100.179
+        ],
+        "content": "Yujia Li, David H. Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 455,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.051,
+          680.553,
+          526.151,
+          769.27
+        ],
+        "content": "Lago, Thomas Hubert, Peter Choy, Cyprien de Masson d’Autume, Igor Babuschkin, Xinyun Chen, PoSen Huang, Johannes Welbl, Sven Gowal, Alexey Cherepanov, James Molloy, Daniel J. Mankowitz, Esme Sutherland Robson, Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. 2022. Competition-level code generation with alphacode. CoRR, abs/2203.07814.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 456,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          548.972,
+          526.151,
+          670.565
+        ],
+        "content": "Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, Shashank Gupta, Bodhisattwa Prasad Majumder, Katherine Hermann, Sean Welleck, Amir Yazdanbakhsh, and Peter Clark. 2023. Self-refine: Iterative refinement with self-feedback. In Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 457,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          483.144,
+          526.154,
+          538.983
+        ],
+        "content": "Niklas Muennighoff, Qian Liu, Armel Zebaze, Qinkai Zheng, Binyuan Hui, Terry Yue Zhuo, Swayam Singh, Xiangru Tang, Leandro von Werra, and Shayne Longpre. 2023. Octopack: Instruction tuning code large language models. CoRR, abs/2308.07124.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 458,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          428.274,
+          525.659,
+          473.155
+        ],
+        "content": "Xuefei Ning, Zinan Lin, Zixuan Zhou, Huazhong Yang, and Yu Wang. 2023. Skeleton-of-thought: Large language models can do parallel decoding. CoRR, abs/2307.15337.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 459,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          395.323,
+          525.654,
+          418.286
+        ],
+        "content": "OpenAI. 2023. GPT-4 technical report. CoRR, abs/2303.08774.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 460,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          340.454,
+          526.06,
+          385.334
+        ],
+        "content": "Chen Qian, Xin Cong, Cheng Yang, Weize Chen, Yusheng Su, Juyuan Xu, Zhiyuan Liu, and Maosong Sun. 2023. Communicative agents for software development. CoRR, abs/2307.07924.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 461,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          241.749,
+          526.153,
+          330.465
+        ],
+        "content": "Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools. In Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 462,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          154.003,
+          526.065,
+          231.76
+        ],
+        "content": "Uri Shaham, Maor Ivgi, Avia Efrat, Jonathan Berant, and Omer Levy. 2023. Zeroscrolls: A zero-shot benchmark for long text understanding. In Findings of the Association for Computational Linguistics: EMNLP 2023, Singapore, December 6-10, 2023, pages 7977–7989. Association for Computational Linguistics.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 463,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          66.257,
+          526.15,
+          144.014
+        ],
+        "content": "Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Reflexion: language agents with verbal reinforcement learning. In Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023.",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 464,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          516.17,
+          290.792,
+          769.27
+        ],
+        "content": "Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian CantonFerrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn, Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa, Isabel Kloumann, Artem Korenev, Punit Singh Koura, Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra, Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi, Alan Schelten, Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aurélien Rodriguez, Robert Stojnic, Sergey Edunov, and Thomas Scialom. 2023. Llama 2: Open foundation and finetuned chat models. CoRR, abs/2307.09288.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 465,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          421.093,
+          290.878,
+          509.809
+        ],
+        "content": "Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed H. Chi, Quoc V. Le, and Denny Zhou. 2022. Chain-of-thought prompting elicits reasoning in large language models. In Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans, LA, USA, November 28 - December 9, 2022.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 466,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          326.016,
+          290.881,
+          414.732
+        ],
+        "content": "Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik Narasimhan. 2023a. Tree of thoughts: Deliberate problem solving with large language models. In Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023.",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 467,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          252.857,
+          290.88,
+          319.656
+        ],
+        "content": "Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R. Narasimhan, and Yuan Cao. 2023b. React: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 468,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          168.739,
+          290.875,
+          246.497
+        ],
+        "content": "Kechi Zhang, Zhuo Li, Jia Li, Ge Li, and Zhi Jin. 2023. Self-edit: Fault-aware code editor for code generation. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2023, Toronto, Canada, July 9-14, 2023, pages 769–787. Association for Computational Linguistics.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 469,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          117.498,
+          290.88,
+          162.379
+        ],
+        "content": "Lily Zhong, Zilong Wang, and Jingbo Shang. 2024. LDB: A large language model debugger via verifying runtime execution step-by-step. CoRR, abs/2402.16906.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 470,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.5]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          66.257,
+          290.784,
+          111.137
+        ],
+        "content": "Andy Zhou, Kai Yan, Michal Shlapentokh-Rothman, Haohan Wang, and Yu-Xiong Wang. 2023. Language agent tree search unifies reasoning acting and planning in language models. CoRR, abs/2310.04406.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 471,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          306.142,
+          755.988,
+          386.505,
+          771.542
+        ],
+        "content": "A Pseudocode",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 472,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          70.473,
+          680.641,
+          365.837,
+          694.834
+        ],
+        "content": "Algorithm 1 Generate Code with Self-organized Agent Framework",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.909,
+        "id": 474,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          666.538,
+          524.406,
+          678.204
+        ],
+        "content": "Input: docstrings: Docstrings for the function, unit_tests: List of unit tests, max_depth: Maximum depth of the agent",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 476,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          646.612,
+          371.724,
+          667.918
+        ],
+        "content": "hierarchy, max_iterations: Maximum number of code modification iterations Output: The final generated code",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 477,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.866,
+          148.48,
+          524.562,
+          647.993
+        ],
+        "id": 478,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              74.65,
+              637.188,
+              81.626,
+              647.993
+            ],
+            "content": "1:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              627.225,
+              320.357,
+              638.03
+            ],
+            "content": "2: Initialize the root Mother agent with docstrings and unit_tests",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              617.262,
+              81.626,
+              628.067
+            ],
+            "content": "3:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              606.762,
+              409.645,
+              618.428
+            ],
+            "content": "4: function GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              591.267,
+              219.222,
+              608.465
+            ],
+            "content": "5: if depth − 1 = max_depth then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              581.304,
+              231.474,
+              598.179
+            ],
+            "content": "6: next_agent ← new ChildAgent",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              576.874,
+              113.502,
+              588.54
+            ],
+            "content": "7: else",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              561.379,
+              237.938,
+              578.254
+            ],
+            "content": "8: next_agent ← new MotherAgent",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              74.65,
+              556.948,
+              121.231,
+              568.614
+            ],
+            "content": "9: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              547.524,
+              321.87,
+              558.329
+            ],
+            "content": "10: Assign subtask_docstrings and unit_tests to next_agent",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              537.561,
+              236.443,
+              548.366
+            ],
+            "content": "11: GENERATE(next_agent, depth + 1)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              527.06,
+              134.886,
+              538.726
+            ],
+            "content": "12: end function",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              517.636,
+              82.325,
+              528.441
+            ],
+            "content": "13:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              507.135,
+              218.371,
+              518.801
+            ],
+            "content": "14: function GENERATE(agent, depth)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              497.173,
+              524.562,
+              508.839
+            ],
+            "content": "15: if depth = 1 then ▷ Root Mother",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              481.678,
+              396.161,
+              498.553
+            ],
+            "content": "16: skeleton ← Generate skeleton from agent.docstrings and agent.unittests",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              471.715,
+              205.05,
+              488.59
+            ],
+            "content": "17: agent.code ← skeleton",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              467.285,
+              359.398,
+              478.951
+            ],
+            "content": "18: for each subtask_docstrings, subtask_unit_tests in subtasks do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              457.86,
+              416.567,
+              468.665
+            ],
+            "content": "19: GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              447.359,
+              141.126,
+              459.025
+            ],
+            "content": "20: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              437.397,
+              524.409,
+              449.063
+            ],
+            "content": "21: else if depth = max_depth then ▷ Child",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              427.972,
+              403.778,
+              438.777
+            ],
+            "content": "22: Generate code for agent.subtask_docstrings and agent.subtask_unit_tests",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              411.939,
+              224.585,
+              428.814
+            ],
+            "content": "23: agent.code ← generated code",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              407.509,
+              524.562,
+              419.175
+            ],
+            "content": "24: else ▷ Mother",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              398.084,
+              403.778,
+              408.889
+            ],
+            "content": "25: Generate code for agent.subtask_docstrings and agent.subtask_unit_tests",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              382.051,
+              224.585,
+              398.926
+            ],
+            "content": "26: agent.code ← generated code",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              377.621,
+              359.398,
+              389.287
+            ],
+            "content": "27: for each subtask_docstrings, subtask_unit_tests in subtasks do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              368.196,
+              416.567,
+              379.001
+            ],
+            "content": "28: GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              357.696,
+              141.126,
+              369.362
+            ],
+            "content": "29: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              347.733,
+              121.93,
+              359.399
+            ],
+            "content": "30: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              337.77,
+              134.886,
+              349.436
+            ],
+            "content": "31: end function",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              328.346,
+              82.325,
+              339.151
+            ],
+            "content": "32:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              317.845,
+              337.996,
+              329.511
+            ],
+            "content": "33: function MODIFY(agent, test_result, upper_agent_observation)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              308.42,
+              405.274,
+              319.225
+            ],
+            "content": "34: Generate feedback for agent based on test_result and upper_agent_observation",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              298.458,
+              244.781,
+              309.263
+            ],
+            "content": "35: Update agent’s code based on feedback",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              287.957,
+              257.812,
+              299.623
+            ],
+            "content": "36: for each subagent in agent.subagents do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              278.532,
+              417.309,
+              289.337
+            ],
+            "content": "37: Evaluate subagent.code using subagent.unit_tests to get subagent_test_result",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              268.57,
+              380.381,
+              279.375
+            ],
+            "content": "38: MODIFY(subagent, subagent_test_result, feedback and code changes)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              258.069,
+              127.677,
+              269.735
+            ],
+            "content": "39: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              248.106,
+              134.886,
+              259.772
+            ],
+            "content": "40: end function",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              238.682,
+              82.325,
+              249.487
+            ],
+            "content": "41:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              228.719,
+              291.32,
+              239.524
+            ],
+            "content": "42: Start code generation with GENERATE(root_mother, 1)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              218.757,
+              82.325,
+              229.562
+            ],
+            "content": "43:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              208.256,
+              235.56,
+              219.922
+            ],
+            "content": "44: for each iteration in max_iterations do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              198.831,
+              378.472,
+              209.636
+            ],
+            "content": "45: Combine implementations from all agents to create final_implementation",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              188.869,
+              359.984,
+              199.674
+            ],
+            "content": "46: Evaluate final_implementation using unit_tests to get test_result",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              178.906,
+              444.273,
+              189.711
+            ],
+            "content": "47: Modify the code starting from root_mother with MODIFY(root_mother, test_result, None)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              168.405,
+              114.227,
+              180.071
+            ],
+            "content": "48: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              158.981,
+              82.325,
+              169.786
+            ],
+            "content": "49:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              70.866,
+              148.48,
+              297.948,
+              160.146
+            ],
+            "content": "50: return The final implementation combined from all agents",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 50,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      }
+    ],
+    "modification date": "D:20240404010736Z",
+    "number of pages": 11,
+    "title": ""
+  }
+}

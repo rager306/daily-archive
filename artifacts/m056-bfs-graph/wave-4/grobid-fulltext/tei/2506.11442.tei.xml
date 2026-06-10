@@ -1,0 +1,1612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">REVEAL: SELF-EVOLVING CODE AGENTS VIA RELIABLE SELF-VERIFICATION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-21">21 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yiyang</forename><surname>Jin</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Tongji University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kunzhao</forename><surname>Xu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Science and Technology of China</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hang</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research Asia</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xueting</forename><surname>Han</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yanmin</forename><surname>Zhou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research Asia</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Tongji University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Science and Technology of China</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Bai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research Asia</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">REVEAL: SELF-EVOLVING CODE AGENTS VIA RELIABLE SELF-VERIFICATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-21">21 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E004957204B2B8849AA7D40F51B1C38C</idno>
+					<idno type="arXiv">arXiv:2506.11442v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Reinforcement learning with verifiable rewards (RLVR) has advanced the reasoning capabilities of large language models. However, existing methods rely solely on outcome rewards, without explicitly optimizing verification or leveraging reliable signals from realistic environments, leading to unreliable self-verification and limited test-time scaling. To address this, we widen the verification-generation asymmetry by explicitly optimizing self-verification, making it a reliable driver of deeper test-time scaling. We introduce ReVeal, a multi-turn Reinforcement learning framework that evolves code generation through self-Verification and toolbased evaluation. ReVeal structures long-horizon reasoning as iterative generationverification turns and incorporates TAPO for turn-level credit assignment, fostering the co-evolution of code and test generation. At inference, this strengthened selfverification enables the model to use self-constructed tests and tool feedback to continuously evolve code for 20+ turns on LiveCodeBench despite training on only three. It also significantly improves Pass@k, indicating stronger exploration that expands the reasoning boundaries of the base model. These findings highlight the promise of ReVeal as a scalable paradigm for RL training and test-time scaling, paving the way for more robust and autonomous AI agents.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Reinforcement learning with verifiable rewards (RLVR) has recently shown strong potential to enhance the reasoning abilities of large language models (LLMs) <ref type="bibr" target="#b2">(DeepSeek-AI et al., 2025;</ref><ref type="bibr" target="#b13">OpenAI)</ref>.</p><p>A key factor behind this success is the emergence of reflection and self-verification, which allow models to iteratively refine their reasoning. Recent analyses identify the verification-generation asymmetry (i.e., easier to verify than to solve) as the underlying mechanism for these improvements and a key driver of test-time scaling <ref type="bibr" target="#b20">(Wei, 2025;</ref><ref type="bibr" target="#b17">Setlur et al., 2025)</ref>. However, current RLVR methods rely solely on outcome rewards without explicitly optimizing verification. This leads to unreliable self-verification, where models often produce verbose, uninformative reflections or random guessing on hard problems, and limits the effectiveness of test-time scaling: prior studies show that reasoning performance plateaus once test-time compute exceeds the training horizon <ref type="bibr" target="#b17">(Setlur et al., 2025)</ref>.</p><p>Complex problem-solving, such as competitive programming, typically requires multiple iterations of verification and revision rather than being solved in a single attempt, making accurate feedback essential to guide refinement. This highlights the need for verification-driven multi-turn reasoning. Prior work has attempted this either by training a separate critic model to assess each attempt-without leveraging tool feedback and at the cost of added inference-time complexity <ref type="bibr">(Xie et al., 2025</ref>)-or by relying on execution feedback against pre-existing public tests, which are rarely available in real-world scenarios <ref type="bibr" target="#b4">(Gehring et al., 2025)</ref>. As a result, these methods provide limited and non-generalizable verification, leaving self-verification unreliable and limiting sustained improvement.</p><p>Accuracy (%) 15 35 55 75 0 0.2 0.4 0.6 0.8 1 1.2 1.4 1.6 1.8 2 Verification Accuracy Generation Accuracy ReVeal Training Test-time Scaling Widened V-G gap via explicit verification optimization Generation improves via verification-driven scaling ReVeal Widens V-G Asymmetry to Drive Test-time Scaling To address these limitations, we propose Re-Veal, a multi-turn RL framework that explicitly optimizes self-verification, thereby widening the verification-generation (V-G) asymmetry and fostering co-evolution of both capabilities during training. This enables models at inference to obtain reliable verification signals from realistic environments and iteratively refine their solutions, without needing to rely on pre-existing tests. The widened V-G gap allows verification to drive sustained improvements in generation, ultimately enabling deeper test-time scaling (Figure <ref type="figure" target="#fig_1">2</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Concretely, ReVeal structures long-horizon reasoning into iterative generation and verification turns.</head><p>At each turn, the model generates candidate code and self-verifies its correctness by constructing test cases and invoking external tools (e.g., a Python interpreter) for execution. This closed loop yields actionable verification signals and fine-grained feedback, allowing the model to identify errors, revise strategies, and progressively refine its output across turns. For training, we attach dense, turn-level rewards that directly supervise both code quality and verification accuracy. To ensure robustness, ReVeal employs a Turn-Aware Policy Optimization (TAPO) tailored for the generation-verification interplay, assigning credit at the turn granularity and preventing reward gaming (e.g., generating trivial code to hack verification rewards). Unlike outcome-only RL methods, ReVeal makes verification itself an optimization target, turning verification signals into reliable drivers of improvement.</p><p>We evaluate ReVeal on the challenging LiveCodeBench benchmark <ref type="bibr" target="#b7">(Jain et al., 2024)</ref>. Notably, despite being trained on only three reasoning turns, ReVeal sustains continuous refinement for over 20+ inference turns, showing robust extrapolation beyond its training horizon and tackling problems previously unsolved. Furthermore, ReVeal significantly outperforms the base model in Pass@k by leveraging verification signals and tool feedback to guide more effective exploration, achieving an expansion of the underlying model's reasoning boundaries that standard RL methods fail to reach. These results validate ReVeal as not only a practical framework for self-evolving code agents, but also as a general RL paradigm for tasks with verification-generation asymmetry, where explicitly optimizing verification unlocks reliable long-horizon reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">METHODS</head><p>2.1 REVEAL FRAMEWORK</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.1">ITERATIVE GENERATION-VERIFICATION LOOP</head><p>ReVeal organizes long-horizon reasoning into an interleaved generation-verification loop with tool execution feedback, where verification itself is explicitly optimized to provide reliable signals for multi-turn refinement. As illustrated in Figure <ref type="figure" target="#fig_2">3</ref>, we use a single policy for both generation and verification to reduce system complexity and cost while enabling cross-capability transfer, allowing solutions and their verification strategies to co-evolve under a shared training scheme. In the code generation setting, generation produces candidate code, whereas verification synthesizes and executes tests to assess correctness. Fine-grained feedback from tool execution (e.g., Python interpreter) is appended to the rollout and conditions the next turn. The loop continues until a valid solution is found or a turn budget K is reached, enabling progressive refinement without external critics or predefined test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input Prompt Question</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Policy LLM Python Interpreter</head><p>&lt;Generation&gt; Code &lt;Verification&gt; Test Cases &lt;Tool&gt; Feedback &lt;Generation&gt; Code &lt;Verification&gt; Test Cases Output Rollout &lt;Generation&gt; Code &lt;Verification&gt; Test Cases Turn 1 &lt;Tool&gt; Feedback &lt;Generation&gt; Code &lt;Verification&gt; Test Cases Turn N &lt;Tool&gt; Feedback …… Memorize Incorrect Correct Generation 1 Verification 1 Tool 1 [Masked] …… Prompt Generation 2 Verification 2 Tool 2 [Masked] Tool N [Masked] Table <ref type="table">4</ref> in Appendix B illustrates a multi-turn rollout under ReVeal's structured prompting, which decouples generation, verification, and tool feedback into distinct segments. At each turn, the policy first reasons thoroughly and explores diverse reasoning patterns freely, then emits structured outputs: executable code in &lt;generation-answer&gt; and executable tests in &lt;verification-answer&gt;. As shown in the case study, after producing candidate code the model begins verification: it hypothesizes potential failure modes and edge conditions to propose diverse test cases. The &lt;tool-feedback&gt; section then records execution results, including runtime errors, invalid test cases, as well as the expected output, actual output, and pass/fail judgment for each valid test case. Based on this feedback, the model interprets traces and error messages, diagnoses underlying causes, and adjusts both its candidate code and its verification plan in the next turn. Full prompting and feedback templates are provided in Appendix B Tables <ref type="table" target="#tab_1">5</ref> and <ref type="table" target="#tab_2">6</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.2">TOOL-AUGMENTED VERIFICATION</head><p>The interaction with external tools provides reliable, fine-grained supervisory signals that condition subsequent reasoning and enable systematic refinement of both code and verification strategies across turns. More importantly, tool interaction broadens exploration during reinforcement learning by revealing concrete failure modes, steering the policy into promising regions of the search space beyond a single attempt and helping it escape local optima. Empirically (see §3.3), this yields consistently higher Pass@k than the base model.</p><p>During RL training, the &lt;tool-feedback&gt; section is excluded from the loss and used only as contextual input, which stabilizes optimization while preserving coherent multi-turn rollouts. To ensure feedback quality during training, we adopt a filtering mechanism: model-generated test cases are executed on candidate code only if they are verified against a golden solution. This guarantees that execution traces provide legitimate supervision, thereby improving feedback precision and guiding exploration toward correct solutions. At test time, no golden reference is available; all generated test cases are executed, making verification fully autonomous. This places a strong demand on the model's ability to generate high-quality tests. To meet this demand, ReVeal adopts a novel RL algorithm that incentivizes diverse and reliable test construction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">TURN-AWARE RL FOR THE GENERATION-VERIFICATION PARADIGM</head><p>Prior RLVR methods rely on outcome-only signals to optimize an entire long reasoning trace, but this provides imprecise credit to intermediate verification and often degenerates into blind reflection. Yet one may ask: can the current paradigm fully sustain reliable verification and deeper test-time scaling? Verification, however, is a non-trivial task: with well-designed verifiable rewards, a task can often be solved effectively. This motivates ReVeal to explicitly optimize verification with hard-to-hack rewards, which widen the verification-generation gap. At test time, this asymmetry becomes an asset: easier and more reliable verification signals can effectively guide the harder generation process to evolve over many turns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.1">JOINT VERIFIABLE REWARDS</head><p>To jointly train generation and verification, ReVeal decomposes the reward into three complementary components (Figure <ref type="figure" target="#fig_2">3(b)</ref>): an outcome reward supervising the final solution, a generation reward capturing improvements across generation turns, and a verification reward evaluating the quality of generated tests. This design naturally links the two roles in a co-evolutionary loop.</p><p>Outcome reward. The outcome reward shapes the entire reasoning chain by the final solution quality: r outcome = r format + r passrate , (1) where the format reward r format ensures that the model produces well-formed generation and verification blocks,</p><formula xml:id="formula_0">r format = 1, if the output format is correct, -1, otherwise,<label>(2)</label></formula><p>and r passrate = 5 × passrate measures final code accuracy with passrate ∈ [0, 1], giving r outcome ∈ <ref type="bibr">[-1, 6]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generation reward.</head><p>For each generation turn k (odd), we compute the pass rate r k passrate of the code produced and define:</p><formula xml:id="formula_1">r k gen = r 1 passrate , k = 1, abs • r k passrate + imp • r k passrate -r k-2 passrate , k ≥ 3</formula><p>, where abs and imp weight absolute accuracy and iterative improvement. We set abs = 0, imp = 1 so that the reward encourages real improvements in code accuracy across turns.</p><p>Verification reward. For each verification turn k (even), we reward the proportion of generated tests that succeed when executed on a golden code:</p><formula xml:id="formula_2">r k ver = #{test cases in turn k that pass} #{test cases generated in turn k} .<label>(3)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.2">TURN-AWARE POLICY OPTIMIZATION</head><p>Preliminaries. Our algorithm builds on the Proximal Policy Optimization (PPO) framework <ref type="bibr" target="#b15">(Schulman et al., 2017)</ref>, an on-policy actor-critic method that optimizes a clipped surrogate objective for stable updates. PPO typically estimates token-level advantages using Generalized Advantage Estimation (GAE) <ref type="bibr" target="#b16">(Schulman et al., 2018)</ref>:</p><formula xml:id="formula_3">ÂGAE(γ,λ) t = ∞ l=0 (γλ) l r t+l + γV t+l+1 -V t+l ,<label>(4)</label></formula><p>where γ ∈ [0, 1] is the discount factor and λ ∈ [0, 1] controls the bias-variance trade-off.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn-Aware Policy Optimization.</head><p>Building on our structured reward design, we introduce Turn-Aware Policy Optimization (TAPO), which preserves the PPO actor-critic framework but replaces GAE-based advantages with a turn-aware return. TAPO leverages the critic to efficiently bootstrap from both token-level Monte Carlo returns and turn-level returns, enabling stable learning across these two reward granularities.</p><p>1. Token-level return. We set λ = 1 and γ = 1 (pure Monte Carlo). For token step t with final step T :</p><formula xml:id="formula_4">R t = T -t l=0 r t+l = r t + R t+1 , R T +1 = 0.<label>(5)</label></formula><p>2. Turn-level return. To mitigate adversarial reward gaming (e.g., generating trivial code that hacks the verification reward), we introduce a turn-level return tailored to the generation-verification interplay. Specifically, (i) each generation reward is assigned both to its own generation turn and to the immediately preceding verification turn, and (ii) each verification reward is confined strictly to its own verification turn. This design prevents reward hacking by ensuring that generation turns are rewarded solely based on code quality, rather than verification success. Let {t 1 , . . . , t K } denote the token indices at which each turn ends (alternating generation and verification), and define:</p><formula xml:id="formula_5">R turn (t k ) = r k gen , if turn k is generation, r k ver + R turn (t k+1 ), if turn k is verification, R turn (t K+1 ) = 0.<label>(6)</label></formula><p>For token t, let τ (t) = min{t k | t k ≥ t} and define</p><formula xml:id="formula_6">R turn t = R turn τ (t) , if τ (t) exists, 0, otherwise. (<label>7</label></formula><formula xml:id="formula_7">)</formula><p>3. Turn-aware return. The final return combines the two levels:</p><formula xml:id="formula_8">R t = R t + R turn t , A t = R t -V t ,<label>(8)</label></formula><p>where V t is the critic model's estimate at step t. These advantages A t then replace the standard GAE estimates in the PPO objective, completing the TAPO update.</p><p>Discussion. TAPO provides sharper supervision than outcome-only methods by explicitly assigning credit at both token and turn levels. It integrates outcome rewards, which keep the process aligned with final correctness, and turn-level signals, which provide dense supervision for progressive refinement. This structure establishes a feedback loop: stronger tests expose errors that drive code improvements, which are then reinforced by the generation reward, while improved code raises the bar for verification, pushing the model to generate richer and more challenging tests. By design, TAPO prevents reward gaming and turns this loop into stable co-evolution of code and tests. Crucially, TAPO is a general credit-assignment algorithm, applicable to any reasoning task with verifiable rewards for both generation and verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">EXPERIMENTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">SETTINGS</head><p>Dataset We construct our training dataset from TACO <ref type="bibr" target="#b9">(Li et al., 2023)</ref>, a large-scale corpus comprising 26,443 algorithmic programming problems sourced from competitive programming platforms such as LeetCode (LLC, 2015) and Codeforces <ref type="bibr" target="#b1">(Codeforces, 2025)</ref>. Each problem consists of a natural language description, golden solutions, and multiple test cases.</p><p>To address noise in the raw dataset, we first filter out problems containing unsupported content types, specifically those tagged with interactive or image elements. To ensure testability and correctness, we process two types of test-case formats, function-based tests and standard input/output tests, into a unified structure compatible with our code execution environment. We then execute each test case against the first available golden solution in our execution environment. Problems where the golden code fails to pass all associated test cases are discarded. After preprocessing, we retain a high-quality dataset of 11,151 problems for training and 509 problems for testing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models and Training Details</head><p>We adopt DAPO-Qwen-32B <ref type="bibr" target="#b24">(Yu et al., 2025)</ref> as our base model, which is reinforced with mathematical data, and we continue RL training on code datasets to adapt its reasoning capabilities to coding tasks. Our models are trained using Verl <ref type="bibr" target="#b18">(Sheng et al., 2024)</ref> framework on 8/16 AMD Mi300x GPUs. The RL training process follows the hyperparameter settings listed in Table <ref type="table">2</ref>. We set maximum turns to 3 during RL training.</p><p>Evaluation We evaluate ReVeal on two code generation benchmarks: LiveCodeBench (LCB) V6 (2025.02-2025.05) <ref type="bibr" target="#b7">(Jain et al., 2024)</ref> and CodeContests <ref type="bibr" target="#b11">(Li et al., 2022)</ref>. The evaluation process follows the hyperparameter configuration specified in Table <ref type="table">3</ref>. Although training is performed with a maximum of 3 turns, we evaluate the model under extended turn settings (8 and 25 turns) to assess its generalization to longer reasoning horizons and test-time scaling performance.</p><p>We use Pass@1 to measure the success rate of the model's final code solutions. To evaluate the model's verification and self-correction capabilities, we introduce two additional metrics: ∆ ↑ denotes the fraction of initially incorrect solutions that become correct after revision, and ∆ ↓ denotes the fraction of initially correct solutions that become incorrect after revision. In line with recent work <ref type="bibr" target="#b25">(Yue et al., 2025)</ref>, we use Pass@k up to k = 128 to assess whether ReVeal can push the reasoning boundaries beyond the base model, with at most 10 generation-verification turns per example.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Mechanism for Context Management</head><p>To improve inference efficiency under extended multi-turn rollouts, we use a short-term memory mechanism that retains only the last three turns as context, which prevents excessive context growth without hurting accuracy (details in Appendix C).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Execution Tool</head><p>We use Code Judge<ref type="foot" target="#foot_0">foot_0</ref> as our code execution environment. Code Judge supports both function-based and standard input-output test case formats through a consistent interface. Designed for scalability and robustness, it enables efficient long-batch execution through multiprocessing and provides reliable code evaluation.</p><p>Baselines We compare ReVeal against the following baselines: ( <ref type="formula">1</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">MAIN RESULTS</head><p>Table <ref type="table" target="#tab_0">1</ref> shows that single-turn RL (outcome-only, no explicit optimization of self-verification or tool use) improves Pass@1 over the base models. ReVeal goes further by explicitly optimizing verification and enabling deeper inference; it surpasses the single-turn RL baseline by a wide margin. In addition to deeper-turn gains, ReVeal also achieves higher Pass@1 at turn 1 (34.8%) than the single-turn RL baseline under the same inference budget on LCB V6, indicating that multi-turn training (3 turns) transfers exploration benefits into a stronger policy and that increasing training depth may further amplify gains.</p><p>ReVeal significantly outperforms critic-based methods such as CTRL. While critic models tailored for code tasks can be paired with policy models for multi-turn critique and revision, ReVeal employs a single policy model that self-verifies and iteratively refines its own outputs, yet achieves superior More Experiments To validate effectiveness and scalability across models, we evaluate ReVeal on another base model, Qwen2.5-32B-Instruct. Detailed results are provided in Appendix D Table <ref type="table">7</ref> and Figure <ref type="figure" target="#fig_6">5</ref>. ReVeal outperforms single-turn RL baseline by 4.1%, which demonstrates the effectiveness of ReVeal. To demonstrate that the performance improvements are statistically significant, we repeated the experiment 8 times and reported the mean ± std in the Appendix D Table <ref type="table">8</ref>. Across models of varying capability, ReVeal remains effective. With the stronger DAPO-Qwen-32B backbone, ReVeal unlocks greater headroom: accuracy continues to improve with deeper inference turns and surpasses outcome-only RL by a wider margin. This underscores ReVeal's potential on stronger backbones.</p><p>To verify that the performance improvements originate from explicit optimization rather than mere tool use and prompting, we evaluate a prompt-only ReVeal baseline using the same tools and prompt, showing that ReVeal significantly outperforms this baseline across all turn budgets. Without explicit optimization for verification, the prompt-only variant fails to sustain effective deep multi-turn refinement. See Appendix E Table <ref type="table" target="#tab_3">9</ref> for details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">ANALYSIS</head><p>ReVeal Enables Test-time Scaling into Deeper Inference Regimes. As shown in Figure <ref type="figure" target="#fig_0">1</ref>(a), ReVeal enables effective test-time scaling through iterative generation and verification. Although the model is trained with a maximum of three reasoning turns, it continues to improve its solutions when more turns are allowed at inference time, leading to progressively higher code accuracy. For instance, Pass@1 increases from 34.8% at turn 1 to 36.7% at turn 3, and further rises to 38.7% by turn 25 on LiveCodeBench. This compellingly demonstrates how reliable self-verification and iterative environment feedback can enable compute scaling into deeper inference regimes, allowing ReVeal to solve previously intractable problems and evolve novel solutions. As a result, ReVeal supports selfimprovement beyond the training horizon, enabling strong generalization in long-horizon reasoning during inference. Furthermore, these newly discovered solutions can be distilled back into the code LLM to further enhance its reasoning capabilities through continued training.</p><p>ReVeal Pushes Beyond the Reasoning Boundaries of the Base Model. We compare DAPO-Qwen-32B and single-turn RL baseline with ReVeal using Pass@k metrics on LiveCodeBench. As shown in Figure <ref type="figure" target="#fig_0">1</ref>(b), the RL baseline outperforms the base model when k &lt; 32, but its performance gain gradually diminishes as k increases. In contrast, ReVeal consistently outperforms both the base model and the RL baseline across all k values from 1 to 128, demonstrating its ability to surpass the reasoning boundaries beyond the base model. We attribute this improvement to ReVeal's verificationdriven exploration: tool-assisted verification provides targeted, execution-based feedback and precise judgments that guide the model to explore better solutions more effectively. With this enhanced exploration capability, the model continually self-evolves and grows beyond its initial reasoning capability during RL training. We believe this approach offers a promising path towards developing self-evolving agents with stronger reasoning capabilities.  <ref type="formula">b</ref>) reveals that final solutions consistently outperform those generated at turn 1, with the performance gap widening over time. This trend indicates that as the model's verification ability strengthens, multi-turn refinement enables the exploration of better solutions, progressively enhancing its capacity to generate and refine code. After the format is learned, test-case accuracy rises substantially from about 50% at step 40 to nearly 88%, as shown in Figure <ref type="figure" target="#fig_4">4(d</ref>). Additionally, for correctly generated test cases, the model achieves over 85% accuracy in judging code correctness (Figure <ref type="figure" target="#fig_4">4(c</ref>)), indicating that the generated test cases have high error-detection coverage beyond high accuracy. This demonstrates that during inference, the model can reliably generate valid test cases and effectively leverage tools to produce accurate verification signals, which are critical for continuous improvements in code quality. These results provide strong evidence that ReVeal jointly and effectively optimizes both generation and verification, enabling the model to evolve its reasoning capabilities throughout training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ReVeal Co-evolves the Model's Generation and Verification Capabilities.</head><p>The Effectiveness of TAPO with Joint Verifiable Rewards. As shown in Table <ref type="table" target="#tab_0">1</ref>, TAPO with joint rewards further enhances multi-turn performance compared to relying solely on outcome rewards. Figure <ref type="figure" target="#fig_4">4(a</ref>,<ref type="figure">b</ref>) show TAPO with joint rewards achieves more stable and consistent per-turn code gains, and Figure <ref type="figure" target="#fig_4">4(c</ref>,<ref type="figure">d</ref>) show it achieves stronger verification (error-detection) capability and higher test-case accuracy, indicating that explicitly optimizing verification yields higher-quality tests and more effective reasoning in the code generation task. These benefits are amplified in longer-sequence and harder verification scenarios. On the stronger DAPO-Qwen-32B backbone with longer chains (~5k tokens), dense turn-level supervision yields larger gains than on Qwen2.5-32B-Instruct with much shorter chains (~1.8k tokens; see Table <ref type="table">7</ref> and Figure <ref type="figure" target="#fig_6">5</ref>). This is because outcome-only signals are too coarse for extremely long chains, providing imprecise credit to intermediate verification steps. Furthermore, in more challenging verification scenarios, such fine-grained supervision becomes increasingly essential, offering richer learning signals to enhance the model's verification capabilities.</p><p>4 RELATED WORK</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">TOOL-AUGMENTED REASONING</head><p>Tool-integrated reasoning enables large language models (LLMs) to leverage external tools, such as search engines or code interpreters, to overcome inherent limitations in domain knowledge and mathematical operations. Early approaches demonstrated the benefits of tool integration via prompt engineering <ref type="bibr" target="#b23">(Yao et al., 2023;</ref><ref type="bibr" target="#b0">Chen et al., 2023;</ref><ref type="bibr" target="#b19">Shinn et al., 2023)</ref> and supervised fine-tuning <ref type="bibr" target="#b5">(Gou et al., 2024)</ref>. ReAct <ref type="bibr" target="#b23">(Yao et al., 2023)</ref> and Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref> interleave reasoning with actions or self-critique under tool access to refine solutions; however, their heuristic prompting often yields inaccurate tests that cause both false negatives and positives, leading to unsustained gains. More recently, multi-turn RL has been adopted to further enhance this capability on various reasoning tasks <ref type="bibr">(Jin et al., 2025;</ref><ref type="bibr" target="#b3">Feng et al., 2025;</ref><ref type="bibr" target="#b10">Li et al., 2025)</ref>. For example, Search-R1 <ref type="bibr">(Jin et al., 2025)</ref> incorporates multi-turn interactions with a search engine to retrieve relevant contextual information during RL training. ReTool <ref type="bibr" target="#b3">(Feng et al., 2025)</ref> and ToRL <ref type="bibr" target="#b10">(Li et al., 2025)</ref> enable multi-turn code execution to support mathematical reasoning. Building on the promising potential of tool-integrated RL, Agent-R1 <ref type="bibr" target="#b14">(Ouyang et al., 2025)</ref> introduces an open-source RL framework capable of supporting multi-turn, customizable tool invocations.</p><p>Despite their effectiveness, most tool-augmented RL methods are predominantly outcome-driven: they rely on task success or failure as the sole training signal and do not explicitly optimize verification or assign credit across turns. Likewise, prompt-only agents lack turn-level, verifiable supervision, which can make self-verification unreliable on harder problems and limit sustained test-time improvement. Unlike prior tool-augmented work, ReVeal treats verification itself as a first-class optimization target alongside generation, and introduces Turn-Aware Policy Optimization rewards (TAPO) to provide fine-grained credit to both generation and verification turns. Our approach and prior tool-augmented methods are orthogonal and complementary, and can be naturally combined to further enhance reasoning capability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">SELF-VERIFICATION OF LLMS</head><p>Enabling LLMs to iteratively refine their outputs is critical for enhancing their reasoning capabilities. However, LLMs typically lack reliable self-judgment <ref type="bibr" target="#b6">(Huang et al., 2024)</ref>. One common solution is to introduce a separate critic model to verify the output of the policy model <ref type="bibr" target="#b26">(Zhang et al., 2025;</ref><ref type="bibr">Xie et al., 2025)</ref>. For example, CTRL <ref type="bibr">(Xie et al., 2025)</ref> uses RL to train a critic model for code completion tasks. Although effective, these approaches incur the cost and complexity of maintaining and coordinating two distinct models.</p><p>An alternative strategy is to enable one single model to generate outputs and self-verify them. In mathematical reasoning, <ref type="bibr" target="#b22">(Xiong et al., 2025)</ref> synthesizes long chains of thought that incorporate "self-reward" and "self-correction" signals as seed data for supervised fine-tuning, and then further enhances this ability via RL. In the code domain, execution feedback effectively verifies code correctness and provides useful information for fixing errors. RLEF <ref type="bibr" target="#b4">(Gehring et al., 2025)</ref> performs multi-turn code generation and verification with an integrated code execution tool; however, it depends on publicly available test cases, limiting its applicability.</p><p>In contrast, ReVeal advances self-verification by having the model generate its own high-quality test cases on the fly. By explicitly crafting and executing these tests, ReVeal eliminates the dependency on pre-existing test suites and improves applicability to real-world software systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION</head><p>We presented ReVeal, a multi-turn reinforcement learning (RL) framework that makes verification a first-class optimization target alongside generation and organizes long reasoning chains into iterative generation-verification turns with tool feedback. Using TAPO with joint verifiable rewards, ReVeal equips LLMs with strong verification capabilities and demonstrates the surprising power of enabling code LLMs to self-evolve-both during RL training, where it pushes boundaries beyond the base model, and at test time, where multi-turn generation and verification continually refine outputs, even up to 20+ inference turns. This compellingly demonstrates that ReVeal can enable compute scaling into deeper inference regimes, allowing it to solve previously intractable problems and evolve novel solutions. Furthermore, these newly discovered solutions can be distilled back into the code LLM to further enhance its reasoning capabilities through continued training.</p><p>Although we demonstrate ReVeal on code tasks, its general concept of generation-verification, TAPO, and turn-level reward design can be applied to any domain with verifiable rewards for both generation and verification and that exhibits verification asymmetry, offering a promising blueprint for future advances in self-improving, more robust, and autonomous AI agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 4: Case Study of ReVeal Performing Iterative Generation and Verification</head><p>Question:</p><p>The Two-dimensional kingdom has a regular army of n people... The Two-dimensional kingdom has m vests at its disposal, the j-th vest's size equals b j . Help mobilize the Two-dimensional kingdom's army: equip with vests as many soldiers as possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Response: &lt;generation-think&gt;</head><p>The problem can be solved using a dual circulation.</p><p>Here's a step-by-step approach to the solution: ... Wait, I can use a greedy approach to solve this problem. Let me try the greedy algorithm by following steps: ... &lt;/generation-think&gt; &lt;generation-answer&gt; ```python def equip_soldiers(n, m, x, y, a, b): ... ``&lt; /generation-answer&gt; &lt;verification-think&gt; Now, we will verify the code with the provided test cases.</p><p>-Example Input 1 should result in matching 2 pairs: (Soldier at index 1 with Vest at index 1) and (Soldier at index 3 with Vest at index 2). There is no possible matching for the remaining soldiers with the available vests within the given range. Wait, I could add an extra test case for verification: more vests than soldiers... &lt;/verification-think&gt; &lt;verification-answer&gt; -Input: ```1 3 5 ``-Expected Output: ```3 2 ``.</p><p>.. &lt;/verification-answer&gt; &lt;tool-feedback&gt; ...</p><p>-Actual Output: ```3 1 ``-Judgement: Failed ... &lt;/tool-feedback&gt; &lt;generation-think&gt; The initial code provided did not successfully handle the actual output as expected. There is a discrepancy where the vest index tracked in the loop is not correctly being reset or updated... Alternatively, I should create a list that keeps track of which vests have already been used and adjust the code logic to ensure each vest is used only once. Here is a revised version of the code: ... &lt;/verification-answer&gt; &lt;tool-feedback&gt; ... -Actual Output: ```3 2 ``-Judgement: Passed ... &lt;/tool-feedback&gt; Table 6 shows the mapping between execution results and hint templates: (1) for test cases that are verified as successful, we give a [Passed] signal in the judgement area; (2) for test cases that are verified as failed, we give a [Failed] signal in the judgement area; (3) for test cases that are verified as wrong, we give a clear feedback of [Wrong test case] for individual failures, or [No correct test cases generated] if all test cases are invalid; (4) for format error, we will give the feedback of formatting instructions to guide correct generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C THE EFFECTIVENESS OF SHORT-TERM MEMORY</head><p>To ensure context understanding in long interaction loops, we adopt a short-term memory component, which implements a short-term memory mechanism that leverages in-context learning to store recent generation-verification loops within the contextual window. The system maintains a rolling history of the most recent interactions, including code generations, test verifications, and tool feedback. Critical information such as successful patterns, error types, and effective test structures are preserved in complete formats. This structured memory representation enables the model to quickly identify relevant patterns from recent history and build upon previous attempts, leading to faster convergence and reduced redundant exploration in the solution space.</p><p>We compare models with and without memory integration. The baseline model without memory provides complete historical information from all previous turns directly to the model, maintaining full contextual details throughout the interaction sequence. We verified the impact of ReVeal on Pass@1 on LiveCodeBench with and without memory. Test results indicate that introducing shortterm memory does not cause a decline in Pass@1 (w/o memory 38.2% vs. w/ memory 38.3% at turn 15), and may even yield a slight performance boost. This sustained improvement capability highlights the memory mechanism's effectiveness in enabling continuous learning and adaptation within computational constraints.  indicating that simply changing prompts or enabling tools is insufficient. In contrast, ReVeal with RLtrained verification delivers consistent gains and markedly higher verification reliability; for example, test-case accuracy improves from around 50% to about 88% after training (Figure <ref type="figure" target="#fig_4">4</ref>(d)), confirming that the gains chiefly stem from explicitly optimized self-verification rather than prompting or tool use alone. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Performance of ReVeal on LiveCodeBench V6. (a) ReVeal enables effective test-time scaling, with Pass@1 accuracy improving from 34.8% at turn 1 to 38.7% at turn 25. (b) ReVeal (max_turn=10) consistently outperforms both the base model and the RL baseline in Pass@k, expanding the base model's reasoning boundaries, which the RL baseline fails to achieve.</figDesc><graphic coords="1,286.97,436.03,221.02,147.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: ReVeal expands the V-G gap.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of ReVeal. (a) Iterative generation-verification loop with tool feedback. (b) TAPO with joint verifiable rewards: outcome, generation, and verification rewards.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>) Base: base models without code-specific RL training; (2) CTRL(Xie et al., 2025) + Qwen2.5-Coder-32B-Instruct: five-turn critic-revision with a dedicated critic model; results cited from the original paper (evaluated on LCB 24.08-24.11); (3) Single-turn RL with outcome reward: RL with outcome-only rewards under standard &lt;think&gt;-&lt;answer&gt; prompting template without any external tool calls.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Training curves of (a) first-turn code accuracy, (b) last-turn code accuracy, (c) last-turn verification accuracy on filtered correct test cases, and (d) last-turn test-case accuracy for three methods. Note on (b): the dip before step 40 is due to expanded evaluation coverage: as format score reaches 0.9 around step 40, more problems enter the evaluation set, temporarily lowering accuracy.</figDesc><graphic coords="8,107.06,186.67,199.02,106.14" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Figure 4(b) and (d) illustrate the co-evolution of the model's code and test case generation capabilities. As shown in Figure 4(b), once the format is learned, final code accuracy steadily improves during training and significantly surpasses the single-turn RL baseline. Moreover, comparing Figure 4(a) and (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Comparison of code accuracy, test case accuracy, and response length across training for ReVeal (Qwen2.5-32B-Instruct) with turn-level rewards, ReVeal with outcome-only rewards, and single-turn RL without tool integration.</figDesc><graphic coords="19,106.18,186.28,197.59,105.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison of ReVeal with baseline methods on LiveCodeBench V6 and CodeContests. Pass@1 indicates the success rate; ∆ ↑ and ∆ ↓ represent the percentages of incorrect solutions corrected and correct solutions degraded after revision, respectively.</figDesc><table><row><cell>Model</cell><cell cols="3">LiveCodeBench V6</cell><cell cols="3">CodeContests</cell></row><row><cell></cell><cell cols="2">Pass@1 ∆ ↑</cell><cell>∆ ↓</cell><cell cols="2">Pass@1 ∆ ↑</cell><cell>∆ ↓</cell></row><row><cell cols="3">Existing Baselines</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Qwen2.5-32B-Instruct</cell><cell>24.8</cell><cell>-</cell><cell>-</cell><cell>13.3</cell><cell>-</cell><cell>-</cell></row><row><cell>DAPO-Qwen-32B</cell><cell>31.1</cell><cell>-</cell><cell>-</cell><cell>18.5</cell><cell>-</cell><cell>-</cell></row><row><cell>Qwen2.5-Coder-32B-Instruct</cell><cell>29.5</cell><cell>-</cell><cell>-</cell><cell>14.6</cell><cell>-</cell><cell>-</cell></row><row><cell>w/ critic×5 Qwen2.5-Coder</cell><cell>29.6</cell><cell>2.14</cell><cell>3.04</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>w/ critic×5 GPT-4o</cell><cell>32.9</cell><cell>4.82</cell><cell>2.50</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>w/ critic×5 CTRL</cell><cell>33.4</cell><cell>3.75</cell><cell>0.89</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="4">RL based on DAPO-Qwen-32B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Single-turn RL</cell><cell>32.8</cell><cell>-</cell><cell>-</cell><cell>21.0</cell><cell>-</cell><cell>-</cell></row><row><cell>ReVeal×25</cell><cell>38.7</cell><cell>7.50</cell><cell>0.0</cell><cell>33.6</cell><cell>15.69</cell><cell>0.0</cell></row><row><cell cols="5">Ablation Study: TAPO with Joint Verifiable Rewards</cell><cell></cell><cell></cell></row><row><cell>ReVeal×8 w/ outcome reward</cell><cell>36.1</cell><cell>4.69</cell><cell>1.32</cell><cell>27.4</cell><cell>9.24</cell><cell>2.36</cell></row><row><cell>ReVeal×8 w/ TAPO with joint rewards</cell><cell>37.7</cell><cell>5.62</cell><cell>0.0</cell><cell>30.4</cell><cell>12.30</cell><cell>0.0</cell></row></table><note><p>results, highlighting the benefit of jointly optimizing generation and verification. Specifically, ReVeal attains larger correction rates with near-zero degradation, demonstrating highly robust and reliable capabilities in self-verification, critique, and revision. (CTRL numbers are cited from earlier LCB version; see Table7</p><p>for a V5 comparison on Qwen2.5-32B-Instruct.) Ablation studies confirm the benefit of TAPO with joint verifiable rewards: at the same turn budget it yields higher Pass@1, increases ∆ ↑ , and suppresses ∆ ↓ compared to outcome-only training. In contrast, outcome-only rewards exhibit higher ∆ ↓ , indicating that insufficiently optimized verification can drive incorrect revisions.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 5 :</head><label>5</label><figDesc>Comparison Between Think-Answer Prompt and ReVeal PromptExtract sample test cases if the problem description includes them. When necessary, generate a small number of additional test cases to validate the correctness of the generated code. 2. Enclose your reasoning process in &lt;verification-think&gt; &lt;/verification-think&gt; tags and enclose the final test cases and your verification conclusion within &lt;verification-answer&gt; &lt;/verification-answer&gt; tags and wrap each test case using the following</figDesc><table><row><cell>Think-Answer Prompt</cell><cell>ReVeal Prompt</cell></row><row><cell>system</cell><cell>system</cell></row><row><cell>You are Qwen, created by Alibaba Cloud. You are</cell><cell>You are Qwen, created by Alibaba Cloud. You are a helpful assistant.</cell></row><row><cell>a helpful assistant.</cell><cell>user</cell></row><row><cell>user</cell><cell>{question}</cell></row><row><cell>{question}</cell><cell></cell></row><row><cell></cell><cell>First think through the reasoning process and write Python</cell></row><row><cell>First think about the reasoning process in the mind</cell><cell>code to solve the problem, enclose your reasoning process in &lt;generation-think&gt;</cell></row><row><cell>and then provides the user with the answer. The</cell><cell>&lt;/generation-think&gt; and present the code in</cell></row><row><cell>reasoning process and answer are enclosed within</cell><cell>```python</cell></row><row><cell>&lt;think&gt; &lt;/think&gt; and &lt;answer&gt; &lt;/answer&gt; tags,</cell><cell>Your code</cell></row><row><cell>respectively, i.e., &lt;think&gt; reasoning process here</cell><cell>``ẁ</cell></row><row><cell>&lt;/think&gt; &lt;answer&gt; answer here &lt;/answer&gt;.</cell><cell>ithin &lt;generation-answer&gt; &lt;/generation-answer&gt; tags. After that, verify your</cell></row><row><cell>Enclose your code within delimiters as follows.</cell><cell>code by generating test cases:</cell></row><row><cell>```python</cell><cell></cell></row><row><cell>YOUR CODE HERE ``à ssistant</cell><cell>1. format:</cell></row><row><cell></cell><cell>-Input:</cell></row><row><cell></cell><cell>``t</cell></row><row><cell></cell><cell>estcase input</cell></row><row><cell></cell><cell>``-</cell></row><row><cell></cell><cell>Expected Output:</cell></row><row><cell></cell><cell>``è</cell></row><row><cell></cell><cell>xpected testcase output</cell></row><row><cell></cell><cell>``3</cell></row><row><cell></cell><cell>. Note that for "Use Call-Based format" questions, the testcase input should use a</cell></row><row><cell></cell><cell>function call format, e.g., fn_name(12, 12, 12).</cell></row><row><cell></cell><cell>assistant</cell></row><row><cell cols="2">B.4 TEMPLATES USED FOR TOOL FEEDBACK</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>Tool Feedback Templates for Different Execution Result Types.</figDesc><table><row><cell>Execution Results</cell><cell>Feedback</cell></row><row><cell></cell><cell>-Input:</cell></row><row><cell></cell><cell>{input}</cell></row><row><cell></cell><cell>-Expected Output:</cell></row><row><cell></cell><cell>{expected output}</cell></row><row><cell>Success Test cases</cell><cell>-Actual Output:</cell></row><row><cell></cell><cell>{actual output}</cell></row><row><cell></cell><cell>-Judgement</cell></row><row><cell></cell><cell>Passed</cell></row><row><cell></cell><cell>-Input:</cell></row><row><cell></cell><cell>{input}</cell></row><row><cell></cell><cell>-Expected Output:</cell></row><row><cell></cell><cell>{expected output}</cell></row><row><cell></cell><cell>-Actual Output:</cell></row><row><cell>Failed Test cases</cell><cell>{actual output}</cell></row><row><cell></cell><cell>-Judgement</cell></row><row><cell></cell><cell>Failed</cell></row><row><cell></cell><cell>-Failed Reason</cell></row><row><cell></cell><cell>{failed reason}</cell></row><row><cell></cell><cell>-Input:</cell></row><row><cell></cell><cell>{input}</cell></row><row><cell></cell><cell>-Expected Output:</cell></row><row><cell></cell><cell>{expected output}</cell></row><row><cell>Wrong Test Cases</cell><cell>-Actual Output: {actual output}</cell></row><row><cell></cell><cell>-Judgement</cell></row><row><cell></cell><cell>Wrong test case.</cell></row><row><cell></cell><cell>No correct test cases are generated.</cell></row><row><cell></cell><cell>No valid code because of the incorrect format. Write Python code again, and</cell></row><row><cell></cell><cell>present the code in</cell></row><row><cell></cell><cell>```python</cell></row><row><cell></cell><cell>Your code</cell></row><row><cell></cell><cell>``ẁ</cell></row><row><cell></cell><cell>ithin &lt;generation-answer&gt; &lt;/generation-answer&gt; tags. After that, verify your</cell></row><row><cell></cell><cell>code by generating test cases:</cell></row><row><cell></cell><cell>1. Extract sample test cases if the problem description includes them...</cell></row><row><cell>Error Format</cell><cell>2. Wrap each test case using the following format:</cell></row><row><cell></cell><cell>-Input:</cell></row><row><cell></cell><cell>``t</cell></row><row><cell></cell><cell>estcase input</cell></row><row><cell></cell><cell>``-</cell></row><row><cell></cell><cell>Expected Output:</cell></row><row><cell></cell><cell>``è</cell></row><row><cell></cell><cell>xpected testcase output</cell></row><row><cell></cell><cell>```1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 9 :</head><label>9</label><figDesc>Performance comparison of ReVeal with prompt-only variant on Qwen2.5-32B-Instruct. Pass@1 indicates the success rate; ∆ ↑ and ∆ ↓ represent the percentages of incorrect solutions corrected and correct solutions degraded after revision, respectively.</figDesc><table><row><cell>Model</cell><cell></cell><cell>LiveCodeBench V5</cell><cell></cell></row><row><cell></cell><cell>Pass@1</cell><cell>∆ ↑</cell><cell>∆ ↓</cell></row><row><cell>ReVeal Prompting w/o Training</cell><cell></cell><cell></cell><cell></cell></row><row><cell>×1 turn</cell><cell>26.3</cell><cell>-</cell><cell>-</cell></row><row><cell>×3 turn</cell><cell>27.5</cell><cell>-</cell><cell>-</cell></row><row><cell>×6 turn</cell><cell>27.4</cell><cell>2.40</cell><cell>1.31</cell></row><row><cell>ReVeal</cell><cell></cell><cell></cell><cell></cell></row><row><cell>×1 turn</cell><cell>35.7</cell><cell>-</cell><cell>-</cell></row><row><cell>×3 turn</cell><cell>37.5</cell><cell>-</cell><cell>-</cell></row><row><cell>×6 turn</cell><cell>38.0</cell><cell>3.41</cell><cell>0.0</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/0xWJ/code-judge</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A THE USE OF LARGE LANGUAGE MODELS</head><p>In preparing this manuscript, we used a large language model (LLM) solely for polishing the writing style and improving the clarity of the manuscript. The LLM was not used for generating research ideas, designing experiments, conducting analyses, or deriving results. All scientific contributions, including the conceptualization, methodology, experiments, and conclusions, were developed entirely by the authors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B IMPLEMENTATION DETAILS</head><p>B.1 HYPERPARAMETERS Table <ref type="table" target="#tab_4">2</ref> and Table <ref type="table">3</ref> show the detailed hyperparameters we use during training and evaluation. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D MORE EXPERIMENTS ON QWEN2.5-32B-INSTRUCT</head><p>Main Results. To further validate the effectiveness and scalability of ReVeal across different base models, we additionally conduct experiments on Qwen2.5-32B-Instruct. As shown in Table <ref type="table" target="#tab_5">7</ref>, ReVeal achieves a 4.1% improvement in Pass@1 over the single-turn RL baseline. Moreover, using TAPO with joint verifiable rewards yields higher Pass@1 compared to ReVeal with outcome-only reward, while maintaining a higher ∆ ↑ and near-zero ∆ ↓. These results demonstrate that ReVeal remains effective and stable across backbones of varying capability.</p><p>Training Curves. Figure <ref type="figure">5</ref> shows concurrent improvements in both code accuracy and test-case accuracy when using TAPO with joint rewards, indicating that explicitly optimizing self-verification leads to more reliable verification and drives stronger multi-turn refinement, echoing our main findings on DAPO-Qwen-32B.</p><p>Significance. To demonstrate that the performance improvements are statistically significant, we repeated the experiment 8 times and reported the mean ± std in Table <ref type="table" target="#tab_6">8</ref>, confirming the significance of the gains. To verify that the performance improvements originate from explicit optimization rather than mere tool use and prompting, we evaluate a prompt-only ReVeal variant on Qwen2.5-32B-Instruct that keeps the same ReVeal prompt and the same code-execution tool, but performs no RL training. As shown in Table <ref type="table">9</ref>, this prompt-only setup fails to sustain effective deep multi-turn refinement,</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 2 :</head><label>2</label><figDesc>RL Training Hyperparameters for ReVeal-Qwen2.5-32B-Instruct and ReVeal-DAPO-Qwen-</figDesc><table><row><cell>32B</cell><cell></cell><cell></cell></row><row><cell>Parameter</cell><cell cols="2">Qwen2.5-32B-Instruct DAPO-Qwen-32B</cell></row><row><cell>Max Turn</cell><cell>3</cell><cell>3</cell></row><row><cell>Training Batch Size</cell><cell>128</cell><cell>1024</cell></row><row><cell>Mini-Batch Size</cell><cell>16</cell><cell>256</cell></row><row><cell>Learning Rate (Actor)</cell><cell>5 × 10 -7</cell><cell>1 × 10 -6</cell></row><row><cell>Learning Rate (Critic)</cell><cell>1 × 10 -5</cell><cell>1 × 10 -5</cell></row><row><cell>KL Coefficient</cell><cell>0.0</cell><cell>0.0</cell></row><row><cell>Maximum Prompt Length</cell><cell>4,096</cell><cell>4,096</cell></row><row><cell>Maximum Response Length</cell><cell>8,192</cell><cell>12,288</cell></row><row><cell>Maximum Tool Response Length</cell><cell>4,096</cell><cell>4,096</cell></row><row><cell>Temperature</cell><cell>1.0</cell><cell>1.0</cell></row><row><cell>Training Epochs</cell><cell>4</cell><cell>10</cell></row><row><cell cols="3">Table 3: RL Evaluation Hyperparameters for Qwen2.5-32B-Instruct and DAPO-Qwen-32B</cell></row><row><cell>Parameter</cell><cell cols="2">Qwen2.5-32B-Instruct DAPO-Qwen-32B</cell></row><row><cell>Maximum Prompt Length</cell><cell>4,096</cell><cell>4,096</cell></row><row><cell>Maximum Response Length</cell><cell>20,480</cell><cell>32,768</cell></row><row><cell>Maximum Tool Response Length</cell><cell>4,096</cell><cell>4,096</cell></row><row><cell>Do Sample</cell><cell>True</cell><cell>True</cell></row><row><cell>Temperature for Pass@1</cell><cell>0.6</cell><cell>0.6</cell></row><row><cell>Top_p for Pass@1</cell><cell>0.9</cell><cell>0.9</cell></row><row><cell>Rollout for Pass@1</cell><cell>10</cell><cell>10</cell></row><row><cell>Temperature for Pass@k</cell><cell>0.6</cell><cell>0.6</cell></row><row><cell>Top_p for Pass@k</cell><cell>0.9</cell><cell>0.9</cell></row><row><cell>Rollout for Pass@k</cell><cell>128</cell><cell>128</cell></row><row><cell>B.2 CASE STUDY OF REVEAL</cell><cell></cell><cell></cell></row><row><cell>Table 4 shows a detailed case of ReVeal.</cell><cell></cell><cell></cell></row><row><cell>B.3 PROMPT TEMPLATES</cell><cell></cell><cell></cell></row></table><note><p>Table5</p><p>shows the comparison between the commonly used Think-Answer prompt and our Generation-Verification Prompt. Our prompt guides the model to continuously alternate between generation and verification until the correct answer is obtained. Additionally, to enable the extraction of code generated by the model for providing accurate training rewards, we instruct the model to enclose the code within python blocks.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Performance comparison of ReVeal (Qwen2.5-32B-Instruct) with baseline methods on LiveCodeBench. Pass@1 indicates the success rate; ∆ ↑ and ∆ ↓ represent the percentages of incorrect solutions corrected and correct solutions degraded after revision, respectively.</figDesc><table><row><cell>Model</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Significance test of ReVeal (Qwen2.5-32B-Instruct) on LiveCodeBench V5. mean ± std indicates the average code Pass@1 from 8 repeated experiments.</figDesc><table><row><cell>Model</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.12588" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Codeforces -competitive programming platform</title>
+		<author>
+			<persName><surname>Codeforces</surname></persName>
+		</author>
+		<ptr target="https://codeforces.com/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2028" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.12948" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<pubPlace>Ziyang Song, Zizheng Pan</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Zhen Huang, Zhipeng Xu, Zhongyu Zhang, and Zhen Zhang. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.11536" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Rlef: Grounding code llms in execution feedback with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunhao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vegard</forename><surname>Mella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taco</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.02089" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Tora: A tool-integrated reasoning agent for mathematical problem solving</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.17452" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Large language models cannot self-correct reasoning yet</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Huaixiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.01798" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Armando Solar-Lezama, Koushik Sen, and Ion Stoica. Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">King</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.07974" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.09516" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rongao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Taco</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.14852" />
+		<title level="m">Topics in algorithmic code generation dataset</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Torl: Scaling tool-integrated rl</title>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.23383" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><forename type="middle">Dal</forename><surname>Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyprien</forename><surname>De Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esme</forename><surname>Sutherland Robson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.07814</idno>
+		<title level="m">Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. Competition-level code generation with alphacode</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Online coding platform for technical interview preparation</title>
+		<author>
+			<persName><forename type="first">Llc</forename><surname>Leetcode</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leetcode</surname></persName>
+		</author>
+		<ptr target="https://leetcode.com/" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Learning to reason with llms</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/learning-to-reason-with-llms/" />
+		<imprint>
+			<date type="published" when="2025-03-15">15 March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Training powerful llm agents with end-to-end reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiran</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucong</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyue</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://github.com/0russwest0/Agent-R1" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1707.06347" />
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">High-dimensional continuous control using generalized advantage estimation</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1506.02438" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Learning to explore enables extrapolation of test-time compute for llms</title>
+		<author>
+			<persName><forename type="first">Amrith</forename><surname>Setlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">R</forename><surname>Matthew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Greer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Virginia</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Simchowitz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.09026" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">Hybridflow: A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.11366" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Asymmetry of verification and the verifier&apos;s law</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<ptr target="https://www.jasonwei.net/blog/asymmetry-of-verification-and-verifiers-law" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Teaching language models to critique via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zhihui</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weichao</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.03492" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Selfrewarding correction for mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanning</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502" />
+		<imprint>
+			<date type="published" when="2025">2025. 19613</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2210.03629" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Dapo: An open-source llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bole</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mofan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaze</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongli</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangpeng</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Qin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.14476" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Does reinforcement learning really incentivize reasoning capacity in llms beyond the base model?</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaokai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.13837" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Generative verifiers: Reward modeling as next-token prediction</title>
+		<author>
+			<persName><forename type="first">Lunjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Kazemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.15240" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

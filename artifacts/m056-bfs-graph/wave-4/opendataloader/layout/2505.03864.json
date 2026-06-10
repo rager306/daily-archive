@@ -1,0 +1,3350 @@
+{
+  "layout": {
+    "author": "Qiaomu Li",
+    "creation date": "D:20250506163023Z00'00'",
+    "file name": "2505.03864.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          72.0,
+          635.546,
+          539.637,
+          719.964
+        ],
+        "content": "From Glue-Code to Protocols: A Critical Analysis of A2A and MCP Integration for Scalable Agent Systems",
+        "font": "CambriaMath",
+        "font size": 21.647,
+        "heading level": 1,
+        "id": 17,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          563.227,
+          360.292,
+          625.167
+        ],
+        "content": "Qiaomu Li Ying Xie College of Computing and Software College of Computing and Software Engineering Engineering Kennesaw State University Kennesaw State University Marietta, GA 30060, USA Marietta, GA 30060, USA qli12@students.kennesaw.edu yxie2@kennesaw.edu",
+        "font": "TimesNewRomanPS-ItalicMT",
+        "font size": 9.12,
+        "id": 18,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          495.851,
+          139.722,
+          517.911
+        ],
+        "content": "Abstract",
+        "font": "TimesNewRomanPSMT",
+        "font size": 19.92,
+        "heading level": 2,
+        "id": 19,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.21176470816135406, 0.37254902720451355, 0.5686274766921997]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          221.324,
+          540.001,
+          487.573
+        ],
+        "content": "Artificial intelligence is rapidly evolving towards multi-agent systems where numerous AI agents collaborate and interact with external tools. Two key open standards, Google's Agent to Agent (A2A) protocol for inter-agent communication and Anthropic's Model Context Protocol (MCP) for standardized tool access, promise to overcome the limitations of fragmented, custom integration approaches. While their potential synergy is significant, this paper argues that effectively integrating A2A and MCP presents unique, emergent challenges at their intersection, particularly concerning semantic interoperability between agent tasks and tool capabilities, the compounded security risks arising from combined discovery and execution, and the practical governance required for the envisioned \"Agent Economy\". This work provides a critical analysis, moving beyond a survey to evaluate the practical implications and inherent difficulties of combining these horizontal and vertical integration standards. We examine the benefits (e.g., specialization, scalability) while critically assessing their dependencies and trade-offs in an integrated context. We identify key challenges increased by the integration, including novel security vulnerabilities, privacy complexities, debugging difficulties across protocols, and the need for robust semantic negotiation mechanisms. In summary, A2A+MCP offers a vital architectural foundation, but fully realizing its potential requires substantial advancements to manage the complexities of their combined operation.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 20,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          188.714,
+          289.966,
+          207.196
+        ],
+        "content": "1. Introduction and Motivation",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 21,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          86.924,
+          540.002,
+          179.173
+        ],
+        "content": "The trajectory of Artificial Intelligence (AI) increasingly points towards complex ecosystems of interacting, specialized agents [24, 33]. These Multi-Agent Systems (MAS) promise enhanced capabilities but face fundamental challenges in coordination, communication, interaction with diverse external tools and data sources [15, 27], knowledge organization, and integrating expertise [43]. Historically, integrating heterogeneous agents and tools required bespoke, brittle \"glue code,\" hindering the development of scalable and robust systems [10].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 22,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          579.644,
+          540.001,
+          719.413
+        ],
+        "content": "Two prominent open standards have emerged to address these bottlenecks: Anthropic's Model Context Protocol (MCP) standardizes the \"vertical\" interaction between an agent and its environment (tools, data), while Google's Agent-to-Agent (A2A) protocol standardizes the \"horizontal\" communication and collaboration between agents [1, 2, 5, 6]. MCP offers a universal interface for tool access, reducing the M x N integration problem for tools [42]. A2A provides a framework for agent discovery, task delegation, and secure inter-agent communication, offering a modern alternative to traditional, often semantically rigid, Agent Communication Languages (ACLs) [16]. Multi-agent architectures, leveraging specialized agents and coordination mechanisms, are being proposed as solutions to the limitations of standalone LLMs [17, 43].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 23,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          441.164,
+          540.001,
+          565.093
+        ],
+        "content": "While these protocols are explicitly designed to be complementary, their effective integration is not automatic. This paper provides a critical analysis focused specifically on the synergy and difficulties arising from the combination of A2A and MCP. Our central argument is that while integrating these standards offers substantial potential benefits, it also introduces unique, emergent challenges that must be addressed for realizing seamless, scalable agent systems. The novelty of our contribution lies in moving beyond surveying the individual protocols to critically evaluating the practical effects, architectural trade-offs, and specific risks at the intersection of horizontal (A2A) and vertical (MCP) integration.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 24,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          365.804,
+          539.999,
+          426.613
+        ],
+        "content": "We analyze how benefits like specialization are impacted by the need for semantic alignment between A2A tasks and MCP tools. We examine how security risks grow when A2A's agent discovery is combined with MCP's tool execution capabilities. We assess the feasibility of the \"Agent Economy\" from A2A/MCP interactions.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 25,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          227.324,
+          539.997,
+          351.493
+        ],
+        "content": "This analysis proceeds as follows: Section 2 recaps the core components of A2A and MCP. Section 3 presents a taxonomy of integration benefits, critically evaluating their practical realization in an integrated context. Section 4 discusses architectural integration patterns, highlighting potential difficulties at the interface. Section 5 analyzes the economic implications and the \"Agent Economy\" concept through a critical perspective. Section 6 delves into the risks and challenges specifically increased or created by the integration. Section 7 outlines future research directions to overcome these integration-specific hurdles. Figure 1 provides a conceptual overview.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 26,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          183.9,
+          485.375,
+          428.1,
+          720.0
+        ],
+        "id": 33,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "2505.03864_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          182.953,
+          457.244,
+          429.045,
+          470.533
+        ],
+        "content": "Fig. 1. The multi-agent workflow with A2A + MCP",
+        "font": "TimesNewRomanPS-ItalicMT",
+        "font size": 12.0,
+        "id": 27,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          424.634,
+          335.402,
+          443.116
+        ],
+        "content": "2. Background: Protocol Components",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 28,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          370.364,
+          540.0,
+          415.333
+        ],
+        "content": "The emergence of LLM-based agents has driven the need for standardized interaction mechanisms like A2A and MCP. Equipping LLMs with external tools is now a key paradigm [34, 40, 41].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 29,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          340.363,
+          421.281,
+          356.363
+        ],
+        "content": "2.1 Google's A2A Protocol: Enabling Agent Collaboration",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 30,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          222.764,
+          540.001,
+          331.093
+        ],
+        "content": "The Agent-to-Agent (A2A) protocol is an open standard introduced by Google to enable direct communication and interoperability between AI agents across frameworks and vendors [1]. Its core purpose is to let agents coordinate actions and share information in a structured way, rather than treating other agents merely as tools or static API endpoints. A2A defines a client–server style interaction between agents: a client agent formulates tasks and requests, and a remote agent acts on those tasks, returning results or performing actions. Importantly, any agent can play either role depending on the context. Key components and features of A2A include:",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 31,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          77.25,
+          74.684,
+          540.03,
+          214.453
+        ],
+        "id": 32,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              106.124,
+              540.001,
+              214.453
+            ],
+            "content": "● Core Design Principles: A2A is built on principles like embracing agentic capabilities (recognizing agents as autonomous entities), leveraging existing web standards (HTTP, JSON-RPC 2.0, SSE) for easier adoption, being secure by default (enterprise-grade authentication/authorization), supporting long-running asynchronous tasks, and being modality-agnostic (handling text, files, streams, JSON, etc.). The concept of \"opaque execution\" allows agents to collaborate based on advertised capabilities without needing internal implementation details.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              74.684,
+              540.03,
+              103.573
+            ],
+            "content": "● Agent Discovery (Agent Cards): A2A provides a mechanism for agents to advertise their capabilities in a standardized format called an Agent Card. Typically hosted at a /.well-",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 35,
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          77.25,
+          112.844,
+          540.039,
+          719.413
+        ],
+        "id": 35,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              95.25,
+              610.844,
+              539.996,
+              719.413
+            ],
+            "content": "known/agent.json URL, this JSON document describes the agent's name, description, endpoint URL, provider info, version, authentication requirements (mirroring OpenAPI schemes), supported modalities (MIME types), and specific skills [1, 6]. Each skill includes an ID, name, description, tags, optional examples, and skill-specific input/output modes. This allows a client agent to discover which remote agent is best suited for a given task, potentially querying registries or marketplaces. Ensuring the security and reliability of this discovery process is itself a challenge [21, 28].",
+            "font": "SimSun",
+            "font size": 12.0,
+            "id": 34,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              498.284,
+              540.037,
+              608.293
+            ],
+            "content": "● Tasks and Task Lifecycle: The fundamental unit of work is a Task object, initiated by the client (e.g., via tasks/send) [1, 6]. Each task has a unique ID and encapsulates a request (including parameters, desired skill, etc.). It progresses through a defined lifecycle managed by the remote agent, with states like submitted, working, input-required, completed, failed, canceled, and unknown. Tasks facilitate the exchange of Messages and the generation of Artifacts. A Task object contains fields like id, skillId, state, optional sessionId, the initial message, and optional notification configurations.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              418.124,
+              539.998,
+              495.493
+            ],
+            "content": "● Messaging and Parts: Communications within a task occur via Message objects. Each message has a role (user or agent) and contains one or more Part objects representing the content [1, 6]. Parts are the fundamental content units and can be of different MIME types, supporting rich, multimodal communication (e.g., TextPart, FilePart for binary data/URIs, DataPart for structured JSON).",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              337.244,
+              540.037,
+              415.093
+            ],
+            "content": "● Artifacts: Immutable outputs or results generated by the remote agent during task execution are represented as Artifact objects [1, 6]. A task can produce multiple artifacts (e.g., code and documentation). Artifacts contain Part objects and include fields like name, description, parts, metadata, and index for ordering. Optional append and lastChunk flags support streaming updates.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              256.844,
+              540.0,
+              334.693
+            ],
+            "content": "● Communication Protocol (JSON-RPC & SSE): A2A uses JSON-RPC 2.0 over HTTP(S) for remote procedure calls. Key methods include tasks/send (initiate task), tasks/sendSubscribe (initiate and subscribe via SSE), tasks/get (retrieve task status), tasks/cancel (request cancellation), and methods for managing push notifications (tasks/pushNotification/set, tasks/pushNotification/get).",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              160.124,
+              540.039,
+              253.813
+            ],
+            "content": "● Long-Running Tasks & Streaming Updates: A2A explicitly supports long-running processes via asynchronous handling. Clients typically use tasks/sendSubscribe. The server responds immediately and establishes a persistent Server-Sent Events (SSE) connection (Content-Type: text/event-stream) to push updates (e.g., TaskStatusUpdateEvent, TaskArtifactUpdateEvent) as they occur. Webhook-based push notifications are also supported for disconnected clients.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              112.844,
+              539.995,
+              157.573
+            ],
+            "content": "● UX Negotiation: Agents can advertise supported input/output modes in their Agent Cards and use multi-part messages to offer content in various formats, allowing the client to select the best representation for its UI or capabilities.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 7,
+        "numbering style": "unordered",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "previous list id": 32,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          540.6,
+          540.0,
+          720.0
+        ],
+        "id": 42,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2505.03864_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          234.847,
+          524.924,
+          377.151,
+          538.213
+        ],
+        "content": "Fig. 2. The workflow of A2A",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 36,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          354.764,
+          540.001,
+          510.373
+        ],
+        "content": "A2A Example: Consider a hiring scenario. A “Hiring Manager Agent” needs to fill a software engineer position. Using A2A, it discovers a “Recruiter Agent” via its Agent Card, which lists skills like \"candidate sourcing\" and supported input/output modes. The Hiring Manager Agent sends a task: “Find candidates with skill X in location Y.” The Recruiter Agent accepts the task. It might use its internal capabilities (possibly via MCP) to query LinkedIn. As it finds candidates, it streams back partial results (Artifacts containing candidate profiles) via SSE over the A2A connection. The Hiring Manager Agent could then delegate subsequent tasks – scheduling interviews, background checks – to other specialized agents (Calendar Agent, HR Agent) via separate A2A tasks. A2A manages the secure communication, task state tracking, and multimodal data exchange throughout this workflow.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 37,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          324.763,
+          465.784,
+          340.763
+        ],
+        "content": "2.2 Anthropic's MCP: Standardizing Agent Context and Tool Use",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 38,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          254.684,
+          539.991,
+          315.493
+        ],
+        "content": "The Model Context Protocol (MCP) is an open standard introduced by Anthropic that addresses how an AI model or agent accesses external data, tools, and context in a uniform way [2]. MCP defines a client–server architecture for augmenting AI models, decoupling model logic from the specifics of data sources or APIs. It acts as a \"universal port\" [3].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 39,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          77.25,
+          169.724,
+          539.994,
+          246.133
+        ],
+        "id": 40,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              185.564,
+              539.994,
+              246.133
+            ],
+            "content": "● Core Design Principles: MCP aims for universal connectivity (solving the \"MxN\" integration problem), structured context management via defined primitives (Resources, Tools), security with user control emphasis (local-first default, consent for actions), and support for two-way communication [2, 3, 8].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              169.724,
+              271.506,
+              183.013
+            ],
+            "content": "● Architecture (Host/Client/Server):",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 43,
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          97.5,
+          74.684,
+          540.0,
+          167.173
+        ],
+        "id": 41,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              97.5,
+              138.044,
+              540.0,
+              167.173
+            ],
+            "content": "○ Host: The main AI application the user interacts with (e.g., Claude Desktop, IDE plugin). Manages connections and security.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              97.5,
+              106.364,
+              539.997,
+              135.493
+            ],
+            "content": "○ Client: An intermediary within the Host, managing the connection to one specific MCP Server. Helps sandbox connections.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              97.5,
+              74.684,
+              539.993,
+              103.813
+            ],
+            "content": "○ Server: A program exposing capabilities (Tools, Resources, Prompts) related to an external system (database, API, filesystem) via the MCP spec.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          77.25,
+          291.884,
+          540.001,
+          719.413
+        ],
+        "id": 43,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              706.124,
+              518.917,
+              719.413
+            ],
+            "content": "● Transport & Communication: MCP uses JSON-RPC 2.0 over two primary transports:",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  97.5,
+                  642.764,
+                  539.994,
+                  703.573
+                ],
+                "id": 11,
+                "level": "1",
+                "list items": [
+                  {
+                    "bounding box": [
+                      97.5,
+                      690.284,
+                      413.117,
+                      703.573
+                    ],
+                    "content": "○ Standard I/O (stdio): For local client-server communication.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      97.5,
+                      642.764,
+                      539.994,
+                      687.733
+                    ],
+                    "content": "○ HTTP + Server-Sent Events (SSE): For remote connections. Client sends requests via HTTP POST; server can respond via HTTP or push asynchronous notifications/responses via SSE.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "unordered",
+                "page number": 6,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              595.004,
+              540.001,
+              640.453
+            ],
+            "content": "● Discovery: Clients discover server capabilities by invoking protocol-defined JSON-RPC methods like tools/list, resources/list, prompts/list. Servers can notify clients of changes (e.g., notifications/tools/list_changed).",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              578.684,
+              476.814,
+              591.973
+            ],
+            "content": "● MCP Primitives: MCP standardizes interactions using core message types [3]:",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  97.5,
+                  323.564,
+                  540.0,
+                  576.133
+                ],
+                "id": 12,
+                "level": "1",
+                "list items": [
+                  {
+                    "bounding box": [
+                      97.5,
+                      530.924,
+                      539.992,
+                      576.133
+                    ],
+                    "content": "○ Tools: Executable functions exposed by the server (e.g., send email, query database). Defined by a name, description, inputSchema (JSON Schema), and optional annotations (e.g., destructiveHint). Invoked via tools/call.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      97.5,
+                      466.844,
+                      540.0,
+                      527.893
+                    ],
+                    "content": "○ Resources: Structured data/content provided by the server for context (e.g., file content, query results). Identified by a URI, have name, description, mimeType, and content (text or base64 blob). Read via resources/read, updates via resources/subscribe and notifications/resources/updated.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      97.5,
+                      402.524,
+                      540.0,
+                      463.813
+                    ],
+                    "content": "○ Prompts: Predefined prompt templates or workflow scripts offered by the server, often user-selected. Defined by name, description, arguments. Used via prompts/get to retrieve messages for the LLM, potentially embedding resource context or defining multi-step workflows.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      97.5,
+                      371.084,
+                      539.985,
+                      400.213
+                    ],
+                    "content": "○ Roots: Client-side primitive representing host environment entry points (e.g., directories) the server might access.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      97.5,
+                      323.564,
+                      539.994,
+                      368.533
+                    ],
+                    "content": "○ Sampling: Advanced server-side primitive allowing the server to request the host AI generate text based on a prompt. Requires careful handling and often human approval due to safety implications.",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 5,
+                "numbering style": "unordered",
+                "page number": 6,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              291.884,
+              539.997,
+              321.013
+            ],
+            "content": "● Security: Evolved to support OAuth 2.1, emphasizes sandboxing, user consent for tool calls, and aims to prevent prompt injection from retrieved data [12].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "previous list id": 40,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          254.444,
+          539.988,
+          283.333
+        ],
+        "content": "MCP Example: An AI writing assistant needs to draft an email reply incorporating calendar availability. Using MCP:",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 44,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          78.0,
+          104.204,
+          539.996,
+          245.893
+        ],
+        "id": 45,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              232.604,
+              531.235,
+              245.893
+            ],
+            "content": "1. The assistant (Host/Client) connects to a Calendar MCP Server and an Email MCP Server.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              200.444,
+              539.991,
+              230.053
+            ],
+            "content": "2. To find availability, it calls resources/read on the Calendar server with a URI representing next week's schedule (Resource interaction).",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              168.284,
+              539.996,
+              197.893
+            ],
+            "content": "3. To find the recipient's address, it might call resources/read on the Email server for the latest message thread (Resource interaction).",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              104.204,
+              539.996,
+              165.973
+            ],
+            "content": "4. To send the email, it calls tools/call on the Email server with the method name \"sendEmail\" and parameters defined by the tool's inputSchema (Tool interaction). The assistant interacts via the standardized MCP interface, regardless of the underlying calendar/email providers.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          703.963,
+          304.784,
+          719.963
+        ],
+        "content": "2.3 Complementarity of A2A and MCP",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 46,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          618.044,
+          539.995,
+          694.693
+        ],
+        "content": "A2A and MCP address distinct needs: A2A enables horizontal inter-agent collaboration, while MCP enables vertical agent-to-environment interaction. They are inherently complementary [7]. An agent might use MCP to fetch data or execute a tool, then share the results or delegate follow-up actions to another agent via A2A. Understanding this distinction is key to architecting effective integrated systems and analyzing the emergent properties of their combination.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 47,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          408.487,
+          540.0,
+          604.137
+        ],
+        "id": 51,
+        "page number": 7,
+        "pdfua_tag": "Figure",
+        "source": "2505.03864_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          182.112,
+          392.444,
+          429.886,
+          405.733
+        ],
+        "content": "Fig. 3. The workflow with and without A2A + MCP",
+        "font": "TimesNewRomanPS-ItalicMT",
+        "font size": 12.0,
+        "id": 48,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          336.764,
+          334.61,
+          350.053
+        ],
+        "content": "A comparative summary highlights their distinct roles:",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 49,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          111.408,
+          540.0,
+          310.858
+        ],
+        "id": 52,
+        "page number": 7,
+        "pdfua_tag": "Figure",
+        "source": "2505.03864_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          156.357,
+          95.804,
+          455.639,
+          109.093
+        ],
+        "content": "Table 1. Distinct focus and complementarity of A2A and MCP",
+        "font": "TimesNewRomanPS-ItalicMT",
+        "font size": 12.0,
+        "id": 50,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          679.754,
+          539.795,
+          719.836
+        ],
+        "content": "3. Taxonomy of Benefits from Integrating A2A and MCP: A Critical Evaluation",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 53,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          641.324,
+          539.991,
+          670.453
+        ],
+        "content": "Integrating A2A and MCP offers compelling benefits, but getting them in practice requires carefully managing the complexities from combining these distinct layers.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 54,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          611.323,
+          322.894,
+          627.323
+        ],
+        "content": "3.1 Interoperability and Standardization",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 55,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          335.804,
+          539.998,
+          602.053
+        ],
+        "id": 56,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              493.724,
+              539.998,
+              602.053
+            ],
+            "content": "● Cross-Vendor/Framework Collaboration: Enables agents built with different tools or vendors to communicate (A2A) and access standardized tools/data (MCP), addressing a key challenge in MAS interoperability [14]. Evaluation: While this improves connection possibilities, achieving true semantic understanding—ensuring agents consistently interpret the meaning of exchanged information and capabilities—remains a significant hurdle, especially at the A2A-MCP interface [22]. This semantic gap can limit effective collaboration despite standard protocols.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              414.764,
+              539.995,
+              491.413
+            ],
+            "content": "● Plug-and-Play Modular Architecture: Allows treating agents and data connectors as swappable components [11]. Evaluation: This modularity is useful but needs reliable discovery methods and potentially complex coordination logic to handle dependencies. The ideal of simple \"plug-and-play\" might be hard to reach for complex interactions needing deep understanding between parts.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              335.804,
+              539.996,
+              412.213
+            ],
+            "content": "● Consistent Governance and Compliance: Standard protocols can simplify policy enforcement. Evaluation: Applying rules consistently across both protocols requires integrated systems that understand both agent-to-agent talks (A2A) and agent-to-tool actions (MCP). This combined governance layer isn't part of the protocols themselves and adds complexity.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          311.803,
+          306.858,
+          327.803
+        ],
+        "content": "3.2 Enhanced Capabilities via Synergy",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 57,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          115.244,
+          539.999,
+          302.293
+        ],
+        "id": 58,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              210.044,
+              539.997,
+              302.293
+            ],
+            "content": "● Specialization and Delegation: Creates potential for expert agent teams. A central agent (using A2A) can delegate tasks to specialized agents which use MCP for tool access. This approach is seen in many multi-agent systems. Evaluation: This powerful setup depends heavily on the main agent's ability to accurately match high-level A2A tasks to specific MCP tool abilities advertised by other agents. Vague skill descriptions can lead to errors. Good multi-agent planning is vital [17, 26].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              115.244,
+              539.999,
+              207.493
+            ],
+            "content": "● Contextualized Reasoning with Real-Time Data: Agents using MCP get current information, which can then be shared via A2A for better group understanding [15]. Evaluation: This benefit depends on efficient context sharing. Sending large amounts of raw data from MCP over A2A can be slow. Agents need good ways to summarize, check, and combine context from different MCP sources into their A2A collaboration, adding complexity.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          703.963,
+          330.397,
+          719.963
+        ],
+        "content": "3.3 Efficiency, Scalability, and Robustness",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 59,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          428.444,
+          539.998,
+          694.693
+        ],
+        "id": 60,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              633.884,
+              539.998,
+              694.693
+            ],
+            "content": "● Parallelism and Throughput: Enables distributing tasks across agents (A2A) for simultaneous work (using MCP). Evaluation: Getting significant speedups requires tasks that can truly run in parallel and smart coordination to manage dependencies and combine results, which does add its own overhead [14, 26].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              554.924,
+              539.995,
+              631.333
+            ],
+            "content": "● Scalability across Domains and Load: Makes it easier to scale by adding more agents (A2A) or tool servers (MCP). Evaluation: Real-world scalability depends not just on the protocols but also on factors like discovery service speed, network delays, coordination complexity, and the performance of the underlying AI models. The A2A-MCP interface itself can become a bottleneck.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              491.564,
+              539.998,
+              552.373
+            ],
+            "content": "● Fault Tolerance and Graceful Failure: Offers potential for backup options [4]. Evaluation: Building robust fault tolerance requires agents that can reliably detect failures (in both A2A tasks and MCP calls), assess alternatives, and replan dynamically. This makes agents much more complex than simple error handling would suggest.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              428.444,
+              539.995,
+              489.013
+            ],
+            "content": "● Resource Efficiency through Delegation: Allows using cheaper/smaller agents for simple tasks. Evaluation: This requires a smart coordinating agent that can accurately judge task difficulty and agent abilities (including both A2A skills and MCP tool access) to delegate efficiently – a tricky planning problem.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          404.443,
+          312.231,
+          420.443
+        ],
+        "content": "3.4 Ecosystem and Innovation Benefits",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 61,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          207.884,
+          540.0,
+          394.933
+        ],
+        "id": 62,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              334.364,
+              539.996,
+              394.933
+            ],
+            "content": "● Network Effects and Agent Ecosystems: Common protocols can encourage marketplaces [8]. The MCP ecosystem is growing. Evaluation: Success depends on wide adoption, clear standards, good discovery tools, and reliable trust/reputation systems to ensure the quality and security of third-party components – a major challenge for open systems.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              271.004,
+              540.0,
+              331.813
+            ],
+            "content": "● Reduced Development Complexity: Standard interfaces reduce integration code. Evaluation: This shifts the difficulty towards understanding the protocols, designing agent interactions across protocols, building effective coordination, and debugging distributed systems, requiring new skills.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              207.884,
+              539.999,
+              268.453
+            ],
+            "content": "● Cross-Domain Applicability: Protocols are general-purpose [23]. Evaluation: While the protocols are general, real applications need domain-specific knowledge, tools, and context. The integration itself doesn't automatically make solutions transferable between different fields.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          183.883,
+          375.47,
+          199.883
+        ],
+        "content": "3.5 Quality, Safety, and Alignment Improvements",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 63,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          82.124,
+          540.003,
+          174.373
+        ],
+        "id": 64,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              129.644,
+              540.0,
+              174.373
+            ],
+            "content": "● Continuous Learning from Feedback: Standardized logs provide data. Evaluation: Using this data effectively requires advanced methods for multi-agent learning and figuring out how to translate interaction logs into real improvements.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              82.124,
+              540.003,
+              127.093
+            ],
+            "content": "● Safety via Structured Control: Protocols offer points to insert controls. Evaluation: Defining and enforcing effective safety rules across dynamic A2A interactions and MCP tool calls is very complex. Preventing misuse, ensuring privacy, and aligning agent behavior in",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          95.25,
+          706.124,
+          373.154,
+          719.413
+        ],
+        "content": "integrated systems are major unsolved research gaps [39].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 65,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          636.284,
+          511.169,
+          677.596
+        ],
+        "content": "4. Architectural Patterns: Integration Points and Difficulties Integrating A2A and MCP requires architectural choices that bridge their different scopes.",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 66,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          78.0,
+          408.524,
+          540.002,
+          627.733
+        ],
+        "id": 67,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              598.604,
+              540.002,
+              627.733
+            ],
+            "content": "1. Pattern 1: A2A Agent Utilizing MCP Internally (Primary Pattern): An A2A server agent uses MCP internally.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  98.25,
+                  535.484,
+                  539.992,
+                  596.293
+                ],
+                "content": "○ Integration Insight: This pattern keeps things clearly separated but might lead to duplicated effort if many A2A agents need the same MCP tool. Also, the A2A client doesn't directly see which MCP tools the remote agent uses, relying only on the A2A skill description, which might be vague.",
+                "font": "TimesNewRomanPSMT",
+                "font size": 12.0,
+                "id": 6,
+                "level": "3",
+                "page number": 10,
+                "pdfua_tag": "P",
+                "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              503.804,
+              539.995,
+              532.933
+            ],
+            "content": "2. Pattern 2: Exposing MCP Tools via A2A Agent Card: A2A skills directly represent MCP tools.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  98.25,
+                  440.204,
+                  540.002,
+                  501.253
+                ],
+                "content": "○ Integration Insight: This makes tools more discoverable via A2A but creates a semantic mismatch. A2A's skill format is less detailed than MCP's tool format (inputSchema). Trying to reliably match A2A task details to MCP tool inputs based on potentially unclear text descriptions is a major point of difficulty and potential error [1, 22].",
+                "font": "TimesNewRomanPSMT",
+                "font size": 12.0,
+                "id": 7,
+                "level": "3",
+                "page number": 10,
+                "pdfua_tag": "P",
+                "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              408.524,
+              539.998,
+              437.653
+            ],
+            "content": "3. Pattern 3: A2A for Tool Orchestration (Alternative/Edge Case): Using A2A directly for complex \"tools\".",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          98.25,
+          361.004,
+          539.997,
+          405.973
+        ],
+        "content": "○ Integration Insight: This uses A2A's strengths for long tasks but bypasses MCP's specific focus on standard tool interactions, potentially making tool handling less consistent across the system.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 68,
+        "level": "3",
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          276.044,
+          539.997,
+          352.453
+        ],
+        "content": "Orchestration Layer: Regardless of the pattern, effective integration usually needs an orchestration layer [14, 17, 26]. This layer acts as the critical hub, translating goals into A2A tasks, matching tasks to agents and their MCP abilities, managing communication, handling errors across protocols, and combining results. Designing this coordination logic, perhaps using a dedicated coordinator agent, is vital and challenging for practical A2A+MCP systems.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 69,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          215.594,
+          412.938,
+          234.076
+        ],
+        "content": "5. Economic Implications: The \"Agent Economy\"",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 70,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          161.324,
+          539.999,
+          206.293
+        ],
+        "content": "The vision of an \"Agent Economy\" enabled by A2A+MCP integration [9] needs a critical look alongside its potential. This concept relates to the field of Agent-based Computational Economics (ACE), which models economies as dynamic systems of interacting agents [29, 30].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 71,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          131.323,
+          289.918,
+          147.323
+        ],
+        "content": "5.1 Emergence of “Agent Economy”",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 72,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          77.084,
+          540.001,
+          122.053
+        ],
+        "id": 73,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              77.084,
+              540.001,
+              122.053
+            ],
+            "content": "● Automated Transactions: Protocols provide the technical base. Critical Evaluation: A real economy requires more than just technology; it needs reliable, scalable ways to establish trust, manage reputations, handle automated contracts, securely exchange value, and",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 75,
+        "number of list items": 1,
+        "numbering style": "unordered",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          77.25,
+          627.164,
+          540.0,
+          719.413
+        ],
+        "id": 75,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              95.25,
+              690.284,
+              540.0,
+              719.413
+            ],
+            "content": "resolve disputes between autonomous agents. Current ideas using cryptoeconomics are still developing and have their own challenges.",
+            "font": "TimesNewRomanPS-BoldMT",
+            "font size": 12.0,
+            "id": 74,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              627.164,
+              540.0,
+              687.733
+            ],
+            "content": "● Transformed Marketplaces: Potential for agent-driven services/data. Critical Evaluation: This depends on solving semantic discovery (agents reliably finding and understanding services), quality assurance (checking agent/tool quality), and clear liability rules for automated transaction failures.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "previous list id": 73,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          603.163,
+          362.97,
+          619.163
+        ],
+        "content": "5.2 Lower Barriers and Competitive Landscape",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 76,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          453.884,
+          539.999,
+          593.653
+        ],
+        "id": 77,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              517.244,
+              539.999,
+              593.653
+            ],
+            "content": "● Reduced Lock-in: Open protocols may reduce vendor dependence. Critical Evaluation: Large platforms could still dominate through better coordination services, unique agent abilities, control over key data sources (via MCP), or by creating popular extensions, potentially leading to new forms of lock-in. True openness requires active community involvement.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              453.884,
+              539.999,
+              514.693
+            ],
+            "content": "● Increased Choice for Buyers: More flexibility exists. Critical Evaluation: This choice brings the complexity of managing parts from different vendors, ensuring compatibility beyond basic protocol rules, and potentially higher security risks from using less-vetted components.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          429.883,
+          291.797,
+          445.883
+        ],
+        "content": "5.3 New Roles and Business Models",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 78,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          359.804,
+          540.0,
+          420.613
+        ],
+        "content": "● Agent Brokers/Orchestrators, MCP Server Providers, Agent Auditors: These roles seem possible [5, 13, 20]. Critical Evaluation: Their success depends on proving their value compared to integrated solutions. Auditing complex AI agents that use both A2A and MCP requires new methods.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 79,
+        "level": "2",
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          336.043,
+          280.897,
+          352.043
+        ],
+        "content": "5.4 Productivity and Cost Impacts",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 80,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          170.924,
+          539.998,
+          326.533
+        ],
+        "id": 81,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              265.964,
+              539.998,
+              326.533
+            ],
+            "content": "● Productivity Gains: Automation potential is clear [23, 24]. Critical Evaluation: Real gains must outweigh the significant costs of building, securing, managing, and debugging these complex systems. Automation benefits might initially be limited to specific, well-defined areas.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              218.444,
+              539.997,
+              263.413
+            ],
+            "content": "● Workforce Transformation: Job changes are likely. Critical Evaluation: Society needs to adapt proactively. There's a risk of increasing inequality if benefits mainly go to owners or specialized AI developers.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              170.924,
+              539.996,
+              215.893
+            ],
+            "content": "● Efficiency Paradox: Automation might increase overall resource use. Critical Evaluation: Optimizing energy and computing efficiency for large agent systems will be important for sustainability.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          146.923,
+          295.555,
+          162.923
+        ],
+        "content": "5.5 Strategic Control and Data Value",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 82,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          77.25,
+          76.844,
+          539.999,
+          137.653
+        ],
+        "id": 83,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              77.25,
+              92.684,
+              539.996,
+              137.653
+            ],
+            "content": "● Protocol Stewardship: Influence follows standards. Critical Evaluation: Keeping protocols truly open requires active community participation to prevent control by a few dominant companies.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.25,
+              76.844,
+              539.999,
+              90.133
+            ],
+            "content": "● Data Value & Licensing: MCP makes data more usable. Critical Evaluation: Standardized",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          95.25,
+          674.444,
+          539.995,
+          719.413
+        ],
+        "content": "access via MCP raises complex issues around data privacy, ownership, fair payment for data use, and potential information advantages for agents with special data access, especially if this data influences A2A interactions [18].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 84,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          607.034,
+          441.878,
+          625.516
+        ],
+        "content": "6. Risks and Challenges at the A2A-MCP Intersection",
+        "font": "CambriaMath",
+        "font size": 15.765,
+        "heading level": 3,
+        "id": 85,
+        "level": "Subtitle",
+        "page number": 12,
+        "pdfua_tag": "H3",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          568.364,
+          539.992,
+          597.493
+        ],
+        "content": "Integrating A2A and MCP creates unique challenges beyond those inherent in each protocol individually.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 86,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          538.363,
+          250.594,
+          554.363
+        ],
+        "content": "6.1 Key Risks and Challenges",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 87,
+        "level": "Subtitle",
+        "page number": 12,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          78.0,
+          168.044,
+          539.998,
+          529.093
+        ],
+        "id": 88,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              515.804,
+              523.905,
+              529.093
+            ],
+            "content": "1. Security - Compounded Vulnerabilities: The combination creates novel attack vectors.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  98.25,
+                  325.964,
+                  540.0,
+                  513.253
+                ],
+                "id": 1,
+                "level": "1",
+                "list items": [
+                  {
+                    "bounding box": [
+                      98.25,
+                      405.164,
+                      540.0,
+                      513.253
+                    ],
+                    "content": "○ Integration-Specific Threats: A key risk involves attackers using A2A discovery to find agents, then exploiting vulnerabilities exposed through those agents' MCP tool connections [19, 21]. For example, finding an agent via A2A that uses an insecure MCP server is an indirect attack path. Threats like \"tool squatting\" (maliciously registering fake tools) are more dangerous when combined with A2A's discovery potential [32]. Malicious instructions can also spread between agents via A2A, potentially triggering unsafe MCP tool actions [28, 35, 37].",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 12,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      98.25,
+                      325.964,
+                      540.0,
+                      402.613
+                    ],
+                    "content": "○ Identity and Trust Management: Establishing trust is harder. An agent must trust its A2A partner and, indirectly, the tools that partner uses via MCP. Managing security across both A2A talks and later MCP calls requires complex solutions not built into the basic protocols. Reliable trust and reputation models are crucial but difficult to implement [20, 36].",
+                    "font": "ArialMT",
+                    "font size": 12.0,
+                    "kids": [],
+                    "page number": 12,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0, 0.0, 0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "unordered",
+                "page number": 12,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              294.524,
+              539.998,
+              323.413
+            ],
+            "content": "2. Semantic Interoperability Gap: Ensuring agents understand each other and the tools they access is critical but difficult.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [
+              {
+                "bounding box": [
+                  98.25,
+                  199.484,
+                  539.997,
+                  291.973
+                ],
+                "content": "○ Integration-Specific Challenge: A major difficulty is translating high-level A2A tasks into specific, correct MCP tool commands. An A2A client might ask for a summary, but the remote agent needs to figure out the exact MCP queries and tool parameters. A2A's skill descriptions often lack the detail of MCP's tool requirements, leading to potential errors at the integration point [1, 22]. This needs better ways for agents to negotiate meaning or use shared knowledge bases.",
+                "font": "TimesNewRomanPSMT",
+                "font size": 12.0,
+                "id": 2,
+                "level": "3",
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              168.044,
+              539.994,
+              196.933
+            ],
+            "content": "3. Debugging and Observability Complexity: Diagnosing failures in integrated systems is significantly harder.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 90,
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 12,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          98.25,
+          73.004,
+          539.996,
+          165.493
+        ],
+        "content": "○ Integration-Specific Challenge: If a workflow that uses multiple agents and tools breaks down, diagnosing the problem involves tracking activities across A2A tasks, agent communications, and MCP tool interactions. To pinpoint the error (like an A2A misunderstanding, a faulty MCP tool, or bad mapping), we need integrated monitoring tools that cover both protocols, but such tools don't exist yet. Formal verification methods show promise but struggle with the scale of these combined systems [25, 31].",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 89,
+        "level": "3",
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          580.364,
+          540.0,
+          719.413
+        ],
+        "id": 90,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              674.444,
+              539.99,
+              719.413
+            ],
+            "content": "4. Orchestration Complexity: Designing the coordinating logic that manages the flow across A2A and MCP is challenging. The orchestrator must handle planning, delegation, monitoring, error handling across both protocols, and combining results [14, 17, 26].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              627.164,
+              540.0,
+              671.893
+            ],
+            "content": "5. Governance and Policy Enforcement: Defining and enforcing consistent security, privacy, and ethical rules across both agent-to-agent (A2A) and agent-to-tool (MCP) interactions requires a unified approach.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              580.364,
+              472.512,
+              619.163
+            ],
+            "content": "6.2 Future Directions Addressing the integration challenges requires focused research and development:",
+            "font": "CambriaMath",
+            "font size": 13.647,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "previous list id": 88,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          93.25,
+          274.124,
+          540.0,
+          571.813
+        ],
+        "id": 91,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              93.25,
+              527.084,
+              539.997,
+              571.813
+            ],
+            "content": "1. Semantic Negotiation and Shared Ontologies: Developing ways for agents to clarify task meanings, capabilities beyond simple Agent Cards, and reliably map A2A requests to MCP tool details [22]. Shared knowledge structures (ontologies) could help.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              463.724,
+              540.0,
+              524.533
+            ],
+            "content": "2. Integrated Security Frameworks: Designing security systems that handle the combined A2A+MCP risks, including identity management, cross-protocol permissions, and defenses against threats like tool squatting [21, 28, 32, 38]. Improving MCP's built-in security features is also needed.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              432.044,
+              539.996,
+              461.173
+            ],
+            "content": "3. Cross-Protocol Observability and Debugging Tools: Creating tools for unified logging, tracing, and visualizing activity across both A2A and MCP to make debugging easier.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              384.764,
+              539.997,
+              429.733
+            ],
+            "content": "4. Robust Multi-Agent Orchestration and Planning: Improving multi-agent planning techniques [14, 17, 26] specifically for coordinating agents that use external tools via MCP.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              353.084,
+              540.0,
+              382.213
+            ],
+            "content": "5. Formal Verification for Integrated Systems: Adapting formal methods to verify the correctness and safety of combined A2A+MCP systems [25, 31].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              321.404,
+              540.0,
+              350.533
+            ],
+            "content": "6. Trust and Reputation Infrastructure: Building reliable trust and reputation systems for open ecosystems involving both A2A communication and MCP tool use.",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              93.25,
+              274.124,
+              539.997,
+              318.853
+            ],
+            "content": "7. Standardized Governance Mechanisms: Developing ways to define and enforce operational, security, and ethical rules consistently across integrated A2A+MCP systems, especially for any future \"Agent Economy\" [13].",
+            "font": "ArialMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 7,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          250.123,
+          143.535,
+          266.123
+        ],
+        "content": "6.3 Outlook",
+        "font": "CambriaMath",
+        "font size": 13.647,
+        "heading level": 6,
+        "id": 92,
+        "level": "Subtitle",
+        "page number": 13,
+        "pdfua_tag": "H6",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          164.204,
+          539.997,
+          240.613
+        ],
+        "content": "The integration of A2A and MCP provides a powerful, standardized foundation. However, near-term success depends on the community building good tools, establishing best practices for managing integration complexity (especially security and semantics), and creating a trustworthy ecosystem. Long-term adoption requires solving the deeper challenges of orchestration, governance, and verification for these complex systems.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 93,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          81.164,
+          539.995,
+          122.236
+        ],
+        "content": "7. Conclusion The combination of Google's A2A and Anthropic's MCP protocols marks a significant step",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "heading level": 4,
+        "id": 94,
+        "level": "Subtitle",
+        "page number": 13,
+        "pdfua_tag": "H4",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          627.164,
+          539.998,
+          719.413
+        ],
+        "content": "towards enabling more sophisticated, interoperable, and scalable multi-agent systems. By standardizing horizontal (agent-to-agent) and vertical (agent-to-environment) interactions, respectively, they offer a pathway to move beyond brittle, custom integrations. This paper has provided a critical analysis of this integration, acknowledging the substantial benefits while focusing on the unique challenges and complexities that emerge specifically at the intersection of these two standards.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 95,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          504.284,
+          539.999,
+          612.613
+        ],
+        "content": "Our analysis reveals that while the potential for enhanced capabilities, efficiency, and ecosystem growth is considerable, realizing these benefits requires confronting significant hurdles. Key challenges include ensuring semantic alignment between A2A tasks and MCP tools, managing compounded security risks from agent discovery and tool execution, the difficulty of debugging across both protocols, and establishing governance for complex interactions, particularly for the \"Agent Economy.\" Special attention shall also be paid to specific security risks associated with the MCP server lifecycle.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 96,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          381.644,
+          540.0,
+          489.973
+        ],
+        "content": "Ultimately, A2A and MCP provide crucial architectural building blocks. However, they are not a complete solution. Unlocking the full potential of collaborative, tool-using AI agents requires continued innovation in multi-agent planning and orchestration, robust trust and reputation mechanisms, advanced security architectures tailored for integrated systems, practical solutions for semantic negotiation, and effective governance models. Addressing these integrationspecific challenges will be essential for the successful development and deployment of the next generation of truly capable and reliable multi-agent AI systems.",
+        "font": "TimesNewRomanPSMT",
+        "font size": 12.0,
+        "id": 97,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          322.834,
+          145.529,
+          340.212
+        ],
+        "content": "References",
+        "font": "CambriaMath",
+        "font size": 14.824,
+        "heading level": 5,
+        "id": 98,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H5",
+        "text color": "[0.10588235408067703, 0.10980392247438431, 0.11372549086809158]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          78.0,
+          78.524,
+          540.005,
+          313.333
+        ],
+        "id": 99,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              300.044,
+              442.28,
+              313.333
+            ],
+            "content": "[1] Google Cloud (2025). Announcing the Agent2Agent Protocol (A2A).",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              284.204,
+              393.281,
+              297.493
+            ],
+            "content": "[2] Anthropic (2024). Introducing the Model Context Protocol.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              252.524,
+              539.995,
+              281.653
+            ],
+            "content": "[3] Narajala, V. et al. (2025). Enterprise-Grade Security for the Model Context Protocol (MCP): Frameworks and Mitigation Strategies. arXiv:2504.08623.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              220.844,
+              540.005,
+              249.973
+            ],
+            "content": "[4] Ramel, D. (2025). Protocols for Agentic AI: Google’s New A2A Joins Viral MCP. Virtualization Review, April 9, 2025.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              205.004,
+              393.677,
+              218.293
+            ],
+            "content": "[5] WorkOS (2025). MCP, ACP, A2A, Oh my! WorkOS Blog.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              189.164,
+              467.606,
+              202.453
+            ],
+            "content": "[6] Yang, Y. et al. (2025). A Survey of AI Agent Protocols. arXiv:2504.16736",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              157.724,
+              539.999,
+              186.853
+            ],
+            "content": "[7] Blott Studio (2025). MCP vs A2A: Which Protocol is Better for AI Agents? Blott.studio Blog.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              141.884,
+              532.289,
+              155.173
+            ],
+            "content": "[8] Keywords AI (2025). A Complete Guide to the Model Context Protocol (MCP) in 2025.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              110.204,
+              539.998,
+              139.333
+            ],
+            "content": "[9] John S. Kim (2025). Rise of the A2A economy: How AI agent-to-agent interactions will reshape the world. Sendbird Blog.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              78.524,
+              530.645,
+              107.653
+            ],
+            "content": "[10] Shen, Y. et al. (2023). HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in HuggingFace. arXiv:2303.17580.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 100,
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          78.0,
+          73.724,
+          539.625,
+          719.413
+        ],
+        "id": 100,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              690.284,
+              505.565,
+              719.413
+            ],
+            "content": "[11] Google Cloud (2025). Vertex AI offers new ways to build and manage multi-agent systems. Google Cloud Blog/Documentation.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              674.444,
+              539.625,
+              687.733
+            ],
+            "content": "[12] Sarig, Dor. (2025). The Security Risks of Model Context Protocol (MCP). Pillar Security.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              642.764,
+              482.549,
+              671.893
+            ],
+            "content": "[13] Chaffer, Tomer Jordi. (2025). Can We Govern the Agent-to-Agent Economy? arXiv:2501.16606.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              611.324,
+              533.251,
+              640.453
+            ],
+            "content": "[14] De Weerdt, M., et al. (2009). Introduction to planning in multiagent systems. Multiagent and Grid Systems, Volume 5, Issue 4.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              579.644,
+              518.927,
+              608.773
+            ],
+            "content": "[15] Du, H., et al. (2024). A Survey on Context-Aware Multi-Agent Systems: Techniques, Challenges and Future Directions. arXiv:2402.01968.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              547.964,
+              466.273,
+              577.093
+            ],
+            "content": "[16] Labrou, Y., & Finin, T. (1997). Semantics and Conversations for an Agent communication language. arXiv:cs/9809034.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              516.284,
+              448.951,
+              545.413
+            ],
+            "content": "[17] Li, A., et al. (2024). Agent-Oriented Planning in Multi-Agent Systems. arXiv:2410.02189.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              484.844,
+              526.958,
+              513.973
+            ],
+            "content": "[18] Such, J. M., et al. (2014). A Survey of Privacy in Multi-agent Systems. The Knowledge Engineering Review, 29(3), 312-343.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              453.164,
+              525.892,
+              482.293
+            ],
+            "content": "[19] He, F., et al. (2024). The Emerged Security and Privacy of LLM Agent: A Survey with Case Studies. arXiv:2407.19354.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              421.484,
+              521.929,
+              450.613
+            ],
+            "content": "[20] Granatyr, J., et al. (2015). Trust and Reputation Models for Multiagent Systems. ACM Computing Surveys (CSUR), Vol. 48, Issue 2.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              389.804,
+              501.574,
+              418.933
+            ],
+            "content": "[21] Cloud Security Alliance (CSA). (2025). Agentic AI Threat Modeling Framework: MAESTRO. CSA Blog.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              374.204,
+              493.934,
+              387.493
+            ],
+            "content": "[22] SmythOS. (2025). What is an Agent Communication Language? SmythOS Blog.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              342.524,
+              490.886,
+              371.653
+            ],
+            "content": "[23] Krishnan, Naveen. (2025). AI Agents: Evolution, Architecture, and Real-World Applications. arXiv:2503.12687.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              310.844,
+              538.898,
+              339.973
+            ],
+            "content": "[24] Xu, L., et al. (2021). Will bots take over the supply chain? Revisiting Agent‐based supply chain automation. arXiv:2109.01703.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              279.164,
+              491.615,
+              308.293
+            ],
+            "content": "[25] Mendez, J. A., et al. (2025). Can Proof Assistants Verify Multi-Agent Systems? arXiv:2503.06812.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              247.484,
+              532.26,
+              276.613
+            ],
+            "content": "[26] Sun, L., et al. (2025). Multi-Agent Coordination across Diverse Applications: A Survey. arXiv:2502.14743.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              216.044,
+              478.579,
+              245.173
+            ],
+            "content": "[27] Peigné, P., et al. (2025). Multi-Agent Security Tax: Trading Off Security and Collaboration Capabilities in Multi-Agent Systems. arXiv:2502.19145.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              184.364,
+              539.255,
+              213.493
+            ],
+            "content": "[28] Narajala, V., et al. (2025). Securing GenAI Multi-Agent Systems Against Tool Squatting: A Zero Trust Registry-Based Approach. arXiv:2504.19951.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              121.004,
+              527.186,
+              181.813
+            ],
+            "content": "[29] Tesfatsion, L. (2023). Agent-Based Computational Economics: Overview and Brief History. In: Venkatachalam, R. (eds) Artificial Intelligence, Learning and Computation in Economics and Finance . Understanding Complex Systems. Springer, Cham. https://doi.org/10.1007/978-3-031-15294-8_4",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              73.724,
+              537.124,
+              118.693
+            ],
+            "content": "[30] Tesfatsion, L. (2016). \"Review of Agent-Based Computational Economics: How the Idea Originated and Where It Is Going,\" ISU General Staff Papers 201612010800001695, Iowa State University, Department of Economics.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 101,
+        "number of list items": 20,
+        "numbering style": "arabic numbers",
+        "page number": 15,
+        "pdfua_tag": "L",
+        "previous list id": 99,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          78.0,
+          342.524,
+          534.906,
+          719.413
+        ],
+        "id": 101,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              78.0,
+              690.284,
+              501.258,
+              719.413
+            ],
+            "content": "[31] Parker, D. (2023). Multi-Agent Verification and Control with Probabilistic Model Checking. arXiv:2308.02829",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              658.604,
+              528.542,
+              687.733
+            ],
+            "content": "[32] Xi, Z., et al. (2023). The Rise and Potential of Large Language Model Based Agents: A Survey. arXiv:2309.07864.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              642.764,
+              420.632,
+              656.053
+            ],
+            "content": "[33] Shen, Z. (2024). LLM With Tools: A Survey. arXiv:2409.18807.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              611.324,
+              524.878,
+              640.453
+            ],
+            "content": "[34] Deng, Z., et al. (2024). AI Agents Under Threat: A Survey of Key Security Challenges and Future Pathways. arXiv:2406.02630.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              579.644,
+              523.577,
+              608.773
+            ],
+            "content": "[35] Gan, Y., et al. (2024). Navigating the Risks: A Survey of Security, Privacy, and Ethics Threats in LLM-Based Agents. arXiv:2411.09523.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              547.964,
+              498.583,
+              577.093
+            ],
+            "content": "[36] Fu, X., et al. (2024). Imprompter: Tricking LLM Agents into Improper Tool Use. arXiv:2410.14923.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              532.124,
+              526.915,
+              545.413
+            ],
+            "content": "[37] Milev, I., et al. (2025). ToolFuzz -- Automated Agent Tool Testing. arXiv:2503.04479.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              484.844,
+              514.555,
+              529.573
+            ],
+            "content": "[38] Chen, Z. Y., et al. (2024). Towards Tool Use Alignment of Large Language Models. Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              453.164,
+              516.221,
+              482.293
+            ],
+            "content": "[39] Lu, J., et al. (2024). ToolSandbox: A Stateful, Conversational, Interactive Evaluation Benchmark for LLM Tool Use Capabilities. arXiv:2408.04682.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              437.324,
+              500.6,
+              450.613
+            ],
+            "content": "[40] Wölflein, G., et al. (2025). LLM Agents Making Agent Tools. arXiv:2502.11705.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              405.644,
+              507.226,
+              434.773
+            ],
+            "content": "[41] Shi, Z., et al. (2025). Tool Learning in the Wild: Empowering Language Models as Automatic Tool Agents. The Web Conference 2025.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              374.204,
+              534.906,
+              403.093
+            ],
+            "content": "[42] Hou, X., et al. (2025). Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions. arXiv:2503.23278v2.",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              78.0,
+              342.524,
+              511.926,
+              371.653
+            ],
+            "content": "[43] Li, Q., et al. (2024). EduMAS: A Novel LLM-Powered Multi-Agent Framework for Educational Support. 2024 IEEE International Conference on Big Data (Big Data).",
+            "font": "TimesNewRomanPSMT",
+            "font size": 12.0,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0, 0.0, 0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 13,
+        "numbering style": "arabic numbers",
+        "page number": 16,
+        "pdfua_tag": "L",
+        "previous list id": 100,
+        "type": "list"
+      }
+    ],
+    "modification date": "D:20250506163023Z00'00'",
+    "number of pages": 16,
+    "title": "Revised Draft_ A2A + MCP Integration (Analytical Refinement)"
+  }
+}

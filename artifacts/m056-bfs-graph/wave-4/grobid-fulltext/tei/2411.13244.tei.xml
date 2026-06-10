@@ -1,0 +1,959 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Leveraging Prior Experience: An Expandable Auxiliary Knowledge Base for Text-to-SQL</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-20">20 Nov 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhibo</forename><surname>Chu</surname></persName>
+							<email>zb.chu@mail.ustc.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Zichong</forename><surname>Wang</surname></persName>
+							<email>ziwang@fiu.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Qitao</forename><surname>Qin</surname></persName>
+							<email>qingqitao@gmail.com</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Science and Technology of China Heifei</orgName>
+								<address>
+									<settlement>Anhui</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Florida International University Miami</orgName>
+								<address>
+									<region>FL US</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Science and Technology of China Heifei</orgName>
+								<address>
+									<settlement>Anhui</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Leveraging Prior Experience: An Expandable Auxiliary Knowledge Base for Text-to-SQL</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-20">20 Nov 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">19DEF009E4862F92ED22F639B0794F24</idno>
+					<idno type="arXiv">arXiv:2411.13244v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) exhibit impressive problem-solving skills across many tasks, but they still underperform compared to humans in various downstream applications, such as text-to-SQL. On the BIRD benchmark leaderboard, human performance achieves an accuracy of 92.96%, whereas the top-performing method reaches only 72.39%. Notably, these state-of-the-art (SoTA) methods predominantly rely on in-context learning to simulate human-like reasoning. However, they overlook a critical human skill: continual learning. Inspired by the educational practice of maintaining mistake notebooks during our formative years, we propose LPE-SQL (Leveraging Prior Experience: An Expandable Auxiliary Knowledge Base for Text-to-SQL), a novel framework designed to augment LLMs by enabling continual learning without requiring parameter fine-tuning. LPE-SQL consists of four modules that i) retrieve relevant entries, ii) efficient sql generation, iii) generate the final result through a cross-consistency mechanism and iv) log successful and failed tasks along with their reasoning processes or reflection-generated tips. Importantly, the core module of LPE-SQL is the fourth one, while the other modules employ foundational methods, allowing LPE-SQL to be easily integrated with SoTA technologies to further enhance performance. Our experimental results demonstrate that this continual learning approach yields substantial performance gains, with the smaller Llama-3.1-70B model with surpassing the performance of the larger Llama-3.1-405B model using SoTA methods.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Text-to-SQL, the task of converting natural language queries into structured SQL commands, has garnered significant attention due to its potential to simplify database interactions. Recently, incontext learning (ICL) with large language models (LLMs) has emerged as the leading approach for this task <ref type="bibr" target="#b0">[1]</ref>. Unlike traditional fine-tuning, ICL supplies instructions and a few demonstration examples directly in the model's input prompt, enabling models to generate SQL queries more effectively and efficiently <ref type="bibr" target="#b1">[2]</ref>. Given that LLM performance is highly sensitive to the quality of these examples, creating optimal examples has become a critical area of research <ref type="bibr" target="#b2">[3]</ref>.</p><p>Current efforts to create demonstration examples for text-to-SQL rely on two primary approaches. The first involves manually annotating a small, fixed set of examples that are reused across queries <ref type="bibr" target="#b3">[4]</ref>. While straightforward, this approach often lacks flexibility and struggles with generalization. The second approach pre-generates a large pool of demonstration examples in advance <ref type="foot" target="#foot_0">2</ref> , using retrieval techniques like similarity search to select relevant examples for each query. These examples, typically derived from training data, pair natural language questions with corresponding SQL queries <ref type="bibr" target="#b4">[5]</ref>. The retrieval-based method using training data offers more adaptability and leads to performance improvements. Furthermore, <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b5">6]</ref> demonstrate that providing a small number of in-domain examples, i.e., those from the same database as the test query, in the prompt results in better performance. This is because in-domain examples contain more relevant details and context, thereby reducing the model's generalization burden. To address the challenge of acquiring in-domain data, <ref type="bibr" target="#b6">[7]</ref> propose synthesizing such data by adapting templates from external databases and populating them with columns and values from the target database, thereby lowering data acquisition costs. However, the absence of specific domain knowledge, such as the database schema or common query patterns, limits the model's ability to generate accurate SQL queries in cross-domain scenarios.</p><p>In practical settings, particularly within enterprise environments, multiple distinct business systems, such as flight booking and concert scheduling systems, often coexist <ref type="bibr" target="#b7">[8]</ref>, each with vastly different database structures <ref type="bibr" target="#b7">[8]</ref>. This variation complicates SQL query generation and demands greater adaptability and generalization from LLMs. We conducted extensive experiments comparing LLM performance on in-domain versus out-of-domain tasks for text-to-SQL, as detailed in Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table" target="#tab_1">3</ref>. The results indicate that LLMs perform significantly better on in-domain tasks, while their performance declines substantially when confronted with entirely different database structures. This underscores the current limitations of LLMs' generalization abilities in cross-domain scenarios. Consequently, we argue that for widely-used, high-accuracy tasks like text-to-SQL, effectively leveraging in-domain data is crucial for reducing the high generalization demands placed on LLMs, ultimately leading to improved performance and greater societal impact.</p><p>While the advantages of using in-domain data are evident, concerns may arise regarding the cost of acquiring such data for text-to-SQL tasks. Based on practical scenarios and our investigation, we provide two key reasons to demonstrate the abundance of in-domain data for text-to-SQL in real-world applications, which has been overlooked in previous work. i) According to the annual "Top 10 Programming Languages" report <ref type="bibr" target="#b8">[9]</ref>, SQL continues to dominate the "Jobs list", highlighting its widespread use across various enterprise roles, including Business Intelligence (BI) analysts, developers, database administrators (DBAs), product management, operations, compliance, and business strategy. This inevitably generates a large amount of in-domain data related to enterprise content and business. ii) Although LLMs excel at natural language tasks, their ability to generate complex SQL queries remains inferior to that of human experts. Consequently, LLMs are often used as assistive tools, generating initial SQL queries that users must review and modify. These correct SQL queries are often crafted by experts and accumulated as problems are solved. This valuable repository of correct query data, however, remains underutilized, even though it holds significant potential to enhance LLM performance. Building on the above analysis and inspired by mistake notebooks, i.e., a learning method commonly employed by students to track and learn from errors in exams or exercises <ref type="bibr" target="#b9">[10]</ref>, we propose a similar strategy for LLMs in the context of text-to-SQL tasks, shown in Fig. <ref type="figure" target="#fig_0">1</ref>, referred to as LPE-SQL. In this approach, after each task, regardless of whether the generated SQL query is correct or erroneous, the results are logged into either a correct notebook or a mistake notebook. The correct notebook captures successful queries along with their reasoning paths, while the mistake notebook documents errors along with a reflection-generated tip designed to prevent the model from repeating similar mistakes in the future. By referencing these prior experiences, the model not only avoids previous errors but also reinforces its understanding by leveraging successful reasoning patterns. This iterative process allows the LLM to optimize its performance over time, improving both the accuracy of query generation and its ability to learn from accumulated experience. In enterprise settings, this feedback-driven mechanism holds the potential to significantly narrow the performance gap between LLMs and human experts in complex SQL generation, while also maximizing the value of existing data resources.</p><p>Our contributions can be summarized as follows:</p><p>• Departing from the conventional approach of using training sets as the knowledge base, we emphasize the value of in-domain data. We propose LPE-SQL, a continual learning method for text-to-SQL tasks that leverages in-domain data without requiring parameter fine-tuning, outperforming methods based on out-of-domain and synthetic in-domain data.</p><p>• Inspired by human learning strategies, we propose a novel knowledge base structure consisting of a correct notebook and a mistake notebook. By retrieving relevant entries from both notebooks during future tasks, the model is able to leverage prior experiences, improving SQL generation accuracy.</p><p>• Instead of simply pairing questions with their corresponding SQL queries, these notebooks are enriched with detailed reasoning paths and reflection-generated tips. Our experiments demonstrate that such high-information examples can further enhance model performance.</p><p>• Empirically, LPE-SQL demonstrates superior performance. Notably, the smaller Llama-3.</p><p>1-70B-INT4 model, which utilizes the LPE-SQL method, outperforms the larger Llama-3.1-405B model, which employs SoTA techniques. The source code and all experimental results is open-source and available on GitHub<ref type="foot" target="#foot_1">foot_1</ref> . Demonstration Selection prompt1 prompt2 prompt3 result1 result2 result3 result1 result2 result3 Final result SQL Generation Cross-consistency Rethink and Update Notebook Question :xxx SQL :xxx Thought Process :xxx Based on the following information, please provide a Tip on how to avoid making the same mistake in the future. (1) Question :xxx (2) Error SQL :xxx (3) Compiler Hints :xxx (4) Ground Truth SQL :xxx Question :xxx Ground Truth SQL :xxx Error SQL :xxx Compiler Hints :xxx Tip :xxx Please provide your thought process behind the generation of this SQL query. (1) Question :xxx (2) SQL :xxx result1 result2 result3 Correct?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Yes No</head><p>Correct Notebook Mistake Notebook 2 Related Work</p><p>SoTA Text-to-SQL approaches typically use a multi-module method consisting of demonstration selection, SQL generation, and a correction module <ref type="bibr" target="#b0">[1]</ref>. Below, we discuss each module and relevant research.</p><p>Demonstration Selection. LLMs exhibit superior performance in Text-to-SQL tasks through incontext learning, where only a few examples are provided within input prompts. However, due to the high sensitivity of LLMs to prompt design, the success of in-context learning relies heavily on selecting appropriate examples <ref type="bibr" target="#b2">[3]</ref>. This module focuses on identifying the most effective examples from the knowledge base to mitigate this limitation. Many previous works have utilized the training set as a knowledge base, employing complex, multi-step retrieval strategies to select suitable examples <ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref>. In contrast, <ref type="bibr" target="#b1">[2]</ref> and <ref type="bibr" target="#b5">[6]</ref> found that performance can be significantly improved by using a small number of in-domain examples directly in the prompt, where question-SQL pairs correspond to the test database. Furthermore, <ref type="bibr" target="#b6">[7]</ref> argues that obtaining in-domain data is often challenging and proposes a hybrid knowledge base that combines synthetic in-domain data with out-of-domain examples. Nevertheless, both their experimental results and our findings (reported in Table <ref type="table" target="#tab_0">1</ref>) indicate that synthetic in-domain data is notably less effective than real indomain data in enhancing performance. Unlike prior work, our approach utilizes a continuously expandable knowledge base that incorporates real in-domain data and out-of-domain data. We employ a straightforward, similarity-based matching retrieval method, which reduces the complexity of the approach while improving efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SQL Generation.</head><p>The SQL generation phase often involves more than simply producing a candidate query from an input context. Prior works enhance this process by breaking it into multiple subtasks, solving them incrementally, and then merging the results <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b14">15]</ref>. Common subtasks include schema selection, which encompasses both table and column selection. The objective here is to narrow the schema to include only the necessary tables and columns required for generating the SQL query. Another critical aspect is identifying query features and classifying them for targeted handling. For instance, <ref type="bibr" target="#b3">[4]</ref> categorizes queries into three classes-easy, non-nested complex, and nested complex-tailoring prompts accordingly for each type. In our approach, we simplify this stage by directly instructing the LLM to generate SQL using straightforward prompts. This significantly reduces the complexity of the method and enhances the efficiency of SQL generation.</p><p>Correction. Two widely employed techniques at this stage are self-consistency <ref type="bibr" target="#b15">[16]</ref> and selfdebugging <ref type="bibr" target="#b16">[17]</ref>. For self-consistency, a notable example is MCS-SQL <ref type="bibr" target="#b17">[18]</ref>, which introduces a strategy that generates multiple prompts by varying the selection method and sequence of several demonstration examples, sampling multiple responses from LLMs to mitigate sensitivity. Their framework produces three distinct prompts per step, with each prompt executed 20 times by the LLM. In contrast, our approach executes the LLM only once per prompt, significantly reducing execution time and API costs, while presenting a greater challenge to our methodology. Regarding self-debugging, existing approaches typically rely on execution-based feedback <ref type="bibr" target="#b18">[19]</ref> or model-based feedback <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b19">20]</ref> to correct generated SQL queries. For clarity, we integrate this strategy within the SQL generation module of our methodology.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In this section, we introduce LPE-SQL, a continual learning framework for Text-to-SQL that utilizes real in-domain data without requiring parameter fine-tuning. It leverages human learning strategies, like mistake notebooks, to create a dynamic knowledge base for enhanced performance. Specifically, we give a detailed description of our proposed method, as shown in Fig. <ref type="figure" target="#fig_0">1</ref>, the LPE-SQL method consists of four components: i) Demonstration Selection: demonstrations are selected based on question similarity from correct and mistake notebooks, with varying proportions prepended to the prompt for in-context learning. ii) SQL Generatation: these demonstrations, combined with the database schema and task-specific instructions as prompt, are used by the LLM to generate SQL queries. iii) Cross-consistency: multiple SQL results are compared to ensure consistency across different prompts, selecting the most stable result for increased robustness. iv) Rethink and Update Notebook: the generated SQL is evaluated against the ground truth; if correct, the model logs its thought process in the correct notebook. If incorrect, the model reflects on the failure and generates improvement tips for the mistake notebook, promoting continuous learning and refinement. We will discuss each component in detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Demonstration Selection</head><p>Given a few demonstration examples, LLMs can leverage them to generate SQL queries with a more standardized format and improved accuracy <ref type="bibr" target="#b4">[5]</ref>. Demonstration examples selection plays a crucial role in few-shot learning, significantly impacting the performance of LLMs <ref type="bibr" target="#b20">[21]</ref>.</p><p>We adopt a hybrid strategy for demonstration selection, wherein we choose a total of k demonstration examples from the knowledge base based on their embedding similarity to the test sample. The correct rate denotes the proportion of examples drawn from the correct notebook among the k total examples. Specifically, we construct prompts by selecting examples from both the correct and mistake notebooks at three distinct ratios: correct rate = 1, where all k examples originate from the correct notebook; correct rate = 0.5, featuring an equal distribution of examples from both notebooks; and correct rate = 0, where all examples are sourced from the mistake notebook. These examples, along with the database and the user's query, are integrated to form the final prompt. By varying the correct rate, we aim to thoroughly investigate and leverage the unique contributions of both the correct and mistake notebooks. The experimental analysis is reported in Section 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">SQL generatation</head><p>After the Demonstration Selection module, we utilize three distinct prompts. For each prompt, we employ a straightforward approach that enables the LLMs to directly generate a single SQL query. Following prevous work <ref type="bibr" target="#b18">[19]</ref>, if an error message occurs during SQL execution, we use the error message as feedback. We take the database, user question, initial SQL, and error message as input, and ask LLMs to output the corrected SQL. This correction process is not illustrated in the SQL Generation module in Fig. <ref type="figure" target="#fig_0">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Cross-consistency</head><p>Traditional self-consistency approaches in text-to-SQL tasks typically increase the randomness of LLM outputs by setting higher temperatures, thereby generating diverse SQL queries. These diverse queries are then aggregated through majority voting to determine the most consistent result <ref type="bibr" target="#b17">[18]</ref>. However, this method has notable drawbacks: higher temperatures can exacerbate model hallucinations <ref type="bibr" target="#b21">[22]</ref>, and the necessity for multiple API calls leads to increased costs in terms of token usage and runtime.</p><p>To address these limitations, we propose a novel cross-consistency method that utilizes diverse prompts generated during the Demonstration Selection and SQL Generation stages. After selecting demonstrations with varying correct rates (as described in Section 3.1), we construct distinct prompts. Each prompt instructs the LLM to generate a SQL query at a lower temperature, ensuring high quality and stability while reducing hallucinations. Importantly, only one API call is made per prompt, minimizing costs in terms of token usage and runtime. The resulting SQL queries are executed against the database, and their results are compared for consistency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Rethink and Update Notebook</head><p>The Rethink and Update Notebook module serves as a pivotal component of our LPE-SQL methodology, facilitating continuous learning through systematic evaluation and knowledge accumulation. This module comprises two essential processes: Rethink and Update Notebook.</p><p>Rethink: In the Rethink phase, the system evaluates the SQL queries produced by the SQL Generation module, comparing their execution results against those of the ground truth SQL to ensure alignment and accuracy. This evaluation mirrors the educational practice of maintaining a mistake notebook to enhance learning outcomes. Specifically, when execution results mismatch, the model performs reflective analysis to identify discrepancies and provide targeted improvement suggestions. Conversely, when match of both execution results, the model constructs a detailed reasoning process inspired by the "chain-of-thought" methodology <ref type="bibr" target="#b22">[23]</ref>. We expect this reasoning process to contribute to multi-step reasoning necessary for more complex tasks, thereby reducing the occurrence of hallucinations.</p><p>Update Notebook: The Update Notebook process operationalizes the insights gained from the Rethink phase by systematically integrating them into the relevant notebooks. This step involves updating the mistake notebook with reflective feedback and enhancing the correct notebook with validated reasoning chains, ensuring that accumulated knowledge is readily accessible for future tasks. By maintaining an up-to-date knowledge base of both successful and erroneous instances, the system leverages historical data to inform and improve future SQL query generation, fostering an environment of continual improvement and robustness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTAL SETUP</head><p>Datasets and Evaluation Metrics. We conduct our experiments on the BIRD dataset <ref type="bibr" target="#b23">[24]</ref>, which is recognized as one of the most challenging benchmarks for Text-to-SQL tasks. BIRD consists of 12,751 unique question-SQL pairs derived from 95 comprehensive databases across 37 diverse domains, including education, healthcare, and more. Specifically designed to replicate real-world database scenarios, BIRD incorporates external knowledge and provides detailed descriptions of both databases and columns to address potential ambiguities in query generation. If not explicitly stated, all evaluations of LPE-SQL were conducted on the full development set.</p><p>To assess model performance, we utilize execution accuracy (EX), a metric that compares the execution results of the predicted SQL queries with those of the reference queries on the corresponding database instances. This approach measures the functional correctness of queries, accommodating variations in valid SQL formulations that yield the same results.</p><p>Large Language Models. We evaluate our approach using several leading LLMs, including Llama3.1-70B <ref type="bibr" target="#b24">[25]</ref>, CodeLlama-34B <ref type="bibr" target="#b25">[26]</ref> <ref type="foot" target="#foot_2">foot_2</ref> , and GPT-3.5-turbo-0125 (GPT-3.5). Llama3.1 represents one of the most widely-used general-purpose open-source LLMs, while CodeLlama is a specialized variant of Llama2 <ref type="bibr" target="#b26">[27]</ref>, further trained on code-specific datasets. GPT-3.5, a closed-source model, is among the most prominent LLMs in the field. Together, these models cover a broad spectrum of application scenarios. GPT-3.5 is accessed via OpenAI APIs, while the Llama3.1-70B and CodeLlama-34B model is downloaded from hugging face to perform experiments locally.</p><p>Due to the high computational restrictions and API cost of the most advanced models, such as Llama3.1-405B and GPT-4o, we were unable to include them in our experiments. However, it is noteworthy that the SoTA method by <ref type="bibr" target="#b0">[1]</ref>, which utilized Llama3.1-405B, achieved an EX score of 59.18 on a subset of the BIRD development set. In contrast, our approach, using the significantly smaller Llama3.1-70B model with INT4 quantization, achieved a notably higher score of 61.22 on the same evaluation set. This substantial performance improvement highlights the effectiveness of our method, with further analysis provided in the Section 5.</p><p>Implementation Details. For the initialization of the knowledge base, unless explicitly stated, we randomly selected 1,000 question-SQL pairs from the training set, leveraging our method to populate both the correct and mistake notebooks. For subsequent accumulation strategies of the knowledge base, we have two approaches: dynamically accumulating examples during the evaluation process following the LPE-SQL method, and not accumulating at all. Additionally, we drew inspiration from the work of <ref type="bibr" target="#b3">[4]</ref> to create four manually annotated demonstration examples. Using the FAISS <ref type="bibr" target="#b27">[28]</ref> library, we leveraged the similarities between the sentence embeddings <ref type="foot" target="#foot_3">5</ref> of the target and candidate questions to identify the most similar entries from both the correct and mistake notebooks, with the quantity determined by specific experimental settings. To minimize the randomness of the LLM outputs, we set the temperature to 0. All prompt templates are detailed in Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Results</head><p>For thorough evaluation, the following research questions are addressed:</p><p>RQ1: How important is real in-domain data? We conducted a thorough analysis comparing real in-domain data with both out-domain data and synthetic in-domain data as knowledge base.</p><p>• Real in-domain data vs. out-domain data: We conducted experiments with Llama3.1-70B, CodeLlama-34B, and GPT-3.5 under two different knowledge base configurations: i) using randomly selected 1,000 question-SQL pairs from the training set, leveraging the notebooks generated by LPE-SQL to populate the knowledge base initialization method, without dynamically accumulating examples during the evaluation process, and ii) initializing the knowledge base as empty and only dynamically accumulating examples during the evaluation process. The results reported through the cross-consistency method, as shown in Table <ref type="table" target="#tab_0">1</ref>, demonstrate that the use of accumulated in-domain data outperforms the exclusive use of out-domain data by an average of 4.96% across these LLMs on the full BIRD development set. This improvement is primarily attributed to the alignment between the notebooks accumulated from in-domain data and the evaluation examples, which provides richer contextual information that aids the model in generating accurate responses. This indicates that real in-domain data is more effective than out-domain data in these scenarios.</p><p>• Real in-domain data vs. synthetic in-domain data: To the best of our knowledge, the only work that has explored synthetic in-domain data for text-to-SQL tasks is <ref type="bibr" target="#b6">[7]</ref>. However, since the code for their data generation was not open-sourced, we could not replicate their exact results. Nevertheless, their experimental findings (Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table">2</ref>  We conducted experiments in scenarios more aligned with the real world, specifically by initializing the knowledge base with a large amount of out-domain data and continuously adding new in-domain data. We selected demonstration examples from the correct and mistake notebooks, using three different selection ratios (detailed in Section 3.1), and analyzed SQL generation performance. Results are shown in Table <ref type="table">2</ref>.</p><p>Specifically, in Table <ref type="table">2</ref>, Llama-3.1 and CodeLlama consistently outperform the mistake notebook alone across most difficulty levels when using the correct notebook, particularly showing an average improvement of 4.49% on challenging tasks. This demonstrates that these models excel at learning the thought processes from the correct notebook to execute complex reasoning more effectively.</p><p>In contrast, GPT-3.5 performs better using only the mistake notebook, indicating its strength in leveraging error experiences for reasoning tasks.</p><p>When both notebooks are used together, Llama-3.1 and CodeLlama show notable improvements in handling challenging tasks, benefiting from the integration of correct thought processes and error feedback, which helps reduce hallucinations and avoid repeated mistakes. Conversely, GPT-3.5 shows significant improvement in simple tasks, but its performance declines in moderate and challenging tasks compared to when it relies solely on the mistake notebook. This suggests that GPT-3.5 tends to learn from past errors more than from correct reasoning paths, particularly in more complex tasks, indicating a nuanced distinction in its learning process.</p><p>Through the analysis presented, we find that Llama-3.1 and CodeLlama achieve more consistent results, compared to GPT-3.5, which often exhibits an opposing trend. This discrepancy may arise from the more similar structure and training data of Llama-3.1 and CodeLlama, as opposed to GPT-3.5's differing characteristics. Consequently, these models demonstrate distinct learning patterns. Exploring these distinct learning patterns could be a valuable direction for future research.</p><p>RQ3: What is the role of cross-consistency, and is it necessary? From Table <ref type="table">2</ref>, it is evident that using both the correct and mistake notebooks in total yields superior results for Llama3.1-70B and GPT-3.5 compared to employing only the correct or mistake notebooks. However, CodeLlama-34B achieves its best performance solely with the correct notebook. Additionally, at more granular levels of difficulty, the differences among the models vary significantly depending on the correct rate. This suggests that the impact of the correct and mistake notebooks differs across various LLMs, likely due to variations in architecture, training data, or parameter settings, leading to distinct preferences in information processing. Consequently, without a clear understanding of the specific effects of the correct and mistake notebooks on a given LLM, achieving stable performance becomes challenging.</p><p>To address this inconsistency, we employed cross-consistency, and the results in Table <ref type="table">2</ref> demonstrate that cross-consistency achieved either optimal results or results deviating by less than 1% from the best. However, it is important to note that implementing cross-consistency incurs additional time and API token costs. Exploring the applicability of the correct and mistake notebooks across different LLMs to fully leverage optimal combinations at various difficulty levels presents a promising avenue for future research aimed at enhancing performance while minimizing runtime and API token expenditures.</p><p>Table <ref type="table">2</ref>: EX scores on the full BIRD development set at different difficulty levels. Method: "CR-1", "CR-0.5", and "CR-0" correspond to correct rate = 1, correct rate = 0.5, and correct rate = 0, respectively, indicating the proportion of examples from the correct notebook. "Vote" refers to the results generated using cross-consistency. The highest and second scores for each model in each section are highlighted in red and blue, respectively.</p><p>Model Method Difficulty level Total Simple Moderate Challenging Llama-3.1-70B CR-1 70.92 56.47 47.59 64.34 CR-0.5 71.24 58.84 53.79 65.84 CR-0 69.62 57.54 44.83 63.62 Vote 72.11 59.70 51.03 66.36 CodeLlama-34B CR-1 63.03 46.77 39.31 55.87 CR-0.5 62.16 45.26 42.07 55.15 CR-0 60.86 42.67 33.10 52.74 Vote 62.81 45.26 37.93 55.15 GPT-3.5 CR-1 65.73 49.57 46.21 59.00 CR-0.5 69.41 50.86 46.21 61.60 CR-0 66.16 52.59 47.59 60.30 Vote 68.22 51.94 44.83 61.08</p><p>RQ4: How does performance improve as the number of entries accumulated in the notebook increases? To answer RQ4 and comprehensively demonstrate the performance of LPE-SQL, we compared it with the current SoTA method in the BIRD benchmark <ref type="bibr" target="#b0">[1]</ref>. For compare, we used the same evaluation set as theirs, which consisted of 10% of the entries from each database in the BIRD dev set. We conducted comparisons on Llama-3.1-70B using three different notebook configuration strategies, where all strategies initialized the notebook with 1,000 examples collected from the training set. The differences between the strategies are as follows: i) no further examples are accumulated during evaluation, ii) examples are continuously accumulated into the notebook during evaluation, and iii) to show performance improvement as the notebook grows, we accumulated the remaining examples from the BIRD dev set into the notebook, while continuously accumulating examples during evaluation. The results are shown in Table <ref type="table" target="#tab_1">3</ref>. Experimental results demonstrate that as the number of in-domain data entries accumulated in the notebook increases, Llama-3.1-70B demonstrates steady improvements in EX scores across various difficulty levels, with particularly notable gains at the challenging level, where performance doubles when utilizing a notebook rich in in-domain data. This strongly highlights the value of continual learning. Furthermore, we compared our approach with the SoTA method proposed by <ref type="bibr" target="#b0">[1]</ref>, which employs a comprehensive and iterative strategy. This method includes generating a candidate SQL query, then applying corrections through iterative re-generation based on database execution errors <ref type="bibr" target="#b28">[29]</ref>, revisions guided by database administrator instructions <ref type="bibr" target="#b11">[12]</ref>, and model-based feedback akin to Reflexion <ref type="bibr" target="#b29">[30]</ref>. It also incorporates self-consistency <ref type="bibr" target="#b15">[16]</ref> to generate multiple responses and selects the most consistent result throughout the entire pipeline for augmentation, SQL generation, and SQL correction. In contrast, our approach, while only utilizing fundamental methods in each module, leverages continual learning and surpasses the SoTA method by 2.04%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ5: How do high-information examples enhance model performance?</head><p>We conducted two sets of experiments using the same experimental setup as in RQ2 on the Llama-3.1-70B model. In one setup, the examples in the notebook adhered to our proposed high-information methodology, which included additional insights such as the thought process and relevant tips. In the other setup, the notebook contained only simple question-ground truth SQL pairs without any supplementary information. This setup aimed to highlight the impact of high-information examples on model performance.</p><p>As shown in Table <ref type="table" target="#tab_2">4</ref>, models with high-information examples consistently outperformed those trained with low-information examples across tasks of varying difficulty levels. Notably, the most significant improvement was observed in challenging tasks, where accuracy increased by 4.82%. Overall, the average accuracy across all difficulty levels reflected an improvement of 1.69% when utilizing high-information examples. These results underscore that providing the model with richer context and reasoning information significantly enhances its capability to handle more complex SQL generation tasks, particularly in challenging scenarios that require deeper reasoning and error correction. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we present LPE-SQL, a novel continual learning framework for Text-to-SQL tasks that utilizes real in-domain data without the need for parameter fine-tuning. Our approach draws inspiration from human learning strategies to create a dynamic knowledge base composed of a correct notebook and a mistake notebook. Extensive experiments conducted on the challenging BIRD dataset demonstrate the effectiveness of our method, as the smaller Llama-3.1-70B model outperforms the larger Llama-3.1-405B model using SoTA methodtechniques. Furthermore, we note that different large language models display varying learning patterns with the correct and mistake notebooks. Leveraging these distinct patterns could further enhance performance, presenting a valuable area for exploration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Limitations</head><p>This work has several limitations and areas for improvement. Since advancing the SoTA was not our primary goal and due to the high cost of APIs for advanced models like GPT-4o, we did not evaluate our approach with the most powerful LLMs. Additionally, we did not incorporate schema linking, a common technique for recognizing tables and columns, nor did we use methods like high-temperature self-consistency to generate multiple candidate SQL queries from a single prompt. As a result, the full potential of our approach remain unexplored. We believe that our continuous learning framework for integrating in-domain data into the correct and mistake notebooks is applicable not only to Text-to-SQL tasks but also to other reasoning tasks, such as mathematical reasoning, which we will continue to explore.</p><p># External Knowledge : { External Knowledge } # Error SQL Query : { Error SQL Query } # Error information : { Error } # SQL after Reflection : { SQL after Reflection } # Ground Truth SQL : { Ground Truth SQL } Error SQL Query is the result you generate the first time and SQL after Reflection is the result you generate again based on the Error information returned by the compiler knowing that the first generated result was wrong . Now that both results are known to be wrong , I am providing Ground Truth SQL for your reference , please think carefully about why your first two results were not correct , please provide a Tip on how to avoid making the same mistake in the future . Note that you only need to return the Tip . Please return in the following format : # Tip : Listing 3: The template for generating tips based on the incorrect SQL and the ground truth SQL. # For your reference , here are some examples of Questions , sql queries , and thought processes related to the Question you ' re working with { Example2 } # Below are examples of mistakes you ' ve made before that are similar to the question you ' re about to tackle , so please refer to not making the same mistake ! { Example1 } { Example2 } # Schema of the database : { Database Schema } # Question : { Question } # External Knowledge : { External Knowledge } # SQL Query : { SQL Query } # Error : { Error } Reflect on the error encountered in the SQL query and provide a corrected SQL query . In your response , you do not need to mention your intermediate steps . Do not include any comments in your response . Do not need to start with the symbol ''' Your SQL code should be concise and efficient . You only need to return the result SQLite SQL code start from SELECT Listing 4: The template for generating a thought process corresponding to the SQL query.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Reasoning Pipeline</head><p>To clarify the proposed LPE-SQL method, we provide a summary of the reasoning pipeline in Algorithm Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table">2</ref>. Algorithm Table 1 outlines the reasoning process for a single correct rate setting, whereas Algorithm Table 2 demonstrates the reasoning process using the cross-consistency method across various correct rate settings. The complete source code is available in src/gpt_request.py. Algorithm 1 Main Pipeline of Single Reasoning for LPE-SQL Input: Initialization of the knowledge base KG, correct rate CR, number of demonstration examples k, Question Q, External Knowledge EK, database path db_path, ground truth SQL GT . Output: SQL query. 1: Initialize a retriever (CR, KG) to retrieve and update data in KG. 2: Demonstration example E ← retriever.get_example(Q) 3: Prompt ← generate_prompt_common_sql(Q, E, EK) 4: SQL query ← LLM(Prompt) 5: Prompt ← generate_prompt_thought_process(Q, EK, SQL query) 6: Thought process ← LLM(Prompt) 7: _, error ← execute_sql(SQL query, db_path) 8: if error ̸ = None then 9: Prompt ← generate_prompt_reflection_sql(E, Q, EK, SQL query, error) 10: Reflectioned SQL query ← LLM(Prompt) 11: end if 12: Predicted SQL ← if New SQL query ̸ = None then New SQL query else SQL query 13: res ← execute_compare(Predicted SQL, GT ) 14: if res == 0 then Use Algorithm 1 to obtain the SQL query based on the current CR and KG, and save it into sql_list. 4: end for 5: Compare the execution results of all SQL queries in sql_list, and select the SQL query with the most consistent results as the final SQL query. 6: Obtain the final SQL query and all updated knowledge base.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C MORE RESULTS</head><p>In Fig. <ref type="figure" target="#fig_2">2</ref>, we present a comparison of different methods applied to problems of varying difficulty levels from the BIRD development dataset. These methods include: i) using only manually annotated examples based on <ref type="bibr" target="#b3">[4]</ref>, ii) using 1000 examples collected from the training set, and iii) using examples dynamically accumulated during evaluation via the LPE-SQL method. The first two methods are commonly used in few-shot learning as knowledge base, while the third method is introduced in our LPE-SQL approach. Consequently, a detailed examination of our approach, along with a comparison to other methods, by analyzing performance across problems of varying difficulty at a more granular level, provides valuable insights.</p><p>Using the training set as a knowledge base does not significantly outperform carefully designed fixed examples. Across all three different LLMs tested in the experiment, using the training set as a knowledge base provided a slight performance improvement-around 1%-over manually annotated examples for tasks of simple and moderate difficulty. However, at the challenging difficulty level, both Llama-3.1-70B and CodeLlama-34B showed consistent performance drops, with CodeLlama-34B experiencing a decline of 3.44%. These observations indicate that there is no significant difference in performance between these two methods.</p><p>In-domain data accumulation leads to comprehensive improvements. Compared to both using the training set as a knowledge base and relying on carefully designed fixed examples, continuously accumulating domain-specific data during evaluation results in significant improvements across various difficulty levels. At the simple, moderate, and challenging levels, applying the evaluationonly method with different LLMs achieves at least 4.44%, 1.94%, and 2.76% improvements over the other two methods, respectively. The maximum observed improvements reach 6.92%, 7.76%, and 11.72%, underscoring the effectiveness of this approach.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An overview of the proposed method including all four modules</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>15 :</head><label>15</label><figDesc>Prompt ← generate_prompt_reflection_tip(Q, EK, SQL query, error, Reflectioned SQL query, GT ) 16: Tip ← LLM(Prompt) 17: KG ← retriever.add_to_mistake_notebook(Q, EK, SQL query, error, Reflectioned SQL query, GT , Tip) 18: else 19: KG ← retriever.add_to_correct_notebook(Q, EK, Predicted SQL, Thought process) 20: end if 21: Obtain the predicted SQL query and updated knowledge base KG. Algorithm 2 Main Pipeline of Cross-Consistency Reasoning for LPE-SQL Input: Initialization of all knowledge bases KG_list, list of all correct rates CR_list, number of demonstration examples k, Question Q, External Knowledge EK, database path db_path, ground truth SQL GT . Output: Final SQL query. 1: Initialize a list sql_list to store all generated SQL queries. 2: for each CR, KG in CR_list and KG_list do 3:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: EX scores across problems of varying difficulty levels from the BIRD development dataset using different methods.</figDesc><graphic coords="15,108.00,72.00,396.01,169.72" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>in their paper) indicate that using only synthetic in-domain data leads to worse performance compared to solely using out-domain data across various LLMs and datasets. Combined with our findings from Table1, it is clear that synthetic in-domain data fails to adequately represent real in-domain data.Performance comparison of out-of-domain and in-domain examples across different LLMs. Init method: Indicates the initialization method for the knowledge base, where "T" denotes the selection of 1,000 question-SQL pairs from the training set, with the notebook generated by LPE-SQL serving as the initial knowledge base. "-" indicates that the knowledge base is initialized as empty. Continuous accumulation: ✓ signifies that examples are continuously accumulated into the notebook during evaluation, while × indicates the opposite.</figDesc><table><row><cell cols="2">Init method Continuous accumulation</cell><cell></cell><cell>Model</cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="2">Llama 3.1-70B CodeLlama-34B</cell><cell>GPT-3.5</cell></row><row><cell>T</cell><cell>×</cell><cell>59.45</cell><cell>48.76</cell><cell>55.48</cell></row><row><cell>-</cell><cell>✓</cell><cell>63.89 (+4.44)</cell><cell>54.24 (+5.48)</cell><cell>60.43 (+4.95)</cell></row></table><note><p>RQ2: What is the impact of the correct notebook and mistake notebook on handling SQL generation with varying difficulty?</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>The impact of increasing the scale of notebooks on the EX scores of the BIRD development subset across different difficulty levels.E f ull indicates that we accumulated the remaining examples from the BIRD development set into the notebook.</figDesc><table><row><cell>Model</cell><cell cols="2">Init method Continuous accumulation</cell><cell></cell><cell>Difficulty level</cell><cell></cell><cell>Total</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Simple</cell><cell>Moderate</cell><cell>Challenging</cell></row><row><cell></cell><cell>T + E f ull</cell><cell>✓</cell><cell>67.90</cell><cell>53.70</cell><cell>50.00</cell><cell>61.22</cell></row><row><cell>Llama-3.1-70B</cell><cell>T</cell><cell>✓</cell><cell cols="2">61.73 (-6.17) 48.15 (-5.55)</cell><cell>41.67 (-8.33)</cell><cell>55.10 (-6.12)</cell></row><row><cell></cell><cell>T</cell><cell>×</cell><cell cols="4">60.49 (-7.41) 42.59 (-11.11) 25.00 (-25.00) 51.02 (-10.20)</cell></row><row><cell>Llama-3.1-405B</cell><cell>SoTA[1]</cell><cell></cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>59.18 (-2.04)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Performance comparison of Llama3.1-70B using low-information and high-information examples on the complete BIRD development set.</figDesc><table><row><cell>Method</cell><cell></cell><cell>Difficulty level</cell><cell></cell><cell>Total</cell></row><row><cell></cell><cell>Simple</cell><cell>Moderate</cell><cell>Challenging</cell><cell></cell></row><row><cell>Low-information</cell><cell>70.92</cell><cell>57.97</cell><cell>46.21</cell><cell>64.67</cell></row><row><cell cols="2">High-information 72.11 (+1.19)</cell><cell>59.70 (+1.73)</cell><cell cols="2">51.03 (+4.82) 66.36 (+1.69)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>For simplicity, we will refer to the large pool of demonstration examples as a "knowledge base" throughout the following text.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://github.com/czbnlp/LPE-SQL</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>Due to the high GPU requirements of running Llama3.1-70B and CodeLlama-34B, we utilized the INT4 quantized and AWQ quantized versions, respectively, available on Hugging Face.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>The encoder model utilized is all-MiniLM-L6-v2, available on Hugging Face at https://huggingface. co/sentence-transformers/all-MiniLM-L6-v2.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A prompt templates</head><p>This section introduces the prompt templates used in LPE-SQL, categorized into four types: the template for generically generating SQL queries (List 1), the template for generating the corresponding thought process based on the SQL query (List 2), the template for generating tips based on the incorrect SQL and the ground truth SQL (List 3), and the template for re-generating the SQL using error information from SQL execution (List 4). For demonstration purposes, we use a scenario that combines both the correct and mistake notebooks (correct rate = 0.5).</p><p># For your reference , here are some examples of Questions , sql queries , and thought processes related to the Question you ' re working with { Example2 } # Below are examples of mistakes you ' ve made before that are similar to the question you ' re about to tackle , so please refer to not making the same mistake ! { Example1 } { Example2 } # Schema of the database : { Database Schema } --Using valid SQLite and understanding Hint , answer the following questions for the tables provided above . --{ Question } --{ External Knowledge } Generate the SQLite for the above question after thinking step by step : In your response , you do not need to mention your intermediate steps . Do not include any comments in your response . Do not need to start with the symbol ''' Your SQL code should be concise and efficient . You only need to return the result SQLite SQL code start from SELECT Listing 1: The template for generically generating SQL queries. # Schema of the database : { database_schema } # Question : { Question } # External Knowledge : { External Knowledge } # You just generated the following SQL : { SQL Query } Now , please provide your thought process behind the generation of this SQL query . Your explanation should be concise and efficient , focusing on the key reasoning steps .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 2: The template for re-generating an SQL query based on error feedback from SQL execution.</head><p># Schema of the database : { Database Schema } # Question : { Question }</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">The death of schema linking? text-to-sql in the age of well-reasoned language models</title>
+		<author>
+			<persName><forename type="first">Karime</forename><surname>Maamari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fadhil</forename><surname>Abubaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Jaroslawicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amine</forename><surname>Mhedhbi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07702</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Evaluating the text-to-sql capabilities of large language models</title>
+		<author>
+			<persName><forename type="first">Nitarshan</forename><surname>Rajkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.00498</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">What did i do wrong? quantifying llms&apos; sensitivity and consistency to prompt engineering</title>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Errica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giuseppe</forename><surname>Siracusano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Sanvito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Bifulco</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12334</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Din-sql: Decomposed in-context learning of text-to-sql with self-correction</title>
+		<author>
+			<persName><forename type="first">Mohammadreza</forename><surname>Pourreza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davood</forename><surname>Rafiei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Synchromesh: Reliable code generation from pre-trained language models</title>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vu</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Gulwani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11227</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">How to prompt llms for text-to-sql: A study in zero-shot, single-domain, and cross-domain settings</title>
+		<author>
+			<persName><forename type="first">Shuaichen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Fosler-Lussier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11853</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Selective demonstrations for cross-domain text-to-sql</title>
+		<author>
+			<persName><forename type="first">Shuaichen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Fosler-Lussier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06302</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Information systems for enterprise integration, interoperability and networking: theory and applications</title>
+		<author>
+			<persName><forename type="first">Hervé</forename><surname>Panetto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Cecil</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">The top programming languages</title>
+		<author>
+			<persName><surname>Spectrum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Design of smart mistake notebook based on ai and big data</title>
+		<author>
+			<persName><forename type="first">Zeyi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Cen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linhao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjie</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Computer Science and Education</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18" to="28" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Act-sql: Incontext learning for text-to-sql with automatically-generated chain-of-thought</title>
+		<author>
+			<persName><forename type="first">Hanchong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongshen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.17342</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Chess: Contextual harnessing for efficient sql synthesis</title>
+		<author>
+			<persName><forename type="first">Shayan</forename><surname>Talaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadreza</forename><surname>Pourreza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Chen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Saberi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.16755</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Tcsr-sql: Towards table content-aware text-to-sql with self-retrieval</title>
+		<author>
+			<persName><forename type="first">Wenbo</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoming</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingwei</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01183</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Rb-sql: A retrieval-based llm framework for text-to-sql</title>
+		<author>
+			<persName><forename type="first">Zhenhe</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongqiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengxiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiyu</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongjiang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangyong</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.08273</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">End-to-end text-to-sql generation within an analytics insight engine</title>
+		<author>
+			<persName><forename type="first">Karime</forename><surname>Maamari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amine</forename><surname>Mhedhbi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12104</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Mcs-sql: Leveraging multiple prompts and multiple-choice selection for text-to-sql generation</title>
+		<author>
+			<persName><forename type="first">Dongjun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Choongwon</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehyuk</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heesoo</forename><surname>Park</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.07467</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Evaluating llms for temporal entity extraction from pediatric clinical text in rare diseases context</title>
+		<author>
+			<persName><forename type="first">Judith</forename><surname>Jeyafreeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anita</forename><surname>Burgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Garcelon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the First Workshop on Patient-Oriented Language Processing (CL4Health)@ LREC-COLING 2024</title>
+		<meeting>the First Workshop on Patient-Oriented Language Processing (CL4Health)@ LREC-COLING 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="145" to="152" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Magic: Generating self-correction guideline for in-context text-to-sql</title>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Askari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Poelitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinye</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12692</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiachang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.06804</idno>
+		<title level="m">What makes good in-context examples for gpt-3?</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">The effect of sampling temperature on problem solving in large language models</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Renze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhan</forename><surname>Guven</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.05201</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Can llm already serve as a database interface? a big bench for large-scale database grounded text-to-sqls</title>
+		<author>
+			<persName><forename type="first">Jinyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiying</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Huo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Remez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Matthijs</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandr</forename><surname>Guzhva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gergely</forename><surname>Szilvasy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Emmanuel</forename><surname>Mazaré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hervé</forename><surname>Jégou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.08281</idno>
+		<title level="m">The faiss library</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Robust text-to-sql generation with execution-guided decoding</title>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kedar</forename><surname>Tatwawadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1807.03100</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

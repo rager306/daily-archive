@@ -1,0 +1,2832 @@
+{
+  "layout": {
+    "author": "Elias Lumer; Faheem Nizar; Anmol Gulati; Pradeep Honaganahalli Basavaraju; Vamse Kumar Subbiah",
+    "creation date": null,
+    "file name": "2511.01854.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          225.46,
+          36.36,
+          566.54
+        ],
+        "content": "arXiv:2511.01854v2[cs.CL]4Nov2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 33,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          145.4,
+          643.736,
+          469.963,
+          679.329
+        ],
+        "content": "Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 2,
+        "id": 25,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          168.138,
+          598.297,
+          447.221,
+          622.785
+        ],
+        "content": "Elias Lumer, Faheem Nizar, Anmol Gulati, Pradeep Honaganahalli Basavaraju, and Vamse Kumar Subbiah",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 26,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          243.674,
+          577.727,
+          371.682,
+          589.016
+        ],
+        "content": "PricewaterhouseCoopers U.S.A.",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 27,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          163.111,
+          360.085,
+          452.249,
+          546.778
+        ],
+        "content": "Abstract. Recent advances in LLM Multi-Agent Systems enable scalable orchestration of sub-agents, each coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. However, existing retrieval methods typically match queries against coarse agentlevel descriptions before routing, which obscures fine-grained tool functionality and often results in suboptimal agent selection. We introduce Tool-to-Agent Retrieval, a unified framework that embeds both tools and their parent agents in a shared vector space and connects them through metadata relationships. By explicitly representing tool capabilities and traversing metadata to the agent level, Tool-to-Agent Retrieval enables granular tool-level or agent-level retrieval, ensuring that agents and their underlying tools or MCP servers are equally represented without the context dilution that arises from chunking many tools together. Evaluating Tool-to-Agent Retrieval across eight embedding models, our approach achieves consistent improvements of 19.4% in Recall@5 and 17.7% in nDCG@5 over previous state-of-the-art agent retrievers on the LiveMCPBench benchmark.",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 28,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          315.232,
+          480.591,
+          339.74
+        ],
+        "content": "Keywords: Large Language Models · Tool Retrieval · Agent Routing · MultiAgent Systems · Model Context Protocol (MCP)",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 29,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          281.838,
+          228.934,
+          296.675
+        ],
+        "content": "1 Introduction",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 30,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.765,
+          149.977,
+          480.594,
+          270.106
+        ],
+        "content": "Recent advancements in Large Language Model (LLM) agents and the Model Context Protocol (MCP) enable assistants to discover, equip, and use large collections of external tools and MCP servers at inference time [6, 20]. In practice, a single assistant may delegate to specialized sub-agents for code analysis, databases, or web search, each bundling dozens of tools behind a single interface [5]. A central challenge is routing: given a user query, should the system select a specific tool or leverage an entire agent (e.g., an MCP server) that provides a coherent set of tools? Forwarding all tool descriptions to the model is impractical, e.g., one MCP server with 26 tools can consume over 4,600 tokens, making efficient retrieval essential for scalability [35,38].",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 31,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.88,
+          480.587,
+          150.368
+        ],
+        "content": "Existing strategies typically fall into two camps. Agent-first pipelines match the query against a brief agent description, then operate only within that agent,",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 32,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          548.323,
+          480.538,
+          676.161
+        ],
+        "id": 35,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2511.01854_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          134.765,
+          502.597,
+          480.593,
+          535.865
+        ],
+        "content": "Fig. 1. Comparison of agent-only retrieval (left) and the proposed Tool-to-Agent Retrieval (right), which embeds tools and agents in a shared vector space to support joint retrieval and traversal.",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 36,
+        "linked content id": 35,
+        "page number": 2,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          134.765,
+          345.583,
+          480.595,
+          477.668
+        ],
+        "content": "which can hide highly relevant tools whose parent description does not obviously align with the query. Conversely, tool-only retrieval treats each tool independently and ignores the complementary benefits of the surrounding bundle on multi-step tasks [22]. Recent benchmarks have highlighted these challenges in multi-step tool selection, evaluating agents across diverse tool repositories [10, 15, 29]. In practice, single-tool matches may underperform when a workflow benefits from a coordinated set of tools, while agent-first routing may overlook fine-grained capabilities. What is needed is a retrieval mechanism that can operate at both levels, return a focused tool when the query is specific, or return an entire agent when broader capability is advantageous, without committing to a brittle two-stage pipeline.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 37,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          235.731,
+          480.596,
+          343.906
+        ],
+        "content": "We introduce Tool-to-Agent Retrieval, which represents tools and their parent agents in the same vector space and links them through explicit metadata (Figure 1). At query time, retrieval runs over a joint index and returns either an individual tool or an agent bundle, depending on which better fits the query. By modeling fine-grained tool semantics while retaining agent context via tool→agent links (and traversing those links at retrieval time), the method avoids the context dilution that arises when many tools are collapsed into a single coarse description. This enables one-pass decisions about what to equip (a tool vs. an agent), improving routing for both focused and multi-step queries.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 38,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.88,
+          480.594,
+          234.054
+        ],
+        "content": "Related Work. A growing line of work builds tool retrieval for LLM agents by embedding tool descriptions and metadata in a tool knowledge base and selecting top-k tools per query [19, 21, 22, 37]. Retrieval-augmented generation (RAG) enables LLM agents to access external knowledge and tools through semantic search [7], with recent hybrid approaches combining knowledge graphs and vector retrieval to improve tool selection accuracy [32]. Systems such as PLUTO and Re-Invoke refine dense retrieval for tool selection and demonstrate strong single-pass performance at scale [4, 9]. Graph-based approaches have emerged to structure tool relationships, including ToolNet and Control-",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 39,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          663.352,
+          464.892,
+          675.855
+        ],
+        "content": "Algorithm 1 Combined Tool–Agent Top-K Retrieval (Tool-to-Agent Retrieval)",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 42,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          463.905,
+          480.592,
+          661.614
+        ],
+        "id": 44,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              138.655,
+              633.601,
+              480.587,
+              661.614
+            ],
+            "content": "1: Input: query q, corpus C (agents ∪ tools), type τ(·) ∈ {agent, tool}, owner map own(·), similarity s(q, ·), cutoffs N, K",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              622.642,
+              313.359,
+              639.696
+            ],
+            "content": "2: Output: set of agents A⋆ with |A⋆|= K",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              611.683,
+              480.592,
+              628.692
+            ],
+            "content": "3: L ← TopN(q, C, N) ▷ rank by s and return ordered [e(1), . . . , e(N)]",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              600.724,
+              207.533,
+              617.716
+            ],
+            "content": "4: A ← ∅; i ← 1",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              589.766,
+              276.662,
+              606.82
+            ],
+            "content": "5: while |A|< K and i ≤ N do",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              578.807,
+              197.487,
+              595.799
+            ],
+            "content": "6: e ← L[i]",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              573.497,
+              248.948,
+              584.902
+            ],
+            "content": "7: if τ(e) = agent then",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              556.889,
+              201.566,
+              573.881
+            ],
+            "content": "8: a ← e",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.655,
+              551.579,
+              367.518,
+              562.984
+            ],
+            "content": "9: else if τ(e) = tool and own(e) is defined then",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              534.971,
+              225.583,
+              551.963
+            ],
+            "content": "10: a ← own(e)",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              529.661,
+              181.828,
+              541.066
+            ],
+            "content": "11: else",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              513.053,
+              480.592,
+              530.107
+            ],
+            "content": "12: i ← i + 1; continue ▷ skip if owner missing/undefined",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              499.853,
+              222.592,
+              516.907
+            ],
+            "content": "13: if a ∈/ A then",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              488.894,
+              232.18,
+              505.886
+            ],
+            "content": "14: A ← A ∪ {a}",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              475.694,
+              201.479,
+              492.686
+            ],
+            "content": "15: i ← i + 1",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              463.905,
+              217.117,
+              480.959
+            ],
+            "content": "16: return A⋆ ← A",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 16,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          134.765,
+          339.607,
+          480.596,
+          447.782
+        ],
+        "content": "LLM which organize tools through graph structures to enable more sophisticated navigation [16,17]. Iterative methods like ToolReAGT decompose complex tasks and retrieve tools step-by-step, improving recall on multi-step problems [2, 3]. Multi-hop reasoning frameworks further enhance retrieval by chaining intermediate steps [34,36]. In parallel, hierarchical pipelines first choose the MCP server and then a tool inside it to control prompt cost, but this agent-first routing can suppress fine-grained matches [6,39]. Our approach differs by jointly representing tools and agents and retrieving over a single, linked space, so the system does not have to commit upfront to tool-only or agent-first selection.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 46,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          149.709,
+          327.652,
+          480.595,
+          340.185
+        ],
+        "content": "Contributions. We make the the following contributions through this work:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 47,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          138.973,
+          193.12,
+          480.595,
+          323.812
+        ],
+        "id": 48,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              138.973,
+              275.393,
+              480.592,
+              323.812
+            ],
+            "content": "1. Unified Retrieval Framework: We introduce a novel tool retrieval strategy that embeds both tools and their parent agents in a shared vector space, linked through tool-to-agent metadata traversal, enabling unified retrieval and achieving state-of-the-art performance.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.973,
+              228.279,
+              480.595,
+              276.697
+            ],
+            "content": "2. Granular Routing Mechanism: We propose a retrieval procedure that preserves fine-grained tool-level detail while retaining agent-level context, mitigating context dilution from coarse summaries and improving robustness on multi-step queries.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.973,
+              193.12,
+              480.594,
+              229.583
+            ],
+            "content": "3. Comprehensive Evaluation: We evaluate the method on LiveMCPBench across eight embedding models, demonstrating 17.7% (recall@5) and 19.4% (nDCG@5) improvements over previous state-of-the-art approaches.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          134.765,
+          158.34,
+          359.967,
+          173.177
+        ],
+        "content": "2 Approach: Tool-to-Agent Retrieval",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 49,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.88,
+          480.594,
+          150.368
+        ],
+        "content": "As illustrated in Figure 1, Tool-to-Agent Retrieval embeds both tools and their parent agents in a unified vector space, explicitly linking each tool to its parent",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 50,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          495.631,
+          480.596,
+          675.537
+        ],
+        "content": "agent through metadata relationships. We consider a catalog of MCP servers with their corresponding agents, denoted as a ∈ A. Each agent a owns a set of tools Ta, consisting of API calls, functions, or actions exposed by the agent. The combined system is modeled as a bipartite graph G = (A,T ,E), where edges E represent ownership relations between tools and agents. Graph-based modeling of tool relationships enables structured navigation and reasoning over tool capabilities [11,33]. This unified representation directly addresses the limitations of single-level retrieval. Retrieving solely by agent descriptions can obscure finegrained functional capabilities at the tool level, while retrieving tools independently discards important execution context such as authentication, parameter inference, or access policies maintained at the agent level. By integrating both levels, the retriever can surface relevant tools without losing their surrounding agent context. Furthermore, every query or sub-query ultimately resolves to an executable agent, ensuring that the retrieved entity can act upon the user request.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          441.731,
+          480.593,
+          484.54
+        ],
+        "content": "Indexing. We construct a unified tool–agent catalog C that integrates both tools and agents for retrieval. The catalog is composed of two corpora: the tool corpus CT and the agent corpus CA.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          376.366,
+          480.595,
+          448.675
+        ],
+        "content": "The Tool Corpus CT ⊂ C contains tool names and descriptions that are directly indexed for retrieval. Each tool entry includes metadata explicitly linking it to its parent MCP server or agent, denoted as owner(T ) = A. This mapping enables traversal from a retrieved tool to the corresponding executable agent during query resolution, drawing on graph-based representation techniques for knowledge integration [27,28].",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 54,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          340.5,
+          480.593,
+          376.944
+        ],
+        "content": "The Agent Corpus CA ⊂ C similarly contains agent names and descriptions, representing higher-level capabilities and serving as parent nodes within the retrieval graph.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 55,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          233.19,
+          480.595,
+          329.409
+        ],
+        "content": "Retrieval. The retrieval process modifies the standard top-K ranking procedure. The objective is to identify the top-K most relevant agents for a given query or sub-query. To achieve this, we first retrieve the top N ≫ K entities from the unified tool–agent catalog C, ranked by semantic similarity to the query. This approach combines semantic and lexical matching strategies to improve recall [14], utilizing BM25 [30] alongside dense vector retrieval. The corresponding parent agents are then aggregated, and the top-K unique agents are selected. The complete retrieval procedure is detailed in Algorithm 1.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 56,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          185.655,
+          480.59,
+          222.099
+        ],
+        "content": "Query. The input to the Tool-to-Agent Retriever can be the original user query, the decomposed sub-steps derived from it, or a combination of both. We evaluate two query paradigms.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 57,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          149.79,
+          480.594,
+          186.233
+        ],
+        "content": "The first, Direct Querying, uses the user’s high-level question directly as the retrieval query, without any pre-processing. This approach retrieves the top-K most relevant agents or tools for the overall task.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.879,
+          480.595,
+          150.368
+        ],
+        "content": "The second, Step-wise Querying, decomposes the original query into a sequence of smaller sub-tasks. Each step is then submitted independently to the",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          639.469,
+          480.591,
+          678.441
+        ],
+        "content": "Table 1. Results on the LiveMCPBench benchmark comparing Tool-to-Agent Retrieval with baselines (BM25, Q.Retrieval, ScaleMCP, and MCPZero). Metrics are Recall@K, mAP@K, and nDCG@K for K ∈ {1, 5, 10}.",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 61,
+        "linked content id": 62,
+        "page number": 5,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          137.07,
+          553.115,
+          478.286,
+          634.858
+        ],
+        "id": 62,
+        "level": "2",
+        "number of columns": 4,
+        "number of rows": 2,
+        "page number": 5,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  137.269,
+                  611.247,
+                  253.769,
+                  634.46
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      140.059,
+                      623.464,
+                      184.996,
+                      634.869
+                    ],
+                    "content": "Approach",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 1,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  253.769,
+                  611.247,
+                  328.674,
+                  634.46
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      260.5,
+                      612.011,
+                      321.947,
+                      634.869
+                    ],
+                    "content": "Recall @1 @3 @5",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 3,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  328.674,
+                  611.247,
+                  403.58,
+                  634.46
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      335.405,
+                      612.011,
+                      396.852,
+                      634.869
+                    ],
+                    "content": "mAP @1 @3 @5",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 6,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  403.58,
+                  611.247,
+                  478.087,
+                  634.46
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      410.311,
+                      612.011,
+                      471.758,
+                      634.869
+                    ],
+                    "content": "nDCG @1 @3 @5",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 10,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  137.269,
+                  553.513,
+                  253.769,
+                  611.247
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      140.059,
+                      554.024,
+                      250.578,
+                      611.395
+                    ],
+                    "content": "BM25 Q.Retrieval MCPZero ScaleMCP Tool-to-Agent Retrieval",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 12,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  253.769,
+                  553.513,
+                  328.674,
+                  611.247
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      256.957,
+                      554.024,
+                      325.49,
+                      611.395
+                    ],
+                    "content": "0.20 0.20 0.20 0.31 0.47 0.56 0.44 0.66 0.70 0.49 0.68 0.74 0.61 0.77 0.83",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 18,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  328.674,
+                  553.513,
+                  403.58,
+                  611.247
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      331.863,
+                      554.024,
+                      400.396,
+                      611.395
+                    ],
+                    "content": "0.12 0.12 0.12 0.31 0.31 0.24 0.45 0.39 0.31 0.49 0.40 0.29 0.61 0.49 0.34",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 23,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  403.58,
+                  553.513,
+                  478.087,
+                  611.247
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      406.768,
+                      554.024,
+                      475.301,
+                      611.395
+                    ],
+                    "content": "0.14 0.14 0.14 0.31 0.35 0.32 0.45 0.46 0.41 0.49 0.48 0.40 0.61 0.56 0.46",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 34,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          134.765,
+          457.41,
+          480.596,
+          529.719
+        ],
+        "content": "retriever, allowing the system to identify different agents as needed across multistep workflows. This decomposition strategy aligns with reasoning-based retrieval planning methods that break complex queries into manageable sub-goals [12,13]. Query rewriting techniques further enhance retrieval by reformulating queries for improved semantic matching [23]. This step-wise procedure is the primary setting used in our evaluations.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 63,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          424.723,
+          322.079,
+          439.56
+        ],
+        "content": "3 Experiments and Evaluation",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 64,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.765,
+          317.48,
+          480.596,
+          413.699
+        ],
+        "content": "We evaluate the effectiveness of the proposed Tool-to-Agent Retriever in comparison to agent-only retrieval methods. Our primary hypothesis is that a unified retriever operating over both tools and agents will outperform approaches that retrieve agents alone. In the MCP context, particularly under hierarchical querying [6,21], this improvement extends to the initial stage of routing, where identifying the correct MCP server enables access to its associated tools for crossconnected operations. Recent benchmarking efforts have highlighted the challenges of stateful, conversational tool use across multi-turn interactions [18,40].",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 65,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          257.659,
+          480.596,
+          318.012
+        ],
+        "content": "The experimental setup evaluates retrieval accuracy in identifying the correct agents or MCP servers for each query. We report standard information retrieval metrics, including Recall, mean average precision (mAP), and normalized discounted cumulative gain (nDCG), to quantify the performance improvements of the proposed approach.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 66,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          173.746,
+          480.596,
+          246.054
+        ],
+        "content": "Dataset and Evaluation Protocol. We evaluate our approach on the LiveMCPBench dataset [24,25], which includes 70 MCP servers and 527 tools, along with 95 real-world questions annotated with step-by-step breakdowns and relevant tool–agent mappings. This structure enables fine-grained, step-level evaluation of retrieval performance. On average, each question spans 2.68 steps and involves 2.82 tools and 1.40 MCP agents.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 67,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.88,
+          480.595,
+          174.278
+        ],
+        "content": "To isolate the contribution of tool-level information, we also construct an agent-only baseline dataset containing only MCP server names and descriptions. During inference, we employ step-wise querying and compare Tool-to-Agent Retrieval against BM25 [31], ScaleMCP [21], and MCPZero [6].",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          195.99,
+          667.036,
+          419.362,
+          678.441
+        ],
+        "content": "Table 2. Per-embedding comparison against MCPZero",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 70,
+        "linked content id": 71,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          134.765,
+          541.011,
+          500.303,
+          657.274
+        ],
+        "id": 71,
+        "level": "3",
+        "number of columns": 4,
+        "number of rows": 3,
+        "page number": 6,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  134.964,
+                  633.663,
+                  275.2,
+                  656.876
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      138.75,
+                      645.88,
+                      215.327,
+                      657.285
+                    ],
+                    "content": "Retriever Model",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 1,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 2,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  275.2,
+                  645.369,
+                  350.168,
+                  656.876
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      291.517,
+                      645.88,
+                      333.65,
+                      657.285
+                    ],
+                    "content": "Recall@5",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 3,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  350.168,
+                  645.369,
+                  425.335,
+                  656.876
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      365.965,
+                      645.88,
+                      409.535,
+                      657.285
+                    ],
+                    "content": "nDCG@5",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 5,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  425.335,
+                  645.369,
+                  500.104,
+                  656.876
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      444.097,
+                      645.88,
+                      481.738,
+                      657.285
+                    ],
+                    "content": "mAP@5",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 7,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  275.2,
+                  633.663,
+                  350.168,
+                  645.369
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      279.185,
+                      634.428,
+                      345.984,
+                      645.717
+                    ],
+                    "content": "Ours MCPZero",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 8,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  350.168,
+                  633.663,
+                  425.335,
+                  645.369
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      354.352,
+                      634.428,
+                      421.151,
+                      645.717
+                    ],
+                    "content": "Ours MCPZero",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 11,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  425.335,
+                  633.663,
+                  500.104,
+                  645.369
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      429.519,
+                      634.428,
+                      496.318,
+                      645.717
+                    ],
+                    "content": "Ours MCPZero",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 13,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  134.964,
+                  541.409,
+                  275.2,
+                  633.663
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      138.75,
+                      541.974,
+                      270.813,
+                      633.811
+                    ],
+                    "content": "Vertex AI text embedding 005 Gemini Embedding 001 Amazon titan embed text v2 Amazon titan embed text v1 OpenAI text embedding ada 002 OpenAI text embedding 3 small OpenAI text embedding 3 large All MiniLM L6 v2",
+                    "font": "SFRM0900",
+                    "font size": 8.966,
+                    "id": 14,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  275.2,
+                  541.409,
+                  350.168,
+                  633.663
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      279.517,
+                      622.468,
+                      334.516,
+                      633.873
+                    ],
+                    "content": "0.87 0.74",
+                    "font": "SFBX0900",
+                    "font size": 8.966,
+                    "id": 27,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  },
+                  {
+                    "bounding box": [
+                      279.517,
+                      541.92,
+                      334.516,
+                      622.366
+                    ],
+                    "id": 29,
+                    "level": "1",
+                    "list items": [
+                      {
+                        "bounding box": [
+                          279.517,
+                          576.441,
+                          334.516,
+                          622.366
+                        ],
+                        "content": "0.86 0.74 0.85 0.66 0.85 0.65 0.83 0.70",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      },
+                      {
+                        "bounding box": [
+                          279.517,
+                          541.92,
+                          334.516,
+                          576.339
+                        ],
+                        "content": "0.87 0.72 0.87 0.74 0.80 0.67",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      }
+                    ],
+                    "number of list items": 2,
+                    "numbering style": "arabic numbers",
+                    "page number": 6,
+                    "pdfua_tag": "L",
+                    "type": "list"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  350.168,
+                  541.409,
+                  425.335,
+                  633.663
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      354.684,
+                      610.961,
+                      409.683,
+                      633.873
+                    ],
+                    "id": 41,
+                    "level": "1",
+                    "list items": [
+                      {
+                        "bounding box": [
+                          354.684,
+                          622.468,
+                          409.683,
+                          633.873
+                        ],
+                        "content": "0.48 0.42",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      },
+                      {
+                        "bounding box": [
+                          354.684,
+                          610.961,
+                          409.683,
+                          622.366
+                        ],
+                        "content": "0.49 0.44",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              354.684,
+                              541.92,
+                              409.683,
+                              610.859
+                            ],
+                            "id": 40,
+                            "level": "1",
+                            "list items": [
+                              {
+                                "bounding box": [
+                                  354.684,
+                                  599.454,
+                                  409.683,
+                                  610.859
+                                ],
+                                "content": "0.47 0.37",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              },
+                              {
+                                "bounding box": [
+                                  354.684,
+                                  587.948,
+                                  409.683,
+                                  599.353
+                                ],
+                                "content": "0.48 0.39",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [
+                                  {
+                                    "bounding box": [
+                                      354.684,
+                                      576.441,
+                                      409.683,
+                                      587.846
+                                    ],
+                                    "content": "0.50 0.40",
+                                    "font": "SFBX0900",
+                                    "font size": 8.966,
+                                    "id": 35,
+                                    "page number": 6,
+                                    "pdfua_tag": "P",
+                                    "text color": "[0.0]",
+                                    "type": "paragraph"
+                                  }
+                                ],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              },
+                              {
+                                "bounding box": [
+                                  354.684,
+                                  564.934,
+                                  409.683,
+                                  576.339
+                                ],
+                                "content": "0.49 0.41",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              },
+                              {
+                                "bounding box": [
+                                  354.684,
+                                  541.92,
+                                  409.683,
+                                  564.832
+                                ],
+                                "content": "0.50 0.42 0.45 0.39",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              }
+                            ],
+                            "number of list items": 4,
+                            "numbering style": "arabic numbers",
+                            "page number": 6,
+                            "pdfua_tag": "L",
+                            "type": "list"
+                          }
+                        ],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      }
+                    ],
+                    "number of list items": 2,
+                    "numbering style": "arabic numbers",
+                    "page number": 6,
+                    "pdfua_tag": "L",
+                    "type": "list"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  425.335,
+                  541.409,
+                  500.104,
+                  633.663
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      429.851,
+                      541.92,
+                      484.85,
+                      633.873
+                    ],
+                    "id": 52,
+                    "level": "1",
+                    "list items": [
+                      {
+                        "bounding box": [
+                          429.851,
+                          622.468,
+                          484.85,
+                          633.873
+                        ],
+                        "content": "0.36 0.32",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      },
+                      {
+                        "bounding box": [
+                          429.851,
+                          610.961,
+                          484.85,
+                          622.366
+                        ],
+                        "content": "0.37 0.34",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              429.851,
+                              564.934,
+                              484.85,
+                              610.859
+                            ],
+                            "id": 48,
+                            "level": "1",
+                            "list items": [
+                              {
+                                "bounding box": [
+                                  429.851,
+                                  599.454,
+                                  484.85,
+                                  610.859
+                                ],
+                                "content": "0.35 0.28",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              },
+                              {
+                                "bounding box": [
+                                  429.851,
+                                  564.934,
+                                  484.85,
+                                  599.353
+                                ],
+                                "content": "0.36 0.30 0.39 0.30 0.36 0.31",
+                                "font": "SFBX0900",
+                                "font size": 8.966,
+                                "kids": [],
+                                "page number": 6,
+                                "pdfua_tag": "LI",
+                                "text color": "[0.0]",
+                                "type": "list item"
+                              }
+                            ],
+                            "number of list items": 2,
+                            "numbering style": "arabic numbers",
+                            "page number": 6,
+                            "pdfua_tag": "L",
+                            "type": "list"
+                          }
+                        ],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      },
+                      {
+                        "bounding box": [
+                          429.851,
+                          541.92,
+                          484.85,
+                          564.832
+                        ],
+                        "content": "0.38 0.32 0.33 0.29",
+                        "font": "SFBX0900",
+                        "font size": 8.966,
+                        "kids": [],
+                        "page number": 6,
+                        "pdfua_tag": "LI",
+                        "text color": "[0.0]",
+                        "type": "list item"
+                      }
+                    ],
+                    "number of list items": 3,
+                    "numbering style": "arabic numbers",
+                    "page number": 6,
+                    "pdfua_tag": "L",
+                    "type": "list"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 3,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          134.765,
+          416.327,
+          480.596,
+          512.546
+        ],
+        "content": "Retriever Setup. We evaluate retrieval performance across several embedding models. Specifically, we use 8 embedding models, both closed and open source [1, 8, 26]. The datasets are embedded using each model, and semantic similarity search is performed to retrieve relevant entities. We first retrieve the top N ≫ K entities from the tool–agent catalog and then select the top-K unique agents using Algorithm 1. Retrieval accuracy is computed by comparing the retrieved agents against the ground-truth agents associated with each query in the evaluation set.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 72,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          331.697,
+          480.592,
+          392.051
+        ],
+        "content": "Results. Tables 1 and 2 show that Tool-to-Agent Retrieval consistently outperforms prior methods across Recall, mAP, and nDCG metrics. Our approach achieves superior performance over all baselines, with gains observed across multiple embedding families including Vertex AI, Gemini, Titan, OpenAI, and MiniLM.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 73,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          209.566,
+          480.595,
+          329.695
+        ],
+        "content": "These improvements arise primarily from the richer retrieval corpus that jointly indexes both tools and agents, enabling finer-grained semantic alignment. Importantly, the performance lift is not attributable to tool-level retrieval alone. The joint index supports nuanced matches while preserving agent context, as evidenced by 39.13% of retrieved top-K items originating from the agent corpus CA and 34.44% of matched top-K tools also tracing back to CA. Together, these results demonstrate that explicitly linking tools to their parent agents mitigates context dilution and improves multi-step routing without sacrificing fine-grained precision. Across all eight embedding models, Tool-to-Agent Retrieval exhibited remarkably stable improvements, with standard deviations of",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          125.879,
+          480.596,
+          210.144
+        ],
+        "id": 75,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              134.765,
+              125.879,
+              480.596,
+              210.144
+            ],
+            "content": "0.02 in Recall@5 and 0.01 in nDCG@5 relative to MCPZero. This consistency indicates that the gains are architecture-agnostic and primarily driven by the unified indexing design rather than embedding-specific behavior. The strongest relative improvement was observed on Amazon Titan v2 (Recall@5 improved from 0.66 to 0.85, a +28% relative gain), while even the compact All-MiniLML6-v2 model achieved a +13% improvement, confirming generalizability across both proprietary and open-source embeddings.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 81,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          134.765,
+          662.424,
+          219.255,
+          677.261
+        ],
+        "content": "4 Conclusion",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 77,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.765,
+          483.676,
+          480.595,
+          651.626
+        ],
+        "content": "Recent advances in LLM multi-agent systems enable scalable orchestration of sub-agents coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. We introduce Tool-to-Agent Retrieval, a unified framework for large language model (LLM) multi-agent systems that embeds both tools and their parent agents in a shared vector space, linked through metadata relationships. By explicitly modeling tool capabilities and enabling traversal between tool- and agent-level representations, our approach supports granular retrieval decisions that preserve fine-grained context without the dilution introduced by coarse agent summaries. Experiments across eight embedding models on the LiveMCPBench benchmark demonstrate substantial improvements over prior agent retrievers, with gains of 19.4% in Recall@5 and 17.7% in nDCG@5. These results highlight a promising direction for unifying tool and agent selection, motivating future research into retrieval architectures that scale across increasingly complex agent networks.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 78,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.765,
+          662.424,
+          197.686,
+          677.261
+        ],
+        "content": "References",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 80,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.764,
+          126.191,
+          480.595,
+          649.285
+        ],
+        "id": 81,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              139.371,
+              626.705,
+              480.594,
+              649.285
+            ],
+            "content": "1. Amazon: Amazon titan text embeddings models. https://docs.aws.amazon.com/ bedrock/latest/userguide/titan-embedding-models.html (2025)",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              593.347,
+              480.592,
+              626.886
+            ],
+            "content": "2. Anantha, R., Bandyopadhyay, B., Kashi, A., Mahinder, S., Hill, A.W., Chappidi, S.: Protip: Progressive tool retrieval improves planning (2023), https://arxiv. org/abs/2312.10332",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              549.031,
+              480.593,
+              593.528
+            ],
+            "content": "3. Braunschweiler, N., Doddipatla, R., ZORILA, T.C.: ToolreAGt: Tool retrieval for LLM-based complex task solution via retrieval augmented generation. In: Knowledgeable Foundation Models at ACL 2025 (2025), https://openreview. net/forum?id=LTeBIM1rJL",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              526.964,
+              480.592,
+              549.212
+            ],
+            "content": "4. Chen, Y., Yoon, J., Sachan, D.S., Wang, Q., Cohen-Addad, V., Bateni, M., Lee, C.Y., Pfister, T.: Re-invoke: Tool invocation rewriting for zero-shot tool retrieval",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  515.673,
+                  333.344,
+                  527.294
+                ],
+                "content": "(2024), https://arxiv.org/abs/2408.01875",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 19,
+                "level": "2",
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              493.606,
+              480.594,
+              515.854
+            ],
+            "content": "5. Du, Y., Wei, F., Zhang, H.: AnyTool: Self-Reflective, Hierarchical Agents for LargeScale API Calls (2024), arXiv preprint arXiv:2402.04253",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              470.875,
+              480.59,
+              493.455
+            ],
+            "content": "6. Fei, X., Zheng, X., Feng, H.: Mcp-zero: Active tool discovery for autonomous llm agents (2025), https://arxiv.org/abs/2506.01056",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              448.809,
+              480.593,
+              471.057
+            ],
+            "content": "7. Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., Wang, H.: Retrieval-augmented generation for large language models: A survey",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  437.85,
+                  314.242,
+                  449.139
+                ],
+                "content": "(2024), arXiv preprint arXiv:2312.10997",
+                "font": "SFTI0900",
+                "font size": 8.966,
+                "id": 20,
+                "level": "2",
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              415.119,
+              480.595,
+              437.699
+            ],
+            "content": "8. Google: Vertex ai text embeddings models. https://cloud.google.com/ vertex-ai/generative-ai/docs/embeddings/get-text-embeddings (2025)",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              139.371,
+              392.72,
+              480.59,
+              415.3
+            ],
+            "content": "9. Huang, T., Jung, D., Chen, M.: Planning and editing what you retrieve for enhanced tool learning (2024), https://arxiv.org/abs/2404.00450",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              359.695,
+              480.593,
+              392.901
+            ],
+            "content": "10. Huang, Y., Shi, J., Li, Y., Fan, C., Wu, S., Zhang, Q., Liu, Y., Zhou, P., Wan, Y., Gong, N.Z., Sun, L.: Metatool benchmark for large language models: Deciding whether to use tools and which to use (2024), arXiv preprint arXiv:2310.03128",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              326.337,
+              480.59,
+              359.544
+            ],
+            "content": "11. Jin, B., Xie, C., Zhang, J., Roy, K.K., Zhang, Y., Li, Z., Li, R., Tang, X., Wang, S., Meng, Y., Han, J.: Graph chain-of-thought: Augmenting large language models by reasoning on graphs (2024), arXiv preprint arXiv:2404.07103",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              292.988,
+              480.594,
+              326.186
+            ],
+            "content": "12. Joshi, A., Sarwar, S.M., Varshney, S., Nag, S., Agrawal, S., Naik, J.: REAPER: Reasoning based Retrieval Planning for Complex RAG Systems (2024), arXiv preprint arXiv:2407.18553",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              259.621,
+              480.591,
+              292.828
+            ],
+            "content": "13. Khattab, O., Santhanam, K., Li, X.L., Hall, D., Liang, P., Potts, C., Zaharia, M.: Demonstrate-Search-Predict: Composing retrieval and language models for knowledge-intensive NLP (2023), arXiv preprint arXiv:2212.14024",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              226.264,
+              480.588,
+              259.471
+            ],
+            "content": "14. Kuzi, S., Zhang, M., Li, C., Bendersky, M., Najork, M.: Leveraging semantic and lexical matching to improve the recall of document retrieval systems: A hybrid approach (2020), arXiv preprint arXiv:2010.01195",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              192.915,
+              480.595,
+              226.113
+            ],
+            "content": "15. Li, M., Zhao, Y., Yu, B., Song, F., Li, H., Yu, H., Li, Z., Huang, F., Li, Y.: API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs (2023), arXiv preprint arXiv:2304.08244",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              159.557,
+              480.593,
+              192.755
+            ],
+            "content": "16. Liu, X., Peng, Z., Yi, X., Xie, X., Xiang, L., Liu, Y., Xu, D.: Toolnet: Connecting large language models with massive tools via tool graph (2024), arXiv preprint arXiv:2403.00839",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.764,
+              126.191,
+              480.595,
+              159.398
+            ],
+            "content": "17. Liu, Z., Lai, Z., Gao, Z., Cui, E., Li, Z., Zhu, X., Lu, L., Chen, Q., Qiao, Y., Dai, J., Wang, W.: Controlllm: Augment language models with tools by searching on graphs (2023), arXiv preprint arXiv:2310.17796",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 83,
+        "number of list items": 17,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "previous list id": 75,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          134.765,
+          126.191,
+          480.595,
+          674.604
+        ],
+        "id": 83,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              134.765,
+              630.447,
+              480.594,
+              674.604
+            ],
+            "content": "18. Lu, J., Holleis, T., Zhang, Y., Aumayer, B., Nan, F., Bai, F., Ma, S., Ma, S., Li, M., Yin, G., Wang, Z., Pang, R.: Toolsandbox: A stateful, conversational, interactive evaluation benchmark for llm tool use capabilities (2024), arXiv preprint arXiv:2408.04682",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              608.179,
+              480.594,
+              630.759
+            ],
+            "content": "19. Lumer, E., Basavaraju, P.H., Mason, M., Burke, J.A., Subbiah, V.K.: Graph ragtool fusion (2025), https://arxiv.org/abs/2502.07223",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              575.293,
+              480.588,
+              608.832
+            ],
+            "content": "20. Lumer, E., Gulati, A., Subbiah, V.K., Basavaraju, P.H., Burke, J.A.: Memtool: Optimizing short-term memory management for dynamic tool calling in llm agent multi-turn conversations (2025), https://arxiv.org/abs/2507.21428",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              542.407,
+              480.591,
+              575.946
+            ],
+            "content": "21. Lumer, E., Gulati, A., Subbiah, V.K., Basavaraju, P.H., Burke, J.A.: Scalemcp: Dynamic and auto-synchronizing model context protocol tools for llm agents (2025), https://arxiv.org/abs/2505.06416",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              520.812,
+              480.59,
+              543.06
+            ],
+            "content": "22. Lumer, E., Subbiah, V.K., Burke, J.A., Basavaraju, P.H., Huber, A.: Toolshed: Scale tool-equipped agents with advanced rag-tool fusion and tool knowledge bases",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  509.521,
+                  333.344,
+                  521.142
+                ],
+                "content": "(2024), https://arxiv.org/abs/2410.14594",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 21,
+                "level": "2",
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              487.926,
+              480.593,
+              510.174
+            ],
+            "content": "23. Ma, X., Gong, Y., He, P., Zhao, H., Duan, N.: Query Rewriting for RetrievalAugmented Large Language Models (2023), arXiv preprint arXiv:2305.14283",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              454.708,
+              480.595,
+              488.247
+            ],
+            "content": "24. Mo, G., Zhong, W., Chen, J., Chen, X., Lu, Y., Lin, H., He, B., Han, X., Sun, L.: Livemcpbench: Can agents navigate an ocean of mcp tools? (2025), https: //arxiv.org/abs/2508.01780",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              421.823,
+              480.594,
+              455.361
+            ],
+            "content": "25. Mo, G., Zhong, W., Chen, J., Chen, X., Lu, Y., Lin, H., He, B., Han, X., Sun, L.: Livemcpbench: Can agents navigate an ocean of mcp tools? https://github.com/ icip-cas/LiveMCPBench/blob/main/annotated_data/all_annotations.json",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  411.196,
+                  177.112,
+                  422.485
+                ],
+                "content": "(2025)",
+                "font": "SFRM0900",
+                "font size": 8.966,
+                "id": 22,
+                "level": "2",
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              388.937,
+              480.594,
+              411.517
+            ],
+            "content": "26. OpenAI: Vector embeddings documentation. https://platform.openai.com/ docs/guides/embeddings/embedding-models (2025)",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              345.092,
+              480.593,
+              389.59
+            ],
+            "content": "27. Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., Wu, X.: Unifying large language models and knowledge graphs: A roadmap. IEEE Transactions on Knowledge and Data Engineering 36(7), 3580–3599 (Jul 2024). https://doi.org/10.1109/tkde. 2024.3352100, http://dx.doi.org/10.1109/TKDE.2024.3352100",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              323.497,
+              480.592,
+              345.745
+            ],
+            "content": "28. Peng, B., Zhu, Y., Liu, Y., Bo, X., Shi, H., Hong, C., Zhang, Y., Tang, S.: Graph retrieval-augmented generation: A survey (2024), arXiv preprint arXiv:2408.08921",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              279.652,
+              480.594,
+              323.818
+            ],
+            "content": "29. Qin, Y., Liang, S., Ye, Y., Zhu, K., Yan, L., Lu, Y., Lin, Y., Cong, X., Tang, X., Qian, B., Zhao, S., Hong, L., Tian, R., Xie, R., Zhou, J., Gerstein, M., Li, D., Liu, Z., Sun, M.: Toolllm: Facilitating large language models to master 16000+ real-world apis (2023), arXiv preprint arXiv:2307.16789",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              235.807,
+              480.595,
+              279.973
+            ],
+            "content": "30. Robertson, S., Zaragoza, H.: The Probabilistic Relevance Framework: BM25 and Beyond (2009). https://doi.org/10.1561/1500000019, http://dx.doi.org/10. 1561/1500000019, iSSN: 1554-0669 Issue: 4 Pages: 333-389 Publication Title: Foundations and Trends® in Information Retrieval Volume: 3",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              213.826,
+              480.588,
+              236.128
+            ],
+            "content": "31. Robertson, S., Zaragoza, H.: The probabilistic relevance framework: Bm25 and beyond. Foundations and Trends® in Information Retrieval 3(4), 333–389",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  191.631,
+                  480.596,
+                  214.21
+                ],
+                "content": "(2009). https://doi.org/10.1561/1500000019, http://dx.doi.org/10.1561/ 1500000019",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 23,
+                "level": "2",
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              159.077,
+              480.595,
+              192.283
+            ],
+            "content": "32. Sarmah, B., Hall, B., Rao, R., Patel, S., Pasquali, S., Mehta, D.: Hybridrag: Integrating knowledge graphs and vector retrieval augmented generation for efficient information extraction (2024), arXiv preprint arXiv:2408.04948",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              126.191,
+              480.594,
+              159.398
+            ],
+            "content": "33. Sun, J., Xu, C., Tang, L., Wang, S., Lin, C., Gong, Y., Ni, L.M., Shum, H.Y., Guo, J.: Think-on-graph: Deep and responsible reasoning of large language model on knowledge graph (2024), arXiv preprint arXiv:2307.07697",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 85,
+        "number of list items": 16,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "previous list id": 81,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          134.765,
+          444.146,
+          480.595,
+          674.604
+        ],
+        "id": 85,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              134.765,
+              652.356,
+              480.592,
+              674.604
+            ],
+            "content": "34. Trivedi, H., Balasubramanian, N., Khot, T., Sabharwal, A.: Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  151.518,
+                  641.397,
+                  314.242,
+                  652.686
+                ],
+                "content": "(2023), arXiv preprint arXiv:2212.10509",
+                "font": "SFTI0900",
+                "font size": 8.966,
+                "id": 24,
+                "level": "2",
+                "page number": 10,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              608.529,
+              480.588,
+              641.727
+            ],
+            "content": "35. Wu, M., Zhu, T., Han, H., Tan, C., Zhang, X., Chen, W.: Seal-tools: Self-instruct tool learning dataset for agent tuning and detailed benchmark (2024), arXiv preprint arXiv:2405.08355",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              575.653,
+              480.592,
+              608.85
+            ],
+            "content": "36. Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K., Cao, Y.: ReAct: Synergizing Reasoning and Acting in Language Models (2023), arXiv preprint arXiv:2210.03629",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              542.435,
+              480.595,
+              575.974
+            ],
+            "content": "37. Yuan, L., Chen, Y., Wang, X., Fung, Y.R., Peng, H., Ji, H.: Craft: Customizing llms by creating and retrieving from specialized toolsets (2024), https://arxiv. org/abs/2309.17428",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              509.899,
+              480.594,
+              543.097
+            ],
+            "content": "38. Yuan, S., Song, K., Chen, J., Tan, X., Shen, Y., Kan, R., Li, D., Yang, D.: EASYTOOL: Enhancing LLM-based Agents with Concise Tool Instruction (2024), arXiv preprint arXiv:2401.06201",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              476.681,
+              480.59,
+              510.22
+            ],
+            "content": "39. Zheng, Y., Li, P., Liu, W., Liu, Y., Luan, J., Wang, B.: Toolrerank: Adaptive and hierarchy-aware reranking for tool retrieval (2024), https://arxiv.org/abs/ 2403.06551",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              134.765,
+              444.146,
+              480.59,
+              477.343
+            ],
+            "content": "40. Zhong, L., Du, Z., Zhang, X., Hu, H., Tang, J.: Complexfuncbench: Exploring multi-step and constrained function calling under long-context scenario (2025), arXiv preprint arXiv:2501.10132",
+            "font": "SFRM0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 7,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "previous list id": 83,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 10,
+    "title": "Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems"
+  }
+}

@@ -1,0 +1,1758 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LongCLI-Bench: A Preliminary Benchmark and Study for Long-horizon Agentic Programming in Command-Line Interfaces</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-26">26 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yukang</forename><surname>Feng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jianwen</forename><surname>Sun</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zelai</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaxin</forename><surname>Ai</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chuanhao</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zizhen</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fanrui</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kang</forename><surname>He</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Ma</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jifan</forename><surname>Lin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jie</forename><surname>Sun</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yang</forename><surname>Xiao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sizhuo</forename><surname>Zhou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Wenxiao</forename><surname>Wu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yiming</forename><surname>Liu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shenglin</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kaipeng</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shanda</forename><forename type="middle">Ai</forename><surname>Research Tokyo</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shanghai</forename><forename type="middle">Ai</forename><surname>Laboratory</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Polyu</surname></persName>
+						</author>
+						<title level="a" type="main">LongCLI-Bench: A Preliminary Benchmark and Study for Long-horizon Agentic Programming in Command-Line Interfaces</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-26">26 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C46F46784AB5E910EC376404219BC880</idno>
+					<idno type="arXiv">arXiv:2602.14337v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Percentage (%) Benchmark Comparison: LongCLI-Bench (20 tasks; 104.0 files/task; 15,000+ LoC/task; 1000+ minutes expert time) vs Terminal-Bench@2 (89 tasks; 0.69 files/task; 227.7 LoC/task; 206.7 minutes expert time). Claude Code(with Claude models) Codex(with GPT models) OpenHands Pass Rate F2P Step Score</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The paradigm of AI-assisted programming is undergoing a fundamental transition from code generation to autonomous software engineering. Modern agents such as SWE-agent <ref type="bibr">(Yang et al., 2024a)</ref>, OpenHands <ref type="bibr" target="#b33">(Wang et al., 2024)</ref>, and commercial CLI assistants <ref type="bibr">(OpenAI, 2025;</ref><ref type="bibr" target="#b0">Anthropic, 2025;</ref><ref type="bibr" target="#b12">Google, 2025)</ref> can now function like human engineers: they plan architectures, navigate repositories, manage development environments, and execute multi-step workflows via Command Line Interfaces (CLI) based on environment feedback <ref type="bibr" target="#b41">(Yao et al., 2022;</ref><ref type="bibr" target="#b32">Shinn et al., 2023;</ref><ref type="bibr" target="#b25">Madaan et al., 2023)</ref>.</p><p>Despite the advancements, evaluation benchmarks have lagged behind. Early benchmarks, such as HumanEval and MBPP <ref type="bibr" target="#b5">(Chen et al., 2021</ref>;  Test Outputs Metrics …… def place_ant(tunnel): if(check_food()) ant = Ant() place_ant... def check_food(): … …… [PASS] Func1: The place function works properly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F2P</head><p>P2P [FAIL] FuncN: The room map is broken.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>…… ……</head><p>[FAIL] ReqN: The queen can not be added correctly…</p><p>Pass: 0</p><p>Step Score: 80</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>Pass: 0</p><p>Step Score: 80</p><p>Figure <ref type="figure">1</ref>: Task sample in LongCLI-Bench. <ref type="bibr" target="#b1">Austin et al., 2021)</ref>, assess only algorithmic logic within isolated code snippets. While subsequent benchmarks like SWE-bench <ref type="bibr" target="#b18">(Jimenez et al., 2024;</ref><ref type="bibr" target="#b28">OpenAI, 2024)</ref> extend to repository-level, they remain restricted to short, single-category tasks, and are compromised by data contamination from scraped GitHub repositories. Recent Terminal-Bench (Institute, 2025) introduces interactive sandbox environments with community-contributed tasks, yet its tasks remain simple with short horizons, and lack fine-grained evaluation to deliver effective feedback or diagnose failure modes.</p><p>In real-world scenarios, software engineering tasks are inherently long-horizon with continuous requirements, yet existing benchmarks ignore such sequential dependencies, failing to evaluate the ability to maintain long-term environmental context and navigate complex, interdependent workflows.</p><p>To address the above limitations, we introduce LongCLI-Bench, a comprehensive benchmark designed to evaluate long-horizon agentic capabilities in realistic CLI environments, covering diverse task categories and providing fine-grained evaluation. Unlike benchmarks that focus on a single task type, LongCLI-Bench spans four engineering categories: From Scratch (0 → 1) which involves building projects from the ground up, Feature Addition (N → N + 1) which focuses on enhancing existing codebases, Bug Fix (N o → Y es) which addresses diagnosing and resolving bugs, and Refactor (A → A ′ ) which involves optimizing or restructuring code. We curate tasks from two distinct sources: 958 computer science (CS) assignments and 50 real-world workflows. This approach not only mitigates the data contamination risk inherent in GitHub-derived datasets but also ensures that the benchmark encompasses realistic, complex, long-horizon tasks that align with genuine development scenarios. To identify tasks that effectively probe the functional boundaries of agents, we manually crafted test inputs to execute these samples via Codex (OpenAI, 2025), followed by a manual inspection of the execution results. We found that existing agents already exhibit high proficiency in handling the majority of routine assignments, so we eliminated these tasks and focused on the remaining complex tasks. For each task, we manually created the requirement documentation, isolated environments, and test suites and finally filtered the pool into 20 high-quality tasks.</p><p>Each task includes an initial repository and a requirement document in an isolated environment. The evaluation utilizes a dual-set protocol: Fail→Pass (F2P) tests verify that the agent has successfully implemented the new requirements, while Pass→Pass (P2P) tests ensure that the agent's modifications do not break existing system functionalities (detecting regressions). Moreover, we provide step-level scores, enabling fine-grained measurement of partial progress and pinpointing exactly where long workflows break.</p><p>The experiment results show that long-horizon CLI work remains far from solved: all agent systems achieve &lt; 20% pass rate (e.g., Claude Code <ref type="bibr" target="#b0">(Anthropic, 2025)</ref> with Claude-Opus-4.6 and Codex with GPT-5.3-Codex), while step-level scores reveal that failures are predominantly concentrated in the early stages of tasks. Furthermore, although self-correction improves performance by leveraging error feedback, it still lags behind methods involving human plan injection or human-agent interaction. This finding strongly indicates that strategic planning and execution proficiency remain the key bottlenecks for current autonomous agents. Our contributions are summarized as follows: LongCLI-Bench: A curated benchmark of 20 long-horizon tasks, filtered from &gt;1,000 samples via manual curation and rigorous validation process to ensure sufficient long-horizon and complex, covering four distinct engineering categories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dual-Set Tests with Step-Level Scores: Assesses both the requirement implementation (F2P) and the regressions (P2P</head><p>). Additionally, we introduce step-level metrics to measure the degree of task completion, enabling a clear distinction between early-stage failures and near-success outcomes. Experiment Results: All agents yield pass rates below 20%, identifying planning and execution proficiency as the key limitations hindering autonomous software engineering performance.</p><p>Rather than focusing solely on boosting agents' standalone planning and execution capacities, future research should prioritize core engineering proficiencies, long-horizon contextual consistency maintenance, and effective human collaboration to navigate complex engineering tasks.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Agents and Coding-Oriented LLMs</head><p>Agentic coding performance is shaped jointly by the LLMs and the agent scaffold. Firstly, codeoriented LLMs <ref type="bibr">(Rozière et al., 2023;</ref><ref type="bibr" target="#b20">Li et al., 2023;</ref><ref type="bibr" target="#b31">Seed et al., 2025;</ref><ref type="bibr" target="#b16">Huang et al., 2024)</ref> such as <ref type="bibr">DeepSeek-Coder (Guo et al., 2024)</ref> and Qwen3-Coder <ref type="bibr">(Yang et al., 2025a)</ref> have demonstrated considerable capabilities in code understanding and generation. Secondly, SWE-agent <ref type="bibr">(Yang et al., 2024a)</ref> can interact with real repositories by interfaces, while OpenHands <ref type="bibr" target="#b33">(Wang et al., 2024)</ref> provides an end-to-end framework; other systems explore different avenues, including structured localization and repair <ref type="bibr" target="#b45">(Zhang et al., 2024)</ref>, multi-agent optimization <ref type="bibr">(Huang et al., 2023)</ref>, planning coding <ref type="bibr">(Bairi et al., 2023)</ref>, baselines <ref type="bibr" target="#b34">(Xia et al., 2024)</ref>, and retrieval-augmented completion <ref type="bibr" target="#b44">(Zhang et al., 2023)</ref>. In practice, commercial CLI assistants (Ope-nAI, 2025; Anthropic, 2025; Google, 2025), such as Codex, integrate innovative paradigms including general tool-use and self-refinement mechanisms <ref type="bibr" target="#b41">(Yao et al., 2022;</ref><ref type="bibr" target="#b30">Schick et al., 2023;</ref><ref type="bibr" target="#b32">Shinn et al., 2023;</ref><ref type="bibr" target="#b25">Madaan et al., 2023)</ref>, demonstrating strong intelligent assistance capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Coding/SWE Benchmarks</head><p>The evaluation of code generation has evolved from simple function-level tasks to increasingly complex, environment-grounded repository-level challenges. Early benchmarks measured functionlevel <ref type="bibr" target="#b5">(Chen et al., 2021;</ref><ref type="bibr" target="#b1">Austin et al., 2021;</ref><ref type="bibr" target="#b14">Hendrycks et al., 2021)</ref> and class-level <ref type="bibr" target="#b10">(Du et al., 2024)</ref> tasks, which are useful for assessing local correctness but largely overlook cross-file planning. Consequently, benchmarks expanded to more diverse suites and domains <ref type="bibr">(Lu et al., 2021;</ref><ref type="bibr" target="#b19">Lai et al., 2022;</ref><ref type="bibr" target="#b3">Cassano et al., 2022;</ref><ref type="bibr">Zhuo et al., 2024)</ref>, freshness-oriented evaluation <ref type="bibr">(Jain et al., 2024)</ref>, and tasks requiring explicit cross-file reasoning <ref type="bibr" target="#b23">(Liu et al., 2023;</ref><ref type="bibr" target="#b9">Ding et al., 2023)</ref>.</p><p>At the repository level, the SWE-bench series <ref type="bibr" target="#b18">(Jimenez et al., 2024;</ref><ref type="bibr" target="#b28">OpenAI, 2024;</ref><ref type="bibr" target="#b43">Zan et al., 2025;</ref><ref type="bibr">Yang et al., 2024b;</ref><ref type="bibr" target="#b42">Yu et al., 2025;</ref><ref type="bibr">Yang et al., 2025b)</ref> evaluates real github issue resolution via patches that satisfy project tests. Complementary benchmarks extend to feature and longhorizon tasks <ref type="bibr" target="#b21">(Li et al., 2025;</ref><ref type="bibr" target="#b27">Ni et al., 2025;</ref><ref type="bibr" target="#b7">Deng et al., 2025)</ref>, repository generation <ref type="bibr">(Ding et al., 2025)</ref>, and test generation <ref type="bibr" target="#b26">(Mündler et al., 2024)</ref>. Meanwhile, environment-centric benchmarks <ref type="bibr" target="#b35">(Xiao et al., 2025;</ref><ref type="bibr" target="#b11">Fu et al., 2025;</ref><ref type="bibr" target="#b4">Chan et al., 2024)</ref> emphasize reproducible execution. But these benchmarks are mined from GitHub and are susceptible to contamination <ref type="bibr" target="#b36">(Xu et al., 2024;</ref><ref type="bibr" target="#b6">Deng et al., 2024)</ref>. Terminal-Bench (Institute, 2025) provides a standardized sandbox with community-contributed tasks for evaluating agents' coding and terminal capabilities. However, it is limited to short-duration tasks and offers only binary pass/fail feedback, which prevents a detailed analysis of the agent's performance. Furthermore, precisely because these tasks lack the complexity and continuity inherent to real-world workflows, existing benchmarks are increasingly facing saturation. We therefore introduce LongCLI-Bench, a benchmark of multicategory, long-horizon real-world tasks with steplevel evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">LongCLI-Bench</head><p>LongCLI-Bench is designed around five principles: long-horizon, contamination control, clear requirements, solvability, and isolated environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Data Construction</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Data Sources and Initial Codebase</head><p>Most existing benchmarks scrape tasks from popular GitHub repositories, but this increases contamination risk. We avoid direct mining and instead curate tasks from two primary sources: CS course assignments and real-world workflows. CS course assignments are rigorously designed by domain experts and typically feature clear specifications alongside realistic codebases. However, establishing a benchmark that genuinely challenges modern agents requires extensive filtration. To ensure high task quality and alignment with our benchmark goals, we undertook a labor-intensive manual curation process. Specifically, we first identified and collected 958 assignments from 108 courses spanning diverse domains such as operating systems, networks, and data processing. For each assignment, we organized the task documentation and executed it using Codex. Since most assignments lack automated evaluation metrics, we then manually assessed the solutions generated by Codex to verify task completion status, which allowed us to evaluate the feasibility and difficulty of each task. Through thorough manual review, we found that Codex excels at most CS homework and many project-level tasks. As a result, we eliminated tasks that were either too easy or hard to evaluate consistently and only a small subset of tasks that required complex, multi-step engineering skills were kept.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Real-world Research &amp; Engineering Workflows.</head><p>These are long-chain tasks derived from actual research and work scenarios, where all information is manually constructed. Inspired by daily development activities, such as writing code, configuring environments, and building data processing pipelines, these tasks represent a sequence of complex, continuous sub-tasks that mirror realistic workflows. Crucially, they exhibit strong sequential dependency, forming a complete requirement chain where the outcome of previous steps determines the feasibility of subsequent ones.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Requirement Document</head><p>Based on the specific task objectives, we craft a requirement document that explicitly defines both the functional goals and the entry point specifications. This document must clearly articulate the functionality to be implemented. This avoids false negatives where correct logic fails testing due to arbitrary, unlocatable entry points.</p><p>For CS course assignments that come with existing descriptions, we partially rewrite the requirements by replacing specific variable/function/file names, and background stories to prevent simple retrieval matching, thereby reducing contamination risks while enhancing readability. For tasks derived from real-world scenarios, the requirements are entirely manually crafted.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Environment and Solution Codebase</head><p>We concurrently construct the execution environment and solution codebase within Docker container. This process involves iteratively solving the task from a base docker image while recording necessary dependencies. The final outputs are rigorously separated: dependencies are solidified into a Dockerfile to provide a consistent base environment, while the human solution path form the solution repo to verify solvability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.4">Test Suite and Scoring Design</head><p>Test scripts are written based solely on the requirement document, not the solution repo. This prevents "baking in" the implementation into the tests and avoids inheriting potential errors from the human solution. We employ two test sets: 1) Fail → Pass (F2P): These tests evaluate the completion status of the requirements. 2) Pass → Pass (P2P): Often ignored in other benchmarks, these tests verify that the agent's modifications have not broken existing system functionality.</p><p>To accurately reflect task completion, we prioritize environment-state verification, such as confirming a service deployment by checking if the port is listening and the log content, rather than just validating that a start command was written. Furthermore, both test sets contribute to a step-level score. For CS assignments with built-in grading scripts, we parse the output to calculate this score; for tasks without predefined tests, we manually segment the requirements into sub-tasks and write corresponding evaluation scripts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.5">Verification and Quality Control Verification condition.</head><p>A task is valid if the F2P tests fail on the initial repo and pass on the solution repo, while the P2P tests pass on both.</p><p>To ensure benchmark quality, we adopt a rigorous iterative, closed-loop verification procedure: 1) During the environment setup and solution creation, we immediately revise the documentation if any ambiguities or missing content are identified. 2) Test Suite Validation. Execute test scripts against both the initial and solution repos. If the verification condition is not met, it indicates an issue with the test script, the solution, or the environment. Human experts review and fix the issue, triggering a re-validation. If a task cannot meet the verification condition after three iterations, it is discarded. 3) Expert review. Each task undergoes an final expert review to ensure logical correctness and feasibility before inclusion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Task Composition and Evaluation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Task Composition</head><p>LongCLI-Bench is designed around five principles: long-horizon, isolated environments, clear requirements, solvability, and contamination control. Each task consists of the following components: Initial Repo: The task starting codebase (e.g., a skeleton or empty directory). Task Requirement: A task requirement document that explicitly defines functional goals and entry points to ensure clear requirements. Environment: An isolated environment ensuring consistent execution and reproducibility. Solution Repo: A human-authored "golden solution" ensuring solvability and validation. Tests: A dual-set testing suite verifying both requirement fulfillment and regression testing.</p><p>Scoring Parser: A parser that analyzes test outputs to calculate a step-level metric. Metadata: Includes task type, domain, difficulty level, and estimated human completion time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Evaluation Workflow</head><p>Based on above components, the evaluation follows the sequence: 1) Initialization: An isolated docker environment is initialized with the initial repo.</p><p>2) Execution: The agent receives the requirement, plans and interacts with the terminal to execute.</p><p>3) Test: Upon task completion or timeout, the harness executes the test scripts. 4) Scoring: The Scoring Parser aggregates the test results to compute the pass rate and step scores.</p><p>LongCLI-Bench also supports optional evaluation approaches: 1) Multiple Attempts: The agent executes the task repeatedly for N independent attempts. 2) Self-Correction: The agent leverages test feedback from the prior turn and re-executes to refine the solution in a multi-turn process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Taxonomy</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1">Engineering Taxonomy</head><p>To systematically evaluate agent capabilities across the software development lifecycle, we classify tasks into four distinct engineering categories. This classification enables targeted assessment of agent performance across a full spectrum of core engineering competencies. From Scratch (0 → 1): The ability to plan, configure, and build a runnable project from scratch. Feature Addition (N → N + 1): The ability to add new modules to an existing codebase. Bug Fix (N o → Y es): The ability to diagnose, locate, and fix complex bugs. Refactor (A → A ′ ): The ability to optimize or restructure code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Domain Taxonomy</head><p>Beyond engineering types, LongCLI-Bench covers six primary domains to assess agent capabilities across diverse technical fields.</p><p>System Programming: Operating system, compilers, memory, concurrency, embedded programming, hardware interfacing, and distributed system.</p><p>Web Development: Frontend/backend, database, API design, authentication, and service.</p><p>Data Engineering: Crawling, filtering, formatting and statistical analysis/visualization.</p><p>Machine Learning: training, inference, deployment, evaluation, and signal processing.</p><p>Applications: Business or gameplay, simulation engines, physics integration, and interactive tool.</p><p>DevOps: CI/CD pipelines, containerization, environment build, system monitoring/diagnostics. We present a detailed statistical analysis of the 20 curated tasks in LongCLI-Bench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Statistics of LongCLI-Bench</head><p>LongCLI-Bench averages 15,000+ lines of code (LoC) and 104 source files per task, covering a diverse linguistic landscape, including C, Python, Java, and JavaScript, representing complex, repository-level engineering. In stark contrast, Terminal-Bench@2 averages only 227.7 LoC and 0.69 files. This disparity highlights that LongCLI-Bench evaluates the ability to handle long-horizon complex problems within massive, interdependent systems rather than executing isolated snippets.</p><p>This complexity extends to the temporal dimension, imposing a significantly higher cognitive load. Expert completion time for LongCLI-Bench averages 1000+ minutes (vs. 206.7 min for Terminal-Bench@2). These metrics confirm that the benchmark effectively probes long-horizon planning and context maintenance capabilities, differentiating it from short-term execution tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Setup</head><p>Agents and Models. We evaluate two distinct categories of agents. The first comprises commercial CLI assistants driven by proprietary models: Codex (gpt-5.x-codex series) and Claude Code (claudesonnet/opus-4.x series). The second leverages the OpenHands <ref type="bibr" target="#b33">(Wang et al., 2024)</ref> framework to assess the leading open-source models, including DeepSeek-V3.1 <ref type="bibr">(Liu et al., 2024)</ref>, GLM-4.6 <ref type="bibr" target="#b46">(Zhipu AI, 2025)</ref>, and Qwen3-235B-A22B <ref type="bibr">(Yang et al., 2025a)</ref>. Evaluation Metrics and Protocol. To ensure fairness, we employed a unified system prompt and averaged results over three independent runs. We first measure step scores for both requirement fulfillment (F2P) and regression testing (P2P), assessing the percentage of sub-steps completed. A binary "pass" is defined strictly: a test set is considered passed only when its step score reaches 100%. Accordingly, we derive the F2P pass rate and P2P pass rate. The overall Pass Rate is defined as the percentage of tasks where the agent pass on both F2P and P2P tests. Additionally, we report Pass@3 to assess stability, along with execution time for efficiency analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Table 2 presents the overall performance of various models on LongCLI-Bench in a single-turn setting. The experimental results reveal that LongCLI-Bench poses an extreme challenge to current state-of-the-art agent systems. The pass rate for most models falls below 15%, with even the top-performing Claude-Opus-4.6 achieving only 16.7%.</p><p>This result compellingly demonstrates that while existing agent technologies excel in short code generation, a significant capability gap remains when facing real-world long-horizon tasks requiring longterm memory, environmental perception, and complex logical planning. Commercial systems significantly outperformed the open-source framework in requirements completion (F2P step score), indicating that general frameworks struggle to adapt to such complex engineering tasks without targeted optimizations.</p><p>While the average P2P step scores are very high (&gt;98%) across all models, the P2P pass rate is notably lower, ranging from 70.0% to 88.3%. The low P2P pass rate indicates that in the tasks where agents did attempt complex edits, they introduced broken modification in nearly 12%-30% of cases. This corroborates that agents often lose sight of the broader context when focusing on new features, or struggle to adhere to the instructions as task difficulty improves, resulting in unintended breakage of existing functionalities.</p><p>Interestingly, OpenHands with DeepSeek-V3.1 achieved the highest P2P pass rate (88.3%), likely because its lower execution capability (F2P Score 25.3) limited the scope of its modifications, reducing the surface area for potential errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Step-level Analysis</head><p>To investigate when models fail to complete tasks, we analyzed the distribution of F2P step score. Table <ref type="table" target="#tab_2">3</ref> reveals that failures are not evenly distributed and the majority of tasks fail at early stages. Across all evaluated agents, the highest percentage of outcomes is concentrated in the &lt;30% range. This implies that agents encountered severe difficulties at the very onset of the tasks. Notably, commercial agent-model pairs exhibit a lower proportion of scores falling into low range compared to OpenHands, an indicator of their superior earlystage planning capabilities. This strength helps them navigate early task obstacles through more robust upfront preparation and reasoning.</p><p>The few cases in the [80, 100) range highlights the sequential dependency of long-horizon tasks, where a failure in a preceding step directly blocks the subsequent steps. This distribution highlights step-level scoring's core value: unlike binary metrics that treat all failures equally, step scores reveal the exact breakage point in the execution chain. This granularity allows us to discern partial progress and diagnose whether agents fail at fundamental planning or specific logic implementation, confirming that LongCLI-Bench effectively evaluates the robustness of the entire workflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Self-Correction Capabilities</head><p>Under the Self-Correction setting, agents reexecutes the task using feedback from previous turn enabling multi-turn self-correction. As illustrated in Figure <ref type="figure" target="#fig_3">3</ref>, this setting yields pass rate improvements, with substantial gains from T1 to T2, and continued but comparatively smaller improvements from T2 to T3 for several models (e.g., Claude-Opus-4.6).</p><p>F2P keeps improving across rounds, suggesting that agent-model pairs can better leverage the feedback provided by Self-Correction setting to satisfy previously failing requirements and complete the task more effectively.</p><p>Meanwhile, P2P stays high overall, but different agent-model pairs diverge at different rounds. Codex with GPT-5.3-Codex pushes P2P pass rate to 95% at T2 and 100% at T3. In contrast, GPT-5.1-Codex-Max reaches 85% at T2 but declines to 80% at T3, and similarly, Claude-Opus-4.6 reaches 95% at T2 but drops to 90% at T3. This suggests that the last self-correction round can widen the change scope. It may complete the remaining hard cases, but it can also introduce new regression testing risks.</p><p>In terms of time overhead, multi-round selfcorrection shows mixed effects on runtime across different agents and models, with no consistent trend of increasing time cost in later rounds. The gains are real, but the marginal benefit tends to shrink in later rounds.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Human-Agent Collaboration</head><p>To investigate the performance of human-agent collaboration, we designed two experimental setups: Static Plan Injection. Before the execution phase, we inject key plans without specific code details. This setup evaluates whether reducing planning  Plan injection outperformed the self-correction baseline in both pass rate and efficiency. For instance, Claude Code with plan injection achieved a 58.3% pass rate compared to 55.0% with selfcorrection. This confirms that establishing a correct plan upfront is far more efficient than relying on the agent to iteratively fix errors during the execution process, as it prevents the agent from entering incorrect logical branches initially.</p><p>Interactive guidance generally achieved higher performance compared to static plan injection alone. Claude Code improved from 58.3% (Plan) to 58.3% (Interactive) in pass rate, while F2P Score increased from 65.4 to 67.4. While static plans provide a roadmap, they cannot anticipate all runtime anomalies. This dynamic intervention proves more robust, as it effectively guides the agent away from unproductive execution trajectories and logic errors that a static plan cannot anticipate.</p><p>The combined Plan &amp; Interactive setting yielded the best results across all metrics. Crucially, the presence of a pre-injected plan reduced the need for human intervention (e.g., Inter.Avg dropped from 2.4 to 2.1 for Claude Code), indicating a synergy where the plan handles the roadmap while human interaction resolves specific execution problems.</p><p>Our findings indicate that rather than exclusively chasing full autonomy, future work should focus on developing collaborative systems that leverage the synergy between efficient execution and human strategic guidance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Error Analysis</head><p>To better understand why current agents achieve low end-to-end success on LongCLI-Bench (most pass rates &lt;20%), we manually inspected 50 failed trajectories across representative agent-model pairs (primarily Codex and Claude Code). Overall, failures are rarely caused by local syntax-level coding mistakes. Instead, they are dominated by longhorizon workflow breakdowns, where the agent must plan, verify state, and preserve consistency across many interdependent steps. This aligns with our step-level findings that the majority of runs remain below 30% completion.</p><p>Overall, LongCLI-Bench failures are primarily caused by the following three reasons: Repetitive loops from weak strategic adaptation. A common pattern is that the agent encounters an execution failure, proposes a superficial patch, reruns the same command, observes the same error, and repeats until the step limit is exhausted. Such trajectories reveal that the agent fails to recognize that the current plan is invalid and does not shift focus to addressing the root cause.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment grounding and verification gaps.</head><p>We observed instances of misdiagnosis in which environment-related issues were incorrectly attributed to code logic flaws, resulting in code edits that failed to address the actual cause of the failure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Long-term inconsistency and regression.</head><p>Even when agents make substantial progress on the new requirements, they often break existing functionality: while the average P2P step scores are very high, the P2P pass rates are much lower, indicating that agents introduce regressions risks when they make non-trivial edits. We also saw context drift in long runs (e.g., forgetting earlier constraints), which explains why later self-correction rounds can widen change scope and increase regression risks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>LongCLI-Bench introduces a new benchmark for evaluating agentic programming in long-horizon command-line interface (CLI) tasks. By curating 20 complex tasks from over 1,000 real-world workflows and computer science assignments, LongCLI-Bench addresses key gaps in existing benchmarks, such as their focus on short, isolated tasks. Unlike many benchmarks that offer binary pass/fail evaluations, LongCLI-Bench emphasizes long-duration tasks that reflect real-world challenges and evaluates both requirement fulfillment and regression avoidance through step-level scores. The results show that current agent systems struggle with longhorizon tasks, achieving low pass rates. However, human-agent collaboration significantly boosts performance, highlighting the need to prioritize collaborative workflows in future research alongside autonomous agent advancements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Task Creation Requires Significant Manual Effort: Creating tasks for LongCLI-Bench involves extensive manual work, including writing requirement documents, constructing solution paths, setting up test environments, and creating test scripts. This process is time-consuming, with each task taking an average of 40 hours to complete, resulting in a relatively small dataset. Additionally, this makes it challenging to curate high-quality, long-horizon tasks that effectively challenge agents. Evaluation Metrics: While step-level scores provide more granular insights, they do not fully assess agent performance in areas like code quality or efficiency. Future versions of the benchmark could include additional metrics for a more complete evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>Data Privacy and Usage: All tasks in LongCLI-Bench are derived from publicly available resources or manually curated data. No sensitive or proprietary information was used, and all data have been anonymized to ensure privacy. Human-Agent Collaboration: This study involves human-agent collaboration to explore how agent performance improves with human guidance. We strictly adhere to ethical guidelines to ensure participant rights and safeguard their privacy. Evaluation Ethics: All data used for evaluation are standardized and anonymized, ensuring compliance with ethical research practices. Transparency: We will release detailed task creation processes and evaluation results to ensure transparency and encourage open participation in AI research.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>In this project, you will create a tower-defense simulation where ants defend their queen from invading bees by filling in the missing game mechanics and unit behaviors… Introduce the resource system: placing ants… Req. 2: Make each tunnel position aware of the next… Req. 3: Define standard targeting: a ranged ant attacks… Req. N: Add the queen: each turn she permanently… Placing ants checks for sufficient food… Func 2: The map consists of beehives, tunnel grids, and… Func 3: Pre-set multiple difficulty levels of offensive… Func N: Bees move along tunnels when not blocked…P2PResults and TestsAgent Execution</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>[</head><figDesc>PASS] Req1: Ants place is correct after checking…</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: The LongCLI-Bench construction pipeline. We curate tasks from diverse sources and employ a parallel construction method for solutions and tests. The pipeline features a strict Dual-Set Verification mechanism with iterative refinement loops to ensure high-quality, contamination-free benchmarks across various engineering and domain categories.</figDesc><graphic coords="4,128.20,187.14,70.19,92.45" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Multi-Turn Self-Correction Performance.</figDesc><graphic coords="8,75.40,70.86,444.47,85.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison of LongCLI-Bench and Terminal-Bench@2. Files, LoC and Expert Time are average results; LoC stands for Lines of Code.</figDesc><table><row><cell>Benchmark</cell><cell cols="2">Tasks Files</cell><cell>LoC</cell><cell>Expert Time (min)</cell></row><row><cell>Terminal-Bench@2</cell><cell>89</cell><cell>0.69</cell><cell>227.7</cell><cell>206.7</cell></row><row><cell>LongCLI-Bench</cell><cell>20</cell><cell cols="2">104.0 15,000+</cell><cell>1000+</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Overall Performance on LongCLI-Bench (Average on 3 attempts). We report the Pass Rate(%), Pass@3(%), and average Step Scores(%) for both F2P and P2P tests. Time is measured in minutes.</figDesc><table><row><cell>Agent</cell><cell>Model</cell><cell cols="7">Pass Pass@3 F2P Pass F2P Step Score P2P Pass P2P Step Score Time(min)</cell></row><row><cell>Codex</cell><cell cols="2">GPT-5.1-Codex-Max 11.7</cell><cell>15.0</cell><cell>16.7</cell><cell>41.8</cell><cell>70.0</cell><cell>99.2</cell><cell>12.9</cell></row><row><cell></cell><cell>GPT-5.2-Codex</cell><cell>10.0</cell><cell>15.0</cell><cell>13.3</cell><cell>39.1</cell><cell>73.3</cell><cell>99.4</cell><cell>10.9</cell></row><row><cell></cell><cell>GPT-5.3-Codex</cell><cell>15.0</cell><cell>20.0</cell><cell>18.3</cell><cell>44.1</cell><cell>86.7</cell><cell>99.5</cell><cell>8.8</cell></row><row><cell cols="2">Claude Code Claude-Sonnet-4.5</cell><cell>10.0</cell><cell>10.0</cell><cell>13.3</cell><cell>42.0</cell><cell>70.0</cell><cell>98.4</cell><cell>10.6</cell></row><row><cell></cell><cell>Claude-Opus-4.5</cell><cell>16.7</cell><cell>20.0</cell><cell>20.0</cell><cell>47.1</cell><cell>71.7</cell><cell>98.7</cell><cell>11.3</cell></row><row><cell></cell><cell>Claude-Opus-4.6</cell><cell>16.7</cell><cell>25.0</cell><cell>20.0</cell><cell>50.7</cell><cell>78.3</cell><cell>99.1</cell><cell>17.6</cell></row><row><cell>OpenHands</cell><cell>DeepSeek-V3.1</cell><cell>5.0</cell><cell>10.0</cell><cell>11.7</cell><cell>25.3</cell><cell>88.3</cell><cell>99.7</cell><cell>17.9</cell></row><row><cell></cell><cell>GLM-4.6</cell><cell>6.7</cell><cell>10.0</cell><cell>11.7</cell><cell>26.8</cell><cell>83.3</cell><cell>99.5</cell><cell>25.3</cell></row><row><cell></cell><cell>Qwen3-235B-A22B</cell><cell>6.7</cell><cell>10.0</cell><cell>13.3</cell><cell>28.9</cell><cell>81.7</cell><cell>99.3</cell><cell>30.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Distribution of F2P step scores. Columns show the percentage of tasks falling into specific score ranges.</figDesc><table><row><cell>Agent</cell><cell>Model</cell><cell cols="4">[0,30) [30,60) [60,80) [80,100) [100]</cell></row><row><cell></cell><cell cols="2">GPT-5.1-Codex-Max 45.0 16.7</cell><cell>13.3</cell><cell>8.3</cell><cell>16.7</cell></row><row><cell>Codex</cell><cell>GPT-5.2-Codex</cell><cell>51.7 15.0</cell><cell>10.0</cell><cell cols="2">10.0 13.3</cell></row><row><cell></cell><cell>GPT-5.3-Codex</cell><cell>41.7 13.3</cell><cell>15.0</cell><cell cols="2">11.7 18.3</cell></row><row><cell></cell><cell>Claude-Sonnet-4.5</cell><cell>46.7 13.3</cell><cell>11.7</cell><cell cols="2">15.0 13.3</cell></row><row><cell>Claude Code</cell><cell>Claude-Opus-4.5</cell><cell>40.0 23.3</cell><cell>6.7</cell><cell cols="2">10.0 20.0</cell></row><row><cell></cell><cell>Claude-Opus-4.6</cell><cell>38.3 20.0</cell><cell>10.0</cell><cell cols="2">11.7 20.0</cell></row><row><cell></cell><cell>DeepSeek-V3.1</cell><cell>65.0 13.3</cell><cell>5.0</cell><cell>5.0</cell><cell>11.7</cell></row><row><cell>OpenHands</cell><cell>GLM-4.6</cell><cell>63.3 15.0</cell><cell>3.3</cell><cell>6.7</cell><cell>11.7</cell></row><row><cell></cell><cell cols="2">Qwen3-235B-A22B 58.3 13.3</cell><cell>8.3</cell><cell>6.7</cell><cell>13.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Results of Human-Agent Collaboration. Pass and F2P Score are reported as percentages (%). Time is measured in minutes. Inter.Avg represents the average number of human interventions per task.</figDesc><table><row><cell cols="2">Agent &amp; Model Mode</cell><cell cols="4">Pass F2P Score Time Inter.Avg</cell></row><row><cell></cell><cell>Base (Avg)</cell><cell>15.0</cell><cell>44.1</cell><cell>8.8</cell><cell>-</cell></row><row><cell>Codex GPT-5.3-Codex</cell><cell>Self-Correction Plan Interactive</cell><cell>40.0 41.7 45.0</cell><cell>58.4 59.3 61.3</cell><cell>26.7 10.7 25.9</cell><cell>--2.7</cell></row><row><cell></cell><cell cols="2">Plan &amp; Interactive 50.0</cell><cell>62.3</cell><cell>22.4</cell><cell>2.2</cell></row><row><cell></cell><cell>Base (Avg)</cell><cell>16.7</cell><cell>50.7</cell><cell>17.6</cell><cell>-</cell></row><row><cell>Claude Code Claude-Opus-4.6</cell><cell>Self-Correction Plan Interactive</cell><cell>55.0 58.3 58.3</cell><cell>63.6 65.4 67.4</cell><cell>43.8 15.4 39.6</cell><cell>--2.4</cell></row><row><cell></cell><cell cols="2">Plan &amp; Interactive 61.7</cell><cell>69.3</cell><cell>35.4</cell><cell>2.1</cell></row><row><cell cols="6">errors leads to improved task accuracy, thereby</cell></row><row><cell cols="6">quantifying the impact of Planning Capability.</cell></row><row><cell cols="6">Dynamic Interactive Guidance. In this setting,</cell></row><row><cell cols="6">the model autonomously decides whether to re-</cell></row><row><cell cols="6">quest human intervention based on its current state.</cell></row><row><cell cols="6">Upon intervention, humans provide the next steps</cell></row><row><cell cols="6">and future roadmap, offering explanatory guidance</cell></row><row><cell cols="6">rather than direct implementation. If the model ex-</cell></row><row><cell cols="6">plicitly asks for code, the request is denied to force</cell></row><row><cell cols="6">the model to reason independently. The maximum</cell></row><row><cell cols="5">number of interventions is limited to 3.</cell><cell></cell></row><row><cell cols="6">Table 4 summarizes performance across two</cell></row><row><cell cols="6">agent-model pairs (Codex with GPT-5.3-Codex;</cell></row><row><cell cols="6">Claude Code with Claude-Opus-4.6), showing that</cell></row><row><cell cols="6">current agents face dual limitations in both plan-</cell></row><row><cell cols="6">ning and execution proficiency, and human collab-</cell></row><row><cell cols="6">oration significantly mitigates these bottlenecks.</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://github.com/anthropics/claude-code.GitHubrepository" />
+		<title level="m">Claude code</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<title level="m">Program synthesis with large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Bairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atharv</forename><surname>Sonwane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Kanade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Vageesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suresh</forename><surname>Parthasarathy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.12499</idno>
+		<title level="m">Sriram Rajamani, B. Ashok, and Shashank Shet. 2023. Codeplan: Repository-level coding using llms and planning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Gouwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sydney</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luna</forename><surname>Phipps-Costin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Pinckney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Ho</forename><surname>Yee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolyn</forename><forename type="middle">Jane</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Molly</forename><forename type="middle">Q</forename><surname>Feldman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.08227</idno>
+		<title level="m">Multipl-e: A scalable and extensible approach to benchmarking neural code generation</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Mle-bench: Evaluating machine learning agents on machine learning engineering</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Shern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Jaffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Aung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dane</forename><surname>Sherburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Mays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulio</forename><surname>Starace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Maksin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejal</forename><surname>Patwardhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.07095</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Investigating data contamination in modern benchmarks for large language models</title>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/2024.NAACL-LONG.482</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL 2024 (Long Papers)</title>
+		<meeting>NAACL 2024 (Long Papers)</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="8706" to="8719" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Andrew Park, Nitin Pasari, and Chetan Rane</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Da</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwin</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanak</forename><surname>Ide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lauffer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.16941</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Swe-bench pro: Can ai agents solve long-horizon software engineering tasks? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Qingshui Gu, and 29 others. 2025. Nl2repo-bench: Towards longhorizon repository generation evaluation of coding agents</title>
+		<author>
+			<persName><forename type="first">Jingzhe</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengda</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changxin</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaojian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaiyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianfu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Deng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.12730</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yangruibo</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uddin</forename><surname>Wasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantian</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nihal</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Murali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parminder</forename><surname>Nallapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11248</idno>
+		<title level="m">Crosscodeeval: A diverse and multilingual benchmark for cross-file code completion</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Evaluating large language models in class-level code generation</title>
+		<author>
+			<persName><forename type="first">Xueying</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaofeng</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3597503.3639219</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 46th IEEE/ACM International Conference on Software Engineering (ICSE 2024)</title>
+		<meeting>the 46th IEEE/ACM International Conference on Software Engineering (ICSE 2024)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">81</biblScope>
+			<biblScope unit="page">13</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Multidocker-eval: A &apos;shovel of the gold rush&apos; benchmark on automatic environment building for software engineering</title>
+		<author>
+			<persName><forename type="first">Kelin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingwei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaigui</forename><surname>Bian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.06915</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://github.com/google-gemini/gemini-cli.GitHubrepository" />
+		<title level="m">Gemini cli</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14196</idno>
+		<title level="m">Deepseek-coder: When the large language model meets programming -the rise of code intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.09938</idno>
+		<title level="m">Measuring coding challenge competence with apps</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<title level="m">Qingwen Bu, Yuhao Qing, and Heming Cui. 2023. Agentcoder: Multi-agent-based code generation with iterative testing and optimisation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siming</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaran</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liuyihan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linzheng</forename><surname>Chai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.04905</idno>
+		<title level="m">Opencoder: The open cookbook for top-tier code large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Armando Solar-Lezama, Koushik Sen, and Ion Stoica. 2024. Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">King</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07974</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06770</idno>
+		<title level="m">Swe-bench: Can language models resolve real-world github issues? arXiv preprint</title>
+		<imprint>
+			<publisher>Ofir Press, and Karthik Narasimhan</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Wen Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.11501</idno>
+		<title level="m">Ds-1000: A natural and reliable benchmark for data science code generation</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangyue</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scarlett</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06680</idno>
+		<title level="m">Fea-bench: A benchmark for evaluating repository-level code generation for feature implementation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Chong Ruan, and 1 others. 2024. Deepseek-v3 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.03091</idno>
+		<title level="m">Repobench: Benchmarking repository-level code auto-completion systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Dawn Drain, Daxin Jiang, and Duyu Tang. 2021. Codexglue: A machine learning benchmark dataset for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrosio</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Clement</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2102.04664</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17651</idno>
+		<title level="m">Self-refine: Iterative refinement with selffeedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Niels</forename><surname>Mündler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Niklas Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12952</idno>
+		<title level="m">Swt-bench: Testing and validating real-world bug-fixes with code agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huacan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.18993</idno>
+		<title level="m">Gittaskbench: A benchmark for code agents solving real-world tasks through code repository leveraging</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Introducing swe-bench verified</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://github.com/openai/codex.GitHubrepository" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Blog post. OpenAI. 2025. Codex</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Romain Sauvestre, and Tal Remez. 2023. Code llama: Open foundation models for code</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Toolformer: Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bytedance</forename><surname>Seed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaibo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.03524</idno>
+		<title level="m">Seedcoder: Let the code model curate data for itself</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<title level="m">Reflexion: Language agents with verbal reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16741</idno>
+		<title level="m">Openhands: An open platform for ai software developers as generalist agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yijia</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyang</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davor</forename><surname>Golac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.06111</idno>
+		<title level="m">Csr-bench: Benchmarking llm agents in deployment of computer science research repositories</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuhao</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Greene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M-Tahar</forename><surname>Kechadi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.04244</idno>
+		<title level="m">Benchmark data contamination of large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Chengen Huang, and Chenxu Lv. 2025a. Qwen3 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15793</idno>
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xindi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.03859</idno>
+		<title level="m">Swe-bench multimodal: Do ai systems generalize to visual software domains? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabir</forename><surname>Khandpur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.21798</idno>
+		<title level="m">Ludwig Schmidt, and Diyi Yang. 2025b. Swe-smith: Scaling data for software engineering agents</title>
+		<imprint>
+			<publisher>Ofir Press</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Utboost: Rigorous evaluation of coding agents on swe-bench</title>
+		<author>
+			<persName><forename type="first">Boxi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pinjia</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Kang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.09289</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shulin</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aoyan</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.02605</idno>
+		<title level="m">Multi-swe-bench: A multilingual benchmark for issue resolving</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12570</idno>
+		<title level="m">Repocoder: Repository-level code completion through iterative retrieval and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05427</idno>
+		<title level="m">Autocoderover: Autonomous program improvement</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Glm-4.6: Advanced agentic, reasoning and coding capabilities</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Zhipu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">Chien</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ratnadira</forename><surname>Widyasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imam</forename><surname>Nur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bani</forename><surname>Yusuf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haolan</forename><surname>Zhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.15877</idno>
+		<title level="m">Junda He, and Indraneil Paul. 2024. Bigcodebench: Benchmarking code generation with diverse function calls and complex instructions</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

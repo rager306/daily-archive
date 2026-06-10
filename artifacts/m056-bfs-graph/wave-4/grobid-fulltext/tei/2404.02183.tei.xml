@@ -1,0 +1,1642 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Self-Organized Agents: A LLM Multi-Agent Framework toward Ultra Large-Scale Code Generation and Optimization</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-04-02">2 Apr 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yoichi</forename><surname>Ishibashi</surname></persName>
+							<email>ishibashi.tsukushiai@gmail.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yoshimasa</forename><surname>Nishimura</surname></persName>
+							<email>nishimura.tsukushiai@gmail.com</email>
+						</author>
+						<title level="a" type="main">Self-Organized Agents: A LLM Multi-Agent Framework toward Ultra Large-Scale Code Generation and Optimization</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-04-02">2 Apr 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4D61269DA7CA6A25C214CC739C26AFF6</idno>
+					<idno type="arXiv">arXiv:2404.02183v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in automatic code generation using large language model (LLM) agent have brought us closer to the future of automated software development. However, existing single-agent approaches face limitations in generating and improving large-scale, complex codebases due to constraints in context length. To tackle this challenge, we propose Self-Organized multi-Agent framework (SoA), a novel multi-agent framework that enables the scalable and efficient generation and optimization of large-scale code. In SoA, self-organized agents operate independently to generate and modify code components while seamlessly collaborating to construct the overall codebase. A key feature of our framework is the automatic multiplication of agents based on problem complexity, allowing for dynamic scalability. This enables the overall code volume to be increased indefinitely according to the number of agents, while the amount of code managed by each agent remains constant. We evaluate SoA on the HumanEval benchmark and demonstrate that, compared to a single-agent system, each agent in SoA handles significantly less code, yet the overall generated code is substantially greater. Moreover, SoA surpasses the powerful single-agent baseline by 5% in terms of Pass@1 accuracy. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In recent years, research on agents using Large Language Models (LLMs) <ref type="bibr" target="#b2">(Brown et al., 2020;</ref><ref type="bibr" target="#b15">OpenAI, 2023;</ref><ref type="bibr">Touvron et al., 2023)</ref>, such as Re-Act <ref type="bibr">(Yao et al., 2023b)</ref>, Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, Toolformer <ref type="bibr" target="#b17">(Schick et al., 2023)</ref>, and Auto-GPT<ref type="foot" target="#foot_1">foot_1</ref> , has been expanding the possibilities of automating human tasks. These advancements have particularly contributed to the rapid development</p><p>Self-organized Agents (SoA) Single agent Limited scalability ✗ Total Code Size Code Size per agent Scalable code generation/improvement ✔ ! " Total Code Size Code Size per agent Max context length Max context length A single agent is solely responsible for the entire implementation. As the codebase grows larger, the load increases for code generation, modification, and memory management, making it difficult to manage and develop. The larger the entire codebase becomes, the more it puts pressure on the context length during self-debugging, limiting the amount of code that can be managed. Right (SoA): The implementation is distributed among multiple agents. The agents are independent; code generation, modification, and memory management are separated from other agents. Each agent manages only its own part, allowing it to focus on the implementation regardless of the complexity of the entire codebase. Furthermore, agents automatically multiply according to the complexity of the problem. This allows for the generation and modification of complex and large-scale code while maintaining a constant amount of code management/generation/modification per agent.</p><p>of automatic code generation techniques in the field of automated application and tool development <ref type="bibr" target="#b6">(Hong et al., 2023;</ref><ref type="bibr" target="#b7">Dong et al., 2023;</ref><ref type="bibr" target="#b7">Huang et al., 2023)</ref>. Compared to non-agent-based methods <ref type="bibr">(Muennighoff et al., 2023;</ref><ref type="bibr">Li et al., 2023b)</ref>, these research achievements have led to remarkable performance improvements in automatic code generation <ref type="bibr" target="#b25">(Zhong et al., 2024;</ref><ref type="bibr" target="#b27">Zhou et al., 2023)</ref>.</p><p>Most recent research has focused on single-agent approaches for code generation. These single-agent code generation methods face limitations, especially in terms of scalability, when the implemen-tation becomes complex and requires a large codebase. The main reason for this technical difficulty is that a single agent must manage the entire code generation process alone. For instance, implementing a machine learning algorithm involves several stages, such as data preprocessing, algorithm training, and result evaluation, which include many functions and classes. When these complex components are combined, the codebase inevitably becomes very large. However, there are limitations to the context length of LLMs, and as the number of input tokens increases, the inference performance decreases <ref type="bibr" target="#b8">(Levy et al., 2024;</ref><ref type="bibr" target="#b18">Shaham et al., 2023;</ref><ref type="bibr">Li et al., 2023a)</ref>. Consistently understanding and generating or modifying appropriate code for such an extensive codebase poses a significant challenge for a single agent in terms of comprehending and managing the context. Consequently, the singleagent approach struggles to efficiently generate and modify code as its complexity and size increase.</p><p>To tackle these challenges, we propose a selforganized multi agent framework that can automatically generate and modify large-scale code (Figure <ref type="figure" target="#fig_0">1</ref>). Self-organization (Ashby, 1947) is a phenomenon in which living organisms or matter create an orderly, large structure as a result of their individual autonomous behaviors, despite lacking the ability to oversee the entire system. In our framework, self-organized agents, each responsible for different code parts or tasks, independently generate and modify code. With the self-organization of agents, a single agent no longer needs to comprehend the entire codebase, making it possible to scale up large-scale code simply by increasing the number of agents. Another feature of our framework is that agents automatically multiply according to the complexity of the problem, allowing the overall codebase to expand while keeping the amount of code handled by each agent constant. These features enable the dynamic and flexible generation and modification of large-scale code, which was impossible with the traditional single-agent approach.</p><p>In our experiments, we evaluated the performance of this framework using HumanEval <ref type="bibr">(Chen et al., 2021)</ref>, a benchmark for code generation. The results show that our self-organized multi-agent framework outperformed Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, an existing powerful code generation agent ( §4.1), demonstrating the effectiveness of our approach in generating and modifying code. Furthermore, through a detailed analysis of the experimen-tal results, we revealed how agents automatically multiply according to the complexity of the problem, effectively scaling up the overall code volume while keeping the code generation per agent constant ( § 4.2). These experimental results support the contribution of our framework, which overcomes the scalability issues faced by single-agent approaches and provides a solution capable of handling larger projects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Code Generation Task</head><p>The code generation task involves generating Python functions from docstrings <ref type="bibr">(Chen et al., 2021)</ref>. In this task, an agent is given a docstring that defines the types of the function's inputs and expected outputs, as well as the specific requirements that the function should meet. The agent is then required to generate the code for a function that fulfills the specified functionality. The generated code is verified for accuracy using unit tests, and the quality of the code is evaluated based on its ability to pass the test cases. As with previous studies <ref type="bibr" target="#b19">(Shinn et al., 2023;</ref><ref type="bibr" target="#b25">Zhong et al., 2024;</ref><ref type="bibr" target="#b27">Zhou et al., 2023)</ref>, we use the evaluation metric Pass@1 <ref type="bibr">(Chen et al., 2021)</ref>, where a problem is considered solved if any of the k code samples pass all test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Self-organized Agent Framework</head><p>Our Self-organized Agents (SoA) framework enables efficient implementation of large-scale and complex code by having self-organized agents independently generate and modify small-scale and simple code. In this section, we introduce the important components of SoA, namely the agents and the layers responsible for more abstract processing than the agents, and finally introduce the code generation and modification protocols in the SoA framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Child Agent</head><p>Child agents implement a given function based on its docstrings. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, this agent has a simple structure consisting of two elements: an LLM and memory. The LLM generates code from the given docstrings and modifies the code based on the results of unit tests. The memory stores the code generated by the agent itself and retrieves the latest code to be input to the LLM along with the unit test feedback during code modification. If an agent has these minimal specifications, it is possi-ble to use an off-the-shelf agents (e.g., Reflexion) as a Child agent. We deliberately use a simple agent to verify the effectiveness of SoA in a simple setup.</p><p>Code Generation The main role of Child agents is to generate functions that meet the specifications based on the given function's docstrings. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, the agent follows the instructions to generate the rest of the function and complete it. The completed function implementation is stored in memory, and the unit tests for the function are also stored as they form the basis for future code modifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Modification: Empowering Child Agents with Self-Organization and Adaptability</head><p>One of the most remarkable aspects of agents in the SoA framework is their ability to autonomously improve their code based on the state of nearby agents . This process sets SoA apart from traditional agent approaches and showcases the power of self-organization in code modification. While existing agents like Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref> rely solely on the results of unit tests, Child agents in SoA go beyond this limitation by independently observing the state of their mother agent, such as differences in modifications and feedback. By gathering this invaluable information from their surrounding environment, Child agents can adapt their behavior and make more informed decisions about code modification, even without explicit instructions. The modifications and feedback generated by the Mother agent serve as an important source of information for the Child agents. Armed with these insights, Child agents can more effectively modify their own code, contributing to the overall improvement of the codebase in a way that is both efficient and adaptive. Figure <ref type="figure" target="#fig_2">3</ref> illustrates this process, which begins with the execution of unit tests and the retrieval of the latest implementation from memory. The Child agent then harnesses the power of the LLM to create a code modification proposal, seamlessly combining the information observed from the Mother agent with the test results and the latest implementation details. By storing the modified code in memory, Child agents create a feedback loop that continuously refines and improves the codebase over time. This iterative process, driven by the principles of self-organization and adaptability, enables SoA to tackle complex code modification tasks with efficiency and effectiveness. As Child agents work in harmony with their Mother agent, they contribute to the creation of a more optimized and large codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Mother Agent</head><p>The Mother is an agent that generates new agents (Mother or Child). Similar to Child agents, the Mother agent independently implements the specific Python function based on its given docstrings. The Mother has memory, code generation capabilities, and self-debugging functions, as same as Child agents. The unique feature of the Mother agent is its ability to generate multiple Child agents according to the complexity of the problem and delegate parts of the implementation to these agents. This structure allows the Mother agent to focus on implementing abstract processes, while the Child agents generated by the Mother agent concentrate on implementing concrete processes. This division of labor enhances the overall efficiency and flexibility of the SoA framework.</p><p>Code Generation We explain the code generation process by the Mother agent using the implementation example of the is_sum_of_odds_ten function shown in Figure <ref type="figure" target="#fig_1">2</ref>. The starting point is the function's docstrings and unit tests, which are memorized for reference in the later self-debugging phase. The first task of the Mother agent is to generate a skeleton of the implementation from the given docstrings, including subfunctions such as get_odd_numbers to extract odd numbers and sum_of_numbers to calculate their sum. The number and types of these subfunctions are automatically determined by the LLM based on the complexity of the problem.</p><p>It is important to note that these subfunctions are unimplemented, and the Mother agent does not directly implement them. Instead, it delegates the implementation of the subfunctions to other agents, allowing the Mother agent to focus on generating the skeleton and streamline its own code generation process. After the docstrings and unit tests for the subfunctions are generated, they are assigned to newly initialized agents for implementation. These agents proceed with the implementation of their respective functions without looking at the internals of the is_sum_of_odds_ten function implemented by the Mother agent. Since agents within the same Mother can work asynchronously, the overall code generation process is streamlined.</p><p>Code Modification The Mother's code modification is almost the same as the Child's code modifi-</p><p>Child Docstrings Unit test Mother Unit test Unit test Code STEP1: Generate the skeleton Memory STEP2: Update memory def is_sum_of_odds_ten(lst): ''' Checks if sum of odd numbers is 10 ''' pass assert is_sum_of_odds_ten([1,9]) == True LLM STEP3: Generate signature and unit tests child or mother child or mother assert get_odd_numbers([1,2,3]) == [1, 3] assert sum_numbers([1,3]) == 4 LLM def sum_numbers(lst): ''' Calculates the sum of numbers. ''' pass def get_odd_numbers(lst): ''' Extracts the odd numbers. ''' pass def is_sum_of_odds_ten(lst): '''Checks if sum of odd numbers is 10 ''' odd_numbers = get_odd_numbers(lst) sum_odds = sum_numbers(odd_numbers) return "Yes" if sum_odds == 10 else "No" Docstrings Unit test Code STEP1: Generate the code Memory STEP2: Update memory LLM def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ''' odd_numbers = [n for n in lst if n % 2 != 0] return odd_numbers def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ''' pass assert get_odd_numbers([1,2,3]) == [1, 3] cation (Figure <ref type="figure" target="#fig_2">3</ref>). It observes information from the upper Mother and uses it to modify the functions it is responsible for. The only difference is that the feedback it generates and the code before and after modification are used by lower-level agents (Child or Mother).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Self-organized Agent Process</head><p>The Self-organized Agent (SoA) framework is a distributed framework in which multiple agents (including Mother agents and Child agents) repeatedly generate and modify functions. The core of this framework lies in the principle of self-organization, where each agent functions independently without the need to directly observe the entire codebase.</p><p>The hierarchical combination of Mother agents and Child agents forms an agent network that effectively constructs a single large-scale codebase.</p><p>In this hierarchical structure, Mother agents decompose complex problems into more manageable smaller problems by dividing tasks and delegating them to the agents they have generated. Although each agent is independent, the agents as a whole can work efficiently towards the implementation of a single function. Despite the fact that the amount of code each agent generates, modifies, and manages is always small, the number of agents scales, allowing the amount of code generated to be increased indefinitely according to the difficulty of the problem. Detailed algorithms are presented in Algorithm 1 in the appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Generation</head><p>The code generation process in the SoA framework begins with the function's docstrings and unit tests. In the initial stage, there is only one initialized Mother agent, which is the root of the tree structure. Based on the input docstrings and unit tests, it generates docstrings and unit tests for subtasks and passes them to other agents it generates (see §3.2). If the tree structure reaches a predetermined depth, the tasks are passed to Child agents; otherwise, they are passed to newly generated Mother agents. By repeatedly proliferating and increasing the number of agents until the last agent, it is possible to generate large-scale code while keeping the amount of code managed by individual agents constant.</p><p>Code Modification Once code generation is complete, the process transitions to the code modification phase. First, the implementations of all agents are combined to create the final implementation. This final implementation is evaluated using the unit tests provided to the root Mother, and feedback is generated from the results. Since there are no agents higher than this root Mother, information from higher-level agents as shown in Figure <ref type="figure" target="#fig_2">3</ref> is not used. The modification process starts based on this feedback and propagates information from the root Mother agent to the Child</p><p>agents. Each agent updates its implementation based on the received STEP3: Fix code Test result Unit test STEP1: Observe upper agent Mother Upper Mother Memory LLM LLM STEP2: Generate self-feedbacks (1) Return a Boolean value. (2) In 'get_odd_numbers', ignore negative numbers. Code STEP4: Update memory Old code STEP3: Fix code Test result Unit test STEP1: Observe mother agent Memory LLM LLM STEP2: Generate self-feedbacks (1) Ignore numbers that are negative. Code STEP4: Update memory Old code def get_odd_numbers(lst): ''' Extracts the odd numbers from a given list of numbers. ''' odd_numbers = [n for n in lst if n % 2 != 0 and n &gt; 0] return odd_numbers Child (Self-feedbacks, New code, Old code) To other children/mothers Agent state Agent state def is_sum_of_odds_ten(lst): '''Checks if sum of odd numbers is 10 ''' odd_numbers = get_odd_numbers(lst) sum_odds = sum_numbers(odd_numbers) return True if sum_odds == 10 else False feedback, generates new feedback, and transmits it to lower-level agents (see §3.2). Finally, the Child agents update their own implementations, and the process terminates (see § 3.1). This series of processes is repeated until a predetermined maximum number of iterations is reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>Baselines We compare SoA with several state-ofthe-art code generation methods including Alpha-Code <ref type="bibr" target="#b11">(Li et al., 2022)</ref>, Incoder <ref type="bibr" target="#b5">(Fried et al., 2023)</ref>, Codex <ref type="bibr">(Chen et al., 2021)</ref>, CoT <ref type="bibr" target="#b21">(Wei et al., 2022)</ref>, and Gemini Pro <ref type="bibr" target="#b0">(Anil et al., 2023)</ref>. Additionally, we evaluate the performance of various GPT-3.5based agents, such as ChatGPT, Self-Edit <ref type="bibr" target="#b24">(Zhang et al., 2023)</ref>, and Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>. These baselines are chosen to represent a diverse range of approaches, including single-agent and multi-agent systems, as well as those with and without self-debugging capabilities.</p><p>Agent Configuration To evaluate the effectiveness of the SoA framework, we selected the Reflexion agent as a baseline. Reflexion iteratively modifies code based on the given docstrings and automatically generated unit tests until it reaches the maximum number of iterations or passes the unit tests. The main difference between Reflexion and SoA is that Reflexion is composed of a single agent, while SoA is composed of self-organized multiple agents. In the SoA configuration, we set the maximum number of iterations for the learning loop to 8 and the maximum tree depth to 2. Additionally, following <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, we provided a few-shot trajectory to the LLM.</p><p>Data and Tasks To evaluate the performance of automatic code generation, we used the Hu-manEval <ref type="bibr">(Chen et al., 2021)</ref> benchmark. Hu-manEval is a set that includes diverse programming problems designed to measure the functional correctness of generated code. We used the Python language set for evaluation and followed the evaluation methodology of Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>. In this process, multiple test cases are created for each generated code, and n test cases are randomly selected to construct a test suite. This test suite is used to verify whether the generated code functions correctly. We set 6 unit tests for Reflexion and 1 unit test for SoA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Main Results</head><p>Table 1 compares the Pass@1 accuracy of the proposed method and the baseline. Comparing SoA with Reflexion, a strong baseline, SoA outperforms Reflexion by 5% in Pass@1. Considering that each agent in SoA does not see the entire code, this is a surprising result. This result suggests that selforganized agents can generate code that functions well as a whole without needing to oversee the Table 1: Results of SoA and baselines on HumanEval. The score of ChatGPT is taken from Dong et al. (2023). SD indicates whether the agent uses self-debugging with unit tests, while SO denotes whether the agent employs self-organized multi-agent collaboration.</p><p>entire code, by independently implementing the functions assigned to them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Analysis</head><p>One of the most critical aspects of our study is the efficiency of the self-organized multi-agent approach in large-scale code generation. To showcase the superior performance of SoA, we conducted a comprehensive comparative analysis between Reflexion, a state-of-the-art single-agent system, and our proposed multi-agent system. Using the Hu-manEval benchmark, we meticulously examined the overall scale of the code generated by both systems and the amount of code each agent independently generated and memorized. To ensure a fair comparison, we removed comments and docstrings from the HumanEval results and focused on the number of characters and tokens of pure code. This finding underscores the exceptional scalability of SoA, indicating its ability to handle increasingly complex tasks by seamlessly adding more agents to the system. Our results suggest that by increasing the depth of the agent hierarchy and introducing more Mother agents, SoA can generate even larger-scale code by efficiently distributing the workload among multiple agents. As the tree structure becomes deeper, the system exhibits an infinite scaling potential, enabling the generation of increasingly complex and extensive codebases while ensuring that each agent handles a manageable portion of the code. Each agent can maintain a manageable amount of code while theoretically allowing for an indefinite increase in the overall code generation capacity.</p><p>This distributed approach empowers SoA to significantly scale up its ability to tackle large-scale and complex coding tasks with remarkable efficiency and high quality, far surpassing the limi- tations encountered by single-agent systems like Reflexion, where a sole agent is responsible for managing and generating the entire codebase.</p><p>5 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Agents</head><p>Recent advancements in LLM agents, such as ReAct <ref type="bibr">(Yao et al., 2023b)</ref>, Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, Toolformer <ref type="bibr" target="#b17">(Schick et al., 2023)</ref>, and Self-Refine <ref type="bibr" target="#b12">(Madaan et al., 2023)</ref>, have primarily focused on single-agent approaches, where one agent is responsible for both generation and modification tasks. Among these, Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref> has gained significant attention in the field of code generation due to its outstanding performance. However, despite their strengths, these single-agent approaches face inherent limitations when it comes to generating and modifying large-scale codebases. To address these limitations and push the boundaries of what is possible with LLM agents, we propose SoA, a novel multi-agent framework that harnesses the power of self-organization and collaboration. While we intentionally adopted simple agents for SoA in this work, our framework is flexible enough to incorporate more sophisticated and powerful methods <ref type="bibr" target="#b25">(Zhong et al., 2024;</ref><ref type="bibr" target="#b27">Zhou et al., 2023)</ref> and other state-of-the-art LLMs 5 , further enhancing its potential for large-scale code generation and modification.</p><p>5 <ref type="url" target="https://claude.ai/">https://claude.ai/</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Agent Collaboration for Software Development</head><p>In recent years, several multi-agentbased approaches have emerged as promising solutions for software development, such as MetaGPT <ref type="bibr" target="#b6">(Hong et al., 2023)</ref>, ChatDev <ref type="bibr" target="#b16">(Qian et al., 2023)</ref>, Self-collaboration <ref type="bibr" target="#b7">(Dong et al., 2023)</ref>, and AgentCoder <ref type="bibr" target="#b7">(Huang et al., 2023)</ref>. These methods typically personify agents and assign them specific names or occupational roles, such as programmers, project managers, or QA engineers, to allocate tasks. While this approach has shown promise, our method takes a different and more flexible approach. Instead of assigning fixed occupational roles, we subdivide agent capabilities based on code functionality, allowing each agent to demonstrate its expertise without being constrained by predefined roles. This fine-grained task allocation enables more flexible problem-solving and adaptation to the complexity of the software development process. Moreover, by incorporating the concepts of self-organization and self-proliferation, our agents can dynamically scale up the overall code volume based on the difficulty of the problem at hand, providing a highly adaptable and efficient framework for large-scale code generation and modification.</p><p>Macro vs. Micro Perspectives While both multiagent-based methods <ref type="bibr" target="#b6">(Hong et al., 2023;</ref><ref type="bibr" target="#b16">Qian et al., 2023;</ref><ref type="bibr" target="#b7">Dong et al., 2023;</ref><ref type="bibr" target="#b7">Huang et al., 2023)</ref> and our proposed SoA framework share the common goal of automating software development, they address different technical aspects of the process. Existing multi-agent methods primarily focus on optimizing the macro structure of software development, such as project management and task allocation. In contrast, our method takes a more micro-level perspective, focusing on the elemental technologies of code generation and modification. These approaches are not mutually exclusive but rather complementary, offering a more comprehensive solution to the challenges faced in automatic software development. By combining the strengths of both macro and micro-level approaches, we can create a powerful and holistic framework that efficiently handles the complexities of large-scale code generation and modification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt</head><p>Engineering Tree-of-Thought (ToT) <ref type="bibr">(Yao et al., 2023a)</ref> and Skeleton of Thought (SoT) <ref type="bibr" target="#b14">(Ning et al., 2023)</ref> are prompt engineering techniques that utilize tree-like structures. ToT represents reasoning steps as nodes to explore correct reasoning paths, while SoT generates a skeleton of the answer and completes the contents in parallel to decrease generation latency. In contrast, SoA uses a tree structure with agents as nodes, focusing on their collaboration and self-organization to generate and modify code efficiently.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this work, we introduced Self-organized Agents (SoA), a novel multi-agent framework for efficient and scalable automatic code generation and optimization using large language models (LLMs). SoA addresses the limitations of single-agent approaches in handling large-scale, complex codebases by leveraging the power of self-organization and distributed code generation. In SoA, selforganized agents operate independently to generate and modify code components while seamlessly collaborating to construct the overall codebase. A key feature of our framework is the automatic multiplication of agents based on problem complexity, allowing for dynamic scalability and enabling the overall code volume to be increased indefinitely according to the number of agents, while the amount of code managed by each agent remains constant.</p><p>We evaluated SoA on the HumanEval benchmark and demonstrated its superior performance compared to Reflexion, a state-of-the-art singleagent system, with SoA achieving a 5% improvement in terms of Pass@1 accuracy. Furthermore, our in-depth analysis revealed SoA's remarkable scalability, as each agent in SoA handles significantly less code compared to the single-agent baseline, yet the overall generated code is substantially greater. These results highlight the effectiveness of SoA in generating and optimizing large-scale code efficiently and with high quality.</p><p>However, it is essential to acknowledge the limitations of the current implementation of SoA. The framework's performance may be affected by the choice of LLM and the quality of the generated unit tests. Additionally, SoA has been evaluated on a limited set of programming tasks, and its effectiveness in handling more complex, real-world software development projects remains to be investigated. Furthermore, the communication and collaboration mechanisms among agents in SoA can be further optimized to improve efficiency and fault tolerance.</p><p>Despite these limitations, we believe that the SoA framework has significant potential for future research and development in the field of automatic software development.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Left (single agent): A single agent is solely responsible for the entire implementation. As the codebase grows larger, the load increases for code generation, modification, and memory management, making it difficult to manage and develop. The larger the entire codebase becomes, the more it puts pressure on the context length during self-debugging, limiting the amount of code that can be managed. Right (SoA): The implementation is distributed among multiple agents. The agents are independent; code generation, modification, and memory management are separated from other agents. Each agent manages only its own part, allowing it to focus on the implementation regardless of the complexity of the entire codebase. Furthermore, agents automatically multiply according to the complexity of the problem. This allows for the generation and modification of complex and large-scale code while maintaining a constant amount of code management/generation/modification per agent.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of code generation. Child agents generate executable Python function from a given docstring. The Mother agent generates the skeleton of the function. The Mother spawns a new initialized agent (Child or Mother) and delegates unimplemented functions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Overview of code modification. Agents (Mother/Child) observe the state of Mother (feedback, old code, and updated code) and use this information to improve the functions for which they are responsible. The state of the upper agent is used to modify code by lower agents within the hierarchy. This state propagation promotes collaboration and information sharing throughout the hierarchy, enabling efficient code modification.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5</head><label>5</label><figDesc>presents a visualization of the average amount of code generated by SoA and Reflexion from the perspective of individual functions and all functions. In the context of HumanEval, which requires the implementation of a single function, SoA's code amount is calculated by summing the code generated by each agent, while Reflexion's code amount is based on a single function. The code amount per function in SoA refers to the code generated by each individual agent, whereas in Reflexion, it is equivalent to the code amount of a single function. The results unequivocally demonstrate SoA's superiority over Reflexion in terms of the number of tokens per final code and the average number of characters per function. What is remarkable is that despite each agent in SoA handling significantly fewer tokens/characters compared to the single agent in Reflexion, the overall output generated by SoA is substantially greater.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Comparison of code generation amount between SoA (mulit-agent) and Reflexion (single agent).</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Our code will be available at https://github.com/ tsukushiAI/self-organized-agent.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://github.com/Significant-Gravitas/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>gpt3.5-turbo-1106</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>GPT-4 was not selected due to the high experimental cost required.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Method SD SO Pass@1 AlphaCode (Li et al., 2022) ✘ ✘ 17.1 Incoder (Fried et al., 2023) ✘ ✘ 15.2 Codex (Chen et al., 2021) ✘ ✘ 47.0 Gemini Pro (Anil et al., 2023) ✘ ✘ 67.7 GPT-3.5 CoT (Wei et al., 2022) ✘ ✘ 44.6 ChatGPT ✘ ✘ 57.3 Self-Edit (Zhang et al., 2023) ✔ ✘ 62.2 Reflexion (Shinn et al., 2023) ✔ ✘ 66.5 SoA (ours) ✔ ✔ 71.4</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Overview of the SoA framework. Mother agents and Child agents hierarchically construct a network and perform function generation and modification. Mother agents delegate tasks to other Mother agents or Child agents, and each agent independently executes tasks while effectively implementing a single function as a whole.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slav</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melvin</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jilin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Pitler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angeliki</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Ronald</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Viola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malcolm</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Doherty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erica</forename><surname>Moreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kareem</forename><surname>Ayoub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megha</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enrique</forename><surname>Piqueras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Savinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Danihelka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Becca</forename><surname>Roelofs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anaïs</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lakshman</forename><surname>Tamara Von Glehn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Yagati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Kazemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Khalman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sygnowski</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2312.11805</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Gemini: A family of highly capable multimodal models. CoRR, abs/2312.11805</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Principles of the self-organizing dynamic system</title>
+		<author>
+			<persName><forename type="first">Ashby</forename><surname>Ross</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of general psychology</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="125" to="128" />
+			<date type="published" when="1947">1947</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 33: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-12-06">2020. 2020. 2020. December 6-12, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Pondé De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating large language models trained on code. CoRR, abs/2107.03374</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Selfcollaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2304.07590</idno>
+		<idno>CoRR, abs/2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Incoder: A generative model for code infilling and synthesis</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2023-05-01">2023. May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2308.00352</idno>
+		<idno>CoRR, abs/2308.00352</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Agentcoder: Multi-agentbased code generation with iterative testing and optimisation</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2312.13010</idno>
+		<idno>CoRR, abs/2312.13010</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Same task, more tokens: the impact of input length on the reasoning performance of large language models</title>
+		<author>
+			<persName><forename type="first">Mosh</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Jacoby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Goldberg</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2402.14848</idno>
+		<idno>CoRR, abs/2402.14848</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">2023a. Loogle: Can long-context language models understand long contexts?</title>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengmeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2311.04939</idno>
+		<idno>CoRR, abs/2311.04939</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgenii</forename><surname>Zheltonozhskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Dehaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mishig</forename><surname>Davaadorj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">João</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleh</forename><surname>Shliazhko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Gontier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Meade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armel</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Ho</forename><surname>Yee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logesh</forename><surname>Kumar Umapathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhtasham</forename><surname>Oblokulov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiruo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rudra</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Stillerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sankalp</forename><surname>Siva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Abulkhanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Zocca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nour</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Moustafa-Fahmy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Bhattacharyya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swayam</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paulo</forename><surname>Luccioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fedor</forename><surname>Kunakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Zhdanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadav</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Timor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Schlesinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dao</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2305.06161</idno>
+		<idno>abs/2305.06161</idno>
+		<editor>Mayank Mishra, Alex Gu, Jennifer Robinson, Carolyn Jane Anderson, Brendan Dolan-Gavitt, Danish Contractor, Siva Reddy, Daniel Fried, Dzmitry Bahdanau, Yacine Jernite, Carlos Muñoz Ferrandis, Sean Hughes, Thomas Wolf, Arjun Guha</editor>
+		<imprint/>
+	</monogr>
+	<note>Leandro von Werra, and Harm de Vries. 2023b. Starcoder: may the source be with you! CoRR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">H</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><forename type="middle">Dal</forename><surname>Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyprien</forename><surname>De Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">J</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esme</forename><surname>Sutherland Robson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Nando De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2203.07814</idno>
+		<idno>CoRR, abs/2203.07814</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023</title>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. 2023. December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Xiangru Tang, Leandro von Werra, and Shayne Longpre. 2023. Octopack: Instruction tuning code large language models</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armel</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinkai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swayam</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2308.07124</idno>
+		<idno>CoRR, abs/2308.07124</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Skeleton-of-thought: Large language models can do parallel decoding</title>
+		<author>
+			<persName><forename type="first">Xuefei</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zinan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazhong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2307.15337</idno>
+		<idno>CoRR, abs/2307.15337</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">GPT-4 technical report</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2303.08774</idno>
+		<idno>CoRR, abs/2303.08774</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2307.07924</idno>
+		<idno>CoRR, abs/2307.07924</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. 2023. 2023. December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Zeroscrolls: A zero-shot benchmark for long text understanding</title>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Shaham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maor</forename><surname>Ivgi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avia</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12-06">2023. December 6-10, 2023</date>
+			<biblScope unit="page" from="7977" to="7989" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Reflexion: language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bikel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jude</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedanuj</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saghar</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hakan</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenya</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushkar</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rashi</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Saladi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>Silva</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2307.09288</idno>
+		<editor>Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang</editor>
+		<imprint>
+			<publisher>Aurélien Rodriguez</publisher>
+			<pubPlace>Robert Stojnic, Sergey Edunov</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Thomas Scialom. 2023. Llama 2: Open foundation and finetuned chat models. CoRR, abs/2307.09288</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-11-28">2022. 2022. 2022. November 28 -December 9, 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">2023a. Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">2023b. React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karthik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2023">May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Self-edit: Fault-aware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/2023.ACL-LONG.45</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07-09">2023. July 9-14, 2023</date>
+			<biblScope unit="page" from="769" to="787" />
+		</imprint>
+	</monogr>
+	<note>ACL 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">LDB: A large language model debugger via verifying runtime execution step-by-step</title>
+		<author>
+			<persName><forename type="first">Lily</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2402.16906</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Corr</surname></persName>
+		</author>
+		<idno>abs/2402.16906</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">A Pseudocode Algorithm 1 Generate Code with Self-organized Agent Framework Input: docstrings: Docstrings for the function, unit_tests: List of unit tests, max_depth: Maximum depth of the agent hierarchy, max_iterations: Maximum number of code modification iterations Output: The final generated code 1: 2: Initialize the root Mother agent with docstrings and unit_tests 3: 4: function GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests) 5: if depth -1 = max_depth then 6: next_agent ← new ChildAgent 7: else 8: next_agent ← new MotherAgent 9: end if 10: Assign subtask_docstrings and unit_tests to next_agent 11: GENERATE(next_agent, depth + 1) 12: end function 13: 14: function GENERATE(agent, depth) 15: if depth = 1 then ▷ Root Mother 16: skeleton ← Generate skeleton from agent.docstrings and agent.unittests 17: agent.code ← skeleton 18: for each subtask_docstrings, subtask_unit_tests in subtasks do 19: GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests) 20: end for 21: else if depth = max_depth then ▷ Child 22: Generate code for agent.subtask_docstrings and agent.subtask_unit_tests 23: agent.code ← generated code 24: else ▷ Mother 25: Generate code for agent.subtask_docstrings and agent.subtask_unit_tests 26: agent.code ← generated code 27: for each subtask_docstrings, subtask_unit_tests in subtasks do 28: GENERATEAGENT(agent, depth, subtask_docstrings, subtask_unit_tests) 29: end for 30: end if 31: end function 32: 33: function MODIFY(agent, test_result, upper_agent_observation) 34: Generate feedback for agent based on test_result and upper_agent_observation 35: Update agent&apos;s code based on feedback 36: for each subagent in agent.subagents do 37: Evaluate subagent.code using subagent.unit_tests to get subagent_test_result 38: MODIFY(subagent, subagent_test_result, feedback and code changes</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2310.04406</idno>
+		<idno>CoRR, abs/2310.04406</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">39</biblScope>
+		</imprint>
+	</monogr>
+	<note>Language agent tree search unifies reasoning acting and planning in language models end for 40: end function 41: 42: Start code generation with GENERATE(root_mother, 1) 43: 44: for each iteration in max_iterations do 45: Combine implementations from all agents to create f inal_implementation 46: Evaluate f inal_implementation using unit_tests to get test_result 47: Modify the code starting from root_mother with MODIFY(root_mother, test_result, None) 48: end for 49: 50: return The final implementation combined from all agents</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

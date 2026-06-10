@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">The OpenHands Software Agent SDK: A Composable and Extensible Foundation for Production Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-04-22">22 Apr 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+							<email>xingyao@openhands.dev</email>
+						</author>
+						<author>
+							<persName><forename type="first">Simon</forename><surname>Rosenberg</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Juan</forename><surname>Michelini</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Calvin</forename><surname>Smith</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hoang</forename><surname>Tran</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Engel</forename><surname>Nyst</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Rohit</forename><surname>Malhotra</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Valerie</forename><surname>Chen</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Robert</forename><surname>Brennan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+							<email>graham@openhands.dev</email>
+						</author>
+						<author>
+							<persName><roleName>Gitlab App, ... OpenHands CLI</roleName><forename type="first">Github</forename><surname>App</surname></persName>
+						</author>
+						<title level="a" type="main">The OpenHands Software Agent SDK: A Composable and Extensible Foundation for Production Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-04-22">22 Apr 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">34C6DBB4DF8F0FF00329FBEFE486C408</idno>
+					<idno type="arXiv">arXiv:2511.03690v2[cs.SE]</idno>
+					<note type="submission">Accepted at MLSys 2026</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Agents are now used widely in the process of software development, but building production-ready software engineering agents is a complex task. Deploying software agents effectively requires flexibility in implementation and experimentation, reliable and secure execution, and interfaces for users to interact with agents. In this paper, we present the OpenHands Software Agent SDK, a toolkit for implementing software development agents that satisfy these desiderata. This toolkit is a complete architectural redesign of the agent components of the popular OpenHands framework for software development agents.</p><p>To achieve flexibility, we design a simple interface for implementing agents that requires only a few lines of code in the default case, but is easily extensible to more complex full-featured agents with features such as custom tools, memory management, and more. For security and reliability, it delivers seamless local-to-remote execution portability, integrated REST/WebSocket services. For interaction with human users, it can connect directly to a variety of interfaces, such as visual workspaces (VS Code, VNC, browser), command-line interfaces, and APIs. Compared with existing SDKs from OpenAI, Claude and Google, OpenHands uniquely integrates native sandboxed execution, lifecycle control, model-agnostic multi-LLM routing, and built-in security analysis. We validate the architecture empirically: production deployment data shows that V1 substantially reduces system-attributable failures over V0 with negligible event-sourcing overhead, and evaluations across multiple models and benchmarks demonstrate strong agent performance. Put together, these elements allow the OpenHands Software Agent SDK to provide a practical foundation for prototyping, unlocking new classes of custom applications, and reliably deploying agents at scale.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In software engineering, AI agents have evolved from assistive tools <ref type="bibr" target="#b3">(GitHub, 2021;</ref><ref type="bibr">Cursor Team, 2024)</ref> to autonomous systems capable of hours-long async execution on complex tasks (e.g., Devin (Cognition AI, 2024), Claude Code <ref type="bibr">(Anthropic, 2025b)</ref>, OpenHands <ref type="bibr" target="#b17">(Wang et al., 2025)</ref>). Reliably deploying autonomous agents in production requires system foundations-including durable state management, safe execution in a sandbox, and consistent behavior across environments ranging from local to containerized cloud deployments-that were four decoupled packages. Applications consume software agent SDK; tool and workspace packages extend sdk's abstraction with actual implementations; the workspace package spawns and connects to agent server.</p><p>Figure <ref type="figure">1</ref> Architecture Evolution from OpenHands V0 to V1. V0's monolithic, sandbox-centric design tightly coupled components and required duplicated local implementations. V1 refactors this into a modular SDK with clear boundaries, opt-in sandboxing, and reusable agent, tool, and workspace packages. The color of each component in V0 roughly corresponds to its modular counterpart in V1.</p><p>unnecessary for earlier assistive tools that rely on largely local user-driven workflows. Yet no consensus exists on how to architect these foundations: existing SDKs from major providers differ widely in isolation models, state management, and deployment assumptions, leaving practitioners without a well-validated reference design.</p><p>OpenHands <ref type="bibr" target="#b17">(Wang et al., 2025)</ref> demonstrated that open-source software agents can achieve broad adoption and contributions, reaching over 64k GitHub stars and hundreds of contributors in just 18 months <ref type="bibr" target="#b10">(Neubig, 2025)</ref>. As the project scaled, the original monolithic architecture-what we refer to as OpenHands V0-exposed growing architectural tensions. The early design was driven by the need for fast prototyping and iteration, combining agent logic, evaluation, and applications in a single codebase. Over time, this approach led to rigid sandboxing assumptions, sprawling mutable configuration, and tight coupling between research and production, eventually making a full architectural redesign unavoidable.</p><p>Guided by these lessons, OpenHands V1 introduces a new architecture grounded in four design principles that directly address the limitations of V0:</p><p>• Optional isolation. The agent runs locally by default but can switch to a sandboxed environment when additional safety or resource control is required.</p><p>• Stateless by default, one source of truth for state. All components-agents, tools, LLMs, etc-are immutable and validated at construction, while a single conversation state object records all mutable context. This design ensures reliable recovery of agent sessions.</p><p>• Strict separation of concerns. The agent core is decoupled from applications so that downstream systems (CLI, Web UI, GitHub App) use it as a shared library rather than duplicating logic.</p><p>• Two-layer composability. Developers can compose independent deployment packages (SDK, Tools, Workspace, Server) and extend the SDK safely by adding or replacing typed components such as tools or agents.</p><p>Building on these principles, we introduce OpenHands V1, a complete software-agent ecosystem-including CLI and GUI applications-built on a shared foundation: the OpenHands Software Agent SDK (Fig. <ref type="figure">1b</ref>). We present the SDK as a reference architecture for production agent systems, codifying lessons from 18 months of open-source development and production deployment into an empirically validated design. The SDK defines an event-sourced state model with deterministic replay, an immutable configuration for agents, and a typed tool system with MCP integration. Its workspace abstraction enables the same agent to run locally for prototyping or remotely in secure, containerized environments with minimal code changes. Unlike prior library-only SDKs <ref type="bibr">(Anthropic, 2025a;</ref><ref type="bibr" target="#b11">OpenAI, 2024)</ref>, OpenHands includes a built-in REST/WebSocket server for remote execution and a suite of interactive workspace interfaces for human inspection and control. We systematically compare features of our SDK with those of the OpenAI Agents SDK, Claude Agent SDK, Google ADK, and LangChain (Tab. 6), finding that our SDK uniquely combines native remote execution with sandboxing, a production server, model-agnostic multi-LLM routing across 100+ providers, a security analyzer for agent actions, and built-in QA instrumentation for production reliability.</p><p>We support this architectural contribution with empirical evidence at two levels. At the systems level, a 15-day production comparison shows V1 reduces system-attributable failures by 61% relative to V0, and event-sourcing overhead is negligible. At the agent capability level, evaluations across 14 language models and five benchmark categories-including SWE-Bench Verified, GAIA, SWE-Bench Multimodal, SWT-Bench, and Commit0-demonstrate that the redesigned architecture maintains strong agent performance.</p><p>The OpenHands Software Agent SDK 1 and evaluation harness 2 are fully open-sourced under the MIT License.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Agent Design</head><p>Modern AI agents can be viewed as systems that perceive, reason, and act within an environment to accomplish goals over time <ref type="bibr" target="#b13">(Russell and Norvig, 2009)</ref>. In recent work <ref type="bibr" target="#b16">(Wang et al., 2023)</ref>, agent design typically centers on these interconnected components:</p><p>• Environment and Observations. The environment defines the external context in which the agent operates, providing structured interfaces (e.g., APIs, files, user interfaces) from which it receives observations. These percepts-such as text, logs, or visual data-inform the agent's situational awareness and ground its decisions in the evolving task state.</p><p>• State and Memory. An agent's state encodes what it currently knows about the world and itself, often represented as a history of past interactions, retrieved information, and internal reasoning.</p><p>• Actions and Tools. Actions represent how the agent influences its environment-issuing commands, executing code, or invoking APIs-each realized through the use of tools that implement these capabilities.</p><p>1 <ref type="url" target="https://github.com/OpenHands/software-agent-sdk">https://github.com/OpenHands/software-agent-sdk</ref> 2 <ref type="url" target="https://github.com/OpenHands/benchmarks">https://github.com/OpenHands/benchmarks</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Software Agents</head><p>In software engineering contexts, these agentic components manifest concretely in systems like Open-Hands <ref type="bibr" target="#b17">(Wang et al., 2025)</ref>, which emulate a developer's end-to-end workflow. The environment is a sandboxed workspace exposing a filesystem, terminal, and web interface, allowing the agent to observe program output and test feedback. Its state and memory are represented through an event log that records commands, edits, and results, providing persistent context across actions. The agent acts by editing files, running tests, or invoking structured tools like web browser to interact with its environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Challenges and Design Principles</head><p>As OpenHands evolved, it has accumulated significant architectural complexity: core agent logic, multiple CLIs, a web server for the GUI, frontend code, and diverse runtime providers (e.g., local Docker, Kubernetes in production) all coexist in a single codebase. Much of this architecture dated back to the project's first weeks, before the introduction of LLM structured tool use or the Model Context Protocol (MCP; <ref type="bibr" target="#b7">MCP Team 2025)</ref>. This section revisits the key architectural tensions observed in OpenHands V0 and distills them into four design principles guiding V1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Universal Sandboxing vs. Local Flexibility</head><p>V0 Challenges. V0 was built on the assumption that all tool calls should run inside sandboxed Docker containers for safety and reproducibility.</p><p>However, doing so introduced multiple layers of friction as each conversation spanned two independent processes (agent and sandbox) with potentially divergent states. Since the sandbox for tools might crash while the agent continued (or vice versa), leading to corrupted sessions. In multi-tenant deployments, resource-heavy actions from one user, such as mass webpage visits generating oversized screenshots, could exhaust container resources and crash other agents sharing the same application.</p><p>When the need arose to support local execution workflows-for example, running tools or MCP clients directly on the host machine-we had to add exceptions and bypass layers that duplicated existing logic. As shown in Fig. <ref type="figure">1a</ref>, this led to redundant local versions of MCP and tool implementations, diverging from the original sandbox-based code path. These ad hoc extensions made the architecture increasingly brittle and poorly aligned with MCP, which assumes agents can execute actions locally with direct access to credentials, files, and IDEs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V1 Design Principle</head><p>Sandboxing should be opt-in, not universal. V1 unifies agent and tool execution in a single process by default, aligning with MCP's assumptions. When isolation is needed, the same stack can be containerized transparently. Sandboxing becomes opt-in-preserving flexibility without sacrificing safety.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Mutable Configuration vs. Deterministic State</head><p>V0 Challenges. V0's configuration system mixed different domains -deployment, agent behavior, LLM routing, sandbox settings, and UI options -within overlapping layers, creating hidden dependencies and complex override logic. The deeper issue was structural: configuration was split across multiple parallel hierarchies (CLI/headless, Web UI, GitHub App, and SaaS), each evolving its own precedence rules and assumptions. Different entry points were added incrementally, each patching configuration values in place, so two runs with identical parameters could still diverge subtly. Later attempts to unify these systems only added more override layers and inconsistencies, while the web configuration remained rigid due to its coupling with ORM models and database schemas. These issues led to severe sprawl -140+ fields, 15 classes, and 2.8K lines of configuration code -a brittle system where small changes often cascaded into unrelated failures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V1 Design Principle</head><p>Stateless by Default, One Source of Truth for State. V1 treats all agents and their components-tools, LLMs, etc-as immutable and serializable Pydantic models validated at construction. The only mutable entity is the conversation state, which is a single, well-defined source of truth that tracks ongoing execution. This design isolates change to one place, enabling deterministic replay, strong consistency, and stable long-term recovery.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Monorepo vs. Modular SDK</head><p>V0 Challenges. OpenHands V0 was implemented as a single monolithic repository that combined the agent core, evaluation suite, and applications (frontend, backend, CLI) into one codebase. This monorepo simplified early development but gradually blurred boundaries between the agent and its downstream applications. The same repository powered the CLI, web interface, and GitHub integrations, each introducing divergent logic and configuration overrides. Over time, the agent core absorbed application-specific branches, benchmark dependencies, and environment-specific hacks, making the system brittle and slow to evolve.</p><p>As OpenHands gained popularity in the academic community, many benchmarks were contributed, making the agent more general but also introducing heavy dependencies and frequent version conflicts. These leaked into the main application due to mono-repo design, making deployments heavyweight and fragile.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V1 Design Principle</head><p>Maintain strict separation of concerns. V1 isolates the agent core into software engineering SDK as described in this paper. Applications integrate via SDK APIs, allowing research to evolve independently from applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Monolith Logic vs. Extensible Architecture</head><p>V0 Challenges. As V0 lacked clear boundaries between the agent core and its applications, adding new behaviors in V0 often required editing the core logic or branching for specific entry points, limiting experimentation and maintainability. The system lacked a structured notion of composability and extensibility, forcing ad hoc hacks for even small changes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V1 Design Principle</head><p>Everything should be composable and safe to extend. V1 makes composability a first-class design goal at two levels. At the deployment level, its four modular packages-SDK, Tools, Workspace, and Agent Server-combine flexibly to support local, hosted, or containerized execution. At the capability level, the SDK exposes a typed component model-tools, LLMs, contexts, etc-so developers can extend or reconfigure agents declaratively without touching the core.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Architecture</head><p>OpenHands V1's architecture emerged from both the operational challenges we encountered in V0 analyzed in §3. OpenHands V1 is a broader ecosystem with applications like CLI and GUI. Its foundation is the OpenHands Software Agent SDK-a standalone developer framework comprising nine interlocking components: Event-Sourced State Management ( §4.2), LLM ( §4.3), Tool System ( §4.4), Agent ( §4.5), Context Window Management ( §4.6), Local Conversation ( §4.7), Secret Registry ( §4.8), Security and Confirmation ( §4.9), and deployment architecture ( §4.10) with local and remote workspace support ( §4.10). This section focuses on describing the SDK architecture rather than the full application and explains how these components collectively support both local and production deployments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Modular Four-Package Design</head><p>The OpenHands Software Agent SDK is organized into four Python packages that compose together based on deployment needs. Fig. <ref type="figure">1b</ref> shows how these packages interact:</p><p>• openhands.sdk: Core abstractions (Agent, Conversation, LLM, Tool, MCP, etc) and the event system.</p><p>• openhands.tools: Concrete tool implementations based on abstractions defined in openhands.sdk.</p><p>• openhands.workspace: Execution environments (e.g., Docker, hosted API) that extend SDK base classes.</p><p>• openhands.agent server: A web server exposing REST/WebSocket APIs for remote execution.</p><p>The separation addresses key production concerns that slowed down development, QA, and release in OpenHands V0: (1) sdk stays lightweight for diverse integration scenarios;</p><p>(2) tools isolates slow-running tool tests from core SDK changes, speeding up development;</p><p>(3) workspace provides optional sandboxing implementations without bloating the core; and (4) agent server offers a generic API server usable with or without containers. This modularity enables independent testing, selective dependency management, and incremental release cycles-critical for production deployments where monolithic repositories create QA bottlenecks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Event-Sourced State Management</head><p>At V1's core lies an event-sourcing pattern treating all interactions as immutable events appended to a log.</p><p>Event Hierarchy. The event system uses a multi-level hierarchy shown in Table <ref type="table">1</ref>. At the base, Event provides immutable structure (ID, timestamp, source) with type-safe serialization via discriminated unions <ref type="bibr">(Pydantic Team, 2025)</ref>. LLMConvertibleEvent adds to llm message() for converting events into LLM format. The action-observation loop uses ActionEvent for tool calls and ObservationBaseEvent subclasses for results -all these are subclasses of LLMConvertibleEvent. Internal events (condensation, state updates, etc) inherit directly from Event for bookkeeping without LLM exposure.</p><p>Table <ref type="table">1</ref> Event hierarchy organized by parent-child relationships. LLM-convertible events can be sent to the LLM, while internal events handle state management and control flow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Parent Class Child Classes &amp; Purpose</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Event</head><p>Base: Immutable structure, type-safe serialization</p><p>LLM-Convertible Events (visible to LLM) LLMConvertibleEvent MessageEvent: User/assistant text messages ↩→ Event ActionEvent: Agent tool calls with thought &amp; reasoning SystemPromptEvent: System prompt with tool schemas CondensationSummaryEvent: Summary of forgotten events ObservationBaseEvent: Base for tool responses ObservationBaseEvent ObservationEvent: Successful tool execution results ↩→ LLMConvertibleEvent UserRejectObservation: User rejected action AgentErrorEvent: Agent/scaffold errors Internal Events (not visible to LLM) Event ConversationStateUpdateEvent: State field changes CondensationRequest: Trigger history compression Condensation: Compression result with forgotten events PauseEvent: User-requested pause When persistence is configured, ConversationState selectively writes changes to disk. Metadata fields serialize to a single base state.json file on each modification, while EventStore persists events as individual JSON files to the corresponding directory. This dual-path design enables efficient incremental persistence-only new events write to disk, avoiding rewrites of large histories. Conversations resume by loading base state.json and replaying events from the directory, with agents automatically detecting incomplete conversations and continuing from the last processed event.</p><p>Empirical measurements on agent traces confirm that event-sourcing overhead is negligible relative to LLM round-trip times, with sub-millisecond persist latency and crash recovery under 20 ms (see §5.2 for details).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">LLM Abstraction Layer</head><p>The LLM class provides a unified interface to language models. Through LiteLLM, it supports 100+ providers with two APIs: the standard Chat Completions API for broad compatibility and the newer OpenAI Responses API for latest reasoning models.</p><p>Native Support for Reasoning / Extended Thinking. The SDK captures and processes advanced native reasoning fields from frontier models, such as ThinkingBlock for Anthropic's extended thinking, and ReasoningItemModel for OpenAI's reasoning. The SDK supports the OpenAI Responses API transparently for the agent, enabling client developers to use the agent with advanced reasoning models like GPT-5-Codex that are only available on the recently released Responses API.</p><p>Built-in Support for Non-function-calling Models. For models without native function calling support, the SDK implements a NonNativeToolCallingMixin, which converts tool schemas to text-based prompt instructions and parses tool calls from model outputs using structured prompts and regex-based extraction. This enables models that do not support function calling to be used for agentic tasks, dramatically expanding the set of usable models.</p><p>Multi-LLM Routing Support. SDK features RouterLLM, a subclass of LLM that enables the agent to use different models for different LLM requests. Custom implementations can extend RouterLLM and implement select llm() to choose a different model based on different LLM inputs. Please refer to Fig. <ref type="figure" target="#fig_2">3</ref> for a pseudo-code example.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Tool System</head><p>The V1 tool system provides a type-safe and extensible framework grounded in an Action-Execution-Observation pattern. As illustrated in Fig. <ref type="figure" target="#fig_3">4</ref>, tool usage follows a strict contract: the LLM proposes JSON tool calls, which are validated and parsed into Action; these are executed and the results are returned as Observation. This abstraction unifies how the SDK supports both custom tools and MCP tools, providing a single standard interface for defining, invoking, and managing tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action-Execution-Observation Pattern.</head><p>Each tool is defined by three well-separated components:</p><p>• Action -Specifies the input schema for a tool call. LLM-generated arguments are validated against a Pydantic model before execution, ensuring type safety and preventing malformed requests.</p><p>• Execution -Implements the tool's actual logic via the ToolExecutor, which receives a validated Action and performs the underlying execution. • Observation -Captures the output of the execution, defining a structured return schema, and converting results (or errors) into a LLM-compatible format.</p><p>class Schema(BaseModel): Tool Registry and Distributed Execution. SDK supports distributed agent architectures by decoupling tool specifications from implementations using a registry-based resolution mechanism. Because Python executors are non-serializable, tools are represented as lightweight Tool specification objects containing only a registered name and JSON-serializable parameters. Through register tool(name, ToolDefinition), each identifier is bound to a resolver that reconstructs the full definition-including its executor-at runtime based on conversation context. This allows tool specs to cross process or network boundaries as pure JSON, enables lazy instantiation with environment-specific state (e.g., workspace paths), and ensures a uniform interface for local and remote execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Agent: Stateless Event Processor</head><p>The agent abstraction separates configuration from execution state. Agents are defined as stateless, immutable specifications, including LLM settings, tool specifications, security policies, and agent content, that can be serialized and transmitted across process boundaries.</p><p>Event-Driven Execution.</p><p>Agents execute through an event-driven loop that processes conversation state step-by-step. Rather than directly returning results, agents emit structured events (e.g., messages, actions, observations) through callbacks, i.e. on event(event: Event) -&gt; None, separating event generation from execution control. This design enables: (1) security interleaving-actions can be reviewed or blocked before execution based on risk analysis ( §4.9); (2) incremental execution-the agent advances one step at a time, supporting pause/resume, recovery from context overflows, and condensation for long conversations; and (3) event streaming-intermediate results (e.g., observations and reasoning traces) are emitted in real time for UI updates and monitoring.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Customizing Agent Context with Skills and Prompts.</head><p>AgentContext centralizes all inputs that shape LLM behavior, including prefixes/suffixes for system/user messages and user-defined Skill objects. Skills can be defined programmatically or loaded from markdown files (e.g., .openhands/skills/, or compatible formats like .cursorrules, agents.md). Each skill may always be active (trigger=None) to persistently augment the system prompt, or conditionally activated via keyword matching based on user input; skills may also include MCP tools. This design enables rich contextual and behavioral customization without modifying agent logic.</p><p>Sub-Agent Delegation. The SDK supports hierarchical agent coordination through a delegation tool that demonstrates the extensibility of the tool abstraction. Sub-agents operate as independent conversations that inherit the parent's model configuration and workspace context, enabling structured parallelism and isolation without any changes to the core SDK. The current implementation provides blocking parallel execution, implemented as a standard tool in the openhands.tools package, where the parent agent spawns and monitors sub-agents until all tasks complete. This pattern exemplifies how complex coordination behaviors-such as asynchronous delegation, dynamic scheduling, or fault-tolerant recovery-can be implemented entirely as user-defined tools, reinforcing the SDK's design principle for extensibility that advanced agent orchestration requires no modification to the core framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Context Window Management</head><p>To ensure the ever-growing history fits inside the LLM's context, the Condenser system drops events and replaces them with summaries whenever the history grows too large.</p><p>The results of any given condensation are stored in the event log as a CondensationEvent. Before sending the event history to the LLM, the agent applies these condensation events by removing forgotten events and inserting summaries. This strategy lets the SDK preserve the entirety of the event log, regardless of condensation, while also keeping the condenser implementations stateless.</p><p>Condensers enable long-running conversations and, as a mechanism for constraining the tokens consumed per step, can reduce the overall cost of a conversation. LLMSummarizingCondenser (the default condenser) has been shown to reduce API costs by up to 2× with no degradation in agent performance <ref type="bibr" target="#b14">(Smith, 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">Local Conversation</head><p>LocalConversation provides the simplest and most direct execution mode of the SDK, designed for rapid iteration and debuggability. It runs the full agent loop-LLM calls, tool invocation, event callbacks, and state updates-entirely in-process without network or container overhead. The core API offers intuitive control: developers can initialize a conversation with Conversation(agent, workspace), send inputs using send message(), start execution via run(), pause and resume with pause() and run() respectively, inspect results through event callbacks or direct access of .state attribute. Pausing automatically persists state and emits a PauseEvent, allowing agents to resume from the same point later.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.8">Secret Registry</head><p>SecretRegistry provides secure, late-bound, and remotely manageable credentials for tool execution. Each conversation maintains its own instance, ensuring strict per-session isolation. Tools access secrets only at execution time, and all secret values appearing in outputs are masked to prevent leakage. For example, the Bash Tool scans commands for secret keys, exports the referenced ones as environment variables, and replaces their occurrences in results with a constant mask (&lt;secret-hidden&gt;). Secrets may be static values or callables (e.g., token refreshers) and can originate from local stores or HTTP-based sources with secret-aware header handling. New custom sources can be easily added to integrate with external secret stores. All secrets are redacted during serialization and can be encrypted with a configurable cipher. They can also be updated mid-conversation-locally or through the agent server API-supporting live rotation without restarting agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.9">Security and Confirmation</head><p>AI agents can perform risky actions, making security especially important when they run on a user's machine.</p><p>To address this, SDK treats security as a first-class concern within the agent's control loop.</p><p>Two abstractions form the core of this design: the SecurityAnalyzer, which rates each tool call as low, medium, high, or unknown risk, and the ConfirmationPolicy, which determines whether user approval is required before execution based on the action's details and assessed risk. When approval is required, the agent pauses in a special WAITING FOR CONFIRMATION state until the user explicitly approves or rejects the action. Upon rejection, it may retry with safer alternatives. The confirmation policy can be updated dynamically during a session, enabling adaptive trust-such as relaxing restrictions for safe, read-only operations like grep. This architecture separates risk assessment from enforcement, allowing developers define custom SecurityAnalyzer and ConfirmationPolicy without touching tool executors or core logic. The SDK includes a built-in pair: LLMSecurityAnalyzer, which appends a security risk field to tool calls, and ConfirmRisky policy, which blocks actions exceeding a configurable risk threshold (default: high).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.10">Deployment Architecture: Local to Remote</head><p>OpenHands Agent SDK's key innovation is seamless transition from local prototyping to remote production with minimal code changes. This is enabled by the agent API server and the abstraction of Conversation and Workspace.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conversation Factory: Local &amp; Remote Conversation.</head><p>The Conversation class serves as a factory entry point that abstracts over local and remote execution. When instantiated with a string path or LocalWorkspace, it returns a LocalConversation that executes the full agent loop in-process, directly invoking tools and updating state synchronously ( §4.7). When provided a RemoteWorkspace, the same call transparently constructs a RemoteConversation, which serializes the agent configuration and delegates execution to an agent server over HTTP and WebSocket. Both implementations share an identical API allowing seamless migration from local prototyping to containerized multi-user deployments without code changes. This factory pattern encapsulates all environment-specific logic behind a unified interface, achieving the SDK's goal of "local-first, deploy-anywhere" development: the same agent code that runs interactively in a notebook can scale to distributed production simply by swapping the workspace type. Agent Server. The agent server module implements an API server for remote agent execution (Fig. <ref type="figure">6</ref>).</p><p>It exposes REST endpoints for conversation control (e.g., POST /conversations, GET /conversations/id) and WebSocket for event streaming. When a RemoteConversation starts, it serializes agent configuration-including LLM settings, tools, and context-into JSON and submits it to /conversations. The server reconstructs the agent, launches a local execution loop, and streams structured events back in real time, enabling responsive UIs without polling overhead. RemoteConversation (Client) Agent Server Local Conversation Agent + Tools Container HTTP/WS spawns executes Figure 6 Agent server architecture. Client serializes agent configuration via HTTP; the server executes using SDK components inside the container and streams events via WebSocket.</p><p>To support scalable and isolated execution, we provide official Docker images that bundle the full agent-server stack-including the API server, VSCode Web, VNC desktop, and Chromium browser. Each agent instance runs in an independent container with a dedicated file system, environment, and resource. This containerized design simplifies deployment and enables SaaS-style multi-tenancy while preserving workspace isolation.</p><p>Workspace. The BaseWorkspace abstract class enables sandboxes for agents. Local Workspace executes in-process against the host filesystem and shell; it is effectively a thin, no-op wrapper that forwards file/command/git operations directly, enabling fast prototyping without network hops. Remote Workspace preserves the same interface but delegates all operations over HTTP to an Agent Server (see Fig. <ref type="figure" target="#fig_5">7</ref>), with concrete sponsors including a containerized server (DockerWorkspace) or a API-managed runtime (APIRemoteWorkspace). The factory Workspace(. . . ) resolves to local when only working dir is provided and to remote when host/runtime parameters are present, ensuring the agent code remains unchanged across environments.</p><p>class BaseWorkspace(ABC):</p><p>def __enter__(self) -&gt; "BaseWorkspace"</p><p>def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -&gt; None def execute_command(self, command: str) -&gt; CommandOutput:</p><p>"""Run shell command in workspace environment."""</p><p>def file_upload(self, path: str, content: bytes) -&gt; None:</p><p>"""Write file to workspace filesystem."""</p><p>def file_download(self, path: str) -&gt; bytes:</p><p>"""Read file from workspace filesystem."""</p><p>class LocalWorkspace(BaseWorkspace):</p><p>def execute_command(self, cmd: str) -&gt; CommandOutput: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Reliability and Evaluation</head><p>We assess the OpenHands Agent SDK through four complementary lenses: (1) production reliability comparing V0 and V1, (2) systems overhead of the event-sourcing mechanism, (3) continuous testing, and (4) benchmark evaluation across diverse models and tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Production Reliability: V0 vs. V1</head><p>To directly evaluate whether the architectural redesign improves operational reliability, we analyzed production logs from a 15-day parallel rollout in which V0 and V1 served users simultaneously. Exceptions were extracted from conversation failure logs and categorized into three classes (Tab. 7):</p><p>To ensure comparability, we report system-attributable errors-error classes directly attributable to agent infrastructure or SDK logic, excluding LLM provider errors that are external to both architectures. Results are shown in Tab. <ref type="table" target="#tab_0">2</ref>. Result: V1 reduces system-attributable failures by 61% (from 78.0 to 30.0 errors per 1k conversations). The eliminated V0 infrastructure errors were dominated by: HTTPStatusError (401) at 43.0 / 1k (interpod authentication failures), AgentRuntimeNotReadyError at 18.8 / 1k (runtime pod readiness races), and connection/timeout errors at 3.1 / 1k (network instability). These failures stem from V0's inter-pod HTTP communication between the conversation manager and execution runtime. V1's co-located execution model eliminates these observed failure modes by removing this dependency entirely. The remaining V1 SDK errors (29.7 / 1k) were dominated by a condensation bug discovered during the rollout of extended thinking support, as the LLM provider introduced additional constraints on the event/message interface. This issue has since been fixed in the official release.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Event-Sourcing Systems Overhead</head><p>To quantify the I/O cost of event sourcing, we replayed real payloads from 433 SWE-Bench Verified conversations (39,870 events) through the production LocalFileStore path (Tab. <ref type="table">3</ref>). All persist and recovery latencies are negligible relative to LLM round-trip times (typically 1-30 s), storage grows linearly, and crash recovery completes in under 20 ms even for the longest observed conversation (358 events). These results demonstrate that event sourcing adds minimal overhead to the agent execution loop.</p><p>Table <ref type="table">3</ref> Event-sourcing systems overhead measured on SWE-Bench Verified traces (433 conversations, 39,870 events).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metric Median P95 At max (358 events)</head><p>Per-event persist latency 0.20 ms 0.31 ms -Action cycle persist (Action+Obs) 0.40 ms 0.56 ms -Full state replay 4.1 ms 9.7 ms 18.9 ms Crash recovery (replay + unmatched-action scan) 7.4 ms 14.9 ms 32.1 ms Storage per conversation 380 KB 1.4 MB 3.4 MB</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Continuous Quality Assurance</head><p>The SDK employs a three-tier testing strategy that balances coverage, cost, and depth:</p><p>• Programmatic Tests -Run on every commit. These tests mock llm calls and verify core logic, data flow, and API contracts within seconds. Mocking allows quicker feedback, ensuring that most regressions are caught before any external API calls are made.</p><p>• LLM-based Tests -Include both integration and example tests (see below). Executed daily and ondemand for pull requests. These tests use real models (Claude Sonnet 4.5, GPT-5 Mini, DeepSeek Chat) to validate reasoning, tool invocation, and environment stability. Each run costs $0.5-$3 and completes in less than 5 minutes.</p><p>• Benchmark Evaluation -On-demand, high-cost evaluations ($100-1000, hours per run) that measure comprehensive agent capabilities on academic datasets.</p><p>Integration tests cover multiple scenario-based workflows (e.g., file manipulation, command execution, git operations, and browsing), while example tests periodically run all SDK examples (custom tools, MCP integration, persistence, async execution, routing, etc) to ensure end-to-end reliability. The suite is continuously expanded as new agent behaviors and failure patterns are discovered, improving coverage and regression sensitivity over time. On-demand execution for these LLM-based tests further optimizes CI/CD cost: integration tests target high-risk changes, example tests cover user-facing modules, and daily runs track regressions across overall codebase updates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Benchmark Evaluation</head><p>We validate the SDK on academic benchmarks along two axes: first, that the V0-to-V1 architectural transition preserves (and, where the architecture enables new provider features, improves) agentic capability; second, that the SDK generalizes across models and task types. issue resolution and testing, while GPT-5.4 leads in long-horizon greenfield development (62.5%, +12.5 pts ahead of second place).</p><p>OpenAI Agents SDK Claude Agent SDK Google Agent Dev. Kit LangChain/ LangGraph OpenHands Agent SDK Standalone SDK Features MCP Support ✓ ✓ ✓ ✓ ✓ Custom Tools ✓ ✓ ✓ ✓ ✓ History Persistence &amp; Restore ✓ ✓ ✓ ✓ ✓ Sub-agent Delegation ✓ ✓ ✓ ✓ ✓ Model Agnostic (100+ LLMs) ✓ × ✓ ✓ ✓ Multi-LLM Routing × × × ∼ ✓ Conversation Cost &amp; Token Tracking ✓ ✓ × ✓ ✓ Pause/Resume Agent Execution ✓ × × ✓ ✓ Native Support for Non-function-calling models × × × × ✓ Security Analyzer for Agent Action × × ✓ × ✓ Action Confirmation Policies ∼ × ∼ ∼ ✓ Context Files (e.g., repo.md, AGENTS.md) </p><formula xml:id="formula_0">× ✓ × × ✓ Agent Skills × ✓ × × ✓ Context Condensation × ✓ × ✓ ✓ Secrets Management with Auto-Masking × × × × ✓ Agent Stuck Detection × × × × ✓ Production Server &amp; Deployment Builtin REST+WebSocket Server × × × ✓ ✓ Session-Based Authentication × × × ✓ ✓ Builtin Remote Agent Execution × × × ✓ ✓ Agent Environment Sandboxing × × ∼ × ✓ Continuous Quality Assurance Programmatic tests ✓ ✓ ✓ ✓ ✓ Strong Type Checking ✓ ✓ ✓ ✓ ✓ Frequent LLM-based tests × ✓ ✓ × ✓ Built-in Academic Benchmark Evaluation × × × × ✓</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Related Work</head><p>Recent agent SDKs share common goals of tool orchestration, state management, and production deployment. General-purpose frameworks such as LangChain and LangGraph focus on compositional pipelines and stateful graph execution with durable checkpoints for long-running reasoning workflows (LangChain, 2025; Team, 2025). LangGraph Platform further offers deployment and server capabilities, making it one of the most feature-complete open-source alternatives. Provider SDKs from OpenAI and Anthropic emphasize production orchestration, guardrails, and handoffs within their own model ecosystems (OpenAI, 2025; Anthropic, 2025a), while Google's Agent Development Kit (ADK) targets model-agnostic agents integrated with Vertex AI for managed deployment <ref type="bibr" target="#b4">(Google, 2025)</ref>.</p><p>In contrast, the OpenHands Software Agent SDK is a fully open-source, vendor-agnostic platform purposebuilt for software engineering agents. It couples an event-sourced state model and immutable configuration with sandboxed execution, a built-in REST/WebSocket server, and workspace-level remote interfaces for human-agent collaboration. These design choices enable reproducible, deterministic execution and seamless transition from local prototyping to production-scale deployments. A feature-level comparison with major agent SDKs-including LangChain/LangGraph-is provided in Tab. 6, with comparison methodology detailed in the caption.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Discussion</head><p>Architectural Alternatives Considered. During the V1 redesign, we evaluated several alternative approaches. For state management, we considered a traditional database-backed model (used by many web frameworks) but rejected it because it would couple the SDK to a specific storage backend and make offline replay difficult; event sourcing was chosen for its reproducibility and storage-agnostic design. For execution isolation, we considered mandatory containerization (as in V0) and fully local-only execution; the optional isolation model was selected as a compromise that aligns with MCP's local-first assumptions while preserving sandboxing for production. For the package structure, we considered a monolithic SDK (simpler dependency management) versus a microservices architecture (maximum flexibility); the four-package design balances independent testability with practical dependency management.</p><p>Multi-Tenant Deployment. The current security and isolation discussion focuses primarily on single-user scenarios. In multi-tenant deployments-where multiple users submit requests to the same agentic application or multiple applications share infrastructure components-additional considerations apply. The containerized deployment model ( §4.10) provides process-level isolation between tenants, with each agent instance running in an independent container with a dedicated filesystem and resource limits. The event-sourced state model naturally supports tenant isolation since each conversation maintains its own event log. However, shared resources such as LLM API keys, MCP servers, and secret registries require careful access control. The SDK's SecretRegistry supports per-conversation secrets, and the agent server's session-based authentication provides a foundation for multi-tenant access control, but a comprehensive multi-tenant security audit remains future work.</p><p>Limitations. The current implementation focuses on single-agent conversations. While the event-sourced architecture naturally supports interleaving events from multiple agents, coordination mechanisms for multiagent collaboration require further design. The security framework, while substantially improved over V0, cannot guarantee complete safety: LLM-based security analysis is subject to adversarial prompts and inconsistent classification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion</head><p>The OpenHands Software Agent SDK provides a reference architecture for production agent systems, bridging the gap between rapid local prototyping and production deployment through a stateless, event-sourced, and composable design spanning four packages (SDK, Tools, Workspace, Server). From our experience scaling OpenHands from research prototype to production system, we distill four key lessons: strict separation between core agent logic and applications is essential for maintainability; event-sourced state enables reproducibility and fault recovery with negligible overhead (sub-millisecond persist latency, crash recovery under 20 ms); immutable component design prevents configuration drift; and a unified execution model supporting both local and sandboxed deployment streamlines the transition from experimentation to production. These architectural choices yield measurable reliability gains: a 15-day production comparison demonstrates a 61% reduction in system-attributable failures relative to V0, while evaluations across 14 models and five benchmark categories confirm that the redesign preserves and enables strong agentic performance, achieving state-of-the-art results on three of five tasks. Together, these results validate the SDK as a robust foundation for both research and industrial-scale deployment.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>1Figure 2</head><label>2</label><figDesc>Figure 2 Minimal example of OpenHands Software Agent SDK.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>ConversationState: Single Source of Truth. By design, components like Agent, Tool, and LLM are immutable and serializable-all changing variables live in ConversationState, making it the only stateful component. This class maintains two types of state: (1) mutable metadata fields (e.g., agent status, stats, confirmation policy) stored directly in the Pydantic model, and (2) an append-only EventLog recording all agent interactions. A FIFO lock ensures thread-safe updates through a two-path pattern: state-only updates for metadata changes, and event-based updates that append to the log.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>classFigure 3</head><label>3</label><figDesc>Figure 3 Multi-LLM routing example. Routers inherit from LLM to maintain a unified interface while delegating to selected models.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4</head><label>4</label><figDesc>Figure4Tool system structure. Actions validate inputs, executors run logic, and observations format outputs for LLMs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5</head><label>5</label><figDesc>Figure5Local-to-remote transition requires only importing and instantiating DockerWorkspace. All other code (agent configuration, LLM setup, message handling) remains unchanged.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7</head><label>7</label><figDesc>Figure 7 Workspace interface. Implementations handle environment details.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>The evaluation spans five categories of software engineering work: Issue Resolution (SWE-Bench Verified<ref type="bibr" target="#b5">(Jimenez et al., 2024)</ref>), Greenfield Development (Commit0<ref type="bibr" target="#b19">(Zhao et al., 2025)</ref>), Frontend Development class BaseIntegrationTest(ABC): 2 def setup(self): """Prepare test environment""" 3 def tools(self) -&gt; list[Tool]: """Agent capabilities""" (Agent(llm, self.tools), workspace)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2</head><label>2</label><figDesc>System-attributable errors per 1k conversations during 15-day production rollout.</figDesc><table><row><cell></cell><cell cols="2">V0 (Legacy) V1 (SDK)</cell></row><row><cell>Infrastructure errors</cell><cell>69.8 / 1k</cell><cell>0.0 / 1k</cell></row><row><cell>SDK errors</cell><cell>N/A</cell><cell>29.7 / 1k</cell></row><row><cell>System-attributable error rate</cell><cell>78.0 / 1k</cell><cell>30.0 / 1k</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6</head><label>6</label><figDesc>Feature comparison across major agent SDKs (✓= full support, ∼= partial, ×= absent).</figDesc><table><row><cell>Methodology:</cell></row></table><note><p>"Partial" indicates the capability requires significant external setup or community extensions rather than built-in support. OpenHands uniquely combines: (i) native remote execution with environment sandboxing, (ii) LLM-powered action-level security analysis, (iii) model-agnostic multi-LLM routing with first-class support for non-function-calling models, and (iv) built-in academic benchmark evaluation for continuous quality assurance.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://index.openhands.dev</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>OpenHands Index uses the test dataset of SWE-bench Multimodal, for which no state-of-the-art results have yet been published.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p><ref type="url" target="https://github.com/OpenHands/software-agent-sdk">https://github.com/OpenHands/software-agent-sdk</ref> Benchmarks: <ref type="url" target="https://github.com/OpenHands/benchmarks">https://github.com/OpenHands/benchmarks</ref> </p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>(SWE-Bench Multimodal <ref type="bibr" target="#b18">(Yang et al., 2025)</ref>), Software Testing (SWT-Bench <ref type="bibr" target="#b9">(Mündler et al., 2024)</ref>), and Information Gathering (GAIA <ref type="bibr" target="#b8">(Mialon et al., 2023)</ref>). Results for all 14 evaluated models are maintained on the continuously updated OpenHands Index. 3 V0 vs. V1: Capability Preservation. We compare V0 and V1 on SWE-Bench Verified using matched models to isolate the contribution of the SDK redesign (Tab. 4). With Claude Sonnet 4, V0 and V1 achieve identical performance (68.0%), confirming that the architectural redesign preserves baseline agentic capability. With Sonnet 4.5, V1 gains +8.2 points; we attribute this to extended thinking support, which V1's eventsourced architecture integrates naturally but would require significant engineering effort to retrofit into V0's multi-component design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model V0 V1 (SDK)</head><p>Claude Sonnet 4.5 64.6% 72.8% Claude Sonnet 4 68.0% 68.0% Table 5 Multi-model benchmark evaluation across five SE task categories (14 models evaluated). Bold indicates the SDK exceeds published SOTA. Full per-model results are available on the OpenHands Index (<ref type="url" target="https://index.openhands.dev">https://index.  openhands.dev</ref>).</p><p>SDK-Enabled Insights. The uniform evaluation harness enables observations that would be difficult without a model-agnostic SDK. Models exhibit clear task-specific specialization: Claude models dominate</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A Discussion</head><p>Architectural Alternatives Considered. During the V1 redesign, we evaluated several alternative approaches. For state management, we considered a traditional database-backed model (used by many web frameworks) but rejected it because it would couple the SDK to a specific storage backend and make offline replay difficult; event sourcing was chosen for its reproducibility and storage-agnostic design. For execution isolation, we considered mandatory containerization (as in V0) and fully local-only execution; the optional isolation model was selected as a compromise that aligns with MCP's local-first assumptions while preserving sandboxing for production. For the package structure, we considered a monolithic SDK (simpler dependency management) versus a microservices architecture (maximum flexibility); the four-package design balances independent testability with practical dependency management.</p><p>Multi-Tenant Deployment. The current security and isolation discussion focuses primarily on single-user scenarios. In multi-tenant deployments-where multiple users submit requests to the same agentic application or multiple applications share infrastructure components-additional considerations apply. The containerized deployment model ( §4.10) provides process-level isolation between tenants, with each agent instance running in an independent container with a dedicated filesystem and resource limits. The event-sourced state model naturally supports tenant isolation since each conversation maintains its own event log. However, shared resources such as LLM API keys, MCP servers, and secret registries require careful access control. The SDK's SecretRegistry supports per-conversation secrets, and the agent server's session-based authentication provides a foundation for multi-tenant access control, but a comprehensive multi-tenant security audit remains future work.</p><p>Limitations. The current implementation focuses on single-agent conversations. While the event-sourced architecture naturally supports interleaving events from multiple agents, coordination mechanisms for multiagent collaboration require further design. The security framework, while substantially improved over V0, cannot guarantee complete safety: LLM-based security analysis is subject to adversarial prompts and inconsistent classification. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8</head><label>8</label><figDesc>Integration test framework. Subclasses implement setup(), tools, and verify result() for specific scenarios.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4</head><label>4</label><figDesc>V0 vs. V1 on SWE-Bench Verified with matched models. Sonnet 4 confirms capability parity; the Sonnet 4.5 gain is attributed to extended thinking support enabled by V1's architecture.</figDesc><table><row><cell></cell><cell>Issue Resol.</cell><cell>Greenfield</cell><cell>Frontend</cell><cell>Testing</cell><cell>Info. Gather.</cell></row><row><cell></cell><cell>SWE-Bench V.</cell><cell>Commit0</cell><cell cols="2">SWE-Bench MM SWT-Bench V.</cell><cell>GAIA (test)</cell></row><row><cell>Published SOTA</cell><cell>79.2%</cell><cell>12.5%</cell><cell>-4</cell><cell>84.0%</cell><cell>74.6%</cell></row><row><cell>Best SDK</cell><cell>76.6%</cell><cell>56.2%</cell><cell>44.1%</cell><cell>78.8%</cell><cell>80.0%</cell></row><row><cell>Model</cell><cell>Opus 4.5</cell><cell>GPT-5.4</cell><cell>Gemini 3.1 Pro</cell><cell>Opus 4.6</cell><cell>Opus 4.6</cell></row><row><cell>2nd SDK</cell><cell>75.6%</cell><cell>56.2%</cell><cell>41.8%</cell><cell>78.5%</cell><cell>78.8%</cell></row><row><cell>Model</cell><cell>GPT-5.4</cell><cell>Opus 4.6</cell><cell>Opus 4.6</cell><cell>Opus 4.5</cell><cell>GPT-5.4</cell></row></table><note><p>Comprehensive Multi-Model Evaluation.</p><p>We evaluated 14 language models-7 closed-source(Anthropic,  OpenAI, Google)  </p><p>and 7 open-weights (MiniMax, DeepSeek, Zhipu AI, Moonshot AI, Alibaba, NVIDIA)-across all five categories. Tab. 5 summarizes the best SDK result per category alongside published state-of-the-art. The SDK achieves SOTA on 3 of 5 benchmarks and remains competitive on the other two (within 2.6 and 5.2 points), using a single model per evaluation while several SOTA systems employ multi-model orchestration.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7</head><label>7</label><figDesc>Error taxonomy for production reliability analysis.</figDesc><table><row><cell>Category</cell><cell cols="3">Definition &amp; Examples</cell></row><row><cell>Infrastructure</cell><cell cols="3">Runtime communication and orches-</cell></row><row><cell></cell><cell cols="3">tration failures (e.g., HTTPStatusError,</cell></row><row><cell></cell><cell cols="3">AgentRuntimeNotReadyError,</cell></row><row><cell></cell><cell cols="2">ConnectionError)</cell></row><row><cell>SDK</cell><cell cols="3">Internal SDK logic errors (e.g.,</cell></row><row><cell></cell><cell cols="2">CondensationError)</cell></row><row><cell cols="4">LLM Provider External API failures, analyzed</cell></row><row><cell></cell><cell>separately</cell><cell>(e.g.,</cell><cell>RateLimitError,</cell></row><row><cell></cell><cell cols="2">AuthenticationError)</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Claude agent sdk: Overview and python sdk</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://anthropic.mintlify.app/en/api/agent-sdk/overview" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Claude code: An agentic coding tool that lives in your terminal</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://github.com/anthropics/claude-code.GitHubrepository" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<ptr target="https://www.cognition.ai/devin" />
+		<title level="m">Cognition AI. Devin: Ai software engineer</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Github copilot: Your ai pair programmer</title>
+		<author>
+			<persName><surname>Github</surname></persName>
+		</author>
+		<ptr target="https://github.com/features/copilot" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Agent development kit (adk)</title>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://google.github.io/adk-docs/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Langchain: Runnables and the langchain expression language (lcel)</title>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://api.python.langchain.com/en/latest/core/runnables.html" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Model context protocol (mcp</title>
+		<author>
+			<persName><surname>Mcp Team</surname></persName>
+		</author>
+		<ptr target="https://modelcontextprotocol.io" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Gaia: a benchmark for general ai assistants</title>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Swift</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.12983" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">SWT-bench: Testing and validating realworld bug-fixes with code agents</title>
+		<author>
+			<persName><forename type="first">Niels</forename><surname>Mündler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Niklas Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=9Y8zUO11EQ" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">One year of openhands: A journey of open source ai development. All Hands AI Blog</title>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://www.all-hands.dev/blog/one-year-of-openhands-a-journey-of-open-source-ai-development" />
+		<imprint>
+			<date type="published" when="2025-03">March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Openai agents sdk</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://github.com/openai/openai-agents-python" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Agents sdk and guide</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions" />
+	</analytic>
+	<monogr>
+		<title level="m">Pydantic Team. Unions -discriminated unions</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Artificial Intelligence: A Modern Approach</title>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Norvig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>Prentice Hall Press</publisher>
+			<pubPlace>USA</pubPlace>
+		</imprint>
+	</monogr>
+	<note>3rd edition</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Openhands context condensensation for more efficient ai agents. All Hands AI Blog</title>
+		<author>
+			<persName><forename type="first">Calvin</forename><surname>Smith</surname></persName>
+		</author>
+		<ptr target="https://openhands.dev/blog/openhands-context-condensensation-for-more-efficient-ai-agents" />
+		<imprint>
+			<date type="published" when="2025-04">April 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Langgraph documentation (durable execution, deployment, server/cloud</title>
+		<author>
+			<persName><forename type="first">Langgraph</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://docs.langchain.com/oss/python/langgraph/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengbang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Hao Ran Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi-Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Rong</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2308.11432</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID:261064713" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Openhands: An open platform for AI software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuqiang</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Brennan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=OJd3ayDDoF" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">SWE-bench multimodal: Do AI systems generalize to visual software domains?</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xindi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karthik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=DGSuigFLFq" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<publisher>Sida Wang, and Ofir Press</publisher>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Commit0: Library generation from scratch</title>
+		<author>
+			<persName><forename type="first">Wenting</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Celine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><forename type="middle">T</forename><surname>Chiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cardie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Gallé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=MMwaQEVsAg" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

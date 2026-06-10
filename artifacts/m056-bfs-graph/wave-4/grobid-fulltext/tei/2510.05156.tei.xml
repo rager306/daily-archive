@@ -1,0 +1,1524 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">VeriGuard: Enhancing LLM Agent Safety via Verified Code Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-03">3 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Lesly</forename><surname>Miculicich</surname></persName>
+							<email>lmiculicich@google.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mihir</forename><surname>Parmar</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hamid</forename><surname>Palangi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Krishnamurthy</forename><forename type="middle">Dj</forename><surname>Dvijotham</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mirko</forename><surname>Montanari</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Google Cloud AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Long</forename><forename type="middle">T</forename><surname>Le</surname></persName>
+							<email>longtle@google.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">VeriGuard: Enhancing LLM Agent Safety via Verified Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-03">3 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">88B97B6505E8E602A215AD91BFED21C1</idno>
+					<idno type="arXiv">arXiv:2510.05156v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The deployment of autonomous AI agents in sensitive domains, such as healthcare, introduces critical risks to safety, security, and privacy. These agents may deviate from user objectives, violate data handling policies, or be compromised by adversarial attacks. Mitigating these dangers necessitates a mechanism to formally guarantee that an agent's actions adhere to predefined safety constraints, a challenge that existing systems do not fully address. We introduce Ve r i G uar d, a novel framework that provides formal safety guarantees for LLM-based agents through a dual-stage architecture designed for robust and verifiable correctness. The initial offline stage involves a comprehensive validation process. It begins by clarifying user intent to establish precise safety specifications. VeriGuard then synthesizes a behavioral policy and subjects it to both testing and formal verification to prove its compliance with these specifications. This iterative process refines the policy until it is deemed correct. Subsequently, the second stage provides online action monitoring, where VeriGuard operates as a runtime monitor to validate each proposed agent action against the pre-verified policy before execution. This separation of the exhaustive offline validation from the lightweight online monitoring allows formal guarantees to be practically applied, providing a robust safeguard that substantially improves the trustworthiness of LLM agents.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>The proliferation of Large Language Model (LLM) agents marks a significant leap towards autonomous AI systems capable of executing complex, multi-step tasks <ref type="bibr" target="#b27">(Xi et al., 2023;</ref><ref type="bibr" target="#b30">Yao et al., 2023)</ref>. These agents, often empowered to interact with external tools, APIs, and file systems <ref type="bibr">(Patil et al., 2024;</ref><ref type="bibr">Schick et al., 2023a)</ref>, hold immense promise for automating digital workflows and solving real-world problems. However, this power introduces substantial and often unpredictable safety and security vulnerabilities. A critical reliability gap has emerged: while LLM agents can generate solutions with unprecedented flexibility, the solution they produce often lacks assurances, making it susceptible to subtle errors, security flaws, and emergent behaviors that can lead to catastrophic failures. An agent tasked with data analysis could inadvertently exfiltrate sensitive information; one managing cloud infrastructure could execute destructive commands; another interacting with financial APIs could trigger erroneous, irreversible transactions. This problem is even more serious when there is adversary attack on the system, as shown in <ref type="bibr" target="#b31">Zhang et al. (2025)</ref>.</p><p>Existing safety mechanisms-such as sandboxing, input/output filtering, and static rule-based guardrails <ref type="bibr" target="#b9">(Inan et al., 2023;</ref><ref type="bibr" target="#b20">Rebedea et al., 2023)</ref> -provide a necessary but insufficient first line of defense. These approaches are fundamentally reactive or based on pattern matching; they struggle to cover the vast and dynamic state space of agent actions and can be bypassed by novel adversarial inputs or unforeseen edge cases <ref type="bibr" target="#b26">(Wei et al., 2023;</ref><ref type="bibr" target="#b29">Xu et al., 2023)</ref>. They lack a deep, semantic understanding of the code's intent and consequences, treating the agent's output as a black box to be constrained. This leaves systems vulnerable to sophisticated exploits that a static rule set cannot anticipate <ref type="bibr" target="#b23">(Schulhoff et al., 2023)</ref>. For LLM agents to be trusted in high-stakes, mission-critical environments, a more rigorous, provable approach to safety is required.</p><p>In this work, we propose a novel method to address this reliability gap, centered on the Ve ri -G uar d framework. Ve ri G uar d represents a paradigm shift from reactive filtering to proactive, provable safety by deeply integrating policy specification generation and automated verification into the agent's action-generation pipeline. VeriGuard fundamentally reshapes the code generation process to be "correct-by-construction". This is achieved by prompting the LLM agent to generate not only the functional code for an action but also its corresponding verification that precisely define the code's expected behavior and safety properties. These paired artifacts are then immediately subjected to an automated verification engine. An iterative refinement loop forms the core of our framework: if verification fails, the verifier provides a specific counterexample or logical inconsistency, which is fed back to the agent as a concrete, actionable critique to guide the generation of a corrected and verifiably safe version of the code <ref type="bibr" target="#b17">(Pan et al., 2024;</ref><ref type="bibr" target="#b32">Zhao et al., 2025)</ref>. More details are in §3.</p><p>The primary contribution of this paper is the VeriGuard framework itself, which includes novel methodologies for the LLM-driven generation and refinement of verifiable code tailored to agent security and safety contexts. We further contribute a comprehensive empirical validation of the framework's effectiveness in preventing unsafe actions across a variety of challenging domains. Finally, we present a detailed analysis of the performance trade-offs inherent in this approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">LLM Agents and the Emergence of Autonomous Systems</head><p>The development of Large Language Models (LLMs) has catalyzed the emergence of a new class of autonomous systems known as LLM agents. LLM agents are designed to be proactive, goal-oriented entities capable of planning, reasoning, and interacting with their environment through the use of tools <ref type="bibr">(Schick et al., 2023b)</ref>. Early frameworks like ReAct demonstrated how to synergize reasoning and acting within LLMs, enabling them to solve complex tasks by generating both textual reasoning traces and executable actions <ref type="bibr" target="#b30">(Yao et al., 2023)</ref>. The agent can also execute more complex tasks like web browsing. This capability, however, is merely the entry point into a broader spectrum of autonomous actions. Advanced agents are not just navigating websites but are becoming generalist problem-solvers on the web and beyond. This evolution is detailed in research and demonstrated in benchmarks like WebArena <ref type="bibr" target="#b33">(Zhou et al., 2023)</ref> and Mind2Web <ref type="bibr" target="#b7">(Gou et al., 2025)</ref>, which test agents on their ability to perform multi-step, realistic tasks on live websites. This paradigm quickly evolved into more sophisticated agent architectures. Systems like AutoGPT <ref type="bibr" target="#b8">(Gravitas, 2023)</ref> and BabyAGI showcased the potential for fully autonomous task completion, where agents could decompose high-level goals into smaller, executable steps, manage memory, and selfdirect their workflow. Further research has explored enhancing agent capabilities through mechanisms like self-reflection and verbal reinforcement learning, allowing them to learn from past mistakes and improve their performance over time <ref type="bibr" target="#b24">(Shinn et al., 2023)</ref>. The concept of "Generative Agents" pushed the boundaries even further by creating interactive simulacra of human behavior within a sandbox environment, highlighting the potential for complex social and emergent behaviors <ref type="bibr" target="#b18">(Park et al., 2023)</ref>. A comprehensive survey by <ref type="bibr" target="#b25">(Wang et al., 2023)</ref> details the rapid advancements and architectural patterns in this burgeoning field.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">LLM Safety, Alignment, and Guardrails</head><p>A significant body of research has focused on ensuring the safety and alignment of LLMs. A primary line of defense involves creating guardrails to constrain agent behavior. These can range from simple input/output filtering and prompt-based restrictions to more sophisticated techniques <ref type="bibr" target="#b0">(Bai et al., 2022)</ref>. Another critical area is the proactive discovery of vulnerabilities through "red teaming", where humans or other AIs craft adversarial prompts to elicit unsafe or undesirable behaviors from the model <ref type="bibr" target="#b5">(Ganguli et al., 2022)</ref>. The insights from these attacks are then used to fine-tune the model for greater robustness. Despite these efforts, LLMs remain susceptible to a wide array of "jailbreaking" techniques that can bypass safety filters <ref type="bibr" target="#b26">(Wei et al., 2023)</ref>. More recent work has focused on creating safety-tuned LLMs specifically for tool use, aiming to prevent harmful API calls or command executions <ref type="bibr" target="#b11">(Jin et al., 2024)</ref>.</p><p>There are some previous work in Agent safeguard. GuardAgent, a framework that uses an LLMbased "guard agent" to safeguard other LLM agents. GuardAgent operates as a protective layer, using reasoning to detect and prevent unsafe behaviors <ref type="bibr" target="#b28">(Xiang et al., 2025)</ref>. Another work is ShieldAgent, a guardrail agent designed to ensure that autonomous agents powered by large language models (LLMs) adhere to safety policies <ref type="bibr" target="#b2">(Chen et al., 2025)</ref>.</p><p>However, these existing approaches are largely empirical and reactive. They rely on identifying and patching vulnerabilities as they are discovered, but they do not provide formal, provable guarantees of safety. A clever adversary can often devise a novel attack that circumvents existing guardrails. This highlights a fundamental limitation: without a formal specification of what constitutes "safe" behavior and a method to verify compliance, safety remains an ongoing. VeriGuard distinguishes itself from this body of work by moving from an empirical to a formal verification paradigm, aiming to prove the correctness of an agent's actions before they are ever executed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Formal Methods and Verifiable Code Generation</head><p>Formal methods provide a mathematically rigorous set of techniques for the specification, development, and verification of software and hardware systems. The advent of powerful LLMs has opened a new frontier for bridging the gap between natural language specifications and formal, machine-checkable code. Recent research has begun to explore the potential for LLMs to automate or assist in the generation of not just code, but also its formal specification and verification artifacts. For example, <ref type="bibr" target="#b12">(Li et al., 2024)</ref> demonstrate a system where LLMs are used to generate verifiable computation, producing code along with the necessary components for a verifier to check its correctness. Further studies have investigated the self-verification capabilities of LLMs <ref type="bibr" target="#b6">(Ghaffarian et al., 2024)</ref>. This line of work shows the promise of integrating LLMs into high-assurance software development pipelines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Methodology</head><p>Figure <ref type="figure" target="#fig_0">1</ref> describes the high-level ideas of VeriGuard, which operates in two main stages: (i) Policy Generation: VeriGuard takes inputs including the agent's specification and a high-level security request in natural language to synthesize an initial policy function and its corresponding formal constraints. To ensure the correctness and alignment of this policy, we employ a rigorous, multi-step refinement feedback loop. This loop begins with a validation phase to resolve any ambiguities in the user's request, followed by an automated code testing phase that generates unit tests to verify functional correctness. The most critical phase uses formal verification to prove that the policy code adheres to its specified conditions, ensuring a provably-sound safety contract. (ii) Policy Enforcement: The verified policy is integrated into the agentic system at key enforcement points, where it intercepts and evaluates agent-initiated actions before execution. When a potential violation is detected, VeriGuard can employ one of several enforcement strategies, ranging from immediately terminating the agent's task to blocking the specific unsafe action or engaging in a collaborative re-planning dialogue with the agent. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Task Definition</head><p>In this section, we formalize the process of generating agent policies from high-level, natural language specifications.</p><p>Policy Generation Given a safety and security request in natural language, denoted as 𝑟, and a agent specification, 𝒮, the primary objective is to synthesize a policy function, 𝑝, written in a structured programming language. Concurrently, a set of verifiable constraints (i.e. pre and post-conditions), 𝐶 = {𝑐 1 , 𝑐 2 , . . . , 𝑐 𝑛 }, is derived. The system must guarantee that the generated policy 𝑝 complies with all constraints in 𝐶. This relationship is formally denoted as 𝑝 |= 𝐶, signifying that ∀𝑐 ∈ 𝐶, the policy 𝑝 satisfies 𝑐. The user request 𝑟 typically defines a security or operational protocol in text format, while the agent specification 𝒮 provides a schematic of the agent: task description, input/output (I/O) data structures, available context, environmental information, and any other available data.</p><p>Policy Enforcement Given an agentic system and a set of verified policies, the second objective is to integrate these policies as enforcement mechanisms. The goal is to optimize the system's performance by minimizing policy violations (i.e., reducing the attack surface) while maximizing the agent's task-completion utility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Framework</head><p>To address the defined tasks, we propose a framework, VeriGuard, which consists of an initial policy generator followed by an iterative refinement loop. This loop validates, tests, and formally verifies the policy code to ensure it accurately reflects the agent requirements and specifications. For the policy enforcement task, experiment with multiple integration strategies for deploying VeriGuard within an agentic system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1.">Policy Generator</head><p>The Policy Generator is the core component responsible for translating the agent's specification and user's intent into executable code and formal specifications. It has two sub-components: (1) policy code generation, and (2) constrains generation, both LLM-based. At the first pass, the policy generator takes the user request 𝑟, an agent specification 𝒮, to produce a preliminary policy function 𝑝 0 , together with a list of arguments the policy function requires 𝒫 0 . Similarly, the constrains generator take same inputs to produce a set of constraints 𝐶 0 . This initial generation functions, 𝐺 0 and 𝐻 0 , can be represented as:</p><formula xml:id="formula_0">𝐺 0 𝑟, 𝒮 → 𝑝 0 , 𝒫 0 𝐻 0 𝑟, 𝒮 → 𝐶 0</formula><p>The arguments schema 𝒫 0 contains the name, description and type of each required input argument of the policy function. If the request entails multiple interdependent rules, the generator produces a single, cohesive codebase that encapsulates all logic. The prompts for the initial generations are detailed in A.1.</p><p>The Policy Generator operates within an iterative refinement loop where policy and constraints are gradually improved from the previous step (𝑝 𝑡-1 , 𝐶 𝑡-1 ):</p><formula xml:id="formula_1">𝐺 𝑡 𝑟, 𝒮, 𝑅, 𝐴, 𝑒, 𝑝 𝑡-1 → 𝑝 𝑡 , 𝒫 𝑡 𝐻 𝑡 𝑟, 𝒮, 𝑅, 𝐴, 𝑝 𝑡-1 → 𝐶 𝑡</formula><p>𝑅, 𝐴, and 𝑒 are the set of requirements, assumptions and coding error messages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2.">Refinement Process</head><p>We employ a three-stage refinement process: validation, testing, and formal verification.</p><p>Validation The Validator's primary function is to resolve ambiguities and ensure the semantic alignment between the user's natural language request and its formal representation (𝑝 0 , 𝐶 0 ). This process is bifurcated into an analysis phase and a disambiguation phase.</p><p>In the analysis phase, a function 𝑉 𝑎 scrutinizes the initial artifacts to identify semantic ambiguities, logical inconsistencies, and implicit presuppositions. The output is a set of queries, 𝑄, that encapsulate these issues: 𝑉 𝑎 𝑝 0 , 𝐶 0 → 𝑄 In the disambiguation phase, a function 𝑉 𝑑 processes the user's feedback, 𝑈 feedback , to resolve the queries in 𝑄. This interactive process yields a definitive set of explicit assumptions, 𝐴, and a refined, unambiguous set of requirements 𝑅 as: 𝑉 𝑑 𝑄, 𝑈 feedback → 𝐴, 𝑅 In an autonomous operational mode where user feedback is unavailable, an internal module, Ω, is invoked to resolve the queries by selecting the most contextually plausible interpretations. This generates a set of default assumptions, 𝐴 default , which are then used to produce the final requirements 𝑅. This autonomous path is modeled as: 𝑉 𝑑 𝑄, Ω𝑄 → 𝐴 default , 𝑅. A.3 shows the implementations detail of this component.</p><p>Code Testing This module automatically generates a suite of test cases to perform empirical validation of the policy function. It takes the policy code 𝑝, the user request 𝑟, and the agent specification 𝒮 as input. The objective is to ensure that the policy meets a baseline of functional requirements and correctly handles typical and edge-case scenarios before proceeding to the more computationally expensive formal verification stage. The output is a set of test cases formatted for the PyTest framework. The policy code is refined iteratively until all generated tests pass, with failure reports and error messages 𝑒 serving as feedback for the refinement loop. The iteration stops when not more errors are found or at a maximum 𝑁 number. Details in A.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Verification</head><p>The final stage of refinement involves formal verification using a program verifier. This component takes the logical constraints 𝐶 and the policy code 𝑝 as input. The constraints in 𝐶 define a formal contract, specifying the pre-conditions (𝐶 pre ⊆ 𝐶) that must hold before the policy's execution and the post-conditions (𝐶 post ⊆ 𝐶) that must be guaranteed upon its completion. The verifier's task is to mathematically prove that the policy code 𝑝 adheres to this contract. This relationship is formally expressed using a Hoare triple: {𝐶 pre } 𝑝 {𝐶 post }. If program 𝑝 starts in a state where pre-condition 𝐶 pre is true, its execution is guaranteed to terminate in a state where post-condition 𝐶 post is true. If the code violates the contract, the verifier provides a counterexample or error trace 𝑒, which is used as feedback to refine the policy or constraints. The refinement cycle continues until formal verification succeeds or at a maximum 𝑁 number. For this implementation, we utilize the Nagini verifier <ref type="bibr" target="#b3">(Eilers and Müller, 2018)</ref> as a black box. As a static verifier built on the Viper <ref type="bibr" target="#b4">(Eilers et al., 2025)</ref> infrastructure, Nagini can handle more complex properties than other available Python verifiers. Pre-processing for Nagini is detailed in A.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Policy Enforcement Strategies</head><p>Once a policy is generated and verified, it is integrated into the agentic system at specific enforcement points that intercept agent-initiated actions (e.g., tool executions, database access, environmental interactions). Each agent can be governed by one or more policy functions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1.">Policy Function Arguments</head><p>At runtime, the arguments for the policy function defined, in 𝒫, must be populated from the agentic system data defined in 𝑆. We do not assume 𝑆 is a direct input to the policy, as this data could be unstructured, and require preprocessing or extraction. Moreover, implementing preprocessing step strictly via code can limit the system's flexibility. Thus, a function 𝑓 : 𝑆 → 𝑃 is required to map the agent data to the policy arguments. For our experiments, we implement 𝑓 as a flexible LLM-based component (A.2). The input of 𝑓 is the agent data in the format specified in 𝑆 and the output is a populated dictionary of arguments specified in 𝑃 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2.">Policy Function Integration</head><p>We experimented with four distinct enforcement strategies upon detecting a policy violation: (i) Task Termination: the most restrictive approach, which halts the agent's entire high-level task and issues a notification explaining the violation; (ii) Action Blocking: a more targeted approach, where the specific action that violates the policy is blocked, but the agent is permitted to continue executing subsequent actions in its plan that do not violate policy; (iii) Tool Execution Halt: which stops the specific execution that caused the violation and returns no observation to the agent, forcing the agent's reasoning process to halt and decide on a new course of action based on the lack of feedback; and (iv) Collaborative Re-planning: the most interactive strategy, which informs the agent of the specific policy it has violated and requests that it generate a new action plan that complies with the stated constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Datasets</head><p>Agent Security Bench (ASB) <ref type="bibr" target="#b31">(Zhang et al., 2025)</ref> This dataset focuses on four types of attacks against agentic systems: direct and indirect prompt injection, memory poisoning, and plan-of-thought backdoors. The framework utilizes 10 ReAct agents across 10 different scenarios (e.g., finance, commerce, autonomous driving), incorporating 10 different tasks, 13 attack variations, and 400 attack tools. <ref type="bibr" target="#b28">(Xiang et al., 2025)</ref> This benchmark evaluates an ICU question/answer agent's access control over 10 patient databases. It defines specific user roles, each restricted to designated subsets of the databases and their internal information categories. The agent must deny any user question if its answer requires accessing data that is forbidden for the user's given role.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EICU-AC</head><p>Mind2Web-SC <ref type="bibr" target="#b28">(Xiang et al., 2025)</ref> Mind2Web-SC adapts the Mind2Web benchmark, which tasks web agents with solving over 2,000 complex online tasks using sequential actions. The "SC" (Safety Control) variant augments this framework by introducing safety rules that prohibit specific users from performing certain web activities, thereby testing the agent's ability to enforce these policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Evaluation Metrics</head><p>ASB : we simultaneously evaluate defense efficacy and operational interference using two primary metrics: the (i) Attack Success Rate (ASR↓): quantifies the quality of the defense. It is defined as the ratio of successful attacks to the total number of attack attempts. (ii) Task Success Rate (TSR↑): measures the operational interference or overhead imposed by the defense mechanism. It is calculated as the ratio of successfully completed original tasks to the total number of tasks attempted.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EICU-AC and Mind2Web-SC:</head><p>the task is defined exclusively as access control, where correctly stopping a forbidden action is the desired outcome. This evaluation is treated as a binary classification problem (Allow vs. Deny), so we use standard classification metrics: Accuracy, Precision, and Recall.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Baselines</head><p>ASB : we experiment with four backbone LLMs: Gemini 2.5 Flash and Pro, GPT-4.1, and Claude-Sonnet-4. We establish two base boundaries: the upper-bound No Attack, derived from unattacked model performance, and No Defence, derived from undefended model performance.We compare against several baselines: Paraphrasing <ref type="bibr" target="#b10">(Jain et al., 2023)</ref>, which rewords the query to disrupt malicious special-character sequences and triggers (effective for DPI and PoT Backdoor attacks); Dynamic Prompt Rewriting <ref type="bibr" target="#b31">(Zhang et al., 2025)</ref>, which transforms the input to align with security objectives (proposed for DPI); and Delimiter <ref type="bibr" target="#b16">(Mattern et al., 2023)</ref>, which encapsulates the user query to ensure bounded execution (effective for IPI). We also implemented a stronger Guardrail baseline that receives the same input as Ve ri G uar d but, instead of generating a code function, directly asks an LLM to evaluate policy compliance.</p><p>EICU-AC and Mind2Web-SC: we report the results of several state-of-the-art (SOTA) approaches. These include GuardAgent <ref type="bibr" target="#b28">(Xiang et al., 2025)</ref>, which translates natural language safety rules into executable code via manually defined functions; AGrail <ref type="bibr" target="#b15">(Luo et al., 2025)</ref>, which implements a mechanism to continually learn and adapt policies (as security checks) and uses an LLM for verification; LLaMA-Guard 3 Llama Team (2024), a model trained to detect security issues; and AgentMonitor <ref type="bibr" target="#b1">(Chan et al., 2024)</ref>, a guardrail method for multi-agent systems. We also include the Hard-coded Rules baseline in <ref type="bibr" target="#b28">(Xiang et al., 2025)</ref>.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Results</head><p>Table <ref type="table" target="#tab_0">1</ref> summarizes our evaluation on the ASB dataset, conducted across three backbone LLMs to assess generalization. The table reports the ASR and TSR against several baselines, including a "No Defense" scenario (providing a lower bound for ASR) and a "No Attack" scenario (an upper bound for TSR). The low ASR achieved by GuardRail indicates that simple violation detection is a largely solved task for strong LLMs. The primary challenge, therefore, is not if a violation occurs, but how to intervene precisely by blocking only the malicious component (e.g., a specific tool) without degrading task utility. Paraphrasing and Delimiter defenses show high TSR whit Claude-Sonnet-4, Claude-Sonnet showed strong performance in this benchmark <ref type="bibr" target="#b31">(Zhang et al., 2025)</ref>, however the ASR remains high. Ve ri G uar d proves particularly effective at this, achieving a near-zero ASR while simultaneously outperforming all other defenses in TSR, demonstrating a superior trade-off between security and utility.</p><p>Table <ref type="table" target="#tab_1">2</ref> summarizes the performance evaluation on the EICU-AC and Mind2Web-SC datasets. To ensure a fair comparison, we use GPT-4o as the backbone LLM, consistent with the SOTA model. We also report with Gemini-2.5-pro. Ve ri G uar d, achieves perfect accuracy on the EICU-AC dataset and outperforms all baselines on recall in Mind2Web-SC. This is particularly noteworthy given that Ve ri G uar d is a generic policy constructor, whereas a strong baseline like GuardAgent employs a predefined policy structure specifically tailored to these access control tasks. Furthermore, unlike GuardAgent, our method does not require any in-context learning to build its policies. On the other hand, Agrail shows better accuracy and precision showing that an external memory bank of policies can be beneficial. Future, work can enhance Ve ri G uar d with memory of previous judgments. While our method attains high accuracy, we argue that recall is a more critical metric for security applications. On both datasets, Ve ri G uar d achieves high recall, signifying that it successfully identifies and blocks every policy violation. This capacity to prevent all illicit actions, even at the cost of a decrease in precision, is a crucial requirement for deploying secure agentic systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Ablation Study of Ve r i G uar d Components</head><p>The results of our ablation study, presented in Figure <ref type="figure">2</ref> Gemini-2.5-Flash with default parameters.</p><p>Figure <ref type="figure">2a</ref> shows the defense is built in stages as initially the agent is highly vulnerable, with an average ASR of 53.5%. First, the Policy Generation step provides a substantial impact, reducing the average ASR to 9.97%. Subsequently, the Validation plays a critical role for complex attacks where the initial policy may be incomplete or non-executable; this is most evident against Memory Poisoning, where this step reduces the ASR by more than half (from 31.75% to 15%). Following this, the Validation component further enhances robustness, fully neutralizing all remaining threats and reducing the ASR to 0% across all attack vectors. Finally, the formal verification step ensures that the defense code rigorously follows all security constraints. Figure <ref type="figure">2b</ref> demonstrates that these robust security gains do not incur a performance trade-off. The TSR remains high and exhibits a consistent increase (from 51.87% to 63.25% average), confirming Ve ri G uar d's ability to secure the agent without compromising functional utility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Evaluating Integration Methods: Security vs. Utility</head><p>Each strategy offers a different trade-off. Task Termination (TT) is the most stringent approach; it neutralizes threats by terminating any task when an attack is detected. This method is impractical for real-world scenarios because it results in a complete task failure (0% TSR). Action Blocking (AB) is a less severe strategy that blocks a single malicious action but allows subsequent, non-malicious actions to proceed, forcing the agent to replan. Tool Execution Halt (TEH) offers a more granular approach. A single agent "action" can invoke multiple tool calls (some benign), so TEH blocks only the suspicious tool call-not the entire action-letting the agent continue its plan with a "no tool response" error. In contrast, Collaborative Re-planning (CRP) is the least invasive method. Instead of blocking, Ve ri G uar d sends an alert to the agent, which allows it to formulate a new, safer plan. While this significantly boosts the TSR, it doesn't guarantee security, as the agent can still perform unsafe actions (leading to an 11.9% average ASR). Therefore, a hybrid CRP + TEH approach yields the optimal results. This combination leverages the high TSR of CRP with the fine-grained security of TEH, achieving both a near-zero average ASR (0.1%) and the highest average TSR (63.6%).</p><p>Table <ref type="table" target="#tab_2">3</ref> presents the results from the ASB using Gemini-2.5-Flash. It evaluates the five integration strategies detailed in Section 3.3.2: Task Termination (TT), Action Blocking (AB), Tool Execution Halt (TEH), Collaborative Re-planning (CRP), and a combination of CRP and TEH. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Limitations</head><p>It is pertinent to acknowledge some limitations of our current approach that define clear avenues for future research. A primary limitation stems from the reliance on a Large Language Model (LLM) to generate formal constraints from natural language-a process that is inherently non-deterministic and susceptible to error. Consequently, the soundness of the formal verification is contingent upon manual validation by the user to ensure the generated constraints accurately reflect their intent. Secondly, the system's capabilities are intrinsically bound by the underlying program verification tool, Nagini. As Nagini is an active research project, it may possess a limited grammar for expressing certain complex properties. Furthermore, while extending the framework to other programming languages is possible, doing so represents a non-trivial implementation challenge. Finally, our hybrid architecture, which integrates an LLM for argument interpretation with deterministic Python code for rule implementation, may be insufficient for identifying sophisticated attacks that require deeper capacity for logical reasoning and dynamic policy updates, which presents a key direction for future investigation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>In this work, we introduce Ve ri G uar d, a novel framework designed to substantially enhance the safety and reliability of Large Language Model (LLM) agents. By integrating a verification module that formally checks agent-generated policies and actions against predefined safety specifications, Ve ri G uar d moves beyond reactive, pattern-matching safety measures to a proactive, provablysound approach. Our experiments demonstrate that this interactive verification loop is highly effective at preventing a wide range of unsafe operations, from prompt injections to unauthorized data access, while maintaining a high degree of task success. The results on benchmarks such as ASB, EICU-AC, and Mind2Web-SC show that VeriGuard not only significantly reduces the attack success rate to near-zero but also offers flexible policy enforcement strategies that can be tailored to different operational needs. Ve ri G uar d provides a robust and essential safeguard, paving the way for the trustworthy deployment of LLM agents in complex and high-stakes real-world environments.</p><p>Building on the foundation of VeriGuard, several promising avenues for future research emerge. One key direction is the scalability and efficiency of the formal verification process. Another area for exploration is the autonomous generation of safety specifications themselves.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experiment Details</head><p>This section details the implementation VeriGuard with agent systems mentioned in Section 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Prompts Used To Generate the Policy Prompt: Policy Code Generation</head><p>You are an expert AI security agent. Your primary function is to generate a Python security policy function based on a high-level user request.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## CONTEXT</head><p>You are part of a system that moderates a target agent's actions at runtime. This system works as follows: 1. A user gives a natural language security request (e.g., "The agent cannot send emails to non-company addresses"). 2. You receive this request and generate a specific Python policy function to enforce it. 3. At runtime, before the target agent acts, its inputs and outputs are intercepted. 4. Parameters are extracted from this runtime data using the read_parameters_with_LLM tool. 5. The extracted parameters are passed to your generated policy function, which decides whether to allow or deny the action. **Runtime Data:** -agent_information: str # The text prompt input given to the agent, the agent output, and any available context. **Parameter Extraction Tool:** The system uses the read_parameters_with_LLM tool to extract relevant arguments from the agent_information.</p><p>-**Tool Signature**: read_parameters_with_LLM(text: str, list_of_arguments_to_read: dict[str, type]) -&gt; dict -**Example**: Given the text "Send an email to alex@example.com and Dona Jhonson with the subject 'Update'" and list_of_arguments_to_read={{"recipients": list, "subject": str}}, the tool would return {{"recipients": ["alex@example.com", "dona@example.com"], "subject": "Update"}}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## YOUR TASK</head><p>Given a agent's security request and the target agent_specification, you must generate two outputs: a list of parameters to extract, and the Python code for the policy function.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## OUTPUT REQUIREMENTS</head><p>Your response must contain exactly two parts in the following order: **1. Arguments to Extract** A Python dictionary named list_of_arguments_to_read that contains all the string arguments needed from the runtime data to evaluate the policy. Follow this exact format: ```python list _ of _ arguments _ to _ read = { { " argument1 " : type1 , " argument2 " : type2 , " argument3 " : type3 } } ``* *2. Policy Function Header**</p><p>```python def policy ( arguments : dict ) -&gt; tuple [ bool , str ]: ``* *3. Constant variables** You can define global variables needed to execute the function. ```python variable1 = " value1 " variable2 = [ " value2 " ] ``* *4. Policy Function Code** A Python function that implements the user's security policy. You can create auxiliary functions as well, but the policy function must be named exactly policy. The function must adhere to these rules: -It must be named exactly policy. -It must accept one argument: arguments: dict. -It must return a tuple: (bool, str). The bool is the decision: True if the action is **allowed**, False if it is **denied**. -It must include a clear docstring explaining the policy. -It must not use any external libraries. Note: Do not use python string functions to get parameters or arguments. Use the read_parameters_with_LLM tool instead. Follow this exact format: ```python def policy ( arguments : dict ) -&gt; tuple [ bool , str ]: " " " A brief , one -sentence description of what this policy enforces . " " " # Your policy logic here # ... if condition _ is _ met : return True , " Reason for allowing . " else : return False , " Reason for denial . " ``-Target Agent Specification: {agent_specification} User Request {request} Requirements # If available {requirements} Assumptions # If available {assumptions} Prompt: Constraint Generation You are a senior **Security Systems Architect** with a deep understanding of **Natural Language Understanding (NLU)** and formal logic. Your expertise lies in translating complex, human-written security policies into clear, unambiguous, and verifiable logical rules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## Objective</head><p>Your task is to analyze a given natural language security policy, an agent's description, and a set of defined variables/constants to generate a set of discrete, testable logical statements. These statements should represent the core requirements of the policy and can be used to programmatically verify the agent's behavior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## Instructions</head><p>1. **Analyze the Inputs:** Carefully read the provided security policy, the agent's description, and the list of variables and constants. Identify key actors, actions, conditions, and the specific capabilities of the agent that are relevant to the policy. 2. **Generate Logical Statements:** For each policy rule, create one or more logical statements. * Each statement should be a complete, verifiable condition. * Use a clear **IF-THEN** or similar logical structure. * Focus on verifiable conditions (e.g., "The agent's state is 'idle'") and outcomes (e.g., "The agent must not respond to external commands"). * Ensure the statements cover both "positive" (allowed) and "negative" (denied) cases, taking into account the agent's specific functions. 3. **Provide a Rationale:** After the list, briefly explain the logical structure and why these statements effectively capture the policy's intent and apply to the described agent. 4. **Output Format:** Verifiable Logical Statements: (Give the statements in json format as:) ```json [ { { " statement " : ... } } , { { " statement " : ... } } ... ] ``R ationale: (A brief explanation of the logical framework and how it aligns with the policy, the agent's capabilities, and the provided variables.)</p><p>## Input: Security Policy Specification: {security policy} Agent Specification: {agents_description} Variables and Constants: {variables_and_constants} Requirements # If available {requirements} Assumptions # If available {assumptions} ## Output: Verifiable Logical Statements: Python Function: {function} Input Text: {text} AND THIS PARAMETER SPECIFICATION: {parameters} PRODUCE THIS OUTPUT: A.3. Prompts Used for Validation Prompt: Validation Analysis You are an expert **Natural Language Understanding (NLU)** and **logic engine**. Your primary function to verify logical statements. ## OUTPUT FORMAT Your response must contain two parts: **Part 1: Decisions on Ambiguities** For each point from the analysis, provide your decision in the following structured format: 1. [Title of the Point/Ambiguity] -Decision: [State your clear and final decision on the requirement or assumption.] -Justification: [Briefly explain *why* this decision is the most reasonable, referencing the user/agent specifications as needed.] 2. [Title of the Next Point/Ambiguity] -Decision: [...] -Justification: [...] **Part 2: Finalized Detailed Requirements List** After addressing all ambiguities, compile a complete and final list of all detailed requirements (combining the original, clear requirements with your new decisions). 1. [Detailed Requirement 1] 2. [Detailed Requirement 2] 3. [Detailed Requirement 3] -## INPUTS User Specification {user_specification} Agent Specification {agent_specification} Analysis of Ambiguities {analysis} A.4. Prompts Used for Code Testing Prompt: Test Case Generation You are an expert at writing Pytest functions. Your task is to generate complete and effective test cases for a given Python function, adhering to best practices.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 |</head><label>1</label><figDesc>Figure 1 | Ve ri G uar d overview which includes Policy generation and Policy enforcement. The verified policy is integrated into the agent as a runtime safeguard, intercepting and preventing harmful actions.</figDesc><graphic coords="4,62.36,76.54,470.53,265.43" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>*</head><figDesc>Values obtained from the cited papers.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Figure 2 | (a) shows the ASR is systematically reduced to 0% across all evaluated attack types. (b) shows the TSR increases as defense layers are added.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>within a single Python code block. The tests should be comprehensive, covering a wide range of scenarios including: -**Happy Path:** Standard, valid inputs. -**Edge Cases:** Boundary conditions (e.g., empty strings, zero, negative numbers). -**Error Handling:** Cases that should raise specific exceptions. Use the following format for your output: You are an expert Python developer and debugger. Your task is to analyze a Python function and its corresponding pytest error message, identify the bug, and provide the corrected code. Python Function to Correct {function_to_test} Pytest Error Message {error_message} ## Your Task Analyze the function and the error message to find the source of the error. Explain the bug clearly and concisely. Provide the complete, corrected Python function. **Response Format** Bug Explanation (Describe the bug and the reason for the error here.) Corrected Function ```python # Your corrected Python code here . ``À .5. Prompts Used for Verification Prompt: Code Generation for Verification You are an expert in **formal methods** and **software verification**, specializing in Python. Your primary skill is translating requirements into precise **Nagini pre-and post-condition contracts**. ## Objective: Your task is to augment a given Python function with Nagini contracts ('Requires' and 'Ensures') based on a set of logical statements. You must ensure the generated code is syntactically correct and accurately reflects the logic of the provided statements. --Analyze the Inputs:** Carefully review the provided Python function and the list of requirements given as logical statements. 2. **Translate Policies to Nagini:** For each logical statement, formulate the equivalent Nagini 'Requires' (pre-conditions) or 'Ensures' (post-conditions).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>3. **Adhere to Grammar:** Strictly follow the provided Nagini grammar and refer to the examples for correct syntax and structure. 4. **Integrate and Output:** Embed the generated Nagini contracts directly into the Python functionProvide the complete Python code for the function, including the newly added Nagini decorators, inside a single Python code block.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><graphic coords="10,130.90,76.53,330.45,185.93" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 |</head><label>1</label><figDesc>Experiment results of Ve ri G uar d on ASB benchmark. Attack Success Rate (ASR ↓) Task Success Rate (TSR ↑).</figDesc><table><row><cell>Defense</cell><cell></cell><cell>DPI</cell><cell></cell><cell>IPI</cell><cell></cell><cell>MP</cell><cell></cell><cell>PoT</cell><cell cols="2">AVG</cell></row><row><cell></cell><cell cols="10">ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑</cell></row><row><cell>Gemini-2.5-Flash</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No attack</cell><cell>-</cell><cell>57.5</cell><cell>-</cell><cell>57.5</cell><cell>-</cell><cell>57.5</cell><cell>-</cell><cell>74.3</cell><cell>-</cell><cell>61.7</cell></row><row><cell>No defense</cell><cell>98.5</cell><cell>0.5</cell><cell cols="2">40.5 46.3</cell><cell>15</cell><cell cols="5">57.3 53.5 64.3 51.9 42.1</cell></row><row><cell>Delimiter</cell><cell>-</cell><cell>-</cell><cell cols="2">40.8 48.5</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Paraphrasing</cell><cell cols="2">71.8 24.0</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell cols="2">57.3 67.3</cell><cell>-</cell><cell>-</cell></row><row><cell>DP Rewriting</cell><cell cols="2">70.5 30.0</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GuardRail</cell><cell>0.0</cell><cell>24.5</cell><cell>0.0</cell><cell>35.3</cell><cell>0.0</cell><cell>58.5</cell><cell>0.0</cell><cell>66.3</cell><cell>0.0</cell><cell>40.2</cell></row><row><cell>VeriGuar d</cell><cell>0.0</cell><cell>50.5</cell><cell>0.0</cell><cell>55.8</cell><cell>0.0</cell><cell>69.0</cell><cell>0.0</cell><cell>77.7</cell><cell>0.0</cell><cell>63.3</cell></row><row><cell>Gemini-2.5-Pro</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No attack</cell><cell>-</cell><cell>76.0</cell><cell>-</cell><cell>76.0</cell><cell>-</cell><cell>76.0</cell><cell>-</cell><cell>78.0</cell><cell>-</cell><cell>76.5</cell></row><row><cell>No defense</cell><cell>83.0</cell><cell>3.5</cell><cell cols="8">62.3 68.0 11.0 79.8 52.2 75.5 52.1 56.7</cell></row><row><cell>GuardRail</cell><cell>0.0</cell><cell>48.8</cell><cell>0.0</cell><cell>18.0</cell><cell>0.0</cell><cell>67.3</cell><cell>0.0</cell><cell>72.0</cell><cell>0.0</cell><cell>51.5</cell></row><row><cell>VeriGuar d</cell><cell>0.0</cell><cell>55.6</cell><cell>0.0</cell><cell>65.5</cell><cell>0.0</cell><cell>76.8</cell><cell>0.0</cell><cell>71.3</cell><cell>0.0</cell><cell>67.3</cell></row><row><cell>GPT-4.1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No attack</cell><cell>-</cell><cell>64.5</cell><cell>-</cell><cell>64.5</cell><cell>-</cell><cell>64.5</cell><cell>-</cell><cell>87.0</cell><cell>-</cell><cell>70.1</cell></row><row><cell>No defense</cell><cell>92.5</cell><cell>1.0</cell><cell cols="2">60.0 45.3</cell><cell>2.8</cell><cell cols="5">62.3 99.5 87.0 63.7 43.1</cell></row><row><cell>Delimiter</cell><cell>-</cell><cell>-</cell><cell cols="2">64.3 52.0</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Paraphrasing</cell><cell cols="2">80.3 19.0</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell cols="2">60.0 85.5</cell><cell>-</cell><cell>-</cell></row><row><cell>DP Rewriting</cell><cell cols="2">74.5 15.5</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GuardRail</cell><cell>0.0</cell><cell>20.0</cell><cell>0.0</cell><cell>31.5</cell><cell>0.0</cell><cell>63.0</cell><cell>0.0</cell><cell>82.0</cell><cell>0.0</cell><cell>44.6</cell></row><row><cell>VeriG uar d</cell><cell>0.0</cell><cell>28.0</cell><cell>0.0</cell><cell>42.3</cell><cell>0.0</cell><cell>63.5</cell><cell>0.0</cell><cell>94.5</cell><cell>0.0</cell><cell>57.1</cell></row><row><cell>Claude-sonnet-4</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No attack</cell><cell>-</cell><cell>100.0</cell><cell>-</cell><cell>100.0</cell><cell>-</cell><cell>100.0</cell><cell>-</cell><cell>99.0</cell><cell>-</cell><cell>99.8</cell></row><row><cell>No defense</cell><cell cols="10">31.3 89.0 63.8 97.0 24.0 82.0 80.5 87.8 49.9 89.0</cell></row><row><cell>Delimiter</cell><cell>-</cell><cell>-</cell><cell cols="2">60.8 98.3</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Paraphrasing</cell><cell cols="2">39.8 88.5</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell cols="2">73.3 90.5</cell><cell>-</cell><cell>-</cell></row><row><cell>DP Rewriting</cell><cell cols="2">66.8 57.5</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GuardRail</cell><cell>0.0</cell><cell>68.5</cell><cell>0.0</cell><cell>46.0</cell><cell>0.0</cell><cell>75.5</cell><cell>0.0</cell><cell>83.5</cell><cell>0.0</cell><cell>68.3</cell></row><row><cell>VeriG uar d</cell><cell>0.0</cell><cell>86.8</cell><cell>0.0</cell><cell>91.5</cell><cell>0.0</cell><cell>81.8</cell><cell>0.0</cell><cell>80.2</cell><cell>0.0</cell><cell>85.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 |</head><label>2</label><figDesc>Performance comparison on the EICU-AC and Mind2Web-SC benchmarks</figDesc><table><row><cell>Methods</cell><cell></cell><cell>EICU-AC</cell><cell></cell><cell cols="3">Mind2Web-SC</cell></row><row><cell></cell><cell>Acc.</cell><cell>P</cell><cell>R</cell><cell>Acc.</cell><cell>P</cell><cell>R</cell></row><row><cell cols="2">Hardcoded Safety Rules (Xiang et al., 2025) * 81.0</cell><cell>76.6</cell><cell cols="3">90.7 77.5 95.1</cell><cell>58.0</cell></row><row><cell>LLaMA-Guard3 (Luo et al., 2025) *</cell><cell>48.7</cell><cell>-</cell><cell>-</cell><cell cols="2">56.0 93.0</cell><cell>13.0</cell></row><row><cell>AgentMonitor (GPT-4o) (Luo et al., 2025) *</cell><cell>82.3</cell><cell>98.2</cell><cell cols="3">66.7 72.5 79.2</cell><cell>61.0</cell></row><row><cell>GuardAgent (GPT-4) (Xiang et al., 2025) *</cell><cell cols="6">98.7 100.0 97.5 90.0 100.0 80.0</cell></row><row><cell>AGrail (GPT-4o) (Luo et al., 2025) *</cell><cell>97.8</cell><cell>97.5</cell><cell cols="3">98.1 98.4 99.0</cell><cell>98.0</cell></row><row><cell>Ve ri G uar d (GPT-4o)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 |</head><label>3</label><figDesc>ASR and TSR for VeriGuard integration methods including Task Termination (TT), Action Blocking (AB), Tool Execution Halt (TEH), Collaborative Re-planning (CRP). CRP + TEH combination achieves the optimal balance of security and utility.</figDesc><table><row><cell cols="2">Integration Method</cell><cell>DPI</cell><cell>IPI</cell><cell></cell><cell>MP</cell><cell></cell><cell></cell><cell>PoT</cell><cell></cell><cell>AVG</cell></row><row><cell></cell><cell cols="10">ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑ ASR↓ TSR↑</cell></row><row><cell>TT</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell></row><row><cell>AB</cell><cell>0.0</cell><cell>0.5</cell><cell>0.0</cell><cell>34.0</cell><cell>0.0</cell><cell>55.5</cell><cell>0.0</cell><cell>62.3</cell><cell>0.0</cell><cell>38.1</cell></row><row><cell>TEH</cell><cell>0.0</cell><cell>0.3</cell><cell>0.0</cell><cell>48.8</cell><cell>0.0</cell><cell>61.5</cell><cell>0.0</cell><cell>68</cell><cell>0.0</cell><cell>44.6</cell></row><row><cell>CRP</cell><cell cols="4">14.3 51.5 33.3 50.0</cell><cell>0.0</cell><cell>69.0</cell><cell>0.0</cell><cell cols="3">77.7 11.9 62.1</cell></row><row><cell>CRP + TEH</cell><cell>0.0</cell><cell>50.5</cell><cell>0.0</cell><cell>55.8</cell><cell>0.0</cell><cell>69.0</cell><cell>0.0</cell><cell>77.7</cell><cell>0.0</cell><cell>63.3</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Prompts Used To Enforce the Policy Prompt: Argument Extraction</head><p>You are an expert Natural Language Understanding (NLU) engine. Your task is to extract structured information from a given text based on a specification and return it as a single Python dictionary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## YOUR TASK</head><p>You will be provided with a block of input text, a Python function for context, and a specification of the parameters to extract. You must carefully read the **entire** input text, find the values for each required parameter, and format them into a dictionary. **Instructions:** -Synthesize information from all parts of the input text to fill the parameters.</p><p>-Ensure the data types in the output dictionary match the specification (e.g., list for list <ref type="bibr">[str]</ref>).</p><p>-Your output at the end should include your reasoning and a valid Python dictionary. --</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## EXAMPLE</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GIVEN THIS CONTEXT: Python Function:</head><p>```python def send _ email ( arguments : dict ) -&gt; str :</p><p>" " " Send an email to the specified recipients with the given subject . " " " # send email logic here # ... return " Email sent successfully . " ``À gent Information: Input: Send an email to alex@example.com and Dona Jhonson with the subject 'Update' Output: Step 1: Using retreive_email("Dona Jhonson") we get the email "dona@example.com" AND THIS PARAMETER SPECIFICATION: {{"recipients": "list[str]", "subject": "str"}} PRODUCE THIS OUTPUT: **Reasoning** From the "Agent Input", I found one recipient, "alex@example.com", and the subject, "Updates". From "Agent Output" Step 1, I found the email for "Dona Jhonson" is "dng@example.com". I will combine these into the 'recipients' list. **Python dictionary** ```python { " recipients " : [ " alex@example . com " , " dona@example . com " ] , " subject " : "</p><p>Update " } ``--## YOUR TURN GIVEN THIS CONTEXT:</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kundu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mckinnon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kerr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ladish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Landau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sellitto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mercado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lasenby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lanham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Telleen-Lawton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<title level="m">Harmlessness from ai feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Agentmonitor: A plug-and-play framework for predictive and secure multi-agent systems</title>
+		<author>
+			<persName><forename type="first">C.-M</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.14972" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<title level="m">Shieldagent: Shielding agents via verifiable safety policy reasoning. ICML</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Nagini: a static verifier for python</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Eilers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Müller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Computer Aided Verification</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="596" to="603" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fifteen years of viper</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Eilers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schwerhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Summers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Müller</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-031-98668-0_5</idno>
+		<idno>10.1007/978-3-031-98668-0_5</idno>
+		<ptr target="https://link.springer.com/chapter" />
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification (CAV)</title>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Piskac</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Z</forename><surname>Rakamarić</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer Nature Switzerland</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="107" to="123" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>El-Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jacobson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209.07858" />
+		<title level="m">Red teaming language models to reduce harms: Methods, scaling behaviors, and lessons learned</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Can llms verify their own code? a case study in secure web development</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ghaffarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bavota</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Izadi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kopanev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">J</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Moussa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Rozgic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ziyadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mind</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Evaluating agentic search with agent-as-a-judge</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Auto-gpt: An autonomous gpt-4 experiment</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gravitas</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kandasamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rameshbabu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>El-Khamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ranganath</surname></persName>
+		</author>
+		<ptr target="https://ai.meta.com/research/publications/llama-guard-llm-based-input-output-safeguard-for-human-ai-conversations/" />
+		<title level="m">Llama guard: Llm-based input-output safeguard for human-ai conversations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Baseline defenses for adversarial attacks against aligned language models</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schwarzschild</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Somepalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kirchenbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Goldblum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Geiping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Goldstein</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.00614" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Llm-safeguard: A human-in-the-loop framework for tuning safety-guard of llm-based agents</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Effendy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-T</forename><forename type="middle">T</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-H</forename><surname>Tsai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Llm-based generation of verifiable computation</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">The llama 3 herd of models</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Llama</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.21783" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">AGrail: A lifelong agent guardrail with effective and adaptive safety detection</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiao</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.399</idno>
+		<ptr target="https://aclanthology.org/2025.acl-long.399/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Pilehvar</surname></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-07">July 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8104" to="8139" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Membership inference attacks against language models via neighbourhood comparison</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mattern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mireshghallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Berg-Kirkpatrick</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.719</idno>
+		<ptr target="https://aclanthology.org/2023.findings-acl.719/" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="page" from="11330" to="11343" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Automatically correcting large language models: Surveying the landscape of diverse automated correction strategies</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Saxon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Nathani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/tacl_a_00660</idno>
+		<ptr target="https://aclanthology.org/2024.tacl-1.27/" />
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="484" to="506" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<title level="m">Generative agents: Interactive simulacra of human behavior</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Gorilla: Large language model connected with massive apis</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="126544" to="126565" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">NeMo guardrails: A toolkit for controllable and safe LLM applications with programmable rails</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rebedea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dinu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Sreedhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parisien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-demo.40</idno>
+		<ptr target="https://aclanthology.org/2023.emnlp-demo" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Lefever</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing: System Demonstrations<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">Dec. 2023</date>
+			<biblScope unit="page" from="431" to="445" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tsvigun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolformer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Ignore this title and hackaprompt: Exposing systemic vulnerabilities of llms through a global prompt hacking competition</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">V</forename><surname>Schulhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-F</forename><surname>Bouchard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Boyd-Graber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tagliabue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Kost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">R</forename><surname>Carnahan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z.-Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+		<title level="m">A survey on large language model based autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Jailbroken: How does llm safety training fail?</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Haghtalab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864</idno>
+		<title level="m">The rise and potential of large language model based agents: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Guardagent: Safeguard llm agents by a guard agent via knowledge-enabled reasoning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">An llm can fool itself: A prompt-based adversarial attack</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kankanhalli</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.13345" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Agent security bench (asb): Formalizing and benchmarking attacks and defenses in llm-based agents</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Recode: Improving llm-based code repair with fine-grained retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2509.02330" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Environment-in-the-Loop: Rethinking Code Migration with LLM-based Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-10">10 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiwei</forename><surname>Fei</surname></persName>
+							<email>zhiweifei@smail.nju.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ying</forename><surname>Ma</surname></persName>
+							<email>ying.ma@brunel.ac.uk</email>
+						</author>
+						<author>
+							<persName><forename type="first">Jerry</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sarro</forename><surname>Federica</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+							<email>he.ye@ucl.ac.uk</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution">University College London London</orgName>
+								<address>
+									<country key="GB">United Kingdom</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Nanjing University Nanjing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Brunel University London</orgName>
+								<address>
+									<country key="GB">United Kingdom</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">University College London London</orgName>
+								<address>
+									<country key="GB">United Kingdom</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="institution">University College London London</orgName>
+								<address>
+									<country key="GB">United Kingdom</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Environment-in-the-Loop: Rethinking Code Migration with LLM-based Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-10">10 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">14B3178ABC00E7DB60C404E8C428616A</idno>
+					<idno type="DOI">10.1145/3786180.3788315</idno>
+					<idno type="arXiv">arXiv:2602.09944v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Automated Environment Setup</term>
+					<term>Code Migration</term>
+					<term>Large Language Model</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Modern software systems continuously undergo code upgrades to enhance functionality, security, and performance, and Large Language Models (LLMs) have demonstrated remarkable capabilities in code migration tasks. However, while research on automated code migration which including refactoring, API adaptation, and dependency updates has advanced rapidly, the exploration of the automated environment interaction that must accompany it remains relatively scarce. In practice, code and its environment are intricately intertwined. Relying solely on static analysis of the environment leads to an inadequate understanding of the target setting, prolongs feedback cycles, and consequently causes significant rework and project delays, thereby reducing overall efficiency. We contend that successful software evolution demands a holistic perspective that integrates both code and environment migration. To understand the current landscape and challenges, we first provide an overview of the status of automated environment construction. We then propose a novel framework paradigm that tightly integrates automated environment setup with the code migration workflow. Finally, we explore the challenges and future directions for automated environment interaction within the code migration domain. Our findings emphasize that without automated environment interaction, the automation of code migration is only half complete.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Figure <ref type="figure">1</ref>: An implicit and subtle runtime error caused by the library upgrade, which is hard to catch by static analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Code migration is a critical and frequent challenge in modern software development, which involves large-scale and systematic modifications across an entire codebase at the repository level particularly. Code migration tasks represent a comprehensive evolution of software across its language, version, system, and dependencies. Typical scenarios include: 1) API and dependency upgrades; 2) framework modernization (e.g. from AngularJS to React); 3) language version evolution (e.g. from Python 2 to Python 3, or from Java 8 to Java 17); 4) platform and system porting (e.g. from Ubuntu to CentOS). The high degree of difficulty in these tasks stems from their broad impact and strong inter-dependencies. Developers must maintain consistency across numerous files, understand complex cross-module call relationships, and handle the cascading effects on external dependencies, database schemas, and deployment scripts. Consequently, establishing a stable and reliable post-migration environment is the cornerstone of a successful migration.</p><p>To manage the complex engineering of code migration, the process is typically structured into several key phases <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b19">20]</ref>. The current basic steps for code migration include: 1) examine the existing system's structure and environment to define migration scope and plan; 2) update code to resolve incompatibilities and replace deprecated callings; 3) execute and test the migrated system to ensure functional correctness.</p><p>Current migration processes overly focus on code modification, and rely on static analysis of the initial environment, decoupling code modification from environment configuration. This disconnect misses subtle runtime errors caused by different library versions, which static analysis cannot detect. As shown in Fig. <ref type="figure">1</ref>, although the function name and usage remain the same, different library versions (version 1.x and 2.x of NumPy) may impose different internal constraints, resulting in subtle errors that cannot be caught by static analysis alone. Fig. <ref type="figure" target="#fig_0">2</ref> shows some examples of hidden and subtle errors that cannot be identified by static environment analysis timely. Furthermore, this approach mistakenly treats the environment as immutable, ignoring that code logic itself often dictates environmental changes (like library upgrades or downgrades). This leads to unnecessary rework and project delays <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b21">22]</ref>.</p><p>Although Large Language Models (LLMs) demonstrate exceptional capabilities in software engineering tasks <ref type="bibr" target="#b4">[5]</ref>, and are used in migration <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b20">21]</ref>, their application is confined to interactive code editing. As reported by Cheng et al. <ref type="bibr" target="#b5">[6]</ref>, LLMs perform poorly in predicting execution outcomes (causing nearly 30% of runtime errors), indicating a need for actual environment interaction. Research on how to leverage LLMs to interact with environments still needs to be explored. The key challenge is to research how LLMs can automate environment setup, code execution and testing, thereby establishing a dynamic and closed-loop feedback between the code and its environment across the migration process.</p><p>To address this, we propose an LLM-based environment-driven migration framework to replace the current linear and manual process. Rather than depending on initial static analysis, it creates a dynamic feedback loop and feeds real-time, practical information from the environment (e.g., test failures, runtime behavior) back into the migration process to guide and refine the code modification. This integrated approach allows for the early detection and resolution of problems, significantly reducing rework while increasing the overall efficiency and success rate of the migration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background 2.1 Challenges</head><p>The core deficiency in current code migration workflows stems from the disconnection between the code modification process and the dynamic realities of the execution environment. The primary challenges can be summarized as follows:</p><p>• Decoupling from the execution environment. The over-reliance on static analysis of the initial environment, detached from the actual migration steps, makes it impossible to detect subtle, version-dependent runtime errors (e.g., internal constraint changes between NumPy 1.x and 2.x) that are imperceptible to static checks. This runtime error can lead to a large amount of rework <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b22">23]</ref>. For example, Running the test/CI/build phases after AI translates/migrates code may expose unexpected errors/dependency incompatibility issues, which often lead to the need to go back and modify and update the translated code <ref type="bibr" target="#b27">[28]</ref>.</p><p>• Manual validation and test workflow. Post-migration validation, including environment setup, dependency resolution, and testing, remains a labor-intensive, manual process <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b26">27]</ref>. This workflow erroneously treats the environment as immutable, ignoring that code logic changes often necessitate corresponding environmental adaptations (e.g., library upgrades), thereby causing significant rework <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b27">28]</ref>.</p><p>• Absence of a dynamic feedback loop. The most critical research gap is the lack of a mechanism to leverage LLMs for automated environment interaction <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b19">20]</ref>. This includes automated setup, code execution, and results-in-formed testing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Automated Environment Interaction</head><p>Creating a functioning development environment for a codebase or a repository, is a vital task in software development. Rule-based or template-based automated environment construction and interaction <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b17">18]</ref> can enhance efficiency and provide valuable assistance, but usually require a significant amount of manual input from developers or are limited to specific languages or use cases.</p><p>Recently, the extensive research interest in AI agents has promoted its application in software engineering, especially in the field of automated environments interaction. LLM-based agents typically consist of four key components: planning, memory, perception, and action <ref type="bibr" target="#b24">[25]</ref>, which ensure its efficient and accurate automation process in the field of environmental interaction. <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b18">19]</ref> propose LLM-based agent capable of successfully setting up Python repositories. <ref type="bibr" target="#b2">[3]</ref> introduce ExecutionAgent that correctly configures 33 out of 50 considered repositories across 5 programming languages (Python, Java, C, C++, and JavaScript). EnvBench <ref type="bibr" target="#b6">[7]</ref> is a comprehensive environment setup benchmark, which encompasses thousands of Python and JVM-based repositories, with a focus on repositories that present genuine configuration challenges. Nowadays, LLMbased agents have demonstrated superior performance compared to standalone LLMs in various software engineering tasks <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b25">26]</ref>, but few researches have discussed how agents affect migration fields. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">LLM-assisted Code Migration</head><p>The early work <ref type="bibr" target="#b9">[10]</ref> point out that re-configurability of the environment is a core prerequisite for migration automation. LLMs has brought about a new intelligent path for code migration. Jelkhoury <ref type="bibr" target="#b12">[13]</ref> and LinearB <ref type="bibr" target="#b14">[15]</ref> demonstrate that LLMS can understand complex project structure and dependency contexts, leading to fewer warnings, and lower risks. But LLMS only act as "advisors" rather than "executors" in these cases, and the interactive potential has yet to be fully exploited. Cheng et al. <ref type="bibr" target="#b5">[6]</ref> build a benchmark to verify LLMs' abilities in code upgrades, downgrades, and version migrations, in which the result indicates that LLMs have initial ability to understand environmental constraints and perform functional verification. However, the target environment itself is often unknown or dynamically generated in real project migration.</p><p>In industrial practice, an increasing number of migration tools have moved beyond merely providing static code-change suggestions. For instance, Amazon Q's <ref type="bibr" target="#b19">[20]</ref> dev mode and Aviator Agent's Runbooks framework <ref type="bibr" target="#b0">[1]</ref> can launch an isolated sandbox (Docker container) where candidate changes are built and tested; if tests fail, the system iterates improvements. When integrated into GitHub, CI/workflow results feed back into the Agent's suggestion process. These industrial examples jointly support a clear emerging trend: future migration tools should bridge code, environment, and runtime validation into a unified loop, thereby improving the accuracy, automation capability, and reliability of migrations.</p><p>Altogether, existing research has not yet established a systematic paradigm for an Agent that actively builds environments and interacts with them to carry out code migration. So we want to propose such a new paradigm that enabling an Agent not only to understand code, but also to manipulate the environment (install, retry, correct, test), thereby realizing a truly end-to-end automated migration system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Environment-driven Multi-Agent Workflow</head><p>The migration workflow operates as a multi-agent collaborative loop, centered on continuous iteration across four stages: 1) migration planing, 2)automated environment setup, 3)test validation, 4)feedback refinement, as demonstrated in Fig. <ref type="figure" target="#fig_1">3</ref>. Each agent undertakes a distinct responsibility within the migration chain, while the chain synchronizes their actions to achieve end-to-end migration verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Agent Components</head><p>We abstract the LLM-based Migration process into an Agent system composed of three core collaborative components: Migration Agent (M-Agent), Environment Agent (E-Agent), Testsuite Agent (T-Agent). Among them, each agent can use a specific functional toolkit (see left part of Fig. <ref type="figure" target="#fig_1">3</ref>), responsible for handling specific stage tasks in the migration workflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Migration Agent.</head><p>The Migration Agent (M-Agent) is responsible for understanding the migration goal and program semantics, and for performing code modification and migration. Its inputs include the source project code and the migration target specifications (e.g., language version, framework upgrade, API compatibility changes). Its outputs are candidate migrated code versions, dependency upgrade plans, and lists of potential risk points. Within the workflow, the M-Agent recieve feedback from the E-Agent to automatically refine the migrated code logic and dependency mapping strategies.</p><p>Environment Agent. The Environment Agent (E-Agent) autonomously constructs executable build and runtime environments for the migrated project, ensuring that the transformed code can be correctly compiled, executed, and validated under real dependency configurations. It takes as input the migrated repository, dependency manifests, and runtime constraints (such as language version, platform, and operating system). Its outputs include successfully built environment images, runtime logs, diagnostic reports for environment-related errors, test execution results and failure reports. In the collaborative workflow, the E-Agent acts as the central verification hub:</p><p>• It provides the execution context required by the T-Agent for testing.</p><p>• It supplies environmental feedback and error diagnostics.</p><p>• It triggers remediation loops in either the M-Agent (for codelevel errors) or itself (for configuration-level issues).</p><p>By enabling reproducible and traceable build environments, the E-Agent ensures migration reliability across dependency and configuration drifts, transforming the process from static code transformation into a dynamic, environment-aware migration cycle.</p><p>Testsuite Agent. The Testsuite Agent (T-Agent) is responsible for automatically generating, repairing, or extending test suites to validate functional consistency and behavioral equivalence after migration. Its inputs include the migrated codebase (from the M-Agent), existing legacy tests, behavioral specifications, and project documentation. Its outputs are generated test files (unit, integration, and regression tests). Through iterative execution within the E-Agent's constructed environment, the T-Agent continuously improves validation coverage and provides structured behavioral feedback to guide further refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Migration Workflow</head><p>In this workflow, the Environment Agent is not merely a supporting component but the central driver of automated migration. By grounding the entire migration life-cycle in automated environment setup, the proposed paradigm advances code migration from static transformation toward operational intelligence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Task Trigger and Migration Planning.</head><p>The workflow is automatically triggered when version upgrades, framework migrations, or dependency changes are detected within the CI/CD pipeline. The M-Agent is firstly invoked to analyze the repository and synthesize an initial migration plan, producing a migrated code draft and updated dependency specifications. These outputs are then immediately handed to the E-Agent, which becomes the central executor for all subsequent validation and feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Automated Environment Interaction.</head><p>Upon receiving the migrated repository and dependency manifests, it autonomously constructs a reproducible, executable environment-including language runtimes, dependency packages, toolchains, and system-level configurations. Concretely, the E-Agent: 1) selects base images and provisioning scripts, 2) installs dependencies and resolves version conflicts, 3) configures build systems (e.g., Gradle/Maven, npm/pip), and 4) builds and executes the project in an isolated sandbox.</p><p>If the build or runtime fails, the E-Agent captures logs, diagnoses causes (e.g., compiler mismatch, missing packages, dependency incompatibility), and generates structured diagnostic reports. These reports form environmental feedback, which drives the entire corrective process:</p><p>• Configuration-level errors are self-repaired by the E-Agent.</p><p>• Semantic or logic-level issues are routed back to the M-Agent.</p><p>• Runtime behavioral anomalies are passed to the T-Agent for validation refinement. Through this process, the Environment Agent transforms the migration from a static, one-time code transformation into a dynamic and verifiable process, where every migration step is grounded in an executable, environment-aware state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Test Generation and Execution.</head><p>Once a stable environment is established, the T-Agent automatically generates regression testsuites by analyzing the migrated code and legacy behavioral specifications. All tests are executed within the E-Agent's verified environment, ensuring that test outcomes reflect realistic dependency and configuration constraints. Crucially, the E-Agent captures runtime logs, records system states, and provides contextual traces in the execution loop for each failure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.4">Feedback Aggregation and CI/CD Integration.</head><p>After each test iteration, all results are analyzed with the environmental context as the anchor point. This iterative cycle is orchestrated around the E-Agent, whose diagnostics determine the next correction target. The E-Agent thereby evolves into a continuous verification and coordination hub, maintaining the consistency of the migration pipeline across agents.</p><p>Upon successful validation, the migrated code version, environment configurations, generated tests, coverage reports and execution logs will be aggregated and uploaded to CI/CD artifact repository. This enables automatic revalidation not only during version upgrades but also whenever dependency or configuration drift is detected.</p><p>The entire closed-loop workflow which includes three LLMbased agents achieves end-to-end automation from migration analysis to environment construction, testing, and iterative repair. This paradigm ensures migration correctness while enhancing CI/CD resilience against environment drift and compatibility degradation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Challenges and Further Directions</head><p>Despite the promising potential of the proposed agentic migration paradigm, several open challenges remain, especially regarding automation and reliability of environment setup. Environment reproduction and dependency management remain core difficulties. Reconstructing a runnable environment that faithfully mirrors the original system demands accurate detection of configuration drift and robust dependency inference. Future work may enable Environment Agents to learn environment semantics from build scripts, runtime traces, or CI logs to ensure reproducible, portable environments. Multi-agent coordination and feedback loops pose another challenge. Environment feedback (e.g., build errors, missing libraries) must be interpreted by Migration Agents to trigger meaningful fixes rather than simple retrials. Future research could draw on reinforcement learning or cooperative multi-agent systems to build more stable correction cycles.</p><p>Industrial integration with CI/CD pipelines is also crucial. Automated environment construction must align with existing workflows, supporting sandbox creation, reconstruction logging, and developer auditing. Future directions include leveraging LLM-based Environment Agents as transparent extensions to container orchestration systems such as Docker or Kubernetes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We take the position that automated environment setup must become a first-class concern in the design of code migration systems. Current research and industrial tools focus predominantly on source code, yet overlook the fact that migration correctness is ultimately verified only within a runnable environment. We advocate a paradigm shift: migration should be as a co-evolution of source code, dependencies, and execution environments. By embedding this capability into CI/CD workflows and coupling it with continuous feedback from Migration and Testsuite Agents, we envision a future where code migration becomes an environment-intelligent process, which capable of sustaining long-term software evolution across ecosystems.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Examples of error types that can only be discovered through dynamic environment interaction.</figDesc><graphic coords="2,65.81,83.69,216.22,133.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The overall workflow of environment-driven multi-agent code migration.</figDesc><graphic coords="3,79.02,83.69,453.97,154.43" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Aviator</surname></persName>
+		</author>
+		<ptr target="https://docs.aviator.co/" />
+		<imprint>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<ptr target="https://github.com/bndr/pipreqs" />
+		<title level="m">Generate pip requirements.txt file based on imports of any project</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">You name it, I run it: An LLM agent to execute tests of arbitrary projects</title>
+		<author>
+			<persName><forename type="first">Islem</forename><surname>Bouzenia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1054" to="1076" />
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note>ISSTA</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunzhi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei-Hung</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunhua</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Jannesari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19770[cs.LG</idno>
+		<ptr target="https://arxiv.org/abs/2412.19770" />
+		<title level="m">Fortran2CPP: Automating Fortran-to-C++ Translation using LLMs via Multi-Turn Dialogue and Dual-Agent Integration</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Prometheus: Unified Knowledge Graphs for Issue Resolution in Multilingual Codebases</title>
+		<author>
+			<persName><forename type="first">Zimin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.19942</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Keyuan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xudong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhammad</forename><forename type="middle">Asif</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijie</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.00894</idno>
+		<ptr target="https://arxiv.org/abs/2506.00894" />
+		<title level="m">CODEMENV: Benchmarking Large Language Models on Code Migration</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>cs.SE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Eliseeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kovrigin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Kholkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Egor</forename><surname>Bogomolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaroslav</forename><surname>Zharov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14443</idno>
+		<title level="m">Envbench: A benchmark for automated environment setup</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mahdi</forename><surname>Fahmideh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Farhad</forename><surname>Daneshgar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ghassan</forename><surname>Beydoun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fethi</forename><surname>Rabhi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.10724[cs.SE</idno>
+		<ptr target="https://arxiv.org/abs/2004.10724" />
+		<title level="m">Challenges in migrating legacy software systems to the cloud an empirical study</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Parnin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1905.11127</idno>
+		<ptr target="https://arxiv.org/abs/1905.11127" />
+		<title level="m">DockerizeMe: Automatic Inference of Environment Dependencies for Python Code Snippets</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>cs.SE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horton</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Fast Detection of Configuration Drift in Python</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Parnin</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Fast Detection of Configuration Drift in Python</orgName>
+			</affiliation>
+		</author>
+		<idno type="arXiv">arXiv:1909.06251</idno>
+		<ptr target="https://arxiv.org/abs/1909.06251" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note>cs.SE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">An llm-based agent for reliable docker environment configuration</title>
+		<author>
+			<persName><forename type="first">Ruida</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13681</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><surname>Saqib</surname></persName>
+		</author>
+		<ptr target="https://thenewstack.io/the-engineers-guide-to-controlling-configuration-drift/.Ac-cessed" />
+		<title level="m">The Engineer&apos;s Guide to Controlling Configuration Drift</title>
+		<imprint>
+			<date type="published" when="2025-01">Jan. 2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Leveraging Large Language Models for Automated Code Migration and Repository-Level Tasks, Part I</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jelkhoury</surname></persName>
+		</author>
+		<ptr target="https://medium.com/@jelkhoury880/leveraging-large-language-models-for-automated-code-migration-and-repository-level-tasks-part-i-402" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">892</biblScope>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Code migration through transformations: An experience report</title>
+		<author>
+			<persName><forename type="first">Kostas</forename><surname>Kontogiannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenny</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Gregory</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hausi</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Mylopoulos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CASCON First Decade High Impact Papers</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="201" to="213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><surname>Linearb</surname></persName>
+		</author>
+		<ptr target="https://linearb.io/blog/how-google-uses-ai-to-speed-up-code-migrations" />
+		<title level="m">How Google Uses AI to Speed Up Code Migrations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Why Software Migrations Fail: It&apos;s Not the Code</title>
+		<author>
+			<persName><forename type="first">Nishil</forename><surname>Macwan</surname></persName>
+		</author>
+		<ptr target="https://devops.com/why-software-migrations-fail-its-not-the-code/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>May</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diganta</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justine</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename><surname>Junior</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.04852[cs.SE</idno>
+		<ptr target="https://arxiv.org/abs/2510.04852" />
+		<title level="m">FreshBrew: A Benchmark for Evaluating AI Agents on Java Code Migration</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">generator-docker: Yeoman generator for Docker</title>
+		<ptr target="https://github.com/microsoft/generator-docker" />
+		<imprint>
+			<publisher>Microsoft. n.d</publisher>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Beyond pip install: Evaluating llm agents for the automated installation of python projects</title>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Milliken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungmin</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shin</forename><surname>Yoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="11" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Evaluating Human-AI Partnership for LLM-based Code Migration</title>
+		<author>
+			<persName><surname>Behrooz Omidvar Tehrani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ishaani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anmol</forename><surname>Anubhai</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3613905.3650896</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Extended Abstracts of the CHI Conference on Human Factors in Computing Systems</title>
+		<meeting><address><addrLine>Honolulu, HI, USA; New York, NY, USA, Article</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">133</biblScope>
+			<biblScope unit="page">pages</biblScope>
+		</imprint>
+	</monogr>
+	<note>CHI EA &apos;24)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Lost in Translation: A Study of Bugs Introduced by Large Language Models while Translating Code</title>
+		<author>
+			<persName><forename type="first">Rangeet</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Ibrahimzada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divya</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lambert</forename><surname>Sankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Pouguem Wassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Merler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raju</forename><surname>Sobolev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Pavuluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reyhaneh</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jabbarvand</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3597503.3639226</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/ACM 46th International Conference on Software Engineering</title>
+		<meeting>the IEEE/ACM 46th International Conference on Software Engineering<address><addrLine>Lisbon, Portugal; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>ICSE &apos;24 Article 82, 13 pages</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Configuration Drift: How It Happens</title>
+		<ptr target="https://www.puppet.com/blog/configuration-drift" />
+	</analytic>
+	<monogr>
+		<title level="m">Top Sources + How to Reduce It</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">AI-Driven Configuration Drift Detection in Cloud Environments. Gogulakrishnan Thiyagarajan, Vinay Bist, Prabhudarshi Nayak</title>
+		<author>
+			<persName><forename type="first">Gogulakrishnan</forename><surname>Thiyagarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Bist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prabhudarshi</forename><surname>Nayak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Communication Networks and Information Security (IJCNIS)</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="721" to="743" />
+			<date type="published" when="2024">2024. 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>AI-Driven Configuration Drift Detection in Cloud Environments</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenlong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxiang</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyue</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhua</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongping</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.16645[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2502.16645" />
+		<title level="m">CODESYNC: Synchronizing Large Language Models with Dynamic Code Evolution at Scale</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Limao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihan</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongxiang</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wensen</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongyan</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864</idno>
+		<ptr target="https://arxiv.org/abs/2309.07864" />
+		<title level="m">Xipeng Qiu, Xuanjing Huang, and Tao Gui. 2023. The Rise and Potential of Large Language Model Based Agents: A Survey</title>
+		<imprint/>
+	</monogr>
+	<note>cs.AI</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Aligning the Objective of LLM-based Program Repair</title>
+		<author>
+			<persName><forename type="first">Junjielong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Fu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.08877[cs.SE</idno>
+		<ptr target="https://arxiv.org/abs/2404.08877" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Shin Hwei Tan, and Pinjia He</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Semantic Alignment-Enhanced Code Translation via an LLM-Based Multi-Agent System</title>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weitong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19894[cs.SE</idno>
+		<ptr target="https://arxiv.org/abs/2409.19894" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Migrating Code At Scale With LLMs At Google</title>
+		<author>
+			<persName><forename type="first">Celal</forename><surname>Ziftci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stoyan</forename><surname>Nikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Sjövall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Codecasa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3696630.3728542</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM International Conference on the Foundations of Software Engineering (FSE Companion &apos;25)</title>
+		<meeting>the 33rd ACM International Conference on the Foundations of Software Engineering (FSE Companion &apos;25)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="162" to="173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

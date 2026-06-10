@@ -1,0 +1,1288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-04">4 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Elias</forename><surname>Lumer</surname></persName>
+							<affiliation key="aff0">
+								<address>
+									<country key="US">U.S.A</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Faheem</forename><surname>Nizar</surname></persName>
+							<affiliation key="aff0">
+								<address>
+									<country key="US">U.S.A</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anmol</forename><surname>Gulati</surname></persName>
+							<affiliation key="aff0">
+								<address>
+									<country key="US">U.S.A</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pradeep</forename><forename type="middle">Honaganahalli</forename><surname>Basavaraju</surname></persName>
+							<affiliation key="aff0">
+								<address>
+									<country key="US">U.S.A</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Vamse</forename><forename type="middle">Kumar</forename><surname>Subbiah</surname></persName>
+							<affiliation key="aff0">
+								<address>
+									<country key="US">U.S.A</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-04">4 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B8EB632D2994B3354C63CFB48B1EFE98</idno>
+					<idno type="arXiv">arXiv:2511.01854v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Large Language Models</term>
+					<term>Tool Retrieval</term>
+					<term>Agent Routing</term>
+					<term>Multi-Agent Systems</term>
+					<term>Model Context Protocol (MCP)</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advances in LLM Multi-Agent Systems enable scalable orchestration of sub-agents, each coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. However, existing retrieval methods typically match queries against coarse agentlevel descriptions before routing, which obscures fine-grained tool functionality and often results in suboptimal agent selection. We introduce Tool-to-Agent Retrieval, a unified framework that embeds both tools and their parent agents in a shared vector space and connects them through metadata relationships. By explicitly representing tool capabilities and traversing metadata to the agent level, Tool-to-Agent Retrieval enables granular tool-level or agent-level retrieval, ensuring that agents and their underlying tools or MCP servers are equally represented without the context dilution that arises from chunking many tools together. Evaluating Tool-to-Agent Retrieval across eight embedding models, our approach achieves consistent improvements of 19.4% in Recall@5 and 17.7% in nDCG@5 over previous state-of-the-art agent retrievers on the LiveM-CPBench benchmark.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advancements in Large Language Model (LLM) agents and the Model Context Protocol (MCP) enable assistants to discover, equip, and use large collections of external tools and MCP servers at inference time <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b19">20]</ref>. In practice, a single assistant may delegate to specialized sub-agents for code analysis, databases, or web search, each bundling dozens of tools behind a single interface <ref type="bibr" target="#b4">[5]</ref>. A central challenge is routing: given a user query, should the system select a specific tool or leverage an entire agent (e.g., an MCP server) that provides a coherent set of tools? Forwarding all tool descriptions to the model is impractical, e.g., one MCP server with 26 tools can consume over 4,600 tokens, making efficient retrieval essential for scalability <ref type="bibr" target="#b34">[35,</ref><ref type="bibr" target="#b37">38]</ref>.</p><p>Existing strategies typically fall into two camps. Agent-first pipelines match the query against a brief agent description, then operate only within that agent, which can hide highly relevant tools whose parent description does not obviously align with the query. Conversely, tool-only retrieval treats each tool independently and ignores the complementary benefits of the surrounding bundle on multi-step tasks <ref type="bibr" target="#b21">[22]</ref>. Recent benchmarks have highlighted these challenges in multi-step tool selection, evaluating agents across diverse tool repositories <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b28">29]</ref>. In practice, single-tool matches may underperform when a workflow benefits from a coordinated set of tools, while agent-first routing may overlook fine-grained capabilities. What is needed is a retrieval mechanism that can operate at both levels, return a focused tool when the query is specific, or return an entire agent when broader capability is advantageous, without committing to a brittle two-stage pipeline.</p><p>We introduce Tool-to-Agent Retrieval, which represents tools and their parent agents in the same vector space and links them through explicit metadata (Figure <ref type="figure" target="#fig_0">1</ref>). At query time, retrieval runs over a joint index and returns either an individual tool or an agent bundle, depending on which better fits the query. By modeling fine-grained tool semantics while retaining agent context via tool→agent links (and traversing those links at retrieval time), the method avoids the context dilution that arises when many tools are collapsed into a single coarse description. This enables one-pass decisions about what to equip (a tool vs. an agent), improving routing for both focused and multi-step queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Related Work.</head><p>A growing line of work builds tool retrieval for LLM agents by embedding tool descriptions and metadata in a tool knowledge base and selecting top-k tools per query <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b36">37]</ref>. Retrieval-augmented generation (RAG) enables LLM agents to access external knowledge and tools through semantic search <ref type="bibr" target="#b6">[7]</ref>, with recent hybrid approaches combining knowledge graphs and vector retrieval to improve tool selection accuracy <ref type="bibr" target="#b31">[32]</ref>. Systems such as PLUTO and Re-Invoke refine dense retrieval for tool selection and demonstrate strong single-pass performance at scale <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b8">9]</ref>. Graph-based approaches have emerged to structure tool relationships, including ToolNet and Control-Algorithm 1 Combined Tool-Agent Top-K Retrieval (Tool-to-Agent Retrieval) 1: Input: query q, corpus C (agents ∪ tools), type τ (•) ∈ {agent, tool}, owner map own(•), similarity s(q, •), cutoffs N , K 2: Output: set of agents A ⋆ with |A ⋆ |= K 3: L ← TopN(q, C, N ) ▷ rank by s and return ordered [e (1) , . . . , e (N ) ] 4: A ← ∅; i ← 1 5: while |A|&lt; K and i ≤ N do 6:</p><p>e ← L[i] 7:</p><p>if τ (e) = agent then 8:</p><p>a ← e 9:</p><p>else if τ (e) = tool and own(e) is defined then 10:</p><p>a ← own(e) 11: else 12:</p><formula xml:id="formula_0">i ← i + 1; continue ▷ skip if owner missing/undefined 13:</formula><p>if a / ∈ A then 14:</p><p>A ← A ∪ {a} 15:</p><formula xml:id="formula_1">i ← i + 1 16: return A ⋆ ← A</formula><p>LLM which organize tools through graph structures to enable more sophisticated navigation <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref>. Iterative methods like ToolReAGT decompose complex tasks and retrieve tools step-by-step, improving recall on multi-step problems <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>. Multi-hop reasoning frameworks further enhance retrieval by chaining intermediate steps <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b35">36]</ref>. In parallel, hierarchical pipelines first choose the MCP server and then a tool inside it to control prompt cost, but this agent-first routing can suppress fine-grained matches <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b38">39]</ref>. Our approach differs by jointly representing tools and agents and retrieving over a single, linked space, so the system does not have to commit upfront to tool-only or agent-first selection.</p><p>Contributions. We make the the following contributions through this work:</p><p>1. Unified Retrieval Framework: We introduce a novel tool retrieval strategy that embeds both tools and their parent agents in a shared vector space, linked through tool-to-agent metadata traversal, enabling unified retrieval and achieving state-of-the-art performance. 2. Granular Routing Mechanism: We propose a retrieval procedure that preserves fine-grained tool-level detail while retaining agent-level context, mitigating context dilution from coarse summaries and improving robustness on multi-step queries. 3. Comprehensive Evaluation: We evaluate the method on LiveMCPBench across eight embedding models, demonstrating 17.7% (recall@5) and 19.4% (nDCG@5) improvements over previous state-of-the-art approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Approach: Tool-to-Agent Retrieval</head><p>As illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, Tool-to-Agent Retrieval embeds both tools and their parent agents in a unified vector space, explicitly linking each tool to its parent agent through metadata relationships. We consider a catalog of MCP servers with their corresponding agents, denoted as a ∈ A. Each agent a owns a set of tools T a , consisting of API calls, functions, or actions exposed by the agent. The combined system is modeled as a bipartite graph G = (A, T , E), where edges E represent ownership relations between tools and agents. Graph-based modeling of tool relationships enables structured navigation and reasoning over tool capabilities <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b32">33]</ref>. This unified representation directly addresses the limitations of single-level retrieval. Retrieving solely by agent descriptions can obscure finegrained functional capabilities at the tool level, while retrieving tools independently discards important execution context such as authentication, parameter inference, or access policies maintained at the agent level. By integrating both levels, the retriever can surface relevant tools without losing their surrounding agent context. Furthermore, every query or sub-query ultimately resolves to an executable agent, ensuring that the retrieved entity can act upon the user request.</p><p>Indexing. We construct a unified tool-agent catalog C that integrates both tools and agents for retrieval. The catalog is composed of two corpora: the tool corpus C T and the agent corpus C A .</p><p>The Tool Corpus C T ⊂ C contains tool names and descriptions that are directly indexed for retrieval. Each tool entry includes metadata explicitly linking it to its parent MCP server or agent, denoted as owner(T ) = A. This mapping enables traversal from a retrieved tool to the corresponding executable agent during query resolution, drawing on graph-based representation techniques for knowledge integration <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b27">28]</ref>.</p><p>The Agent Corpus C A ⊂ C similarly contains agent names and descriptions, representing higher-level capabilities and serving as parent nodes within the retrieval graph.</p><p>Retrieval. The retrieval process modifies the standard top-K ranking procedure. The objective is to identify the top-K most relevant agents for a given query or sub-query. To achieve this, we first retrieve the top N ≫ K entities from the unified tool-agent catalog C, ranked by semantic similarity to the query. This approach combines semantic and lexical matching strategies to improve recall <ref type="bibr" target="#b13">[14]</ref>, utilizing BM25 <ref type="bibr" target="#b29">[30]</ref> alongside dense vector retrieval. The corresponding parent agents are then aggregated, and the top-K unique agents are selected. The complete retrieval procedure is detailed in Algorithm 1.</p><p>Query. The input to the Tool-to-Agent Retriever can be the original user query, the decomposed sub-steps derived from it, or a combination of both. We evaluate two query paradigms.</p><p>The first, Direct Querying, uses the user's high-level question directly as the retrieval query, without any pre-processing. This approach retrieves the top-K most relevant agents or tools for the overall task.</p><p>The second, Step-wise Querying, decomposes the original query into a sequence of smaller sub-tasks. Each step is then submitted independently to the Table <ref type="table">1</ref>. Results on the LiveMCPBench benchmark comparing Tool-to-Agent Retrieval with baselines (BM25, Q.Retrieval, ScaleMCP, and MCPZero). Metrics are Recall@K, mAP@K, and nDCG@K for K ∈ {1, 5, 10}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Approach</head><p>Recall mAP nDCG @1 @3 @5 @1 @3</p><p>@5 @1 @3 @5 BM25 0.20 0.20 0.20 0.12 0.12 0.12 0.14 0.14 0.14 Q.Retrieval 0.31 0.47 0.56 0.31 0.31 0.24 0.31 0.35 0.32 MCPZero 0.44 0.66 0.70 0.45 0.39 0.31 0.45 0.46 0.41 ScaleMCP 0.49 0.68 0.74 0.49 0.40 0.29 0.49 0.48 0.40 Tool-to-Agent Retrieval 0.61 0.77 0.83 0.61 0.49 0.34 0.61 0.56 0.46</p><p>retriever, allowing the system to identify different agents as needed across multistep workflows. This decomposition strategy aligns with reasoning-based retrieval planning methods that break complex queries into manageable sub-goals <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b12">13]</ref>. Query rewriting techniques further enhance retrieval by reformulating queries for improved semantic matching <ref type="bibr" target="#b22">[23]</ref>. This step-wise procedure is the primary setting used in our evaluations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments and Evaluation</head><p>We evaluate the effectiveness of the proposed Tool-to-Agent Retriever in comparison to agent-only retrieval methods. Our primary hypothesis is that a unified retriever operating over both tools and agents will outperform approaches that retrieve agents alone. In the MCP context, particularly under hierarchical querying <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b20">21]</ref>, this improvement extends to the initial stage of routing, where identifying the correct MCP server enables access to its associated tools for crossconnected operations. Recent benchmarking efforts have highlighted the challenges of stateful, conversational tool use across multi-turn interactions <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b39">40]</ref>.</p><p>The experimental setup evaluates retrieval accuracy in identifying the correct agents or MCP servers for each query. We report standard information retrieval metrics, including Recall, mean average precision (mAP), and normalized discounted cumulative gain (nDCG), to quantify the performance improvements of the proposed approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset and Evaluation Protocol.</head><p>We evaluate our approach on the LiveM-CPBench dataset <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b24">25]</ref>, which includes 70 MCP servers and 527 tools, along with 95 real-world questions annotated with step-by-step breakdowns and relevant tool-agent mappings. This structure enables fine-grained, step-level evaluation of retrieval performance. On average, each question spans 2.68 steps and involves 2.82 tools and 1.40 MCP agents.</p><p>To isolate the contribution of tool-level information, we also construct an agent-only baseline dataset containing only MCP server names and descriptions. During inference, we employ step-wise querying and compare Tool-to-Agent Retrieval against BM25 <ref type="bibr" target="#b30">[31]</ref>, ScaleMCP <ref type="bibr" target="#b20">[21]</ref>, and MCPZero <ref type="bibr" target="#b5">[6]</ref>. Retriever Setup. We evaluate retrieval performance across several embedding models. Specifically, we use 8 embedding models, both closed and open source <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b25">26]</ref>. The datasets are embedded using each model, and semantic similarity search is performed to retrieve relevant entities. We first retrieve the top N ≫ K entities from the tool-agent catalog and then select the top-K unique agents using Algorithm 1. Retrieval accuracy is computed by comparing the retrieved agents against the ground-truth agents associated with each query in the evaluation set.</p><p>Results. Tables <ref type="table">1</ref> and <ref type="table" target="#tab_0">2</ref> show that Tool-to-Agent Retrieval consistently outperforms prior methods across Recall, mAP, and nDCG metrics. Our approach achieves superior performance over all baselines, with gains observed across multiple embedding families including Vertex AI, Gemini, Titan, OpenAI, and MiniLM. These improvements arise primarily from the richer retrieval corpus that jointly indexes both tools and agents, enabling finer-grained semantic alignment. Importantly, the performance lift is not attributable to tool-level retrieval alone. The joint index supports nuanced matches while preserving agent context, as evidenced by 39.13% of retrieved top-K items originating from the agent corpus C A and 34.44% of matched top-K tools also tracing back to C A . Together, these results demonstrate that explicitly linking tools to their parent agents mitigates context dilution and improves multi-step routing without sacrificing fine-grained precision. Across all eight embedding models, Tool-to-Agent Retrieval exhibited remarkably stable improvements, with standard deviations of 0.02 in Recall@5 and 0.01 in nDCG@5 relative to MCPZero. This consistency indicates that the gains are architecture-agnostic and primarily driven by the unified indexing design rather than embedding-specific behavior. The strongest relative improvement was observed on Amazon Titan v2 (Recall@5 improved from 0.66 to 0.85, a +28% relative gain), while even the compact All-MiniLM-L6-v2 model achieved a +13% improvement, confirming generalizability across both proprietary and open-source embeddings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Conclusion</head><p>Recent advances in LLM multi-agent systems enable scalable orchestration of sub-agents coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. We introduce Tool-to-Agent Retrieval, a unified framework for large language model (LLM) multi-agent systems that embeds both tools and their parent agents in a shared vector space, linked through metadata relationships. By explicitly modeling tool capabilities and enabling traversal between tool-and agent-level representations, our approach supports granular retrieval decisions that preserve fine-grained context without the dilution introduced by coarse agent summaries. Experiments across eight embedding models on the LiveMCPBench benchmark demonstrate substantial improvements over prior agent retrievers, with gains of 19.4% in Recall@5 and 17.7% in nDCG@5. These results highlight a promising direction for unifying tool and agent selection, motivating future research into retrieval architectures that scale across increasingly complex agent networks.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Comparison of agent-only retrieval (left) and the proposed Tool-to-Agent Retrieval (right), which embeds tools and agents in a shared vector space to support joint retrieval and traversal.</figDesc><graphic coords="2,134.77,115.84,345.77,127.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 .</head><label>2</label><figDesc>Per-embedding comparison against MCPZero</figDesc><table><row><cell>Retriever Model</cell><cell cols="2">Recall@5</cell><cell cols="2">nDCG@5</cell><cell cols="2">mAP@5</cell></row><row><cell></cell><cell cols="6">Ours MCPZero Ours MCPZero Ours MCPZero</cell></row><row><cell>Vertex AI text embedding 005</cell><cell>0.87</cell><cell>0.74</cell><cell>0.48</cell><cell>0.42</cell><cell>0.36</cell><cell>0.32</cell></row><row><cell>Gemini Embedding 001</cell><cell>0.86</cell><cell>0.74</cell><cell>0.49</cell><cell>0.44</cell><cell>0.37</cell><cell>0.34</cell></row><row><cell>Amazon titan embed text v2</cell><cell>0.85</cell><cell>0.66</cell><cell>0.47</cell><cell>0.37</cell><cell>0.35</cell><cell>0.28</cell></row><row><cell>Amazon titan embed text v1</cell><cell>0.85</cell><cell>0.65</cell><cell>0.48</cell><cell>0.39</cell><cell>0.36</cell><cell>0.30</cell></row><row><cell cols="2">OpenAI text embedding ada 002 0.83</cell><cell>0.70</cell><cell>0.50</cell><cell>0.40</cell><cell>0.39</cell><cell>0.30</cell></row><row><cell cols="2">OpenAI text embedding 3 small 0.87</cell><cell>0.72</cell><cell>0.49</cell><cell>0.41</cell><cell>0.36</cell><cell>0.31</cell></row><row><cell cols="2">OpenAI text embedding 3 large 0.87</cell><cell>0.74</cell><cell>0.50</cell><cell>0.42</cell><cell>0.38</cell><cell>0.32</cell></row><row><cell>All MiniLM L6 v2</cell><cell>0.80</cell><cell>0.67</cell><cell>0.45</cell><cell>0.39</cell><cell>0.33</cell><cell>0.29</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<ptr target="https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html" />
+		<title level="m">Amazon: Amazon titan text embeddings models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Anantha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bandyopadhyay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mahinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chappidi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.10332" />
+		<title level="m">Protip: Progressive tool retrieval improves planning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">ToolreAGt: Tool retrieval for LLM-based complex task solution via retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Braunschweiler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Doddipatla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">C</forename><surname>Zorila</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=LTeBIM1rJL" />
+	</analytic>
+	<monogr>
+		<title level="m">Knowledgeable Foundation Models at ACL 2025</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Cohen-Addad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bateni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Y</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pfister</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.01875" />
+		<title level="m">Re-invoke: Tool invocation rewriting for zero-shot tool retrieval</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">AnyTool: Self-Reflective</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.04253</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Hierarchical Agents for Large-Scale API Calls (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Feng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.01056" />
+		<title level="m">Mcp-zero: Active tool discovery for autonomous llm agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10997</idno>
+		<title level="m">Retrieval-augmented generation for large language models: A survey (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings" />
+		<title level="m">Vertex ai text embeddings models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Planning and editing what you retrieve for enhanced tool learning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.00450" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">Z</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03128</idno>
+		<title level="m">Metatool benchmark for large language models: Deciding whether to use tools and which to use (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">K</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.07103</idno>
+		<title level="m">Graph chain-of-thought: Augmenting large language models by reasoning on graphs (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Sarwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Varshney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Naik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.18553</idno>
+		<title level="m">REAPER: Reasoning based Retrieval Planning for Complex RAG Systems (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.14024</idno>
+		<title level="m">Demonstrate-Search-Predict: Composing retrieval and language models for knowledge-intensive NLP (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Leveraging semantic and lexical matching to improve the recall of document retrieval systems: A hybrid approach</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kuzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bendersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Najork</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.01195</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08244</idno>
+		<title level="m">API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.00839</idno>
+		<title level="m">Toolnet: Connecting large language models with massive tools via tool graph (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.17796</idno>
+		<title level="m">Controlllm: Augment language models with tools by searching on graphs (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Holleis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aumayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Nan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.04682</idno>
+		<title level="m">Toolsandbox: A stateful, conversational, interactive evaluation benchmark for llm tool use capabilities (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lumer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H</forename><surname>Basavaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Burke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Subbiah</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.07223" />
+		<title level="m">Graph ragtool fusion</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Memtool: Optimizing short-term memory management for dynamic tool calling in llm agent multi-turn conversations</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lumer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gulati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H</forename><surname>Basavaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Burke</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.21428" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Scalemcp: Dynamic and auto-synchronizing model context protocol tools for llm agents</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lumer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gulati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H</forename><surname>Basavaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Burke</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.06416" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Toolshed: Scale tool-equipped agents with advanced rag-tool fusion and tool knowledge bases</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lumer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Burke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H</forename><surname>Basavaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Huber</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.14594" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14283</idno>
+		<title level="m">Query Rewriting for Retrieval-Augmented Large Language Models (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Livemcpbench: Can agents navigate an ocean of mcp tools?</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.01780" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Livemcpbench: Can agents navigate an ocean of mcp tools?</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://github.com/icip-cas/LiveMCPBench/blob/main/annotated_data/all_annotations.json" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<ptr target="https://platform.openai.com/docs/guides/embeddings/embedding-models" />
+		<title level="m">OpenAI: Vector embeddings documentation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Unifying large language models and knowledge graphs: A roadmap</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2024.3352100</idno>
+		<ptr target="http://dx.doi.org/10.1109/TKDE.2024.3352100" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="3580" to="3599" />
+			<date type="published" when="2024-07">Jul 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08921</idno>
+		<title level="m">Graph retrieval-augmented generation: A survey (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Toolllm: Facilitating large language models to master 16000+ real-world apis (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<author>
+			<persName><forename type="first">S</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zaragoza</surname></persName>
+		</author>
+		<idno type="DOI">10.1561/1500000019</idno>
+		<ptr target="http://dx.doi.org/10.1561/1500000019" />
+	</analytic>
+	<monogr>
+		<title level="m">The Probabilistic Relevance Framework: BM25 and Beyond</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: Bm25 and beyond</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zaragoza</surname></persName>
+		</author>
+		<idno type="DOI">10.1561/1500000019</idno>
+		<ptr target="http://dx.doi.org/10.1561/1500000019" />
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Hybridrag: Integrating knowledge graphs and vector retrieval augmented generation for efficient information extraction</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sarmah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pasquali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mehta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.04948</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Y</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07697</idno>
+		<title level="m">Think-on-graph: Deep and responsible reasoning of large language model on knowledge graph (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10509</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.08355</idno>
+		<title level="m">Seal-tools: Self-instruct tool learning dataset for agent tuning and detailed benchmark (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">ReAct: Synergizing Reasoning and Acting in Language Models (2023)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Craft: Customizing llms by creating and retrieving from specialized toolsets</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ji</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.17428" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.06201</idno>
+		<title level="m">EASY-TOOL: Enhancing LLM-based Agents with Concise Tool Instruction (2024)</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.06551" />
+		<title level="m">Toolrerank: Adaptive and hierarchy-aware reranking for tool retrieval</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Complexfuncbench: Exploring multi-step and constrained function calling under long-context scenario</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.10132</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
