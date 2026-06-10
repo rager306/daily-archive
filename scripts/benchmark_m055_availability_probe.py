@@ -91,7 +91,7 @@ def _probe_grobid(endpoint: str, timeout: int = 5) -> dict[str, Any]:
 
 
 def _metadata_version() -> str | None:
-    for distribution_name in ("opendataloader-pdf", "opendataloader"):
+    for distribution_name in ("opendataloader-pdf", "opendataloader_pdf"):
         try:
             return importlib.metadata.version(distribution_name)
         except importlib.metadata.PackageNotFoundError:
@@ -100,12 +100,12 @@ def _metadata_version() -> str | None:
 
 
 def _probe_opendataloader() -> dict[str, Any]:
-    spec = importlib.util.find_spec("opendataloader")
+    spec = importlib.util.find_spec("opendataloader_pdf")
     if spec is None:
         return {
             "installed": False,
             "version": _metadata_version(),
-            "import_error": "module opendataloader is not importable",
+            "import_error": "module opendataloader_pdf is not importable",
         }
     return {
         "installed": True,
