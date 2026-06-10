@@ -254,22 +254,39 @@ def _run_generic(catalog: Path, index: Path, selection: Path, *extra: str) -> su
 
 
 def test_m027_wrapper_emits_local_only_handoff_artifacts() -> None:
-    result = subprocess.run(
-        [sys.executable, str(WRAPPER_SCRIPT)],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
+    # The wrapper mutates REAL_CORPUS_DIR (the actual repo path).
+    # Capture and restore to keep working tree clean.
+    real_corpus_dir = Path(__file__).parents[1] / "data" / "article_corpora" / SELECTION_ID
+    real_paths = [
+        real_corpus_dir / "catalog-summary.json",
+        real_corpus_dir / "catalog-diagnostics.jsonl",
+        real_corpus_dir / "catalog-report.md",
+    ]
+    backup = {p: p.read_bytes() if p.exists() else None for p in real_paths}
+    try:
+        result = subprocess.run(
+            [sys.executable, str(WRAPPER_SCRIPT)],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "M027 mixed-source catalog validation passed" in result.stdout
 
-    assert result.returncode == 0, result.stderr
-    assert "M027 mixed-source catalog validation passed" in result.stdout
-
-    corpus_dir = Path(__file__).parents[1] / "data" / "article_corpora" / SELECTION_ID
-    summary = json.loads((corpus_dir / "catalog-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (corpus_dir / "catalog-diagnostics.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    report = (corpus_dir / "catalog-report.md").read_text(encoding="utf-8")
+        summary = json.loads((real_corpus_dir / "catalog-summary.json").read_text(encoding="utf-8"))
+        diagnostics = [json.loads(line) for line in (real_corpus_dir / "catalog-diagnostics.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        report = (real_corpus_dir / "catalog-report.md").read_text(encoding="utf-8")
+    finally:
+        # Restore pre-test state to keep working tree clean.
+        for p, original in backup.items():
+            if original is None:
+                if p.exists():
+                    p.unlink()
+            else:
+                p.write_bytes(original)
 
     assert summary["milestone_id"] == "M027-aakeky"
+    assert summary["slice_id"] == "S01"
     assert summary["slice_id"] == "S01"
     assert summary["article_count"] == 6
     assert summary["local_only_validation"]["network_fetch_attempted"] is False

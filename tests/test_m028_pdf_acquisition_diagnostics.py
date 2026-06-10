@@ -355,7 +355,7 @@ def test_checksum_mismatch_records_typed_non_acquired_reason(tmp_path: Path) -> 
     assert summary["diagnostic_counts"]["artifact_checksum_mismatch"] == 1
 
 
-def test_real_corpus_regeneration_contract() -> None:
+def test_real_corpus_regeneration_contract(tmp_path: Path) -> None:
     script = _load_script()
 
     events, summary = script.build_pdf_acquisition_outputs(
@@ -363,7 +363,7 @@ def test_real_corpus_regeneration_contract() -> None:
         REAL_CORPUS_DIR / "source-acquisition-events.jsonl",
         REAL_CORPUS_DIR / "source-metadata-events.jsonl",
         REAL_CORPUS_DIR / "source-metadata-summary.json",
-        REAL_CORPUS_DIR,
+        tmp_path,
         repo_root=REPO_ROOT,
     )
 
@@ -382,11 +382,11 @@ def test_real_corpus_regeneration_contract() -> None:
     assert by_ref["R03"]["pdf_acquisition"]["reason"] == "not_applicable_non_arxiv_pdf_source"
     assert by_ref["R07"]["candidate_pdf"]["is_candidate"] is False
     assert all(by_ref[ref_id]["pdf_artifact"]["signature_verified"] is True for ref_id in ["R01", "R08", "R12", "R13"])
-    report = (REAL_CORPUS_DIR / "pdf-acquisition-report.md").read_text(encoding="utf-8")
+    report = (tmp_path / "pdf-acquisition-report.md").read_text(encoding="utf-8")
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
-    serialized = (REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl").read_text(encoding="utf-8") + (REAL_CORPUS_DIR / "pdf-acquisition-summary.json").read_text(encoding="utf-8")
+    serialized = (tmp_path / "pdf-acquisition-events.jsonl").read_text(encoding="utf-8") + (tmp_path / "pdf-acquisition-summary.json").read_text(encoding="utf-8")
     for forbidden in ["%PDF-", "<html", "</html>", "raw_text", "chunk_text", "trusted_fact"]:
         assert forbidden.lower() not in serialized.lower()
 
