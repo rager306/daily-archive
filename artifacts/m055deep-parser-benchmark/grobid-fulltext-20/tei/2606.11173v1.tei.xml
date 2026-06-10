@@ -1,0 +1,1600 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">The Role of Feedback Alignment in Self-Distillation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-09">9 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Semih</forename><surname>Kara</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Oğuzhan</forename><surname>Ersoy</surname></persName>
+						</author>
+						<title level="a" type="main">The Role of Feedback Alignment in Self-Distillation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-09">9 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">531185ADB6BB2DED71A01FAD31ABCA6A</idno>
+					<idno type="arXiv">arXiv:2606.11173v1[cs.AI]</idno>
+					<note type="submission">Accepted to the ICML 2026 Workshop on RL from World Feedback (RLxF).</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T11:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Conditioning a language model on additional context, such as feedback on a previous attempt, typically improves its response. Self-distillation trains the model to retain this improvement when the context is not present. The method works by matching the model's output distribution under two settings: a student that sees only the question, and a self-teacher that also sees the context. What the model learns therefore depends on what context the self-teacher receives, yet the design of this context remains largely unexplored.</p><p>We study context design for self-distillation by training a solver on feedback from a frozen critic. We compare three conditions: (i) a binary reward (GRPO), (ii) the reference solution, and (iii) a step-by-step critique aligned to the solver's reasoning trace.</p><p>Step-aligned critique yields the largest gains, outperforming GRPO by 16.11 points and referencesolution-conditioned self-distillation by 5.27 points (Avg@12). Per-token advantage analysis reveals why: step-aligned feedback targets only the tokens where reasoning fails, leaving correct behavior intact. Conditioning on the reference solution, by contrast, pressures the model to change its behavior at every token (even correct steps) because an alternative derivation inevitably differs in phrasing and approach. This suggests that structural alignment between feedback and the solver's reasoning is a key driver of self-distillation effectiveness.</p><p>Prior work has used various forms of context for self-distillation: code execution traces <ref type="bibr" target="#b9">(Hübotter et al., 2026)</ref>, ground-truth solutions <ref type="bibr" target="#b33">(Zhao et al., 2026)</ref>, and feedback from other models <ref type="bibr" target="#b23">(Song et al., 2026)</ref> or users <ref type="bibr" target="#b27">(Wang et al., 2026;</ref><ref type="bibr" target="#b2">Buening et al., 2026)</ref>. In all cases, the context is treated as a fixed choice. No prior work, to our knowledge, studies how the design of the context affects what the model learns.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Post-training with reinforcement learning has become the dominant recipe for improving LLM reasoning. The standard approach is reinforcement learning from verifiable rewards (RLVR) <ref type="bibr" target="#b21">(Shao et al., 2024)</ref>, which learns from a single scalar reward per rollout. This reward says whether the final answer is correct, but not where in the reasoning trace the model went wrong, making credit assignment difficult. Alternatively, distillation <ref type="bibr" target="#b7">(Hinton et al., 2015)</ref> provides dense, token-level supervision. However, it requires access to the logits of a strong teacher, which may not exist behind an API or may be too costly to transfer at scale. Self-distillation <ref type="bibr" target="#b9">(Hübotter et al., 2026;</ref><ref type="bibr" target="#b33">Zhao et al., 2026;</ref><ref type="bibr" target="#b22">Shenfeld et al., 2026)</ref> sidesteps both limitations. The same model plays two roles: a student conditioned on the question alone, and a self-teacher conditioned on the question plus some additional context 𝑐 (e.g., execution traces, follow-up prompts, reference solutions, feedback from another model, etc.). Training minimizes a divergence between these two distributions, distilling capabilities that emerge in-context <ref type="bibr" target="#b1">(Brown et al., 2020)</ref> into the context-free policy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Background</head><p>Distillation. Knowledge distillation <ref type="bibr" target="#b7">(Hinton et al., 2015)</ref> trains a student model 𝜋 𝜃 to match a stronger teacher 𝜋 𝑇 by minimizing the per-token forward KL divergence:</p><formula xml:id="formula_0">L KD = 𝔼 𝑦 ∼ 𝜋 𝑇 (• | 𝑥 ) KL 𝜋 𝑇 ( 𝑦 | 𝑥) 𝜋 𝜃 ( 𝑦 | 𝑥) .<label>(1)</label></formula><p>This provides dense, token-level supervision but requires access to the logits of a strong teacher model (which is often not available). Standard distillation is also off-policy: the student trains on the teacher's rollouts, not its own. Thus, errors compound as the student's distribution drifts from the teacher's at inference time <ref type="bibr" target="#b20">(Ross et al., 2011)</ref>. On-policy distillation <ref type="bibr" target="#b0">(Agarwal et al., 2024;</ref><ref type="bibr" target="#b15">Lu and Thinking Machines, 2025)</ref> addresses this by having the student generate its own rollouts and optimizing a reverse-KL-style distillation objective using token-level supervision from the teacher, but it still requires access to the logits of a stronger teacher.</p><p>RLVR. Reinforcement learning with verifiable rewards removes the need for a teacher. Given a question 𝑥, the model samples 𝐺 rollouts { 𝑦 𝑖 } 𝐺 𝑖=1 ∼ 𝜋 𝜃 (• | 𝑥), each scored by a binary reward 𝑟 𝑖 ∈ {0, 1}. GRPO <ref type="bibr" target="#b21">(Shao et al., 2024)</ref> estimates per-rollout advantages via group normalization:</p><formula xml:id="formula_1">𝐴 GRPO 𝑖 = 𝑟 𝑖 - r 𝜎(𝑟) ,<label>(2)</label></formula><p>where r and 𝜎(𝑟) are the mean and standard deviation of rewards within the group, respectively. The policy is updated by maximizing:</p><formula xml:id="formula_2">J GRPO (𝜃) = 𝔼 { 𝑦 𝑖 } 𝐺 𝑖=1 ∼𝜋 𝜃 (• | 𝑥 ) 𝐺 ∑︁ 𝑖=1 1 | 𝑦 𝑖 | | 𝑦 𝑖 | ∑︁ 𝑡=1 log 𝜋 𝜃 ( 𝑦 𝑖,𝑡 | 𝑥, 𝑦 𝑖,&lt;𝑡 ) 𝐴 𝑖,𝑡 .</formula><p>Notice that 𝐴 𝑖,𝑡 = 𝐴 GRPO 𝑖 is constant across all tokens within a rollout.</p><p>In next-token prediction, a rollout is the model's complete response to a prompt. We present the simplified, on-policy expression (without clipping) and remove the KL penalty. We refer to <ref type="bibr" target="#b21">Shao et al. (2024)</ref> for the full details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-distillation.</head><p>Self-distillation <ref type="bibr" target="#b9">(Hübotter et al., 2026;</ref><ref type="bibr" target="#b33">Zhao et al., 2026;</ref><ref type="bibr" target="#b22">Shenfeld et al., 2026)</ref> unifies the dense supervision of distillation with the teacher-free and on-policy properties of RL. The same model serves as both student and teacher under different prompting contexts. The student is conditioned on the question alone, 𝜋 𝜃 (• | 𝑥, 𝑦 &lt;𝑡 ), whereas the self-teacher is conditioned on the question augmented with additional context 𝑐, giving the distribution 𝜋 𝜃 (• | 𝑥, 𝑐, 𝑦 &lt;𝑡 ).</p><p>Training minimizes a per-token divergence (forward KL, reverse KL, or Janson-Shannon divergence) between these two distributions, yielding the loss function:</p><formula xml:id="formula_3">L SD = 𝔼 𝑦 ∼ 𝜋 𝜃 (• | 𝑥 ) 𝐷 𝜋 𝜃 ( 𝑦 | 𝑥) sg [𝜋 𝜃 ( 𝑦 | 𝑥, 𝑐)] ,<label>(3)</label></formula><p>where 𝐷 is a divergence and sg <ref type="bibr">[•]</ref> denotes stop-gradient. <ref type="bibr" target="#b9">Hübotter et al. (2026)</ref> show that, when 𝐷 is the KL divergence, the gradient of L SD has the same form as the gradient of -J GRPO , but with per-token advantages given by</p><formula xml:id="formula_4">𝐴 SD 𝑡 ( ŷ𝑡 ) = log 𝜋 𝜃 ( ŷ𝑡 | 𝑥, 𝑐, 𝑦 &lt;𝑡 ) -log 𝜋 𝜃 ( ŷ𝑡 | 𝑥, 𝑦 &lt;𝑡 ).<label>(4)</label></formula><p>𝐴 SD 𝑡 quantifies how much the context shifts the model's next-token prediction. Unlike the GRPO advantage, the self-distillation advantage varies at every token position, providing dense credit assignment automatically.</p><p>Self-distillation uses the same model 𝜋 𝜃 in both roles, distinguished only by the context 𝑐. The quality of the resulting advantage (Eq. 4) therefore depends heavily on 𝑐. When 𝑐 is feedback from another model, the practitioner has control over its structure. The topic of this paper is the design of this structure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Solver</head><formula xml:id="formula_5">𝜋 𝜃 Critic 𝜋 critic 1. Solver produces 𝐺 answers to question 𝑥. ( 𝑦 𝑖 ) 𝐺 𝑖=1 ∼ 𝜋 𝜃 (• | 𝑥) 2. Critic provides feedback 𝑓 𝑖 for each 𝑦 𝑖 . ( 𝑓 𝑖 ) 𝐺 𝑖=1 ∼ 𝜋 critic (• | 𝑥, 𝑦 𝑖 )</formula><p>3. Solver minimizes L SD with ( 𝑓 𝑖 ) 𝐺 𝑖=1 as context.</p><p>Figure <ref type="figure">1</ref> Solver-critic training loop. The critic produces feedback given the question 𝑥 and each response 𝑦 𝑖 . Only the solver is trained.</p><p>Solver-critic setup. We implement self-distillation in a solver-critic setup (Figure <ref type="figure">1</ref>). For each math question 𝑥, a trainable solver 𝜋 𝜃 generates step-tagged reasoning traces</p><formula xml:id="formula_6">𝑦 = ⟨step 1 ⟩ . . . ⟨step 𝑁 ⟩⟨answer⟩.</formula><p>A frozen critic 𝜋 critic produces feedback 𝑓 on the solver's response. The solver is then trained with self-distillation (Eq. 3) using 𝑓 as the context 𝑐.</p><p>The only variable across our experimental conditions is 𝑓 . The solver, loss function, divergence, and all hyperparameters remain fixed, isolating feedback structure as the independent variable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Feedback conditions.</head><p>We compare three forms of context/feedback:</p><p>• GRPO (no feedback.) Standard RLVR baseline. The solver generates 𝐺 rollouts per question, each scored with a binary reward. Advantages are group-normalized rewards (Eq. 2). No critic, no self-distillation.</p><p>• RefSol (reference solution). A chain-of-thought reference solution produced by a stronger model, either generated on-the-fly by the critic, or precomputed during dataset construction as by <ref type="bibr" target="#b12">Li et al. (2024)</ref>; <ref type="bibr" target="#b16">Moshkov et al. (2025)</ref>. RefSol mirrors the setup of <ref type="bibr" target="#b33">Zhao et al. (2026)</ref>.</p><p>• StepAlignFB (step-aligned critique). The critic receives both the solver's step-tagged response and the dataset's reference solution, then produces per-step feedback. We prompt it to copy correct steps verbatim and fix incorrect or incomplete steps while staying as close to the solver's reasoning trace as possible. We observed that copying correct steps verbatim activates the model's in-context copying behavior <ref type="bibr" target="#b18">(Olsson et al., 2022)</ref>, which sharpens advantage estimates, especially for correct steps. We give more details in Section 4.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Training Details</head><p>Our training recipe follows <ref type="bibr" target="#b33">Zhao et al. (2026)</ref> with three modifications: no per-token KL clipping, increased student rollout cap, and a critic-conditioned teacher in the StepAlignFB experiments.</p><p>Self-distillation recipe. We use Qwen3-1.7B <ref type="bibr" target="#b29">(Yang et al., 2025)</ref> as the solver. All rollouts are sampled on-policy, at temperature 𝑇=1.1 with a maximum token cap of 2048. We use a group size of 𝐺 = 1 for self-distillation experiments, and set 𝐺 = 8 for GRPO). Divergence measure is forward KL. We use the Thinking-Mode-Off student / Thinking-Mode-On teacher pairing identified as optimal by Zhao et al.. The teacher is held fixed at the initial (LoRA-free) base policy by disabling adapters at the teacher forward; no separate teacher checkpoint is loaded. LoRA <ref type="bibr" target="#b8">(Hu et al., 2021)</ref> adapters are trained on all attention and MLP projections (𝑟=64, 𝛼=128) with AdamW <ref type="bibr" target="#b14">(Loshchilov and Hutter, 2019)</ref>, learning rate 5×10 -6 , effective batch size 32, bf16 precision, gradient checkpointing, and Flash Attention 2 <ref type="bibr" target="#b5">(Dao et al., 2022)</ref>. Distributed training uses DeepSpeed ZeRO-2 with CPU optimizer offload <ref type="bibr" target="#b19">(Rasley et al., 2020)</ref> across 4 H100 GPUs; on-policy generation is served in-process by vLLM <ref type="bibr" target="#b11">(Kwon et al., 2023)</ref> in colocate mode. Details of the training configuration are in Appendix A.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step-aligned feedback variant (StepAlignFB).</head><p>In the step-aligned feedback variant, the teacher conditions on the critique 𝑓 (for a group size of 1, we denote 𝑓 := 𝑓 1 ) instead of the raw reference solution. The critique is produced once per rollout by a frozen reasoning model (Qwen/QwQ-32B; greedy decoding, 𝑇=0, Thinking-Mode-On) served via vLLM. We send a single user-message prompt that contains schema-driven grading instructions, the problem, the reference solution, and the student rollout; we strip the reasoning trace (&lt;think&gt;...&lt;/think&gt;) from the returned content and splice only the structured grader output into the teacher context. The detailed critic prompt template is in Appendix A.1. The critic prompt is long, by design, to keep its feedback actionable and aligned step-by-step with the solution. Nonetheless, vLLM's automatic prefix caching substantially mitigates the resulting overhead.</p><p>Dataset. We train on a difficulty and formatting-filtered subset of OpenMathReasoning <ref type="bibr" target="#b16">(Moshkov et al., 2025)</ref>. Prior work suggests that self-distillation's advantage over RLVR methods is most pronounced on harder problems. Since our focus is on how the form of feedback affects self-distillation, we deliberately target this harder-question regime, where self-distillation is the more relevant choice over RLVR. We additionally require that the problems be tractable for the trained Qwen3-1.7B, so that the model receives actionable feedback rather than failing outright and being handed a full reference-like solution by the critic (which would have collapsed RefSol and StepAlignFB into the same setup). We also require that the critic itself can solve the problem, ensuring that its feedback is coherent and high quality.</p><p>Concretely, we start from the subset of OpenMathReasoning with pass_rate_72b_tir &gt; 0.85, then compute Avg@16 and average formatting accuracy over 16 attempts from the 1.7B model, keeping .00 (s=60) 56.67 (s=50) 35.83 (s=50) 1996.07 (s=10)</p><p>only problems where Avg@16 &lt; 5/16 and the formatting accuracy is greater than 0.9. This yields 312 samples, of which we reserve 30 for evaluation and use the remaining 282 for training. We train for up to 7 epochs, saving checkpoints every 10 optimizer steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Accuracy Results</head><p>We evaluate the three feedback variants on a held-out 30-sample test split from OpenMathReasoning. We report aggregation-style accuracy metrics over 𝑛 = 12 samples per problem, averaged across the test set: Avg@12 (mean fraction of correct samples), Majority-Vote@12 (correctness of the majority answer), and Pass@12 (fraction of problems with at least one correct sample), alongside mean answer length.</p><p>We compare GRPO against the self-distillation variants (RefSol and StepAlignFB) at matched generation compute. GRPO requires 𝐺=8 rollouts per prompt for its group-relative advantage estimate, while self-distillation uses a single rollout (𝐺=1); at equal compute, thus GRPO consumes 8× fewer prompts per step. Nonetheless, each method trains for 7 epochs, ruling out the reduced dataset exposure as a confound.</p><p>Figure <ref type="figure" target="#fig_0">2</ref> plots each metric as a function of the training step. Table <ref type="table" target="#tab_0">1</ref> summarizes the per-metric best value attained by each method across checkpoints (steps 10-70), with the step at which the maximum (minimum for answer length) occurred annotated as s. Because the methods reach peak evaluation performance at different steps, we select the best checkpoint independently for each metric rather than reporting end-of-run values or fixing a single checkpoint per method.</p><p>Observations. We see that using step-aligned feedback as context outperforms feeding the reference solution. Despite never seeing the ground-truth derivation, StepAlignFB outperforms RefSol on the Avg@12 metric at the per-metric best values: +2.33 Pass@12, +13.33 Maj@12, and +5.27 Avg@12 (Table <ref type="table" target="#tab_0">1</ref>). The large Majority-Vote gain in particular suggests StepAlignFB's policy concentrates probability on correct answers more sharply, rather than merely covering them, which is the regime that benefits most from test-time aggregation.</p><p>As with other post-training methods <ref type="bibr" target="#b24">(Stollenwerk, 2022;</ref><ref type="bibr" target="#b33">Zhao et al., 2026)</ref>, self-distillation benefits from early stopping. We trained the model for 7 epochs but found that 5-6 sufficed to reach peak performance across all metrics. This is promising for compute efficiency, however carries a methodological caveat: a fixed end-of-run evaluation can systematically understate self-distillation's ceiling, so per-checkpoint selection on a held-out validation set is necessary for a fair comparison.</p><p>Finally, both distillation methods dominate GRPO throughout training at all fronts except answer length. While GRPO maintains token efficiency, both RefSol and StepAlignFB stay above GRPO in terms of accuracy throughout training, with a final Avg@12 gap on the order of 8 points. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Token-Level Credit Assignment</head><p>In this section, we identify the mechanism by which StepAlignFB outperforms RefSol. The selfdistillation advantages (Eq. 4) tell a clear story: step-aligned feedback causes the self-distillation signal to behave like a process reward model, reinforcing correct steps in the solver's trace while suppressing erroneous ones. Feeding the reference solution as feedback, by contrast, suppresses even fully correct solver trajectories. We present sample problems, student and reference solutions, critiques, and the resulting per-token advantage plots in Appendix B.</p><p>StepAlignFB concentrates signal at errors and reinforces correct steps. At incorrect steps, the self-teacher diverges sharply from the student, producing large negative advantages (Figure <ref type="figure" target="#fig_4">4</ref>). At correct steps, including those preceding the error, the critic faithfully preserves the solver's reasoning path. The result is a targeted learning signal that penalizes errors while reinforces the valid trace that surrounds them. This is analogous to a process reward model, but derived entirely from natural-language feedback, with no reward model training required.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Solution-level feedback produces diffuse suppressive signal.</head><p>Under RefSol, the self-teacher sees a complete alternative derivation: one that reaches the right answer but follows a different reasoning path, uses different notation, and phrases steps differently. Even at steps where the solver was correct, the alternative solution diverges in surface form, creating diffuse negative advantages at almost all tokens (see Figures <ref type="figure" target="#fig_2">3</ref> and <ref type="figure" target="#fig_4">4</ref>). The self-teacher thus mixes genuine error correction with stylistic disagreement, diluting the learning signal.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Verbatim Repetition and the Role of Induction-Head Copying</head><p>Our experiments showed that PRM-like credit assignment requires careful design of what the critic includes in its feedback. How much of the solver's output the critic repeats verbatim determines the quality of the advantage signal. We identify three regimes in the advantage plots. These led us to the "faithful-scribe convention": the critic repeats correct steps verbatim and rewrites only the incorrect ones (Hard Rules 3 and 4 in Appendix A.1). we found this consistently fails. The verbatim quote, placed earlier in the context, anchors the model at the erroneous step: the teacher reproduces tokens from the original (incorrect) attempt, and the per-token advantages are diffusely positive (Figure <ref type="figure" target="#fig_6">6</ref>). The corrective text appended after the quote does not override the in-context copy, and the gradient do not see the error.  Omitting the solution suppresses correct reasoning. The dual failure mode arises when we don't provide any of the correct steps from the original attempt (verbatim). A natural shorthand is to acknowledge correctness without reproducing the trace, e.g. 'This step is correct." However, without the student's tokens in the context, the self-teacher distribution can drift away from the student's at the positions the student got right. The per-token advantages on the correct trace come out diffusely negative (Figure <ref type="figure" target="#fig_8">7</ref>), echoing the diffuse-suppression pattern RefSol produces in Figure <ref type="figure" target="#fig_2">3</ref> despite the feedback endorsing the student.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Full verbatim repetition overrides the corrective signal.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Partial verbatim repetition up to the first error preserves both properties.</head><p>The configuration that works is to repeat the student's solution verbatim only up to (but not including) the erroneous step, replace that step with the correct claim, and continue from there. The teacher's distribution then aligns with the student's tokens on the correct prefix (producing positive advantages), while the absence of an in-context anchor at the erroneous position lets the corrected continuation govern the teacher's predictions there (producing the sharp negative cluster). This is the pattern shown in Figure <ref type="figure" target="#fig_4">4</ref>, and it is precisely the behavior our critic prompt is engineered to elicit.</p><p>A mechanistic hypothesis: induction-head copying. These three regimes mirror the prefix-matchingand-copying behavior of induction heads characterized by <ref type="bibr" target="#b18">Olsson et al. (2022)</ref>. An induction head implements the pattern [ 𝐴] [𝐵] . . . [𝐴] → [𝐵]: when a token sequence appears earlier in the context, attending back to it increases the logit of the token that followed it, biasing the model toward repeating the in-context continuation. Under this account, a full verbatim quote of the student's incorrect step installs the erroneous continuation as the in-context [𝐵]; subsequent corrective text arrives too late and too disconnected from the matching prefix to override the copy. Partial repetition is the only configuration that uses copying selectively: the correct prefix is anchored, so induction-head copying reinforces it; the erroneous step is left un-anchored, so the corrected continuation freshly written by the critic governs the teacher's predictions there. In effect, the faithful-scribe convention recruits induction-head copying as a tool for credit assignment rather than a source of error reinforcement. <ref type="bibr" target="#b9">Hübotter et al. (2026)</ref> report a closely related effect in a different setting. Ablating whether the student's original attempt 𝑦 is included in the teacher template, they find that "including it biases the teacher towards the student's attempt . . . thereby reducing exploration" (their Table <ref type="table">6</ref>), and that "naively including only solutions or initial attempts 𝑦 significantly reduces diversity in the teacher and student." Our findings are consistent with this result and we hypothesize that in-context copying via induction heads is the underlying mechanism. The practical implication, however, is sharper than "do not repeat the attempt." Repetition is not uniformly harmful; it can be harmful only where the student's tokens are wrong. Repeating the correct prefix while withholding the erroneous step converts the copying bias from a liability into the mechanism that concentrates the self-distillation signal at errors. This recovers, by prompt design alone, the localization property that PRMs obtain through step-labeled training.   learning from text feedback using both self-distillation and feedback-modeling objectives, though they re-sample in-context rollouts from the solver. SDFT <ref type="bibr" target="#b22">(Shenfeld et al., 2026)</ref> applied self-distillation to continual learning from demonstrations.</p><p>Process vs. outcome supervision. <ref type="bibr">PRMs (Lightman et al., 2024)</ref> and process-based feedback <ref type="bibr" target="#b25">(Uesato et al., 2022)</ref> assign per-step scalar rewards and consistently outperform outcome supervision <ref type="bibr" target="#b4">(Cobbe et al., 2021)</ref> for math. The advantage is twofold: step-level signals localize errors to the exact reasoning step where they occur, which provides denser credit assignment than a single end-of-trajectory reward, and they discourage models from reaching correct answers via flawed intermediate steps. To avoid the cost of human step-level annotation, follow-up work has automated the labeling process by estimating each step's value from rollouts to the final answer <ref type="bibr" target="#b26">(Wang et al., 2024)</ref>. PRMs are widely used both as verifiers for best-of-N selection and as dense reward signals for RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-agent debate and LLM-as-judge.</head><p>Multi-agent debate <ref type="bibr" target="#b6">(Du et al., 2024)</ref> and LLM-as-judge <ref type="bibr" target="#b34">(Zheng et al., 2023</ref>) introduced inter-model interaction for improving reasoning at inference time. Since then, LLM-generated judgments have been widely adopted as training signals <ref type="bibr" target="#b30">(Yuan et al., 2024;</ref><ref type="bibr" target="#b3">Chan et al., 2023;</ref><ref type="bibr" target="#b32">Zhao et al., 2025)</ref>. Our solver-critic setup follows this paradigm.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Structured reasoning.</head><p>Chain-of-thought prompting <ref type="bibr" target="#b28">Wei et al. (2022)</ref>, along with the closely related scratchpad approach <ref type="bibr" target="#b17">(Nye et al., 2021)</ref>, established that exposing intermediate computations dramatically improves multi-step reasoning, and that prompting alone is often enough to elicit it <ref type="bibr" target="#b10">(Kojima et al., 2022)</ref>. STaR <ref type="bibr" target="#b31">(Zelikman et al., 2022)</ref> extends this by turning CoT from a prompting trick into a training signal: it samples rationales from the model, keeps those that yield the correct answer, and fine-tunes on them, iterating to bootstrap stronger reasoning from the model's own outputs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>As demonstrated with experiments, the structure of feedback is a central determinant of self-distillation effectiveness. Among the three training signals we study, step-aligned feedback (StepAlignFB) consistently performs best on all accuracy metrics, outperforming both the sparse binary reward (used in GRPO) and self-distillation with reference solution (RefSol). This comparison highlights a clear trade-off. Firstly, as observed by prior work as well <ref type="bibr" target="#b9">(Hübotter et al., 2026;</ref><ref type="bibr" target="#b33">Zhao et al., 2026;</ref><ref type="bibr" target="#b23">Song et al., 2026)</ref>, GRPO is simple and inexpensive, but its scalar reward provides only weak credit assignment over long reasoning traces. Secondly, RefSol offers richer supervision than GRPO, yet because it is not explicitly aligned to the solver's intermediate steps, its learning signal remains diffuse. By contrast, StepAlignFB preserves the token-level benefits of self-distillation while adding structural alignment to the solver's reasoning process, yielding an implicit form of process supervision that concentrates around error-prone parts of the trace. At the same time, this stronger signal comes with an important practical drawback: producing high-quality step-aligned critiques requires a capable critique model, which can substantially increase training cost and system complexity relative to the other methods. Reference solutions with chain-of-thought are also commonly sampled from strong models. Nonetheless, unlike solution-specific feedback, they are not tailored to an individual rollout and can be reused across many training runs.</p><p>Our findings suggest that the main advantage of self-distillation is not merely access to additional context, but also access to context whose structure matches the reasoning trajectory the student. Our study, however, is limited in scope: all experiments are conducted on the OpenMathReasoning dataset, so it remains unclear how well these conclusions transfer to other mathematical benchmarks, broader reasoning domains, or different solver-critic configurations. Future work should therefore test whether the benefits of step-aligned critique persist across datasets, model sizes, and tasks, and whether similarly effective but cheaper critique-generation strategies can narrow the cost gap that currently limits the practicality of StepAlignFB.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experiment details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Teacher Prompt -RefSol (reference-solution conditioning)</head><p>Question: {problem} A reference solution is given below. Use it only to ensure correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reference solution: {reference_solution}</head><p>Instructions:</p><p>-Produce a fresh, self-contained solution to the original problem.</p><p>-Use the reference solution only to ensure correctness; do not mention or refer to it.</p><p>Let's think step by step and produce a final answer in the format \boxed{}.</p><p>Figure <ref type="figure">9</ref> Teacher prompt for RefSol. The reference solution provided in the dataset is the privileged context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Teacher Prompt -StepAlignFB (step-aligned feedback conditioning)</head><p>Question: {problem} Expert feedback on a prior attempt at this problem is given below. The feedback diagnoses where the attempt went wrong (by step number) and carries the corrected continuation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Expert feedback: {expert_critique}</head><p>Instructions: -Produce a fresh, self-contained solution to the original problem.</p><p>-Use the feedback only to ensure correctness; do not mention or refer to it.</p><p>Let's think step by step and produce a final answer in the format \boxed{}. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Prompt (Qwen/QwQ-32B)</head><p>You are a math grader producing feedback to a student's solution. Your default behavior is faithful scribe: when the student's work is correct up to some point, reproduce that portion. The exceptions: -In Case D, at the erroneous step only, replace the student's claim with the correct one.</p><p>-In Case C, you may compress the student's correct steps because the student ran out of room --this exception applies ONLY to Case C and nowhere else.</p><p># Decision procedure **Step 1: Classify into ONE case.** Check in order, stop at first match: -No final answer (no \\boxed{{}}, trails off, stops mid-derivation) -&gt; Case C -Boxed answer doesn't match reference (allow equivalent forms: 1/2 == 0.5) -&gt; Case D -Boxed answer matches but a non-routine (non-routine = named theorem, substitution, key equation, or non-algebraic claim) step is unjustified or invalid -&gt; Case B -Else -&gt; Case A **Step 2: Identify the pivotal step N.** -B: step with the unjustified claim. -C: last step before stopping. -D: earliest erroneous step (not inherited errors). **Step 3: Output the matching schema below. No preamble, no postamble, no commentary outside the schema.** # Schemas Every schema begins with a '### Summary' block giving a one-line verdict per student step. The body that follows uses headers and '---' delimiters to make the structure of the feedback explicit. ## Case A ### Summary Step 1: Correct. Step 2: Correct. ... Step &lt;final&gt;: Correct. # Your solution is fully correct. ---&lt;Reproduce the student's solution, including the \\boxed{{}} answer.&gt; ---## Case B ### Summary Step 1: Correct. Step 2: Correct. ... Step &lt;N&gt;: Correct, but missing justification --&lt;one phrase naming what's missing&gt;. Step &lt;N+1&gt;: Correct. ... Step &lt;final&gt;: Correct. # Your solution reaches the correct answer, but Step &lt;N&gt; is missing justification. # This is the part of your solution before the gap: ---&lt;Student's steps 1 through N-1, reproduced.&gt; ---# Step &lt;N&gt; needs the following justification added: ---&lt;Student's step N copied, with the missing justification --named theorem, formula, or equation --appended.&gt; ---# The remainder of your solution is correct: ---&lt;Student's steps N+1 through final, reproduced, including the \\boxed{{}} answer.&gt; ---## Case C ### Summary Step 1: Correct. Step 2: Correct. ... Step &lt;N&gt;: Correct, but stopped here without producing a final answer. # Your solution was correct up to Step &lt;N&gt; but ran out of room before finishing. Below is a condensed version of your work followed by the completion. # This is the correct part of your solution, condensed: ---&lt;Student's steps 1 through N, condensed.&gt; ---# Here is the rest of the solution: ---&lt;Continue the derivation in the student's notation, concisely. One operation per step .&gt; ---# Final answer \\boxed{{&lt;answer&gt;}} ## Case D ### Summary Step 1: Correct. Step 2: Correct. ... Step &lt;N&gt;: Incorrect --&lt;one phrase naming the error&gt;. Step &lt;N+1&gt;: &lt;verdict&gt;. ... Step &lt;final&gt;: &lt;verdict&gt;. # Your solution has an error at Step &lt;N&gt;. Below is your correct work, the corrected step, and the remainder of the solution. # This is the correct part of your solution: ---&lt;Student's steps 1 through N-1, reproduced.&gt; ---# You made an error at Step &lt;N&gt;. Here is the corrected step: ---Step &lt;N&gt;: &lt;Write the correct claim in the student's style --same notation, same step granularity, same level of detail as the surrounding correct steps. Do NOT reproduce the student's incorrect step.&gt; ---# Continuing the solution from the corrected step: ---&lt;Continue the derivation correctly from the corrected step N, in the student's notation and style. Include the final \\boxed{{}} answer.&gt; ---# Hard rules 1. Output ONE schema only. Every schema starts with '### Summary'. No preamble before '### Summary', no postamble after the final delimiter. 2. The '### Summary' block contains one line per student step in the format 'Step &lt;i&gt;: &lt;verdict&gt;' where verdict is "Correct" or "Incorrect --&lt;one phrase&gt;" or a similar terse marker. 3. In Cases A, B, and D, your reproduction of the student's correct steps should follow same or similar equation, notations, wording. If the student's reasoning trace correct, do not deviate from the student's solution.</p><p>4. In Case D, at step N only, replace the student's incorrect claim with the correct claim in the student's style. Correct steps before and after are copied exactly per rule 3. 5. Every hypothesis in the problem must appear in the steps at a named step. 6. No advisory phrases ("be more rigorous", "needs justification") unless immediately followed by the specific content. 7. Equivalent approaches reaching the same answer are CORRECT. The reference is an answer key, not a required path. 8. In Case D, continuations after step N match the student's style: same notation, same step granularity, same level of formality. In Case C, continuations are written concisely --one operation per step, no exploration. 9. Don't invent formulas absent from the reference or not derivable from the problem.</p><p>Problem: {problem} Reference answer: {reference_solution} Student's solution: {student_sol} </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Training configuration (full)</head><p>This appendix lists complete hyperparameters for the self-distillation (with reference solution and ) and GRPO runs reported in the main paper. See Tables <ref type="table" target="#tab_1">2</ref>, <ref type="table" target="#tab_2">3</ref>, 4, and 5 for the values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Sample solution, critique, and self-distillation advantage plots B.1. Example correct student solution</head><p>Problem Let $\mathbb{Z}_{&gt;0}$ be the set of positive integers. Find all functions $f : \mathbb{Z}_{&gt;0} \rightarrow \mathbb{Z}_{&gt;0}$ such that $$f(2m+2n)=f(m)^{2021}f(n)^{2021}$$ for all $m,n \in \mathbb{Z}_{&gt;0}$.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reference Solution</head><p>To solve the functional equation \( f(2m + 2n) = f(m)^{2021} f(n)^{2021} \) for all positive integers \( m \) and \( n \), we proceed as follows:</p><p>1 5. **Uniqueness:** -To show that \( f(k) = 1 \) is the only solution, consider the necessity for \( f(m) f(n) \) to be constant for each \( t \geq 2 \) where \( m + n = t \). This implies \( f \) must be constant.</p><p>-If \( f \) were not constant, the recursive relationships derived would lead to inconsistencies, as shown by the recursive nature of the equation.</p><p>Thus, the only function that satisfies the given equation is:</p><formula xml:id="formula_7">\[ \boxed{1} \]</formula><p>Student Solution We are given the functional equation:</p><formula xml:id="formula_8">$$ f(2m + 2n) = f(m)^{2021} f(n)^{2021} $$</formula><p>for all $ m, n \in \mathbb{Z}_{&gt;0} $, and we are to find all functions $ f : \mathbb{Z}_{&gt;0} \to \mathbb{Z}_{&gt;0} $ satisfying this. We notice that the equation has a multiplicative structure. Let's try to analyze the form of $ f $.</p><p>Define:</p><formula xml:id="formula_9">$$ f(n) = g(n)^{2021} $$ Then: $$ f(2m + 2n) = g(2m + 2n)^{2021} So: $$ \alpha(2m + 2n) = 2021(\alpha(m) + \alpha(n)) $$</formula><p>This is a recursive functional equation. It implies that $ \alpha(n) $ must be linear in the binary representation of $ n $. This is possible only if $ \alpha(n) = k \cdot \log_2 n $, which is not in $ \mathbb{Z}_{&gt;0} $ unless $ k = 0 $.</p><p>So the only solution is:</p><formula xml:id="formula_10">$$ \alpha(n) = 0 \Rightarrow f(n) = 1 $$ --- ### Final Answer: $$ \boxed{f(n) = 1} $$ Figure 12</formula><p>Per-token advantages under each teacher context for correct student solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Example incorrect student solution</head><p>Problem How many solutions are there to the equation \(2x + 3y = 763\)?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reference Solution</head><p>To determine the number of non-negative integer solutions to the equation \(2x + 3y = 763\), we proceed as follows:</p><p>1. **Check for the existence of solutions**: The greatest common divisor of 2 and 3 is 1, and since 1 divides 763, there exist integer solutions to the equation.</p><p>2. **Express \(x\) in terms of \(y\)**: \[ x = \frac{763 -3y}{2} \] For \(x\) to be an integer, \(763 -3y\) must be even. Since 763 is odd, \(3y\) must also be odd, implying that \(y\) must be odd. Let \(y = 2k + 1\) where \(k\) is a non-negative integer. 3. **Substitute \(y = 2k + 1\) into the equation**: \[ x = \frac{763 -3(2k + 1)}{2} = \frac{763 -6k -3}{2} = \frac{760 -6k}{2} = 380 -3k \] 4. **Ensure \(x\) is non-negative**: \[ 380 -3k \geq 0 \implies 380 \geq 3k \implies k \leq \frac{380}{3} \approx 126.67 \] Since \(k\) must be an integer, \(k\) ranges from 0 to 126, inclusive. 5. **Count the number of possible values for \(k\)**: The number of integers from 0 to 126 is: \[ 126 -0 + 1 = 127 \]</p><p>Therefore, the number of non-negative integer solutions to the equation \(2x + 3y = 763\) is \(\boxed{127}\).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Student Solution</head><p>We are given the equation: $$ 2x + 3y = 763 $$ We are to find the number of **integer solutions** $(x, y)$ that satisfy this equation. We have:</p><formula xml:id="formula_11">$$ x = 380 -3k $$ $$ y = 2k + 1 $$</formula><p>There are no restrictions on $k$, so $k$ can be any integer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>---### Step 5: Count the number of integer solutions</head><p>Since $k$ can be any integer, there are **infinitely many integer solutions** to the equation. We need both \(x\) and \(y\) to be non-negative integers.</p><p>For \(x = 380 -3k \geq 0\): \[ 380 -3k \geq 0 \implies k \leq \frac{380}{3} \approx 126.67 \implies k \leq 126 \]</p><p>For \(y = 2k + 1 \geq 0\): \[ 2k + 1 \geq 0 \implies k \geq -\frac{1}{2} \] Since \(k\) is an integer, the smallest possible \(k\) is \(0\).</p><p>Thus, \(k\) must satisfy \(0 \leq k \leq 126\).</p><p>---</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head># Continuing the solution from the corrected step: ---### Step 5: Count the number of integer solutions</head><p>The integer values of \(k\) range from \(0\) to \(126\) inclusive. The number of integers in this range is: \[ 126 -0 + 1 = 127 \]    </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Self-distillation matches or exceeds GRPO across training on OpenMathReasoning. RefSol conditions the teacher on the reference solution provided in the OpenMathReasoning dataset; StepAlignFB substitutes step-level feedback; GRPO is the reward-only baseline.</figDesc><graphic coords="6,81.60,291.22,231.31,177.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Connection to process vs. outcome supervision. Lightman et al. (2024) and Uesato etal. (2022)show that per-step scalar rewards outperform per-problem rewards for math reasoning. Our finding is a distributional generalization: step-aligned textual feedback provides richer-than-scalar process supervision, and the self-distillation mechanism converts it into per-token credit, all without training a reward model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3</head><label>3</label><figDesc>Figure 3 Fully-correct rollout. Per-token advantages 𝐴 SD 𝑡 ( ŷ𝑡 ) (see Eq. 4) along a single student trajectory that reaches the correct boxed answer. StepAlignFB (top) produces positive advantages throughout the trace, reinforcing the student's correct reasoning trace. RefSol (bottom) produces diffuse negative advantages across the entire rollout: the teacher prefers the alternative derivation's surface form even though the student's answer is correct, mixing stylistic disagreement into the gradient.</figDesc><graphic coords="7,81.60,236.75,481.90,218.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>A natural first question is whether to expose the full original attempt in the feedback: "Here is your previous attempt: &lt;previous_attempt&gt;. Step 𝑁 is incorrect; the correct step should be &lt;corrected_step&gt;." Consistent with Hübotter et al. (2026),</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4</head><label>4</label><figDesc>Figure 4 Incorrect step. Per-token advantages for a rollout containing an error at the step marked by the dashed line. StepAlignFB (top) produces a sharp negative shift at the tokens after the erroneous step, while reinforcing correct reasoning in the preceding steps. RefSol (bottom) produces broadly negative advantages across the entire trace, conflating the error with everywhere the student's path diverges from the canonical solution.</figDesc><graphic coords="8,81.60,85.04,481.90,218.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5</head><label>5</label><figDesc>Figure5Incomplete solution. Per-token advantages for a rollout that exhausted the token budget without producing a final answer. The student's reasoning trace is unpromising from the start and quickly devolves into guessing values for the variable before running out of budget. The critic responds by producing a complete alternative solution, yielding update signals similar to those of the reference solution.</figDesc><graphic coords="8,81.60,373.34,481.90,218.67" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6</head><label>6</label><figDesc>Figure6Full verbatim repetition with appended correction. The critic includes the student's incorrect step verbatim and follows it with a textual correction. Induction-head copying of the original (incorrect) tokens dominates the teacher's distribution; per-token advantages are overwhelmingly positive.</figDesc><graphic coords="9,81.60,504.99,481.90,107.83" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>for LLMs. Main references for self-distillation are Hübotter et al. (2026); Shenfeld et al. (2026); Song et al. (2026); Zhao et al. (2026). Hübotter et al. (2026) introduced SDPO and used code execution trace, reference solutions from datasets, and stronger models' solutions as feedback. OPSD Zhao et al. (2026) used ground-truth solutions as teacher context. RLTF (Song et al., 2026) formalized</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7</head><label>7</label><figDesc>Figure7Solution omitted from the teacher context. For a fully correct student solution, the critic acknowledges correctness without reproducing the trace. With no in-context anchor on the student's tokens, the teacher's distribution drifts toward alternative surface forms, producing negative advantages across the correct trajectory.</figDesc><graphic coords="10,81.60,85.04,481.90,107.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>step by step. Format each step as: ### Step N: &lt;topic&gt; &lt;reasoning for step N&gt; Please reason step by step, and put your final answer within \boxed{}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 8</head><label>8</label><figDesc>Figure8Solver prompt. The solver sees only the problem statement, with the same step-formatted instruction used by the evaluation harness so that on-policy training and inference share a prompt template.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 10</head><label>10</label><figDesc>Figure 10 Teacher prompt for StepAlignFB. The reference solution is replaced by a critic-generated critique 𝑓 produced by Qwen/QwQ-32B (Figure 11).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 11</head><label>11</label><figDesc>Figure11Critic prompt. A single user-turn message sent to a frozen Qwen/QwQ-32B. The grader is instructed to classify the student rollout into one of four cases (A: fully correct; B: correct answer with an unjustified non-routine step; C: ran out of tokens; D: incorrect answer) and emit feedback in a schema specific to that case. The returned reasoning trace (&lt;think&gt;...&lt;/think&gt;) is stripped before the structured grader output is spliced into the final feedback 𝑓 for the StepAlignFB teacher prompt (Figure10). Unicode characters in the deployed prompt have been transliterated here for printability.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>. **Initial Substitution and Simplification:** -Set \( m = n \). Then the equation becomes: \[ f(4m) = f(m)^{4042} \] -This indicates that \( f \) at even arguments can be expressed in terms of \( f \) at smaller arguments. 2. **General Form Analysis:** -For any positive integers \( m \) and \( n \), the argument \( 2m + 2n = 2(m + n) \). Thus, \( f(2(m + n)) = f(m)^{2021} f(n)^{2021} \). -Consider \( m = 1 \) and vary \( n positive integer solution to this equation is \( c = 1 \). 4. **Verification:** -Verify that \( f(k) = 1 \) satisfies the original equation: \[ f(2m + 2n) = 1 \quad \text{and} \quad f(m)^{2021} f(n)^{2021} = 1^{2021} \cdot 1^{2021} = 1 \] -Both sides are equal, confirming that \( f(k) = 1 \) is a solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><figDesc>implies $ c = c^{4042} $, which is only true if $ c = 1 $, since $ c \in \mathbb{Z}_{&gt;0} $.So $ f(n) = 1 $ is a possible solution.generally true for all $ m, n $. So $ f(n) = n^k $ is not a solution unless $ k = 0 $, which gives $ f(n) = 1 $.---### Step 2: Consider functional equations with exponentsWe notice that the equation has a multiplicative structure. Let's try to analyze the form of $ f $.#### Try: $ f(n) = c $, a constant.+ 2n) = 1, \quad f(m)^{2021} f(n)^{2021} = 1^{2021} \cdot 1^{2021} = 1 $$ So this satisfies the equation. #### Try: $ f(n) = n^k $ for some exponent $ k \in \mathbb{Z} $.generally true for all $ m, n $. So $ f(n) = n^k $ is not a solution unless $ k = 0 $, which gives $ f(n) = 1 $.---### Step 2: Consider functional equations with exponents</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>$ to be an integer, the expression $763 -3y$ must be even. ---### Step 2: Determine conditions on $yconsider the parity (even or odd nature) of the numbers involved: -$763$ is **odd** -$3y$ is **odd** if $y$ is **odd**, and **even** if $y$ is **even** So, odd minus odd = even odd minus even = odd Therefore, for $763 -3y$ to be **even**, $3y$ must be **odd**, which means $y$ must be **odd**. ---### Step 3: Let $y = 2k + 1$, where $k$ is an integer Substitute $y = 2k + 1$ into the equation: Step 4: Find all integer values of $k$ such that $x$ and $y$ are integers</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><figDesc>Incorrect --failed to consider non-negative constraints on x and y. Step 5: Correct. # Your solution has an error at Step 4. Below is your correct work, the corrected step, and the remainder of the solution. # This is the correct part of your solution: ---We are given the equation: find the number of **integer solutions** $(x, y)$ that satisfy this equation. $ to be an integer, the expression $763 -3y$ must be even. consider the parity (even or odd nature) of the numbers involved: -$763$ is **odd** -$3y$ is **odd** if $y$ is **odd**, and **even** if $y$ is **even** So, odd minus odd = even odd minus even = odd Therefore, for $763 -3y$ to be **even**, $3y$ must be **odd**, which means $y$ must be *an error at Step 4. Here is the corrected step: ---### Step 4: Find all integer values of $k$ such that $x$ and $y$ are non-negative integers</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><graphic coords="24,81.60,363.49,481.90,218.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><graphic coords="29,81.60,133.35,481.90,218.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 Per-metric best evaluation results on OpenMathReasoning. For</head><label>1</label><figDesc>each (method, metric) pair we report the best value across all training checkpoints and annotate the step (s) at which the maximum (or minimum, for answer length) was attained. Bold marks the per-column winner.</figDesc><table><row><cell></cell><cell>Pass@12</cell><cell>Maj@12</cell><cell>Avg@12</cell><cell>Mean Answer Length</cell></row><row><cell>GRPO</cell><cell cols="4">76.67 (s=40) 26.67 (s=50) 19.72 (s=30) 1681.49 (s=50)</cell></row><row><cell>RefSol</cell><cell cols="4">86.67 (s=60) 43.33 (s=60) 30.56 (s=40) 1935.83 (s=10)</cell></row><row><cell cols="2">StepAlignFB 90</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2</head><label>2</label><figDesc>Self-distillation training configuration. The step-aligned feedback block lists the additional critic-server settings.</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Model and adapters</cell><cell></cell></row><row><cell>Base model</cell><cell>Qwen3-1.7B</cell></row><row><cell>Precision</cell><cell>bfloat16</cell></row><row><cell>Attention implementation</cell><cell>Flash Attention 2</cell></row><row><cell>LoRA rank 𝑟</cell><cell>64</cell></row><row><cell>LoRA 𝛼</cell><cell>128</cell></row><row><cell>LoRA dropout</cell><cell>0.0</cell></row><row><cell>LoRA target modules</cell><cell>{q,k,v,o,gate,up,down}_proj</cell></row><row><cell>Optimization</cell><cell></cell></row><row><cell>Optimizer</cell><cell>AdamW</cell></row><row><cell>Learning rate</cell><cell>5×10 -6</cell></row><row><cell>LR schedule</cell><cell>constant</cell></row><row><cell>Weight decay</cell><cell>0.0</cell></row><row><cell>Gradient clipping (global)</cell><cell>0.1</cell></row><row><cell>Per-device train batch size</cell><cell>2</cell></row><row><cell>Gradient accumulation steps</cell><cell>4</cell></row><row><cell>GPUs (data-parallel)</cell><cell>4</cell></row><row><cell>Effective batch size</cell><cell>32</cell></row><row><cell>Gradient checkpointing</cell><cell>Enabled</cell></row><row><cell>DeepSpeed ZeRO stage</cell><cell>2 (CPU optimizer offload)</cell></row><row><cell>Epochs (max)</cell><cell>7</cell></row><row><cell>Save / eval interval</cell><cell>every 10 optimizer steps</cell></row><row><cell>Sequence lengths</cell><cell></cell></row><row><cell>Max student completion | ŷ| max</cell><cell>2048</cell></row><row><cell>Max packed sequence length</cell><cell>20,000</cell></row><row><cell>On-policy sampling</cell><cell></cell></row><row><cell>Sampling backend</cell><cell>vLLM (colocate)</cell></row><row><cell>Temperature</cell><cell>1.1</cell></row><row><cell>Top-𝑝</cell><cell>0.95</cell></row><row><cell>Top-𝑘</cell><cell>20</cell></row><row><cell>Rollouts per problem</cell><cell>1</cell></row><row><cell>Student thinking mode</cell><cell>OFF</cell></row><row><cell>Teacher thinking mode</cell><cell>ON</cell></row><row><cell>Distillation objective</cell><cell></cell></row><row><cell>Objective</cell><cell>Full-vocabulary generalized JSD</cell></row><row><cell>𝛽 (forward KL)</cell><cell>0</cell></row><row><cell>Per-token KL clip 𝜏</cell><cell>disabled</cell></row><row><cell>Teacher policy</cell><cell>Fixed = initial (LoRA-disabled) base</cell></row><row><cell>Teacher temperature</cell><cell>1.0</cell></row><row><cell>𝜆 (student-mixing)</cell><cell>1</cell></row><row><cell>StepAlignFB only: critic server</cell><cell></cell></row><row><cell>Critic model</cell><cell>Qwen/QwQ-32B (frozen)</cell></row><row><cell>Critic inference backend</cell><cell>vLLM (separate node, OpenAI-compat HTTP)</cell></row><row><cell>Critic sampling</cell><cell>greedy (𝑇=0), top-𝑝 0.95, top-𝑘 off</cell></row><row><cell>Critic max output tokens</cell><cell>8,000</cell></row><row><cell>Critic request timeout</cell><cell>240 s</cell></row><row><cell>Fallback on truncation</cell><cell>Enabled</cell></row><row><cell>Reasoning-trace handling</cell><cell>Strip everything up to and including &lt;/think&gt;</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3</head><label>3</label><figDesc>GRPO baseline configuration<ref type="bibr" target="#b21">(Shao et al., 2024)</ref>. Effective batch size and learning rate are matched to self-distillation experiments (RefSol and StepAlignFB); the larger generation cap and group size are the standard GRPO configuration.</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Base model</cell><cell>Qwen3-1.7B</cell></row><row><cell>Learning rate</cell><cell>5×10 -6</cell></row><row><cell>Per-device batch size</cell><cell>1</cell></row><row><cell>Gradient accumulation</cell><cell>8</cell></row><row><cell>GPUs</cell><cell>4</cell></row><row><cell>Effective batch size</cell><cell>32</cell></row><row><cell>LoRA 𝑟 / 𝛼</cell><cell>64 / 128</cell></row><row><cell>LoRA target modules</cell><cell>{q,k,v,o,gate,up,down}_proj</cell></row><row><cell>Max prompt length</cell><cell>2,048</cell></row><row><cell>Max completion length</cell><cell>8,000</cell></row><row><cell>Rollouts per prompt 𝐺</cell><cell>8</cell></row><row><cell>Sampling temperature</cell><cell>1.2</cell></row><row><cell>Loss type</cell><cell>grpo</cell></row><row><cell>Reward scaling</cell><cell>group-normalized</cell></row><row><cell>KL coefficient 𝛽</cell><cell>0</cell></row><row><cell>PPO inner iterations</cell><cell>2</cell></row><row><cell>Reward signal</cell><cell>binary, verified by math_verify</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4</head><label>4</label><figDesc>Deltas of our setup from<ref type="bibr" target="#b33">Zhao et al. (2026)</ref>. Items not listed are unchanged.</figDesc><table><row><cell>Item</cell><cell>Zhao et al.</cell><cell>Ours</cell></row><row><cell>Training corpus</cell><cell>OpenThoughts math subset</cell><cell>OpenMathReasoning (difficulty and format-filtered)</cell></row><row><cell cols="3">Teacher conditioning Reference solution (RefSol) Critic feedback 𝑓 (StepAlignFB)</cell></row><row><cell>Student rollout cap</cell><cell>1,024 tokens</cell><cell>2,048 tokens</cell></row><row><cell>Per-token KL clip 𝜏</cell><cell>Enabled (untuned)</cell><cell>Disabled</cell></row><row><cell>Training budget</cell><cell>100 optimizer steps</cell><cell>Up to 7 epochs</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5</head><label>5</label><figDesc>Evaluation configuration.</figDesc><table><row><cell>Parameter</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Define:</p><formula xml:id="formula_12">$$ f(n) = g(n)^{2021} $$ Then: $$ f(2m + 2n) = g(2m + 2n)^{2021} $$ On the other hand: $$ f(m)^{2021} f(n)^{2021} = [g(m)^{2021}]^{2021} [g(n)^{2021}]^{2021} = g(m)^{2021^2} g(n)^{2021^2} $$</formula><p>So the equation becomes:</p><formula xml:id="formula_13">$$ g(2m + 2n)^{2021} = g(m)^{2021^2} g(n)^{2021^2} $$</formula><p>This is a functional equation for $ g $. It's similar in form to the original one, but with the exponent $ 2021^2 $ instead of $ 2021 $. So the structure is consistent.</p><p>We can iterate this and try to find a function $ g $ such that this holds.</p><p>---</p><formula xml:id="formula_14">### Step 3: Try $ g(n) = 1 $ for all $ n $ Then: $$ g(2m + 2n) = 1, \quad g(m)^{2021^2} g(n)^{2021^2} = 1^{2021^2} \cdot 1^{2021^2} = 1 $$ So this works. Then: $$ f(n) = g(n)^{2021} = 1^{2021} = 1 $$ Thus, $ f(n) = 1 $ is a solution. --- ### Step 4: Uniqueness</formula><p>Suppose there is another function $ f $ satisfying the condition. Suppose $ f(n) \neq 1 $ for some $ n $.</p><p>Let's try $ f(1) \neq 1 $. Then we can define $ f(2m + 2n) = f(m)^{2021} f(n)^{2021} $, which is a multiplicative function in $ m, n $, but not necessarily additive.</p><p>If we consider the form of the function, we can try to look for functions that are multiplicative or power functions. Suppose $ f(n) = c^{\alpha(n)} $, with some function $ \alpha(n) $.</p><p>Then the equation becomes:</p><formula xml:id="formula_15">$$ f(2m + 2n) = c^{\alpha(2m + 2n)} = f(m)^{2021} f(n)^{2021} = (c^{\alpha(m)})^{2021} (c^{\alpha(n)})^{2021} = c^{2021\alpha(m) + 2021\alpha(n)} $$ So: $$ \alpha(2m + 2n) = 2021(\alpha(m) + \alpha(n)) $$ This is a recursive functional equation. It implies that $ \alpha(n) $ must be linear in the binary representation of $ n $. This is possible only if $ \alpha(n) = k \cdot \log_2 n $, which is not in $ \mathbb{Z}_{&gt;0} $ unless $ k = 0 $.</formula><p>So the only solution is:</p><formula xml:id="formula_16">$$ \alpha(n) = 0 \Rightarrow f(n) = 1 $$ --- ### Final Answer: $$ \boxed{f(n) = 1} $$&lt;|im_end|&gt;</formula><p>Step-level Critique ### Summary Step 1: Correct. Step 2: Correct. Step 3: Correct. Step 4: Correct. Step 5: Correct.</p><p># Your solution is fully correct.</p><p>---We are given the functional equation:</p><formula xml:id="formula_17">$$ f(2m + 2n) = f(m)^{2021} f(n)^{2021} $$</formula><p>for all $ m, n \in \mathbb{Z}_{&gt;0} $, and we are to find all functions $ f : \mathbb{Z}_{&gt;0} \to \mathbb{Z}_{&gt;0} $ satisfying this.</p><p>---</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>### Step 1: Try simple functions</head><p>Let's try simple functions like constant functions, linear functions, or exponential functions.</p><p>$$ On the other hand:</p><formula xml:id="formula_18">$$ f(m)^{2021} f(n)^{2021} = [g(m)^{2021}]^{2021} [g(n)^{2021}]^{2021} = g(m)^{2021^2} g(n)^{2021^2} $$ So the equation becomes: $$ g(2m + 2n)^{2021} = g(m)^{2021^2} g(n)^{2021^2} $$</formula><p>This is a functional equation for $ g $. It's similar in form to the original one, but with the exponent $ 2021^2 $ instead of $ 2021 $. So the structure is consistent.</p><p>We can iterate this and try to find a function $ g $ such that this holds.</p><p>---</p><formula xml:id="formula_19">### Step 3: Try $ g(n) = 1 $ for all $ n $ Then: $$ g(2m + 2n) = 1, \quad g(m)^{2021^2} g(n)^{2021^2} = 1^{2021^2} \cdot 1^{2021^2} = 1 $$</formula><p>So this works. Then:  </p><formula xml:id="formula_20">$$ f(n) = g(n)^{2021} = 1^{2021} = 1 $$ Thus, $ f(n) =</formula></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><figDesc>another function $ f $ satisfying the condition. Suppose $ f(n) \neq 1 $ for some $ n $.Let's try $ f(1) \neq 1 $. Then we can define $ f(2m + 2n) = f(m)^{2021} f(n)^{2021} $, which is a multiplicative function in $ m, n $, but not necessarily additive.If we consider the form of the function, we can try to look for functions that are multiplicative or power functions. Suppose $ f(n) = c^{\alpha(n)} $, with some function $ \alpha(n) $.Then the equation becomes:$$ f(2m + 2n) = c^{\alpha(2m + 2n)} = f(m)^{2021} f(n)^{2021} = (c^{\alpha(m)})^{2021} (c^{\alpha(n)})^{2021} = c^{2021\alpha(m) + 2021\alpha(n)} $$Therefore, the number of non-negative integer solutions to the equation \(2x + 3y = 763\) is \(\boxed{127}\).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><head>Figure 13</head><label>13</label><figDesc>Per-token advantages under each teacher context for incorrect student solution.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">On-policy distillation of language models: Learning from self-generated mistakes</title>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nino</forename><surname>Vieillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongchao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Stanczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sabela</forename><surname>Ramos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Geist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bachem</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.13649</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kleine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Buening</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Hübotter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barna</forename><surname>Pásztor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Idan</forename><surname>Shenfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giorgia</forename><surname>Ramponi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2603.12273</idno>
+		<title level="m">Aligning language models from user interactions</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxuan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.07201</idno>
+		<title level="m">Towards better llm-based evaluators through multi-agent debate</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Flashattention: Fast and memory-efficient exact attention with io-awareness</title>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">Y</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atri</forename><surname>Rudra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.14135</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Distilling the knowledge in a neural network</title>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1503.02531</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<title level="m">Low-rank adaptation of large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning via selfdistillation</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Hübotter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Idan</forename><surname>Shenfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernhard</forename><surname>Schölkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.20802</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.06180</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Soletskyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Costa</forename><surname>Shengyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziju</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Fleureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislas</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Numinamath</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/AI-MO/NuminaMath-CoT" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.05101</idno>
+		<title level="m">Decoupled weight decay regularization</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">On-policy distillation</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thinking</forename><surname>Machines</surname></persName>
+		</author>
+		<ptr target="https://thinkingmachines.ai/blog/on-policy-distillation/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Blog post</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Aimo-2 winning solution: Building state-of-the-art mathematical reasoning models with openmathreasoning dataset</title>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Moshkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darragh</forename><surname>Hanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Toshniwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christof</forename><surname>Henkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benedikt</forename><surname>Schifferer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Gitman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.16891</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00114</idno>
+		<title level="m">Show your work: Scratchpads for intermediate computation with language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Nanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11895</idno>
+		<title level="m">-context learning and induction heads</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Deepspeed: System optimizations enable training deep learning models with over 100 billion parameters</title>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining, KDD &apos;20</title>
+		<meeting>the 26th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining, KDD &apos;20<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3505" to="3506" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">A reduction of imitation learning and structured prediction to no-regret online learning</title>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Drew</forename><surname>Bagnell</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fourteenth International Conference on Artificial Intelligence and Statistics</title>
+		<editor>
+			<persName><forename type="first">Geoffrey</forename><surname>Gordon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Dunson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Miroslav</forename><surname>Dudík</surname></persName>
+		</editor>
+		<meeting>the Fourteenth International Conference on Artificial Intelligence and Statistics<address><addrLine>Fort Lauderdale, FL, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2011-04">Apr 2011</date>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="11" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">DeepSeekMath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Self-distillation enables continual learning</title>
+		<author>
+			<persName><forename type="first">Idan</forename><surname>Shenfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehul</forename><surname>Damani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Hübotter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.19897</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Expanding the capabilities of reinforcement learning via text feedback</title>
+		<author>
+			<persName><forename type="first">Yuda</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fahim</forename><surname>Tajwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Remi</forename><surname>Munos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Andrew</forename><surname>Bagnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aarti</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Zanette</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.02482</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Adaptive fine-tuning of transformer-based language models for named entity recognition</title>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Stollenwerk</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.02617</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.14275</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08935</idno>
+		<title level="m">Math-Shepherd: Verify and reinforce LLMs step-by-step without human annotations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Openclaw-rl: Train any agent simply by talking</title>
+		<author>
+			<persName><forename type="first">Yinjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2603.10165</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghao</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingze</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruize</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinger</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Qiu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Self-rewarding language models</title>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">STaR: Bootstrapping reasoning with reasoning</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Absolute zero: Reinforced self-play reasoning with zero data</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.03335</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Self-distilled reasoner: On-policy self-distillation for large language models</title>
+		<author>
+			<persName><forename type="first">Siyan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihui</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengchen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guan</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feiyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Grover</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.18734</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Judging LLM-as-a-judge with MT-Bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

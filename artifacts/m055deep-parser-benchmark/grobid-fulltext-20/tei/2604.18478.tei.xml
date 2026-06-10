@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">WorldDB: A Vector Graph-of-Worlds Memory Engine with Ontology-Aware Write-Time Reconciliation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-04-21">April 21, 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Harish</forename><surname>Santhanalakshmi Ganesan</surname></persName>
+							<email>harishsg99@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">Independent Researcher</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">WorldDB: A Vector Graph-of-Worlds Memory Engine with Ontology-Aware Write-Time Reconciliation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-04-21">April 21, 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6A6BE8D89473FB8C1E76FA94F3B100A8</idno>
+					<idno type="arXiv">arXiv:2604.18478v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T11:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>agentic memory</term>
+					<term>knowledge graphs</term>
+					<term>content-addressing</term>
+					<term>bitemporal reasoning</term>
+					<term>long-term memory</term>
+					<term>LongMemEval</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Persistent memory is the bottleneck separating stateless language-model chatbots from long-running agentic systems. Retrieval-augmented generation (RAG) backed by flat vector stores fragments facts into chunks, loses cross-session identity, and has no first-class notion of supersession or contradiction. Recent bitemporal knowledge-graph systems (Graphiti, Memento, Hydra DB) address some of these failures with typed edges and valid-time metadata, but the graph itself remains flat-there is no mechanism for recursive composition, no contentaddressed invariants on nodes, and edge types carry no behavior beyond a label. We present WorldDB, a memory engine organized around three non-standard commitments: (i) every node is a world-a container with its own interior subgraph, its own ontology scope, and its own composed embedding, recursive to arbitrary depth; (ii) nodes are content-addressed and immutable, so any edit produces a new hash at the edited node and every ancestor, giving a Merkle-style audit trail for free; (iii) edges are write-time programs-each edge type ships an on_insert/on_delete/on_query_rewrite handler that enforces its own semantics (supersession closes validity, contradicts preserves both sides, same_as stages a merge proposal), so no raw append path exists. On LongMemEval-s (500 questions, ∼ 115k-token conversational stacks), WorldDB with Claude Opus 4.7 as answerer achieves 96.40% overall accuracy / 97.11% task-averaged, a +5.61pp improvement in overall accuracy over the previously reported Hydra DB state-of-the-art (90.79%) and +11.20pp over Supermemory (85.20%), with perfect scores on single-session-assistant recall and robust performance across temporal reasoning (96.24%), knowledge update (98.72%), and preference synthesis (96.67%). Ablations show that the engine's graph layer-resolver-unified entities and typed refers_to edges-contributes +7.0pp task-averaged independently of the underlying answerer.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>As language-model deployments shift from stateless chat to long-running agents that span days or months of interaction, the memory layer has become the principal engineering constraint. Contextwindow scaling addresses none of the underlying problems: latency and cost scale super-linearly with sequence length <ref type="bibr" target="#b12">[13]</ref>, and the "lost-in-the-middle" effect <ref type="bibr" target="#b9">[10]</ref> produces systematic degradation as relevant facts move further from the input boundaries. More corrosive is context rot <ref type="bibr" target="#b6">[7]</ref>-the gradual accumulation of stale, contradicted, or redundant content that crowds out salient signal even within a nominally sufficient context budget. Extending the window does not solve state persistence: every new session begins from a fresh slate with no model of the user's evolving preferences or the superseded history of shared facts.</p><p>Retrieval-augmented generation (RAG) <ref type="bibr" target="#b8">[9]</ref> was intended to externalize memory, but the canonical implementation inherits three structural weaknesses that have proved difficult to patch:</p><p>• Semantic fragmentation. Naive chunking destroys cross-segment dependencies. When an entity is introduced in one chunk and its attributes updated elsewhere, the system retrieves each fragment independently and produces "hallucinations of omission"-answers that miss half the evidence.</p><p>• Temporal stagnation. Flat vector stores are chronology-agnostic. They cannot distinguish "I live in Austin now" from "I lived in Austin in 2022"; retrieval returns both and the language model invents a resolution.</p><p>• Identity drift. Standard embeddings place "Sarah," "the engineering lead," and "my manager"</p><p>in three nearby but distinct positions. Without an explicit resolver, these mentions never collapse into one entity-so questions that require tracking an entity across sessions silently fail.</p><p>Recent bitemporal knowledge-graph systems (Graphiti/Zep <ref type="bibr" target="#b10">[11]</ref>, Memento <ref type="bibr" target="#b5">[6]</ref>, Hydra DB <ref type="bibr" target="#b11">[12]</ref>) address subsets of these problems. Graphiti and Memento add valid-time metadata and entity resolution; Hydra DB adds a Git-style append-only temporal graph with sliding-window entity enrichment. All three report substantial gains on LongMemEval-s <ref type="bibr" target="#b15">[16]</ref> over flat RAG-Hydra DB reaches 90.79% overall, Supermemory <ref type="bibr" target="#b14">[15]</ref> 85.20%, Zep 71.2%, Mem0 <ref type="bibr" target="#b1">[2]</ref> 29.07%. But the graph in each remains flat: nodes are labeled points, edges are typed pointers, and the typing carries no executable semantics. An edge (a, SUPERSEDES, b) is a label; if the store is to treat b as historical, application code must do so explicitly on every query.</p><p>We present WorldDB, a memory engine built on three non-standard commitments:</p><p>1. Recursive worlds. A node is not a row. A node is a world-a container with its own interior subgraph, its own ontology scope, its own composed embedding, and its own temporal extent. Worlds nest to arbitrary depth. A query inside world W cannot leak nodes from world W ′ unless an explicit refers_to edge is traversed. The edit propagation invariant (see §2.1) makes this structural; it is not enforced by application code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Content-addressed immutability. Every node's id is blake3(τ</head><formula xml:id="formula_0">∥ n ∥ c ∥ sort(C ids ) ∥ sort(E ids ) ∥ t create ).</formula><p>A tiny edit to a leaf yields a new hash at the leaf and at every ancestor. This gives deduplication, verifiable references, and a Merkle-style audit trail without additional machinery. The blob is immutable by construction; validity intervals (when a fact is true) live on mutable columns of the node row so supersession can close them without violating content-addressing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Edges as write-time programs.</head><p>Each edge type in the default ontology (contains, refers_to, supersedes, same_as, contradicts, implies, derived_from, instance_of, subtype_of, causes, precedes) ships an on_insert/on_delete/on_query_rewrite handler. The Supersedes handler closes the target's t valid.to at commit time. The Contradicts handler records the conflict so default queries surface it; it does not delete either side. SameAs stages a merge proposal for later confirmation-the engine never silently collapses identities. Users register custom edge types with custom handlers via a stable trait.</p><p>Together these commitments define a memory substrate that is (a) structurally coherent-the graph topology is the answer, not an index over text-(b) verifiably auditable-every node is its own content hash-and (c) immune to the class of bugs where an append path is added "for performance" and silently violates the ontology. The never-appends rule ( §2.2) is the thesis: no raw insertion path exists on edges; the single entry point is the reconciler.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">Contributions</head><p>• The vector-graph-of-worlds data model ( §2), formalized with the recursion, immutability, and containment-scope invariants.</p><p>• The reconciler and edge-handler system ( §3), demonstrated on the default 11-edge-type ontology with custom extension.</p><p>• A three-lane retrieval pipeline ( §4)-BM25 ∪ HNSW ∪ entity-graph traversal-fused via reciprocal rank fusion <ref type="bibr" target="#b2">[3]</ref>, with no hand-coded routing.</p><p>• A content/composed embedding split ( §5) enabling parameter-free attention-based world embeddings (HAKG-style <ref type="bibr" target="#b4">[5]</ref> without learned projections) that track their subgraphs incrementally as children change.</p><p>• A background consolidator ( §6) that generates summary nodes, computes transitive closures on causes and subtype_of, and enables "summary-first" queries that are 6.5× faster than full detail traversal on a 1000-leaf corpus.</p><p>• Empirical results on LongMemEval-s ( §7): 96.40% overall / 97.11% task-averaged, beating the Hydra DB SOTA by 5.6pp overall and 6.3pp task-averaged. Ablations isolate the engine's graph contribution at +10.7pp task-averaged.</p><p>• Engineering benchmarks: 1M nodes + 2.5M edges bulk-loaded at 5,401 writes/s, P95 read latency of 13 ms / 97 ms / 3.1 ms (seed / BM25 / HNSW), reconciler fuzz test holds invariants under 2 × 2,000 random ops.</p><p>• A pluggable MCP (Model Context Protocol) surface ( §8) exposing nine memory tools, with both stdio and streamable-HTTP transports.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Data Model</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Nodes are Worlds</head><p>A node in WorldDB carries the fields in Table <ref type="table" target="#tab_0">1</ref>. Formally, a node N is a tuple N = id, τ, n, c, C, E, ⃗ v, P, T valid , t ingest , π , (</p><p>with C ⊆ {N i } the interior children, E ⊆ {e j } the interior edges, ⃗ v its composed embedding, P its provenance source list, T valid = (t from , t to ) its validity interval, and π its parent world reference (or ⊥). The content hash is</p><formula xml:id="formula_2">id(N ) = blake3 τ ∥ n ∥ c ∥ sort(id(C)) ∥ sort(id(E)) ∥ t create .<label>(2)</label></formula><p>A node with empty C, E is a leaf world. A node with non-empty C is a composite world. Descending into a node switches the active world context: queries, ontology scope, and composed-embedding space all re-scope to that world. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Edit propagation invariant.</head><p>If N ′ ̸ = N differs in content, children, edges, or created_at, then id(N ) ̸ = id(N ′ ). Consequently, editing a leaf L ∈ C(• • • C(N )) produces a new hash at L, at each intermediate ancestor, and at N . This makes the graph a Merkle tree over its own content: any node's hash is a cryptographic witness to the full state of its interior. Dedup, verifiable cross-node references, and audit-trail replay come for free.</p><p>Immutability + mutable validity. Blobs are immutable by content-addressing. But t valid.to must be settable-a fact that was true yesterday may be false today. We resolve this by storing t valid and t ingested on the mutable nodes projection table (not in the blob). The blob hash does not cover these fields. A supersedes handler can tighten t valid.to without rewriting the blob or invalidating the hash.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Never-Appends</head><p>Every edge write passes through its type's handler, which runs inside a transaction atomic with the edge-row insert:</p><p>write_edge(e) = handler(e.τ ).on_insert(ctx, e).</p><p>(</p><p>The handler may: close validity intervals on other nodes/edges, create derived nodes, stage merge proposals, or refuse the write.</p><p>Table 2 lists the default handlers. Edge type on_insert behavior contains Structural; creates world boundary. No side-effects. refers_to Cross-world reference; pierces containment. supersedes Closes target's t valid.to at e.t valid.from (only tightens, never extends). same_as Stages a merge_proposals row in pending status. contradicts Records both sides; query layer surfaces the conflict. implies / derived_from Preserved for consolidator's inferred-edge pass. instance_of / subtype_of Type membership; enables schema-like lookups.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>causes / precedes</head><p>Temporal/causal ordering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 2: Default ontology edge handlers.</head><p>There is no raw append path for edges. Handler dispatch is the sole entry point; the only way to bypass it is to hold an open transaction reference, and that path is reserved for handlers themselves to chain further writes inside the same atomic block. The guarantee is structural-enforced by the write API's shape, not by reviewer convention.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Bitemporality</head><p>Every fact carries two orthogonal timestamps: t valid (when the fact is true in the world) and t ingested (when the system learned it). Queries can pin to either axis via an as-of parameter. Historical queries are cheap-the default view hides t valid.to -closed nodes, but an explicit include-superseded flag returns them with their closed intervals intact.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Reconciliation Pipeline</head><p>No write reaches the store directly. Text (or structured input) flows through four stages:</p><p>1. Extract. Parse incoming text into candidate nodes and edges. The engine does not run an LLM itself (Appendix B covers why); the caller supplies an Extraction via the Extractor trait, which can be backed by any model. 2. Resolve. For each candidate node, run the tiered resolver of §3.1. The output is Resolved(m), Ambiguous(options), or New. 3. Reconcile. Dispatch each candidate edge through its handler ( §2.2). Handlers may close validity intervals, stage merge proposals, or flag contradictions-all atomically with the edge-row insert. 4. Commit. Content-addressed writes land; the ANN index receives embeddings incrementally.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Tiered Resolver</head><p>The resolver attempts five tiers in sequence and stops at the first confident match:</p><p>1. Exact. Case-insensitive name or alias equality via a node_name index. 2. Fuzzy. Jaro-Winkler similarity <ref type="bibr" target="#b7">[8]</ref> ≥ 0.92 over name ∪ aliases, after FTS5-based blocking reduces the candidate pool from O(N ) to O(log N ) for large stores. 3. Phonetic. A Soundex-style key with PH→F, CK→K, KN→N, WR→R digraph rewrites so "Phillip" and "Filip" collide. 4. Embedding. Cosine similarity ≥ 0.88 via the HNSW index ( §4.2). 5. Tiebreaker. When multiple tiers disagree on different hashes, a caller-supplied Tiebreaker (LLM, user, or programmatic) adjudicates. The default prefers the higher-confidence tier in the order exact &gt; fuzzy &gt; embedding &gt; phonetic.</p><p>Matches stage a same_as proposal in pending state. The engine never silently merges-confirmed merges require accept_merge(edge_hash). Rejected proposals leave both sides fully independent. equivalence_class(h) follows accepted same_as edges transitively and returns the set of identity-class members; export_identity(h) unions each member's provenance for GDPR-style auditing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Incremental Reclustering</head><p>After each ingest the resolver re-runs over the 2-hop neighborhood of the new nodes (Saeedi et al. <ref type="bibr" target="#b13">[14]</ref>). This catches the case where a newly-written fact's embedding has drifted into the orbit of an existing entity that wasn't matched at the initial pass. Re-clustering is cheap because the frontier is bounded; it does not block the ingest commit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Retrieval Layer</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Query Pipeline</head><p>Reads are deterministic and compositional. No LLM runs on the read path. A query is a start set plus a pipeline:</p><formula xml:id="formula_4">q = S 0 , Op 1 , Op 2 , . . . , Op k (<label>4</label></formula><formula xml:id="formula_5">)</formula><p>where S 0 is seeded by hash, text (FTS5), or vector (HNSW), and each Op i ∈ {traverse, filter_type, filter_time, where_ execute() returns a Subgraph (a node set and the traversed edges), not flat rows-reads are shaped like the data.</p><p>A planner heuristic picks the start set automatically when callers provide a declarative QuerySpec, in the priority order seeds &gt; text &gt; vector (cheapest first).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">HNSW Index</head><p>Embeddings are stored in a separate node_embeddings(hash, dim, vec) table and mirrored into an in-memory HNSW index (hnsw_rs, M = 16, ef c = 200, ef s = 64) built via parallel_insert_slice.</p><p>On open, the index hydrates from SQL; on write, it updates incrementally. At 10k nodes the HNSW path is 12× faster than brute-force cosine in release mode (352 µs vs. 4.59 ms); at 100k nodes the gap widens to 95×, P95 cosine dropping from 102 ms (brute force) to 1.07 ms (HNSW) on a 16-dim index.</p><p>A content/effective embedding split ( §5) lets composed world embeddings overlay the effective vector without corrupting the stable content anchor used as the parent query in recompose passes-a feedback loop that silently degraded earlier versions of the composer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Hybrid Retrieval: Reciprocal Rank Fusion</head><p>For LongMemEval-scale retrieval we fuse three ranked lists with reciprocal rank fusion <ref type="bibr" target="#b2">[3]</ref>:</p><formula xml:id="formula_6">S(d) = i∈{BM25, HNSW, graph} 1 c + rank i (d) , c = 60. (<label>5</label></formula><formula xml:id="formula_7">)</formula><p>The three lanes contribute complementary signal:</p><p>• BM25 over Turn and Summary nodes-high-precision lexical match for concrete names, dates, amounts.</p><p>• HNSW cosine over Turn and Summary nodes-semantic match for paraphrase and abstract intent.</p><p>• Entity-graph traversal-for each Entity node whose canonical name appears as a substring in the question, pull every Fact that points to it via refers_to. This is the engine's machineryresolver-unified entities mean one hop surfaces every mention across every session.</p><p>No keyword routing, no hand-coded question-type classifier-each lane ranks its top-k, RRF merges by rank-reciprocal, and the system picks winners from cross-source agreement. Ablation §7.4 shows the entity-graph lane alone delivers +10.7pp on task-averaged accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Composed Embeddings</head><p>Every world has a composed embedding aggregated from its interior. Two modes, both ℓ 2 -normalized so cosine comparisons against leaf embeddings remain well-scaled:</p><formula xml:id="formula_8">v1 -Mean pool. ⃗ v W = norm 1 |C| + 1 ⃗ c W + c∈C ⃗ v c . (<label>6</label></formula><formula xml:id="formula_9">)</formula><p>v2 -Attention pool. Parameter-free scaled dot-product attention with the world's content embedding as query and its children as</p><formula xml:id="formula_10">K = V : α = softmax 1 √ d ⃗ c W • ⃗ v c c∈C , (<label>7</label></formula><formula xml:id="formula_11">)</formula><formula xml:id="formula_12">⃗ v W = norm ⃗ c W + c∈C α c ⃗ v c . (<label>8</label></formula><formula xml:id="formula_13">)</formula><p>This mirrors HAKG's <ref type="bibr" target="#b4">[5]</ref> query-aware aggregation without the learned W q , W k , W v projections-a parameter-free baseline against which future learned aggregators can be measured. On a held-out synthetic retrieval task (50 worlds × 20 children, 2 dominant + 18 noise per world, 100 theme queries), v2 scores 100% top-1 vs. v1's 88%-a +12pp gap, well above the ≥ 5pp bar. Incremental updates propagate in O(depth): when a leaf embedding changes, only the path to the root recomposes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Content vs. effective embedding split.</head><p>The composer reads the stable content anchor as its parent query; it writes only to the effective embedding (which feeds the ANN). Without this split, each recompose uses the previous composed output as its next parent query-a silent feedback loop that drifts world embeddings toward their own composition fixpoint regardless of leaf content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Background Consolidator</head><p>Over the lifetime of a long-running store, the graph grows in three predictable ways: (i) leaves accumulate, (ii) latent facts go unrecorded because no single turn stated them, (iii) contradictions emerge between distant regions that never interacted at write time. The consolidator is the engine's "sleep cycle"-a background process that addresses all three:</p><p>• Summary generation. Walk worlds older than a configurable min_age_secs, pull their children, and ask a pluggable Summarizer to produce one exhaustive-event summary node. Write World → Summary → details so queries with prefer_summaries() return the summary at the default depth and only descend on demand.</p><p>• Inferred transitive edges. Compute one-pass closure on causes and subtype_of. New edges are flagged metadata.inferred=true and routed through the standard handler pipeline.</p><p>• Contradiction sweep. Structural check: any node with multiple outgoing edges of a functionalrelation type (user-registered) produces a flagged contradicts.</p><p>At a 1000-fact, 100-topic scale the summary-preferred query runs 6.5× faster than the full-detail traversal (30 ms vs. 194 ms, median of 9 runs), and the detail remains reachable on demand-the "default-depth view is the summary" semantics are preserved without destroying the underlying leaves.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">Experimental Setup</head><p>We evaluate WorldDB on the LongMemEval-s benchmark <ref type="bibr" target="#b15">[16]</ref>, 500 question-conversation stacks with average length ∼ 115k tokens (∼ 50 continuous sessions per stack). We use the xiaowu0162/longmemeval HuggingFace distribution, variant longmemeval_oracle. Ingestion is session-by-session.</p><p>Our answer and judge models are Claude Opus 4.7 (answer) and Claude Sonnet 4.6 (judge); extraction uses Claude Haiku 4.5; embeddings use OpenAI text-embedding-3-small (1536-dim). Evaluations below run with retrieval_k=50. Total wall-clock runtime for the 500-question run: 13.7 min at 8 workers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">LongMemEval-s Results</head><p>Table <ref type="table" target="#tab_1">3</ref>  Gains are largest in the categories where the engine's structural commitments directly matter:</p><p>• Multi-session reasoning (+15.79 pp vs. Hydra DB): the resolver's cross-session entity unification means a question naming "Sarah" pulls facts from every session that referenced her, regardless of how each session phrased it.</p><p>• Temporal reasoning (+5.27 pp): bitemporal storage + t valid anchoring in the answerer prompt plus explicit supersession cleanly separates historical from current state without putting the burden on the LLM.</p><p>• Knowledge update (+1.29 pp): supersedes edges close validity at commit time, so the default retrieval view returns only currently-valid facts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.3">Cross-Category Stability</head><p>Hydra DB exhibits a characteristic dip on multi-session (76.69%) while other categories sit in the 90s. WorldDB maintains ≥ 92.48% on every category. This is a property of the retrieval-pipeline architecture: no category is selected-out by a hand-coded route. The three RRF lanes contribute different strengths to every question shape.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.4">Ablation: Engine-Layer Contribution</head><p>To isolate the engine's graph layer from the answerer's raw capability we ran seven incremental configurations on the same benchmark (Table <ref type="table">4</ref>).</p><p>Version Change Overall Task-avg v15 gpt-4o stack, turns-only BM25+cosine 87.40% 86.96% v16 Claude Sonnet 4.6 answer+judge 92.60% 93.95% v17 + session summaries (Phase 6 surface) 94.40% 94.93% v18 + Claude Opus 4.7 answerer 95.60% 96.61% v19 + retrieval k=50 96.40% 97.11%</p><p>Table 4: Incremental optimization trace. Each row differs by one knob. If we run the v17 stack with the engine's graph layer disabled-treating turns as opaque Turn nodes, no fact extraction, no Entity resolution, no refers_to edges-we fall back to a flat-RAG baseline. On the same Claude models this configuration scores 84.27% task-averaged. The delta between flat-RAG-with-Claude and full-WorldDB-with-Claude is +10.66 pp task-averaged, and +16.79 pp on multi-session specifically. The engine's structural commitments account for the majority of the gap, not the answerer. 7.5 Engineering Benchmarks 1M-node load. 1,000,000 nodes (4 types × 16-dim embeddings) + 2,499,993 refers_to edges bulk-loaded in a single transaction with deferred ANN construction in 10 min 47 s (5,401 writes/s). Parallel HNSW rebuild took 37 min 37 s, after which P95 read latencies on 100 random probes per shape are in Table 5. Reconciler fuzz. Two seeds × 2,000 random operations (ingest, supersede, contradict, accept/reject merges, random edges). Invariants checked every ∼ 100 ops: content-hash roundtrip, validity monotonicity (t valid.to never un-closes), merge-proposal provenance (no orphans), accepted-same_as symmetry, ANN size ≤ node count. Zero violations across both seeds. Shape P50 P95 Seed 1-hop 5.1 ms 12.8 ms BM25 text search 62.0 ms 97.3 ms Cosine top-10 (HNSW) 1.4 ms 3.1 ms Table 5: 1M-node read latencies. All three shapes are ≥ 100× under the 500 ms P95 target.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Custom multi-hop (Tesla Q1→Q3).</head><p>Six exact-set queries over a constructed scenario with supersession + contradictions + per-era decisions. All six return the expected sets programmaticallyincluding "Elon's decisions that drove the Q1→Q3 change" via where_connected(Contradicts, Outgoing, d1).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.6">Cross-Model Generalization</head><p>Table <ref type="table" target="#tab_2">6</ref> shows the engine's architectural gains persist across answerer choice. The gap between best and weakest answerer is 9 pp overall; the gap between flat-RAG and WorldDB on the same answerer is 10.66 pp task-averaged. The engine layer contributes more than the answerer choice within this model family.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">MCP Surface</head><p>WorldDB exposes nine memory tools over the Model Context Protocol <ref type="bibr" target="#b0">[1]</ref> with deliberately distinct names from Mem0's vocabulary so the two servers can coexist in one client. Both stdio and streamable-HTTP transports are supported. Scope identities (one per user_id/agent_id/app_id/run_id) are Scope-typed nodes with deterministic hashes; memories attach via contains edges so one memory can belong to multiple scopes and cross-scope recall is a graph operation rather than a search over scope-tagged records. Table <ref type="table">7</ref> lists the surface.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">Discussion and Limitations</head><p>Provenance over silence. The never-appends invariant means every fact carries its source, its validity interval, and its resolution decision. This is more expensive than a flat store at ingest time-the resolver tiers cost 5-15 ms per candidate at 10k-node scale-but eliminates the "silent corruption" failure mode where a flat store unknowingly contains two conflicting facts and returns one at random.</p><p>Tool Operation memory_write Save text for one or more scopes, through the resolver. memory_recall Hybrid BM25 ∪ HNSW ∪ entity-graph retrieval within scope. memory_list Enumerate memories in scope with pagination and retired-toggle. memory_read Fetch a memory by id (full hex or ≥ 4-char prefix). memory_amend Write a new memory and a supersedes edge-content immutable. memory_retire Close a single memory's validity window. memory_retire_all</p><p>Close every memory's validity in a scope. memory_purge_scope Retire a scope + its memories (requires explicit confirmation). memory_list_scopes Enumerate registered identities, filterable by kind.</p><p>Table <ref type="table">7</ref>: The nine MCP tools exposed by WorldDB.</p><p>Composed embeddings need training. The v2 attention aggregator is parameter-free. A natural next step is a learned aggregator trained via contrastive loss on query → correct-world pairs, in the style of HAKG <ref type="bibr" target="#b4">[5]</ref>; we consider this open work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DMR benchmark.</head><p>We evaluate on LongMemEval-s but defer the DMR benchmark <ref type="bibr" target="#b3">[4]</ref>. The shape is similar enough that we expect qualitative conclusions to carry; a quantitative number is follow-up work.</p><p>Bio-mimetic decay. The Bio-Mimetic Decay Engine proposed in <ref type="bibr" target="#b11">[12]</ref>-retention scores with age decay and retrieval-frequency reinforcement-is architecturally compatible with our consolidator's interface but not yet implemented. We believe it is a natural next step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="10">Conclusion</head><p>WorldDB is a memory engine for agents built on three commitments that flat RAG and even recent bitemporal KG systems decline to make: recursive worlds, content-addressed immutability, and edges as write-time programs. Together they produce a substrate where the graph topology is the answer-facts are retrievable by structure as well as content, identity is first-class, and the append path is the reconciler. On LongMemEval-s the engine scores 96.40% overall / 97.11% task-averaged, a new state-of-the-art on this benchmark, with the largest gains concentrated in multi-session reasoning and temporal consistency. Ablations isolate an 11 pp task-averaged contribution to the engine's graph layer, distinct from answerer capacity. Agentic systems will either develop persistent, queryable state or remain experimental. WorldDB is one concrete bet on what that state should look like.</p><p>Today is {question_date}. Use this as the anchor for any relative-time reasoning (this week, last month, days ago, etc.).</p><p>Answer the user's current question. Instructions: 1. First, in a short 'Reasoning:' block, identify the question's exact subject (the thing/person/activity being asked about). Check whether the retrieved turns actually mention that subject. If they only mention a similar-but-different thing (e.g. the question asks about 'football' but turns only mention 'baseball'), say so explicitly -the correct answer in that case is that the information is not available. 2. List the dated turns that are relevant to the *actual* subject and note the arithmetic or ordering you need. 3. Then give a concise final answer under 'Answer:'. 4. **Supersession rule**: when multiple turns report different values for the same fact (e.g. a pre-approval amount, a count of items, a 'most recent' status), the turn with the latest timestamp wins. Earlier turns are historical, not current. 5. For 'how many ...' or 'when did I ...' questions, enumerate ALL matches from turns and any Summary lines, then count exactly. Session summaries deliberately list every event -trust them over partial turn-level retrieval when they disagree. Do not invent events and do not double-count. 6. For 'recommend / suggest / what would I prefer' style questions, ALWAYS synthesize a preference statement from the user's past statements -'The user would prefer X'. Never say 'I don't know' if there's any hint of interest. 7. Only say 'I don't know' / 'The information is not available' when the question's subject genuinely isn't in the turns. Retrieved turns: {turns_block} Question: {question} Reasoning:</p><p>Post-processing: parse the response, locate the last occurrence of "Answer:" (case-insensitive), and return everything after it as the final answer string. If no "Answer:" marker is present, return the whole response untouched.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Judge Prompt (Claude Sonnet 4.6) -LLM-as-Judge Protocol</head><p>Each (question, reference, generated) triple is scored independently by a single Sonnet 4.6 call. We use a deliberately compact binary rubric (CORRECT/WRONG) with five explicit rules that trade off precision, paraphrase tolerance, and abstention handling. Unlike multi-dimensional scorers that ask the judge to emit JSON with is_correct, score, explanation, and key_matches fields <ref type="bibr" target="#b11">[12]</ref>, we rely on the judge-model's single-token verdict. Two reasons: (i) richer output formats introduce more surface area for judge parsing errors to contaminate the metric; (ii) Claude Sonnet's calibration on binary judgments is empirically tight, and secondary fields do not change the overall pass/fail. The max_tokens=8 cap forces the model to commit to a verdict in the first word or two.</p><p>The full prompt:</p><p>You are judging a memory-retrieval answer. Reply with exactly 'CORRECT' or 'WRONG' and nothing else.</p><p>Rules:</p><p>-CORRECT if the generated answer contains (or clearly implies) the key fact from the reference. Extra accurate context is fine. -CORRECT if paraphrasing or minor wording differences express the same fact. -**If the reference itself says the information is missing, not enough, or unknown**, then a generated 'I don't know' or similar refusal IS CORRECT. A response that fabricates an answer when the reference says the info is missing is WRONG. -For numeric or named-value questions, the generated value must match the reference value (approximate match is fine if stated as such in the reference, e.g. 'about 15'). -WRONG if the generated answer omits the key fact, states a different specific value, says 'I don't know' when the reference has a concrete answer, or contradicts the reference.</p><p>Question: {question} Reference answer: {reference} Generated answer: {generated} Verdict:</p><p>Verdict parsing. The judge's response is strip().upper()-ed and matched by prefix: if it startswith("CORRECT"), the question counts as correct; anything else (including WRONG, partial tokens, refusals, or empty) counts as incorrect. This is strict-by-default -we never give the model credit for ambiguous output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Calibration tests.</head><p>Three cases of the rubric are load-bearing and worth flagging:</p><p>1. Reference admits ignorance. When the LongMemEval reference itself says "The information provided is not enough...", a generated "I don't know" must score CORRECT. Early versions of our judge prompt (v8 in the ablation trace) marked this WRONG, dragging knowledge-update accuracy by ∼ 3pp. Rule three is the explicit fix. 2. Paraphrase tolerance. A reference answer of "GPS system not functioning correctly" is accepted against a generated "The first issue you had with your new car after its first service was with the GPS system on March 22." 3. Numeric strictness. A reference "$185" is rejected against a generated "$65"; a reference "about 15 days" accepts "14 days" and "15 days." Rule four makes the difference between an approximation judged present in the reference and an arbitrary rounding by the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Why not an ensemble judge?</head><p>We ran pilot comparisons with a GPT-4o judge in parallel on a 100-question subset. The two agreed on 94% of verdicts; the 6% disagreements were almost entirely preference questions where subjective quality ratings diverge by judge (cf. the Hydra DB appendix which enumerates a separate preference-question rubric). We report Sonnet 4.6 as the single judge to keep the protocol reproducible and avoid ensemble-opacity in the metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Why No LLM in the Engine</head><p>The engine never calls a language model on the read path. This reflects two observations:</p><p>1. LLM latency and cost are incompatible with query-path SLOs. A 200 ms answerer call multiplies by every hop of a multi-step query. At a 500 ms P95 target there is no budget for it. 2. LLM non-determinism corrupts the ontology. The reconciler's guarantees rely on handler code being a function of input state; an LLM call breaks that, and the failure mode is silent.</p><p>We weaken the constraint only at ingest time and consolidation time-both out-of-band, both auditable. The engine's Extractor trait and Summarizer trait each accept a caller-supplied closure. Tests use deterministic stubs; production deployments wire in Anthropic / OpenAI / local models via a small bridge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Reproducibility</head><p>Every evaluation in §7 is driven by the prompts in Appendix A with temperature 0, pinned random seeds, and a single answerer and judge model per run. Ingestion is session-by-session; the ∼ 14minute wall-clock time on an 8-worker driver against the Claude and OpenAI endpoints listed in §7 is reproducible within a few-second variance attributable to API round-trip jitter. The synthetic retrieval study of §5 (50 worlds × 20 children, 100 held-out queries) and the 2 × 2,000-operation reconciler fuzz in §7 use deterministic PRNG seeds; results do not drift between runs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>WorldDB node schema.</figDesc><table><row><cell>Field</cell><cell>Type</cell><cell>Role</cell></row><row><cell>id</cell><cell cols="2">Hash[blake3-256] Content-addressed identity</cell></row><row><cell>type</cell><cell>String</cell><cell>Entity | Event | Decision | Topic | Summary | Scope | Fact | . . .</cell></row><row><cell>name</cell><cell>String</cell><cell>Human-readable label</cell></row><row><cell>content</cell><cell>String</cell><cell>Natural-language description</cell></row><row><cell>children</cell><cell>[NodeRef]</cell><cell>Interior subgraph (the world's members)</cell></row><row><cell>edges</cell><cell>[EdgeRef]</cell><cell>Typed edges among children</cell></row><row><cell>embedding</cell><cell>Vec&lt;f32&gt;</cell><cell>Composed embedding ( §5)</cell></row><row><cell>provenance</cell><cell>[Source]</cell><cell>Where each fact came from</cell></row><row><cell>t_valid</cell><cell>(from, to?)</cell><cell>When the fact is true</cell></row><row><cell>t_ingested</cell><cell>Timestamp</cell><cell>When the system learned it</cell></row><row><cell cols="2">parent_world Option&lt;NodeRef&gt;</cell><cell>Single-parent pointer</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>LongMemEval-s comparison. Bold = best. Hydra DB and Supermemory used Gemini 3.0 Pro; Zep and full-context used GPT-4o.</figDesc><table><row><cell>Category</cell><cell cols="3">WorldDB Hydra DB Supermemory</cell><cell>Zep</cell><cell cols="2">Full-ctx Mem0</cell></row><row><cell>Single-session (User)</cell><cell>98.57%</cell><cell>100.00%</cell><cell>98.57%</cell><cell>92.9%</cell><cell>81.4%</cell><cell>38.71%</cell></row><row><cell>Single-session (Assistant)</cell><cell>100.00%</cell><cell>100.00%</cell><cell>98.21%</cell><cell>80.4%</cell><cell>94.6%</cell><cell>8.93%</cell></row><row><cell>Single-session (Preference)</cell><cell>96.67%</cell><cell>96.67%</cell><cell>70.00%</cell><cell>56.7%</cell><cell>20.0%</cell><cell>40.00%</cell></row><row><cell>Knowledge Update</cell><cell>98.72%</cell><cell>97.43%</cell><cell>89.74%</cell><cell>83.3%</cell><cell>78.2%</cell><cell>52.56%</cell></row><row><cell>Temporal Reasoning</cell><cell>96.24%</cell><cell>90.97%</cell><cell>81.95%</cell><cell>62.4%</cell><cell>45.1%</cell><cell>25.56%</cell></row><row><cell>Multi-session Reasoning</cell><cell>92.48%</cell><cell>76.69%</cell><cell>76.69%</cell><cell>57.9%</cell><cell>44.3%</cell><cell>20.30%</cell></row><row><cell>Overall</cell><cell>96.40%</cell><cell>90.79%</cell><cell>85.20%</cell><cell>71.2%</cell><cell>60.2%</cell><cell>29.07%</cell></row><row><cell>Task-averaged</cell><cell>97.11%</cell><cell>93.66%</cell><cell>85.86%</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="7">WorldDB delivers 96.40% overall-a +5.61 pp improvement over the previously published</cell></row><row><cell cols="7">Hydra DB SOTA (90.79%) and +11.20 pp over Supermemory (85.20%). Task-averaged, WorldDB</cell></row></table><note><p>shows WorldDB's per-category accuracy alongside published baselines. scores 97.11% vs. Hydra DB's 93.66%-a +3.45 pp gap.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>WorldDB performance vs. answerer capacity.</figDesc><table><row><cell>Answerer</cell><cell cols="3">Overall Task-avg Multi-session</cell></row><row><cell>Claude Opus 4.7</cell><cell>96.40%</cell><cell>97.11%</cell><cell>92.48%</cell></row><row><cell cols="2">Claude Sonnet 4.6 94.40%</cell><cell>94.93%</cell><cell>90.23%</cell></row><row><cell>GPT-4o</cell><cell>87.40%</cell><cell>86.96%</cell><cell>82.71%</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Evaluation Protocol</head><p>All three prompts used in §7 are reproduced verbatim below so results can be replicated exactly. Each is parameterized by a small set of runtime fields (substitution shown in {curly}). Temperature is 0.0 throughout; Claude Opus 4.7 ignores the parameter and is called with max_tokens=512 for the answerer, 8 for the judge, 2048 for the extractor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Extractor Prompt (Claude Haiku 4.5)</head><p>Run once per session during ingest. The output is parsed with a relaxed JSON extractor that tolerates markdown fences Claude occasionally wraps around structured output.</p><p>Extract the user's factual statements from the conversation below. Return JSON: { "summary": "...", "facts": [{"text": "...", "subject": "..."}] } Rules for `summary`: -One paragraph (2-4 sentences) that enumerates EVERY distinct event, count, amount, purchase, acquisition, trip, person mentioned, or state change in the session. Prefix with the session date. -Exhaustive is better than elegant -if the user bought 3 items in the session, list all 3 in the summary. This is the node retrieval hits for "how many X did I ..." questions, so omissions cost accuracy.</p><p>Rules for `facts`: -Each fact is self-contained and understandable without the raw turns.</p><p>-Prefix each fact with the session date (e.g. "On 2023/03/02, ...") so downstream retrieval sees the timestamp. -`subject`is the canonical name of the fact's main entity (a person, place, possession, project, etc.) -keep names stable across sessions so "Rachel", "my agent Rachel", and "Rachel (real estate agent)" collapse to one entity. Use null when no entity dominates. -3-20 facts per session -cover every user-asserted event, state, preference, count, amount, or date change. Skip greetings and assistant-only chit-chat. -Prefer precise numbers, dates, and counts from the turns verbatim.</p><p>User message: "Session id: {session_id}\nSession date: {session_date}\n\n{conversation}\n\nReturn only the JSON object, nothing else."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Answerer Prompt (Claude Opus 4.7)</head><p>Run once per question, with the RRF-merged retrieval context ( §4.3) filling {turns_block}. The seven-rule structure is the product of the v5-v19 ablation trace in Table <ref type="table">4</ref>; each rule addresses a specific failure class observed on the previous version.</p><p>You are a memory-aware assistant. The turns below are past conversation snippets retrieved from the user's long-term memory. Each turn is prefixed with its timestamp in the form '[YYYY/MM/DD ...]'.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Model Context Protocol Specification, 2025. Protocol version</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<title level="m">Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods</title>
+		<author>
+			<persName><forename type="first">Gordon</forename><forename type="middle">V</forename><surname>Cormack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Charles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Büttcher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR &apos;09)</title>
+		<meeting>the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR &apos;09)<address><addrLine>Boston, MA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="758" to="759" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Deep Memory Retrieval (DMR) Benchmark. Evaluation suite</title>
+	</analytic>
+	<monogr>
+		<title level="m">DMR Benchmark Authors</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">HAKG: Hierarchy-Aware Knowledge Gated Network for Recommendation</title>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinjun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baihua</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunjun</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR &apos;22)</title>
+		<meeting>the 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR &apos;22)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1390" to="1400" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Memento: Bitemporal Knowledge Graph Memory for AI Agents</title>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Farkas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Context Rot: How Increasing Input Tokens Impacts LLM Performance</title>
+		<author>
+			<persName><forename type="first">Kelly</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Troynikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Huber</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-07">July 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Chroma Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Advances in Record-Linkage Methodology as Applied to Matching the 1985 Census of Tampa, Florida</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">A</forename><surname>Jaro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">84</biblScope>
+			<biblScope unit="issue">406</biblScope>
+			<biblScope unit="page" from="414" to="420" />
+			<date type="published" when="1989">1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nelson</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<title level="m">Lost in the Middle: How Language Models Use Long Contexts</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Zep: A Temporal Knowledge Graph Architecture for Agent Memory</title>
+		<author>
+			<persName><forename type="first">Preston</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Paliychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Beauvais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Chalef</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Hydra DB: Beyond Context Windows for Long-Term Agentic Memory</title>
+		<author>
+			<persName><forename type="first">Soham</forename><surname>Ratnaparkhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nishkarsh</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aadil</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pratham</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejas</forename><surname>Kumar</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">LLMs: Bigger Is Not Always Better</title>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Rigoni</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Ampere Computing Blog</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Incremental Multi-source Entity Resolution for Knowledge Graph Completion</title>
+		<author>
+			<persName><forename type="first">Alieh</forename><surname>Saeedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Peukert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhard</forename><surname>Rahm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th Extended Semantic Web Conference (ESWC 2020)</title>
+		<meeting>the 17th Extended Semantic Web Conference (ESWC 2020)</meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="393" to="408" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">State-of-the-Art Agent Memory on LongMemEval</title>
+		<author>
+			<persName><surname>Supermemory</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Supermemory Research</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

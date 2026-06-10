@@ -164,6 +164,7 @@ def _extract_fulltext_metrics(tei_text: str) -> dict[str, Any]:
         "header_author_count": 0,
         "abstract_present": False,
         "section_count": 0,
+        "sections": [],
         "parse_error": None,
     }
     if not tei_text:
@@ -190,6 +191,11 @@ def _extract_fulltext_metrics(tei_text: str) -> dict[str, Any]:
         or (element.attrib.get("type") in {None, ""} and any(_local_name(child.tag) == "head" for child in element))
     ]
 
+    sections = []
+    for div in section_divs:
+        head = next((child for child in div if _local_name(child.tag) == "head"), None)
+        sections.append(" ".join("".join(head.itertext()).split()) if head is not None else "")
+
     metrics.update(
         {
             "ref_count": len(refs),
@@ -201,6 +207,7 @@ def _extract_fulltext_metrics(tei_text: str) -> dict[str, Any]:
             "header_author_count": len(authors),
             "abstract_present": any(_text_present(abstract) for abstract in abstracts),
             "section_count": len(section_divs),
+            "sections": sections,
         }
     )
     return metrics

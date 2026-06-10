@@ -1,0 +1,1856 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Unifying Lens on Supervised Fine-Tuning Through Target Distribution Design</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tong</forename><surname>Xie</surname></persName>
+							<email>tongxie@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuanhao</forename><surname>Ban</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunqi</forename><surname>Hong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sohyun</forename><surname>An</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yihang</forename><surname>Chen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cho-Jui</forename><surname>Hsieh</surname></persName>
+							<email>chohsieh@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">UCLA)</orgName>
+								<address>
+									<addrLine>2 Arena</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Unifying Lens on Supervised Fine-Tuning Through Target Distribution Design</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">54165D1389CBFC86AFAB7F9C2626C026</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T12:00+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Supervised fine-tuning (SFT) typically maximizes the likelihood of every token in a demonstrated trajectory. However, an observed token can be non-unique, noisy, or misaligned with the model prior. Strictly fitting toward this one-hot target may be suboptimal, especially when the pretrained model encodes a rich knowledge prior. In this work, we reinterpret SFT as target distribution design: instead of studying only the loss objective, we analyze the token-level target that the loss drives the model to match. We introduce the Q-target framework, which decomposes SFT supervision into two explicit choices: (1) how strongly to rely on the observed token, and (2) how to allocate the remaining probability mass over alternatives. This perspective unifies many existing SFT variants as implicit choices of the target distribution Q. Building on this view, we propose TARGET-SFT which constructs the training objective directly from the desired target distribution. This method consistently outperforms across the ten reasoning dataset-model settings evaluated, showing the effectiveness of this target-based approach. Overall, our formulation reveals a more fundamental design principle for SFT training and opens a broader search space for SFT objectives.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Supervised fine-tuning (SFT) is a central stage in the post-training of large language models (LLMs) <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3]</ref>. By imitating expert behaviors, SFT enables the pretrained model to acquire new knowledge and adapt to tasks efficiently. Despite its popularity, standard SFT relies on a particularly rigid form of supervision, by training the model toward a one-hot target distribution: at every token position, SFT maximizes the probability of the demonstrated token y t , while all other tokens are assigned zero probability. This formulation implicitly assumes that every observed token in the dataset is an ideal and uniquely correct target. This one-hot view reveals a limitation of standard SFT, especially in post-training settings <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b5">6]</ref>. In realistic SFT data, an observed token is rarely the only valid continuation. The same prompt may admit multiple correct reasoning paths, phrasings, intermediate steps, or stylistic choices <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b11">12]</ref>. At the same time, the model already encodes a rich prior from pretraining <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b10">11]</ref>. In such cases, forcing the model to strictly imitate every token can amplify noise, induce overconfidence, interfere with the pretrained model prior, and degrade generalization <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b17">18]</ref>. A growing line of work relaxes the SFT supervision by modifying the objective, for example, through token-level importance reweighting <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b19">20]</ref> or regularization <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22]</ref>. While these approaches are effective, they are often presented as separate algorithmic choices. It remains unclear the connection between variants and how to construct better SFT objectives. Directly construct target distribution via two design choices: (1) How much to rely on label? (2) How to allocate alternatives?</p><p>Target-SFT SFT loss produces gradients, which define update signal that imply target probability. Thus we view SFT directly as target distribution design Induced Target</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 1:</head><p>Overview. An SFT loss drives the model to match an implicitly defined target distribution. This view motivates TARGET-SFT that designs the SFT target directly. It also offers a unifying lens, where many SFT variants can be viewed as different target designs through the choices of γ t and πt .</p><p>In this work, we propose a different perspective: rather than the loss, we ask what target distribution should SFT drive the model to learn. This is more fundamental than the choice of loss alone, because loss is merely an optimization surrogate, while the target distribution directly specifies the desired allocation of probability mass (Figure <ref type="figure">1</ref>). By viewing SFT as target distribution design, we can control the supervision signal when the observed label y t is suboptimal: If y t is ideal and unique, the target should be close to the one-hot distribution δ yt , maximizing its probability. If it is noisy or misaligned with the model prior, then the target should soften supervision and allocate probability to alternatives. Building on this intuition, we introduce a Q-target distribution framework for SFT:</p><formula xml:id="formula_0">Q t = γ t δ yt + (1 -γ t )π t ,</formula><p>where γ t ∈ [0, 1] controls the target probability assigned to the observed token y t based on uncertainty, and π specifies the plausible alternatives for the 1 -γ t residual probability mass. This perspective thus reveals two key questions through the choices of (γ t , πt ): (1) how much to rely on the observed token y t , and (2) where to allocate the remaining probability mass when y t is uncertain?</p><p>In particular, we show that many existing SFT variants can be understood as varying ways of answering these two questions, and seemingly different losses correspond to implicit choices of target distribution Q. Based on this insight, we propose TARGET-SFT by explicitly leveraging the structure revealed by the Q-framework, which previous methods have largely left implicit. In general, we argue that the fundamental object in SFT is not the loss function itself, but the target distribution induced by the loss. This Q-target perspective provides a unifying lens in SFT objective design, and exposes a general design space for balancing dataset imitation, prior preservation, and alternative supervision. Our contributions are as follows:</p><p>1. We introduce a target-distribution perspective on SFT, showing that arbitrary token-level SFT losses can be understood through the induced target distributions they drive the model to learn. 2. We propose the Q-target framework, which unifies existing SFT variants by decomposing objective design into two explicit choices: how much to rely on the observed token and how to allocate the remaining probability mass. 3. We propose TARGET-SFT as a concrete instantiation motivated by the Q-target view, and empirically validate its performance across 10 dataset-model settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Existing works improve SFT along three main directions. We organize them under the Q-target lens, which characterizes SFT variants by how they specify the effective token-level target distribution. We include the concrete connection for representative methods in Appendix C.</p><p>Token-level Reweighting. Standard SFT applies uniform cross-entropy updates to all tokens, treating every token as equally reliable. Token-reweighting methods challenge this assumption by changing how strongly each token contributes to training. DFT <ref type="bibr" target="#b12">[13]</ref>, beyond-log <ref type="bibr" target="#b5">[6]</ref>, and ProFit <ref type="bibr" target="#b10">[11]</ref> use the model probability on the observed token to rescale or filter updates, focusing on tokens that are compatible with the model prior. EAFT <ref type="bibr" target="#b19">[20]</ref> uses entropy-based uncertainty to reduce potentially destructive updates; iw-SFT <ref type="bibr" target="#b22">[23]</ref> and CFT <ref type="bibr" target="#b18">[19]</ref> assign weights based on trajectory-or token-level quality. These methods primarily address the choice of γ t in SFT target construction, controlling how much target mass should be assigned to the observed label. However, reweighting the one-hot loss only weakens or strengthens imitation, but leaves the remaining probability mass underspecified. Our framework provides a complete view by making the effective training target explicit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distribution-level Prior.</head><p>Another line of work introduces soft distributional signals beyond the one-hot label. Reference-constrained methods such as ASFT <ref type="bibr" target="#b20">[21]</ref>, RL's Razor <ref type="bibr" target="#b14">[15]</ref>, and Proximal SFT <ref type="bibr" target="#b21">[22]</ref> regularize updates to prevent large drift from a reference model. Huang et al. <ref type="bibr" target="#b16">[17]</ref> uses label-smoothing to address overconfidence. GEM <ref type="bibr" target="#b4">[5]</ref> uses reverse KL and entropy regularization to preserve output diversity and reduce forgetting. These methods address the rigidity in strict one-hot imitation, proposing alternative sources for probability allocation. They mainly specify the choice of π, allocating probability mass to non-observed alternatives: KL-constraints allocate toward the reference model, label smoothing allocates toward a uniform prior, and diversity-preserving methods discourage collapse onto a narrow set of tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset-level Curations.</head><p>A complementary direction improves SFT by changing the training trajectories. Prior work has proposed augmenting demonstrations with multiple valid trajectories <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b23">24]</ref>, filtering examples by quality <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b25">26]</ref>, and using model-generated or model-aligned responses <ref type="bibr" target="#b15">[16]</ref>. GRAPE <ref type="bibr" target="#b17">[18]</ref> selects trajectories with high likelihood under the model, while rejection-sampling finetuning trains on correct model-generated responses <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b28">29]</ref>. Self-distillation fine-tuning <ref type="bibr" target="#b29">[30]</ref> projects expert demonstrations into the model's distributional style, reducing data-model mismatch. These approaches address the same underlying issue as our work: the demonstrated trajectory or token may not be uniquely ideal for the model to imitate. By improving the dataset, they indirectly change the effective target distribution seen during SFT. In contrast, our work remains on the objective level and directly designs the effective target distribution for a fixed dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminary</head><p>Supervised Fine-Tuning. Let D be a supervised dataset of pairs (x, y) ∼ D, where x is the input prompt and y = (y 1 , . . . , y T ) is the demonstrated response sequence. Given the prefix x t = (x, y &lt;t ), a language model defines the next-token distribution π θ (• | x t ) ∈ ∆ |V| over the vocabulary V.</p><p>Standard SFT minimizes the token-level negative log-likelihood:</p><formula xml:id="formula_1">L SFT (θ) = E (x,y)∼D - T t=1 log π θ (y t | x t ) .</formula><p>Target Distribution. Equivalently, let δ yt denote the one-hot vector that assigns probability 1 to the observed token y t and 0 to all other tokens, δ yt (v) = 1{v = y t }. Then the objective can be written as the cross-entropy with target δ yt as</p><formula xml:id="formula_2">L SFT (θ) = E (x,y)∼D T t=1 CE δ yt , π θ (• | x t ) .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Q-Target Framework for SFT</head><p>The one-hot target δ y in SFT implicitly assumes that y t is the single optimal continuation for the prefix x t . However, an observed token can be non-unique, noisy, or distributionally mismatched with the model prior. To capture this, we relax the assumption and account for the uncertainty in y t , constructing a new target distribution Q t in place of δ y .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Modeling Latent Trust</head><p>We introduce a latent binary variable to represent whether the observed token should be strictly imitated. Let Z t ∈ {0, 1} be where Z t = 1 indicates y t is strictly trusted as the target, and Z t = 0 indicates that supervision should relax to a broader distribution over plausible alternatives. Under this view, the ideal target distribution can be written as</p><formula xml:id="formula_3">P (• | x t ) = P (Z t = 1 | x t )δ yt + P (Z t = 0 | x t )π t (• | x t ),<label>(1)</label></formula><p>where πt ∈ ∆ |V| denotes an alternative distribution over plausible next tokens.</p><p>Since Z t is unobserved, the trust probability r t = P (Z t = 1 | x t ) is unknown. We model this uncertainty using a Beta distribution: r t ∼ Beta(α t , β t ), where α t is evidence supporting y t , and β t is evidence that y t may be non-unique or should relax toward alternatives. The posterior mean γ t = E[r t ] = αt αt+βt ∈ [0, 1] then gives the expected trust for the observed token y t .</p><p>Taking expectation over Eq. ( <ref type="formula" target="#formula_3">1</ref>) leads to the ideal target distribution</p><formula xml:id="formula_4">Q t = E rt [P (• | x t )] = γ t δ yt + (1 -γ t )π t .<label>(2)</label></formula><p>Intuitively, the target probability for y t is scaled by the expected trust γ t in the token, and the residual probability mass is reallocated to plausible alternatives over πt .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Final Target &amp; Objective</head><p>We replace the SFT one-hot target with Q t , and train with the cross-entropy loss:</p><formula xml:id="formula_5">L Q (θ) = E (x,y)∼D T t=1 CE(Q t , π θ (• | x t )) .</formula><p>Proposition 1 (Token-level decomposition of Q-target training). Given the target distribution Q t defined in Eq. ( <ref type="formula" target="#formula_4">2</ref>), the token-level cross-entropy loss at position t decomposes as</p><formula xml:id="formula_6">CE(Q t , π θ (• | x t )) = γ t CE(δ yt , π θ (• | x t )) + (1 -γ t ) CE(π t , π θ (• | x t )).<label>(3)</label></formula><p>This shows that training to match the Q-target involves two forms of supervision: (1) label imitation, which pushes the model toward the observed token y t , with strength controlled by the expected trust γ t , and (2) residual distribution matching, which assigns the remaining supervision mass to alternatives through πt . See Appendix B.1 for proof.</p><p>5 Unifying Perspective</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Existing Variants</head><p>The Q-target formulation separates token-level supervision into two design choices: (1) γ t ∈ [0, 1] controls the target probability mass on y t , while (2) πt ∈ ∆ |V| specifies how the residual probability is allocated. We show that this view unifies many existing SFT variants. Table <ref type="table">4</ref> provides details of each variant discussed, and Table <ref type="table" target="#tab_2">5</ref> summarizes their interpretation under Q-target framework.</p><p>Standard SFT. Consider the degenerate choice γ t = 1, then the Q-objective in Eq. ( <ref type="formula" target="#formula_6">3</ref>) reduces to the negative log-likelihood in SFT, corresponding to setting Q t,k = δ yt :</p><formula xml:id="formula_7">CE(Q t , π θ ) = CE(δ yt , π θ ) = -log π θ (y t | x t ), Q t (k) = δ yt (k) = 1, k = y t , 0, k ̸ = y t .</formula><p>Hence, standard SFT is the special case that places full probability on every observed token y t and assigns no residual mass to alternatives.</p><p>Token-Weighted Variants. A class of SFT variants modifies the objective by scaling the negative log-likelihood with a detached, per-token importance weight w t <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b22">23]</ref>:</p><formula xml:id="formula_8">L t = -w t log π θ (y t | x t ),</formula><p>where w t may depend on model confidence, entropy, sample quality, or other token-level statistics. Corollary 1 (Token weighting as self-residual Q-target.). Assume w t ∈ [0, 1] is detached from the current update. The token-weighted loss above corresponds to the choice</p><formula xml:id="formula_9">(γ t = w t , πt = sg[π θ (• | x t )]) =⇒ Q t = w t δ yt + (1 -w t )sg[π θ (• | x t )] .</formula><p>where sg[•] denotes the stop-gradient operator. In particular, the residual branch πt is a self-matching term that contributes no gradient. See Appendix B.2 for proof.</p><p>This shows that token-weighted variants primarily specify γ t , proposing statistics to determine how strongly to imitate the observed token. And the residual mass 1 -γ t is allocated to the current model prior sg[π θ (• | x t )], providing no corrective supervision toward potential alternatives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distributional Variants.</head><p>Another class of SFT variants incorporates distributional signals beyond the observed token <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b30">31]</ref>. With various intended goals (e.g., to regularize model drift, calibrate confidence, preserve output diversity, etc), these methods enrich hard-label imitation using another distribution target q t . The objective is of the form</p><formula xml:id="formula_10">L t = -a t log π θ (y t | x t ) + b t CE(q t , π θ ), a t , b t ≥ 0.<label>(4)</label></formula><p>Corollary 2 (Distributional variants as residual Q-targets). Given a detached, auxiliary or reference distribution q t ∈ ∆ |V|-1 , distributional variants correspond to Q-target training with</p><formula xml:id="formula_11">γ t = a t a t + b t , πt = q t , =⇒ Q t = γ t δ yt + (1 -γ t )π t ,<label>(5)</label></formula><p>up to a global constant a t + b t . Therefore, these methods primarily specify the residual branch πt , deciding where non-label probability should be allocated. The relative strength γ t between label imitation and residual matching is determined by fixed hyperparameter. See Appendix B.3 for proof.</p><p>In summary, token-weighted variants mainly design the label-trust coefficient γ t , while distributional variants design the residual distribution πt . Together, they present the two axes in our framework: how strongly to imitate the observed token, and how to allocate the remaining probability mass.</p><p>Remark. This is a natural view because an SFT loss is a training surrogate. Although variant losses may take different algebraic forms, their effect on the model is mediated through the probability update over the vocabulary. The loss expression is therefore only a way to generate gradients; the induced target distribution reveals what those gradients effectively drive the model to match. In this sense, the Q-target formulation is a more fundamental perspective beyond the loss forms. This view not only unifies variants but provides a direct lens into training signals. We now formalize this idea, where we derive the induced target Q t for any arbitrary differentiable token-level loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">From Any Loss to Q</head><p>An SFT loss defines a surrogate for shaping the model's next-token distribution. At each prefix x t , the model outputs a distribution p t = π θ (• | x t ), and the loss produces gradients that determine how this probability changes across tokens. Therefore, for any differentiable token-level loss, we can ask what target probability distribution Q t does the loss drive the model to match through its gradients?</p><p>Given token position t (notation omitted for clarity), consider the cross-entropy toward target Q t</p><formula xml:id="formula_12">L CE (Q, p) = - k∈V Q k log p k .</formula><p>Let z denote the logits. The gradient with respect to the k-th logit is simply the prediction difference</p><formula xml:id="formula_13">∂L CE ∂z k = p k -Q k .</formula><p>This relationship can be inverted. Given any differentiable token-level loss L(z, x) with logit gradient g k = ∂L ∂z k , we can derive its induced target as</p><formula xml:id="formula_14">Q k := p k -g k .<label>(6)</label></formula><p>This Q is the target whose cross-entropy gradient ∇ z CE(Q, p) = ∇ z L, aligning exactly with the logit updates produced by L. It therefore explicitly reveals the training signal encoded by the loss. Appendix D shows example derivations, and visualizes loss through its gradients and target Q.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">TARGET-SFT</head><p>The Q-formulation turns SFT supervision from a static log-likelihood objective into a problem of target distribution design: (1) how much to rely on the observed token y t , and (2) how to allocate the remaining probability mass. We now introduce TARGET-SFT, which leverages both branches of this construction. We first use a model-based proxy to estimate label uncertainty, and motivate for an external teacher distribution to enrich supervision signals through the residual branch.</p><p>Probability-Proxy for γ t . The ideal target in Eq (2) involves an expected trust γ t = E[r t ] = αt αt+βt , where α t , β t represent evidence (such as an empirical count) for the binary event y t being selected given prefix x t . However, such a count is intractable in SFT.</p><p>Instead, the model probability p y = π θ (y t | x t ) arises as a natural proxy for α t , which encapsulates statistical evidence accumulated during pretraining. Here p y represents the fraction of the model's belief assigned to y t among all possible continuations. By defining the evidence as α t = p y and β t = 1 -p y , the posterior mean resolves to</p><formula xml:id="formula_15">γ t = p y p y + (1 -p y ) = p y .</formula><p>This derivation motivates probability-weighted SFT variants (such as p-loss) <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b5">6]</ref>, as scaling the SFT target by p y equates to using predictive probability as proxy measure of uncertainty in the label.</p><p>Teacher-Guided Reward Shaping π. Under the Q-target view, such objectives implicitly use a self-matching residual, πt = sg[π θ (• | x t )] , as derived in Section 5.1. This shows that as p y → 0, the supervision weakens and provides no further corrective gradient. This is limiting because a small p y may arise from uncertainty in label, or indicate the lack of knowledge where SFT is intended to teach. A purely self-prior residual treats both cases the same, by reducing the imitation strength and providing no additional guidance over plausible alternatives.</p><p>This motivates a residual distribution that remains anchored to the model prior, but also allows external corrective signals. To this end, we construct a teacher-guided πt . The goal is to preserve model prior without being constrained by it, enabling supervision from teacher-supported alternatives.</p><p>We construct πt through KL-regularized reward shaping:</p><formula xml:id="formula_16">π = arg max q∈∆ [E a∼q [r(a)] -τ KL(q∥π θ )] ,</formula><p>which stays close to π θ while the reward r specifies the alternative tokens to be upweighted. Let π T (• | x t ) denote a teacher distribution. To incorporate teacher guidance, we define reward using the teacher log-probability, r(a) = λ log π T (a).</p><p>The solution has the form π(a) ∝ π θ (a) exp(r(a)/τ ), and substituting the teacher reward yields</p><formula xml:id="formula_17">π(a) ∝ π θ (a)π T (a) η , η = λ/τ.</formula><p>This results in a teacher-guided π close to π θ , while upweighting alternatives favored by the teacher through token-level reward. For easier interpretation, we consider the closely related form</p><formula xml:id="formula_18">πguided t (a) ∝ π θ (a | x t ) 1-η π T (a | x t ) η , η ∈ [0, 1].</formula><p>It interpolates between the student (η → 0) and teacher distribution (η → 1). This parameterization is convenient in practice, since η directly controls the intensity of teacher signals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TARGET-SFT.</head><p>Combining the probability-proxy for trust estimate γ t = p y and the teacher-guided residual distribution π = πguided gives the following target:</p><formula xml:id="formula_19">Q TARGET t = p y δ yt + (1 -p y )π guided t . (<label>7</label></formula><formula xml:id="formula_20">)</formula><p>The corresponding token-level objective decomposes as</p><formula xml:id="formula_21">CE Q TARGET t , π θ = p y CE(δ yt , π θ ) + (1 -p y ) CE πguided t , π θ .<label>(8)</label></formula><p>TARGET-SFT adaptively balances strict imitation and prior preservation. When the observed token y t is well-supported by the model, the objective approaches standard SFT. When y t is uncertain, it weakens one-hot fitting and instead assigns a higher weight to the teacher-guided residual branch. In this regime, teacher supervision acts as a fallback supervision that (1) avoids overfitting to uncertain labels, and (2) strengthens signals when a desired token is under-supported by student due to low p y . 7 Experiments 7.1 Setup</p><p>For mathematical reasoning, we train on two datasets: NuminaMath-CoT-67k <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b5">6]</ref> and OpenR1-Math-15k <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b33">34]</ref>. For broader scientific reasoning, we train on m23k We compare TARGET-SFT against the following baselines: (1) SFT, which trains with the standard negative log-likelihood. (2) SFT (p-loss) <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b12">13]</ref>, a probability-weighted variant that scales loss by the model probability on the observed token. (3) Knowledge Distillation <ref type="bibr" target="#b35">[36]</ref>, which applies teacher distribution on the data as supervision. We use the standard form L Distill = c CE(π T , π θ ) + (1c) CE(δ yt , π θ ), where c is constant and ablated in Table <ref type="table" target="#tab_3">6</ref>. These baselines correspond to different partial choices in the Q-target design space: SFT uses the one-hot target, SFT (p) uses γ t = p yt , and KD uses the full teacher distribution as a fixed distributional signal. TARGET-SFT considers both (γ t , πt ) and adaptively balances label imitation and the residual branch based on uncertainty in label.</p><p>For models that involve teacher distribution, we use the corresponding instruction-tuned model as the teacher; for example, Qwen2.5-1.5B uses Qwen2.5-1.5B-Instruct. For the Qwen3 series, we use Qwen3-4B-Instruct-2507 as the teacher. The evaluation performance is measured by Average@16 accuracy. Further details of evaluation and training configurations are provided in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">Main Results</head><p>Across all evaluations, TARGET-SFT achieves the highest Average@16 accuracy. Figure <ref type="figure" target="#fig_1">2</ref> summarizes the results across tasks. While the baselines each show complementary strengths and weaknesses in different dataset-model settings, TARGET-SFT consistently gives the best results. This highlights the value of the structure exposed by the Q-target framework: effective SFT can arise from carefully designing both the imitation strength and the allocation of remaining probability mass.</p><p>Math. Table <ref type="table" target="#tab_0">1</ref> reports the results on NuminaMath-CoT and OpenR1-15k. TARGET-SFT achieves the highest average accuracy across all models on both datasets. In contrast, standard SFT yields only modest gains over the base model in many cases, and even hurts performance for Qwen3-1.7B on NuminaMath-CoT (14.26 → 12.99). This is consistent with prior observations that rigid one-hot matching can be limiting for mathematical reasoning <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b27">28]</ref>. The relatively strong performance of probability-weighted SFT (p-loss) further suggests that reducing imitation strength on uncertain tokens is beneficial. However, TARGET-SFT improves over the p-loss in every case. This supports our claim that choosing γ t alone and defaulting the residual mass to model prior is incomplete. By explicitly designing πt , TARGET-SFT enhances the supervision and achieves stronger performance.</p><p>Direct distillation, which uses teacher distribution as the full target, performs relatively weakly on mathematical reasoning. On NuminaMath-CoT, distillation is only slightly better than standard SFT in some cases, such as Qwen3-1.7B-Base (17.81 vs. 12.99) and Qwen2.5-Math-7B (25.76 vs. 23.88), whereas TARGET-SFT outperforms significantly. This suggests that simply replacing the target with a soft teacher distribution is still suboptimal. In contrast, TARGET-SFT uses the teacher to shape the residual branch, whose weight 1 -γ t increases when y t is under-supported. This adaptive use of teacher signals proves to be more effective than full distillation in these settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Medical.</head><p>Table <ref type="table" target="#tab_1">2</ref> shows a different pattern on medical reasoning. The gap between standard SFT and p-loss is smaller than in math, and in some cases standard SFT is clearly stronger. For example, on Qwen2.5-1.5B the two methods achieve similar averages, while on LLaMA-3.1-8B standard SFT substantially outperforms p-loss (47.41 vs. 38.60). This suggests that for some tasks, stricter imitation is more effective, perhaps because the demonstrations align more closely with the desired answer distribution. In such cases, the p-loss that uniformly weakens supervision for all low-p y tokens is not ideal. Nevertheless, TARGET-SFT still achieves the best average performance across all models on the medical setting. This shows that the teacher-guided residual branch remains valuable even when probability-based reweighting alone is less effective. Distillation is also more competitive on medical reasoning than on math, outperforming p-loss on Qwen2.5-1.5B and Qwen2.5-7B. However, TARGET-SFT still outperforms distillation across all models. The mixed performance of distillation again suggests that teacher information is useful, but treating it as a fixed full target is not always the best approach. Under the Q-target design, the teacher instead acts as adaptive fallback supervision, which supplements corrective signals for missing knowledge while preserving the model prior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.3">Ablation Study.</head><p>We ablate the two key design choices in TARGET-SFT. We include results on varying (1) the intensity of teacher supervision in the residual distribution, controlled by η. This tests the effect of the teacher model and the method's sensitivity to this hyperparameter eta. We further vary (2) the adaptive weighting of the residual branch, controlled by 1 -γ t . This ablation directly tests whether using an uncertainty-dependent residual weight 1 -γ t is effective, compared to simply assigning a fixed constant weight c to the πt branch. Additionally, we also tune the hyperparameter c for distillation to explore potential performance gain for the baseline.</p><p>We report the full results in Appendix E. In summary, the ablation studies validate both components of TARGET-SFT. While varying η ∈ {0.2, 0.5, 1.0} gives averages in the range from 34.30 to 38.05, they all outperform the baselines and the best distillation setting (34.30 vs. 30.83). In contrast, further tuning of the hyperparameter c ∈ {0.2, 0.5, 0.8, 1.0} for the distillation baseline does not lead to gains beyond the result presented in Table <ref type="table" target="#tab_0">1</ref>, but instead fluctuates significantly from 22.81 to 30.83. The ablation on residual weight 1 -γ t also shows the effectiveness of this design, where changing to this to a constant c degrades the performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion</head><p>In this work, we show that supervised fine-tuning is fundamentally a target distribution design. We formalize this view through the Q-target framework Q t = γ t δ yt + (1 -γ t )π t , which exposes two hidden design choices: how strongly to imitate the observed token, and how to allocate residual probability mass over alternatives. This lens unifies many existing SFT variants as implicit choices of γ t or πt . Building on this insight, we present TARGET-SFT and empirically demonstrate its effectiveness across ten reasoning data-model settings. Overall, our results offer a novel and more complete perspective into SFT, and open a broader design space for future SFT methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Proofs</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Proof of Proposition 1</head><p>For a target distribution Q t , the token-level cross-entropy loss is</p><formula xml:id="formula_22">CE (Q t , π θ (• | x t )) = - k∈V Q t (k) log π θ (k | x t ).</formula><p>By definition, the Q-target is</p><formula xml:id="formula_23">Q t = γ t δ yt + (1 -γ t )π t .</formula><p>Substituting this into the cross-entropy gives</p><formula xml:id="formula_24">CE (Q t , π θ (• | x t )) = - k∈V [γ t δ yt (k) + (1 -γ t )π t (k)] log π θ (k | x t ) = -γ t k∈V δ yt (k) log π θ (k | x t ) -(1 -γ t ) k∈V πt (k) log π θ (k | x t ) = γ t CE (δ yt , π θ (• | x t )) + (1 -γ t )CE (π t , π θ (• | x t )) .<label>(9)</label></formula><p>Therefore, training toward Q t decomposes the token-level supervision into two components: label imitation controlled by γ t and residual distribution matching of πt .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Proof of Corollary 1</head><p>Given the token-weighted loss with detached importance weighting w t L w t = -w t log π θ (y t | x t ), we consider the choice of (γ t , πt )</p><formula xml:id="formula_25">(γ t = w t , πt = sg[π θ (• | x t )]) =⇒ Q t = w t δ yt + (1 -w t )sg[π θ (• | x t )] .</formula><p>By Proposition 1, the token-level loss for this Q t decomposes as</p><formula xml:id="formula_26">CE(Q t , π θ ) = w t CE(δ yt , π θ ) + (1 -w t )CE(sg[π θ ] , π θ ) .</formula><p>The first term gives the token-weighted SFT gradient:</p><formula xml:id="formula_27">∇ θ w t CE(δ yt , π θ ) = -w t ∇ θ log π θ (y t | x t ).</formula><p>For the second term, let p t = π θ and pt = sg[p t ]. Since the logit gradient of CE(p t , p t ) is p t -pt , and pt is a detached copy of p t , we have</p><formula xml:id="formula_28">∇ θ CE(sg[π θ ] , π θ ) = 0.</formula><p>Therefore,</p><formula xml:id="formula_29">∇ θ CE(Q t , π θ ) = -w t ∇ θ log π θ (y t | x t ) = ∇ θ L w t .<label>(10)</label></formula><p>This shows that token-weighted SFT is equivalent at the gradient level to Q-target training with γ t = w t and a self-matching residual branch πt = sg[π θ ].</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Proof of Corollary 2</head><p>Given the distributional objective</p><formula xml:id="formula_30">L t = -a t log π θ (y t | x t ) + b t CE(q t , π θ ), a t , b t ≥ 0,</formula><p>rewrite the label imitation term as cross-entropy and obtain:</p><formula xml:id="formula_31">L t = a t CE(δ yt , π θ ) + b t CE(q t , π θ ).</formula><p>Let s t = a t + b t . For s t &gt; 0, this can be normalized as</p><formula xml:id="formula_32">L t = s t a t s t CE(δ yt , π θ ) + b t s t CE(q t , π θ ) .</formula><p>The constant s t only rescales the token-level gradient globally, which can be absorbed into the effective learning rate or token weight. Define</p><formula xml:id="formula_33">γ t = a t a t + b t , πt = q t .</formula><p>By linearity of cross-entropy in its first argument,</p><formula xml:id="formula_34">γ t CE(δ yt , π θ ) + (1 -γ t )CE(π t , π θ ) = CE (γ t δ yt + (1 -γ t )π t , π θ ) .<label>(11)</label></formula><p>Therefore, up to the overall scale a t + b t , the objective is equivalent to Q-target training with</p><formula xml:id="formula_35">Q t = γ t δ yt + (1 -γ t )π t .</formula><p>This proves the claim of Corollary 2.</p><p>Some distributional methods fall outside the nonnegative residual-mixture form in Eq. (4). For example, GEM <ref type="bibr" target="#b4">[5]</ref> discourages model from concentrating high probability on the strongest non-label alternatives. This can be expressed schematically as a repulsive branch πt,τ as follows</p><formula xml:id="formula_36">π- t,τ (k) = π θ (k | x t ) 1/τ v∈V π θ (v | x t ) 1/τ , τ &lt; 1.</formula><p>This represents a τ -sharpened model distribution, which places mass on high-probability tokens. And its objective is conceptually written as</p><formula xml:id="formula_37">L t = CE(δ yt , π θ ) -λ CE(π - t,τ , π θ )</formula><p>, shaping the residual branch repulsively against collapsing onto a small set of tokens, thereby aligning with GEM's goal of preserving diversity in SFT.</p><p>This can be viewed as a signed residual extension of the Q-target framework, with πt = (π + t , πt ). This defines a desired and undesired target alternative, where Q t = δ yt + π+ t + πt . Instead of matching a positive residual distribution, GEM specifies an undesired residual direction to preserve diversity. More generally under this view, distributional variants can shape the residual branch to emphasize or suppress particular subsets of tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Unifying Framework</head><p>In this section, we provide concrete connections between SFT variants discussed in Section 2 and our Q-target perspective. Table <ref type="table">4</ref> shows the loss formulation and core motivation for each variant. Following the formulation Q t = γ t δ yt + (1 -γ t )π t , these methods can be interpreted through their choices of γ t and πt , as summarized in Table <ref type="table" target="#tab_2">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 4: Details of SFT Variants.</head><p>Each method is presented as a token-level objective ℓ t , given the prefix x t and observed token y t . We denote p t = π θ (y t | x t ), p θ (v) = π θ (v | x t ), sg[•] as stop-gradient, π T , π S as teacher and student distribution, and V as the vocabulary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SFT Variant</head><p>Token-level Objective Motivation Standard SFT ℓ SFT t = -log pt Maximize likelihood of every observed token Token-Level Variants DFT [13] ℓ DFT t = -sg[pt] log pt Use weighting to connect SFT with an RL-style objective Beyond-log [6] ℓ f t = f (pt), ℓ α t = 1 -p α t α Use probability-dependent objectives to balance learning across model capacities ProFiT [11] mt = 1[sg(pt) &gt; τ ],</p><formula xml:id="formula_38">ℓ ProFiT t = -mt log pt</formula><p>Use probability to identify and train on core tokens EAFT <ref type="bibr" target="#b19">[20]</ref> Ht = sg H(π</p><formula xml:id="formula_39">(k) θ,t ) log k , ℓ EAFT t = -Ht log pt.</formula><p>Use entropy to weight uncertain or knowledge-conflicting tokens iw-SFT <ref type="bibr" target="#b22">[23]</ref> w(τ</p><formula xml:id="formula_40">) = q(τ ) π ref (τ )</formula><p>, (w trajectory-level)</p><formula xml:id="formula_41">ℓ iw t = -w(τ ) log pt</formula><p>Use an auxiliary distribution to assign trajectory-level weights CFT <ref type="bibr" target="#b18">[19]</ref> ct = 1 ∀ỹt ∈ At, Correct y&lt;t, ỹt, y&gt;t = 0 ,</p><formula xml:id="formula_42">ℓ CFT t = -ct log pt</formula><p>Update only causally critical / irreplaceable tokens</p><formula xml:id="formula_43">Distributional-Level Variants Label Smooth [17] ℓ LS t = -(1 -λ) log pt + λ |V| v∈V log p θ,t (v) Regularize overconfident predictions for better calibration SFT + KL [15] ℓ KL t = -log pt + λ KL(π ref (• | xt)∥π θ (• | xt))</formula><p>Constrain updates with a reference model to limit drift</p><formula xml:id="formula_44">ASFT [21] ℓ ASFT t = ℓ DFT t + λKL(π base (• | xt)∥π θ (• | xt)) Constrain updates in DFT to prevent distributional drift Proximal SFT [22] rt = pt π old (yt | xt) , ℓ PSFT t = -min(rt, clip(rt, 1 -ϵ, 1 + ϵ))</formula><p>Clip ratio to enforce updates within a trust region GEM <ref type="bibr" target="#b4">[5]</ref> qt</p><formula xml:id="formula_45">(v) = sg[π θ,t (v)] 1/β u∈V sg[π θ,t (u)] 1/β , ℓ GEM t = CE(δy t , π θ,t ) -CE(qt, π θ,t )</formula><p>Control probability transfer from alternatives to observed token to preserve diversity Knowledge Distillation <ref type="bibr" target="#b35">[36]</ref> </p><formula xml:id="formula_46">ℓ KD t = -v∈V π T (v | xt) log π S (v | xt)</formula><p>Use the teacher logit distribution as a soft target Distillation (Hybrid) <ref type="bibr" target="#b35">[36]</ref> ℓ KD-</p><formula xml:id="formula_47">H t = (1 -λ)[-log π S (yt | xt)] +λD KL (π T (• | xt)∥π S (• | xt))</formula><p>Use hard-label and enrich it with teacher logit distribution</p><p>We organize existing methods into three broad categories. Label-trust variants modify the imitation strength on y t , corresponding to different choices of γ t . Residual-distribution variants primarily specify where the non-label probability mass should go. In these cases, the corresponding γ t is often obtained by normalizing the relative weights of the hard-label and residual branches, with any overall scale absorbed into the effective learning rate. Finally, data-level methods do not directly alter γ t or πt for a fixed demonstration. Instead, they reshape the empirical target distribution by selecting, filtering, or rewriting the training trajectory ŷ, after which standard one-hot SFT is applied. We therefore include them as indirect instances of target distribution design at the dataset level.</p><p>In particular, GEM <ref type="bibr" target="#b4">[5]</ref> can also be illustrated with a signed extension of the Q-framework, where the residual component contains both positive and negative branches, πt = (π + t , πt ). This defines a desired and undesired target alternative, where Q t = δ yt + π+ t + πt . And GEM utilizes πt as a repulsive branch to discourage probability collapse onto a small set of high-probability tokens, hence preserving diversity. Proximal SFT <ref type="bibr" target="#b21">[22]</ref> is included as a schematic connection, since its clipping-based trust-region objective is not an explicit residual target but implicitly constrains updates.</p><p>Throughout the table, (γ t , πt ) are treated as stop-gradient unless otherwise specified. Some methods are originally defined at the sequence or trajectory level <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b18">19]</ref>, we present their token-level decompositions or analogues to make the connection to Q t explicit. Label Smoothing <ref type="bibr" target="#b16">[17]</ref> Residual Distribution 1 -λ Unif(V) SFT + KL <ref type="bibr" target="#b14">[15]</ref> Residual Distribution</p><formula xml:id="formula_48">1 1+λ π ref (• | xt)</formula><p>ASFT <ref type="bibr" target="#b20">[21]</ref> Residual Distribution</p><formula xml:id="formula_49">pt pt+λ π base (• | xt)</formula><p>Proximal SFT <ref type="bibr" target="#b21">[22]</ref> Residual Distribution clipping-dependent π old (• | xt) GEM <ref type="bibr" target="#b4">[5]</ref> Residual Distribution</p><formula xml:id="formula_50">γ y t = 1, γ - t = 1 π+ t = π θ,t , π- t = π (β) θ,t</formula><p>Knowledge Distillation <ref type="bibr" target="#b35">[36]</ref> Residual Distribution</p><formula xml:id="formula_51">0 π T (• | xt)</formula><p>Distillation (Hybrid) <ref type="bibr" target="#b35">[36]</ref> Residual Distribution</p><formula xml:id="formula_52">1 -λ π T (• | xt) RFT [9] Data-Level - δ ŷ , ŷ ∼ πgen, correct(•|x) STaR [28] Data-Level - δ ŷ , ŷ ∼ πgen, correct(•|x) GRAPE [18] Data-Level - δ ŷ , ŷ = arg max y (i) π θ 0 (y (i) | x)</formula><p>Self-distillation <ref type="bibr" target="#b29">[30]</ref> Data-Level -δ ŷ , ŷ = Rewriteπ θ 0 (x, y)</p><formula xml:id="formula_53">TARGET-SFT Label Trust + Residual pt πguided t ∝ π 1-η θ,t π T (• | xt) η</formula><p>D From Any Loss to Q t Section 5.2 introduces the derivation of Q-target from any differentiable token-level SFT loss. We now provide two examples and visualize their effects below.</p><p>Example 1: Standard SFT. Standard SFT minimizes the negative log-likelihood of the observed token L SFT (z) = -log p y , where p y is the model probability assigned to y. The logit gradient is</p><formula xml:id="formula_54">g j = ∂L SFT ∂z j = p j -1{j = y}.<label>(12)</label></formula><p>Substituting this into Eq. ( <ref type="formula" target="#formula_14">6</ref>), we obtain the induced target</p><formula xml:id="formula_55">Q SFT (j) = p j -g j = 1, j = y, 0, j ̸ = y. (<label>13</label></formula><formula xml:id="formula_56">)</formula><p>This recovers exactly the one-hot target distribution δ y , assigning all target mass to the observed token and zero mass to alternatives.</p><p>Example 2: Probability-Weighted SFT. Consider the detached probability-weighted loss</p><formula xml:id="formula_57">L p-loss (z) = -sg[p y ] log p y ,<label>(14)</label></formula><p>This loss has the logit gradient</p><formula xml:id="formula_58">g j = sg[p y ](p j -1{j = y}).<label>(15)</label></formula><p>Substituting this gradient into Eq. ( <ref type="formula" target="#formula_14">6</ref>), and using the scalar sg[p y ] = p y derives the induced target</p><formula xml:id="formula_59">Q p-loss (j) = 2p y -p 2 y , j = y, (1 -p y )p j , j ̸ = y. (<label>16</label></formula><formula xml:id="formula_60">)</formula><p>This closed form reveals the mechanism of probability-weighted SFT. When the model assigns high probability to the observed token (p y → 1), the induced target approaches the one-hot SFT target. When the model is uncertain (p y → 0), the induced target relaxes toward the model's own distribution Q j → p j . Thus, low-confidence tokens receive weaker imitation updates, and the residual probability mass defaults to the student prior. In the Q-target notation, this corresponds to choosing γ = p y and π = sg[π θ ], thereby preserving the model prior when evidence for strict imitation on y is weak.</p><p>Figure <ref type="figure">3</ref>: Visualization of Loss. Standard SFT's gradient pulls toward y t and suppresses all k with fixed strength, corresponding to an induced target δ yt . For p-loss, the gradient scales with p y (slope for Non-observed token k depends on p y ). Therefore, its gradient is near-zero when p y ≈ 0, and the target probability is the same as current probability (Q = p); the induced target approaches δ yt only when p y → 1, where the model is certain. An interactive plot is available on our <ref type="url" target="https://txie1.github.io/Target-SFT/">project page</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Ablation Study</head><p>We ablate on the two key design choices in TARGET-SFT: (1) intensity of teacher supervision in the residual distribution, controlled by η, and (2) adaptive weighting of the residual branch, controlled by 1 -γ t . The first ablation tests the effect of teacher model and the method's sensitivity to this hyperparameter η. The second ablation tests whether using an uncertainty-dependent residual weight 1 -γ t is useful, compared to simply assigning a fixed constant weight c to the πt branch.</p><p>Additionally, we ablate on the hyperparameter c = {0.2, 0.5, 0.8, 1.0} in the knowledge distillation baseline L Distill = c CE(π T , π θ ) + (1 -c) CE(δ yt , π θ ) . This presents further results on baseline performance beyond the default choice of c = 0.8 used in the main text. The results in Table <ref type="table" target="#tab_3">6</ref> show that TARGET-SFT still achieves the highest results among all baselines. On the other hand, knowledge distillation in this setting is highly sensitive to the mixture weight c. In particular, it requires intricate balancing between teacher and hard-label supervision, where c = 0.5 and full distillation with c = 1.0 both degrade significantly from c = 0.8. And further tuning of this hyperparameter did not provide additional benefits, where the highest-performing distillation baseline still remains far below TARGET-SFT. This suggests that although the teacher distribution provides useful supervision, using it as a full or fixed soft target is still suboptimal.</p><p>The second ablation further confirms the importance of adaptive residual weighting. Replacing the uncertainty-dependent weight 1 -γ t with a constant branch weight c ∈ {0.2, 0.5, 1.0} gives weaker performance across settings. Although c = 0.5 is slightly more competitive, TARGET-SFT still achieves the highest average accuracy. This supports the main design intuition: teacher guidance should be applied more strongly when the observed token is uncertain, rather than uniformly across all tokens. Overall, the ablations validate both components of TARGET-SFT, showing that using a teacher-guided prior as a fallback mechanism in the residual branch is highly effective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Teacher Model Alignment</head><p>This section analyzes the alignment the model π θ and teacher distribution π T to better understand the effects of teacher guidance.  A large portion of tokens lies near the diagonal, where both models assign similar probabilities to y t . However, the distribution shows meaningful spread around the diagonal. This indicates useful correction signal, since even modest deviations from the diagonal are cases where the teacher's confidence differs and thus providing signals on alternative tokens in vocabulary. While the visualization only shows the marginal probabilities on y t for clarity, we note that the more important effect is the teacher's full redistribution of probability mass across alternative tokens. And divergence on y t serves as a proxy for for broader differences in the teacher's beliefs over the vocabulary, enabling fine-grained adjustments that the student's current distribution cannot capture.</p><p>The off-diagonal density in Q1 represents stronger disagreements (high p T , low p θ ), where teacher guidance is most informative. These tokens correspond to cases where the base model lacks confidence, but the teacher recognizes the token as plausible or important. This shows the role of teacher guidance as a fallback signal: when the student is uncertain, the teacher strengthened supervision rather than relying solely on the student's current belief. Notably, many tokens cluster at p T ≈ 1.0, indicating that the teacher frequently provides strong corrections on tokens the student underweights.</p><p>In Q2 (both p T and p θ low), both models are uncertain about the observed token. These may correspond to noisy, idiosyncratic, or highly non-unique tokens. Standard SFT treats them as fully reliable labels, forcing exact imitation through one-hot target δ yt . In contrast, a softer target reduces imitation strength here, allowing probability mass to plausible alternatives. This helps avoid fitting dataset artifacts or arbitrary surface choices.</p><p>In Q3, the two models assign high probability to y t . These are high-confidence tokens where the label is likely reliable and unambiguous. The target thus remains close to standard SFT one-hot δ yt , since both models support strong imitation. Finally, in Q4 (high p θ , low p T ), the student model is already confident but the teacher is uncertain. In this case, the teacher supervision is downweighted through a smaller 1 -γ t , naturally reducing its influence.</p><p>Together, this analysis supports the motivation of TARGET-SFT, providing a selective fallback distribution to adjust the confidence on dataset tokens. It strengthens supervision when the model is uncertain, while relaxing imitation on low-confidence uncertain tokens. This provides a more adaptive alternative to standard SFT, which imposes the strict one-hot target δ yt regardless of token uncertainty or model-data alignment. Appendix G provides example trajectories showing tokens in the Q1 (high p T , low p θ ) and Q2 (both low), ideally corresponding to useful knowledge vs. uncertain/noisy tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figures 6, 5, 7 show example trajectories from NuminaMath-67k dataset.</head><p>Rescue token y t is assigned a low probability under π θ but high probability under π T , hence strengthens the supervision that is otherwise weak. Filter token y t has low probability under both π θ and π T , thus relaxing its imitation strength. Rescue tends to be answer-binding structural tokens, while Filter tends to be stylistic or chain-of-thought bridge words (e.g., 1., First, Thus, Therefore, So, etc)   </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>(</head><figDesc>so, thus, hence)DatasetTokens may be non-unique x^2 -1 = (x -1)(x + 1), therefore the roots…</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Performance Summary. Average@16 accuracy across all 10 dataset-model settings used.</figDesc><graphic coords="7,108.00,72.00,396.01,149.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>[35], a high-quality medical reasoning dataset. Our experiments cover across seven diverse models: Qwen2.5 (1.5B &amp; 7B), Qwen2.5-Math (1.5B &amp; 7B), Qwen3-1.7B-Base, LlaMA-3.2-3B, LlaMA-3.1-8B.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4</head><label>4</label><figDesc>visualizes the conditional distribution P (p T | p θ ) of the teacher probability p T = π T (• | x t ) given the policy model probability p θ = π θ (• | x t ), both evaluated on the observed ground-truth training token y t .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Conditional Distribution of Probabilities. This visualizes P (p T | p θ ), the teacher probability p T given the student probability p θ on the observed token y t . Each column represents a fixed p θ bin, with color intensity showing the empirical density of p T within that bin. The four annotated quadrants define qualitatively distinct supervision regimes.</figDesc><graphic coords="20,127.80,151.92,356.41,149.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Example Trajectory #1.</figDesc><graphic coords="21,115.92,162.83,380.16,414.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Example Trajectory #2.</figDesc><graphic coords="22,108.00,159.96,396.00,454.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Example Trajectory #3.</figDesc><graphic coords="23,108.00,79.77,396.00,614.59" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><graphic coords="18,147.60,476.36,316.81,158.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="24,108.00,141.01,395.98,146.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Mathematical Reasoning. Average@16 accuracy on five standard benchmarks, using models trained on NuminaMath-CoT (top) and OpenR1 (bottom).</figDesc><table><row><cell></cell><cell>Minerva Math</cell><cell>Olympiad Bench</cell><cell>AIME24</cell><cell>AMC23</cell><cell>Math500</cell><cell>Avg.</cell></row><row><cell></cell><cell></cell><cell cols="2">Dataset: NuminaMath-CoT</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen3-1.7B-Base</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>9.87</cell><cell>11.35</cell><cell>0.62</cell><cell>16.25</cell><cell>33.81</cell><cell>14.26</cell></row><row><cell>SFT</cell><cell>10.78</cell><cell>8.64</cell><cell>0.00</cell><cell>10.78</cell><cell>34.61</cell><cell>12.99</cell></row><row><cell>SFT (p)</cell><cell>18.91</cell><cell>17.81</cell><cell>1.24</cell><cell>27.66</cell><cell>53.86</cell><cell>24.20</cell></row><row><cell>Distill</cell><cell>14.08</cell><cell>11.92</cell><cell>1.65</cell><cell>19.69</cell><cell>41.52</cell><cell>17.81</cell></row><row><cell>TARGET-SFT</cell><cell>21.44</cell><cell>19.21</cell><cell>3.94</cell><cell>30.78</cell><cell>57.55</cell><cell>26.93</cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen2.5-Math-1.5B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>8.23</cell><cell>15.20</cell><cell>3.75</cell><cell>18.12</cell><cell>31.52</cell><cell>14.92</cell></row><row><cell>SFT</cell><cell>12.61</cell><cell>12.11</cell><cell>0.82</cell><cell>16.41</cell><cell>42.29</cell><cell>16.72</cell></row><row><cell>SFT (p)</cell><cell>25.19</cell><cell>27.38</cell><cell>7.72</cell><cell>38.12</cell><cell>65.79</cell><cell>32.94</cell></row><row><cell>Distill</cell><cell>25.46</cell><cell>23.64</cell><cell>6.68</cell><cell>37.50</cell><cell>60.92</cell><cell>30.83</cell></row><row><cell>TARGET-SFT</cell><cell>32.20</cell><cell>31.59</cell><cell>8.96</cell><cell>47.03</cell><cell>70.20</cell><cell>38.05</cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen2.5-Math-7B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>7.66</cell><cell>9.62</cell><cell>8.13</cell><cell>19.84</cell><cell>31.98</cell><cell>15.76</cell></row><row><cell>SFT</cell><cell>21.33</cell><cell>18.77</cell><cell>2.70</cell><cell>22.81</cell><cell>53.55</cell><cell>23.88</cell></row><row><cell>SFT (p)</cell><cell>28.48</cell><cell>32.78</cell><cell>8.56</cell><cell>49.38</cell><cell>67.93</cell><cell>37.33</cell></row><row><cell>Distill</cell><cell>23.35</cell><cell>18.79</cell><cell>5.63</cell><cell>30.31</cell><cell>51.24</cell><cell>25.76</cell></row><row><cell>TARGET-SFT</cell><cell>31.03</cell><cell>34.56</cell><cell>8.96</cell><cell>49.69</cell><cell>72.69</cell><cell>39.49</cell></row><row><cell></cell><cell></cell><cell cols="2">Dataset: OpenR1-15k</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen3-1.7B-Base</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>9.87</cell><cell>11.35</cell><cell>0.62</cell><cell>16.25</cell><cell>33.81</cell><cell>14.26</cell></row><row><cell>SFT</cell><cell>14.30</cell><cell>12.55</cell><cell>1.65</cell><cell>20.62</cell><cell>41.68</cell><cell>18.31</cell></row><row><cell>SFT (p)</cell><cell>25.86</cell><cell>23.66</cell><cell>7.29</cell><cell>35.62</cell><cell>62.41</cell><cell>31.23</cell></row><row><cell>Distill</cell><cell>22.43</cell><cell>18.42</cell><cell>2.90</cell><cell>27.81</cell><cell>53.70</cell><cell>24.99</cell></row><row><cell>TARGET-SFT</cell><cell>27.47</cell><cell>24.78</cell><cell>5.41</cell><cell>33.75</cell><cell>63.92</cell><cell>31.41</cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen2.5-Math-1.5B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>8.23</cell><cell>15.20</cell><cell>3.75</cell><cell>18.12</cell><cell>31.52</cell><cell>14.92</cell></row><row><cell>SFT</cell><cell>14.45</cell><cell>15.35</cell><cell>1.87</cell><cell>24.22</cell><cell>43.99</cell><cell>19.71</cell></row><row><cell>SFT (p)</cell><cell>31.18</cell><cell>33.56</cell><cell>11.45</cell><cell>47.34</cell><cell>70.75</cell><cell>39.00</cell></row><row><cell>Distill</cell><cell>19.89</cell><cell>20.31</cell><cell>5.01</cell><cell>26.72</cell><cell>52.65</cell><cell>25.32</cell></row><row><cell>TARGET-SFT</cell><cell>33.09</cell><cell>34.84</cell><cell>13.13</cell><cell>51.72</cell><cell>72.38</cell><cell>41.24</cell></row><row><cell></cell><cell></cell><cell cols="2">Qwen2.5-Math-7B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>7.66</cell><cell>9.62</cell><cell>8.13</cell><cell>19.84</cell><cell>31.98</cell><cell>15.76</cell></row><row><cell>SFT</cell><cell>34.41</cell><cell>33.26</cell><cell>11.88</cell><cell>50.16</cell><cell>73.29</cell><cell>40.55</cell></row><row><cell>SFT (p)</cell><cell>27.33</cell><cell>28.28</cell><cell>11.24</cell><cell>37.19</cell><cell>57.25</cell><cell>32.20</cell></row><row><cell>Distill</cell><cell>42.04</cell><cell>39.94</cell><cell>13.32</cell><cell>62.34</cell><cell>80.26</cell><cell>47.36</cell></row><row><cell>TARGET-SFT</cell><cell>43.61</cell><cell>42.42</cell><cell>18.13</cell><cell>61.88</cell><cell>80.75</cell><cell>49.50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Medical Reasoning. Average@16 accuracy on medical reasoning benchmarks.</figDesc><table><row><cell></cell><cell cols="10">MedMC MedQA PubMed MMLU-P GPQA Lancet MedB (4) MedB (5) MedX NEJM</cell><cell>Avg.</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>LLaMA-3.2-3B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>21.13</cell><cell>21.76</cell><cell>22.0</cell><cell>12.18</cell><cell>25.64</cell><cell>24.51</cell><cell>27.92</cell><cell>21.43</cell><cell>11.11</cell><cell>21.56</cell><cell>20.92</cell></row><row><cell>SFT</cell><cell>34.19</cell><cell>38.02</cell><cell>57.0</cell><cell>25.93</cell><cell>30.26</cell><cell>36.17</cell><cell>36.04</cell><cell>28.25</cell><cell>11.73</cell><cell>32.34</cell><cell>32.99</cell></row><row><cell>SFT (p)</cell><cell>40.43</cell><cell>40.93</cell><cell>61.4</cell><cell>33.42</cell><cell>34.87</cell><cell>43.45</cell><cell>34.09</cell><cell>25.97</cell><cell>9.87</cell><cell>40.30</cell><cell>36.47</cell></row><row><cell>Distill</cell><cell>37.08</cell><cell>38.26</cell><cell>55.7</cell><cell>28.01</cell><cell>27.44</cell><cell>39.81</cell><cell>35.71</cell><cell>31.82</cell><cell>10.01</cell><cell>35.16</cell><cell>33.90</cell></row><row><cell>TARGET-SFT</cell><cell>39.78</cell><cell>44.46</cell><cell>64.0</cell><cell>32.70</cell><cell>30.00</cell><cell>45.87</cell><cell>37.01</cell><cell>31.17</cell><cell>12.63</cell><cell>39.30</cell><cell>37.69</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>LLaMA-3.1-8B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>22.81</cell><cell>29.30</cell><cell>21.2</cell><cell>19.02</cell><cell>29.49</cell><cell>22.82</cell><cell>29.87</cell><cell>20.78</cell><cell>10.14</cell><cell>20.07</cell><cell>22.55</cell></row><row><cell>SFT</cell><cell>50.47</cell><cell>56.64</cell><cell>74.0</cell><cell>48.21</cell><cell>37.69</cell><cell>53.40</cell><cell>47.73</cell><cell>40.26</cell><cell>14.77</cell><cell>50.91</cell><cell>47.41</cell></row><row><cell>SFT (p)</cell><cell>40.69</cell><cell>46.90</cell><cell>64.3</cell><cell>34.33</cell><cell>33.33</cell><cell>38.35</cell><cell>40.58</cell><cell>31.82</cell><cell>12.22</cell><cell>43.45</cell><cell>38.60</cell></row><row><cell>Distill</cell><cell>45.52</cell><cell>51.61</cell><cell>63.3</cell><cell>42.35</cell><cell>35.64</cell><cell>47.57</cell><cell>38.31</cell><cell>35.71</cell><cell>13.18</cell><cell>45.44</cell><cell>41.86</cell></row><row><cell>TARGET-SFT</cell><cell>49.32</cell><cell>60.17</cell><cell>74.7</cell><cell>50.42</cell><cell>46.15</cell><cell>55.34</cell><cell>41.56</cell><cell>38.96</cell><cell>13.60</cell><cell>47.10</cell><cell>47.73</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Qwen2.5-1.5B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>22.40</cell><cell>22.70</cell><cell>18.4</cell><cell>11.47</cell><cell>17.18</cell><cell>23.06</cell><cell>24.35</cell><cell>17.21</cell><cell>9.45</cell><cell>21.39</cell><cell>18.76</cell></row><row><cell>SFT</cell><cell>39.35</cell><cell>41.16</cell><cell>68.5</cell><cell>34.07</cell><cell>34.36</cell><cell>39.32</cell><cell>35.39</cell><cell>30.19</cell><cell>10.35</cell><cell>32.67</cell><cell>36.54</cell></row><row><cell>SFT (p)</cell><cell>38.92</cell><cell>37.55</cell><cell>67.6</cell><cell>37.79</cell><cell>35.64</cell><cell>42.72</cell><cell>35.71</cell><cell>30.19</cell><cell>10.49</cell><cell>36.48</cell><cell>37.31</cell></row><row><cell>Distill</cell><cell>41.02</cell><cell>42.58</cell><cell>68.9</cell><cell>37.92</cell><cell>38.21</cell><cell>43.20</cell><cell>37.01</cell><cell>28.57</cell><cell>10.70</cell><cell>38.97</cell><cell>38.71</cell></row><row><cell>TARGET-SFT</cell><cell>40.31</cell><cell>41.87</cell><cell>68.3</cell><cell>39.67</cell><cell>42.56</cell><cell>40.29</cell><cell>38.31</cell><cell>31.49</cell><cell>11.59</cell><cell>38.64</cell><cell>39.30</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Qwen2.5-7B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>51.35</cell><cell>57.03</cell><cell>69.7</cell><cell>54.01</cell><cell>45.64</cell><cell>56.80</cell><cell>42.21</cell><cell>40.26</cell><cell>12.22</cell><cell>55.56</cell><cell>48.48</cell></row><row><cell>SFT</cell><cell>42.24</cell><cell>44.07</cell><cell>69.3</cell><cell>41.43</cell><cell>36.67</cell><cell>42.96</cell><cell>38.64</cell><cell>37.01</cell><cell>12.01</cell><cell>39.30</cell><cell>40.36</cell></row><row><cell>SFT (p)</cell><cell>47.65</cell><cell>52.79</cell><cell>74.5</cell><cell>54.27</cell><cell>44.62</cell><cell>57.04</cell><cell>44.81</cell><cell>38.96</cell><cell>12.97</cell><cell>46.60</cell><cell>47.42</cell></row><row><cell>Distill</cell><cell>52.28</cell><cell>58.84</cell><cell>72.3</cell><cell>58.89</cell><cell>40.77</cell><cell>58.01</cell><cell>50.65</cell><cell>41.56</cell><cell>13.73</cell><cell>54.73</cell><cell>50.18</cell></row><row><cell>TARGET-SFT</cell><cell>54.53</cell><cell>62.37</cell><cell>74.9</cell><cell>60.85</cell><cell>48.21</cell><cell>59.95</cell><cell>52.92</cell><cell>42.86</cell><cell>14.01</cell><cell>56.55</cell><cell>52.72</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>SFT variants under the Q-target view. Each method can be interpreted through choices of label trust γ t and residual distribution πt in Q t = γ t δ yt + (1 -γ t )π t . This table provides illustrative examples rather than an exhaustive coverage of methods in each category.</figDesc><table><row><cell>Variant</cell><cell>Category</cell><cell cols="3">Choice of γt</cell><cell>Choice of πt</cell></row><row><cell>Standard SFT</cell><cell>One-hot imitation</cell><cell>1</cell><cell></cell><cell></cell><cell>-</cell></row><row><cell>DFT [13]</cell><cell>Label Trust</cell><cell>pt</cell><cell></cell><cell></cell><cell>π θ,t</cell></row><row><cell>Beyond-log [6]</cell><cell>Label Trust</cell><cell>p α t</cell><cell></cell><cell></cell><cell>π θ,t</cell></row><row><cell>ProFiT [11]</cell><cell>Label Trust</cell><cell cols="3">mt = 1{pt &gt; τ }</cell><cell>π θ,t</cell></row><row><cell>EAFT [20]</cell><cell>Label Trust</cell><cell>Ht =</cell><cell cols="2">H(π log k (k) θ,t )</cell><cell>π θ,t</cell></row><row><cell>iw-SFT [23]</cell><cell>Label Trust</cell><cell cols="2">w(τ ) =</cell><cell cols="2">q(τ ) π ref (τ ) , (trajectory-level) π θ,t</cell></row><row><cell>CFT [19]</cell><cell>Label Trust</cell><cell cols="4">ct = 1{yt counterfactual critical} π θ,t</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Ablation Study. Average@16 accuracy using Qwen2.5-Math-1.5B trained on NuminaMath (top) and OpenR1 (bottom) to ablate on two key designs of the method.</figDesc><table><row><cell></cell><cell>Minerva Math</cell><cell>Olympiad Bench</cell><cell>AIME24</cell><cell>AMC23</cell><cell>Math500</cell><cell>Avg.</cell></row><row><cell></cell><cell cols="4">Intensity of teacher signal η (η ↑= dominant supervision)</cell><cell></cell><cell></cell></row><row><cell>Distill (c = 0.2)</cell><cell>13.99</cell><cell>13.08</cell><cell>1.45</cell><cell>17.34</cell><cell>44.32</cell><cell>18.33</cell></row><row><cell>Distill (c = 0.5)</cell><cell>19.13</cell><cell>18.94</cell><cell>4.16</cell><cell>26.56</cell><cell>53.81</cell><cell>24.92</cell></row><row><cell>Distill (c = 0.8)</cell><cell>25.46</cell><cell>23.64</cell><cell>6.68</cell><cell>37.50</cell><cell>60.92</cell><cell>30.83</cell></row><row><cell>Distill (c = 1.0)</cell><cell>18.07</cell><cell>18.49</cell><cell>4.38</cell><cell>28.28</cell><cell>45.22</cell><cell>22.81</cell></row><row><cell>TARGET-SFT (η = 0.2)</cell><cell>27.41</cell><cell>29.48</cell><cell>9.17</cell><cell>44.06</cell><cell>65.96</cell><cell>35.16</cell></row><row><cell>TARGET-SFT (η = 0.5)</cell><cell>32.20</cell><cell>31.59</cell><cell>8.96</cell><cell>47.03</cell><cell>70.20</cell><cell>38.05</cell></row><row><cell>TARGET-SFT (η = 1.0)</cell><cell>28.24</cell><cell>28.13</cell><cell>7.92</cell><cell>43.12</cell><cell>63.85</cell><cell>34.30</cell></row><row><cell></cell><cell cols="3">Constant branch c, instead of residual 1 -γ t</cell><cell></cell><cell></cell><cell></cell></row><row><cell>c = 0.2</cell><cell>22.09</cell><cell>23.23</cell><cell>5.00</cell><cell>33.44</cell><cell>58.24</cell><cell>28.48</cell></row><row><cell>c = 0.5</cell><cell>29.54</cell><cell>33.19</cell><cell>11.67</cell><cell>50.47</cell><cell>70.71</cell><cell>39.10</cell></row><row><cell>c = 1.0</cell><cell>22.27</cell><cell>27.26</cell><cell>8.14</cell><cell>41.72</cell><cell>60.32</cell><cell>31.82</cell></row><row><cell>TARGET-SFT</cell><cell>33.09</cell><cell>34.84</cell><cell>13.13</cell><cell>51.72</cell><cell>72.38</cell><cell>41.24</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Preprint.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Experiment Details</head><p>Training Configurations. All SFT experiments are conducted using verl, largely following the work by Li et al. <ref type="bibr" target="#b5">[6]</ref>. The optimizer used is AdamW, with the learning rate of 5 × 10 -5 for all models. We use cosine decay scheduling with a warm-up ratio of 0.1. We use the maximum sequence length of 3072 for both mathematical reasoning datasets. The global train batch size is 256, with gradient accumulation. The experiments are conducted on A6000 and H200 GPUs. All models are trained for 1 epoch. Table <ref type="table" target="#tab_4">3</ref> summarizes all training and evaluation-related configurations.</p><p>Teacher Models. For methods that involve teacher distribution, we use the corresponding instruction-tuned model as the teacher for the base model; for example, Qwen2.5-1.5B uses Qwen2.5-1.5B-Instruct. For Qwen3-1.7B-Base, we use Qwen3-4B-Instruct-2507 as the teacher. For TARGET-SFT, we choose the teacher signal intensity from η ∈ {0.2, 0.5, 1.0}. To ensure consistency across methods, we cache all teacher logits before training and use the same cache for both distillation and TARGET-SFT experiments. For memory efficiency, the cached teacher distribution is truncated to the top-64 tokens in the vocabulary with the highest probabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets.</head><p>For NuminaMath-CoT which originally contains 859k chain-of-through problems, we following Li et al. <ref type="bibr" target="#b5">[6]</ref> and use the 67k subset organized in their work. For the OpenR1 training dataset, we sample 15k from OpenR1-Math-46k-8192 <ref type="bibr" target="#b33">[34]</ref>, which contains verified traces generated by DeepSeek-R1 for problems collected from NuminaMath 1.5 <ref type="bibr" target="#b31">[32]</ref>. We collect the responses with sequence length shorter than 3072 to standardize with the training configuration for NuminaMath-CoT. For scientific reasoning, we use m23k <ref type="bibr" target="#b34">[35]</ref>, a 23k high-quality medical reasoning dataset.</p><p>Evaluation. For mathematical reasoning, evaluation covers five representative benchmarks: Minerva Math, Olympiad Bench, AIME24, AMC23, and Math500 <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr">40,</ref><ref type="bibr" target="#b39">41]</ref>. For models trained on m23k, we evaluate on the same benchmarks following Li et al. <ref type="bibr" target="#b5">[6]</ref>, which include MedM-CQA <ref type="bibr" target="#b40">[42]</ref>, MedQA-USMLE <ref type="bibr" target="#b41">[43]</ref>, PubMedQA <ref type="bibr" target="#b42">[44]</ref>, MMLU-Pro <ref type="bibr" target="#b43">[45]</ref>, GPQA (Medical) <ref type="bibr" target="#b44">[46]</ref>, Lancet &amp; NEJM <ref type="bibr" target="#b34">[35]</ref>, MedBullets <ref type="bibr" target="#b45">[47]</ref>, and MedXpertQA <ref type="bibr" target="#b46">[48]</ref>. Evaluation follows the same protocol as Li et al. <ref type="bibr" target="#b5">[6]</ref> and Huang et al <ref type="bibr" target="#b34">[35]</ref>. Inference uses a maximum generation length of 4096 tokens with the decoding temperature 1.0. For distillation and TARGET-SFT on Qwen2.5-Math-7B trained from the longer-sequence OpenR1-15k dataset, we use the decoding settings with temperature 0.7 and top-p 0.8 as recommended for its teacher model Qwen2.5-Math-7B-Instruct. The reported results are averaged over 16 generations for every prompt. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Response Length</head><p>This section analyzes the relationship between the model's output response length and its accuracy performance. Figure <ref type="figure" target="#fig_10">8</ref> shows the comparison on Qwen2.5-Math-1.5B for the two mathematical reasoning datasets, and Qwen2.5-1.5B for the m23k dataset. On m23k and NuminaMath-67K, trained models that produce longer responses generally have higher accuracies than the shorter-output SFT variants, suggesting that the increase in reasoning length is beneficial. However, this relationship between response length and model performance is not consistent on OpenR1-15K, where standard SFT produces the longest responses but achieves substantially lower accuracy than the others. Meanwhile, TARGET-SFT achieves the highest accuracy with relatively shorter responses. This indicates that this pattern may be dataset-dependent and response length alone is not a reliable proxy for reasoning quality.</p><p>A closer inspection of model outputs suggests that the long responses from the base model often reflect poor generation behavior rather than longer reasoning. In particular, the base model occasionally shows rambling, unstable formatting, repetition, or failure to terminate properly. This inflates the average response length while yielding weak performance. In contrast, all trained models produce more consistent outputs and more stable response formats.</p><p>Standard SFT appears especially sensitive to the surface style of the training corpus. For example, on OpenR1-15K, it tends to imitate the dataset's long chain-of-thought monologue style, closely matching its response length and tone. This observation aligns with the intuition behind SFT's one-hot target δ yt , which applies strict supervision to every observed token in the training data. As a result, standard SFT may overfit to dataset-specific surface forms, including verbosity and stylistic structures, without necessarily improving the robustness of the underlying reasoning process.</p><p>By comparison, SFT(p), distillation, and TARGET-SFT tend to preserve more of the base model's flexibility. Their outputs fall into a more moderate-length regime and avoid the extreme verbosity of standard SFT. These methods appear to trade some of SFT's confident dataset-matched style for a more consistent reasoning structure that transfers better across corpora, leading to stronger accuracy without simply increasing response length or mimicking styles from the dataset.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 8 :</head><label>8</label><figDesc>Comparison of Response Length. Bars indicate mean response length (tokens), error bars show the interquartile range (p25-p75), and the green curve reports average accuracy from evaluation in the main text. Response length does not consistently predict performance: long outputs from the base model or standard SFT often reflect rambling, repetition, or dataset-specific style imitation, while TARGET-SFT achieves strong accuracy with more moderate and stable response lengths.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 3 :</head><label>3</label><figDesc>Configuration summary.All experiments use the same setup unless otherwise specified.</figDesc><table><row><cell cols="2">Section Item</cell><cell>Details</cell></row><row><cell cols="2">Dataset NuminaMath-CoT</cell><cell>67k subset from Li et al. [6]</cell></row><row><cell></cell><cell>OpenR1</cell><cell>15k samples with length &lt; 3072 from OpenR1-Math-46k-8192 [34]</cell></row><row><cell></cell><cell>Medical reasoning</cell><cell>m23k [35], a 23k high-quality medical reasoning dataset</cell></row><row><cell>Model</cell><cell>Math</cell><cell>Qwen3-1.7B-Base, Qwen2.5-Math-1.5B, Qwen2.5-Math-7B</cell></row><row><cell></cell><cell>Medical</cell><cell>LLaMA-3.2-3B, LLaMA-3.1-8B, Qwen2.5-1.5B, Qwen2.5-7B</cell></row><row><cell>Train</cell><cell>Framework</cell><cell>verl</cell></row><row><cell></cell><cell>Optimizer</cell><cell>AdamW</cell></row><row><cell></cell><cell>Learning rate</cell><cell>5 × 10 -5</cell></row><row><cell></cell><cell>Schedule</cell><cell>Cosine decay with warm-up ratio 0.1</cell></row><row><cell></cell><cell>Max sequence length</cell><cell>3072</cell></row><row><cell></cell><cell>Global batch size</cell><cell>256, with gradient accumulation</cell></row><row><cell></cell><cell>Epochs</cell><cell>1</cell></row><row><cell>Eval</cell><cell cols="2">Max generation length 4096</cell></row><row><cell></cell><cell>Metric</cell><cell>Average@16</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Instruction tuning for large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoya</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoyin</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Chung</forename><surname>Hyung Won</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuyun</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie</forename><surname>Castro-Ros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Pellat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dasha</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Valter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slav</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Scaling instruction-finetuned language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">The false promise of imitating proprietary llms</title>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Gudibande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyang</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Preserving diversity in supervised fine-tuning of large language models</title>
+		<author>
+			<persName><forename type="first">Ziniu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congliang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiancong</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhi-Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Beyond log likelihood: Probability-based objectives for supervised fine-tuning across the model capability continuum</title>
+		<author>
+			<persName><forename type="first">Gaotang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhong</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanghang</forename><surname>Tong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A survey on data selection for llm instruction tuning</title>
+		<author>
+			<persName><forename type="first">Bolin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianlong</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiying</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dianhui</forename><surname>Chu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">83</biblScope>
+			<date type="published" when="2025-08">August 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">A survey on data selection for language models</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Albalak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanai</forename><surname>Elazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sang</forename><surname>Michael Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bairu</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haewon</forename><surname>Jeong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Scaling relationship on learning mathematical reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanqi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Puxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srini</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avia</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gargi</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lima</surname></persName>
+		</author>
+		<title level="m">Less is more for alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Profit: Leveraging high-value signals in sft via probability-guided token selection</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taiqiang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoning</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Beyond the 80/20 rule: High-entropy minority tokens drive effective reinforcement learning for llm reasoning</title>
+		<author>
+			<persName><forename type="first">Shenzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">On the generalization of sft: A reinforcement learning perspective with reward rectification</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Ziheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingzhe</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinting</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbo</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Hsuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianzhe</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<title level="m">Sft memorizes, rl generalizes: A comparative study of foundation model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Rl&apos;s razor: Why online reinforcement learning forgets less</title>
+		<author>
+			<persName><forename type="first">Idan</forename><surname>Shenfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyothish</forename><surname>Pari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Razin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<title level="m">The role of on-policy data in mitigating forgetting</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Calibrated language models and how to find them with label smoothing</title>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuhao</forename><surname>Zeng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">The best instruction-tuning data are those that fit</title>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qirun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Enhancing large language model reasoning via selective critical token fine-tuning</title>
+		<author>
+			<persName><forename type="first">Zhiwen</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanhua</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Entropy-adaptive fine-tuning: Resolving confident conflicts to mitigate forgetting</title>
+		<author>
+			<persName><forename type="first">Muxi</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lele</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wuxuan</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhonghao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kongming</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanyu</forename><surname>Ma</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyou</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanhua</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>Anchored supervised fine-tuning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Proximal supervised fine-tuning</title>
+		<author>
+			<persName><forename type="first">Wenhong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Supervised fine tuning on curated data is reinforcement learning (and can be improved</title>
+		<author>
+			<persName><forename type="first">Chongli</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Springenberg</forename></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Metamath: Bootstrap your own mathematical questions for large language models</title>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">T</forename><surname>Kwok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Alpagasus: Training a better alpaca with fewer data</title>
+		<author>
+			<persName><forename type="first">Lichang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalpa</forename><surname>Gunaratna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Yadav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Jin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Beyond human data: Scaling self-training for problem-solving with language models</title>
+		<author>
+			<persName><forename type="first">Avi</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">D</forename><surname>Co-Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankesh</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piyush</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Alemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Rizkowsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azade</forename><surname>Nova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Adlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernd</forename><surname>Bohnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gamaleldin</forename><surname>Elsayed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanie</forename><surname>Sedghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabelle</forename><surname>Simpson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasper</forename><surname>Snoek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Pennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiri</forename><surname>Hron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathleen</forename><surname>Kenealy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Swersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kshiteej</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Culp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lechao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><forename type="middle">L</forename><surname>Bileschi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Constant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Novak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosanne</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tris</forename><surname>Warkentin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yundi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yamini</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Behnam</forename><surname>Neyshabur</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Jascha Sohl-Dickstein, and Noah Fiedel</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Self-play fine-tuning converts weak language models to strong language models</title>
+		<author>
+			<persName><forename type="first">Zixiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihe</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huizhuo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<title level="m">Star: Bootstrapping reasoning with reasoning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">A minimalist approach to llm reasoning: from rejection sampling to reinforce</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiarui</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhui</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Self-distillation bridges distribution gap in language model fine-tuning</title>
+		<author>
+			<persName><forename type="first">Zhaorui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhe</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minfeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxian</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Minillm</surname></persName>
+		</author>
+		<title level="m">On-policy distillation of large language models</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">I</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Soletskyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Costa</forename><surname>Shengyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziju</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Fleureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislas</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Numinamath</surname></persName>
+		</author>
+		<ptr target="https://github.com/project-numina/aimo-progress-prize/blob/main/report/numina_dataset.pdf" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Open-r1: a fully open reproduction of deepseek-r1</title>
+		<author>
+			<persName><forename type="first">Elie</forename><surname>Bakouch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leandro</forename><surname>Von Werra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/blog/open-r1" />
+		<imprint>
+			<date type="published" when="2025-01">January 2025</date>
+		</imprint>
+	</monogr>
+	<note>Hugging Face Blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jianhao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yafu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zican</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoye</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<title level="m">Learning to reason under off-policy guidance</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Xianfeng Tang, and Yuyin Zhou. m1: Unleash the potential of test-time scaling for medical reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Xiaoke</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juncheng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Distilling the knowledge in a neural network</title>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Solving quantitative reasoning problems with language models</title>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Ramasesh</surname></persName>
+		</author>
+		<editor>Ambrose Slone, Cem Anil, Imanol Schlag, Theo Gutman-Solo, Yuhuai Wu, Behnam Neyshabur, Guy Gur-Ari, and Vedant Misra</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Ai mathematical olympiad -progress prize 1</title>
+		<author>
+			<persName><surname>Xtx Investments</surname></persName>
+		</author>
+		<ptr target="https://kaggle.com/competitions/ai-mathematical-olympiad-prize" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Kaggle</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<ptr target="https://maa.org/aime-thresholds-are-available/" />
+		<title level="m">Aime thresholds are available</title>
+		<imprint>
+			<publisher>Mathematical Association of America</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Medmcqa : A large-scale multi-subject multi-choice dataset for medical domain question answering</title>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Pal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logesh</forename><surname>Kumar Umapathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malaikannan</forename><surname>Sankarasubbu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">What disease does this patient have? a large-scale open domain question answering dataset from medical exams</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eileen</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nassim</forename><surname>Oufattole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Hung</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyi</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Szolovits</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Pubmedqa: A dataset for biomedical research question answering</title>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhuwan</forename><surname>Dhingra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengping</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Lu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Mmlu-pro: A more robust and challenging multi-task language understanding benchmark</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuansheng</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhranil</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiguang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaran</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongqi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Gpqa: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Benchmarking large language models on answering and explaining challenging medical questions</title>
+		<author>
+			<persName><forename type="first">Hanjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhouxiang</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yash</forename><surname>Singla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Dredze</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Benchmarking expert-level medical reasoning and understanding</title>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangren</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuekai</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ermo</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Medxpertqa</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

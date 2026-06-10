@@ -1,0 +1,2151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Co-Designing Graph-based Approximate Nearest Neighbor Search at Billion Scale for Processing-in-Memory</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-05-25">25 May 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Sitian</forename><surname>Chen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Hong Kong Baptist University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yusen</forename><surname>Li</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Nankai University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yao</forename><surname>Chen</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Huazhong University of Science and Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Minwen</forename><surname>Deng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jintao</forename><surname>Meng</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="department">Shenzhen Institutes of Advanced Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Amelie</forename><forename type="middle">Chi</forename><surname>Zhou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Hong Kong Baptist University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Co-Designing Graph-based Approximate Nearest Neighbor Search at Billion Scale for Processing-in-Memory</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-05-25">25 May 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">8A45C5A4BE78AC3DE081FF9E6B65366A</idno>
+					<idno type="arXiv">arXiv:2605.25522v1[cs.AR]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T11:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Approximate Nearest Neighbor Search (ANNS) is a core primitive in modern AI systems, and graph-based methods currently offer the best accuracy-efficiency trade-off at scale. The workload is fundamentally memory-bound: graph traversal produces frequent, irregular memory accesses that cap CPU throughput at main-memory bandwidth, while GPUs lack the high-bandwidth memory capacity to host billion-scale indexes. Processing-in-Memory (PIM) is a natural candidate, as placing computation next to data unlocks the abundant internal bandwidth that such bandwidth-starved workloads demand. Porting graph-based ANNS to PIM, however, exposes several architectural mismatches: each processing unit has only a small local memory, inter-unit communication is costly, host coordination adds overhead, and in-memory compute units are relatively weak-limitations that have forced prior PIM-based ANNS designs to fall back on cluster-based indexing, whose recall ceiling is far below that of graph methods. This paper presents an algorithm-architecture co-design that overcomes these obstacles through three components: a compacted index layout that shrinks the PIM-resident memory footprint by 14.5×; an asynchronous pipelined scheduler that keeps the host-to-PIM interconnect saturated; and a multiplication-free distance kernel that loses under 0.08% recall. Across three billion-scale benchmarks, the proposed design achieves up to 20× and 17.1× higher throughput than CPU and GPU baselines, respectively, outperforms prior PIM accelerators by 129× in the high-recall regime, and scales gracefully across multi-node deployments and emerging PIM architectures.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Approximate Nearest Neighbor Search (ANNS) is a foundational primitive for large-scale AI services, including retrievalaugmented generation (RAG) <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b35">[36]</ref>, and recommendation systems <ref type="bibr" target="#b52">[53]</ref>, <ref type="bibr" target="#b54">[55]</ref>. Given a high-dimensional query vector, ANNS retrieves the top-k most similar vectors from a massive database while trading a small amount of accuracy for orders-of-magnitude efficiency gains. Among the major ANNS families (hash-based <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b61">[62]</ref>, cluster-based <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b41">[42]</ref>, graph-based <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b53">[54]</ref>, <ref type="bibr" target="#b55">[56]</ref>, <ref type="bibr" target="#b62">[63]</ref>), graph-based methods have received extensive attention in both academia and industry due to their superior expected search accuracy and efficiency trade-offs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitation of Existing Architectures.</head><p>Despite algorithmic advances, graph-based ANNS on conventional architectures are fundamentally bottlenecked by the "memory wall." To quantify this effect, we perform a roofline analysis of representative graph-based ANNS methods using the SIFT dataset and a CPU platform (2× Intel Xeon Gold 6330). As Corresponding author: Amelie Chi Zhou. <ref type="formula">10 4 10 3 10 2 10 1  10 0  10 1  10 2  Arithmetic Intensity</ref> shown in Figure <ref type="figure" target="#fig_0">1</ref>, the results indicate that these state-of-theart methods, including HNSWlib <ref type="bibr" target="#b34">[35]</ref>, NDSearch <ref type="bibr" target="#b55">[56]</ref>, and SymphonyQG <ref type="bibr" target="#b18">[19]</ref>, lie firmly in the memory-bound region, struggling to effectively utilize available compute resources. CPUs are constrained by limited memory bandwidth (e.g., 375 GB/s on CPUs), while GPUs, despite offering higher bandwidth (e.g., 2.0 TB/s on an A100), are severely limited by global memory capacity-a full SymphonyQG index for billion-scale datasets exceeds 1.25 TB, far beyond what GPU HBM can accommodate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Opportunities of PIM.</head><p>To bridge this gap, Processingin-Memory (PIM) has emerged as a promising architecture. Modern PIM systems (e.g., UPMEM PIM <ref type="bibr" target="#b16">[17]</ref>, Samsung PIM-HBM <ref type="bibr" target="#b31">[32]</ref>, and SK Hynix AiM <ref type="bibr" target="#b32">[33]</ref>) embed lightweight processing units (PUs) directly inside memory banks. By colocating computation with data, PIM enables massive internal memory bandwidth (e.g., 2 TB/s aggregate on UPMEM) and minimizes costly data movement across the memory hierarchy, making it particularly attractive for memory-bound, irregular workloads like graph traversal. Unlike custom accelerator designs <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b49">[50]</ref>, <ref type="bibr" target="#b57">[58]</ref>, <ref type="bibr" target="#b59">[60]</ref>, commodity PIM modules ship as standard DIMM form-factor devices, enabling practical deployment without system redesign. However, existing PIMbased ANNS accelerators <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b56">[57]</ref> predominantly rely on simpler, cluster-based algorithms (e.g., IVF-PQ), which inherently suffer from lower search quality and hit a capability ceiling at low recall levels (e.g., ∼61% on SIFT1B).</p><p>Challenges. While PIM's massive internal bandwidth makes it appear well suited for memory-bound workloads, directly mapping graph-based ANNS onto PIM exposes a fundamental algorithm-architecture mismatch that manifests as four tightly coupled challenges (detailed analysis in Section II-C): 1 Extreme Local Memory Capacity: PU-private memory is severely limited (e.g., 64 MB per UPMEM DPU), yet billion-scale graph indexes exceed 1.25 TB, forcing aggressive partitioning. 2 Inter-PU Communication: Fine-grained partitioning causes frequent cross-PU traversals over external bandwidth paths that are &gt;10× slower than internal band-width. <ref type="bibr" target="#b2">3</ref> Coordination Overhead and Load Imbalance: Existing batch-synchronous <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref> and per-query <ref type="bibr" target="#b56">[57]</ref> scheduling strategies either waste PU cycles on synchronization barriers or fragment communication bandwidth. <ref type="bibr" target="#b3">4</ref> Restricted PU Compute: PIM cores feature weak arithmetic capabilities and in some cases lack hardware multipliers (e.g., UPMEM), resulting in disproportionate cost for the remaining floating-point operations in quantization-based distance kernels. Overcoming these coupled challenges requires a holistic algorithm-hardware co-design.</p><p>Innovations. To overcome these architectural constraints, we propose PIMCQG, a holistic algorithm-hardware codesign framework that enables high-performance, high-recall graph-based ANNS on commodity PIM platforms. Rather than applying isolated software patches, PIMCQG realigns the entire system stack-data layout, scheduling, and computationwith PIM architectural constraints through three synergistic innovations: 1 PIM-Friendly Compact Index: We eliminate redundant per-edge quantization metadata via IVF-style clustering and offload exact similarity reranking to the host CPU. This reduces the PIM-resident index footprint by up to 14.5× (e.g., from 2,385 GB to 164 GB on SSN1B dataset <ref type="bibr" target="#b11">[12]</ref>), dramatically easing capacity limits (Challenge 1) and cross-PU communication pressure (Challenge 2) (Section IV-A). Evaluation. We evaluate PIMCQG on a real-world UP-MEM PIM server across three industry-standard billion-scale datasets. Our results demonstrate three key advantages over state-of-the-art baselines: 1) Performance: PIMCQG delivers up to 20× and 17.1× throughput speedups over CPU-based SymphonyQG and GPU-based GGNN, respectively. Furthermore, unlike prior PIM-based ANNS solutions that hit a capability ceiling at low recall levels, PIMCQG successfully scales to high-recall targets, achieving up to 129× speedup at comparable recall boundaries. 2) Energy Efficiency: PIM-CQG provides up to 6.5× and 30.8× improvement in energy efficiency (QPS/Watt) compared to CPU and GPU baselines, demonstrating the power of PIM for large-scale ANNS. 3) Scalability: PIMCQG maintains its performance advantages when scaling to multi-node configurations and different commodity PIM platforms (Samsung PIM-HBM, SK Hynix AiM), showing its generality and practical deployment potential. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND AND MOTIVATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Graph-based ANNS Algorithms</head><p>Graph-based ANNS approaches model the dataset as a proximity graph, enabling a greedy beam search <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b42">[43]</ref> to navigate the structure. Starting from an entry point, the search maintains a candidate set (the beam) of the current n b closest vectors and iteratively expands promising nodes by exploring their neighbors until convergence. Figure <ref type="figure" target="#fig_1">2</ref> illustrates this process for n b = 3 and k=1. The search begins at the entry node (node 0), fetches its neighbors, computes their distances to the query, and updates both the search and result beams accordingly. Each iteration therefore consists of three tightly coupled actions: (1) pointer-based graph traversal to access adjacency lists and candidate vectors, (2) distance computation and ranking, and (3) state updates to the beam and visited set. This decomposition highlights a fundamental performance characteristic of graph-based ANNS: its efficiency depends on both irregular memory access from graph traversal and arithmetic cost from distance evaluation.</p><p>Early designs were primarily bottlenecked by distance computation, motivating a large body of work on accelerating or approximating distance evaluation <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b58">[59]</ref>, <ref type="bibr" target="#b63">[64]</ref>. Among them, RabitQ <ref type="bibr" target="#b15">[16]</ref> stands out as a state-of-the-art (SOTA) quantization technique, offering strong theoretical error bounds while maintaining high practical accuracy. It has been widely used in real-world systems and included in the FAISS library <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b47">[48]</ref>. Built upon this, SymphonyQG <ref type="bibr" target="#b18">[19]</ref> represents a SOTA graph-based ANNS design that tightly integrates RabitQ quantization with graph traversal.</p><p>SymphonyQG consists of two tightly coupled components, offline index construction and online graph-based search, both of which rely on RabitQ <ref type="bibr" target="#b15">[16]</ref> for quantization-aware distance estimation: (1) The index construction stage builds a proximity graph over the dataset. For each node, it encodes its neighbors using RabitQ with respect to the current node, generating quantized codes and associated scaling factors. This design enables efficient approximate distance computation during search, but also introduces additional metadata per edge (details in Figure <ref type="figure" target="#fig_4">5(a)</ref>). (2) At query time, SymphonyQG performs greedy beam search over the graph as described in Figure <ref type="figure" target="#fig_1">2</ref>. Specifically, it computes approximate distances using the quantized representations generated by RabitQ, hence greatly reducing the computation cost. To maintain high recall, a small set of candidates (size of n b ) is periodically re-ranked using full-precision vectors. In this work, we focus Fig. <ref type="figure">3</ref>: Commodity PIM architecture. on optimizing the query execution path, as it dominates endto-end ANNS performance, while treating index construction as an offline preprocessing step.</p><p>By aggressively reducing the cost of distance computation, modern graph-based ANNS algorithms shift their performance bottleneck toward memory access and graph traversal, as confirmed by the roofline analysis in Figure <ref type="figure" target="#fig_0">1</ref>. Motivated by this observation, this paper focuses on addressing the memory-bound nature of modern graph-based ANNS. We choose SymphonyQG as a representative algorithm to study and resolve the memory-related challenges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Processing-In-Memory Architectures</head><p>Processing-In-Memory (PIM) architectures represent a class of memory-centric systems designed to mitigate the longstanding memory wall by embedding lightweight processing units (PUs) directly inside or adjacent to memory banks. By co-locating computation with data, PIM enables high internal memory bandwidth and reduces costly data movement across the memory hierarchy. Figure <ref type="figure">3</ref> illustrates a representative commodity PIM architecture, capturing common design principles shared by modern PIM systems (e.g., UPMEM DRAM-PIM <ref type="bibr" target="#b16">[17]</ref>, Samsung PIM-HBM <ref type="bibr" target="#b31">[32]</ref> and SK Hynix AiM <ref type="bibr" target="#b32">[33]</ref>).</p><p>A PIM system consists of a large number of memory chips, each augmented with multiple PUs. Every PU is tightly coupled to a private local memory bank and executes a lightweight instruction set, while a conventional host CPU remains responsible for query dispatch, synchronization, and result aggregation. Table <ref type="table">I</ref> further quantifies these architectural characteristics by comparing PIM systems with conventional CPU and GPU platforms. While PIM exposes significantly higher aggregate internal memory bandwidth through massive parallelism across thousands of PUs, each PU operates with limited local memory capacity and relatively modest compute capability compared to modern processors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Co-Design Challenges for ANNS on PIM</head><p>Although the massive internal bandwidth of PIM architectures makes them appear well suited for memory-bound workloads, applying PIM directly to graph-based ANNS exposes a fundamental algorithm-architecture mismatch. As discussed in Section II-A, graph-based ANNS is inherently irregular and data-dependent, relying on dynamic graph traversal, evolving beams, and frequent state updates. At the same time, PIM architectures are distributed (data partitioned across thousands of PUs), resource-constrained (limited PU-private memory), and tightly coupled to host coordination. As a result, mapping modern graph-based ANNS onto PIM surfaces four tightly coupled challenges, which reflect the core reasons why existing PIM-based ANNS solutions have been limited to simpler, cluster-based algorithms <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>.</p><p>C1: Extreme Local Memory Capacity Constraints. Each PU in a PIM system is equipped with only a small private memory bank (Table <ref type="table">I</ref>), yet modern graph-based ANNS indexes are memory intensive. Using SymphonyQG as an example, the index must store graph topology, quantization codes, and auxiliary metadata per node. For billion-scale datasets such as SIFT1B (n = 10 9 , D = 128, graph degree R = 32), the index footprint exceeds 1.25 TB, which would require partitioning the graph across tens of thousands of PUs. This extreme partitioning is not merely an engineering inconvenience; it fundamentally reshapes the execution behavior of graph traversal and directly exacerbates the next challenge.</p><p>C2: Graph Partitioning vs. Inter-PU Communication. The fine-grained partitioning forced by C1 splits the proximity graph across many PUs. During query processing, graph traversal frequently crosses partition boundaries. Any graph edge that crosses a boundary becomes a "remote" access that must traverse the slow external bandwidth path, which, as shown in Table <ref type="table">I</ref>, can be over an order of magnitude slower than the internal bandwidth. As a result, the benefits of PIM's high internal bandwidth are nullified by communication overhead unless the index layout and traversal behavior are codesigned to minimize cross-PU interactions.</p><p>C3: Coordination Overhead and Load Imbalance. Communication overhead is further compounded by the highly data-dependent execution of graph-based ANNS. Because the proximity graph is statically partitioned across PUs, queries that traverse dense or frequently accessed partitions concentrate work on a small subset of PUs, while others remain underutilized. Existing PIM systems <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b36">[37]</ref> typically rely on rigid batch-synchronous execution models to amortize communication overheads, but these global barriers force fast PUs to idle while waiting for the slowest PU to complete a batch. Alternative fine-grained dispatching strategies (e.g., PIMANN <ref type="bibr" target="#b56">[57]</ref>) reduce idle time but fragment communication, leaving aggregate bandwidth underutilized. Effectively addressing this challenge therefore requires rethinking how queries are scheduled and how host-side coordination is overlapped with in-PIM execution.</p><p>C4: Restricted PU Compute Capability. Even after memory, communication, and coordination issues are addressed, PIM processing units still provide orders of magnitude less compute throughput than GPUs, and in some designs lack hardware multipliers altogether (e.g. UPMEM). This constraint directly conflicts with the arithmetic patterns of graph-based ANNS, even in optimized methods like SymphonyQG, where approximate distance estimation still relies on multiplicationheavy inner products. Under such constraints, each arithmetic operation carries disproportionate cost, making it necessary to redesign the distance kernel.</p><p>These four challenges are deeply interrelated. Limited PU-</p><p>TABLE I: Comparison of representative CPU, GPU, and PIM platforms. The CPU, GPU, and UPMEM configurations are based on real hardware and are scaled to the same power budget for fair comparison. Specifications of PIM-HBM and AiM are derived from vendor technical reports, as no publicly available hardware is currently accessible. Architecture Type Power (TDP) Peak TFLOPS External BW Internal BW # PUs / Cores PU-Private Memory Power-Comparable Systems (scaled to power budget of ∼400W) UPMEM PIM PIM ∼400W 14.0 (TOPS) 150 GB/s 2.8 TB/s 3584 DPUs 64 MB (MRAM) (28 DIMMs) Intel Xeon Gold 6330 CPU 410W 7.2 375 GB/s -56 Cores N/A (Shared DRAM) (Dual-Socket) NVIDIA A100 GPU 400W 312 2.0 TB/s -6912 (CUDA) N/A (Shared HBM) (SXM4) 432 (Tensor) Hypothetical / Component-Level Systems PIM-HBM (Samsung) PIM Not Stated 1.2 307 GB/s 1.2 TB/s 128 PUs 16 MB AiM (SK Hynix) PIM Not Stated 1.0 64 GB/s 1.0 TB/s 32 PUs 32 MB Vector 1 Vector 2 Vector n Raw vectors Clustering the vectors C1 C2 C3 Graph Building RabitQ quantization Low-bit vector Offline C1 PU 1 PU 2 PU n … … Cluster dispatching Online Cluster Filtering Query In Trigger Send Received Mini-Batch Graph Search Calculate Dist. Store Candidates Send Back Fetch Result Final Reranking Res. Out PIM Add to Buffer Query Dispatcher Search Engine Post-processor Topk EF Host PIM-friendly Index construct (Sec. Ⅳ.A) Query Scheduling (Sec. Ⅳ.B) Q1 Q2 Q3 Q4 Query Results Size: EF Multiplication-Free Opt. (Sec. Ⅳ.C) Graph index structure Local Memory Fig. 4: Overview of PIMCQG local memory capacity (C1) forces aggressive graph partitioning, which in turn amplifies inter-PU communication during traversal (C2). High communication overhead exacerbates coordination costs and load imbalance across PUs (C3), while restricted PU compute capability (C4) further constrains the choice of distance computation and pruning strategies that could otherwise mitigate these effects. Overcoming them requires a holistic algorithm-hardware co-design. III. PIMCQG: A CO-DESIGN FRAMEWORK FOR ANNS ON PIM This paper presents PIMCQG, a co-design framework that realigns state-of-the-art graph-based ANNS <ref type="bibr" target="#b18">[19]</ref> with the architectural realities of commodity PIM systems. PIMCQG consists of three synergistic optimizations that jointly address the coupled challenges discussed earlier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>O1: PIM-Friendly Compact Index.</head><p>To address C1 and C2, we propose a compact index structure that removes redundant quantization metadata and offloads exact reranking to the host. This substantially reduces the memory footprint of the graph index, enabling massive datasets to fit within distributed PIM memories while also reducing the partitioning pressure that would otherwise amplify remote traversal and communication overhead Figure <ref type="figure">4</ref> provides a high-level overview of PIMCQG's end-to-end execution flow and illustrates how the proposed optimizations interact across the host and PIM. Conceptually, query processing is organized into three modules: a hostside Query Dispatcher, an in-PIM Search Engine, and a host-side Post-processor. O1 defines the compact graph index traversed by the Search Engine, O2 governs the asynchronous interaction among modules, and O3 optimizes the distance computation used during candidate evaluation. The detailed design of each optimization is presented in Section IV.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. DESIGN DETAILS OF PIMCQG A. PIM-friendly Compact Index</head><p>We first revisit the internal organization of the Sympho-nyQG index. As illustrated in Figure <ref type="figure" target="#fig_4">5</ref>(a), the index stores four parts per node, including the original vector, neighbor codes, neighbor factors and neighbor IDs. The "neighbor code" and "neighbor factor" components are the core of RabitQ quantization, enabling the replacement of expensive, full-precision distance calculations with highly efficient approximate ones. This design, while effective for enabling accurate quantizationaware distance estimation, introduces substantial redundancy and memory overhead. Therefore, directly porting the Sym-phonyQG index to PIM would not only exceed memory capacity, but also negate the benefits of near-data processing due to excessive communication overhead. To address these issues, we redesign the SymphonyQG index structure with two complementary techniques as described below.</p><p>1) Eliminating Index Redundancy: The redundancy is a direct result of SymphonyQG's quantization logic, where a neighbor's quantized code o is computed relative to the current node's vector v (i.e., o = or-v ||or-v|| ), causing the same neighbor (e.g., "Node 3" in Figure <ref type="figure" target="#fig_4">5(a)</ref>) to store different, redundant codes and factors for each incoming edge.</p><p>A naive approach to eliminating this redundancy would be to quantize all vectors using a single global reference. However, such a design fails to capture local data distributions and significantly degrades quantization accuracy. Instead, we adopt an Inverted File (IVF)-style clustering strategy: we partition the dataset into clusters, assign each node to a cluster, and use the cluster centroid c as the shared reference for quantization within the cluster (i.e., o = or-c ||or-c|| ). Under this design, each node is encoded once relative to its assigned centroid, producing a single canonical RabitQ code and scaling factor that can be reused by all incoming edges.</p><p>Figure <ref type="bibr">5(b)</ref> shows the resulting PIM-aware index layout. The graph adjacency lists stored in PIM now contain only neighbor IDs, while the corresponding canonical RabitQ codes and scaling factors are stored once in shared PIM-resident arrays. During traversal, a PU follows a neighbor ID and resolves it to the node's canonical code/factor entry, rather than edge-specific code/factor. Thus, multiple edges pointing to the same node reuse the same quantized representation, eliminating redundancy while preserving quantization accuracy.</p><p>2) Eliminating Raw Vectors via Approximate Ranking: After eliminating edge-specific quantization redundancy, the remaining dominant contributor to index size in SymphonyQG is the storage of full-precision raw vectors. As described in Section II-A, SymphonyQG retains full-precision vectors to support exact distance computation during search. Although not used at every traversal step, these vectors are accessed periodically to rerank candidates and refine the beam, ensuring high recall. However, storing raw vectors directly on PIM is impractical due to their large footprint (DIM * 32 bits per node).</p><p>PIMCQG addresses this issue by restructuring the ranking pipeline to decouple approximate search from exact reranking. This design is motivated by two observations: 1) RabitQ-based distance estimation already provides sufficiently accurate ordering for traversal and pruning; and 2) exact distances are only required for a small candidate set near convergence. Therefore, PIMCQG removes raw vectors from the PIM-resident index and retains them exclusively on the host. This enables approximate-only traversal on PIM. The query execution path is hence redesigned as follows: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Accuracy tradeoff.</head><p>Compared to the SymphonyQG baseline, PIMCQG quantizes vectors to their respective centroids, other than to the current searched node. This sacrifices locality and may introduce accuracy loss to the quantized representations. To preserve search accuracy, we adopt an over-fetching strategy that uses EF &gt; n b to enlarge the candidate set returned by PIM. The value of EF is selected empirically based on the study in Section V-D to trade off performance with accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Asynchronous Pipelined Query Scheduling</head><p>Our compact index design makes the IVF cluster the fundamental unit of deployment: each cluster contains a selfcontained search structure (i.e., neighbor IDs and RabitQ code/factor arrays) in PU-local memory, while full-precision vectors remain on the host for final reranking. This organization avoids fine-grained graph partitioning across PUs and turns query execution into a cluster-aware scheduling problem. Based on this organization, PIMCQG adopts a two-level scheduling strategy consisting of offline cluster placement and online mini-batch pipeline execution.</p><p>1) Scheduling Challenges on Commodity PIM: Before online execution, PIMCQG first places compact-index clusters onto PUs using a greedy load-balancing policy based on estimated or profiled access frequency <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>. This step mitigates persistent hot spots caused by skewed cluster popularity and improves utilization across the PU array. Because the compact index substantially reduces the memory footprint of each cluster, the scheduler has more flexibility to balance load while respecting the PU-local memory budget. In this sense, the data-layout optimization of O1 directly enables the scheduling flexibility required by O2.</p><p>After cluster placement, the primary runtime bottleneck becomes host-PIM coordination, due to the significant gap between external and internal bandwidth on PIM. Figure <ref type="figure">6</ref> characterizes the communication cost between the host and PIM across different transfer sizes. The key observation is <ref type="formula">8  1 6  3 2  6 4 1 2 8 2 5 6 5 1 2 1 0 2 4 2 0 4 8 4 0 9 6 8 1 9 2  1 6 3 8 4  3 2 7 6 8</ref>Data Size (bytes) . + Query Router PU PU PU √ Result . + Query Router PU PU PU √ Result (a) Batch-synchronous model (b) Per-Query Dispatching (Only use 1/3 bandwidth) (c) Mini-Batching Query Dispatching (Fully use Host-PU Comm.) . + Query . + Query . + Query Router 4/4 5/4 7/4 √ Result √ Result √ Result Trigger Batch send Synchronization Mini-Batching Buffer (Host) Fig. 7: Comparison of different scheduling strategies.</p><p>that transfer latency is not linear in practice: very small transfers under-utilize bandwidth, while large transfers incur much higher latency. Therefore, an effective scheduling policy must strike a balance between these two extremes. Unfortunately, existing mainstream scheduling strategies fail to navigate this trade-off effectively. The widely adopted batch-synchronous model <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b36">[37]</ref> aggregates a large batch of queries, dispatches them to PUs, and blocks until every PU finishes before collecting results (Figure <ref type="figure">7(a)</ref>). This introduces rigid global barriers: the host remains idle during in-PIM search, and the PUs later remain idle while the host performs post-processing and prepares the next batch. At the opposite extreme, per-query dispatching removes the global barrier by sending each query immediately (Figure <ref type="figure">7(b)</ref>). However, this strategy fragments communication into transfers that are too small to efficiently utilize the host-PU bandwidth, and fails to exploit system-wide transfer parallelism when the host serializes many tiny requests.</p><p>2) Dynamic Mini-Batch Pipeline Design: To balance communication efficiency and execution overlap, PIMCQG adopts dynamic mini-batching, as illustrated in Figure <ref type="figure">7(c</ref>). The host maintains a input buffer per-PU, and each incoming query is appended to the buffers of the PUs that store its relevant clusters after cluster filtering. A mini-batch is dispatched when either the workload reaches a target threshold (e.g., 4 in Figure <ref type="figure">7</ref>(c)) or the oldest buffered query exceeds a waitingtime limit. This policy allows the system to aggregate enough work to amortize communication overhead under heavy load, while still being responsive when the arrival rate is low.</p><p>Based on this dispatch policy, PIMCQG organizes execution as an asynchronous pipeline spanning the host and PIM. Logically, the pipeline contains three components. First, the Query Dispatcher on the host performs cluster filtering, fills per-PU buffers, and sends ready mini-batches to PIM. Second, the Search Engine on each PU reads a mini-batch, traverses the compact PIM-resident graph index, and computes approximate distances using the multiplication-free kernel described in the next subsection. Third, the Post-processor on the host continuously fetches returned candidate sets, retrieves the corresponding raw vectors, and performs exact reranking to produce the final top-k results. This execution flow is consistent with the end-to-end workflow shown in Figure <ref type="figure">4</ref>.</p><p>Although the logical execution consists of three components, the end-to-end processing is executed as five overlapped stages: 1 host-side query preparation, 2 host-to-PIM transfer, 3 in-PIM query processing, 4 PIM-to-host result return, and 5 host-side reranking. Figure <ref type="figure" target="#fig_7">8</ref> highlights the key benefit of this design: unlike batch-synchronous execution, communication, in-PIM search, and host-side reranking proceed concurrently rather than serially. As a result, the host no longer waits for all PUs to finish before beginning post-processing, and the PUs no longer stall until the host completes reranking for an entire batch. This is particularly important for graph-based ANNS, where traversal varies significantly across queries.</p><p>To maintain stable execution, PIMCQG uses FIFO queues to decouple the host and PIM stages and applies lightweight flow control to bound the number of in-flight mini-batches. This avoids queue overflow without reintroducing coarse-grained synchronization barriers.</p><p>The effectiveness of this design also depends on choosing a good mini-batch size. Let T pre (N B ), T proc (N B ), and T post (N B ) denote the host-side dispatch time, in-PIM processing time, and host-side reranking time for a mini-batch of size N B , respectively. Since these stages execute in parallel, the average processing time per query is determined by the slowest stage:</p><formula xml:id="formula_0">T (NB) = max (Tpre(NB), Tproc(NB), Tpost(NB)) NB (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>Therefore, the optimal mini-batch size is chosen as</p><formula xml:id="formula_2">N * = arg min N B T (NB).</formula><p>Based on the real hardware limits observed in Figure <ref type="figure">6</ref>, we tune N * to the point where T proc ≈ max T pre , T post . This ensures that the data size stays within the fast communicating range (e.g., under 8 KB), keeping the execution pipeline fully balanced and efficient.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Multiplication-Free Distance Computation</head><p>After the compact index and asynchronous pipeline are in place, the efficiency of the PU-side search engine is determined primarily by its inner-loop distance computation.</p><p>PIMCQG inherits the distance computation kernel from RabitQ <ref type="bibr" target="#b15">[16]</ref>, where the approximate distance between the query vector q and the candidate vector o is computed as:</p><formula xml:id="formula_3">d appro = ∥o∥ 2 + 2 • ∥o∥ ⟨ō, o⟩ • ⟨c, ō⟩ • √ D Query-independent term +∥q∥ 2 - ∥o∥ ⟨ō, o⟩ Outer scaling • 2 • ⟨ō, q⟩ -sumq • 2 Reduced to additions via RabitQ (<label>2</label></formula><formula xml:id="formula_4">)</formula><p>where ō is the vector reconstructed from the quantization code, c is the cluster centroid, and sumq is the sum of query values. Conceptually, this formula consists of three logical components: (1) a query-independent term that can be precomputed, (2) an inner-product term heavily optimized into simple additions, and (3) an outer scaling operation that involves floatingpoint multiplication and division. Thus, although RabitQ successfully removes multiplication from the inner product itself, the remaining outer scalar is still poorly matched to commodity PIM cores and becomes a major source of latency inside the Search Engine.</p><p>To minimize runtime arithmetic, we first isolate all query-independent terms and precompute them as a single RabitQFactor during index construction. Since ∥q∥ 2 is identical for all candidates within a query, it can be omitted without affecting relative ranking. In addition, all candidate vectors are normalized in advance, so ∥o∥=1. Under these conditions, the static portion of the approximate-distance expression can be absorbed into a per-node constant stored in the compact index. The primary remaining computational bottleneck is therefore the outer scalar factor derived from ⟨ō, o⟩.</p><p>Because ō is reconstructed through a random orthogonal transformation, its norm is also 1, and the inner product ⟨ō, o⟩ reduces to cos(θ), where θ is the angle between the original vector o and its reconstruction ō. In the original RabitQ formulation, this term is node-specific, forcing the PU to repeatedly apply a distinct floating-point scaling factor for each candidate.</p><p>Our key observation is that this quantization-error term is sufficiently stable within an IVF cluster. Because vectors in the same cluster are encoded relative to a shared centroid, their quantization-error distribution is also empirically stable at the cluster level. This makes a cluster-wise approximation natural. Therefore, instead of maintaining a separate cos(θ) for each node, PIMCQG replaces it with a cluster-wide constant α, yielding the simplified approximate-distance formulation:</p><formula xml:id="formula_5">d appro = RabitQFactor - 1 α • (RabitQ result) (<label>3</label></formula><formula xml:id="formula_6">)</formula><p>where RabitQ result denotes the lookup-based term already computed using additions.</p><p>To fully eliminate multiplication from the online search path, we further approximate the inverse factor 1/α using only bit shifts and additions. Empirical analysis indicates that for typical feature dimensions (e.g., 10 2 to 10 6 ), cos(θ) concentrates around 0.8 <ref type="bibr" target="#b15">[16]</ref>. Setting α= 0.8 gives 1/α = 1.25. This <ref type="formula">10 20 30 40 50 60 70 80</ref> value has a convenient binary representation, 1.01 2 , which translates directly into efficient bitwise operations: x • 1.25 ≈ x+(x &gt;&gt; 2). When a specific dataset or cluster deviates from this default, α is calibrated during index construction to the nearest hardware-friendly binary-shift equivalent. As a result, the expensive floating-point scaling is removed from online search and absorbed into lightweight offline preprocessing. Finally, we validate that this simplification does not materially degrade search quality. Figure <ref type="figure" target="#fig_8">9</ref> compares the original node-specific cos(θ) formulation against the fixed-α version across different EF settings on the SIFT dataset. The results show that using a fixed α = 0.8 incurs negligible accuracy loss, with a maximum recall drop below 0.08%. Therefore, PIMCQG achieves a multiplication-free in-PIM distance kernel while preserving the ranking quality for high-recall graph traversal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTAL EVALUATION</head><p>We evaluate PIMCQG on a real-world commodity PIM platform to answer three key questions: (1) Can PIMCQG deliver high-throughput graph-based ANNS at high recall, (2) how do its algorithm-hardware co-design choices contribute to performance and energy efficiency, and (3) does the design scale across datasets and system configurations.</p><p>A. Experimental Setup 1) Hardware Setup: We conduct evaluations on three types of hardware platforms, including PIM, CPU and GPU. The PIM platform contains a real-world UPMEM PIM server <ref type="bibr" target="#b9">[10]</ref> equipped with a dual-socket Intel Xeon Silver 4110 host processor (2.10GHz), 256GB DDR4 host memory, and 20 PIM modules providing up to 2,560 DPUs operating at 350 MHz. The total system power is approximately 450W, including ∼170W for the host CPU and ∼14W per activated PIM module. For future-looking scalability analysis, we additionally use the vendor-provided open-source simulators for Samsung PIM-HBM <ref type="bibr" target="#b46">[47]</ref> and SK Hynix AiM <ref type="bibr" target="#b48">[49]</ref>, since these platforms are not yet publicly accessible as commercial systems. The CPU platform contains a dual-socket Intel Xeon Gold 6330 platform (2.0GHz, 112 threads) with 512GB of host memory and a total system power of ∼410W. The GPU platform attaches an NVIDIA A100-SMX4 (80GB) to the CPU platform, resulting in an estimated total system power of ∼810W. For multi-GPU comparison, we expand the system to include up to eight A100 GPUs with the same configurations.</p><p>2) Datasets: We experiment on three industry-standard billion-scale benchmarks: SPACEV1B (D=100) <ref type="bibr" target="#b43">[44]</ref>, SIFT1B (D=128) <ref type="bibr" target="#b21">[22]</ref>, and SimSearchNet++ (SSN1B, D=256) <ref type="bibr" target="#b11">[12]</ref>. Their uncompressed raw-vector footprints are 95GB, 123GB, 25 50 75 62% 70% 76% 80% 84% 86% 88% 90% 92% 94% Recall (%) 0 4 8 12 QPS/W (a) SIFT1B</p><p>25 50 75 67% 72% 76% 78% 80% 82% 84% 86% 88% 90% Recall (%) 0 4 8 12 (b) SPACEV1B and 239GB, respectively. For each dataset, we use the default public query set and compute the ground-truth nearest neighbors using exact brute-force search.</p><p>3) Baselines: We compare PIMCQG against four representative baselines spanning CPU, GPU, and PIM platforms.</p><p>• SymphonyQG <ref type="bibr" target="#b18">[19]</ref> serves as the primary CPU baseline and the SOTA graph-based ANNS method. Because the full SymphonyQG index exceeds the memory capacity of the CPU platform, we apply the same IVF partitioning used by PIMCQG and load only the query-relevant clusters into host memory; disk I/O is excluded from all reported timings to isolate search performance.</p><p>• UpANNS <ref type="bibr" target="#b7">[8]</ref> and PIMANN <ref type="bibr" target="#b56">[57]</ref> serve as the two PIM baselines, representing batch-synchronous and per-query scheduling strategies, respectively, on UPMEM.</p><p>• GGNN <ref type="bibr" target="#b19">[20]</ref>, a popular GPU-based acceleration for billionscale graph-based ANNS, is adopted for comparison since SymphonyQG lacks GPU support. We select GGNN over newer GPU-based systems (e.g., CAGRA <ref type="bibr" target="#b44">[45]</ref>, Path-Weaver <ref type="bibr" target="#b28">[29]</ref>), which target million-scale datasets and do not scale to billion-scale workloads. GGNN utilizes a k-NN graph index, similar to SymphonyQG and PIMCQG. For fairness on billion-scale datasets, GGNN is configured with 16 data shards in our experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Metrics:</head><p>We report four primary metrics: throughput (QPS), recall@10, index size (GB), and energy efficiency (QPS/W). Unless otherwise specified, our default setting uses SIFT1B, builds an IVF partitioning with 8,192 clusters (limited by the 64 MB per-DPU memory budget), probes 8 clusters per query, constructs the graph index with node degree 32, and sets the over-fetched candidate size EF to 40.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. End-to-End Performance Across Hardware</head><p>We first evaluate whether PIMCQG improves the end-toend throughput and energy efficiency of graph-based ANNS relative to representative CPU and GPU baselines. Specifically, we compare PIMCQG against SymphonyQG on CPU and GGNN on GPU, and vary the search-cluster count and EF to cover a broad range of recall targets. Figures <ref type="figure" target="#fig_9">10</ref> and <ref type="figure" target="#fig_10">11</ref> report the resulting throughput and energy-efficiency trade-offs. Across most recall targets, PIMCQG achieves the highest throughput among all three platforms. Compared with SymphonyQG, PIMCQG delivers up to 7.1×, 7.4×, and 20× higher QPS on SIFT1B, SPACEV1B, and SSN1B, respectively. Compared with single-GPU GGNN, PIMCQG achieves up to 17.1×, 16.7×, and 15.8× higher throughput on the same datasets within the practically relevant recall range of approximately 0.60-0.84. At very high recall targets, GGNN becomes more competitive, especially on SPACEV1B. This behavior is expected because the single A100 GPU cannot fully hold the full graph index, forcing CPU-GPU data swapping that becomes a persistent overhead regardless of search strictness. Even so, PIMCQG maintains a clear advantage throughout the main operating region used in practice.</p><p>PIMCQG also provides substantially higher energy efficiency than both baselines. On SIFT1B, it achieves 4-76 QPS/W, compared with 1.5-11 QPS/W for SymphonyQG and about 2.5 QPS/W for GGNN, corresponding to improvements of up to 6.5× over CPU and 30.8× over GPU. Similar trends hold on SPACEV1B and SSN1B, confirming that the throughput gains of PIMCQG are not achieved through disproportionate power consumption, but instead through a more energy-proportional execution model.</p><p>To isolate the effect of GPU memory capacity, we additionally evaluate GGNN on 4× and 8× A100 configurations in which the full index fits in GPU memory. As shown in Figure <ref type="figure" target="#fig_11">12</ref>, multi-GPU GGNN significantly increases raw throughput and can surpass PIMCQG in absolute QPS. However, this comes at a much higher system power cost. As a result, PIMCQG still retains a 3.2×-9.1× advantage in QPS/W over the 4× and 8× A100 configurations on SIFT1B and SPACEV1B. These results show that while aggressively scaled TABLE II: Index footprint of PIMCQG and SymphonyQG. SIFT1B SPACEV1B SSN1B SymphonyQG 1423 GB 1327 GB 2385 GB PIMCQG 138 GB 138 GB 164 GB Reduction Ratio 10.31x 9.62x 14.54x</p><p>GPU systems can deliver high peak throughput, PIMCQG offers a substantially more energy-efficient solution for billionscale graph-based ANNS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Comparison with Existing PIM-based ANNS Systems</head><p>We next compare PIMCQG with prior PIM-based ANNS systems to assess whether the proposed co-design closes the capability gap between PIM and high-recall graph-based search. We use UpANNS and PIMANN as representative baselines, both of which implement IVFPQ-based ANNS <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref> on the UPMEM platform. Since their original studies used a relaxed recall definition, we re-evaluate both methods using the standard recall@10 metric to ensure a fair comparison. Figure <ref type="figure" target="#fig_12">13</ref> reports the resulting recall-throughput curves.</p><p>Under this standardized evaluation protocol, PIMCQG shows a much stronger recall-throughput trade-off than both prior PIM solutions. A key observation is that UpANNS and PIMANN reach a clear capability ceiling at relatively low recall levels (e.g., 61.4% on SIFT1B and 66.7% on SPACEV1B), after which throughput drops sharply. In contrast, PIMCQG maintains high throughput well beyond these saturation points.</p><p>When compared at recall levels near the saturation boundaries of the prior PIM baselines, PIMCQG achieves up to 48× higher throughput on SIFT1B and 129× higher throughput on SPACEV1B. These results show that the contribution of PIM-CQG is not merely incremental acceleration over previous PIM designs; rather, it enables a qualitatively different operating regime by supporting the higher recall levels expected from modern graph-based ANNS workloads.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Component-wise Analysis and Ablation</head><p>To understand where the gains of PIMCQG come from, we next evaluate the individual effects of its three co-designed optimizations and analyze the remaining system bottlenecks.</p><p>1) Compact Index Footprint: We first examine the memory footprint of the compact index introduced in Section IV-A.</p><p>Table II compares the index size of PIMCQG with Sympho-nyQG across the three billion-scale datasets. By removing raw vectors from PIM and replacing per-edge metadata with a compact cluster-aware structure, PIMCQG reduces index size by 10×-14× (e.g., from 1423GB to 138GB on SIFT1B). This reduction is critical for making billion-scale graph-based  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) Pipeline Bottleneck Analysis:</head><p>We then analyze the runtime breakdown of PIMCQG using Figure <ref type="figure" target="#fig_13">14</ref>. Since the asynchronous pipelined execution overlaps query dispatch, DPU search, and post-processing, the end-to-end latency is determined by the slowest pipeline stage. Across all datasets, the actual DPU search contributes only a relatively small fraction (≤50%), while the post-processing stage, including DPU-to-CPU result transfer and host-side exact distance recomputation, dominates the total execution time. Note that this overhead is attributed to two inherent factors: offloading raw vectors to the host to reduce PIM memory footprint, and the limited host-PIM bandwidth of current UPMEM hardware. It also suggests that PIMCQG can benefit substantially from future PIM systems with higher host-PIM bandwidth.</p><p>3) Overfetching-Reranking: PIMCQG relies on a host-side reranking stage over an overfetched candidate set (size of EF) to preserve high accuracy. To study the impact of this strategy, we vary the value of EF and normalize the QPS and recall results of PIMCQG against the results of SymphonyQG with the candidate set size n b =30.</p><p>Figure <ref type="figure" target="#fig_14">15</ref> clearly shows the trade-off between throughput and accuracy. Without overfetching (EF = n b ), PIMCQG achieves very high throughput (10×-10.4× that of Sympho-nyQG), but achieves only 81%-89% of the baseline recall. When increasing the overfetch size (to 150 for SIFT1B and 100 for SPACEV1B), PIMCQG achieves the same recall level as SymphonyQG, while still preserving 4×-6x higher QPS. This result confirms that overfetching-reranking is an effective mechanism for preserving accuracy without sacrificing the throughput advantage of the compact PIM index.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Asynchronous Pipelined Scheduling:</head><p>We next isolate the contribution of the scheduling design in Section IV-B by comparing PIMCQG against three alternatives: per-query dispatching, batch-synchronous scheduling, and PIMCQG 1, a pipeline variant with mini-batch size fixed to one.</p><p>Figure <ref type="figure" target="#fig_0">16</ref> shows that PIMCQG outperforms naive per-query dispatching by 70×-155× across all three datasets, demonstrating that fine-grained dispatch fails to utilize host-DPU com- SIFT1B SPACEV1B SSN1B 0.00 0.05 0.10 0.15 Time (s) -60.4% -60.8% -49.6% w/o MF w/ MF Fig. 17: DPU search time w/ and w/o multiplicationfree distance computation 1 2 4 8 16 32 Number of nodes 10 0 10 1 Speedup QPS QPS/W Fig. 18: Multi-node scalability of PIMCQG on SIFT1B. UPMEM PIM-HBM AiM 10 0 10 1 10 2 Speedup vs CPU vs GPU Fig. 19: Speedup of PIMCQG on different PIM architectures.</p><p>munication parallelism. Compared with batch-synchronous execution, the full asynchronous pipeline yields a ∼1.5× throughput improvement by overlapping communication and computation across query batches. Finally, relative to PIM-CQG 1, using an appropriately sized mini-batch provides a further 1.7×-2.4× improvement, confirming that dispatch granularity is critical for approaching peak effective bandwidth. 5) Multiplication-free Distance Computation: Finally, we evaluate the effect of our multiplication-free distance kernel. Figure <ref type="figure" target="#fig_0">17</ref> compares the DPU search phase of PIMCQG with and without the shift-add reformulation enabled. Across the three datasets, the optimized kernel reduces DPU search time by 49.6%-60.8%. This confirms that even after data movement and scheduling are optimized, arithmetic simplification remains essential for commodity PIM, and that removing floating-point multiplication from the PU-side critical path is a major contributor to the overall performance of PIMCQG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Scalability</head><p>We finally evaluate the scalability of PIMCQG in two dimensions: scale-out across multiple nodes and portability to emerging PIM hardware.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Multi-node Scalability:</head><p>To evaluate distributed scaling, we simulate a multi-node deployment of PIMCQG using a 400 Gbps InfiniBand network model in which communication cost scales with data transfer size. All speedups are normalized to GGNN on 4× A100 GPU for SIFT1B. Figure <ref type="figure" target="#fig_7">18</ref> shows that scaling from one node to two nodes initially causes a performance drop due to inter-node communication overhead. However, as the system scales from 2 to 32 nodes, PIMCQG exhibits near-linear speedup. At that point, the large amount of query-level parallelism dominates the inter-node overhead, indicating that PIMCQG can effectively exploit scale-out execution at the cluster level.</p><p>2) PIM-architecture Scalability: We also project PIMCQG onto two emerging PIM architectures, Samsung PIM-HBM and SK Hynix AiM, both of which provide substantially higher operating frequency and host-PIM bandwidth than current UPMEM systems. Using the vendor-provided simulators, we model the search time of PIMCQG with a GEMV kernel that matches the computational complexity of the optimized distance computation and scale it by the empirically observed average number of graph-search hops per query. Figure <ref type="figure" target="#fig_8">19</ref> shows that on these future platforms, PIMCQG is projected to achieve 100×-137× speedup over the CPU baseline and 6.3×-8.7× speedup over the 4× A100 GPU baseline on SIFT1B. These projections suggest that the algorithmic structure of PIMCQG is well aligned with future high-bandwidth PIM systems and can benefit directly as the underlying hardware matures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. RELATED WORK</head><p>We categorize related works into two main areas: hardware acceleration for ANNS and the broader adoption of PIM.</p><p>Hardware Acceleration for ANNS. Conventional CPUs and GPUs remain common choices for ANNS acceleration, but their performance is fundamentally constrained by memory bottlenecks. CPU-based methods <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b53">[54]</ref> accelerate distance computation via SIMD but remain memory bandwidth-bound. Conversely, GPUs offer superior memory bandwidth <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b28">[29]</ref>, <ref type="bibr" target="#b44">[45]</ref>. However, GPU acceleration is severely limited by small global memory capacities.</p><p>To bypass these limits, various heterogeneous and specialized systems have been proposed. Heterogeneous storage systems <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b37">[38]</ref>, <ref type="bibr" target="#b51">[52]</ref> utilize multi-tier memory hierarchies, but they introduce complex data management and I/O synchronization overheads. Similarly, specialized hardware solutions, including FPGA <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b38">[39]</ref>, <ref type="bibr" target="#b49">[50]</ref>, <ref type="bibr" target="#b59">[60]</ref>, SmartSSD <ref type="bibr" target="#b27">[28]</ref>, <ref type="bibr" target="#b50">[51]</ref>, CXL-based memory pools <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b29">[30]</ref>, and NAND flash <ref type="bibr" target="#b55">[56]</ref>, <ref type="bibr" target="#b57">[58]</ref>, have been developed to push performance limits. These approaches are orthogonal to our PIM-centric design, which leverages commodity hardware without custom fabrication.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PIM-Based ANNS and General Applications.</head><p>PIM has emerged as a proven paradigm for overcoming memory bottlenecks, demonstrating significant success across dataintensive domains like databases <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b30">[31]</ref>, large language models <ref type="bibr" target="#b20">[21]</ref>, <ref type="bibr" target="#b39">[40]</ref>, <ref type="bibr" target="#b45">[46]</ref>, <ref type="bibr" target="#b60">[61]</ref>, and recommendation systems <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b33">[34]</ref>, <ref type="bibr" target="#b40">[41]</ref>. However, in the context of ANNS, existing PIM accelerators <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b56">[57]</ref> target cluster-based algorithms (e.g., IVF-PQ), which provide lower search quality and throughput compared to graph-based methods. Our work bridges this gap by explicitly mapping the high-performance graph-based ANNS algorithm to real-world PIM hardware.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VII. CONCLUSION</head><p>We presented PIMCQG, an algorithm-hardware co-design framework that enables high-recall graph-based ANNS on commodity PIM by jointly redesigning data layout, scheduling, and distance computation. The compact index reduces PIM-resident footprint by up to 14.5×, making billion-scale graphs feasible on distributed PU memories. The asynchronous pipeline overlaps host-PIM execution while fully utilizing host-PIM bandwidth. The multiplication-free kernel removes all floating-point multiplications, cutting DPU search time by up to 60.8%. Our evaluation shows that PIMCQG delivers up to 20×/17.1× throughput over CPU/GPU baselines, 129× over prior PIM systems at high recall, and maintains strong scalability across multi-node configurations and emerging PIM architectures. Our bottleneck analysis shows that host-PIM bandwidth remains the primary constraint, suggesting that PIMCQG will benefit directly from emerging higherbandwidth PIM architectures.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Roofline Analysis of graph-based ANNS on SIFT.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>2</head><label>2</label><figDesc>Asynchronous Pipelined Scheduling: We decouple hostside query dispatch and post-processing from in-PIM search through dynamic mini-batching and FIFO-based asynchronous execution. By overlapping communication, search, and reranking, this design mitigates coordination overhead and load imbalance (Challenge 3) while fully utilizing host-PIM bandwidth (Section IV-B). 3 Multiplication-Free Distance Computation: On observing that the quantization-error scaling factor cos(θ) is empirically stable within each IVF cluster, we replace the expensive per-node floating-point multiplication with a cluster-wide constant approximated via bitwise shifts and additions, achieving a fully multiplication-free in-PIM distance kernel with &lt;0.08% recall loss (Challenge 4) (Section IV-C).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Query processing with greedy beam search.</figDesc><graphic coords="2,183.29,12.01,138.53,184.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>. (Details in Section IV-A.) O2: Asynchronous Pipelined Scheduling. For C3, we propose an asynchronous pipelined scheduling architecture. It decouples host-side query dispatch and post-processing from in-PIM search through dynamic mini-batching and FIFObased asynchronous execution. By overlapping communication, search, and post-processing, this design reduces synchronization stalls, better utilizes host-PIM bandwidth, and improves throughput under highly data-dependent workloads. (Details in Section IV-B.) O3: Multiplication-Free Distance Computation. Even after memory and scheduling bottlenecks are mitigated, C4 remains a key obstacle. To address this, we redesign the distance computation kernel, and replace expensive, PIMhostile floating-point multiplication operations with a sequence of highly efficient bitwise shift and addition operations. This better matches the strengths of lightweight PIM cores and enables efficient in-memory execution of graph-based ANNS without sacrificing search quality. (Details in Section IV-C.)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: Index structure of SymphonyQG and PIMCQG</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>1. (Host-side) Filters the target clusters for the query and dispatches search requests to corresponding PUs. 2. (PIM-side) Traverses the graph and computes approximate distances using canonical quantized representations. 3. (PIM-side) Generates the candidate set with size EF based on approximate distances. 4. (Host-side) Fetches the candidate set from PIM and performs a full-precision reranking to get the final top-k.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 6 :Fig. 7 :</head><label>67</label><figDesc>Fig.6: Host-PIM communication overhead. We vary the size of data transferred from/to PIM and measure the latency.</figDesc><graphic coords="6,293.71,164.04,68.11,90.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: Comparison of Host-PU collaboration strategy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 9 :</head><label>9</label><figDesc>Fig.9: Recall of PIMCQG using node-specific cos(θ) or fixed α on SIFT.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Fig. 10 :</head><label>10</label><figDesc>Fig. 10: QPS vs. recall@10 of compared baselines. Each point is obtained by varying the search-cluster count and EF.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Fig. 11 :</head><label>11</label><figDesc>Fig.11: Energy efficiency (QPS/W) vs. recall@10 for the compared baselines across three datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Fig. 12 :</head><label>12</label><figDesc>Fig. 12: Comparing PIMCQG with GGNN on 4 and 8 GPUs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Fig. 13 :</head><label>13</label><figDesc>Fig. 13: QPS vs. recall@10 for PIMCQG and prior PIM-based ANNS systems.TABLE II: Index footprint of PIMCQG and SymphonyQG.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Fig. 14 :</head><label>14</label><figDesc>Fig. 14: Performance breakdown. The overall execution time is dictated by the slowest pipeline stage.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Fig. 15 :</head><label>15</label><figDesc>Fig.15: The impact of overfetching-reranking strategy ANNS feasible on commodity PIM and directly validates the effectiveness of the compact-index design.2) Pipeline Bottleneck Analysis:We then analyze the runtime breakdown of PIMCQG using Figure14. Since the asynchronous pipelined execution overlaps query dispatch, DPU search, and post-processing, the end-to-end latency is determined by the slowest pipeline stage. Across all datasets, the actual DPU search contributes only a relatively small fraction (≤50%), while the post-processing stage, including DPU-to-CPU result transfer and host-side exact distance recomputation, dominates the total execution time. Note that this overhead is attributed to two inherent factors: offloading raw vectors to the host to reduce PIM memory footprint, and the limited host-PIM bandwidth of current UPMEM hardware. It also suggests that PIMCQG can benefit substantially from future PIM systems with higher host-PIM bandwidth.3) Overfetching-Reranking: PIMCQG relies on a host-side reranking stage over an overfetched candidate set (size of EF) to preserve high accuracy. To study the impact of this strategy, we vary the value of EF and normalize the QPS and recall results of PIMCQG against the results of SymphonyQG with the candidate set size n b =30.Figure15clearly shows the trade-off between throughput and accuracy. Without overfetching (EF = n b ), PIMCQG achieves very high throughput (10×-10.4× that of Sympho-nyQG), but achieves only 81%-89% of the baseline recall. When increasing the overfetch size (to 150 for SIFT1B and 100 for SPACEV1B), PIMCQG achieves the same recall level as SymphonyQG, while still preserving 4×-6x higher QPS. This result confirms that overfetching-reranking is an effective mechanism for preserving accuracy without sacrificing the throughput advantage of the compact PIM index.4) Asynchronous Pipelined Scheduling:We next isolate the contribution of the scheduling design in Section IV-B by comparing PIMCQG against three alternatives: per-query dispatching, batch-synchronous scheduling, and PIMCQG 1, a pipeline variant with mini-batch size fixed to one.Figure16shows that PIMCQG outperforms naive per-query dispatching by 70×-155× across all three datasets, demonstrating that fine-grained dispatch fails to utilize host-DPU com-</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Fig. 18 :Fig. 19 :</head><label>1819</label><figDesc>Fig. 16: Throughput comparison of different scheduling strategies</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="contribution">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>C2: Inter-PU Communication C1: Small Local Memory C4: Restricted Compute Capability C3: Two-level Collaboration Main Memory UPMEM PIM PIM-HBM AiM PU Local Memory Data Bus</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Similarity search in the blink of an eye with compressed indices</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Aguerrebere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Bhati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hildebrand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Willke</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2304.04759</idno>
+		<idno type="arXiv">arXiv:2304.04759</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2304.04759" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Fafnir: Accelerating sparse gathering by using efficient near-memory intelligent reduction</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Asgari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadidi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Shim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-K</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/HPCA51647.2021.00080</idno>
+		<ptr target="https://doi.org/10.1109/HPCA51647.2021.00080" />
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Symposium on High-Performance Computer Architecture (HPCA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="908" to="920" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Pimpam: Efficient graph pattern matching on real processing-in-memory hardware</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3654964</idno>
+		<ptr target="https://doi.org/10.1145/3654964" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Management of Data</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="25" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Drim-ann: An approximate nearest neighbor search engine based on commercial dram-pims</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3712285.3759801</idno>
+		<ptr target="https://doi.org/10.1145/3712285.3759801" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis</title>
+		<meeting>the International Conference for High Performance Computing, Networking, Storage and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="820" to="836" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Finger: Fast inference for graph-based approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-F</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dhillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Hsieh</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3543507.3583318</idno>
+		<ptr target="https://doi.org/10.1145/3543507.3583318" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Web Conference 2023</title>
+		<meeting>the ACM Web Conference 2023</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3225" to="3235" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Spann: Highly-efficient billion-scale approximate nearest neighborhood search</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.5555/3540261.3540659</idno>
+		<ptr target="https://doi.org/10.5555/3540261.3540659" />
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="5199" to="5212" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Approximate nearest neighbor search under neural similarity metric for large-scale recommendation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Deng</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3511808.3557098</idno>
+		<ptr target="https://doi.org/10.1145/3511808.3557098" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st ACM International Conference on Information &amp; Knowledge Management</title>
+		<meeting>the 31st ACM International Conference on Information &amp; Knowledge Management</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3013" to="3022" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Upanns: Enhancing billion-scale anns efficiency with real-world pim architecture</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3712285.3759777</idno>
+		<ptr target="https://doi.org/10.1145/3712285.3759777" />
+	</analytic>
+	<monogr>
+		<title level="m">SC25: International Conference for High Performance Computing, Networking, Storage and Analysis</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="11" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">{PIMLex}: A {High-Performance} learned index with {Processing-in-Memory}</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://www.usenix.org/conference/fast25/presentation/cui" />
+	</analytic>
+	<monogr>
+		<title level="m">23rd USENIX Conference on File and Storage Technologies</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="287" to="303" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">The true processing in memory accelerator</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Devaux</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/HOTCHIPS.2019.8875680</idno>
+		<ptr target="https://doi.org/10.1109/HOTCHIPS.2019.8875680" />
+	</analytic>
+	<monogr>
+		<title level="m">2019 IEEE Hot Chips 31 Symposium (HCS)</title>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1" to="24" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The journey to a knowledgeable assistant with retrieval-augmented generation (rag)</title>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">L</forename><surname>Dong</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3616855.3638207</idno>
+		<ptr target="https://doi.org/10.1145/3616855.3638207" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th ACM International Conference on Web Search and Data Mining</title>
+		<meeting>the 17th ACM International Conference on Web Search and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="4" to="4" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Facebook SimSearchNet++</title>
+		<author>
+			<persName><surname>Facebook</surname></persName>
+		</author>
+		<ptr target="https://dl.fbaipublicfiles.com/billion-scale-ann-benchmarks/FBssnppdatabase" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>u8bin</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Faiss</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Facebook</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Research</surname></persName>
+		</author>
+		<ptr target="https://github.com/facebookresearch/faiss" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">High dimensional similarity search with satellite system graph: Efficiency, scalability, and unindexed query compatibility</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cai</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TPAMI.2021.3067706</idno>
+		<ptr target="https://doi.org/10.1109/TPAMI.2021.3067706" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">44</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="4139" to="4150" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Fast approximate nearest neighbor search with the navigating spreading-out graph</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cai</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.1707.00143</idno>
+		<idno type="arXiv">arXiv:1707.00143</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.1707.00143" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Rabitq: Quantizing high-dimensional vectors with a theoretical error bound for approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3654970</idno>
+		<ptr target="https://doi.org/10.1145/3654970" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Management of Data</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Benchmarking a new paradigm: Experimental analysis and characterization of a real processing-in-memory system</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gómez-Luna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">El</forename><surname>Hajj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Giannoula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">F</forename><surname>Oliveira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mutlu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2022.3174101</idno>
+		<ptr target="https://doi.org/10.1109/ACCESS.2022.3174101" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="52" to="565" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">idec: indexable distance estimating codes for approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ogihara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="DOI">10.14778/3397230.3397243</idno>
+		<ptr target="https://doi.org/10.14778/3397230.3397243" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the VLDB Endowment</title>
+		<meeting>the VLDB Endowment</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">13</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Symphonyqg: Towards symphonious integration of quantization and graph for approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3709730</idno>
+		<ptr target="https://doi.org/10.1145/3709730" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Management of Data</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Ggnn: Graph-based gpu nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Groh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ruppert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wieschollek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>Lensch</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TBDATA.2022.3161156</idno>
+		<ptr target="https://doi.org/10.1109/TBDATA.2022.3161156" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Big Data</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">01</biblScope>
+			<biblScope unit="page" from="267" to="279" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Pim is all you need: A cxl-enabled gpu-free system for large language model inference</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khadem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Umesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Servot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mutlu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Das</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3676641.3716267</idno>
+		<ptr target="https://doi.org/10.1145/3676641.3716267" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="862" to="881" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">SIFT1B</title>
+		<author>
+			<persName><surname>Inria</surname></persName>
+		</author>
+		<ptr target="http://corpus-texmex.irisa.fr/" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">{CXL-ANNS}:{Software-Hardware} collaborative memory disaggregation and computation for {Billion-Scale} approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jung</surname></persName>
+		</author>
+		<ptr target="https://www.usenix.org/conference/atc23/presentation/jang" />
+	</analytic>
+	<monogr>
+		<title level="m">2023 USENIX Annual Technical Conference (USENIX ATC</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="page" from="585" to="600" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Diskann: Fast accurate billion-point nearest neighbor search on a single node</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Jayaram</forename><surname>Subramanya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Devvrit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">V</forename><surname>Simhadri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Krishnawamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kadekodi</surname></persName>
+		</author>
+		<idno type="DOI">10.5555/3454287.3455520</idno>
+		<ptr target="https://dl.acm.org/doi/abs/10.5555/3454287.3455520" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Codesign hardware and algorithm for vector search</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>De Fine Licht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Renggli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rekatsinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hoefler</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3581784.3607045</idno>
+		<ptr target="https://doi.org/10.1145/3581784.3607045" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis</title>
+		<meeting>the International Conference for High Performance Computing, Networking, Storage and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Near-memory processing in action: Accelerating personalized recommendation with axdimm</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-G</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-H</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">H</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kwon</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/MM.2021.3097700</idno>
+		<ptr target="https://doi.org/10.1109/MM.2021.3097700" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Micro</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="116" to="127" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Bang: Billion-scale approximate nearest neighbor search using a single gpu</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">V</forename><surname>Simhadri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vedurada</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2401.11324</idno>
+		<idno type="arXiv">arXiv:2401.11324</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2401.11324" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Accelerating largescale graph-based nearest neighbor search on a computational storage platform</title>
+		<author>
+			<persName><forename type="first">J.-H</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-R</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-Y</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-Y</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TC.2022.3155956</idno>
+		<ptr target="https://doi.org/10.1109/TC.2022.3155956" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computers</title>
+		<imprint>
+			<biblScope unit="volume">72</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="278" to="290" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">{PathWeaver}: A {High-Throughput}{Multi-GPU} system for {Graph-Based} approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">U</forename><surname>Noh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://www.usenix.org/conference/atc25/presentation/kim" />
+	</analytic>
+	<monogr>
+		<title level="m">2025 USENIX Annual Technical Conference (USENIX ATC</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="1501" to="1517" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Cosmos: A cxl-based full in-memory system for approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Doh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-D</forename><surname>Roh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/LCA.2025.3570235</idno>
+		<ptr target="https://doi.org/10.1109/LCA.2025.3570235" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Computer Architecture Letters</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Pimbeam: Efficient regular path queries over graph database using processing-in-memory</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TPDS.2025.3547365</idno>
+		<ptr target="https://doi.org/10.1109/TPDS.2025.3547365" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Parallel and Distributed Systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">System architecture and software stack for gddr6-aim</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Vladimir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Won</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Joo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>An</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/HCS55958.2022.9895629</idno>
+		<ptr target="https://doi.org/10.1109/HCS55958.2022.9895629" />
+	</analytic>
+	<monogr>
+		<title level="m">2022 IEEE Hot Chips 34 Symposium (HCS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1" to="25" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">nm 6gb function-in-memory dram, based on hbm2 with a 1.2 tflops programmable computing unit using bank-level parallelism, for machine learning applications</title>
+		<author>
+			<persName><forename type="first">Y.-C</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-H</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Ryu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-P</forename><surname>Son</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Seongil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Y</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ISSCC42613.2021.9365862</idno>
+		<ptr target="https://doi.org/10.1109/ISSCC42613.2021.9365862" />
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Solid-State Circuits Conference (ISSCC)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="350" to="352" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Costeffective llm accelerator using processing in memory technology</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/VLSITechnologyandCir46783.2024.10631397</idno>
+		<ptr target="https://doi.org/10.1109/VLSITechnologyandCir46783.2024.10631397" />
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE Symposium on VLSI Technology and Circuits (VLSI Technology and Circuits</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="2" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Hnswlib -fast approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">Leonid</forename><surname>Boytsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yury</forename><surname>Malkov</surname></persName>
+		</author>
+		<ptr target="https://github.com/nmslib/hnswlib" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Retrievalaugmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>-T. Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+	<note>paper files/ paper/2020/file/6b493230205f780e1bc26945df7481e5-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Pim-dl: Expanding the applicability of commodity dram-pims for deep learning via algorithm-system co-optimization</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3620665.3640376</idno>
+		<ptr target="https://doi.org/10.1145/3620665.3640376" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="879" to="896" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Scalable graph indexing using gpus for approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3769825</idno>
+		<ptr target="https://doi.org/10.1145/3769825" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Management of Data</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Vstore: in-storage graph based vector search accelerator</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3489517.3530560</idno>
+		<ptr target="https://doi.org/10.1145/3489517.3530560" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th ACM/IEEE Design Automation Conference</title>
+		<meeting>the 59th ACM/IEEE Design Automation Conference</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="997" to="1002" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Heterrag: Heterogeneous processing-in-memory acceleration for retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3695053.3731089</idno>
+		<ptr target="https://doi.org/10.1145/3695053.3731089" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 52nd Annual International Symposium on Computer Architecture</title>
+		<meeting>the 52nd Annual International Symposium on Computer Architecture</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="884" to="898" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Accelerating personalized recommendation with cross-level near-memory processing</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xue</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3579371.3589101</idno>
+		<ptr target="https://doi.org/10.1145/3579371.3589101" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 50th Annual International Symposium on Computer Architecture</title>
+		<meeting>the 50th Annual International Symposium on Computer Architecture</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Juno: optimizing high-dimensional approximate nearest neighbour search with sparsity-aware algorithm and ray-tracing core mapping</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3620665.3640360</idno>
+		<ptr target="https://doi.org/10.1145/3620665.3640360" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="549" to="565" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Efficient and robust approximate nearest neighbor search using hierarchical navigable small world graphs</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">A</forename><surname>Malkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Yashunin</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TPAMI.2018.2889473</idno>
+		<ptr target="https://doi.org/10.1109/TPAMI.2018.2889473" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE transactions on pattern analysis and machine intelligence</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="824" to="836" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">SPACEV1B</title>
+		<author>
+			<persName><surname>Microsoft</surname></persName>
+		</author>
+		<ptr target="https://github.com/microsoft/SPTAG/tree/main/datasets/SPACEV1B" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Cagra: Highly parallel graph construction and approximate nearest neighbor search for gpus</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ootomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Naruse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nolet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Feher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/icde60146.2024.00323</idno>
+		<ptr target="https://doi.org/10.1109/icde60146.2024.00323" />
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE 40th International Conference on Data Engineering (ICDE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="4236" to="4247" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Pim-ai: A novel architecture for high-efficiency llm inference</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ortega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Falevoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ayrignac</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2411.17309</idno>
+		<idno type="arXiv">arXiv:2411.17309</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2411.17309" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">PIM-HBM</title>
+		<author>
+			<persName><surname>Samsung</surname></persName>
+		</author>
+		<ptr target="https://github.com/SAITPublic/PIMSimulator" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Gpu-native approximate nearest neighbor search with ivf-rabitq: Fast index build and search</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>Fehér</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2602.23999</idno>
+		<idno type="arXiv">arXiv:2602.23999</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2602.23999" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">AiM</title>
+		<author>
+			<persName><surname>Sk Hynix</surname></persName>
+		</author>
+		<ptr target="https://github.com/arkhadem/aimsimulator" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">An efficient fpga implementation of approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TVLSI.2025.3544342</idno>
+		<ptr target="https://doi.org/10.1109/TVLSI.2025.3544342" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Transactions on Very Large Scale Integration (VLSI) Systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Scalable billion-point approximate nearest neighbor search using {SmartSSDs}</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://www.usenix.org/conference/atc24/presentation/tian" />
+	</analytic>
+	<monogr>
+		<title level="m">2024 USENIX Annual Technical Conference (USENIX ATC</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="1135" to="1150" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Fusionanns: An efficient cpu/gpu cooperative processing architecture for billion-scale approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2409.16576</idno>
+		<idno type="arXiv">arXiv:2409.16576</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2409.16576" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Recommendation of food items for thyroid patients using content-based knn method</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">S</forename><surname>Vairale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shukla</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-981-15-5309-7_8</idno>
+		<ptr target="https://doi.org/10.1007/978-981-15-5309-78" />
+	</analytic>
+	<monogr>
+		<title level="m">Data Science and Security: Proceedings of IDSCS 2020</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="71" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Accelerating graph indexing for anns on modern cpus</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3725260</idno>
+		<ptr target="https://doi.org/10.1145/3725260" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Management of Data</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="29" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Ems-i: An efficient memory system design with specialized caching mechanism for recommendation inference</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3609384</idno>
+		<ptr target="https://doi.org/10.1145/3609384" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Embedded Computing Systems</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">5s</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Ndsearch: Accelerating graph-traversal-based approximate nearest neighbor search through near data processing</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ISCA59077.2024.00035</idno>
+		<ptr target="https://doi.org/10.1109/ISCA59077.2024.00035" />
+	</analytic>
+	<monogr>
+		<title level="m">2024 ACM/IEEE 51st Annual International Symposium on Computer Architecture (ISCA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="368" to="381" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Turbocharge {ANNS} on real {Processing-in-Memory} by enabling {Fine-Grained}{Per-PIM-Core} scheduling</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chai</surname></persName>
+		</author>
+		<ptr target="https://www.usenix.org/conference/atc25/presentation/wu-puqing" />
+	</analytic>
+	<monogr>
+		<title level="m">2025 USENIX Annual Technical Conference (USENIX ATC</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="1223" to="1241" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Proxima: Near-storage acceleration for graph-based approximate nearest neighbor search in 3d nand</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-K</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pinge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rosing</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/tc.2026.3671718</idno>
+		<ptr target="http://doi.org/10.1109/tc.2026.3671718" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computers</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Neighborhood Graph and Tree for Indexing Highdimensional Data</title>
+		<author>
+			<persName><forename type="first">Yahoo</forename><surname>Japan</surname></persName>
+		</author>
+		<ptr target="https://github.com/yahoojapan/NGT" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Df-gas: A distributed fpga-as-a-service architecture towards billion-scale graph-based approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3613424.3614292</idno>
+		<ptr target="https://doi.org/10.1145/3613424.3614292" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 56th Annual IEEE/ACM International Symposium on Microarchitecture</title>
+		<meeting>the 56th Annual IEEE/ACM International Symposium on Microarchitecture</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="283" to="296" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Nl-dpe: An analog in-memory non-linear dot product engine for efficient cnn and llm inference</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Buonanno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gajjar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Serebryakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Faraboschi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2511.13950</idno>
+		<idno type="arXiv">arXiv:2511.13950</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2511.13950" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Lazylsh: Approximate nearest neighbor search for multiple distance functions with a single index</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Tung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2882903.2882930</idno>
+		<ptr target="https://doi.org/10.1145/2882903.2882930" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2016 International Conference on Management of Data</title>
+		<meeting>the 2016 International Conference on Management of Data</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="2023" to="2037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Processing-in-hierarchical-memory architecture for billionscale approximate nearest neighbor search</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/DAC56929.2023.10247946</idno>
+		<ptr target="https://doi.org/10.1109/DAC56929.2023.10247946" />
+	</analytic>
+	<monogr>
+		<title level="m">2023 60th ACM/IEEE Design Automation Conference (DAC)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Pyglass -Graph Library for Approximate Similarity Search</title>
+		<author>
+			<persName><surname>Zilliz</surname></persName>
+		</author>
+		<ptr target="https://github.com/zilliztech/pyglass" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

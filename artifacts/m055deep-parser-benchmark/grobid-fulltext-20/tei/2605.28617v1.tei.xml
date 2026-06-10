@@ -1,0 +1,1414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LACUNA: Safe Agents as Recursive Program Holes</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-05-27">27 May 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yaoyu</forename><surname>Zhao</surname></persName>
+							<email>yaoyu.zhao@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yichen</forename><surname>Xu</surname></persName>
+							<email>yichen.xu@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Oliver</forename><surname>Bračevac</surname></persName>
+							<email>oliver.bracevac@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cao</forename><surname>Nguyen</surname></persName>
+							<email>nguyen.pham@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pham</forename><surname>Frank</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhengqing</forename><surname>Wu</surname></persName>
+							<email>zhengqing.wu@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Martin</forename><surname>Odersky</surname></persName>
+							<email>martin.odersky@epfl.ch</email>
+							<affiliation key="aff0">
+								<orgName type="institution">EPFL</orgName>
+								<address>
+									<settlement>Lausanne</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LACUNA: Safe Agents as Recursive Program Holes</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-05-27">27 May 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F590EB9895E5C8F3341F20CF12AF625F</idno>
+					<idno type="arXiv">arXiv:2605.28617v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T11:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>LLM agents increasingly act by writing code, yet a split persists between the runtime that drives the agent and the code the model writes. The runtime owns the loop, context, and control flow, and the model has little say over any of them. Letting model-written code shape the runtime itself would make agents more expressive, but it would also sharpen safety problems. A model can be diverted by a prompt injection, call the wrong tool, or fail partway and leave an inconsistent state, and each such failure reaches further when the code shapes the runtime than when it expresses a single action. We present LACUNA, a programming model for agents that closes this split while preserving safety. Each agent action is a typed call agent[T](task) that the LLM fills with code when execution reaches it, and the code is typechecked against the surrounding program before it runs. Because each action is accepted or rejected as a whole, a rejected one leaves the environment untouched, and its compiler diagnostics drive a retry. The same check also bounds which tools and data an action may use and how they flow. Our primitive expresses ReAct loops, sub-agents, skills, parallel decomposition, and multi-model planning as ordinary control flow. We evaluate LACUNA on a collection of test cases, BrowseComp-Plus, and τ 2 -bench. On BrowseComp-Plus, 8.6% of generations are rejected before execution, with 0.7 retries per query on average, and the agent reaches 27.1% accuracy. On τ 2 -bench, LACUNA solves 76.0% of 392 tasks across four domains with a capable model, on par with the baseline agent.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) increasingly drive agents: programs that call models, use tools, and maintain state to solve tasks. Tools such as file access, web search, and API calls are now often described through protocols such as MCP (Anthropic,   * Equal contribution. 2024) and packaged as reusable skills <ref type="bibr">(Anthropic, 2025c)</ref>. The dominant approach, ReAct <ref type="bibr" target="#b47">(Yao et al., 2023)</ref>, has the model alternate between reasoning and individual tool calls until reaching an answer. Code-as-action agents <ref type="bibr">(Wang et al., 2024b;</ref><ref type="bibr">Anthropic, 2025b;</ref><ref type="bibr">Roucher et al., 2025)</ref> offer an alternative: instead of emitting one tool call at a time, the model writes code that composes tools, parses intermediate results, branches, and loops.</p><p>Existing code-as-action agents keep a clear split between the code that runs the agent and the code it writes. The runtime owns the loop, context, and action dispatch, while the model supplies only the next fragment, with little say over what context to keep, when to spawn sub-agents, or how to adapt control flow. Recursive language modeling <ref type="bibr">(Zhang et al., 2025a)</ref> lets generated code update a persistent execution context and call the model again, but the runtime still owns the loop and call structure. Letting the code the model writes shape the runtime itself lifts these limits and makes agents more expressive, but it also raises the stakes for safety. Model-written code is untrusted. When it only expresses actions, the surrounding runtime bounds its reach; once the agent shapes its own runtime, an attack reaches the runtime itself. Existing defenses are piecemeal. Sandboxes and restricted interpreters <ref type="bibr" target="#b33">(Pydantic, 2025)</ref> limit what code can do at runtime, policy languages (Amazon Web Services, 2024) gate access to resources, and input-hardening and mediation defenses <ref type="bibr">(Chen et al., 2025a;</ref><ref type="bibr" target="#b45">Willison, 2023)</ref> try to block unsafe actions. None of them checks a whole generated action before it starts.</p><p>We propose LACUNA, a programming model that closes this split while preserving safety. Each agent action is a typed hole that the LLM fills with code when execution reaches it, and the code is type-checked against the surrounding program before it runs. The core idea is to put the model call inside the program at the point where its result is needed, and to make the caller state what kind of result is expected. Our prototype uses Scala 3 because it supports the two foundations we need: compiling a fresh snippet in the surrounding program context, and tracking which resources that snippet is allowed to use <ref type="bibr">(Scala, 2024a)</ref>. The userfacing call is:</p><p>def agent[T](task: String): T Here task is the natural-language prompt and T is the expected result type. When execution reaches this call, the model writes Scala code for the request, which LACUNA compiles at the same point in the surrounding program, so it can use the variables, functions, and tools available there. If the code provably produces a value of type T, it runs; otherwise the compiler's errors are sent back as feedback for a retry.</p><p>The generated code is ordinary Scala, not just a single tool call. It can use tools, process data, and ask the model for help again, as in this request for a report over several topics: val topics = List( "LLM", "world models", "transformer", ...) val report = agent[String]( "Research each topic and generate a" + " report on their connections.")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>typed action</head><p>One valid expansion uses nested research calls:</p><p>val report: String = val findings = topics.par.map(topic =&gt; agent[String](s"Research: $topic")) agent("Generate a report from the findings")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>recursive expansion</head><p>Each nested call is checked like the outer one, with its own result type and access to the variables introduced by the code around it. Recursive model calls are not a separate agent protocol: they are ordinary code that can branch, loop, spawn sub-agents, call skills, or route work across models.</p><p>The check catches structural failures before execution: a snippet that uses a missing tool, passes arguments of the wrong shape, or returns the wrong kind of result is rejected as a whole, and the retry starts from an unchanged state (Section 4). The check also bounds the agent's authority <ref type="bibr">(Scala, 2024a;</ref><ref type="bibr" target="#b27">Odersky et al., 2026;</ref><ref type="bibr" target="#b46">Xu et al., 2025)</ref>: whether it can access certain files, network handles, and tools (Section 4.3).</p><p>Our contributions are:</p><p>1. A code-as-action model in which an LLM writes agent actions as code that runs as part of its own runtime and is checked at the call site before execution (Section 3).</p><p>2. A safety analysis of the resulting guarantees: pre-execution rejection of unavailable names and type mismatches, no partial execution of rejected snippets, and permissions and information-flow control (Section 4).</p><p>3. A demonstration that nested agent calls and ordinary code express common agent patterns, including ReAct loops, skills, and multimodel planning, as ordinary program control flow (Section 5).</p><p>4. A Scala 3 realization and an evaluation on a collection of verifier test cases, BrowseComp-Plus <ref type="bibr">(Chen et al., 2025b)</ref>, and τ 2 -bench <ref type="bibr">(Barres et al., 2025)</ref>, including the retry behavior induced by compiler diagnostics (Section 6, Section 7).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Code-as-action approaches <ref type="bibr">(Wang et al., 2024b;</ref><ref type="bibr">Anthropic, 2025b;</ref><ref type="bibr">Roucher et al., 2025)</ref> let the model write code as its action space rather than emit a single tool call. Recursive language models (RLM) <ref type="bibr">(Zhang et al., 2025a)</ref>, introduced above, are the closest prior design to ours, and we improve on it in two ways. First, RLM's REPL (a read-evalprint loop, the interactive shell that retains state across inputs) runs generated code without checking it first, so a snippet that misuses a binding or returns the wrong shape can fail partway through and leave the environment inconsistent, whereas LACUNA typechecks against T in the live lexical scope before any of it runs. Second, RLM hands the model a handle to the context but keeps orchestration and control flow in the runtime, whereas in LACUNA the generated code writes that control flow itself, as typed code over the agent primitive.</p><p>Other language-integrated LLM frameworks make model calls first-class in a host language, but they focus on the model's input and output rules. LMQL <ref type="bibr" target="#b8">(Beurer-Kellner et al., 2023)</ref> casts LLM inference as a query whose holes are filled by constrained decoding, where declared constraints on the type, length, or form of the result steer the sampler. DSPy <ref type="bibr" target="#b23">(Khattab et al., 2024)</ref> describes an LLM call with a typed signature that the framework renders into a prompt and parses back into values. In both, the declaration governs only a single call's input and output. Composing several such calls into a larger workflow is left to the developer, who wires them together by hand in fixed code, such as an LMQL query or a DSPy pipeline.</p><p>LACUNA differs on both counts. The agent emits a program rather than a constrained string or a set of field values, and the host compiler typechecks that program against T in the call site's lexical scope before it runs. We neither constrain the sampler nor parse the output. Instead, the compiler's error messages are fed back to drive retries until the model produces a well-typed snippet. Composition is then expressed by the generated code itself, as control flow over the agent primitive. And because the snippet is real code of the host language, capture checking bounds the capabilities it may use, a guarantee neither output-shaping framework provides.</p><p>The closest work in framing is ChatLSP <ref type="bibr" target="#b9">(Blinn et al., 2024)</ref>, which likewise fills a typed hole with LLM-generated code from its expected type and context. Its setting, though, is edit-time code completion that a human reviews, where context mainly reduces hallucination. LACUNA instead makes the hole a recursive runtime action, typechecked against the live lexical scope and run in one process. That shift adds guarantees that completion does not need: a dynamic dependency on the live context, capture-checked authority over effects and data, and recursive use of the hole as the unit of dynamic control flow rather than a one-shot completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">LACUNA: Typed Holes as Agents</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">The Agent Call</head><p>LACUNA treats an agent request as a placeholder in code: the surrounding program needs a value whose type is fixed statically, and the model writes the code that should produce it. Programming tools often call such a placeholder a typed hole <ref type="bibr" target="#b28">(Omar et al., 2017)</ref>. We reuse the idea for model-written actions at runtime:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>def agent[T](task: String): T</head><p>The type parameter T is the expected result type, and the value parameter task is a natural-language prompt describing what should go there. In practice, T rarely needs to be written out. Scala's type inference picks it up from the surrounding context , so callers usually write agent(...) and let the compiler fill in the type. At runtime, the LLM receives the prompt together with the expected type and the enclosing source at the call site, and returns a string of Scala source intended to produce a T. The compiler checks that source statically against T, as if it had been written at the call site. If the check succeeds, the snippet runs and the call evaluates to a value of type T. If it fails, the agent receives the diagnostics as feedback and can try again.</p><p>The static type itself does not constitute our entire contribution, since any typed language provides one. What matters is when and against what it is enforced. A compiler for a statically typed language normally checks only source the developer wrote, ahead of time, and gives no way to run a string against the contract of the surrounding code while the program executes. LACUNA provides that guarantee for model-written code: the snippet does not exist until runtime, yet it is checked against T and the live lexical scope at the call site under the same static rules as hand-written code, before any of it runs. The generated action thus inherits the full strength of static checking from the host language (Section 4), rather than a weaker runtime approximation.</p><p>Concretely, the prompt sent to the LLM is assembled from a small template: a system instruction telling the model to return a Scala expression, the expected type T rendered back to source, the enclosing source with a placeholder at the agent call's position, a listing of the variables and parameters available at the call site and their types, and the user's task string. The system instruction also carries setup-specific guidance, for instance how to interact with the user, how to request additional permissions or capabilities, and how to organize a multi-step task into smaller agent calls. The template is configurable per call site or per session. Callers can swap the system instruction, change how available names are summarized, or attach project-specific context for types the model would not otherwise know.</p><p>What the model may write. The generated code is typically a single expression or a block with multiple statements. It may read parameters, read and update local variables, use control flow (if-else, while, for, match, try-catch), call any function or method visible at the call site, including a nested agent(...), or define its own local functions, lambdas, or classes. The only requirements are the ones the compiler always enforces for hand-written code: the final expression must have type T, every name it uses must be in scope at that point, and the snippet must pass every other check the host compiler applies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tools are functions.</head><p>A tool is simply a function in scope. The model invokes it by writing a func-tion call that the compiler type-checks, with no tool registry, JSON schema, or protocol layer to maintain, and defining a tool is just defining a function (see Appendix C). The idea extends to every interaction with the user and the environment, so showing progress is a plain println(...) and any I/O is the corresponding standard-library call, with no separate agent layer to mediate it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Examples</head><p>The generated code is compiled as if the developer had typed it at the exact point where the agent call appears. The snippet can therefore use the same variables, functions, parameters, and imports as hand-written code at that point.</p><p>&gt; val xs = List(0, 1, 2, 4, 7, 9, 10) &gt; val r = agent[List[Int]]( | "filter the prime numbers from xs") // LLM produces: // def isPrime(n: Int): Boolean = // n &gt; 1 &amp;&amp; // (2 until n).forall(n % // xs.filter(isPrime) val r: List[Int] = List(2, 7)</p><p>The generated code uses xs directly and defines a local helper isPrime. Because the snippet is compiled at the call site, the name xs refers to the list the surrounding program defined, and the value is passed to the snippet at runtime. The expected type List <ref type="bibr">[Int]</ref> constrains the generation to produce a list of integers, so the LLM cannot return a string, an integer, or a boolean. The richer the result type, the tighter the contract: Appendix A shows algebraic data types and function types constraining the generated code further.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Nested Agent Calls</head><p>Nested calls are the central mechanism of LACUNA. The top-level call agent[T](task) asks the model for code that solves the task, and that code may make smaller agent[U](subtask) calls. Each nested call has its own expected type U and its own task string, and is checked and executed by the same agent mechanism.</p><p>Crucially, a nested call sees more than its parent did. When the runtime reaches a nested agent call, the LLM is asked to fill it within a richer context. That context includes not only the names available at the outer call site, but also every intermediate value, comment, and control-flow structure the outer snippet has introduced up to that point. Each sub-problem is therefore approached with more information. The outer call has already narrowed the work down, processed the relevant data, and recorded its reasoning in the program text. Nested agent calls thus give an agent a natural way to break a complex task into smaller ones, sequential or parallel, each reasoned about with richer context and a more precise goal than the step before. Section 5 shows that this is enough to express common agent architectures.</p><p>Nested calls carry the usual termination caveat. An LLM is free to emit a snippet that calls agent again, and the new call may emit another, with no static bound on the depth. A genuinely complex task and an accidental infinite recursion can look the same from the outside. The runtime therefore tracks the current depth of nested agent calls and exposes a configurable cap. When the cap is hit, the offending call fails with an exception. Callers who want a hard ceiling on cost or latency set the cap themselves, and who prefer to trust the LLM can leave it open and let the agent stop when it judges the task complete.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Handling Compilation Errors</head><p>Each agent call runs a self-correcting retry loop. The generated code is sent through the compiler. If the check fails, the diagnostics are appended to the original prompt and the LLM is asked again, up to a configurable maximum number of retries. If the agent still cannot produce an accepted snippet within that budget, the call throws a special exception carrying the final compiler diagnostics. This is the appropriate failure when the prompt requests something the surrounding program context cannot express, for instance asking for a network call when no I/O capability is in scope, or asking for a return shape the type system rules out.</p><p>The outer program can catch this exception like any other:</p><p>try val x: Int = agent("...") ... catch case e: EvalCompileException =&gt; fallback() The trade-off is that a try block placed around an outer agent call also catches compile failures from any nested agent call inside its snippet, even when those failures are unrelated to the outer call's intent. LACUNA also provides agentSafe[T], which, rather than throwing on failure, returns its outcome as a value of type EvalResult[T] holding either the result value of type T or the final diagnostics. A caller can therefore handle a failed generation locally instead of catching an exception that a nested call might throw (the full signature of agentSafe is in Section 6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Safety</head><p>Each agent call is compiled by the host compiler in the original lexical context, so a generated snippet is held to exactly the rules the compiler applies to code written by hand at that point. The snippet runs only if it resolves every name in scope, typechecks against the expected T, and passes every other check the compiler enforces. These checks range from exhaustiveness and nullability to, when capture checking is enabled, effect and information-flow constraints. No separate safety pass of our own is involved: the guarantee is the host compiler's soundness, applied to model-written code. We first fix the threat model, then walk through representative rejections, ending with the constraints capture checking adds. The fully adversarial setting is developed in Section 4.3.</p><p>In the examples below, the generated snippet appears as a comment and the compiler's diagnostic is what the runtime reports to the LLM and caller. We set the retry budget to zero so the first failure surfaces directly (Section 3.4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Threat Model</head><p>We make the trust boundary explicit. The trusted components are the compiler (type checker, static analysis, and code generation), the runtime that executes a type-checked snippet, and the host program that issues the agent call and supplies its lexical scope. The untrusted components are the model that fills the hole (treated as potentially byzantine), every snippet it produces, and any external content (files, third-party APIs, web pages, and tool outputs) that reaches the task string.</p><p>The threat we address here is model error: even an honest, well-intentioned model is an unreliable programmer and may emit code that is incorrect or oversteps its bounds, e.g., performing I/O or reaching a resource the surrounding program could not reach. We want every generated snippet to be as safe as code a developer could have written by hand at that point, irrespective of the model's competence, so that a plain mistake never becomes an action outside the snippet's static contract. These guarantees hold against any model, honest or not, and Section 4.3 extends them to a fully adversarial one.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Static Guarantees</head><p>Undefined names. The snippet may use only names the lexical scope already provides. A reference to a binding the surrounding program lacks is caught before the snippet runs:</p><p>&gt; val tax: Double = 0.08 &gt; agent[Double]("apply tax to price") // model produces: price * (1.0 + tax) EvalCompileException: agent failed to compile: Not found: value price Type mismatches. A value of the wrong type cannot flow into a function call or an algebraic constructor, even if the surface text looks plausible: &gt; case class Order(id: Int, total: Double) &gt; val first: String = "A001" &gt; agent[Order]("id from first, total 0.0") // model produces: Order(first, 0.0) EvalCompileException: agent failed to compile: Order(first, 0.0) ^^^^F ound: String Required: Int</p><p>The same checks turn away other common shortcuts. Appendix B shows a null literal rejected under explicit nulls <ref type="bibr">(Scala, 2024b)</ref> and a nonexhaustive pattern match over a sealed data type rejected by the exhaustiveness checker.</p><p>Atomicity: nothing runs if anything fails. The critical property is that the snippet is accepted or rejected as a whole. A side-effecting statement earlier in the snippet does not run when a later statement fails to typecheck. Consider an agent asked to update a mutable balance:</p><p>&gt; var balance: Int = 100 &gt; agent[Int]( | "subtract 50 and return the new balance") // model produces: // balance -= 50 // s"remaining: $balance" // String, not Int EvalCompileException: agent failed to compile: Found: String Required: Int &gt; balance val res: Int = 100</p><p>The assignment to balance precedes the ill-typed expression in source order, yet never executes: the snippet is rejected as a whole, so the runtime never runs its first statement. Approaches that detect illtyped code only at runtime (a Python exec string, an unconstrained tool call) leak partial effects through exactly this pattern: the assignment fires before the bad statement raises, leaving state inconsistent. The typed hole is all-or-nothing by construction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Capability Safety</head><p>The standard type system of Section 4.2 governs an action's shape but says nothing about its authority: which effects the generated code may perform and which data it may use. Turning on Scala 3's capture checking adds that layer as an opt-in, without changing the primitive, building on the capture-set notation of Appendix D. A capability, in the objectcapability sense used throughout this paper <ref type="bibr" target="#b20">(Dennis and Horn, 1966;</ref><ref type="bibr" target="#b24">Miller, 2006)</ref>, is an ordinary unforgeable program value that authorizes a specific effect or resource (a file handle, a network socket, a logger): code can perform the effect only while it holds a reference to the corresponding value. This differs from the systems notion of capabilities as process-level privilege bits. Here, granting and propagation are lexical and type-tracked rather than ambient. The lexical scope at the hole is therefore the agent's permission set, and the same compiler enforces capability scoping and information-flow constraints on both the generated code and the rest of the program.</p><p>Extended threat model. The threat model of Section 4.1 assumes an honest but fallible model. Tracked capabilities let us widen it to an adversarial model that deliberately emits harmful code, the setting of prompt injection. An injection is direct when it rides in on a hostile user prompt and indirect when it arrives in content the agent reads at runtime (a tool result, a file, or a fetched web page) that flows into the task string. We do not try to stop the model from being influenced by such content, which is unavoidable once untrusted text reaches the prompt. We only bound what that influence can do. The snippet is still recompiled in the hole's lexical scope, so a subverted model can invoke only the effects and reach only the data that scope already grants, exactly as an honest model can.</p><p>Tool use as permission. Because the scope is the permission set, tool use is governed by the same mechanism. Under capture checking an effectful tool (Section 3.1) carries the capability it needs in its type, so the model can call it only when the hole's scope binds that capability. Granting a capability for one phase and withholding it in the next yields least-authority, per-phase permissions: a snippet generated where a read-only file handle is in scope can read, while one generated without a network capability cannot send what it read, whatever a poisoned instruction demands. The two results below make this precise: confinement by scope bounds which effects a snippet may perform, and information-flow control bounds which data it may carry out.</p><p>Confinement by scope. Capture checking confines a capability to the region of code where it is lexically in scope. A generated snippet can reach a capability only if the hole's context already binds it, and even then it cannot smuggle that capability out: a result whose type does not admit the capability cannot carry it past the scope. The snippet may therefore invoke an in-scope capability while it runs, but it may not hand back a value that retains the capability for later use. An io capability makes the contrast concrete: The first call uses io directly and returns a plain String, which carries no capability, so it is accepted. The second call asks for a function that reads a file. The generated lambda has type String -&gt;{io} String because it captures the capability. The capability io is created fresh inside withIO and scoped to that block, so it cannot appear in the capture set of withIO's result, which lives outside the block. Capture checking therefore reports that io outlives its scope: the lambda would carry io out past the withIO block that introduced it, and the compiler rejects the leak before the body runs.</p><p>Information flow control: classified data. Capability scoping also rules out information flows that a pure access-control language cannot describe. Consider a skill that walks through several analysis steps over a legal contract. The user holds a sensitive document and wants to run the skill, but the agent in the program is powered by a hosted online model, so sending the contract text to that model would leak it.</p><p>The TACIT harness <ref type="bibr" target="#b27">(Odersky et al., 2026)</ref> addresses this with a typed container. Sensitive content arrives wrapped:</p><formula xml:id="formula_0">class Classified[T]: def map[U](f: T -&gt; U): Classified[U]</formula><p>The only way to touch the content is through map, which accepts a pure function (</p><p>T -&gt; U, capture set empty). A pure function holds no capabilities, so its body cannot read a file, open a socket, print, or feed data back to the hosted model. The result of map is again Classified[U], so the wrapping is preserved across the pipeline. The hosted agent can plan the analysis, but the content never leaves the wrapper. The limitation is that the function passed to map is written once, at code-generation time, so it cannot adapt to what is inside the wrapper. The agent primitive lifts this restriction: inside the function passed to map, a nested call to local.agent[U] dispatches to a trusted local model. The nested call runs in the pure scope of map, so capture checking still rejects any effectful leak of content, but the code that processes the content is now generated at runtime, with the content in view of the local model alone: val doc: Classified[String] = docs.load(id) val report: Classified[Report] = doc.map { content =&gt; local.agent[Report]( s"follow the skill steps on $content") } pure action only</p><p>The outer (hosted) agent generates the surrounding program, including the lambda passed to map. It sees the source of that lambda but not the value of content, which is bound only when map fires at runtime. At that point, content reaches local, the trusted on-device model. The inner snippet is recompiled in the same pure scope as the map body, so capture checking forbids it from invoking network IO, the file system, or the hosted model's API. The outer agent plans without ever seeing the content; the local agent acts on it with no way out. The net effect is more flexibility without losing safety: a fixed pure function commits the pipeline to one shape in advance, while a nested typed-hole call lets the program adapt to the content at runtime under the same capture-check argument.</p><p>We evaluate these guarantees empirically against an adversary in Section 7.4, porting AgentDojo's prompt-injection attacks to LACUNA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Residual Escape Hatches</head><p>Two constructs slip past the type-level contract. Reflection lets code look up and use classes, fields, and methods by name at runtime, reaching members and call paths the static checker never sees. Raw process execution launches an external process that runs outside the programming language altogether. Both are ambient authority: any code can reach them without being granted a capability, so a snippet can use them while holding none. The language feature safe mode <ref type="bibr">(Scala, 2024c)</ref>, a compiler setting that forbids exactly these unsafe constructs in source, closes both. We therefore recommend running agents under safe mode. Without it, these authorities stay open and a snippet must be treated as ordinary untrusted code. Resource exhaustion, non-termination, and latency lie outside the type system entirely and are bounded by runtime budgets (see the Limitations).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Modeling Agent Patterns with LACUNA</head><p>With agent as the only new primitive, common agent patterns reduce to plain control flow over the typed-hole shape.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Typed Skills and Self-Improvement</head><p>A skill is the reusable unit through which an agent encodes domain expertise. Existing solutions sit at two extremes. At one end, the dominant approach, exemplified by Anthropic's Agent Skills <ref type="bibr">(Anthropic, 2025c)</ref>, ships a skill as a textbased guide the agent consults: it carries domain knowledge well but is unenforceable, since nothing stops the model from skipping a step or deviating from the procedure. At the other end, Voyager <ref type="bibr">(Wang et al., 2024a)</ref> and tool-maker systems <ref type="bibr" target="#b13">(Cai et al., 2024)</ref> store a skill as a fixed piece of code: reproducible, but committed to a single program that cannot adapt to new situations.</p><p>Our agent primitive lets a skill sit between these extremes. A skill is an ordinary typed function: its signature is fixed and checked end to end by the compiler, while its body, generated per call, may freely mix plain code with nested agent calls. The following example sketches a skill for reviewing a code change, which can sit anywhere on the spectrum, from fully delegated to fully coded:</p><p>// 1. fully delegated: one agent call def reviewPR(diff: Diff): Review = agent("apply the code-review checklist") // 2. mixed: code skeleton, agent inside def reviewPR(diff: Diff): Review = val critical = diff.files.filter(_.risky) val notes = critical.map { f =&gt; agent[Note]( s"review $f against the checklist") } Review.fromNotes(notes) // 3. fully coded: no agent call def reviewPR(diff: Diff): Review = val notes = diff.files.map(check) Review.fromNotes(notes)</p><p>Self-improvement. A skill library is just a set of functions in scope, so revision falls out of name resolution. In a long-running REPL session, an agent emits a new function with the same name and signature. This definition shadows the previous one, so later agent calls resolve to the updated version.</p><p>The effect is to treat what cognitive-architecture accounts <ref type="bibr" target="#b41">(Sumers et al., 2024)</ref> call procedural memory as code edited in place, the role that Reflexion <ref type="bibr" target="#b40">(Shinn et al., 2023)</ref> and Voyager-style libraries instead assign to free-form text or stored scripts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">ReAct Loop</head><p>A ReAct <ref type="bibr" target="#b47">(Yao et al., 2023)</ref> loop interleaves reasoning and acting. Any loop can be written as a tailrecursive function (one whose last action is a call to itself), so a ReAct loop is naturally a tail-recursive agent call: at each round the model emits a snippet that calls in-scope tools (Section 3.1), processes their results, and ends by calling</p><p>agent[T](task) again, until it can return a T directly. Conceptually, the call unwinds turn by turn: // initial agent call: agent[T](task) // 1st round snippet: val x = readFile(f) val y = parse(x) agent[T](task) // tail-call // 2nd round snippet: val x = readFile(f) val y = parse(x) val z = analyze(y) agent[T](task) // tail-call // ... until the snippet returns a T directly generated generated</p><p>Every recursive call has the same expected return type T, so each turn attacks the same problem with more accumulated context, and the loop ends when the surrounding scope already contains enough information to produce a T without another model call. This shape is closely related to recursive language modeling (RLM) <ref type="bibr">(Zhang et al., 2025a)</ref>, which also lets an agent write code that re-invokes the model.</p><p>Further patterns, such as sub-agents with an isolated context, parallel reasoning over a collection, and planning with task assignment across models, follow the same control-flow recipe and are deferred to Appendix F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Realization in Scala 3</head><p>The agent primitive is built on a lower-level operation, eval[T](source), that takes a string of Scala source code and runs it as if it had been written at the point where the call appears (its call site). The central technical challenge of this work is to support such a dynamic operation, running code that is only known as a string while the program is already running, inside a statically typed host language without giving up the guarantees that static typing provides.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Why eval is Hard in a Static Language</head><p>Dynamic languages offer this operation for free. Python's eval(s, globals, locals) (Python Software Foundation, 2024) and JavaScript's eval(s) <ref type="bibr">(Mozilla, 2024)</ref> take a string, turn it into code at runtime, run it in the current scope or in a dictionary of variables passed explicitly, and return whatever value results. The string is never checked in advance: it runs in the same untyped setting as the rest of the program, and any error surfaces only when the offending line executes.</p><p>Reproducing this convenience in a statically typed host raises three obstacles. First, a static compiler normally turns source into code once, before the program runs, and does not compile arbitrary strings afterward. To evaluate a string, the program must invoke the compiler again, on itself, while it is already running. Second, the string must be compiled as though it appeared at the call site, with access to everything visible there: local variables, given instances (Scala's implicit values, which the compiler supplies from the surrounding context), and capabilities (values that grant permission to perform an effect such as I/O). In a dynamic language these bindings sit in a runtime dictionary the interpreter can look up; in a static language they live only in the compiler's internal representation of the program, the syntax tree, and are gone by the time the program runs. Third, this second, inner compilation must apply exactly the same typing rules as the original one, so that the model-written code is held to the same contract as the code around it. In particular, capture checking (Scala's mechanism for tracking which effects and resources a piece of code may use) must see the snippet in its original context. Dynamic interpreters sidestep all three obstacles by giving up static typing in the first place. Our goal is the opposite: to keep the safety guarantees of a static host.</p><p>6.2 The eval Primitive We add eval as a new built-in operation in the Scala 3 compiler. It takes two forms: def eval[T](source: String): T def eval[T]( code: String, bindings: Array[Binding], expectedType: String, enclosingSource: String ): T</p><p>The programmer writes only the short form, eval[T](source): it takes a string of source code, type-checks it against the expected type T using everything in scope at the call site, and runs it. The compiler then expands this short form into the long one, filling in three pieces of context automatically: bindings, the in-scope variables paired with their runtime values; expectedType, the type T written back out as text; and enclosingSource, the text of the surrounding code with the call's location marked by a placeholder. If the code string fails to type-check, eval throws an EvalCompileException carrying the compiler's error messages. A variant, evalSafe[T], instead returns the outcome as a value of type <ref type="bibr">EvalResult[T]</ref>, an algebraic data type with two cases, Success(value) carrying the generated value of type T and Failure(diag) carrying the final compiler diagnostics, so the caller can treat a failed compilation as ordinary data rather than catch an exception. The user-facing agentSafe[T] wraps evalSafe the same way agent wraps eval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Building agent on eval</head><p>The agent[T](task) primitive and its sibling agentSafe[T] are thin wrappers around eval, written in ordinary Scala. They send the task prompt, together with the captured context, to an LLM; pass the Scala source the model returns to evalSafe[T]; and, when a compilation fails, feed the compiler's diagnostics back into the next prompt and try again.</p><p>A simplified agentSafe reads:</p><p>@evalSafeLike def agentSafe[T]( task: String, bindings: Array[Binding] = Array.empty, expectedType: String = "", enclosingSource: String = "", maxAttempts: Int = 3): EvalResult[T] = @tailrec def loop( n: Int, errs: List[String]): EvalResult[T] = val prompt = buildPrompt(...) val code = llm.complete(prompt) val r = evalSafe[T]( code, bindings, expectedType, enclosingSource) if r.isSuccess || n &gt;= maxAttempts then r else loop(n + 1, r.error.errors.toList) loop(1, Nil) The @evalSafeLike annotation is what turns this function into a hole. It instructs the compiler to fill the three context parameters (bindings, expectedType, enclosingSource) at every call site, exactly as it does for a direct evalSafe call. Everything else is plain Scala: a retry loop around evalSafe[T] in which the LLM supplies the candidate code and the compiler's diagnostics provide the feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">How eval Works</head><p>At a high level, code containing eval (or an evalLike wrapper such as agent) is transformed and run in four steps:</p><p>• Rewrite. The compiler expands the eval call into the long form, filling in the context parameters. This is done by a new compiler phase that runs after type checking, so it has access to the full typed syntax tree and can extract the necessary information from it.</p><p>• Splice. At runtime, the splicer parses the source string and drops it into the placeholder in that enclosing-statement text, producing a complete top-level statement that looks exactly like code a developer could have written by hand at that spot.</p><p>• Recompile. This spliced source is handed to a fresh run of the same compiler, configured with the same options (including the same effect and capability checks) as the original compilation. Type checking, capture checking, and error reporting are the ordinary ones the compiler applies to any program.</p><p>• Extract. If the code compiles, the compiler produces a class file containing a method that evaluates the spliced code and returns its result. This class file is loaded into the running program.</p><p>• Evaluate. The freshly compiled code is evaluated in the program's original execution context (the same thread and class loader), yielding a value of type T that eval returns to the caller.</p><p>Reusing the unmodified compiler on the spliced source is what lets the safety properties of Section 4 hold without any checker of our own: the very guarantees the compiler provides for the surrounding program apply to the generated code as well. All we have done is arrange for the compiler to see the generated code embedded in the right surrounding program.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.5">Portability</head><p>Two ingredients of our prototype are specific to Scala: its capture-checking system and the hook that lets a running program invoke the compiler within its own process to splice and recompile. Neither is fundamental. The design carries over to any statically typed host that tracks effects or capabilities, as long as it can recompile code from within a running program and expose the live context at a call site to the rewriting step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Evaluation</head><p>Our evaluation asks four questions: do the type system's guarantees hold across host and generated code (Section 7.1); can the recursive agent design handle complex, tool-using tasks (Section 7.2); does it support multi-turn conversation with tools (Section 7.3); and do the capability guarantees of Section 4.3 hold against an adversary that plants prompt-injection attacks (Section 7.4)? We realize LACUNA as a Scala 3 library (Section 6). Full setup details, models, and resource budgets are described in Appendix G.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">Type-System Protection: A Collection of Test Cases</head><p>We isolate the type system as a verifier, independent of any model, with roughly 400 test cases emulating how host code and a generated snippet combine. Each pairs host code with a snippet that is either well-formed (should compile and evaluate to the expected value) or ill-formed in a way agents commonly emit (should be rejected before it runs). All tests pass, confirming that the implementation behaves as intended.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">Complex Tool-Using Benchmark</head><p>We test whether the recursive agent design serves as a general agent on complex, tool-using tasks by running LACUNA on BrowseComp-Plus <ref type="bibr">(Chen et al., 2025b)</ref>, a benchmark of hard informationseeking tasks over a fixed corpus. Each task is a single agent call that searches, reads results, and either answers or recurses. Our aim is not to top the leaderboard, where accuracy is dominated by retriever and base-model strength (both orthogonal to our contribution), but to show that the typed primitive is a drop-in general agent.</p><p>Table <ref type="table" target="#tab_0">1</ref> shows that deepseek-v4-flash answers 27.1% correctly while driving genuine multi-step research (5.9 rounds, 15.5 searches per query), gemini-3.1-flash-lite matches it at 26.2%, and low-effort gpt-5.4-mini explores little and scores accordingly <ref type="bibr">(DeepSeek-AI, 2026;</ref><ref type="bibr" target="#b21">Google DeepMind, 2026;</ref><ref type="bibr">OpenAI, 2026b)</ref>. The primitive executes whatever agentic behavior the model generates.</p><p>The last column is the distinguishing one. Every snippet is typechecked against its hole's contract before it runs, and one that fails never executes: the compiler rejected 8.6% of generations and returned the diagnostics for regeneration (Section 3.4). The loop converges quickly: 0.7 retries per query on average, two-thirds of queries needing none, and a 91.4% end-to-end compile-success rate. The discipline thus adds no accuracy cost, is cheap to satisfy, and guarantees that no ill-typed or out-of-scope action reaches the corpus.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.3">Multi-Turn Conversation Benchmark</head><p>We then test multi-turn conversation with tool use, where state is carried across turns and the agent interleaves tool calls with replies. On τ 2 -bench (Bar- res et al., 2025), a benchmark of tool-using conversations across customer-service domains in which the agent and a simulated user act on a shared environment, we realize each conversation as a sequence of agent calls that share one REPL session. Each user message becomes an agent call evaluated in that session, so everything prior turns introduced (questions, replies, tool calls, printed output) stays in scope. Conversational context is thus carried by the REPL itself, with no dedicated memory mechanism. Across the four domains (392 tasks), deepseek-v4-flash solves 76.0% of tasks outright, ranging from 58.8% on retail to 88.6% on telecom (Table <ref type="table" target="#tab_1">2</ref>). These are genuine interactions, averaging 5.7 user turns and 26.7 tool calls per task on retail, and the result is on par with the reference tool-calling agent. As in the single-turn study, every snippet is typechecked against its hole's contract before it runs, and the retry loop absorbs the failures: retail averages 7.1 regenerations per task and recovers to a 77.6% end-to-end compile-success rate, so no ill-typed or out-of-scope action ever reaches the shared environment.</p><p>Conversational code is, however, more errorprone than single-turn research code, because it must combine parsed tool results, prior-turn state, and policy-conditioned actions: 22.4% of deepseek-v4-flash's retail generations are rejected, against 8.6% on BrowseComp-Plus. How often the verifier fires also depends strongly on the model's coding ability. On the weaker gemini-3.1-flash-lite, the overall solve rate is low (29.1%) yet stays close to the reference agent, matching it on telecom (14.9% versus 15.8%) and exceeding it on telecom-workflow (24.6% versus 21.1%): the gap is the model's, not the primitive's. The small model simply struggles to write correct code, with rejections rising from 3.2% on retail to 89% on telecom.</p><p>We expect these results to improve: prompt optimization or fine-tuning that teaches a model to write typed code as an agent, rather than emit isolated tool calls, should raise both the solve rate and first-try compile success.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.4">Capability Safety Under Prompt Injection</head><p>This study stresses the capability layer of Section 4.3 against an adversary. We extend the TACIT benchmark <ref type="bibr" target="#b27">(Odersky et al., 2026)</ref>, which evaluates capability tracking on agent code, with tasks drawn from AgentDojo <ref type="bibr" target="#b19">(Debenedetti et al., 2024)</ref>, a dynamic environment that plants prompt-injection attacks in the tool outputs an agent consumes. We port the AgentDojo task suites to LACUNA, giving each agent only the capabilities its task requires through scoped closures (Section 3.1), and run the AgentDojo attack suite against the ported agents. TACIT and its data are open-source under the Apache License 2.0, and the AgentDojo task and attack suites we port are released under the MIT license.</p><p>8 Discussion and Future Work A foundation, not a replacement. LACUNA is not meant to replace existing agent architectures but to give them a more flexible and safer foundation: a single typed primitive for an agent's behavior, its interaction with data, and its multi-step reasoning, all checked statically. The patterns of Section 5 are available as ordinary control flow over agent, and a developer is free to keep any specialized machinery an existing harness handles well. A conventional ReAct loop <ref type="bibr" target="#b47">(Yao et al., 2023)</ref>, for instance, may manage the history of a long conversation more efficiently than threading it through nested holes, while it can still use agent calls for</p><p>Model System Banking Workspace Slack Travel Utility Attack Utility Attack Utility Attack Utility Attack gemini-2.5-pro CaMeL 52.8% 0/144 53.8% 0/560 48.6% 0/105 1.4% 0/140 TACIT 56.94% 0/144 50.54% 0/560 40.00% 0/105 64.29% 0/140 LACUNA 63.19% 0/144 56.25% 4/560 42.86% 2/105 63.57% 1/140 o4-mini-high CaMeL 62.5% 1/144 81.4% 0/560 68.6% 0/105 74.3% 0/140 TACIT 59.03% 0/144 52.86% 0/560 47.62% 0/105 68.57% 1/140 LACUNA 65.97% 0/144 55.54% 0/560 49.52% 1/105 71.43% 0/140</p><p>Table 3: LACUNA on the four stock AgentDojo domains. Utility is the fraction of user tasks completed successfully; Attack is the number of injection trials in which the attacker's goal was achieved over total trials. CaMeL numbers are taken from <ref type="bibr" target="#b18">(Debenedetti et al., 2025)</ref>; TACIT numbers are taken from <ref type="bibr" target="#b27">(Odersky et al., 2026)</ref>; LACUNA numbers are from our runs.</p><p>the dynamic behaviors where type or capability safety matters.</p><p>Refinement-typed holes. A natural next step is to let the expected type T carry a refinement predicate <ref type="bibr" target="#b35">(Rondon et al., 2008;</ref><ref type="bibr" target="#b11">Bovel et al., 2026)</ref>, so the contract constrains not just the shape of the result but also its properties (for example, an integer within a bound, a list of fixed length, or relational invariants linking inputs to outputs). Firstclass refinement types for Scala <ref type="bibr" target="#b11">(Bovel et al., 2026)</ref> make this concrete in our host language. Checking the refinement at the hole would further open the door to verified decoding, steering generation toward values that provably satisfy the predicate, with the predicate discharged by a verifier such as Lean (de Moura and Ullrich, 2021) or Stainless <ref type="bibr" target="#b22">(Hamza et al., 2019)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">Conclusion</head><p>We have proposed LACUNA, a single primitive agent[T](task), that treats an agent's action as a typed hole in the host program. At runtime the LLM fills the hole with code, compiled against the expected type T in the original lexical context, fusing program execution and model reasoning into one process. Recursion and composition over this primitive suffice to express common agent patterns, including tools, typed skills, ReAct loops, and multi-model planning, as ordinary control flow. Safety follows from the host language itself: the type system enforces scope and result-shape constraints, and a rejected snippet never runs. Across a collection of verifier test cases, BrowseComp-Plus, and τ 2 -bench, the primitive serves as a drop-in agent while the compiler blocks every ill-typed or out-of-scope action before it runs, with diagnostics driving retries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Well-typed is not correct. The compiler checks that a generated snippet has the expected static type and respects the capabilities in scope. It does not check that the snippet does the right thing. A well-typed snippet can still implement the wrong algorithm, call the wrong in-scope tool, or return a plausible but incorrect value, and the retry loop of Section 3.4 is silent on all three: it regenerates only when the compiler rejects the snippet, so a snippet that compiles runs whether or not it is semantically correct. Our guarantees concern the shape and authority of an action, not its semantic correctness, and human review or test oracles remain necessary for the latter. Narrowing this gap by letting the expected type carry a refinement predicate, so the contract constrains the result's properties and not just its shape, is a direction we outline in Section 8.</p><p>Authority is only as tight as the granted scope. The capability guarantees of Section 4.3 bound a generated snippet to the effects and data its lexical scope already grants, and they hold even against a model that emits hostile code. What they do not do is prevent the model from being influenced by injected content. They only bound what that influence can reach. The protection is therefore exactly as tight as the scope the developer hands each hole. A hole over-provisioned with capabilities it does not need reopens the attack surface, and an attacker who steers the model into misusing a capability the task legitimately grants is not blocked. Consistent with this, a small number of injection trials still succeed in our adversarial study (Section 7.4). Least-authority scoping is thus a property the developer must supply: the type system enforces it but does not infer it.</p><p>Dependence on the model's coding ability. Because a rejected snippet never runs, the safety guarantee holds regardless of how capable the model is; progress does not. An agent advances only when the model can express its intended action as well-typed host code, so a model that writes weak Scala pays a heavy retry tax or fails to converge, while the guarantee merely keeps its broken attempts from executing. The effect is sharp and model-dependent in our experiments (Section 7.3): only 3.2% of gemini-3.1-flash-lite's retail snippets are rejected, but 89% are on the harder telecom domain, where its code generation degrades and most turns make no progress. We conjecture that part of this gap is due to Scala being less represented in pretraining data than Python, the usual language of code-as-action agents, so the competence floor a typed host imposes is higher. Closing it calls for stronger or better-adapted code models rather than changes to the primitive.</p><p>Latency and cost. Each agent call pays for a model completion and at least one compiler pass, and nested recursion stacks both. Every retry adds a further completion and pass, so cost scales with the rejection rate: modest where the generated code is clean (Section 7). A body that is generated once and reused, such as a function-typed hole compiled a single time and applied many times (Appendix A), amortizes the compile, but cold calls and tight perelement loops with ever-varying generated code remain expensive. The approach targets agent loops in which a model call already dominates latency, so the current implementation is a poor fit for ultralow-latency settings.</p><p>Host-language requirements. The design assumes a statically typed host with an effect or capability discipline and an in-process recompile mechanism that can expose the live call-site context (Section 6.5). Dynamically typed hosts obtain the splice but none of the safety, which is why the guarantees do not transfer for free to the Python stacks most agent frameworks build on. The base LACUNA prototype needs only ordinary static typing. The permission, effect, and information-flow controls of Section 4.3 are an opt-in layer on top that additionally requires Scala 3 capture checking, an experimental language feature. In either mode, the safety story relies on a safe mode that closes reflection and raw process execution. Without it, those ambient authorities remain escape hatches and a snippet must be treated as ordinary untrusted code (Section 4.4). Because LACUNA executes model-generated code as real, effectful actions, any deployment that relaxes these defenses, by omitting safe mode or over-provisioning capabilities, carries a corresponding risk of harmful actions, whether from model error or prompt injection.</p><p>Termination and resource use. Recursion depth, fuel, and wall-clock or memory limits are not typelevel properties. A genuinely complex task and a runaway recursion are indistinguishable to the type system, so the runtime falls back on configurable depth and retry caps (Section 3.3) and external budgets, such as the nesting-depth cap and the per-query wall-clock limit in our experiments (Appendix G). These budgets bound cost and nontermination, but they must be set by the user, and a cap set too low can abort a legitimate long-horizon task.</p><p>no schema mediating the two calls.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Tracked Capabilities in Scala 3</head><p>A capability is an ordinary value tied to an effect or resource: a file handle, a network socket, a logger, or a mutable store <ref type="bibr" target="#b12">(Brachthäuser et al., 2020)</ref>. In the object-capability model <ref type="bibr" target="#b20">(Dennis and Horn, 1966;</ref><ref type="bibr" target="#b24">Miller, 2006)</ref>, code can perform an effect only if it holds a reference to the corresponding capability. Capabilities are unforgeable and propagate only by being passed as ordinary data. Scala 3's capture checking <ref type="bibr">(Scala, 2024a;</ref><ref type="bibr" target="#b10">Boruch-Gruszecki et al., 2023;</ref><ref type="bibr" target="#b46">Xu et al., 2025)</ref> lifts this discipline into the type system by recording, in a value's type, which capabilities the value can reach.</p><p>Capturing types have the form T^{x1, ..., xn}, where the capture set {x1, ..., xn} overapproximates the capabilities a value of this type may use. A type with an empty capture set, written simply T, is pure and retains no capabilities. The shorthand T^(for T^{any}) admits any capability.</p><p>Function types record the capabilities their bodies use. The closure (s: String) =&gt; f.write(s) has type String -&gt;{f} Unit (shorthand for (String -&gt; Unit)^{f}), which makes explicit that the function uses the file capability f. A function whose declared type is T -&gt; U is pure: its body cannot invoke any capability, and any attempt to do so is rejected before the body runs. The takeaway for this paper is that a function type is a static whitelist of what the body may invoke, and the lexical scope at a program point plays the same role for the code that appears there. If a capability c is not in the lexical environment at a hole, no code that fills the hole can invoke c.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Additional Related Work</head><p>Beyond the frameworks compared in Section 2, we cover several further lines of work, especially ones bearing on the safety guarantees of Section 4 and the capability layer (Section 4.3).</p><p>Agent sandboxing and isolation. Container and VM isolation, syscall filtering, and language-subset Python interpreters <ref type="bibr" target="#b33">(Pydantic, 2025)</ref> confine a generated snippet but enforce only at runtime: a halfexecuted script can leave the surrounding state inconsistent. Permission-scoped coding agents (Anthropic, 2025a; OpenCode, 2025) gate tool access at the agent boundary but share this non-atomic failure mode. We enforce pre-execution, at capability granularity, with atomic failure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Schema and policy-based access control.</head><p>JSON-schema function calling and tool protocols such as MCP <ref type="bibr" target="#b2">(Anthropic, 2024)</ref> are safe only over pre-registered tools, and composition is checked tool by tool rather than end to end. Security analyses report tool poisoning and cross-origin abuse at the protocol boundary <ref type="bibr" target="#b34">(Radosevich and Halloran, 2025;</ref><ref type="bibr">Christodorescu et al., 2025)</ref>. Runtime policy languages such as Cedar (Amazon Web Services, 2024), as deployed in Amazon's Bedrock AgentCore Policy (Amazon Web Services, 2025), pin access to a fixed list of resources but cannot constrain information flow inside a permitted operation.</p><p>Prompt-injection defenses. Output filtering, training-based hardening such as StruQ <ref type="bibr">(Chen et al., 2025a)</ref>, and LLM-as-judge monitoring are probabilistic, and recent adaptive attacks bypass them in practice <ref type="bibr" target="#b26">(Nasr et al., 2025)</ref>, even as design-pattern catalogs set out principled mitigations <ref type="bibr" target="#b7">(Beurer-Kellner et al., 2025)</ref>. Dual-LLM mediation and capability-based dataflow defenses <ref type="bibr" target="#b45">(Willison, 2023;</ref><ref type="bibr" target="#b18">Debenedetti et al., 2025;</ref><ref type="bibr" target="#b27">Odersky et al., 2026)</ref> push toward static checking by having agents write capability-annotated programs, but enforce outside the host type system, at coarse granularity, and with non-atomic failure. We make the agent action a typed hole checked by the host compiler, preexecution, at capability granularity, with atomic failure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Capability-safe and effect-typed languages.</head><p>Object-capability languages <ref type="bibr" target="#b24">(Miller, 2006)</ref>, effect systems, Scala 3 capture checking <ref type="bibr">(Scala, 2024a;</ref><ref type="bibr" target="#b10">Boruch-Gruszecki et al., 2023)</ref>, and region or ownership systems all provide the underlying discipline. We apply that discipline to the agent action boundary. The novelty is the application and the eval mechanism that preserves it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Additional Agent Patterns</head><p>Beyond the patterns in Section 5, three more reduce to plain control flow over the typed-hole shape.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.1 Chain of Reasoning</head><p>Chain-of-thought reasoning <ref type="bibr" target="#b44">(Wei et al., 2022)</ref> is a sequence of agent calls nested in each other's scope. The simplest form passes one call's output directly into another's prompt: val answer: Answer = agent(agent( s"polish this prompt: $task"))</p><p>The inner call rewrites task into a sharper prompt, and the outer call consumes the rewrite. Each call has its own expected type, so the compiler checks that the inner result is a String before it reaches the outer. The same shape generalizes to longer chains: every call captures the bindings introduced by earlier ones and operates on that richer context, and the compiler keeps the chain coherent end to end. An output that does not fit the next call's parameter type fails before that call runs. The pattern covers prompt polishing, classification routed to a specialist, and any case where one model's output feeds another.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.2 Sub-Agent with Isolated Context</head><p>A call site sometimes wants to delegate to an agent without sharing its full scope. In LACUNA, this is just a top-level function that wraps an agent call:</p><p>def subAgent[T](prompt: String): T = agent[T](prompt) Calling subAgent[T](prompt) from anywhere in the program runs an agent call whose lexical context is the body of subAgent, not the caller's. Inside that body, the names in scope are prompt together with the top-level definitions (imports, package-level definitions) reachable from this file. Local bindings, capabilities, and instance members visible to the caller do not leak in. A function signature is the natural way to budget context: pass through what the sub-agent should see, and nothing else. F.3 Parallel Reasoning Because each agent call is an ordinary Scala expression, parallelism comes from ordinary Scala combinators. To summarize a collection of documents independently, use par.map: val summaries: List[String] = files.par.map { f =&gt; val text = readFile(f) agent[String](s"summarize: $text") }.toList</p><p>No special branching primitive is needed. The same shape covers fan-out and fan-in, map-reduce over a collection, and tree search where each branch is an independent agent call.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.4 Planning and Task Assignment</head><p>Different agent calls can target different models: a small fast model for routine sub-tasks, a larger one for planning, a trusted local model for sensitive data, and an untrusted public provider for the rest. Each is a configured agent instance: val plan: List[Subtask] = large.agent(s"plan the steps to $task") val parts = plan.map { sub =&gt; small.agent <ref type="bibr">[Result]</ref>(s"handle $sub") } val report: Report = large.agent( s"synthesize $parts into a report")</p><p>The planner uses a powerful model to pick a strategy and emit scaffolding code, including calls to small.agent for the sub-tasks. Cost and capability decisions are local to each call, and the type system does not need to know which provider is on the other end. This shape generalizes the dual-LLM design <ref type="bibr" target="#b45">(Willison, 2023;</ref><ref type="bibr" target="#b18">Debenedetti et al., 2025)</ref>, where a privileged planner that never sees raw inputs orchestrates a quarantined doer that handles the data. Any partition of calls across two or more configured agents instantiates the same pattern, with the split chosen per call rather than fixed by the framework. By itself this is only a routing convention, and a misrouted call still leaks. Section 4.3 turns the partition into an enforced barrier, using capture checking and Classified[T] to prevent the planner agent from observing content it is not allowed to see.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Experimental Setup</head><p>Test Suite. We build LACUNA on the Scala 3.9.0 compiler. The roughly 400 test cases of Section 7.1 are contributed as REPL tests in the Scala 3 compiler's own test suite, so each case exercises the real pipeline (parse, typer, capture check).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>BrowseComp-Plus.</head><p>A Python driver issues each of the 830 queries to the Scala REPL as a single agent[String] call and runs the tool calls the generated code makes against a fixed retrieval index.</p><p>The agent has exactly two tools in scope: search(query), returning the top k=5 corpus hits with snippets, and getDocument(docid), returning one full document. Retrieval is held fixed across all runs: an exact-search index over the canonical BrowseComp-Plus Qwen3-Embedding-8B <ref type="bibr">(Zhang et al., 2025b)</ref> vectors (≈ 100k documents), with queries embedded by the same model. Answers are graded by a fixed gpt-4.1 (OpenAI, 2025) judge, so accuracy differences track only the agent model. We compare deepseek-v4-flash (high reasoning effort), gemini-3.1-flash-lite (high reasoning effort), and gpt-5.4-mini (low reasoning effort), each at the provider's default sampling temperature <ref type="bibr">(DeepSeek-AI, 2026;</ref><ref type="bibr">Google Deep-Mind, 2026;</ref><ref type="bibr">OpenAI, 2026b)</ref>. Every query runs in its own REPL under a 600s wall-clock budget, with recursive agent nesting capped at depth 128. We log each query's input, answer, and tool calls, and trace every snippet the agent generates with the compiler feedback it receives. τ 2 -bench. We run all four customer-service domains (retail, airline, telecom, and telecom-workflow; 392 tasks), scored by τ 2 's programmatic reward with no LLM judge. A Python driver runs the conversation loop: it shuttles each turn between the τ 2 simulated user and the Scala REPL, evaluating one agent call per user turn, and forwards every tool call the generated code makes to the τ 2 server. The setup choice that matters most is how those tools reach the agent: each domain ships a fixed typed facade, one Scala function per tool with fully typed signatures and nested arguments rendered as case classes rather than raw JSON. The user simulator is fixed at gpt-5.4 (OpenAI, 2026a), and the agent models, deepseek-v4-flash and gemini-3.1-flash-lite, run at temperature 0 with reasoning disabled, matching the baseline toolcalling agent. Per-task limits guard against nontermination: 200 environment steps, 40 user turns, 500 backend tool calls (50 per turn), and a 300s idle timeout. We run one trial per task, which is equivalent to a num-trials=1 setting in the original τ 2 benchmark. The baseline evaluations use the same models and settings with the official scripts. We log the full conversation, tool calls, and reward of each task, and trace all generated code with its compiler diagnostics.</p><p>Model size and budget. All agent, judge, and user-simulator models (deepseek-v4-flash, gemini-3.1-flash-lite, gpt-5.4-mini, gpt-4.1, and gpt-5.4) are hosted endpoints accessed through their providers' APIs, and we deliberately use the smaller, lower-cost tiers (flash, lite, mini) as the agent. Where a provider discloses architecture we report it: deepseek-v4-flash is a 284B-parameter Mixture-of-Experts that activates 13B parameters per token, and retrieval uses the open 8B Qwen3-Embedding-8B. Google and OpenAI do not publish parameter counts for the Gemini and GPT models, so we cannot report those sizes. We perform no training or fine-tuning, so all model use is inference. The only local computation is the BrowseComp-Plus retrieval index and the Scala compiler passes each agent call triggers. Per-run resource budgets are capped as described above (a 600s wall-clock and depth-128 limit per BrowseComp-Plus query, and the per-task limits on τ 2 -bench). Because all models are hosted endpoints, the experiments require no local GPU.</p><p>Licenses and release. We plan to release our LA-CUNA implementation, test suite, and evaluation harness under the Apache License 2.0. The benchmarks we build on are open-source: BrowseComp-Plus and τ 2 -bench are both under the MIT license. Our use of these artifacts is limited to research evaluation, consistent with their intended use, and we release our own artifacts for research. Because the benchmarks we build on are MIT-licensed rather than research-only, our derivatives carry no research-only restriction.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>&gt;</head><figDesc>trait IO extends caps.SharedCapability &gt; def withIO[T](op: IO^=&gt; T): T = | op(new IO {}) &gt; def readFile( | io: IO, path: String): String = ... // direct use: the result is a plain String &gt; withIO[String] { io =&gt; | agent("read /etc/hosts using io") | } // model produces: readFile(io, "/etc/hosts") val res0: String = ... // storing io for later leaks it past the block &gt; withIO[String =&gt; String] { io =&gt; | agent("return a file reader using io") | } // model produces: // (p: String) =&gt; readFile(io, p) EvalCompileException: Type Mismatch Error: Capability io outlives its scope: it leaks into outer capture set s1 owned by value res2. The leakage occurred when trying to match the following types: Found: String -&gt;{io} String Required: String -&gt;s1 String</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>LACUNA on BrowseComp-Plus, varying only the agent model that powers the agent hole; corpus, retriever (k=5), and gpt-4.1 judge are fixed. Acc. is judge-scored correctness and Recall is retrieval recall against the evidence documents, an upper bound on accuracy under the fixed budget; #retry is the mean compile-rejected regenerations per query.</figDesc><table><row><cell>Agent model</cell><cell cols="3">Acc. (%) Recall (%) #retry</cell></row><row><cell>deepseek-flash</cell><cell>27.1</cell><cell>34.5</cell><cell>0.7</cell></row><row><cell>gemini-lite</cell><cell>26.2</cell><cell>27.9</cell><cell>0.4</cell></row><row><cell>gpt-mini</cell><cell>9.2</cell><cell>16.2</cell><cell>0.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>LACUNA on τ 2 -bench: percentage of tasks solved per service domain. A conversation is a sequence of agent calls sharing one REPL session. The user simulator is fixed at gpt-5.4 across agent models so the simulated customer is a constant. Agent models run at temperature 0 with reasoning disabled. Tool Calling is τ 2 -bench's reference agent, which invokes the same domain tools through the native function-calling API rather than generated code. Overall is solved-rate pooled over all 392 tasks.</figDesc><table><row><cell>Solved (%, full reward)</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Richer Result Types</head><p>The richer the type, the tighter the contract. An algebraic data type pins the shape of the result: The generated code is a constructor call. The caseclass arity and field types are part of Person, so the model cannot return a value with a missing field or a wrong-typed one.</p><p>A function type asks the model for an implementation:</p><p>&gt; val toRoman: Int =&gt; String = | agent("convert 1..3999 to Roman numerals") // LLM produces: // val pairs = List( // 1000 -&gt; "M", 900 -&gt; "CM", 500 -&gt; "D", // 400 -&gt; "CD", 100 -&gt; "C", 90 -&gt; "XC", // 50 -&gt; "L", 40 -&gt; "XL", 10 -&gt; "X", // 9 -&gt; "IX", 5 -&gt; "V", 4 -&gt; "IV", // 1 -&gt; "I") // (n: Int) =&gt; // var x = n; val sb = StringBuilder() // for (v, s) &lt;-pairs do // while x &gt;= v do { sb ++= s; x -= v } // sb.toString &gt; (1 to 5).map(toRoman) val res1: Vector[String] = Vector("I", "II", "III", "IV", "V")</p><p>Here, the generated code is a function of type Int =&gt; String, stored once and called many times.</p><p>Because the function value is generated and compiled once, it can be reused with no further LLM calls or compilation overhead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Static Rejections</head><p>Beyond undefined names and shape mismatches (Section 4.2), the standard type system rejects further common shortcuts.</p><p>Null safety. Under Scala 3's explicit nulls <ref type="bibr">(Scala, 2024b)</ref>, a null literal is not assignable to a nonnullable type, which catches a common shortcut the model might otherwise reach for:</p><formula xml:id="formula_1">&gt;</formula><p>val name: String = | agent("default user name, else null") // model produces: null EvalCompileException: agent failed to compile: Found: Null Required: String Pattern exhaustiveness. The compiler flags nonexhaustive matches over sealed shapes, which catches a common failure mode of generated dispatch logic: &gt; enum Color { case Red, Green, Blue } &gt; def label(c: Color): String = | agent[String](s"name the color $c") // model produces: // c match // case Color.Red =&gt; "red" // case Color.Green =&gt; "green" EvalCompileException: agent failed to compile: match may not be exhaustive. It would fail on pattern case: Color.Blue C Defining a Tool: A Memory Tool Section 3.1 states that a tool is just a function in scope, so defining a tool is just defining a function. A simple memory tool, for instance, is a mutable map with a few functions to manipulate it: val memory: mutable.Map[String, String] def setMemory(key: String, value: String): Unit def getMemory(key: String): Option[String] def searchMemory( query: String): List[(String, String)] def deleteMemory(key: String): Unit</p><p>With these names in scope, the agent uses the tool by writing ordinary calls to them. The compiler checks each call against its signature, with no registry or schema to keep in sync. Suppose an email tool sendEmail(to, subject, body) is also in scope. The agent first records a meeting, then, asked to email a colleague about it, recalls the details and sends the message: &gt; agent[Unit]( | "remember the team sync is Friday at 3pm") // LLM produces: // setMemory("team-sync", "Friday 3pm") &gt; agent[Unit]( | "remind Alice about the team sync") // LLM produces: // val when = searchMemory("team sync") // .headOption.map(_._2).getOrElse("TBD") // sendEmail("alice@corp.com", "Team sync", // s"Reminder: the team sync is $when")</p><p>The second task never mentions a time, so the snippet first calls searchMemory to look the meeting up, then feeds the result into sendEmail, composing two in-scope tools in a single typed snippet.</p><p>The compiler checks the composition end to end: that searchMemory yields a list of (String, String) pairs the snippet destructures correctly, and that sendEmail receives arguments of the right type, with</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>&gt;</head><figDesc>case class Person( | name: String, born: Int, field: String) &gt; val turing: Person = | agent[Person]("info about Alan Turing"</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m">Amazon Web Services. 2024. Cedar policy language</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m">Bedrock AgentCore policy</title>
+		<imprint>
+			<publisher>Amazon Web Services</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Model context protocol</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m">Anthropic. 2025a. Claude code</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">2025b. Code execution with MCP</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<idno>Ac- cessed: 2025-06-01</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">2025c. Equipping agents for the real world with agent skills</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">2025. τ 2 -bench: Evaluating conversational agents in a dual-control environment</title>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Barres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soham</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujie</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno>CoRR, abs/2506.07982</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Design patterns for securing LLM agents against prompt injections</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beat</forename><surname>Buesser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ana-Maria</forename><surname>Cretu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edoardo</forename><surname>Debenedetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Dobos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fabian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Froelicher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathrin</forename><surname>Grosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Naeff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ezinwanne</forename><surname>Ozoani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Paverd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramèr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Václav</forename><surname>Volhejn</surname></persName>
+		</author>
+		<idno>CoRR, abs/2506.08837</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Prompting is programming: A query language for large language models</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">T</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3591300</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1946" to="1969" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Statically contextualizing large language models with typed holes</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Blinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3689728</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="468" to="498" />
+			<date type="published" when="2024-06">June Hyung Kim, and Cyrus Omar. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Capturing types</title>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Boruch-Gruszecki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Odersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ondrej</forename><surname>Lhoták</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">Immanuel</forename><surname>Brachthäuser</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3618003</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Program. Lang. Syst</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">52</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">First-class refinement types for scala</title>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Bovel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kunčak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Odersky</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2605.08369</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Effects as capabilities: Effect handlers and lightweight effect polymorphism</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Immanuel Brachthäuser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Ostermann</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3428194</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">30</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Large language models as tool makers</title>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-05-07">2024. May 7-11, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">2025a. StruQ: Defending against prompt injection with structured queries</title>
+		<author>
+			<persName><forename type="first">Sizhe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Piet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chawin</forename><surname>Sitawarin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Wagner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">USENIX Security Symposium. USENIX Association</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">2025b. Browsecomp-plus: A more fair and transparent evaluation benchmark of deep-research agent</title>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kshama</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyi</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahel</forename><surname>Sharifymoghaddam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nandan</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Crystina</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2508.06600</idno>
+		<idno>CoRR, abs/2508.06600</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Andrey Labunets, and Nishit V. Pandya. 2025. Systems security foundations for agentic computing</title>
+		<author>
+			<persName><forename type="first">Mihai</forename><surname>Christodorescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Earlence</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Hooda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somesh</forename><surname>Jha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johann</forename><surname>Rehberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamalika</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khawaja</forename><surname>Shams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Amir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihye</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarthak</forename><surname>Choudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Palumbo</surname></persName>
+		</author>
+		<idno>CoRR, abs/2512.01295</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">The Lean 4 theorem prover and programming language</title>
+		<idno type="DOI">10.1007/978-3-030-79876-5_37</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Automated Deduction -CADE 28 -28th International Conference on Automated Deduction, Virtual Event</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2021-07-12">2021. July 12-15, 2021</date>
+			<biblScope unit="page" from="625" to="635" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Edoardo</forename><surname>Debenedetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Shumailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fabian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph</forename><surname>Kern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Terzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramèr</surname></persName>
+		</author>
+		<idno>CoRR, abs/2503.18813</idno>
+		<title level="m">Defeating prompt injections by design</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">AgentDojo: A dynamic environment to evaluate prompt injection attacks and defenses for LLM agents</title>
+		<author>
+			<persName><forename type="first">Edoardo</forename><surname>Debenedetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mislav</forename><surname>Balunovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramèr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024</title>
+		<meeting><address><addrLine>Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-12-10">2024. December 10 -15, 2024</date>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+	<note>DeepSeek-AI. 2026. DeepSeek-V4-Flash. Model card</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Programming semantics for multiprogrammed computations</title>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">B</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Earl</forename><forename type="middle">C</forename><surname>Van Horn</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/365230.365252</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Communications of the ACM</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="1966">1966</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="143" to="155" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Gemini 3.1 flash-lite. Model card</title>
+		<author>
+			<persName><forename type="first">Google</forename><surname>Deepmind</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">System FR: formalized foundations for the stainless verifier</title>
+		<author>
+			<persName><forename type="first">Jad</forename><surname>Hamza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Voirol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kuncak</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3360592</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">30</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">DSPy: Compiling declarative language model calls into stateof-the-art pipelines</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paridhi</forename><surname>Maheshwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sri</forename><surname>Vardhamanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiful</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">T</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Moazam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2024-05-07">2024. May 7-11, 2024</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control</title>
+		<author>
+			<persName><forename type="first">Mark</forename><forename type="middle">S</forename><surname>Miller</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+		<respStmt>
+			<orgName>Johns Hopkins University</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">2024. eval() -JavaScript. MDN Web Docs</title>
+		<author>
+			<persName><surname>Mozilla</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+	<note>JavaScript Reference</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">The attacker moves second: Stronger adaptive attacks bypass defenses against LLM jailbreaks and prompt injections</title>
+		<author>
+			<persName><forename type="first">Milad</forename><surname>Nasr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chawin</forename><surname>Sitawarin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sander</forename><forename type="middle">V</forename><surname>Schulhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ilie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juliette</forename><surname>Pluto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Chaudhari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Shumailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhradeep</forename><surname>Thakurta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><forename type="middle">Yuanqing</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Terzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramèr</surname></persName>
+		</author>
+		<idno>CoRR, abs/2510.09023</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Securing agents with tracked capabilities</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Odersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaoyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Bračevac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cao</forename><forename type="middle">Nguyen</forename><surname>Pham</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3786335.3813127</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Conference on AI and Agentic Systems, CAIS &apos;26</title>
+		<meeting>the ACM Conference on AI and Agentic Systems, CAIS &apos;26<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="812" to="838" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Hazelnut: a bidirectionally typed structure editor calculus</title>
+		<author>
+			<persName><forename type="first">Cyrus</forename><surname>Omar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Voysey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Aldrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">A</forename><surname>Hammer</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3009837.3009900</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages</title>
+		<meeting>the 44th ACM SIGPLAN Symposium on Principles of Programming Languages<address><addrLine>Paris, France</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017-01-18">2017. 2017. January 18-20, 2017</date>
+			<biblScope unit="page" from="86" to="99" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Introducing GPT-4.1 in the API</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno>Ac- cessed: 2025-06-01</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Accessed</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m">OpenAI. 2026b. Introducing GPT-5.4 mini and nano</title>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">OpenCode: The open source AI coding agent</title>
+		<author>
+			<persName><surname>Opencode</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Monty: A Python interpreter in Rust. Python Software Foundation</title>
+		<author>
+			<persName><surname>Pydantic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2025. 2024</date>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+	<note>Built-in functions: eval and exec. Python Language Reference</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">MCP safety audit: LLMs with the Model Context Protocol allow major security exploits</title>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Radosevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Halloran</surname></persName>
+		</author>
+		<idno>CoRR, abs/2504.03767</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Liquid types</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Maxim Rondon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjit</forename><surname>Jhala</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1375581.1375602</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGPLAN 2008 Conference on Programming Language Design and Implementation</title>
+		<meeting>the ACM SIGPLAN 2008 Conference on Programming Language Design and Implementation<address><addrLine>Tucson, AZ, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2008-06-07">2008. June 7-13, 2008</date>
+			<biblScope unit="page" from="159" to="169" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Leandro von Werra, and Erik Kaunismäki. 2025. smolagents: A barebones library for agents that think in code</title>
+		<author>
+			<persName><forename type="first">Aymeric</forename><surname>Roucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Villanova Del Moral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/smolagents" />
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">2024a. Scala 3: Capture checker</title>
+		<author>
+			<persName><surname>Scala</surname></persName>
+		</author>
+		<ptr target="https://github.com/scala/scala3" />
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><surname>Scala</surname></persName>
+		</author>
+		<ptr target="https://github.com/scala/scala3" />
+		<title level="m">Scala 3: Explicit nulls</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<ptr target="https://github.com/scala/scala3" />
+		<title level="m">Scala 3: Safe mode</title>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2031" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Cognitive architectures for language agents</title>
+		<author>
+			<persName><forename type="first">Theodore</forename><forename type="middle">R</forename><surname>Sumers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Linxi Fan, and Anima Anandkumar. 2024a. Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Executable code actions elicit better LLM agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning, ICML 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-07-21">2024. July 21-27, 2024</date>
+			<biblScope unit="page" from="50208" to="50232" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-11-28">2022. 2022. 2022. November 28 -December 9, 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">The dual LLM pattern for building AI assistants that can resist prompt injection</title>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Willison</surname></persName>
+		</author>
+		<idno>Ac- cessed: 2026-02-22</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">What&apos;s in the box: Ergonomic and expressive capture tracking over generic data structures</title>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Bračevac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cao</forename><surname>Nguyen Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Odersky</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3763112</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1726" to="1753" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karthik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2023-05-01">2023. May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">2025a. Recursive language models</title>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Kraska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<idno>CoRR, abs/2512.24601</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Qwen3 embedding: Advancing text embedding and reranking through foundation models</title>
+		<author>
+			<persName><forename type="first">Yanzhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingkun</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2506.05176</idno>
+		<idno>abs/2506.05176</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

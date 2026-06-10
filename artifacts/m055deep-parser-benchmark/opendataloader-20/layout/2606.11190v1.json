@@ -1,0 +1,4851 @@
+{
+  "layout": {
+    "author": "Ilay Kamai; Hugues Van Assel; Aviv Regev; Hagai B. Perets; Randall Balestriero",
+    "creation date": null,
+    "file name": "2606.11190v1.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          228.24,
+          36.36,
+          563.76
+        ],
+        "content": "arXiv:2606.11190v1[cs.LG]9Jun2026",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 101,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.407,
+          640.807,
+          503.593,
+          684.536
+        ],
+        "content": "When to Align, When to Predict: A Phase Diagram for Multimodal Learning",
+        "font": "SFRM1728",
+        "font size": 17.215,
+        "heading level": 2,
+        "id": 92,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          547.814,
+          539.502,
+          629.208
+        ],
+        "content": "Ilay Kamai∗1, Hugues Van Assel2, Aviv Regev2, Hagai B. Perets1, and Randall Balestriero3,4 1Technion 2Genentech 3Brown University 4Meta AI, FAIR",
+        "font": "SFRM1200",
+        "font size": 11.955,
+        "id": 93,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          285.711,
+          492.912,
+          326.289,
+          504.317
+        ],
+        "content": "Abstract",
+        "font": "SFBX0900",
+        "font size": 8.966,
+        "id": 94,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.907,
+          290.715,
+          515.097,
+          488.637
+        ],
+        "content": "Cross-modal alignment (CA) and cross-modal prediction (CP) are the dominant paradigms for multimodal representation learning, yet there is no systematic understanding of when each succeeds, when each fails, and when cross-modal training helps at all — a gap that leaves practitioners, especially in scientific domains like biomedicine or astrophysics, with heterogeneous instruments and multiple levels of organization and measurement, unable to diagnose why standard methods underperform the best single modality. We develop a unified linear framework that addresses both questions. Under a spiked signal-plus-noise model with structured cross-modal nuisance correlation, we derive separation ratios for both objectives that expose complementary failure modes: alignment whitens each modality and fails when nuisance is strongly correlated across views; prediction encodes whatever is cross-predictable through a one-sided whitening, with recovery governed by source-modality quality. The resulting phase diagram partitions multimodal problems into four regimes: Both, CA only, CP only, and Neither. We present a data-driven procedure to locate real-world datasets in this diagram using a small labeled subsample, identifying the preferred objective and prediction direction before any cross-modal training. Experiments on synthetic data, stereo-vision benchmarks, image–caption pairs, and real astrophysical data validate the predictions in the nonlinear regime, including the Neither regime where cross-modal training is actively harmful. Our framework lets practitioners diagnose their multimodal problem and choose the right objective before committing to training. Code to reproduce the results is available at https://github.com/IlayMalinyak/mm_align_vs_pred.",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 95,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          256.458,
+          182.388,
+          274.118
+        ],
+        "content": "1 Introduction",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 96,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          128.378,
+          540.004,
+          248.508
+        ],
+        "content": "Multimodal representation learning aims to extract a shared latent structure from paired observations across different modalities, such as images and captions, audio and video, molecular cell profiles and tissue images, or different telescopes observing the same object. Multimodal learning is crucial when a single modality alone is insufficient to fully describe a phenomenon of interest or when the information in a single modality is degenerate or noisy. Moreover, combining multiple modalities of the same object is an important building block for foundational models. Multimodal learning has achieved many successes across domains and scales (e.g., Cui et al. (2025); Parker et al. (2025); Alayrac et al. (2022); Bodnar et al. (2024)). However, the field is mostly empirical, and theoretical studies are relatively sparse, though phenomena like the modality gap in contrastive multimodal models Liang et al. (2022) have started attracting principled analysis (e.g., Yossef Levi and Gilboa (2024)).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 97,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          92.513,
+          540.001,
+          128.956
+        ],
+        "content": "Here, we focus on the interplay between the two leading multimodal learning paradigms - Cross-modal alignment and Cross-modal prediction. Cross-modal alignment (CA) projects paired samples into a common embedding space, encouraging matched pairs to be close; CLIP Radford et al. (2021), ImageBind Girdhar",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 98,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.089,
+          74.768,
+          310.01,
+          86.085
+        ],
+        "content": "∗Corresponding author: ilay.kamai@campus.technion.ac.il",
+        "font": "SFTT0800",
+        "font size": 7.97,
+        "id": 100,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          563.377,
+          540.004,
+          719.372
+        ],
+        "content": "et al. (2023), and VICReg Bardes et al. (2021) are prominent examples. Cross-modal prediction (CP) reconstructs one modality from the other through a bottleneck, so that the learned representation retains whatever is useful for prediction; masked autoencoders He et al. (2021), data2vec Baevski et al. (2022), and the decoder side of encoder-decoder models follow this approach. Both paradigms are widely used, yet they are typically studied in isolation and selected by practitioners based on empirical performance or architectural convenience rather than a principled understanding of their relative strengths and suitability to the problem at hand. We shed light on fundamental characteristics in multimodal learning, when implemented with CA or CP, and provide practical guidelines for success and failure modes of the two. We derive exact solutions and recovery conditions in the linear case, verify the results for the non-linear case using various experiments with deep neural networks, and provide a data-driven method for the analysis of multimodality problems. To the best of our knowledge, this is the first work to systematically compare CA and CP under a multimodal spiked model with structured cross-modal nuisance correlation, and to translate the resulting recovery conditions into a practical diagnostic procedure that applies to real paired datasets. Our main contributions are:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 103,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          86.945,
+          292.393,
+          540.005,
+          556.005
+        ],
+        "id": 104,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              86.945,
+              519.542,
+              540.004,
+              556.005
+            ],
+            "content": "• Unified linear analysis of CA and CP. Using the known equivalences of CA with Canonical Correlation Analysis (CCA) and CP with truncated reduced-rank regression (RRR) as a starting point, we derive closed-form solutions for both objectives and analyze them under a spiked signal-plus-",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  96.907,
+                  483.676,
+                  540.003,
+                  520.119
+                ],
+                "content": "noise model with cross-modal nuisance correlation. We derive separation ratios ∆CA and ∆CP that determines when each method recovers the shared signal subspace, and exposes complementary failure modes.",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 91,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              86.945,
+              427.885,
+              540.005,
+              476.304
+            ],
+            "content": "• Phase diagram with four recovery regimes. The separation ratios partition the space of multimodal problems into four regions — CA only, CP only, Both, and Neither — visualized as a phase diagram in signal-noise space. We identify the Neither regime as the natural habitat of complementary scientific modalities and an important open problem for multimodal representation learning.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              86.945,
+              372.094,
+              540.004,
+              420.513
+            ],
+            "content": "• Data-driven recovery regime estimation. We propose an algorithm that predicts the separation ratios for any paired dataset, based on a small labeled subsample, and before any cross-modal training. Beyond this regime prediction, the per-modality noise estimates identify which modality is stronger and in which direction CP should be applied, a non-trivial question to address in practice.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              86.945,
+              292.393,
+              540.004,
+              364.722
+            ],
+            "content": "• Experimental validation across scales. Experiments on synthetic data, controlled stereo-vision benchmarks, and image–caption pairs confirm that the failure modes identified in the linear theory persist with deep networks. On real astrophysical data, pairing the same spectroscopic encoder with two photometric instruments of differing quality, we confirmed the predicted regime shift experimentally, including the ’Neither’ regime where cross-modal training is actively harmful, and the stronger modality alone is the best representation.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          236.603,
+          540.004,
+          285.001
+        ],
+        "content": "The paper is organized as follows: in Section 3, we present the methods and construct a multimodal spiked model with both modality-specific and cross-modal correlated noise features for the linear case. We then derive signal recovery conditions and phase diagrams. In Section 4, we provide experimental results that support the theory and an algorithm for estimating recovery regimes. Conclusions are provided in Section 5.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 105,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          202.325,
+          191.771,
+          219.985
+        ],
+        "content": "2 Related Work",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 106,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          74.245,
+          540.002,
+          194.395
+        ],
+        "content": "Theory of multimodal learning. A small but growing body of work studies multimodal learning theoretically. One study Huang et al. (2021) analyzed when using more modalities reduces population risk, showing through generalization bounds that the benefit depends on the gap in representation quality between modality subsets. Their linear analysis assumes orthonormal projections and full-rank covariance. Another work Lu (2023) proves that multimodal learning can achieve lower sample complexity than unimodal learning by decoupling the complexity of the connection function from the predictor. However, their analysis does not capture the effects of modality-specific noise, nuisance features, or rank deficiency that arise in practice. Both works establish that multimodality can help under specific assumptions; our work characterizes when it works and when it can also hurt, and shows that the specific approach (i.e. CA or CP) used to combine modalities matters. In a complementary direction, Swain et al. (2025) studies spike",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 107,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          575.332,
+          540.004,
+          719.372
+        ],
+        "content": "detection in a multimodal spiked covariance model, comparing self-covariance, cross-covariance, and jointcovariance decompositions under finite-sample (Wishart) noise. They derive Baik–Ben Arous–Péché (BBP) phase transitions for each matrix and produce phase diagrams showing which method detects the signal first as a function of signal strength and sampling ratio. Concurrently, Mergny and Zdeborová (2025) establish BBP-type thresholds for partial least squares (PLS) and CCA under finite-sample Wishart noise, and Tabanelli et al. (2025) extend this line to a multimodal spiked matrix–tensor model, showing that joint maximum-likelihood optimization is strictly worse than a sequential strategy. Both perform finite-sample BBP-type analyses of a single signal model. Our contribution is complementary, comparing CA against CP at the population level under structured cross-modal nuisance covariance ηj in a matrix–matrix setting. This parameterization is what produces phenomena that prior spiked-model analyses didnot capture, like source–target asymmetry of CP, and the Neither regime in which both paradigms fail simultaneously, for example.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 109,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          370.316,
+          540.003,
+          562.197
+        ],
+        "content": "Theory of self-supervised and contrastive learning. Our work also connects to a rich literature on the theory of unimodal self-supervised learning (SSL), where “views” are generated by data augmentation rather than being structurally distinct modalities. Several works derive closed-form solutions for linear SSL models and analyze the role of augmentations in shaping learned representations (e.g., Cabannes et al. (2023); Balestriero and LeCun (2022)). Most closely related is Van Assel et al. (2025), which compares joint-embedding and reconstruction-based SSL in a unified linear framework, the unimodal counterpart of our analysis. They show that joint-embedding methods impose a strictly weaker alignment condition on augmentations than reconstruction methods when irrelevant features have large magnitude, providing provable guidelines for choosing between the two paradigms. Our work extends this line of inquiry to the genuinely multimodal setting, where the two “views” are not designed augmentations of the same input but fixed, structurally distinct modalities with inherent asymmetries in quality and noise. This introduces new phenomena, such as modality bottlenecks, cross-modal nuisance correlation, and asymmetry of crossprediction, that do not arise in the unimodal SSL framework. Other theoretical works on contrastive and noncontrastive learning (e.g., Arora et al. (2019); HaoChen et al. (2021); Tian et al. (2021)) study downstream task performance as a function of augmentation design, but do not compare between alignment and prediction or address multimodal noise structure.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 110,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          286.63,
+          540.004,
+          370.894
+        ],
+        "content": "Beyond theory, our analysis also speaks to a core architectural choice: whether to add a predictor head on top of a joint embedding like in JEPA (LeCun (2022)) architectures (e.g., Assran et al. (2023); Balestriero and LeCun (2025)) or align embeddings directly (e.g., SimSiam Chen and He (2020), VICReg Bardes et al. (2021)). This choice has typically been motivated by collapse prevention or by the presence of conditional context. Our analysis adds a complementary axis to this design choice in the multimodal case: even without conditional information or asymmetric features, the right choice between aligning and predicting depends on the noise structure of the modality pair.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 111,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          252.557,
+          447.792,
+          270.217
+        ],
+        "content": "3 Cross-Alignment and Cross Prediction Approaches",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 112,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          196.208,
+          540.0,
+          244.606
+        ],
+        "content": "We study two objectives for multimodal representation learning. The first is cross-alignment (CA), which aligns paired samples in a shared latent space. The second is cross-prediction (CP), which predicts one modality from the other through an encoder–decoder factorization. Both are formalized below and analyzed throughout the paper. More details and proofs are deferred to Appendix A.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 113,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          167.947,
+          164.291,
+          182.784
+        ],
+        "content": "3.1 Objectives",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 114,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          130.047,
+          540.0,
+          161.971
+        ],
+        "content": "→ Rk be encoders producing latent codes z(xi) := fX(xi) and z(yi) := fY(yi) in a shared latent space of dimension k. Let fD : Rk → Rd",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 119,
+        "level": "2",
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          143.44,
+          121.447,
+          160.901
+        ],
+        "content": "Let fX : Rd",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 115,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          129.155,
+          142.002,
+          207.303,
+          160.901
+        ],
+        "content": "→ Rk and fY : Rd",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 117,
+        "level": "2",
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          121.447,
+          152.941,
+          125.391,
+          157.922
+        ],
+        "content": "x",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 116,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          207.304,
+          152.941,
+          210.943,
+          157.922
+        ],
+        "content": "y",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 118,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          146.964,
+          115.68,
+          496.209,
+          148.946
+        ],
+        "content": "y be a decoder. The two objectives are (CA) min",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 120,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          208.501,
+          109.315,
+          540.0,
+          128.214
+        ],
+        "content": "1 n i ∥fX(xi) − fY(yi)∥22 s.t. n1 i fX(xi)fY(yi)⊤ = Ik, (1)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 122,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          180.995,
+          106.671,
+          201.953,
+          117.605
+        ],
+        "content": "fX ,fY",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 121,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          147.655,
+          94.293,
+          200.494,
+          106.826
+        ],
+        "content": "(CP) min",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          209.016,
+          87.927,
+          540.0,
+          106.826
+        ],
+        "content": "1 n i ∥yi − fD(fX(xi))∥22. (2)",
+        "font": "CMSY10",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          180.995,
+          85.284,
+          202.722,
+          96.218
+        ],
+        "content": "fX ,fD",
+        "font": "CMSY5",
+        "font size": 4.981,
+        "id": 126,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          68.802,
+          241.434,
+          81.335
+        ],
+        "id": 129,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              68.802,
+              241.434,
+              81.335
+            ],
+            "content": "Figure 1 illustrates the two paradigms.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 205,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          93.35,
+          702.646,
+          200.216,
+          714.657
+        ],
+        "content": "Cross-Prediction (CP)",
+        "font": "SFBX1200",
+        "font size": 9.678,
+        "heading level": 6,
+        "id": 131,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H6",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          78.981,
+          663.59,
+          85.671,
+          671.051
+        ],
+        "content": "xi",
+        "font": "CMBX9",
+        "font size": 7.259,
+        "id": 133,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.92,
+          659.607,
+          196.826,
+          670.891
+        ],
+        "content": "fX z(xi) fD",
+        "font": "CMMI9",
+        "font size": 4.839,
+        "id": 137,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          78.981,
+          624.88,
+          85.671,
+          632.34
+        ],
+        "content": "yi",
+        "font": "CMBX9",
+        "font size": 7.259,
+        "id": 135,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          262.641,
+          702.646,
+          370.562,
+          714.657
+        ],
+        "content": "Cross-Alignment (CA)",
+        "font": "SFBX1200",
+        "font size": 9.678,
+        "heading level": 6,
+        "id": 141,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H6",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          310.162,
+          693.777,
+          377.692,
+          702.539
+        ],
+        "content": "shared latent space Rk",
+        "font": "SFRM0800",
+        "font size": 6.452,
+        "id": 153,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.65]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          312.96,
+          606.676,
+          332.891,
+          687.946
+        ],
+        "id": 144,
+        "level": "4",
+        "number of columns": 2,
+        "number of rows": 3,
+        "page number": 4,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  313.451,
+                  673.704,
+                  325.893,
+                  687.082
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  325.893,
+                  673.704,
+                  332.488,
+                  687.082
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  313.451,
+                  620.919,
+                  325.893,
+                  673.704
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  325.893,
+                  620.919,
+                  332.488,
+                  673.704
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  313.451,
+                  607.421,
+                  325.893,
+                  620.919
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  325.893,
+                  607.421,
+                  332.488,
+                  620.919
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 3,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          257.978,
+          670.475,
+          264.668,
+          677.935
+        ],
+        "content": "xi",
+        "font": "CMBX9",
+        "font size": 7.259,
+        "heading level": 7,
+        "id": 143,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          298.327,
+          666.492,
+          349.254,
+          677.775
+        ],
+        "content": "fX z(xi)",
+        "font": "CMMI6",
+        "font size": 4.839,
+        "id": 146,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          257.978,
+          613.711,
+          349.254,
+          625.464
+        ],
+        "content": "yi fY z(yi)",
+        "font": "CMBX9",
+        "font size": 4.839,
+        "id": 149,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          390.237,
+          576.926,
+          540.004,
+          720.966
+        ],
+        "content": "Figure 1: Two multimodal learning paradigms studied in this work. (Left) Cross-prediction (CP), Equation (2): an encoder fX maps modality x to a latent code z, and a decoder fD reconstructs the paired target y. (Right) Crossalignment (CA), Equation (1): encoders fX and fY project paired samples (xi,yi) into a shared latent space where matched pairs are pulled together.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 154,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          497.624,
+          540.002,
+          546.022
+        ],
+        "content": "To understand when each objective succeeds or fails, we restrict to the linear case, where equation 1 and equation 2 admit closed-form solutions and the population geometry is fully tractable. This linear analysis captures the core mechanism and provides our main analysis tool, and its predictions transfer to the nonlinear regime in our experiments (Section 4).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 155,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          469.159,
+          321.26,
+          483.996
+        ],
+        "content": "3.2 Linear analysis under a spiked model",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 156,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          427.441,
+          540.002,
+          463.884
+        ],
+        "content": "With linear encoders fX(x) = Wx, fY (y) = Vy for CA, and linear encoder fX(x) = Ex and decoder fD(z) = Dz for CP, both objectives admit closed-form solutions expressible through the SVDs of two modality-coupling matrices:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 157,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          214.58,
+          414.478,
+          539.999,
+          428.251
+        ],
+        "content": "C := S−xx1/2SxyS−yy1/2, A := SyxS−xx1/2, (3)",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 158,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          337.777,
+          540.003,
+          410.086
+        ],
+        "content": "where Σxx,Σyy,Σxy denote the (population) (cross-)covariances. CA projects onto the leading k singular directions of C (symmetric whitening, equivalent to CCA (Hotelling, 1936; Andrew et al., 2013)); CP projects onto the leading k singular directions of A (source-side whitening only, equivalent to truncated reduced-rank regression (RRR) (Izenman, 1975; Eckart and Young, 1936)). Although CCA and RRR are classically connected (e.g., Donnat and Tuzhilina (2024)), the two paradigms diverge once structured cross-modal nuisance is present, which is the regime our analysis characterizes.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 159,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          287.974,
+          540.001,
+          324.437
+        ],
+        "content": "Spiked model. To analyze recovery, we posit a signal-plus-noise model in which each modality decomposes into k shared signal coordinates and d − k modality-specific nuisance coordinates. In suitable orthogonal bases, the covariances are block diagonal:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 160,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          112.522,
+          265.048,
+          540.0,
+          278.598
+        ],
+        "content": "Sxx = diag K2 + Γ(xs), Γ(xn) , Syy = diag K2 + Γ(ys), Γ(yn) , Sxy = diag K2, Γxy , (4)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 161,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          197.244,
+          540.001,
+          254.476
+        ],
+        "content": "where K = diag(κ1,...,κk) collects the cross-modal signal strengths, Γ(xs),Γ(ys) are the view-specific noise variances on the shared coordinates, Γ(xn),Γ(yn) are the view-specific noise variances on the nuisance coordinates, and Γxy = diag(η1,...,ηd−k) encodes cross-modal nuisance correlation, with 0 ≤ ηj ≤ γ˜jxγ˜jy. Full parameterization is given in Section A.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 162,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          173.334,
+          539.997,
+          197.822
+        ],
+        "content": "Under this model, the singular values of C and A decompose cleanly into signal and nuisance contributions, yielding recovery conditions for each objective.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 164,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          135.087,
+          540.001,
+          165.961
+        ],
+        "id": 165,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              135.087,
+              540.001,
+              165.961
+            ],
+            "content": "Proposition 3.1 (CA vs. CP separation). Under the spiked model equation 4, the singular values of C and A split into signal values {ρi,τi}i∈ k and nuisance values {νj,ξj}j∈ d−k , given by",
+            "font": "SFBX1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 199,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          303.562,
+          102.478,
+          336.178,
+          130.886
+        ],
+        "content": "κ2i κ2i + γix",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 171,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          174.147,
+          102.478,
+          255.644,
+          130.886
+        ],
+        "content": "κ2i (κ2i + γix)(κ2i + γiy)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 167,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          386.037,
+          100.235,
+          406.521,
+          129.512
+        ],
+        "content": "ηj γ˜jxγ˜jy",
+        "font": "CMMI7",
+        "font size": 9.963,
+        "id": 175,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          451.882,
+          103.792,
+          466.301,
+          129.512
+        ],
+        "content": "ηj γ˜jx",
+        "font": "CMMI7",
+        "font size": 9.963,
+        "id": 179,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          467.995,
+          112.103,
+          539.998,
+          124.636
+        ],
+        "content": ". (5)",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 182,
+        "level": "6",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          256.84,
+          112.063,
+          289.637,
+          122.773
+        ],
+        "content": ", τi =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 170,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          337.871,
+          112.063,
+          372.116,
+          122.773
+        ],
+        "content": ", νj =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 174,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          408.464,
+          112.063,
+          442.147,
+          122.773
+        ],
+        "content": ", ξj =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 178,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          141.238,
+          112.063,
+          160.222,
+          122.772
+        ],
+        "content": "ρi =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 166,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          694.884,
+          540.0,
+          719.322
+        ],
+        "content": "CA (resp. CP) recovers the shared signal subspace whenever its signal singular values exceed its nuisance singular values. Defining the separation ratios",
+        "font": "SFTI1000",
+        "font size": 9.963,
+        "id": 184,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          258.051,
+          661.722,
+          290.669,
+          686.005
+        ],
+        "content": "mini ρi maxj νj",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 186,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          354.645,
+          661.722,
+          386.7,
+          686.005
+        ],
+        "content": "mini τi maxj ξj",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 189,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          388.797,
+          668.595,
+          540.002,
+          681.128
+        ],
+        "content": ", (6)",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 191,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          220.436,
+          668.556,
+          254.089,
+          679.265
+        ],
+        "content": "∆CA :=",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 185,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          292.765,
+          668.556,
+          350.683,
+          679.265
+        ],
+        "content": ", ∆CP :=",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 188,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          71.996,
+          621.841,
+          540.001,
+          653.377
+        ],
+        "content": "full recovery holds when ∆CA > 1 (for CA) or ∆CP > 1 (for CP). In the homogeneous case (κi ≡ κ, γiy ≡ γy, γ˜jy ≡ γ˜y), the two ratios satisfy",
+        "font": "SFTI1000",
+        "font size": 9.963,
+        "id": 192,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          326.266,
+          598.362,
+          358.405,
+          622.535
+        ],
+        "content": "γ˜y κ2 + γy",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 195,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          360.348,
+          604.489,
+          539.997,
+          617.022
+        ],
+        "content": ". (7)",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 197,
+        "level": "6",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          248.885,
+          598.123,
+          312.895,
+          615.408
+        ],
+        "content": "∆CA = ∆CP ·",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 193,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          576.705,
+          382.126,
+          591.242
+        ],
+        "content": "More generally, ∆CA/∆CP is monotonically non-decreasing in each γ˜jy.",
+        "font": "SFTI1000",
+        "font size": 9.963,
+        "id": 198,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          546.146,
+          540.003,
+          570.654
+        ],
+        "id": 199,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              546.146,
+              540.003,
+              570.654
+            ],
+            "content": "Proposition 3.2 (Partial recovery). Under the spiked model equation 4, the top-k singular vectors of C (resp. A) contain at least",
+            "font": "SFBX1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "previous list id": 165,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          502.311,
+          540.0,
+          536.761
+        ],
+        "content": "rCA := {i : ρi > maxj νj} , rCP := {i : τi > maxj ξj} (8) shared signal directions.",
+        "font": "SFTI1000",
+        "font size": 9.963,
+        "id": 200,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          422.609,
+          540.002,
+          494.918
+        ],
+        "content": "Full recovery is r = k (Proposition 3.1); r = 0 corresponds to complete failure; and the intermediate regime 0 < r < k is partial recovery, in which the learned representation is guaranteed to capture at least r signal directions mixed with nuisance. Partial recovery arises only under heterogeneous signal strengths: in the homogeneous case κi ≡ κ, γix ≡ γx, γiy ≡ γy (Figure 2) all signal singular values coincide, so r ∈ {0,k} and partial recovery collapses to the binary regime of Proposition 3.1. As κi become increasingly heterogeneous, the four-region phase diagram of figure 2 smears into a graded continuum (Figure 7, Section C).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 201,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          372.767,
+          540.003,
+          409.27
+        ],
+        "content": "Failure modes. Equation (5) exposes a fundamental asymmetry. CA’s nuisance values νj are cross-modal correlation coefficients in [0,1], independent of nuisance variance: when any νj → 1, no signal direction can match it under whitening (since ρi < 1 whenever any modality-specific noise is present), so ∆CA < 1",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 202,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          340.88,
+          540.004,
+          370.894
+        ],
+        "content": "regardless of signal strength. CP’s nuisance values ξj = νj γ˜jy depend on the target nuisance variance: large γ˜jy amplifies even moderate nuisance correlation into a recovery-breaking singular value (here and in",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 203,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          328.925,
+          539.997,
+          343.463
+        ],
+        "id": 205,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              328.925,
+              539.997,
+              343.463
+            ],
+            "content": "Figure 2, we hold νj fixed when varying γ˜jy, consistent with the (κ,ν) axes of the phase diagram). CP is",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "previous list id": 129,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          306.337,
+          539.998,
+          331.508
+        ],
+        "content": "also asymmetric: swapping source and target replaces γ˜jy with γ˜jx, so the direction of prediction matters. A direct corollary, demonstrated in Figure 9, is that CP can achieve lower reconstruction MSE than CA",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 206,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          246.522,
+          540.001,
+          306.915
+        ],
+        "content": "while recovering the wrong subspace — the MSE objective itself does not distinguish signal from nuisance. The relation of equation 7 makes the complementarity explicit: ∆CA and ∆CP diverge as γ˜jy grows, so a large target-side nuisance favors CA, while a small target-side nuisance favors CP. In the resulting phase diagram (Figure 2) the (κ,ν) plane partitions into four regions — Both, CA only, CP only, Neither — with boundaries set by ∆CA = 1 and ∆CP = 1.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 207,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.955,
+          196.557,
+          530.038,
+          233.02
+        ],
+        "content": "Key takeaway. These failure modes suggest that CA is preferable when nuisance correlation is moderate, modality quality is uncertain, and modality-specific noise is large. CP may be preferable, with the correct source-target orientation, when the signal is strong and the target noise is weak.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 209,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          72.996,
+          540.004,
+          169.235
+        ],
+        "content": "Redundant vs. Complementary Modalities. The failure modes of CA and CP can be understood through a distinction between two regimes of multimodal data. Redundant modalities, such as image– caption pairs, where captions are written to describe image content—share dominant structure across views, corresponding to large κi and small νj in our model, or the lower right corner in Figure 2. In this regime, the redundancy assumption underlying standard multimodal SSL holds. Complementary modalities, by contrast, arise when each view provides a structurally distinct perspective on the same object, as in multisensor measurements in astrophysics and earth science, or multi-omics or multi-scale profiling in biology. Here, view-specific structure dominates the variance of each modality while cross-modal nuisance correlation",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 210,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          518.57,
+          540.009,
+          720.0
+        ],
+        "id": 212,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          461.176,
+          540.001,
+          509.574
+        ],
+        "content": "Figure 2: Phase diagram for signal recovery in (κ,ν) space under the homogeneous model (all signal and noise components are equal). Solid and dashed lines respectively show the ∆CA = 1 and ∆CP = 1 boundaries from Proposition 3.1. (a) Large target nuisance (γ˜y ≫ γy). (b) Small target noise (γ˜y ∼ γy). Phase diagrams for the non-homogeneous case with partial recoveries are shown in Figure 7.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 213,
+        "linked content id": 212,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          72.0,
+          391.836,
+          540.002,
+          440.234
+        ],
+        "content": "is non-negligible, pushing toward large νj and small effective κi—precisely the Neither region (upper left corner) of Figure 2 where both paradigms fail. The intermediate region, which is represented by the center area in Figure 2 is noise dependent - CA is preferred when target noise is large, and CP is preferred when target noise is weak.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 214,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          357.558,
+          182.517,
+          375.218
+        ],
+        "content": "4 Experiments",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 215,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          217.523,
+          540.004,
+          349.608
+        ],
+        "content": "To test the validity of our theory in real-world problems, we conducted experiments across varying levels of complexity and controllability. The first is a linear experiment that directly implements the spiked model, followed by non-linear experiments with synthetic vision datasets, simulating multi-modality by projecting the scene onto two virtual cameras. Next, we use COCO-MS, a real image-caption multi-modality dataset. Finally, we verify our predictions on a real-world scientific problem - an astrophysics multimodal experiment. In all non-linear experiments, we use the VICReg approach (Bardes et al., 2021) as an approximation for the CA objective, and MSE reconstruction as CP. While VICReg does not use exactly the same orthogonality constraint, the covariance and variance regularization terms impose a similar behavior, and it was shown to be a formulation of DeepCCA (Andrew et al., 2013), the non-linear version of CCA (see e.g., Chapman et al. (2023)). We verify this similarity by comparing VICReg and DeepCCA in our two synthetic experiments (see C). We provide implementation details of all experiments in Section B.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 216,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          189.058,
+          234.639,
+          203.895
+        ],
+        "content": "4.1 Spiked Synthetic Data",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 217,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          99.519,
+          540.004,
+          183.783
+        ],
+        "content": "We first verify the theoretical predictions of Section 3 using closed-form solvers on finite-sample, synthetic data drawn from the spiked covariance model. This confirmed that cross-modal noise correlation breaks CP well before CA (Figure 3). The empirical subspace distance shows that CP fails to recover the signal (dist → 1) at ν ≈ 0.15, while CA maintains near-perfect recovery until ν ≈ 0.75 (Figure 3, left). Based on the theoretical separation ratios (Figure 3, right)∆CP crosses the recovery threshold ∆ = 1 at a noise correlation roughly 5× lower than ∆CA. The wide gap between the two thresholds validates the complementary failure modes identified in Section 3. We provide additional linear experiments in Section C.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 218,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          348.118,
+          600.837,
+          540.004,
+          720.966
+        ],
+        "content": "Figure 3: Recovery as a function of normalized noise correlation ν. (Left) Subspace distance between the estimated and true signal subspace (lower is better; shading shows ±1 std over 20 trials). CP fails at ν ≈ 0.15 while CA remains robust until ν ≈ 0.75. (Right) Theoretical separation ratios ∆CA and ∆CP (log scale). The dashed line marks ∆ = 1; recovery succeeds above this threshold.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 221,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          608.849,
+          343.439,
+          701.637
+        ],
+        "id": 220,
+        "page number": 7,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          556.82,
+          254.253,
+          571.657
+        ],
+        "content": "4.2 Stereo vision experiments",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 222,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          455.326,
+          540.002,
+          551.565
+        ],
+        "content": "Stereo-dSprites We next tested whether the complementary failure modes persist in a nonlinear setting using Stereo-dSprites, a synthetic stereo-vision benchmark, based on the dSprites dataset (Matthey et al. (2017)), with controlled nuisance alignment that simulates a multimodal visual setting. Two virtual cameras observe a shared 2D object on a 64 × 64 image. Here, shape is the signal (low pixel variance but perfectly correlated across views) whereas world position is the nuisance (high pixel variance and highly, but imperfectly, correlated, with the correlation controlled by a camera jitter parameter σjitter). We define nuisance alignment as νmax = 1 − σjitter, and evaluate downstream shape classification via linear probe (details in Section B).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 223,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          419.46,
+          540.004,
+          455.924
+        ],
+        "content": "Stereo-3DShapes We replicate the Stereo-dSprites protocol on Stereo-3DShapes (based on Burgess and Kim (2018)): RGB 64 × 64 stereo pairs of 3D-rendered objects (Cube, Cylinder, Sphere, Capsule) with controlled position jitter (details in Section B).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 224,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          287.953,
+          540.004,
+          420.038
+        ],
+        "content": "Both experiments shows the expected trade-off between objectives - CA fails with perfectly correlated noise and improves as the alignment decreases, while CP shows the opposite behavior (Figure 4). At full nuisance alignment (ν = 1), the cross-modal mapping is deterministic and CP’s overcapacity bottleneck encodes both signal and nuisance without compression pressure, circumventing the theory’s failure prediction. As soon as jitter breaks determinism (ν < 1), CP is forced to compress, and the separation ratio governs recovery. These overall conclusions are also observed when we examine examples of latent features with different alignment values for CA and CP in the stereo-dSprites experiment with dimensionality reduction using UMAP (McInnes et al., 2018) ((Figure 5), colors: signal (shape); opacity: nuisance features (position)). The observed patterns align perfectly with the overall results, such that the opacity structure (Figure 5) shows that in CA and CP each succeed where the other fails, and when a method fails, the model primarily captures the nuisance features (position).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 225,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          259.488,
+          270.418,
+          274.325
+        ],
+        "content": "4.3 Image–Caption Experiments",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 226,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          122.089,
+          540.004,
+          254.213
+        ],
+        "content": "We extended the analysis to a real image–caption dataset: MS-COCO (Lin et al., 2014), where captions are written to describe natural image content. As this is a true multimodal dataset, we used the natural caption–image pairing without artificial nuisance manipulation. We trained encoders from scratch (ResNet18 for images, two-layer Transformer for captions) and varied modality-specific noise by applying visual style transforms of increasing strength to the image modality while keeping captions clean. As expected, we observed asymmetric performance for CP (Figure 6); CPI→T strongly dominates at low noise (∼10pp over CA), and degrades monotonically as image noise increases. The asymmetry matches the linear theory: ∆CP depends only on source-side quantities, so image-side perturbations affect CPI→T but leave CPT→I (text source, unchanged) flat. The slight rise of CPT→I is consistent with noisy reconstruction targets acting as a regularizer, a finite-capacity effect outside the linear theory. CA is insensitive throughout, consistent with Σyy normalization absorbing modality-specific variance.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 227,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          494.06,
+          540.003,
+          720.002
+        ],
+        "id": 229,
+        "page number": 8,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          436.665,
+          540.002,
+          485.064
+        ],
+        "id": 230,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              436.665,
+              540.002,
+              485.064
+            ],
+            "content": "Figure 4: Linear probe accuracy vs. nuisance alignment νmax = 1 − σjitter. (Left) Stereo-dSprites (3-class, grayscale, 100k samples). (Right) Stereo-3DShapes (4-class, RGB, 100k samples). In both settings, color represents weak noise levels. In both panels, the trade-off between the methods is clearly seen. CA (solid, circles) peaks at moderate-to-low alignment and collapses at full alignment; CP (dashed, squares) shows",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 239,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          412.755,
+          540.003,
+          437.243
+        ],
+        "content": "the opposite pattern. The crossover at νmax ≈ 0.8 is consistent across datasets. Lower absolute ceilings in 3DShapes reflect the harder discrimination task.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 231,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          378.701,
+          275.949,
+          393.538
+        ],
+        "content": "4.4 Predicting Recovery Regimes",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 232,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          301.117,
+          540.002,
+          373.426
+        ],
+        "content": "We propose a lightweight supervised diagnostic that locates a paired dataset in the phase diagram before committing to cross-modal training. The diagnostic is supervised by design: a small labeled subsample classifies singular components of Cˆ and Aˆ as signal or nuisance, allowing direct estimation of ∆ˆCA and ∆ˆCP without recovering the latent parameters (κ,γ,γ,η˜ ). The labeled budget is small relative to the scale of cross-modal training. the diagnostic is meant to inform, and the labels need not match the downstream target — in Section 4.5, regime prediction from log g correctly orders methods on binarity and age.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 233,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          169.61,
+          540.004,
+          301.695
+        ],
+        "content": "The estimation procedure is well-posed when the representation fed to the estimator approximately satisfies the linear spiked decomposition of Section 3.2: signal and nuisance directions must be meaningfully separable in the joint covariance structure of the paired data. This condition holds most directly in two-stage multimodal pipelines, where each modality is first encoded independently by a unimodal model, and the crossmodal objective operates on these frozen representations. The unimodal features are both the actual inputs to the cross-modal model and a representation in which signal and nuisance can be meaningfully separated; Two-stage pipelines are the dominant paradigm in scientific multimodal learning and in large foundationmodel stacks where modality-specific encoders are pretrained independently. In single-stage pipelines, the encoder and cross-modal objective are optimized jointly from raw data, and no unimodal representation satisfying the spiked decomposition exists prior to training. Applying the estimator to compact proxies of the raw inputs (e.g., pixel-PCA) is possible, but the resulting regime predictions are less reliable.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 234,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          133.446,
+          416.93,
+          155.982
+        ],
+        "content": "4.5 Real Astrophysical Data (LAMOST × Kepler/TESS)",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 235,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          75.516,
+          540.003,
+          135.87
+        ],
+        "content": "Finally, we validated regime estimation on real astrophysical data, pairing ground-based LAMOST (Zhao et al. (2012)) spectra (2048-dim encoder) with space-based photometry from two instruments: Kepler (Mathur et al. (2017)) and TESS (Ricker et al. (2015)) (1024-dim encoders), using frozen pretrained features Kamai et al. (2025) with lightweight projection/prediction heads (Section B). We estimated recovery regimes from a labeled subsample using surface gravity (log g), following Algorithm 1. Downstream evalua-",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 236,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          605.086,
+          539.987,
+          720.0
+        ],
+        "id": 238,
+        "page number": 9,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          535.736,
+          539.999,
+          596.089
+        ],
+        "id": 239,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              535.736,
+              539.999,
+              596.089
+            ],
+            "content": "Figure 5: UMAP embeddings of learned representations of the stereo-dSprites experiment (color = shape, intensity = position). From left to right: CA with aligned noise (σjitter = 0), CA with misaligned noise (σjitter = 0.5), CP with aligned noise, and CP with misaligned noise. All experiments have the same modality-specific noise (σnoise = 0.5). Each method succeeds exactly where the other fails, and on failures, the models learn the nuisance.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "previous list id": 230,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.679,
+          404.229,
+          227.121,
+          523.393
+        ],
+        "id": 240,
+        "page number": 9,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          230.44,
+          439.292,
+          539.325,
+          499.646
+        ],
+        "content": "Figure 6: Top-1 accuracy vs. image style transform strength for MSCOCO experiment. CP shows an asymmetric nature: prediction of image from text results in similar performance as CA but prediction of text from an image results in much better performance. Both approaches converge to the same accuracy when image noise is high.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 241,
+        "linked content id": 240,
+        "page number": 9,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          72.0,
+          311.367,
+          540.004,
+          383.676
+        ],
+        "content": "tion covered three physically distinct targets: binarity, log g, and age. Binarity and age are encoded through modality-specific mechanisms (spectroscopic radial-velocity variations vs. photometric eclipses for binarity; isochrone vs. gyrochronology for age), so agreement between a log g-based regime prediction and behavior on binarity and age tests whether the separation ratios capture the geometry of the modality pair rather than a task-specific artifact. The results show that the regime predictions hold as regime-level statements across all targets, with a revealing asymmetry in how each regime manifests (Table 1, 5 seeds per cell).",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 242,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          251.552,
+          540.002,
+          311.945
+        ],
+        "content": "Kepler (Both). On every target, at least one of {CA, CP} matches or exceeds the best unimodal baseline, but the winner rotates with task. CP stays at the LAMOST ceiling where LAMOST dominates (log g, binarity); CA captures photometric signal where LAMOST is weak (age: +0.19 R2 over LAMOST). The ’Both’ prediction should be read as some cross-modal objective helps on every task, not as both objectives helping uniformly, consistent with ∆ˆCA and ∆ˆCP being very different.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 243,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          215.726,
+          540.001,
+          252.169
+        ],
+        "content": "TESS (Neither). No cross-modal method exceeds LAMOST alone on any target, and the gap is well beyond seed variance. The prediction holds uniformly, with no task-level exceptions. Figure 12 visualizes the underlying singular-value decompositions of Cˆ and Aˆ for both pairs.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 244,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          118.063,
+          540.004,
+          202.386
+        ],
+        "content": "CP direction asymmetry. CP’s recovery condition ∆CP involves only source-side quantities, so swapping source and target produces a structurally different recovery condition: the preferred direction is the one in which the source modality more directly encodes the task signal. For log g and binarity, spectra encode the signal more directly than photometry (through absorption-line broadening rather than granulation/oscillation) so CP forward (spectra → photometry) succeeds while CPrev (photometry → spectra) fails. For age, photometric rotation periods provide a more direct signal via gyrochronology than spectroscopic activity indicators, so the preferred direction reverses: CPrev on age (R2 = 0.497) outperforms forward CP.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 245,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          636.702,
+          540.004,
+          720.986
+        ],
+        "content": "Table 1: Astrophysical cross-modal results, mean ± std over 5 seeds. Best per row in bold (ties within seed std co-bolded). Kepler (Both, ∆ˆCA=1.13, ∆ˆCP=2.22): at least one cross-modal method matches or beats the best unimodal baseline on every target; CP preserves LAMOST’s ceiling where LAMOST dominates, CA captures photometric signal where LAMOST is weak. TESS (Neither, ∆ˆCA,∆ˆCP<1): no cross-modal method beats LAMOST-only on any target. CPrev (photometry → spectra) fails on tasks where spectra carry the more direct signal (log g, binarity), but outperforms forward CP on age, where photometric rotation provides a more direct gyrochronological signal — the same source-quality principle in both directions.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 247,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.826,
+          590.546,
+          491.175,
+          623.498
+        ],
+        "content": "Task CA CP CPrev LAMOST Photometry LAMOST × Kepler — Both regime",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 249,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.826,
+          552.668,
+          477.669,
+          591.578
+        ],
+        "content": "Binarity (bal. acc.) 0.802±0.009 0.814±0.006 0.751±0.004 0.814 0.731 log g (R2) 0.956±0.003 0.976±0.001 0.639±0.004 0.977 0.542 Age (R2) 0.620±0.001 0.434±0.006 0.497±0.039 0.431 0.470",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 252,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.826,
+          520.749,
+          477.665,
+          553.763
+        ],
+        "content": "LAMOST × TESS — Neither regime Binarity (bal. acc.) 0.756±0.022 0.763±0.011 0.626±0.010 0.779 0.604",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 254,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.826,
+          498.831,
+          481.25,
+          526.782
+        ],
+        "content": "log g (R2) 0.929±0.005 0.939±0.001 −0.312±0.001 0.942 −0.312 Age (R2) 0.431±0.029 0.396±0.064 −0.072±0.004 0.503 −0.037",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 256,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.955,
+          438.058,
+          530.04,
+          474.521
+        ],
+        "content": "Key takeaway. Estimating effective recovery regimes is a practical and feasible analysis for real-world multimodal problems. It can indicate whether cross-modal learning is likely to succeed, identify which modality is the informative bottleneck, and guide the choice of objective.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 258,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          395.776,
+          171.127,
+          413.436
+        ],
+        "content": "5 Conclusion",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 259,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          231.831,
+          540.004,
+          387.826
+        ],
+        "content": "We studied cross-modal alignment and cross-modal prediction in a unified linear framework, deriving recovery conditions governed by separation ratios ∆CA and ∆CP that partition multimodal problems into four regimes and determine not only which method succeeds but whether cross-modal training helps at all. A data-driven estimation of these ratios identifies the preferred objective and prediction direction from a small labeled subsample, before any cross-modal training. Experiments span synthetic data, stereo-vision benchmarks, and image–caption pairs, with the sharpest validation on real astrophysical data: same spectroscopic encoder paired with two photometric instruments of differing quality yields two distinct predicted regimes, both confirmed across multiple downstream targets, and the predicted CP direction asymmetry is confirmed on all tasks. The Neither regime is the most important open problem raised by this work, the natural habitat of complementary scientific modalities, where each instrument provides a structurally distinct view yet neither paradigm extracts the shared signal. Escaping it likely requires objectives that go beyond pairwise crosscovariance, e.g., higher-order structure, auxiliary supervision, or modality-specific priors. We hope the phase diagram introduced here provides a principled starting point to solve it.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 260,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          197.554,
+          145.642,
+          215.214
+        ],
+        "content": "References",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 261,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          117.294,
+          540.0,
+          189.603
+        ],
+        "content": "Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katie Millican, Malcolm Reynolds, Roman Ring, Eliza Rutherford, Serkan Cabi, Tengda Han, Zhitao Gong, Sina Samangooei, Marianne Monteiro, Jacob Menick, Sebastian Borgeaud, Andrew Brock, Aida Nematzadeh, Sahand Sharifzadeh, Mikolaj Binkowski, Ricardo Barreira, Oriol Vinyals, Andrew Zisserman, and Karen Simonyan. Flamingo: a Visual Language Model for Few-Shot Learning. arXiv e-prints, art. arXiv:2204.14198, April 2022. doi: 10.48550/arXiv.2204.14198.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 262,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          73.459,
+          540.003,
+          109.902
+        ],
+        "content": "Galen Andrew, Raman Arora, Jeff Bilmes, and Karen Livescu. Deep canonical correlation analysis. In Proceedings of the 30th International Conference on International Conference on Machine Learning Volume 28, ICML’13, page III–1247–III–1255. JMLR.org, 2013.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 263,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          682.54,
+          539.997,
+          719.372
+        ],
+        "content": "Sanjeev Arora, Hrishikesh Khandeparkar, Mikhail Khodak, Orestis Plevrakis, and Nikunj Saunshi. A theoretical analysis of contrastive unsupervised representation learning. In International Conference on Machine Learning, 2019. URL https://api.semanticscholar.org/CorpusID:67855945.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 265,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          626.749,
+          540.001,
+          675.537
+        ],
+        "content": "Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael G. Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 15619–15629, 2023. URL https://api.semanticscholar.org/CorpusID:255999752.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 266,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          583.303,
+          540.004,
+          619.746
+        ],
+        "content": "Alexei Baevski, Wei-Ning Hsu, Qiantong Xu, Arun Babu, Jiatao Gu, and Michael Auli. data2vec: A General Framework for Self-supervised Learning in Speech, Vision and Language. arXiv e-prints, art. arXiv:2202.03555, February 2022. doi: 10.48550/arXiv.2202.03555.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 267,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          539.078,
+          540.002,
+          575.91
+        ],
+        "content": "Randall Balestriero and Yann LeCun. Contrastive and non-contrastive self-supervised learning recover global and local spectral embedding methods. ArXiv, abs/2205.11508, 2022. URL https://api. semanticscholar.org/CorpusID:248986152.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 268,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          507.587,
+          539.999,
+          532.075
+        ],
+        "content": "Randall Balestriero and Yann LeCun. LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics. arXiv e-prints, art. arXiv:2511.08544, November 2025. doi: 10.48550/arXiv.2511.08544.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 269,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          463.751,
+          539.998,
+          500.194
+        ],
+        "content": "Adrien Bardes, Jean Ponce, and Yann LeCun. VICReg: Variance-Invariance-Covariance Regularization for Self-Supervised Learning. arXiv e-prints, art. arXiv:2105.04906, May 2021. doi: 10.48550/arXiv.2105. 04906.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 270,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          396.005,
+          540.001,
+          456.359
+        ],
+        "content": "Cristian Bodnar, Wessel P. Bruinsma, Ana Lucic, Megan Stanley, Anna Vaughan, Johannes Brandstetter, Patrick Garvan, Maik Riechert, Jonathan A. Weyn, Haiyu Dong, Jayesh K. Gupta, Kit Thambiratnam, Alexander T. Archibald, Chun-Chieh Wu, Elizabeth Heider, Max Welling, Richard E. Turner, and Paris Perdikaris. A Foundation Model for the Earth System. arXiv e-prints, art. arXiv:2405.13063, May 2024. doi: 10.48550/arXiv.2405.13063.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 271,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          356.154,
+          539.999,
+          388.613
+        ],
+        "content": "Chris Burgess and Hyunjik Kim. 3d shapes dataset. https://github.com/deepmind/3d-shapes, 2018. Vivien Cabannes, Bobak Kiani, Randall Balestriero, Yann LeCun, and Alberto Bietti. The ssl interplay:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 272,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          81.96,
+          332.244,
+          539.999,
+          356.732
+        ],
+        "content": "Augmentations, inductive bias, and generalization. In International Conference on Machine Learning, pages 3252–3298, 2023.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 273,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          288.408,
+          540.0,
+          324.852
+        ],
+        "content": "James Chapman, Lennie Wells, and Ana Lawry Aguila. Unconstrained Stochastic CCA: Unifying Multiview and Self-Supervised Learning. arXiv e-prints, art. arXiv:2310.01012, October 2023. doi: 10.48550/arXiv. 2310.01012.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 274,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          256.528,
+          539.996,
+          281.016
+        ],
+        "content": "Xinlei Chen and Kaiming He. Exploring Simple Siamese Representation Learning. arXiv e-prints, art. arXiv:2011.10566, November 2020. doi: 10.48550/arXiv.2011.10566.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 275,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          212.692,
+          539.999,
+          249.136
+        ],
+        "content": "Haotian Cui, Alejandro Tejada-Lapuerta, Maria Brbić, Julio Saez-Rodriguez, Simona Cristea, Hani Goodarzi, Mohammad Lotfollahi, Fabian J. Theis, and Bo Wang. Towards multimodal foundation models in molecular cell biology. Nature, 640(8059):623–633, April 2025. doi: 10.1038/s41586-025-08710-y.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 276,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          180.812,
+          539.996,
+          205.3
+        ],
+        "content": "Claire Donnat and Elena Tuzhilina. Canonical Correlation Analysis as Reduced Rank Regression in High Dimensions. arXiv e-prints, art. arXiv:2405.19539, May 2024. doi: 10.48550/arXiv.2405.19539.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 277,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          136.587,
+          539.999,
+          173.42
+        ],
+        "content": "Carl Eckart and Gale Young. The approximation of one matrix by another of lower rank. Psychometrika, 1(3):211–218, September 1936. ISSN 1860-0980. doi: 10.1007/BF02288367. URL https://doi.org/10. 1007/BF02288367.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 278,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          93.141,
+          540.003,
+          129.584
+        ],
+        "content": "Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. ImageBind: One Embedding Space To Bind Them All. arXiv e-prints, art. arXiv:2305.05665, May 2023. doi: 10.48550/arXiv.2305.05665.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 279,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          682.929,
+          540.003,
+          719.372
+        ],
+        "content": "Jeff Z. HaoChen, Colin Wei, Adrien Gaidon, and Tengyu Ma. Provable guarantees for self-supervised deep learning with spectral contrastive loss. In Advances in Neural Information Processing Systems, volume 34, 2021.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 281,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          639.093,
+          540.001,
+          675.537
+        ],
+        "content": "Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked Autoencoders Are Scalable Vision Learners. arXiv e-prints, art. arXiv:2111.06377, November 2021. doi: 10.48550/arXiv. 2111.06377.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 282,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          599.243,
+          539.999,
+          631.701
+        ],
+        "content": "Harold Hotelling. Relations between two sets of variates. Biometrika, 28(3/4):321–377, 1936. Yu Huang, Chenzhuang Du, Zihui Xue, Xuanyao Chen, Hang Zhao, and Longbo Huang. What makes",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 283,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          81.96,
+          574.943,
+          539.996,
+          599.821
+        ],
+        "content": "multi-modal learning better than single (provably). arXiv e-prints, page arXiv:2106.04538, 2021. URL https://arxiv.org/abs/2106.04538v2.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 284,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          531.108,
+          539.999,
+          567.94
+        ],
+        "content": "Alan Julian Izenman. Reduced-rank regression for the multivariate linear model. Journal of Multivariate Analysis, 5(2):248–264, 1975. ISSN 0047-259X. doi: https://doi.org/10.1016/0047-259X(75)90042-1. URL https://www.sciencedirect.com/science/article/pii/0047259X75900421.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 285,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          487.272,
+          540.004,
+          524.105
+        ],
+        "content": "Ilay Kamai, Alex M. Bronstein, and Hagai B. Perets. Machine learning inference of stellar properties using integrated photometric and spectroscopic data. The Astrophysical Journal, 994, 2025. URL https: //api.semanticscholar.org/CorpusID:280232312.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 286,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          455.392,
+          540.002,
+          480.269
+        ],
+        "content": "Yann LeCun. A path towards autonomous machine intelligence version 0.9.2, 2022-06-27, 2022. URL https://www.semanticscholar.org/paper/775f42ed458b8c5b0f2094ea4ff5b64c557b1a34.",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 287,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          411.945,
+          540.003,
+          448.388
+        ],
+        "content": "Weixin Liang, Yuhui Zhang, Yongchan Kwon, Serena Yeung, and James Zou. Mind the Gap: Understanding the Modality Gap in Multi-modal Contrastive Representation Learning. arXiv e-prints, arXiv:2203.02053: arXiv:2203.02053, March 2022. doi: 10.48550/arXiv.2203.02053.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 288,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          356.154,
+          540.004,
+          404.553
+        ],
+        "content": "Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part V 13, pages 740–755. Springer, 2014.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 289,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          323.885,
+          540.004,
+          348.762
+        ],
+        "content": "Zhou Lu. A theory of multimodal learning. Neural Information Processing Systems, arXiv:2309.12458, 2023. doi: 10.48550/arxiv.2309.12458. URL https://arxiv.org/abs/2309.12458v2.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 290,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          244.184,
+          540.003,
+          316.882
+        ],
+        "content": "Savita Mathur, Daniel Huber, Natalie M. Batalha, David R. Ciardi, Fabienne A. Bastien, Allyson Bieryla, Lars A. Buchhave, William D. Cochran, Michael Endl, Gilbert A. Esquerdo, Elise Furlan, Andrew Howard, Steve B. Howell, Howard Isaacson, David W. Latham, Phillip J. MacQueen, and David R. Silva. Revised stellar properties of kepler targets for the q1-17 (dr25) transit detection run. The Astrophysical Journal Supplement Series, 229(2):30, mar 2017. doi: 10.3847/1538-4365/229/2/30. URL https://dx.doi.org/ 10.3847/1538-4365/229/2/30.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 291,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          212.692,
+          540.003,
+          237.18
+        ],
+        "content": "Loic Matthey, Irina Higgins, Demis Hassabis, and Alexander Lerchner. dsprites: Disentanglement testing sprites dataset. https://github.com/deepmind/dsprites-dataset/, 2017.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 292,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          168.857,
+          540.003,
+          205.3
+        ],
+        "content": "Leland McInnes, John Healy, and James Melville. UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. arXiv e-prints, arXiv:1802.03426:arXiv:1802.03426, February 2018. doi: 10. 48550/arXiv.1802.03426.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 293,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          136.976,
+          539.998,
+          161.464
+        ],
+        "content": "Pierre Mergny and Lenka Zdeborová. Spectral thresholds in correlated spiked models and fundamental limits of partial least squares. arXiv preprint arXiv:2510.17561, 2025.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 294,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          105.096,
+          539.995,
+          129.584
+        ],
+        "content": "L. Mirsky. Symmetric gauge functions and unitarily invariant norms. The Quarterly Journal of Mathematics, 11(1):50–59, January 1960. doi: 10.1093/qmath/11.1.50.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 295,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          647.063,
+          540.003,
+          719.372
+        ],
+        "content": "Liam Parker, Francois Lanusse, Jeff Shen, Ollie Liu, Tom Hehir, Leopoldo Sarra, Lucas Meyer, Micah Bowles, Sebastian Wagner-Carena, Helen Qu, Siavash Golkar, Alberto Bietti, Hatim Bourfoune, Nathan Casserau, Pierre Cornette, Keiya Hirashima, Geraud Krawezik, Ruben Ohana, Nicholas Lourie, Michael McCabe, Rudy Morel, Payel Mukhopadhyay, Mariel Pettee, Bruno Regaldo-Saint Blancard, Kyunghyun Cho, Miles Cranmer, and Shirley Ho. AION-1: Omnimodal Foundation Model for Astronomical Sciences. arXiv e-prints, art. arXiv:2510.17960, October 2025. doi: 10.48550/arXiv.2510.17960.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 297,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          591.273,
+          540.002,
+          639.671
+        ],
+        "content": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning Transferable Visual Models From Natural Language Supervision. arXiv e-prints, art. arXiv:2103.00020, February 2021. doi: 10.48550/arXiv.2103.00020.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 298,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          439.84,
+          540.004,
+          583.88
+        ],
+        "content": "George R. Ricker, Joshua N. Winn, Roland Vanderspek, David W. Latham, Gáspár Á. Bakos, Jacob L. Bean, Zachory K. Berta-Thompson, Timothy M. Brown, Lars Buchhave, Nathaniel R. Butler, R. Paul Butler, William J. Chaplin, David Charbonneau, Jørgen Christensen-Dalsgaard, Mark Clampin, Drake Deming, John Doty, Nathan De Lee, Courtney Dressing, Edward W. Dunham, Michael Endl, Francois Fressin, Jian Ge, Thomas Henning, Matthew J. Holman, Andrew W. Howard, Shigeru Ida, Jon M. Jenkins, Garrett Jernigan, John Asher Johnson, Lisa Kaltenegger, Nobuyuki Kawai, Hans Kjeldsen, Gregory Laughlin, Alan M. Levine, Douglas Lin, Jack J. Lissauer, Phillip MacQueen, Geoffrey Marcy, Peter R. McCullough, Timothy D. Morton, Norio Narita, Martin Paegert, Enric Palle, Francesco Pepe, Joshua Pepper, Andreas Quirrenbach, Stephen A. Rinehart, Dimitar Sasselov, Bun’ei Sato, Sara Seager, Alessandro Sozzetti, Keivan G. Stassun, Peter Sullivan, Andrew Szentgyorgyi, Guillermo Torres, Stephane Udry, and Joel Villasenor. Transiting Exoplanet Survey Satellite (TESS). Journal of Astronomical Telescopes, Instruments, and Systems, 1:014003, January 2015. doi: 10.1117/1.JATIS.1.1.014003.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 299,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          396.005,
+          539.998,
+          432.448
+        ],
+        "content": "Arabind Swain, Sean Alexander Ridout, and Ilya Nemenman. Better Together: Cross and Joint Covariances Enhance Signal Detectability in Undersampled Data. arXiv e-prints, art. arXiv:2507.22207, July 2025. doi: 10.48550/arXiv.2507.22207.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 300,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          364.124,
+          540.004,
+          388.613
+        ],
+        "content": "Hugo Tabanelli, Pierre Mergny, Lenka Zdeborova, and Florent Krzakala. Computational Thresholds in Multi-Modal Learning via the Spiked Matrix-Tensor Model. arXiv e-prints, art. arXiv:2506.02664, June",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 301,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          320.289,
+          539.997,
+          364.702
+        ],
+        "content": "2025. doi: 10.48550/arXiv.2506.02664. Yonglong Tian, Xinlei Chen, and Surya Ganguli. Understanding self-supervised learning dynamics without contrastive pairs. In International Conference on Machine Learning, 2021.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 302,
+        "level": "4",
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          276.453,
+          540.003,
+          312.896
+        ],
+        "content": "Hugues Van Assel, Mark Ibrahim, Tommaso Biancalani, Aviv Regev, and Randall Balestriero. Joint Embedding vs Reconstruction: Provable Benefits of Latent Space Prediction for Self Supervised Learning. arXiv e-prints, art. arXiv:2505.12477, May 2025. doi: 10.48550/arXiv.2505.12477.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 303,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          244.573,
+          539.999,
+          269.061
+        ],
+        "content": "Meir Yossef Levi and Guy Gilboa. The Double-Ellipsoid Geometry of CLIP. arXiv e-prints, art. arXiv:2411.14517, November 2024. doi: 10.48550/arXiv.2411.14517.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 304,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          200.737,
+          540.0,
+          237.18
+        ],
+        "content": "Gang Zhao, Yong-Heng Zhao, Yao-Quan Chu, Yi-Peng Jing, and Li-Cai Deng. LAMOST spectral survey An overview. Research in Astronomy and Astrophysics, 12(7):723–734, July 2012. doi: 10.1088/1674-4527/ 12/7/002.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 305,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          705.504,
+          455.853,
+          723.164
+        ],
+        "content": "A Closed-form solutions and spiked model derivations",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 307,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          682.448,
+          334.233,
+          697.285
+        ],
+        "content": "A.1 Full statement of closed-form solutions",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 308,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          559.312,
+          540.002,
+          677.193
+        ],
+        "id": 309,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              664.601,
+              539.502,
+              677.193
+            ],
+            "content": "Theorem A.1 (Closed-form solutions for CA). Assume Sxx and Syy are positive definite. Let C = PΦQ⊤",
+            "font": "SFBX1000",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  72.0,
+                  638.433,
+                  539.995,
+                  664.215
+                ],
+                "content": "be the SVD of C := S−xx1/2SxyS−yy1/2 with rank(C) = r ≥ k and ϕ1 ≥ ··· ≥ ϕr > 0. The minimizers of equation 1 with linear encoders are",
+                "font": "SFTI1000",
+                "font size": 9.963,
+                "id": 49,
+                "page number": 14,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  75.564,
+                  594.555,
+                  540.001,
+                  633.472
+                ],
+                "content": "W⋆ = UΦ−k 1/2P⊤k S−xx1/2, V⋆ = UΦ−k 1/2Q⊤k S−yy1/2, (9) where Pk,Qk contain the leading k columns and U ∈ Rk×k is an arbitrary orthogonal matrix.",
+                "font": "SFTI1000",
+                "font size": 9.963,
+                "id": 50,
+                "page number": 14,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              559.312,
+              540.002,
+              597.049
+            ],
+            "content": "Theorem A.2 (Closed-form solutions for CP). Let A = UAΣVA⊤ be the SVD of A := SyxS−xx1/2 with σ1 ≥ ··· ≥ σr > 0. The composed map B := DE at a minimizer of equation 2 with linear encoder and decoder is",
+            "font": "SFBX1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          249.337,
+          546.349,
+          540.002,
+          560.122
+        ],
+        "content": "B⋆ = UA,k Σk VA,k⊤ S−xx1/2. (10)",
+        "font": "CMMI7",
+        "font size": 9.963,
+        "id": 310,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          518.858,
+          540.005,
+          543.296
+        ],
+        "content": "The factorization B⋆ = D⋆E⋆ is non-unique: for any invertible M ∈ Rk×k, (D⋆M,M−1E⋆) yields the same composed map.",
+        "font": "SFTI1000",
+        "font size": 9.963,
+        "id": 311,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          491.17,
+          236.073,
+          506.007
+        ],
+        "content": "A.2 Proof of Theorem A.1",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 312,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          456.664,
+          339.506,
+          485.895
+        ],
+        "content": "Using the constraint WSxyV⊤ = Ik, the objective reduces to min",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 313,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          202.025,
+          455.918,
+          540.005,
+          468.723
+        ],
+        "content": "Tr(WSxxW⊤) + Tr(VSyyV⊤) s.t. WSxyV⊤ = Ik . (11)",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "id": 315,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          171.814,
+          450.967,
+          190.282,
+          457.947
+        ],
+        "content": "W,V",
+        "font": "CMBX7",
+        "font size": 6.974,
+        "id": 314,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          413.61,
+          470.312,
+          444.135
+        ],
+        "content": "Let W′ = WS1xx/2 and V′ = VS1yy/2, and define C := S−xx1/2SxyS−yy1/2. The problem becomes min",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 316,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          237.077,
+          406.537,
+          540.002,
+          425.668
+        ],
+        "content": "∥W′∥2F + ∥V′∥2F s.t. W′CV′⊤ = Ik . (12)",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "id": 318,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          201.477,
+          406.946,
+          224.959,
+          415.588
+        ],
+        "content": "W′,V′",
+        "font": "CMBX7",
+        "font size": 6.974,
+        "id": 317,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          351.145,
+          540.001,
+          401.734
+        ],
+        "content": "Let the SVD be C = PΦQ⊤. By unitary invariance, it suffices to take W′ = UAP⊤ and V′ = UBQ⊤ with U ∈ Rk×k orthogonal, so the constraint reads AΦB⊤ = Ik and the objective is ∥A∥2F + ∥B∥2F. This decouples across singular directions, yielding the minimizer A = B = Φ−k 1/2 and the choice of the k largest singular values. Hence",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 319,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          314.951,
+          539.999,
+          346.183
+        ],
+        "content": "W′ = UΦ−k 1/2P⊤k , V′ = UΦ−k 1/2Q⊤k , (13) and the constraint holds iff U is orthogonal. Transforming back gives",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 320,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          186.057,
+          294.613,
+          539.999,
+          309.99
+        ],
+        "content": "W⋆ = UΦ−k 1/2P⊤k S−xx1/2 , V⋆ = UΦ−k 1/2Q⊤k S−yy1/2 . (14)",
+        "font": "CMBX10",
+        "font size": 6.974,
+        "id": 321,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          268.475,
+          236.073,
+          283.312
+        ],
+        "content": "A.3 Proof of Theorem A.2",
+        "font": "SFBX1200",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 322,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          244.301,
+          139.214,
+          263.2
+        ],
+        "content": "Since E ∈ Rk×d",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 323,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          226.757,
+          539.688,
+          263.2
+        ],
+        "content": "y×k, the composed map B = DE satisfies rank(B) ≤ k. Conversely, any rank-k matrix B admits such a factorization, so minimizing over (D,E) is equivalent to minimizing over rank-k matrices B. Writing the CP objective in terms of B and expanding:",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 325,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          139.215,
+          244.301,
+          198.209,
+          263.2
+        ],
+        "content": "x and D ∈ Rd",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 324,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          173.301,
+          194.914,
+          540.001,
+          222.623
+        ],
+        "content": "1 n i ∥yi − Bxi∥2 = Tr(Syy) − 2Tr(SyxB⊤) + Tr(BSxxB⊤) . (15)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 326,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          171.092,
+          175.619,
+          175.064,
+          189.95
+        ],
+        "id": 329,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              171.092,
+              182.977,
+              175.064,
+              189.95
+            ],
+            "content": "1",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              171.092,
+              175.619,
+              175.064,
+              182.592
+            ],
+            "content": "2",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          255.625,
+          175.619,
+          259.597,
+          189.95
+        ],
+        "id": 331,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              255.625,
+              182.977,
+              259.597,
+              189.95
+            ],
+            "content": "1",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              255.625,
+              175.619,
+              259.597,
+              182.592
+            ],
+            "content": "2",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          169.896,
+          170.693,
+          254.429,
+          186.252
+        ],
+        "content": "xx and A := SyxS−",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "id": 330,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          170.733,
+          169.899,
+          183.266
+        ],
+        "content": "Substituting B′ := BS",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 328,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          248.202,
+          170.693,
+          498.1,
+          183.266
+        ],
+        "content": "xx (so that SyxB⊤ = A(B′)⊤ and BSxxB⊤ = B′(B′)⊤):",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "id": 332,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          216.66,
+          130.433,
+          539.999,
+          166.093
+        ],
+        "content": "= Tr(Syy) − 2Tr(A(B′)⊤) + Tr(B′(B′)⊤) (16) = Tr(Syy) − Tr(AA⊤) + ∥B′ − A∥2F . (17)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 333,
+        "level": "7",
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          352.002,
+          105.117,
+          539.69,
+          130.7
+        ],
+        "id": 335,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              353.197,
+              123.727,
+              357.169,
+              130.7
+            ],
+            "content": "1",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              352.002,
+              105.117,
+              539.69,
+              124.016
+            ],
+            "content": "2 xx is invertible, minimizing over rank-≤ k",
+            "font": "CMR7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          105.117,
+          351.998,
+          124.016
+        ],
+        "content": "Since Tr(Syy) − Tr(AA⊤) does not depend on B, and since S",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 334,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          87.572,
+          540.005,
+          112.06
+        ],
+        "content": "matrices B is equivalent to minimizing ∥B′ −A∥2F over rank-≤ k matrices B′. By the Eckart–Young–Mirsky theorem (Eckart and Young, 1936; Mirsky, 1960), the best rank-k approximation of A in Frobenius norm is",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 336,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          322.359,
+          73.689,
+          326.331,
+          88.02
+        ],
+        "id": 338,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              322.359,
+              81.047,
+              326.331,
+              88.02
+            ],
+            "content": "1",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.359,
+              73.689,
+              326.331,
+              80.662
+            ],
+            "content": "2",
+            "font": "CMR7",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          67.435,
+          321.164,
+          84.321
+        ],
+        "content": "(B′)⋆ = UkΣkVk⊤. Transforming back via B⋆ = (B′)⋆S−",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 337,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          314.937,
+          68.802,
+          439.963,
+          81.335
+        ],
+        "content": "xx gives the stated solution.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 339,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          670.974,
+          540.004,
+          719.392
+        ],
+        "content": "Non-uniqueness of the factorization. The product B⋆ is uniquely determined (assuming distinct singular values), but the factorization B⋆ = D⋆E⋆ is not: for any invertible M ∈ Rk×k, the pair (D⋆M, M−1E⋆) yields the same composed map. Hence E⋆ is determined only up to left-multiplication by an invertible matrix.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 341,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          158.341,
+          482.155,
+          657.941
+        ],
+        "id": 342,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              625.257,
+              482.155,
+              657.941
+            ],
+            "content": "A.4 Full parameterization For simplicity, assume dx = dy = d and that there exist orthogonal matrices Qx,Qy such that",
+            "font": "SFBX1200",
+            "font size": 11.955,
+            "kids": [
+              {
+                "bounding box": [
+                  159.994,
+                  570.918,
+                  540.005,
+                  618.367
+                ],
+                "id": 63,
+                "level": "8",
+                "list items": [
+                  {
+                    "bounding box": [
+                      159.994,
+                      604.594,
+                      539.999,
+                      618.367
+                    ],
+                    "content": "Sxx = QxΛxQ⊤x , Λx = diag K2 + Γ(xs), Γ(xn) , (18)",
+                    "font": "CMBX10",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 15,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      160.221,
+                      570.918,
+                      540.005,
+                      601.452
+                    ],
+                    "content": "Syy = QyΛyQ⊤y , Λy = diag K2 + Γ(ys), Γ(yn) , (19) Sxy = QxΛxyQ⊤y , Λxy = diag K2, Γxy , (20)",
+                    "font": "CMBX10",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 15,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "english letters",
+                "page number": 15,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  72.0,
+                  528.118,
+                  540.0,
+                  563.804
+                ],
+                "content": "where K = diag(κ1,...,κk) with κ1 ≥ ··· ≥ κk > 0, Γ(xs) = diag(γ1x,...,γkx), Γ(ys) = diag(γ1y,...,γky), Γ(xn) = diag(˜γ1x,...,γ˜dx−k), Γ(yn) = diag(˜γ1y,...,γ˜dy−k), and Γxy = diag(η1,...,ηd−k) with 0 ≤ ηj ≤ γ˜jxγ˜jy.",
+                "font": "CMR10",
+                "font size": 9.963,
+                "id": 64,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              504.7,
+              283.461,
+              519.537
+            ],
+            "content": "A.5 Singular-value decompositions",
+            "font": "SFBX1200",
+            "font size": 11.955,
+            "kids": [
+              {
+                "bounding box": [
+                  72.0,
+                  462.942,
+                  540.005,
+                  499.445
+                ],
+                "content": "Lemma A.3 (Singular values of C and A). Under the spiked model, C and A are block diagonal in the bases defined by Qx,Qy. Their singular values are the union of the signal values ρi,τi and nuisance values νj,ξj given in equation 5.",
+                "font": "SFTI1000",
+                "font size": 9.963,
+                "id": 66,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  72.0,
+                  431.571,
+                  539.998,
+                  457.353
+                ],
+                "content": "Proof. In the bases Qx,Qy, both C = S−xx1/2SxyS−yy1/2 and A = SyxS−xx1/2 are block diagonal with signal and nuisance blocks. Direct computation on each block yields the stated expressions.",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 67,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  72.0,
+                  390.463,
+                  540.005,
+                  426.966
+                ],
+                "content": "Corollary A.4 (Recovery conditions). If mini ρi > maxj νj, the top-k singular vectors of C align with the shared signal block, so the CA solution from Theorem A.1 recovers the shared signal subspace (up to rotation) and discards modality-specific noise. The analogous statement holds for A and CP with τi,ξj.",
+                "font": "SFTI1000",
+                "font size": 9.963,
+                "id": 68,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              362.633,
+              248.29,
+              377.47
+            ],
+            "content": "A.6 Proof of Proposition 3.1",
+            "font": "SFBX1200",
+            "font size": 11.955,
+            "kids": [
+              {
+                "bounding box": [
+                  72.0,
+                  314.549,
+                  540.0,
+                  357.358
+                ],
+                "content": "The singular-value expressions follow from Lemma A.3. For the ratio identity, we consider the homogeneous case (κi ≡ κ, γix ≡ γx, γiy ≡ γy, γ˜jx ≡ γ˜x, γ˜jy ≡ γ˜y, ηj ≡ η), in which all ρi collapse to a single value ρ, and likewise τi ≡ τ, νj ≡ ν, ξj ≡ ξ. Substituting equation 5 into ∆CA/∆CP = (ρ/ν)/(τ/ξ) yields",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 69,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  265.171,
+                  285.102,
+                  285.041,
+                  309.385
+                ],
+                "content": "∆CA ∆CP",
+                "font": "CMR7",
+                "font size": 6.974,
+                "id": 70,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  289.502,
+                  292.682,
+                  297.251,
+                  302.645
+                ],
+                "content": "=",
+                "font": "CMR10",
+                "font size": 9.963,
+                "id": 72,
+                "level": "9",
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  311.176,
+                  285.848,
+                  343.314,
+                  310.021
+                ],
+                "content": "γ˜y κ2 + γy",
+                "font": "CMMI10",
+                "font size": 9.963,
+                "id": 74,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  345.258,
+                  291.975,
+                  539.999,
+                  304.508
+                ],
+                "content": ". (21)",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 76,
+                "level": "10",
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  72.0,
+                  265.915,
+                  388.346,
+                  278.448
+                ],
+                "content": "In the heterogeneous case, the same substitution yields the upper bound",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 77,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  251.336,
+                  230.229,
+                  283.416,
+                  254.512
+                ],
+                "content": "∆CA ∆CP ≤",
+                "font": "CMR7",
+                "font size": 9.963,
+                "id": 78,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  297.341,
+                  228.946,
+                  357.897,
+                  258.336
+                ],
+                "content": "maxj γ˜jy mini(κ2i + γiy)",
+                "font": "CMR10",
+                "font size": 9.963,
+                "id": 81,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  359.093,
+                  237.102,
+                  539.996,
+                  249.635
+                ],
+                "content": ", (22)",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 83,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  72.0,
+                  184.888,
+                  540.001,
+                  223.754
+                ],
+                "content": "since the indices achieving mini ρi and mini τi (and similarly the nuisance maxima) need not coincide. Monotonicity of ∆CA/∆CP in each γ˜jy follows from ∆CP being invariant in γ˜jy (since ξj = ηj/ γ˜jx does not depend on target nuisance variance) and ∆CA being non-increasing in νj, with νj non-increasing in γ˜jy.",
+                "font": "SFRM1000",
+                "font size": 9.963,
+                "id": 84,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              158.341,
+              248.29,
+              173.178
+            ],
+            "content": "A.7 Proof of Proposition 3.2",
+            "font": "SFBX1200",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "arabic numbers",
+        "page number": 15,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          140.494,
+          501.348,
+          153.066
+        ],
+        "content": "We prove the CA case; the CP case is identical with ρi,νj replaced by τi,ξj and C replaced by A.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 343,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          116.583,
+          540.001,
+          141.111
+        ],
+        "content": "By Lemma A.3, the singular values of C are the union {ρi}i∈ k ∪{νj}j∈ d−k , with each ρi corresponding to a singular vector in the signal block and each νj to a singular vector in the nuisance block.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 344,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          68.763,
+          539.999,
+          117.2
+        ],
+        "content": "Let i be any signal index with ρi > maxj νj. Then ρi exceeds every nuisance singular value, so at most k − 1 values of C (the other signal values) can exceed ρi, placing ρi among the top k singular values. Since this holds for each of the rCA signal indices with ρi > maxj νj, the top-k singular vectors contain at least rCA vectors from the signal block.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 345,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          705.504,
+          261.654,
+          723.164
+        ],
+        "content": "B Implementation Details",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 347,
+        "level": "Subtitle",
+        "page number": 16,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          606.752,
+          540.003,
+          697.574
+        ],
+        "content": "Linear experiments. All linear experiments use closed-form solvers on population covariances drawn from the spiked model of Section 3. We set d = 20, k = 3 shared dimensions with signal strengths κ = (3.0,2.0,1.5), and consider a regime with clean signal in the target modality (γy(s) = 0.05) but large target nuisance variance (γy(n) = 50.0), with source-side parameters γx(s) = 0.5, γx(n) = 1.0. We sweep the normalized noise correlation ν = η/ γx(n)γy(n) ∈ [0,0.95] and report subspace distance (averaged over 20 random rotations) and theoretical separation ratios. Subspace distances are computed as ∥PUˆ − PU∥F/",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 348,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          377.3,
+          615.243,
+          385.602,
+          632.528
+        ],
+        "content": "√",
+        "font": "CMSY10",
+        "font size": 9.963,
+        "id": 350,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          577.253,
+          540.004,
+          625.651
+        ],
+        "content": "2k where P denotes the orthogonal projector, and averaged over 20 random rotations of the signal/noise bases. No optimization is involved; the solvers compute exact CA (CCA) and CP (truncated reduced-rank regression) solutions from the covariance matrices on a single CPU.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 352,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          432.207,
+          540.004,
+          564.312
+        ],
+        "content": "Stereo-dSprites. Two virtual cameras observe a shared 2D object (Square, Ellipse, or Heart) on a 64×64 grayscale canvas. World position Pworld ∈ [−0.5,0.5]2 serves as the aligned nuisance; camera jitter σjitter ∈ {0.0,0.05,0.2,0.5} controls de-alignment via per-view translation and rotation. View X receives Gaussian pixel noise σstrong = 0.1; View Y receives σweak ∈ {0.2,0.5,0.9}. Each modality is encoded by a separate 4-layer CNN (1 × 64 × 64 → 128-dim) with ReLU activations. CA uses VICReg (25× invariance +25× variance +1× covariance) on 32-dimensional projections. CP uses MSE reconstruction via a transposedconvolutional decoder. All models are trained with Adam (lr=10−3), batch size 64, for up to 100 epochs with early stopping (patience 5). Downstream evaluation uses a linear probe on frozen encoder features for 3-class shape classification, swept over 9 probe sizes (100 to ∼6,000 samples) and averaged over 5 seeds. We sweep nsamples ∈ {10k,50k,100k} (see Figure 11 for 10k,50k results). The entire sweep took approximately 24 hours on one L40S GPU.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 353,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          323.027,
+          540.002,
+          419.267
+        ],
+        "content": "Stereo-3DShapes. Built from Google’s 3DShapes dataset (480K RGB images). Canonical images, one per shape at fixed hue, scale, and orientation, are rendered into stereo pairs via affine warping with the same jitter and noise protocol as dSprites. The signal is 4-class shape (Cube, Cylinder, Sphere, Capsule); additional nuisance factors include floor hue (10 values), wall hue (10), object hue (10), scale (8), and orientation (15), all fixed per canonical image and shared across views. Encoders are 4-layer CNNs (3 × 64 × 64 → 128-dim; channels 3 → 32 → 32 → 64 → 64, stride 2) with FC layers 1024 → 256 → 128. Training and evaluation follow the dSprites protocol with nsamples = 100k, 10 probe sizes (100 to 10,000), and 3–4 seeds. The entire sweep took approximately 24 hours on one L40S GPU.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 354,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          106.251,
+          540.003,
+          310.086
+        ],
+        "content": "MS-COCO image-caption. We pair each COCO 2017 image with its associated caption, using the dominant-object category (largest bounding box, 80 classes) as the downstream label. Images are 3×224×224 RGB, encoded by a ResNet-18 trained from scratch; captions are word-tokenized to length 64 and encoded by a 2-layer Transformer (4 heads, dembed = 256) followed by mean pooling and a linear projection to 128 dimensions. Neither encoder uses pretrained weights. Nuisance is injected into the image modality: each image is passed through k independent distortion groups (color cast, exposure, contrast, texture, saturation, spatial) drawn uniformly from six groups, with k controlled by a noise level ℓ ∈ {0.0,0.2,0.5} (expected k ≈ 6ℓ groups active). Within each active group, a random transform is applied at continuous intensity t ∼ Uniform(0.3,1.0), so every sample receives a unique pixel-level distortion. Training uses AdamW (lr = 10−3, weight-decay = 10−4) with 5-epoch linear warmup into cosine annealing, batch size 1024 per GPU across 4–6 GPUs via DDP, for 50 epochs. CA uses VICReg on projected embeddings from both encoders (invariance 25×, variance 25×, covariance 1×); CPI→T is the image encoder feeding a caption decoder under cross-entropy loss; CPT→I is the text encoder feeding a pixel decoder under MSE. Evaluation: each method is evaluated on its source /bottleneck encoder. For CA, the image encoder is probed (a symmetric choice both encoders are equally optimized under VICReg). For CPI→T, the image encoder (source). For CPT→I, the text encoder (source). Each frozen representation is fed to a linear probe trained for 30 epochs on the 80-class label; we report top-1 accuracy. The experiment took approximately 24 hours on 4 RTX6000 GPUs.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 355,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          62.436,
+          540.004,
+          93.31
+        ],
+        "content": "Astrophysical cross-modal. We pair LAMOST optical spectra (DR8, resolution R ∼ 1800, range 3690– 9100Å) with light curves from two photometric surveys — Kepler (DR25, 30-min cadence, ∼4year baseline;",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 356,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          563.377,
+          540.003,
+          719.372
+        ],
+        "content": "94,876 cross-matched observations) and TESS (QLP lightcurves; 821,878 cross-matched stars). Each modality uses its own pretrained unimodal encoder, frozen during cross-modal training. LAMOST spectra are encoded by a ’1d ViT’ that produces a 2048-dim CLS token; light curves are encoded by a multichannel network with parallel flux and frequency (ACF and FFT/Lomb–Scargle) branches combined through a mixer, producing a 1024-dim mean-pooled embedding. Both encoders were pretrained independently on their respective modalities before any cross-modal training. On these frozen features we train lightweight heads for each method: CA uses two projection MLPs (2048 → 512 and 1024 → 512) with a VICReg objective (invariance 25×, variance 25×, covariance 1×); CP uses a cross-predictor MLP with a 512-dim bottleneck and MSE loss. Optimization: AdamW (lr=10−3, weight decay=10−4) with cosine annealing, batch size 256, early stopping on validation loss. Evaluation uses a linear probe on the cross-modal representation (concatenated projections for CA, bottleneck activations for CP) against held-out stellar labels — log g, age (regression), and binarity (classification). The cross-modal experiment took approximately 4 hours on one RTX6000 GPU.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 358,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          518.621,
+          260.238,
+          554.31
+        ],
+        "content": "Algorithm 1 Recovery Regime Prediction Require: Paired embeddings Zx ∈ Rn×d",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 360,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          511.664,
+          393.286,
+          537.52
+        ],
+        "content": "y; labels Y ∈ Rn×L Ensure: ∆ˆCA, ∆ˆCP, predicted regime",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 363,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          251.961,
+          518.621,
+          309.449,
+          537.52
+        ],
+        "content": "x, Zy ∈ Rn×d",
+        "font": "CMMI7",
+        "font size": 9.963,
+        "id": 362,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          77.367,
+          402.692,
+          478.233,
+          512.281
+        ],
+        "id": 364,
+        "level": "11",
+        "list items": [
+          {
+            "bounding box": [
+              77.367,
+              499.748,
+              302.767,
+              512.281
+            ],
+            "content": "1: {CA: read separation ratio from CCA spectrum}",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              487.754,
+              397.265,
+              501.009
+            ],
+            "content": "2: Compute SVD of Cˆ = (Σˆxx + εI)−1/2Σˆxy(Σˆyy + εI)−1/2; obtain ϕCCA",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              475.838,
+              467.496,
+              488.371
+            ],
+            "content": "3: Classify CCA components as signal/nuisance by elbow detection on per-component R2",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              457.517,
+              305.673,
+              477.071
+            ],
+            "content": "4: ∆ˆCA ← min(ϕCCA[signal])/ max(ϕCCA[nuisance])",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              451.927,
+              312.814,
+              464.46
+            ],
+            "content": "5: {CP: read separation ratio from A-SVD spectrum}",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              439.933,
+              322.243,
+              453.188
+            ],
+            "content": "6: Compute SVD of Aˆ = Σˆyx(Σˆxx + εI)−1/2; obtain σA",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              428.017,
+              478.233,
+              440.55
+            ],
+            "content": "7: Classify A-SVD components as signal/nuisance by elbow detection on per-component R2",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              409.696,
+              284.366,
+              429.25
+            ],
+            "content": "8: ∆ˆCP ← min(σA[signal])/ max(σA[nuisance])",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              77.367,
+              402.692,
+              267.593,
+              417.297
+            ],
+            "content": "9: return (∆ˆCA,∆ˆCP) and regime per ≷ 1",
+            "font": "SFRM0800",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 9,
+        "numbering style": "arabic numbers",
+        "page number": 17,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          353.019,
+          432.455,
+          371.938
+        ],
+        "content": "Recovery regime prediction. The pipeline takes paired embeddings Zx ∈ Rn×d",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 366,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          432.455,
+          353.019,
+          489.336,
+          371.918
+        ],
+        "content": "x, Zy ∈ Rn×d",
+        "font": "CMMI7",
+        "font size": 9.963,
+        "id": 367,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          250.46,
+          540.004,
+          371.918
+        ],
+        "content": "y and labels Y ∈ Rn×L for a labeled subsample. Under the spiked model, ∆ˆCA and ∆ˆCP are singular-value ratios of C and A respectively: signal and nuisance singular values appear together in each spectrum, distinguished only by which block of the spiked decomposition they belong to. We estimate each ∆ directly from the corresponding spectrum, classifying each component as signal or nuisance by its predictive power for the labels. For each decomposition, 5-fold Ridge regression of the component scores against the labels yields a per-component R2 value (summed across label columns for the classification statistic), and piecewise-linear elbow detection on the sorted R2 curve identifies the breakpoint between the signal block and the nuisance floor. The labeled subsample need not cover the full training set: in our experiments, n < 1,000 samples suffice.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 368,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          705.504,
+          228.015,
+          723.164
+        ],
+        "content": "C Additional Figures",
+        "font": "SFBX1440",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 370,
+        "level": "Subtitle",
+        "page number": 18,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.0,
+          506.854,
+          539.989,
+          685.427
+        ],
+        "id": 371,
+        "page number": 18,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          389.683,
+          540.004,
+          497.878
+        ],
+        "id": 372,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              389.683,
+              540.004,
+              497.878
+            ],
+            "content": "Figure 7: Partial recovery under heterogeneous signal spectra. Empirical recovery count r (number of signal directions with squared projection ≥ 0.8 onto the top-k recovered subspace) across the (¯κ, ν) plane, for signal spread ρ ∈ {1.0, 0.8, 0.6, 0.4} (columns, homogeneous → heterogeneous). (Top): CA. (Bottom): CP. Signal strengths follow a geometric decay κi = κρ¯ i−1 with k = 5, d = 20; noise parameters γx = 1, γy = 0.05, γ˜y = 5. Overlaid curves: ∆CA = 1 (solid) and ∆CP = 1 (dashed) from the homogeneous theory of figure 2. At ρ = 1 the transition is sharp (r ∈ {0,k}) and the ∆ = 1 contours align with the empirical boundary, reproducing figure 2. As ρ decreases, intermediate counts r ∈ {1,...,k − 1} fill a widening band in which stronger signal directions are recovered first; the four-region phase diagram smears into a graded continuum. Averaged over 10 seeds with n = 5,000.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 375,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 18,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          189.0,
+          535.007,
+          422.999,
+          680.124
+        ],
+        "id": 374,
+        "page number": 19,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          71.996,
+          195.95,
+          540.003,
+          526.011
+        ],
+        "id": 375,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              71.996,
+              429.791,
+              540.003,
+              526.011
+            ],
+            "content": "Figure 8: Separation ratios ∆CA and ∆CP as a function of target nuisance variance γ˜y, validating Proposition 3.1. Theory curves (dashed) are computed from the closed-form expressions in Theorems A.1 and A.2; empirical curves (solid) are estimated from finite-sample covariances averaged over 20 random rotations. As γ˜y grows, ∆CA increases unboundedly — CA’s symmetric whitening suppresses high-variance nuisance on both sides — while ∆CP remains approximately constant, since ξj = ηj/ γ˜jx does not depend on target nuisance variance: source-side whitening operates only on the source modality. Theory and empirical curves are in close agreement throughout, confirming the accuracy of the closed-form predictions at finite sample sizes.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  165.599,
+                  229.434,
+                  446.395,
+                  341.681
+                ],
+                "id": 44,
+                "page number": 19,
+                "pdfua_tag": "Figure",
+                "source": "2606.11190v1_images/imageFile8.png",
+                "type": "image"
+              }
+            ],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.0,
+              195.95,
+              539.996,
+              220.438
+            ],
+            "content": "Figure 9: The variance trap: signal recovery vs. reconstruction quality for CA+Probe and direct CP, using the same parameter regime as Figure 3 (κ = (3.0,2.0,1.5), γ˜y = 50.0, γ˜x = 1.0). Green shading marks the",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 19,
+        "pdfua_tag": "L",
+        "previous list id": 372,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          112.264,
+          540.004,
+          196.548
+        ],
+        "content": "regime where ∆CA > 1 > ∆CP. (a) Signal prediction MSE: in the green region, CA+Probe achieves near-zero signal MSE while CP’s signal error climbs steeply, confirming that CP encodes the wrong subspace. (b) Total prediction MSE: CP achieves lower total MSE than CA+Probe across the same region, because it successfully reconstructs the high-variance nuisance components — a task at which CA+Probe, having discarded nuisance directions, cannot compete. Together, the two panels illustrate the core danger of using reconstruction error as a proxy for signal recovery: CP can achieve lower loss than CA while failing to recover the signal, precisely because the MSE objective does not distinguish signal from nuisance.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 376,
+        "page number": 19,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          493.674,
+          296.643,
+          662.302
+        ],
+        "id": 378,
+        "page number": 20,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile9.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          315.362,
+          493.674,
+          540.005,
+          662.302
+        ],
+        "id": 380,
+        "page number": 20,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile10.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          160.481,
+          476.839,
+          453.337,
+          488.128
+        ],
+        "content": "(a) dSprites (b) Shape3D",
+        "font": "SFRM0900",
+        "font size": 8.966,
+        "id": 379,
+        "page number": 20,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          98.343,
+          455.956,
+          513.657,
+          468.489
+        ],
+        "content": "Figure 10: Comparison between VICReg and DeepCCA for dSprites and Shape3D experiments",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 381,
+        "page number": 20,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          72.0,
+          163.572,
+          296.643,
+          332.2
+        ],
+        "id": 382,
+        "page number": 20,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile11.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          315.362,
+          163.572,
+          540.005,
+          332.2
+        ],
+        "id": 383,
+        "page number": 20,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile12.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          130.088,
+          540.004,
+          154.576
+        ],
+        "id": 384,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              130.088,
+              540.004,
+              154.576
+            ],
+            "content": "Figure 11: Stereo-dSprites accuracy vs. nuisance alignment at 10k (Left) and 50k (Right) pretraining samples. The CA–CP crossover from Figure 4 persists across dataset scales.",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 20,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 387,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 20,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          301.989,
+          540.014,
+          632.561
+        ],
+        "id": 386,
+        "page number": 21,
+        "pdfua_tag": "Figure",
+        "source": "2606.11190v1_images/imageFile13.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          72.0,
+          256.549,
+          540.003,
+          293.013
+        ],
+        "id": 387,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              72.0,
+              256.549,
+              540.003,
+              293.013
+            ],
+            "content": "Figure 12: Signal–nuisance decomposition underlying the regime predictions of Table 1. Each panel shows the sorted singular values (gray bars, left axis) and per-component R2 against log g (teal line, right axis) used by Algorithm 1 to classify components as signal (green shading) or nuisance (red shading).",
+            "font": "SFRM1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 21,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 21,
+        "pdfua_tag": "L",
+        "previous list id": 384,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.0,
+          159.829,
+          540.002,
+          256.815
+        ],
+        "content": "Dashed horizontal line: nuisance floor maxj νˆj (CCA panels) or maxj ξˆj (A-SVD panels); ∆ˆ > 1 iff every classified signal singular value exceeds the nuisance floor. (Top): LAMOST × Kepler — both decompositions have signal components above the nuisance floor (∆ˆCA = 1.13, ∆ˆCP = 2.22; Both regime). (Bottom): LAMOST × TESS — no CCA component predicts log g above noise (R2 ≈ 0 across all components, zero signal detected); the A-SVD has one candidate signal component but below the nuisance floor. Both ratios fall below one (Neither regime). The contrast between the two rows — same LAMOST encoder, same protocol, different photometric instrument — shows that instrument quality determines the signal–nuisance separation and hence the regime placement.",
+        "font": "SFRM1000",
+        "font size": 9.963,
+        "id": 388,
+        "page number": 21,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 21,
+    "title": "When to Align, When to Predict: A Phase Diagram for Multimodal Learning"
+  }
+}

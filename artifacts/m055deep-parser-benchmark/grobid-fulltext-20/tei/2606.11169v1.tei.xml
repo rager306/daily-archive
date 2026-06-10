@@ -1,0 +1,3018 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Piper: A Programmable Distributed Training System</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-09">9 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Megan</forename><surname>Frisella</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shubham</forename><surname>Tiwari</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Andy</forename><surname>Ruan</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yi</forename><surname>Pan</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">University of Washington and Shanghai Jiao Tong University Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Parker</forename><surname>Gustafson</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mat</forename><surname>Jacob</surname></persName>
+							<affiliation key="aff5">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gilbert</forename><surname>Bernstein</surname></persName>
+							<affiliation key="aff6">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stephanie</forename><surname>Wang</surname></persName>
+							<affiliation key="aff7">
+								<orgName type="institution">University of Washington Seattle</orgName>
+								<address>
+									<region>WA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Piper: A Programmable Distributed Training System</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-09">9 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">40EF75AD202299C0C01EB9682FD69491</idno>
+					<idno type="arXiv">arXiv:2606.11169v1[cs.DC]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T11:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large-scale model training increasingly relies on composing multiple parallelism strategies, such as data, pipeline, and expert parallelism, together with memory-saving optimizations like ZeRO. Deployed systems for foundation model pretraining often rely on human experts to manually design a highlevel parallelism strategy then implement the corresponding low-level execution strategy, making it difficult to adapt the system to new strategies. Meanwhile, many general-purpose frameworks are more flexible but their implementations are still tied to a fixed set of common parallelism strategies, making it challenging to integrate state-of-the-art strategies.</p><p>We present Piper, a user-controllable distributed training system that decouples the strategy from the runtime implementation. Piper allows users to declare a comprehensive distributed training strategy with a small set of model annotations and scheduling directives. Each directive applies a transformation on Piper's intermediate representation (IR), a unified global training DAG that represents all computation and communication. Using this IR, Piper compiles per-device execution plans and executes them with a distributed runtime agnostic to the strategy. We show that the combined system maintains performance parity on commonly available strategies such as ZeRO, while also enabling additional performance and memory efficiency gains through joint scheduling of compute and communication in composed parallelism strategies such as DeepSeek-V3's DualPipe.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>As machine learning (ML) models have increased in size, pretraining now requires scaling across hundreds to thousands of accelerators. This is challenging because there are many ways to shard and replicate the model, and each introduces different and possibly interacting communication overheads. For example, modern workloads now use combinations of data (DP), tensor (TP), expert (EP), context (CP) and pipeline (PP) parallelism together with memory-saving optimizations such as ZeRO <ref type="bibr" target="#b37">[38]</ref>. There is no one-size fits-all solution, as the right strategy depends on the workload and hardware. A workload's distributed training strategy can be decomposed into: (1) the high-level parallelism strategy, such as the dimensions along which to shard and replicate the model and activations, and (2) each device's low-level strategy for executing the compute and communication operations dictated by the high-level parallelism strategy. The former strategy determines the minimum memory, compute, and communication load per-device, which in turn upper-bounds the overall system throughput. The latter strategy determines how close the system can get to the upper bound by effectively scheduling each device's resources. The two strategies together determine the workload's actual throughput.</p><p>The sheer size of the combined space of strategies has so far made full automation intractable. Thus, while some solutions can find an optimal strategy within a particular subspace <ref type="bibr" target="#b7">[9,</ref><ref type="bibr" target="#b32">33]</ref>, the systems deployed in practice still rely overwhelmingly on human experts. For example, DeepSeek-V3 introduced DualPipe, a custom PP schedule that when composed with EP enables each device to use local microbatch overlapping to hide EP communication overheads <ref type="bibr" target="#b10">[12]</ref>. This solution required human-engineered codesign of the high-level parallelism strategy with a hand-implemented perdevice execution strategy to manage intra-GPU resources, such as the streaming multiprocessors (SMs) allocated to compute vs. communication. Such systems require high effort; experts must design and implement a fixed strategy that is specialized to a particular model and cluster. This results in a system that is hard to adapt to new strategies.</p><p>On the other hand, general-purpose frameworks such as Megatron <ref type="bibr" target="#b39">[40]</ref>, DeepSpeed <ref type="bibr" target="#b0">[1]</ref>, and TorchTitan <ref type="bibr" target="#b21">[23]</ref> offer a more flexible and model-agnostic interface, with knobs for tuning the distributed training strategy. However, these frameworks eagerly dispatch operations for each high-level parallelism dimension as if the dimensions are independent, making it challenging to jointly schedule operations from composed strategies. For example, conceptually DualPipe shares a GPU between two PP microbatches; this is challenging to implement in existing frameworks that assume that each microbatch is allocated the full GPU. While compilerbased frameworks such as JAX/XLA present a more generic tensor placement abstraction <ref type="bibr" target="#b48">[49]</ref> instead of a fixed set of knobs, they cannot easily support arbitrary PP schedules nor control over each device's resources. Thus, again it requires high effort to introduce novel strategies such as DualPipe.</p><p>The key problem we address is extensibility in distributed training systems. Our goal is to build a system that minimizes the effort needed to specify and implement an arbitrary distributed training strategy. Thus, we build a system that provides good performance for common strategies and control when needed for higher performance, making it amenable to both expert engineering and automated search. Our key insight is to decouple what the overall execution strategy should be from how it is realized by the runtime.</p><p>The challenges are to: (1) design a user scheduling API that enables simple specification yet sufficient control over the distributed training strategy, (2) design an intermediate representation <ref type="bibr">(IR)</ref> to interface between the user API and system runtime, and (3) build an efficient system runtime to execute an arbitrary strategy.</p><p>Inspired by previous works on SPMD-style tensor annotations <ref type="bibr" target="#b48">[49]</ref> and PP scheduling <ref type="bibr" target="#b11">[13,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b47">48]</ref>, we first propose an API for placing different tensors in an arbitrary PyTorch model. This can be used to specify high-level parallelism strategies such as the pipeline-parallel stage boundaries or whether to use expert parallelism.</p><p>Next, we design an API for specifying the corresponding low-level execution strategy for the execution order of all operators on each device. A strawman solution is to ask the user to fully specify the strategy by writing their own scheduler for operators over intra-GPU resources such as CUDA streams. This provides users with full control but is impractical. On the other hand, the API must also be expressive enough to capture novel strategies for intra-GPU resource allocation such as DualPipe.</p><p>To address this challenge, we expose a set of directives for lowering the system's IR to a per-device execution strategy. We design an IR that captures all compute and communication operations in a global training DAG. The compiler begins by extracting a non-distributed DAG from the model code. Then, each directive specified by the user transforms the IR. Directives include transforms such as splitting batches into microbatches to increase overlap opportunity and assigning resources such as device streams to chunks. To provide the user more control when needed, we allow the user to specify ordering constraints between compute nodes. We then use a generic scheduling policy to decide the execution order on each device. This enables the user to control the granularity of scheduling and make some decisions while the systems fills in the rest. We guarantee the safety of transformations, i.e. each user directive should be compatible with the original high-level strategy. PP rank 0 gets the first and last layers, etc. We show a variant of DualPipe known as DualPipeV <ref type="bibr" target="#b34">[35]</ref> that places each layer on one PP rank instead of two.</p><p>Finally, we build an efficient and flexible distributed runtime to execute the combined strategy. We use a centralized scheduler to produce and distribute each device's local execution strategy. Each worker loads its associated model weights, then performs local scheduling to allocate shared device resources such as memory, communicators, and GPU streams. Compared to the original model definition, the resulting execution of tensor operators may be distributed, overlapped, out-of-order, etc.; Piper guarantees that the global execution plan still respects the data and temporal dependencies specified by the model definition and user directives.</p><p>Thus, we present Piper. We implement Piper as a torch.compile <ref type="bibr" target="#b2">[4]</ref> backend and use Ray to implement the distributed runtime. We show that Piper can match the performance of generic training frameworks on widely supported strategies, while further enabling concise expression of novel strategies such as DualPipe, producing an overall 6-30% improvement in throughput across baselines including Megatron and TorchTitan. We also demonstrate that Piper can better support arbitrary parallelism strategies through a case study combining PP with different ZeRO levels. While other generic training frameworks fail to support certain combinations, Piper can support all strategies, enabling 3-8x larger batch sizes. Our contributions include</p><p>• A user scheduling interface for controlling the highand low-level execution strategy for inter-and intradevice parallelism.</p><p>• A unified IR for global training DAGs that enables joint scheduling of communication and computation inserted by different parallelism strategies.</p><p>• An efficient distributed runtime that is strategy-agnostic.</p><p>• Our end-to-end evaluation shows that Piper matches the performance of general-purpose frameworks on widely supported strategies, while improving performance and memory efficiency on composed strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head><p>We first overview some possible choices in high-level parallelism strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DP and ZeRO.</head><p>In DP <ref type="bibr" target="#b1">[3,</ref><ref type="bibr" target="#b20">22]</ref>, each worker holds a replica of the model weights, computes a local gradient, then averages the gradients across all replicas using an allreduce (or allgather and reduce-scatter). ZeRO <ref type="bibr" target="#b37">[38]</ref>, also known as fully sharded DP <ref type="bibr" target="#b54">[55]</ref>, is a DP variant that reduces redundant state across workers by sharding the optimizer, gradients, and/or the model weights across DP ranks. States are rematerialized with allgather when needed, and resharded by either dropping the remote shards or reduce-scatter in the case of gradients. Communication operations can be overlapped with computation of the preceding or following compute operations.</p><p>TP, EP, and CP. Each worker holds a shard of either the model weights, e.g., a subset of experts in EP <ref type="bibr" target="#b19">[21]</ref> or a subset of rows/columns in TP <ref type="bibr" target="#b39">[40]</ref>, or the activations, e.g., a subsequence of the context in CP <ref type="bibr" target="#b49">[50]</ref>. Workers execute collective communication according to the sharding plan and tensor operations to ensure that all activations are correctly aggregated. Compared to DP, these collectives execute on the critical path of a batch's computations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PP.</head><p>Each worker holds a shard of the model layers. Because of the sequential dependency between model layers, PP schedules use multiple microbatches to overlap execution across devices. The performance of a PP strategy depends on a complex set of factors including bubbles between devices and the amount of communication overhead. Thus, many PP schedules have been proposed to balance between such factors <ref type="bibr" target="#b15">[17,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b33">34]</ref>. PP adds send-receive communications when activations are passed between "stages", i.e. shards placed on different devices. Unlike the above parallelism strategies, PP is most easily executed with an MPMD (multiple program multiple data) approach due to each rank needing to execute a different set and order of operations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Composition.</head><p>Given the need to scale distributed training to larger models and clusters, common practice uses multiple parallelism dimensions to ensure that models can fit in memory and maximize hardware bandwidth. For example, Figure <ref type="figure" target="#fig_0">1</ref> shows a DualPipe-like placement that combines PP across layers with EP for the expert layer and DP for the non-expert attention layer. The PP schedule (Figure <ref type="figure">2</ref>) is carefully designed to enable overlapping of pairs of forwards and backwards microbatches (Figure <ref type="figure">3b</ref>). This strategy is a variant of DualPipe known as DualPipeV <ref type="bibr" target="#b34">[35]</ref>; it uses microbatch overlapping as in DualPipe but places each stage on one PP rank instead of two.</p><p>As models are becoming more heterogeneous <ref type="bibr" target="#b51">[52]</ref>, the need to be able to specify different strategies per submodule is also becoming critical. For example, the Qwen3-Next models use diverse attention layers <ref type="bibr" target="#b5">[7]</ref>, and multimodal models use modality-specific encoders/decoders composed with the transformer backbone <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b52">53]</ref>. A2A Attn MLP A2A LN A2A A2A LN Compute stream Comm stream MLP(B) MLP(W) Attn(B) Attn(W) A2A Attn MLP A2A LN A2A A2A LN Compute stream MLP(B) MLP(W) Attn(B) Attn(W) A2A Attn MLP A2A LN Compute stream Comm stream A2A Attn MLP A2A LN (a) (b) (c) A2A A2A LN MLP(B) MLP(W) Attn(B) Attn(W) Figure 3. Different strategies for applying intra-device parallelism. (a) Serial forward-backward execution. (b) Interleaving a forward and backward microbatch can effectively hide all-to-alls. (c) Further microbatching within the forwards enables overlapping but reduces hardware efficiency. AR A2A Attn MLP A2A LN A2A A2A AR LN Compute stream Comm stream MLP(B) MLP(W) Attn(B) Attn(W) AR A2A Attn MLP A2A LN A2A A2A LN Compute stream Comm stream 1 MLP(B) MLP(W) Attn(B) Attn(W) AR Comm stream 2 interference A2A Attn MLP A2A LN A2A A2A LN Compute stream Comm stream 1 MLP(B) MLP(W) Attn(B) Attn(W) AR 1 AR 2 AR 1 … (a) (b) (c) AR 3 Figure 4. Different low-level execution strategies corresponding to an overlapped microbatch pair in DualPipe (Figures 1 and 2), now including the allreduce from using DP for Attn (dark blue AR boxes). (a) Using a separate stream for DP communication can add interference to all-to-alls. (b) Scheduling DP communication on the stream delays EP allto-alls. (c) Partitioning DP communication into finer-grained operations and scheduling on the same stream as EP all-toalls can produce the best run time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Challenges</head><p>High-level parallelism strategy. Previous work addressing the problem of expressing high-level parallelism strategies includes GSPMD <ref type="bibr" target="#b48">[49]</ref> for composed tensor sharding and replication plans (Figure <ref type="figure" target="#fig_0">1</ref>) and complementary solutions <ref type="bibr" target="#b11">[13,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b47">48]</ref> for the inter-device PP schedule (Figure <ref type="figure">2</ref>). We additionally observe that as communication overheads increase with larger models, the need for intra-device parallelism has become critical. This is commonly done by overlapping communication with compute. This can be done across distinct microbatches, as seen in DualPipeV (bolded boxes in Figure <ref type="figure">2</ref>), as well as other systems that apply local microbatching for specific operators <ref type="bibr" target="#b6">[8,</ref><ref type="bibr" target="#b16">18,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b46">47]</ref>.</p><p>However, the decision of when to apply intra-device parallelism is nontrivial. For example, overlapping forwards and backwards microbatches improves throughput in the DualPipeV schedule (Figure <ref type="figure">2</ref>), but overlapping forwards with forwards or backwards with backwards could introduce bubbles that outweigh the gains in pairwise microbatch throughput, as shown in Figure <ref type="figure">3c</ref>. Recent work further shows that for heterogeneous models in particular, the intradevice parallelism strategy needs to be codesigned with the PP placement <ref type="bibr" target="#b14">[16]</ref>; optimal overlapping would thus require extensive profiling of the different scheduling options.</p><p>Thus, we advocate for an abstraction that allows users to flexibly specify the high-level inter-and intra-device plan, allowing both human users and automated systems to easily control the system's behavior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Low-level execution strategy.</head><p>Once the high-level parallelism strategy has been decided, the corresponding work must be efficiently scheduled onto each accelerator's resources: compute, memory, and network. For GPU-based programming models, this requires allocating streams and communicators to enable concurrent execution of different kernels and communication operations, respectively.</p><p>In simple cases, such as when the model and activations fit comfortably in memory or when using only one parallelism dimension, scheduling is straightforward. For example, DP only adds communication off of the critical path of execution, so achieving good utilization requires only: (1) using one stream each for compute and communication, (2) choosing a communication bucket size that is large enough to ensure good network utilization but small enough to enable overlapping with compute, and (3) minimizing additional memory usage from allreduce buffers.</p><p>However, when multiple parallelism dimensions are used, each can add operations that may contend for the same resources, such as communication operations contending on network bandwidth or intermediate buffers contending for GPU memory. Resource contention can produce performance behaviors that are hard to predict.</p><p>For example, Figure <ref type="figure">4</ref> shows different low-level execution strategies corresponding to an overlapped microbatch pair in DualPipe (Figures <ref type="figure" target="#fig_0">1</ref> and <ref type="figure">2</ref>), now including the allreduce from using DP for Attn. Figure <ref type="figure">4a</ref> shows the simplest and common case, which uses a separate stream for DP communication. This avoids sequential execution, which would delay the EP all-to-alls (Figure <ref type="figure">4b</ref>). However, because all-to-all and allreduce both use network resources, Figure <ref type="figure">4a</ref> can also exhibit unpredictable interference. For example, we measured a 1.46× slowdown in EP communications due to background allreduces from DP in a DualPipe strategy. Partitioning into smaller all-reduces could reduce interference (Figure <ref type="figure">4c</ref>) but in other cases could increase overall run time due to lower communication efficiency.</p><p>We aim to design an abstraction that allows the user to easily control this behavior, and in the future generalize to let the user control tradeoffs between interference and maximizing communication bandwidth. The goal is to concisely capture the low-level execution strategies shown in Figures <ref type="figure">3</ref> and <ref type="figure">4</ref>, among others. In particular, we focus on expression of scheduling decisions on the tensor operator graph, which is compatible with lower-level optimizations such as kernel fusion that can further boost performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distributed runtime.</head><p>The distributed runtime is responsible for executing the compiled low-level execution strategy on each device. Thus, it must: (1) remain agnostic to the strategy, (2) add minimal scheduling overhead, to avoid blocking accelerators on CPU-based scheduling, and (3) allocate the shared resources of each accelerator efficiently, without needing to ask the user to specify the exact schedule of low-level tensor operators.</p><p>Critically, the system should be able to jointly schedule all of the communication operations introduced by different high-level parallelism dimensions, instead of simply scheduling each as if they were independent. This is critical for overall throughput, especially when resources are contended.</p><p>For example, we observed that when near capacity, the PyTorch memory allocator can introduce expensive device stalls waiting for in-flight work to finish so it can reclaim memory <ref type="bibr" target="#b22">[24]</ref>. Thus, memory-saving sharding techniques such as ZeRO can also significantly improve throughput, not just memory efficiency. Meanwhile, we also found that existing general-purpose training frameworks do not in fact fully support all ZeRO levels when used in combination with other parallelism strategies such as PP. We believe this is due to interactions between the pre-and post-layer hooks that ZeRO introduces and PP execution, which runs each layer multiple times for one global batch. We show that by using a unified abstraction that can correctly capture and schedule these interactions with higher memory efficiency, we can support 3-8× larger batch sizes (Section 6.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Design</head><p>Piper has two components (Figure <ref type="figure" target="#fig_2">5</ref>). First, the compiler translates annotated user models and user scheduling intent into a distributed execution plan. Second, the runtime executes the plan on distributed workers in a way that is agnostic to the specific execution strategy. Together, these components let Piper represent and realize a rich set of training schedules without hard-coding specific parallelism strategy compositions or optimizations into the runtime.</p><p>In the rest of this section, we use a simplified example based on DeepSeek-V3's DualPipe schedule applied to an MoE transformer model. In this example, the user combines PP=2 and EP/DP=2 and uses microbatch overlap to hide EP all-to-all latency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">API</head><p>The API exposes the parts of execution that users may want to control, such as device placement, communication granularity, and operator ordering, while leaving the remaining low-level decisions to the system. Each API translates to a transformation on Piper's intermediate representation (IR). The Piper IR is the global training DAG, a unified abstraction for distributed training that encodes computation, communication, and resource assignment, i.e. a GPU stream.</p><p>Piper realizes the API through two components: 1. Annotations let users identify schedulable regions of model computation, which later become compute nodes in the training DAG. 2. Scheduling directives transform the training DAG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IR.</head><p>To show how Piper's user scheduling APIs are implemented, we first describe the IR, the global training DAG (Figure <ref type="figure" target="#fig_3">6</ref>). Nodes represent coarse-grained compute or communication units and data flows along edges. Piper manages memory for the data along the edges. All communication is explicit in the graph. This allows the compiler and runtime to reason about communication, computation, and resources such as GPU memory in a unified way.</p><p>Each node in the DAG is one of the following: (1) a Chunk: the most basic unit of compute with no interleaved communication, or (2) a Comm node, which can be a point-to-point or collective operation. Nodes have a device or device mesh placement. Except for p2p Comm nodes, all nodes must have the same placement as their inputs and outputs.</p><p>B F PP 0 F s/r PP 1 F PP 1 B PP 0 B s/r a2a EP 2 a2a ar PP 0 MB 1 F s/r PP 1 MB 1 F PP 1 MB 1 B PP 0 MB 1 B s/r PP 0 MB 0 F PP 0 MB 1 F PP 0 MB 0 B PP 1 MB 0 F PP 1 MB 1 F PP 1 MB 1 B PP 0 MB 1 B PP 1 MB 0 B a2a EP 3 a2a 4 1 3 5 2 Optimizer device=[0,1] device=[2,3] Each Chunk and Comm node has an associated exec function to run upon dispatch by the runtime. This is a PyTorch fx.Graph of tensor operators for forwards passes, an opaque graph inserted by the PyTorch autograd engine for backwards passes, or a NCCL communication kernel inserted by Piper. Chunk and Comm nodes also have an assigned logical GPU stream to run on, which the Piper runtime later translates to a physical GPU stream (Section 4.3).</p><p>Conceptually, the compiler begins with a single-device DAG with a single Chunk, extracted from the model definition. The single node has all model operators for a forwardsbackwards pass as one Chunk, with no communication (the large F|B Chunk in Figure <ref type="figure" target="#fig_3">6</ref>). The user's annotated regions of the model replace the single chunk with smaller chunks. Each directive in the user's schedule then repeatedly transforms the DAG, until we have the lowered distributed training DAG to pass to the runtime (Figure <ref type="figure" target="#fig_2">5</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Annotations.</head><p>Piper's annotation API lets the user tag parts of the model for later identification during scheduling. An annotation identifies a semantically meaningful region of computation, such as a pipeline stage or an expert MLP block. These annotations are translated by the compiler into Chunks that can later be reordered, replicated, sharded, or otherwise transformed.</p><p>The annotation API takes in a string dim to allow users to add new parallelism dimensions and refer to them in scheduling directives. For example, in Listing 1, we create a wrapper around an MoE transformer model that annotates PP stages with the PP dimension tag and expert-MLP components with the EP dimension tag. Piper infers indices for repeated annotations based on the order in the model's dataflow. For example, the first PP annotation gets index 0 and the second PP annotation gets index 1. 1 PP = " pp_tag "; EP = " ep_tag " 2 class TransformerModel : Scheduling directives . Piper exposes a small set of scheduling directives for controlling placement, communication granularity, and operator overlapping and ordering. We use filters to allow users to apply directives to one or multiple Chunks at a time. A filter can include zero to multiple dimension names, plus a value to filter on for the dimension index. For example, (PP=0) refers to the first PP stage and (EP=3) refers to the MoELayer in layer 3. " * " pattern-matches on all cases and "-" excludes all cases of a tag. For example, (PP=1, EP=-) matches on all non-expert components of PP stage 1 in Listing 1. For shorthand, omitting a tag from the filter entirely will match on all occurrences of that tag.</p><p>By default, the system also supports a dimension named PASS, to indicate a specific part of the forwards-backwards pass for the same Chunk. Valid values are F for forwards, B for full backwards, Bi for backwards for inputs and Bw for backwards for weights. This is useful for cases like ZeroBubble <ref type="bibr" target="#b33">[34]</ref>, a PP schedule that splits the backwards pass into two stages for better pipelining across devices.</p><p>The placement directives are Place, Replicate, and Shard, as described next. Placement directives take in a device mesh (an N-D array of devices) which represents devices with unique integers. Placement filters must have PASS=* (included by default), i.e. we cannot have different placements for the forwards and backwards passes of the same Chunk.</p><p>Placement directives may add communication nodes to the training DAG. Thus, we also allow these directives to pass a logical GPU stream that any inserted communication operations should execute on. During execution, the runtime will create one physical stream per logical stream on the participating devices. If no stream was provided, then the system uses the default stream, the same stream on which the compute operators run. This allows users to have full control over stream execution without having to manage streams themselves.</p><p>Next we describe each directive in terms of how it transforms the training DAG (Figure <ref type="figure" target="#fig_3">6</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Place(filters, devices, stream=None).</head><p>A placement directive that updates the device placement of matched nodes. If multiple devices are passed, then additional placement directives are needed to determine the concrete device mapping for each Chunk. If a matched node is adjacent to another node that has a different device placement, add a P2P send/recv Comm ((1) in Figure <ref type="figure" target="#fig_3">6</ref>) assigned to stream.</p><p>Replicate(filter, devices, gather_stream=None, reduce_stream=None, shard_params=False, shard_grads=False, bucket_sz=None). A placement directive that replicates the matched nodes across devices. Insert a collective Comm after the backward pass (or backward for weights pass) for each matched Chunk to synchronize gradients among the replicas of the Chunk ((2) in Figure <ref type="figure" target="#fig_3">6</ref>). The operation is all-reduce by default, and alternatively reducescatter when shard_grads=True. When shard_params=True, insert an all-gather Comm before every matched node. New gather Comms are assigned to gather_stream and new reduce Comms are assigned to reduce_stream for fine-grained control over overlappable Comms.</p><p>The user can optionally pass in a bucket_size, and the Piper runtime will attempt to bucket communications to not exceed this size. If the bucket size is smaller than the weights for a Chunk, the system transforms the DAG by breaking each Chunk into smaller Chunks. If the user wants more control over buckets, they can use multiple Replicate rules. For example, to ensure that each model layer is launched as one bucket, the user could annotate each layer of the model with dim=layer, then run Replicate on each layer index.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Shard(filter, devices, stream=None).</head><p>A placement directive that shards the weights associated with matched Chunks along dimension 0. Currently, this requires that the preceding or subsequent Chunk has the same devices but with the Replicate rule. Inserts an all-to-all Comm before and after each matched Chunk and updates upstream/downstream data dependencies to flow through the new Comms ((3) in Figure <ref type="figure" target="#fig_3">6</ref>). This directive combined with Replicate can be used to represent EP with DP/ZeRO.</p><p>In future work, we will generalize our approach and infer communication for arbitrary combinations of these directives, e.g., by incorporating GSPMD-style sharding <ref type="bibr" target="#b48">[49]</ref>.</p><p>Split(filter, dim, num_microbatches). Replicate the matched nodes num_microbatches many times ((4) in Figure <ref type="figure" target="#fig_3">6</ref>). This adds a new dimension with the user-provided name. For example, Listing 2 shows an example where the user specifies 2 PP microbatches under the dimension name MB. MB=0 and MB=1 refer to the first and second microbatches, respectively. This rewrite requires that the filtered nodes form a contiguous sub-DAG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Order(filter_list).</head><p>Add a dependency between each pair of adjacent filters. For example, if two adjacent filters match sub-DAGs 𝐴 and 𝐵 respectively, then this adds a temporal edge from the topologically last node(s) in 𝐴 and the topologically first node(s) in 𝐵 to enforce an ordering between the two sub-DAGs. This requires that each filter matches a contiguous sub-DAG. This directive can be useful for expressing arbitrary PP schedules as well as other ordering dependencies.</p><p>To express overlapped execution of different microbatches, the user can pass in a nested list of filters. For example, in Listing 2, line 11 specifies that the forwards for microbatch 0 of PP stage 1 should execute before an overlapped pair comprising the forwards for microbatch 1 of PP stage 1 and the backwards for microbatch 0 of PP stage 1. In this case, the Piper runtime will interleave the two sub-DAGs of matched Chunks and Comms (Section 4.3).</p><p>Specifying PP schedules manually can be burdensome. Thus, in practice, we expect that users would use functions that build the orders for a given PP schedule. Listing 2. A simplified user schedule for DualPipe.</p><p>Next, we put the directives together to walk through the example user program in Listing 2, which shows a simplified DualPipe-like schedule <ref type="bibr" target="#b34">[35]</ref>. Line 1 creates one logical stream each for PP, DP, and EP communication. Lines 2-3 place the Chunks for pipeline stages 0 and 1 on different devices, applying the transformation in (1) in Figure <ref type="figure" target="#fig_3">6</ref> to insert P2P operators at cross-device boundaries. Lines 4-5 apply DP to all non-expert weights, across devices [0, 2] for pipeline stage 0 and devices <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">3]</ref> for pipeline stage 1. This appends an allreduce per PP stage to the backwards Chunks, as shown in (2) in Figure <ref type="figure" target="#fig_3">6</ref>. Lines 6-7 shard the experts over the same devices as the DP replicas, which inserts an all-to-all collective before and after each expert chunk, as shown in (3) in Figure <ref type="figure" target="#fig_3">6</ref>.</p><p>Line 9 splits the model into two microbatches ((4) in Figure <ref type="figure" target="#fig_3">6</ref>). Split duplicates the entire DAG because its filter matches everything, assigning each DAG copy a unique index within the new MB dimension. Line 10 assigns the microbatch ordering depicted in (5) in Figure <ref type="figure" target="#fig_3">6</ref>. Line 11 designates that 𝑃𝑃 1 𝑀𝐵 1 𝐹 and 𝑃𝑃 1 𝑀𝐵 0 𝐵 are overlappable by passing them together in a nested list.</p><p>The schedule also expresses intent about resource assignment. Communication originating from the PP rewrite gets its own PPStream, meaning that send/recv operations between PP stages are overlappable with compute. DP and EP also use separate streams, so they also will not synchronize with each other. This will yield the execution plan shown in Figure <ref type="figure">4a</ref>. Using the same stream for DP and EP would yield Figure <ref type="figure">4b</ref>. Figure <ref type="figure">4c</ref> could be supported by using the same stream for DP and EP and a smaller communication bucket size for Replicate. Currently, the Piper scheduler may still schedule allreduces even though they would delay the critical path. In the future, we plan to additionally support more control via Order for specific communication operations and/or smarter system scheduling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Piper Compiler</head><p>The Piper compiler translates the user's annotated model and scheduling directives into the DAG IR. The compiled DAG specifies a partial ordering of Chunks and Comms that includes data dependencies from the model dataflow and temporal dependencies from the Order directive. Each Chunk and Comm is also assigned a stream but not yet an order in the stream. The goal is to produce a plan that can be mechanically executed by the distributed runtime with simple heuristics (Section 4.3).</p><p>Compilation proceeds in two phases. First, Piper extracts user-annotated model regions as coarse-grained Chunks and builds an initial single-device training DAG. Second, it applies the user's scheduling directives as graph rewrites to produce a distributed training DAG with explicit communication and finer-grained execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Phase 1: Model annotations and chunk extraction.</head><p>Piper first extracts the dataflow graph of tensor operators. Currently this is done using TorchDynamo <ref type="bibr" target="#b2">[4]</ref>, a PyTorch JIT compiler which uses symbolic tracing to build fx.Graphs made up of PyTorch tensor operators. Initially, all tensor operators are put into one forwards-backwards Chunk (the large F|B chunk in Figure <ref type="figure" target="#fig_3">6</ref>).</p><p>Next, Piper splits the full-model operator graph at annotation boundaries (Listing 1) to produce an operator subgraph per finer-grained chunk. This sub-fx.Graph serves as a forward Chunk's exec function, and the PyTorch autograd engine implicitly adds the executable graph for backwards Chunks. Piper encodes forward Chunk dependencies according to the data dependencies extracted from the model definition. Backward Chunk dependencies follow in reverse order.</p><p>The PyTorch tensor operator graph also determines model weight dependencies for each Chunk. Piper uses this to associate a bucket of model state (parameters, gradients, and optimizer state) with each Chunk. After this initial pass, the compiler will have produced a single-device training DAG split into the user-annotated Chunks.</p><p>Phase 2: DAG transformations. Next, Piper mechanically applies the DAG rewrites as directed by the user schedule (Listing 2). Piper may insert new Comm nodes during the rewrite process; Piper assigns the exec function for Comms to the communication kernel to execute, e.g., all-to-all or allreduce.</p><p>Currently, we require that a model state bucket can only be associated with Chunks that have the same placement. Associating a single bucket with Chunks that have different placements (e.g., tied embeddings) could be supported by inserting additional gradient synchronization between the Chunks' backward passes.</p><p>After applying user transforms, the compiler applies a pass to elide unnecessary communication from parameter bucket rematerialization. In particular, the Replicate directive naively inserts an allgather before each Chunk that consumes the data. In cases where two consecutive Chunks use the same weights, Piper collapses these into one allgather. Similarly, for ZeRO-2 gradient sharding, if two consecutive Chunks accumulate to the same gradient bucket, then Piper collapses the reduce-scatter into one operation. These elisions do not add any memory overhead and reduce unnecessary communication time.</p><p>The final output of this pass is a global training DAG that reflects communication and inter-and intra-device placement. It captures data dependencies from the model definition and temporal dependencies introduced by Order. Each Chunk has a device and stream assignment. Piper validates that all device assignments are present; future work could automatically propagate from adjacent nodes to fill in missing assignments, similar to GSPMD <ref type="bibr" target="#b48">[49]</ref>. Missing stream assignments are assigned to the default compute stream.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Piper Runtime</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Centralized scheduler.</head><p>The Piper runtime executes arbitrary training DAGs on a set of distributed workers. Execution starts at the centralized scheduler, which takes in the transformed training DAG that provides a partial ordering and resource assignment (device and stream) for Chunks and Comms. The goal is to produce a partial ordering per device. The ordering is partial because Chunks and Comms on the same stream are totally ordered, while Chunks and Comms on different streams are only ordered if they have a data or temporal dependency.</p><p>First, the scheduler decomposes the training DAG into one unique sub-DAG per PP rank. Workers with the same PP rank execute with SPMD so they receive the same sub-DAG. For example with PP-2 x EP-2, we use 4 workers and 2 unique sub-DAGs (Figure <ref type="figure" target="#fig_2">5</ref>).</p><p>Decomposing the DAG simply involves gathering the sub-DAG of nodes for each device. Compute operators that execute on different devices are connected by a send-recv node; this decomposes into a send for the sending rank and a recv for the receiving rank. Ranks with the same PP stage replicate all communication operations within that stage.</p><p>The sub-DAG includes only the data dependencies between the worker's local compute and communication operators, as well as any temporal dependencies specified by Order rules. The centralized scheduler resolves the ordering between any Chunks and Comms that do not depend on each other (i.e. there is no path between them) and that are assigned the same stream. For example, these can originate from the nested filters in the Order directive, which indicates the user's intent to overlap sub-DAGs.</p><p>We describe the algorithm for scheduling across independent Chunks and Comms. For simplicity, we use task to refer to either a Chunk or Comm. To decide how to interleave two sub-DAGs, the scheduler begins by creating one queue per stream and initializing the set of ready tasks, which are tasks with no upstream dependencies. Then, Piper performs the following resource scheduling algorithm:</p><p>1. Pick the ready task 𝑡 (all upstream tasks scheduled) with the most downstream dependencies. 2. Add the task to the queue corresponding to 𝑡 .𝑠𝑡𝑟𝑒𝑎𝑚. 3. Mark the task as ready to unblock downstream adjacent tasks. This simple policy works well for the DualPipe-style overlapping depicted in Figure <ref type="figure">3b</ref> where the forward-backward microbatches are symmetric, meaning that each has the same number and pattern of Comms and Chunks. It could perform poorly in cases where there are many small tasks in a subgraph that is not on the critical path, or in cases where critical and non-critical path Comms are on the same stream (Figure <ref type="figure">4b</ref>). For example, we could leverage profile-guided optimization to measure actual run times and resource usage.</p><p>After this process, each worker will have an ordered list of Chunks and Comms per stream, plus all cross-stream data and temporal dependencies. Then, once before execution, the centralized scheduler dispatches each device's sub-DAG to the corresponding worker. The dispatch to a worker also includes the model weights to load for Chunks and Comms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Worker execution.</head><p>Each worker loads its shard of model weights then executes the compute and communication operators according to the order determined by the centralized scheduler. The worker is responsible for managing the GPU's local resources that may be shared between tasks: GPU streams, communicators, and memory. We rely on the GPU to allocate the shared physical resources such as SMs and HBM or network bandwidth between concurrent kernels. Our approach is complementary to other approaches that provide more precise control over physical resources <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b53">54]</ref>, e.g., adding an SM limit on specific Chunks. The worker's scheduling loop repeats the following: 1. Pick a task t from the tasks whose dependencies have been scheduled. 2. If t.stream is different from a dependency's stream t.args[i].stream, synchronize by having t.stream wait on t.args[i].event. 3. Dispatch t to t.stream. This launches all kernels in the task's exec function. 4. Free any of t.args that have no more downstream tasks.</p><p>Store t.outputs in local intermediate storage for later consumption. If t has an output with a downstream task that runs on a different stream, record an event on t.stream and store in t.outputs <ref type="bibr">[i]</ref>.event. Note that when using multiple streams, there will often be multiple tasks that are ready for dispatch. This is because the compiler produces a total ordering of tasks per stream, but only a partial ordering across streams based on data and temporal dependencies. When tasks could be scheduled in any order, the worker must make a local decision about dispatch order.</p><p>Although individual kernels execute asynchronously on the GPU, the dispatch order of tasks is still important because dispatch time on the CPU can delay critical GPU kernels, especially when there are many kernels to dispatch in a single task. For example, when using gradient sharding in ZeRO-2 <ref type="bibr" target="#b37">[38]</ref>, prioritizing gradient reduction could free memory sooner by shortening the lifetime of full gradient state. On the other hand, prioritizing all-to-all communication over gradient reductions may reduce latency along the critical path. Piper currently prioritizes send communication first, defers receive communication last to reduce point-topoint communication interference, and among remaining communication tasks prioritizes critical-path over reduction operators. The prioritization is deterministic, to ensure that all ranks in a collective group dispatch communications in the same order. Future work could include other heuristics and/or online profiling to more precisely determine the best dispatch order.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stream management.</head><p>As shown in the above scheduling loop, the worker dispatches each task's operator(s) on the stream associated with that task's logical resource. Tasks are dispatched asynchronously, as soon as their upstream tasks have been scheduled, to avoid blocking the GPU on CPU scheduling. When two adjacent tasks execute on different streams, Piper inserts synchronization between their streams to preserve correctness using CUDA events and stream-wait. This lets the runtime support arbitrary execution patterns without hard-coding a fixed mapping from operator type to stream.</p><p>For example, for overlapping PP communication, send and receive operators should be assigned a different stream from their upstream and downstream compute operators. In this case, the communication stream must synchronize with the producer node's stream before issuing the send, and the downstream compute node must synchronize with the receive node's stream before consuming the communicated value.</p><p>Although Piper must insert synchronization to preserve correctness, it inserts synchronization only when required by inter-task dependencies across different streams, allowing tasks without data dependencies running on independent resources to proceed concurrently. This also minimizes CPU overhead from scheduling and CUDA event creation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Communication management.</head><p>Avoiding bubbles from unnecessary synchronization can be challenging due to complex interactions between inter-and intra-device dependencies. GPU collective communication typically requires a "communicator", which represents one rank's context in a given collective group. Communication operations must be executed in the same order on all ranks' communicators in the same group, or else the device may hang because GPU collective communications are synchronous <ref type="bibr" target="#b30">[31]</ref>.</p><p>The inter-device communication order can create bubbles when combined with the intra-device dependencies created by shared CUDA streams. For example, in PP, most workers are continually sending and receiving microbatches to and from another worker. Thus, if we use one collective group for a PP schedule, then the send and receive operations need to be globally ordered across all workers' communicators. However, choosing an optimal serial order at compile time is hard because it would require exact predictions of the execution time per microbatch stage as well as communication time. For example, when choosing between sending and receiving, a worker needs to choose whether to send first, which would unblock the downstream worker's compute, or receive first, which would unblock communication operations queued after the upstream worker's send.</p><p>To resolve this problem, Piper allocates separate streams for point-to-point communications, one for sending and one for receiving. To avoid deadlock, Piper also allocates one communicator per stream. Using separate communicators reduces scheduling burden. Instead of requiring that all P2P operations are ordered consistently for every pair of workers, the system only needs to guarantee that P2P operations in each direction are ordered consistently for every pair of workers. This does not require knowing actual run times and is already naturally satisfied by common PP schedules. In particular, the requirement on the PP schedule is that downstream workers process data in the same order that it is produced by upstream workers, e.g., if rank 0 executes microbatch 1 before 2, then rank 1 also executes microbatch 1 before 2. Piper currently rejects schedules that do not meet this requirement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory management.</head><p>Piper manages GPU memory storage for all model state buckets along with all activations sent between Chunks. Thus, GPU memory is shared by compute Chunks as well as Comms that gather or reduce model state during execution. For each bucket, Piper allocates one flat buffer each for parameters and gradients, concatenating all parameter and gradient tensors in the bucket into their respective flat tensor; copies to/from the flat buffer are elided where possible.</p><p>Piper also manages memory for ZeRO-style <ref type="bibr" target="#b37">[38]</ref> gradient/parameter sharding where states must be materialized before computation and sharded after. In such cases, Piper uses persistent buffers to store the sharded states and allocates temporary full buffers for the rematerialized states. For example, in ZeRO-2 gradient sharding, Piper stores persistent buffers for gradient shards and allocates a temporary full gradient buffer at the beginning of each backward task. To precisely control buffer release, Piper waits in a background thread for the event corresponding to the last consumer task's completion, then resizes the buffer's storage to zero.</p><p>Piper also manages intermediate tensors that will later be consumed by downstream tasks. These include in-flight forward activations that must be retained for later backpropagation, activations waiting to be sent to a downstream worker, and intermediate autograd tensors that will later be used to compute model gradients. Once the last consumer task is scheduled, Piper frees the corresponding tensor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Implementation</head><p>Piper is implemented as a TorchDynamo <ref type="bibr" target="#b2">[4]</ref> backend, allowing it to hook into arbitrary PyTorch code. Although TorchDynamo supports non-static behavior by combining compiled-and eager-model execution, Piper currently requires models to be fully traceable. This allows Piper to partition an fx.Graph into sub-graphs at compile time. Annotations are implemented as Python context managers that attach metadata to regions of the model during execution. During graph capture, these annotations are recorded and used to segment the fx.Graph into Chunks.</p><p>Piper's runtime is built on top of Ray. The Piper compiler and centralized scheduler (Section 4.3) run together in a "driver" process. Each worker is implemented as a Ray actor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Evaluation</head><p>We evaluate Piper against the general-purpose training frameworks Megatron-LM 0.18.0 <ref type="bibr" target="#b39">[40]</ref>, DeepSpeed 0.18.9 <ref type="bibr" target="#b0">[1]</ref> and TorchTitan 0.2.2 <ref type="bibr" target="#b21">[23]</ref>. We address the following questions.</p><p>1. Does Piper perform as well as existing systems on commonly supported strategies? 2. What benefits in strategy flexibility and performance does Piper provide? Here, we evaluate performance and memory efficiency of various combinations of PP and ZeRO <ref type="bibr" target="#b37">[38]</ref>, along with PP and EP, including the DualPipeV schedule <ref type="bibr" target="#b34">[35]</ref>. 3. How well does Piper scale?</p><p>We run our evaluation on 4 AWS EC2 NVIDIA 8xA100 nodes with NVLink intra-node interconnect and Elastic Fabric Adapter (EFA) enabled for inter-node networking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Common PP strategies</head><p>We evaluate Piper's support for common PP schedules against Megatron and TorchTitan, which both provide out-of-thebox support for the 1F1B schedule <ref type="bibr" target="#b13">[15]</ref> and its interleaved variant <ref type="bibr" target="#b29">[30]</ref>. Interleaved 1F1B can improve training throughput for large models compared to 1F1B due to better microbatch overlapping from finer-grained interleaved stages.</p><p>TorchTitan allows users to provide a PP schedule, similar to Piper, and provides generic PP schedule-builders for 1F1B and interleaved 1F1B. We adapt the 1F1B and interleaved 1F1B schedule builders from TorchTitan to the Piper API in 29 LoC and 38 LoC, respectively.</p><p>We distribute the Qwen3 1B model with PP-8 x DP/EP-4 across 32 A100 GPUs and the Qwen3 9B model with PP-4 x DP/EP-4 across 16 A100 GPUs. We make DP the outer dimension to simulate larger-scale settings where cross-node DP is required. Megatron requires placing PP as the outermost dimension, so we route intra-node traffic over PCIe to simulate lower inter-node bandwidth for Megatron.</p><p>TorchTitan's performance suffers due to a larger memory footprint compared to the other systems, leading to CPU-side delays inserted by the PyTorch CUDA allocator. The memory footprint is caused by memory buffers needed by TorchTitan's DP implementation. Additionally, TorchTitan's interleaved schedule does 14% worse than its own 1F1B schedule. This is due to sends and recvs executing on the same stream, creating bubbles across ranks in the interleaved schedule.</p><p>Meanwhile, Piper-interleaved-1F1B achieves 5% higher throughput than Piper-1F1B, as expected. This is due to a lower memory footprint and use of dual P2P streams and communicators, one for sending and one for receiving.</p><p>Piper's performance is comparable with Megatron's. We note that Megatron often uses hand-tuned fused kernels targeted to transformer operators, enabling faster single-device execution time: on a single device, one microbatch forward pass of a single PP stage takes about 30 ms in Megatron vs 40 ms in Piper for Qwen3 1B. In general, Piper is orthogonal to approaches like kernel fusion which apply to the lowlevel operator graph contained within a Piper Chunk.exec function. Thus, we believe that the two approaches could be combined to further improve performance gains. 6.2 PP x ZeRO Table <ref type="table" target="#tab_0">1</ref> shows the current support for PP x ZeRO variations in Megatron-LM, DeepSpeed and TorchTitan. All systems support PP x ZeRO-1, which is an optimization of DP where redundant optimizer state is deduplicated across DP replicas.</p><p>To evaluate basic PP x ZeRO-1 support in all systems, we distribute the Qwen3 1B model with DP-2 across 2 A100 Table 2. DP ZeRO-1 throughput on all systems.</p><p>GPUs and evaluate training throughput with ZeRO-1 optimizer state sharding. Table <ref type="table">2</ref> shows that all systems perform similarly, as expected. Differences in execution time are likely due to differences in low-level kernel implementations.</p><p>While all systems support ZeRO variants 1-3, the support for ZeRO 2 (parameter sharding) and 3 (weights sharding) when combined with PP is incomplete. Megatron and DeepSpeed do not support either when combined with PP. TorchTitan supports the variants but the rematerialized buffers are not resharded between all PP microbatches. This reduces communication overhead but also defeats the purpose of ZeRO sharding, which is to save per-device memory from redundant states. We believe that this uneven support for ZeRO-2 and ZeRO-3 is due to the fact that gradient and weights sharding requires careful management of pre-and post-layer hooks, whereas ZeRO-1 only operates on the optimizer states. Meanwhile, Piper correctly supports all combinations of PP x ZeRO; it simply adds the proper allgather, reshard, and reduce-scatter operations to the matched Chunks in the DAG IR, irrespective of the PP strategy.</p><p>We validate the implications of this compatibility matrix by evaluating peak memory of composed PP x ZeRO strategies. We distribute Qwen3 9B with 8-way PP and 4-way DP across 32 A100 GPUs. We expect peak training memory to decrease from ZeRO-2 to ZeRO-3, as the latter introduces parameter sharding in addition to gradient state sharding.</p><p>Figure <ref type="figure" target="#fig_7">8</ref> shows the results. Megatron, DeepSpeed, and other PP x ZeRO-1 variants OOM in all cases because they cannot fit even the smallest batch size. TorchTitan can fit the smaller batch sizes but has higher memory consumption than Piper because it does not properly re-shard weights and gradients, despite setting the provided flag for weights resharding after forwards. As a result, TorchTitan maintains a For Piper, we achieve correct resharding by reducing gradients after every backward pass instead of accumulating gradients between PP microbatches. This adds communication time compared to TorchTitan but achieves the full ZeRO memory savings. As a result, Piper is able to execute with much higher batch sizes than TorchTitan without OOM: 8x higher for ZeRO-2 (up to batch size 32) and 3.3x higher for ZeRO-3 (up to batch size 40).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">PP x EP and DualPipe</head><p>We compare system support for DualPipe-like schedules across Megatron, TorchTitan, and Piper. Megatron provides custom schedules for 1F1B and interleaved 1F1B but not DualPipe, likely due to the need to overlap between microbatches. TorchTitan allows users to provide a PP schedule, similar to Piper, and provides a DualPipeV schedule builder <ref type="bibr" target="#b34">[35]</ref>. DualPipeV (and DualPipe) also uses interleaving, so we use each system's interleaved-1F1B implementation as its respective baseline; the expected performance gain in each case is from overlapping of some EP communication. TorchTitan's DualPipeV implementation uses separate threads to dispatch the overlapped forward and backward microbatches to two streams, one for compute and one for EP communication.</p><p>We adapt the DualPipeV schedule-builder from TorchTitan to the Piper API in 63 LoC. We use the Order directive to specify microbatch overlapping. Similar to TorchTitan, the runtime also uses a background stream for EP communication, but the tasks from the overlapped microbatches are scheduled jointly by a single thread.</p><p>We use the same experiment setup as in Figure <ref type="figure" target="#fig_6">7a</ref>. In the 1B setting, Piper-DualPipeV improves 13% over Piper-1F1B schedule, while TorchTitan-DualPipeV improves only 3% over TorchTitan-1F1B. We believe that TorchTitan's lack of improvement is due to a lack of synchronization between the forwards and backwards dispatch threads, which leads to unintended serialization of the GPU's compute and communication streams.</p><p>For the 9B model, we were not able to run TorchTitan due to OOM. Piper-DualPipeV improves 10% over its interleaved schedule and 6% over Megatron's interleaved schedule (Figure <ref type="figure" target="#fig_6">7b</ref>. In this case, Megatron-Interleaved-1F1B's improvement over Piper-Interleaved-1F1B comes from fused kernels. Note that Megatron does not fuse the EP all-to-all; thus we expect that Megatron's fused kernels could be directly integrated into Piper for additional gains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Scalability</head><p>We evaluate Piper's PP and DP scalability by distributing Qwen3 1B with 2-, 4-and 8-way PP and 2-and 4-way DP We scale the global batch size linearly with the PP and DP degrees and plot the curve representing linear scaling. We show that Piper scales reasonably.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Related Work</head><p>General-purpose training frameworks. Most generalpurpose training frameworks <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b21">23,</ref><ref type="bibr" target="#b39">40]</ref> for PyTorch implement a fixed set of parallelism strategies. DP/ZeRO strategies are model-agnostic and implemented with pre-and post-layer hooks. Megatron-LM and DeepSpeed implement custom-built layers for TP/EP/CP and schedules for PP. TorchTitan supports more general strategies by using DTensor [2] for sharding, an API inspired by GSPMD <ref type="bibr" target="#b48">[49]</ref>, and PiPPy <ref type="bibr" target="#b38">[39]</ref> for PP schedules. However, in all systems, each parallelism dimension dispatches its compute and communication operations eagerly with little to no synchronization with other operations, making it difficult to jointly schedule shared GPU resources such as communication bandwidth or memory.</p><p>Compiler-based systems such as JAX/XLA <ref type="bibr" target="#b4">[6]</ref> provide high-level tensor sharding and replication annotations based on GShard <ref type="bibr" target="#b19">[21]</ref> and GSPMD <ref type="bibr" target="#b48">[49]</ref>. Piper's API is inspired by these works. The annotations allow the compiler to insert the necessary communications and lower to a per-device program, although it is limited to homogeneous SPMD strategies. Later work extended the API and runtime to support arbitrary PP schedules <ref type="bibr" target="#b47">[48]</ref> and heterogeneous strategies or clusters <ref type="bibr" target="#b3">[5]</ref>. However, JAX/XLA does not support user scheduling of the low-level execution strategy; per-device resources such as GPU streams are opaque to the user and changes to the low-level execution strategy would require modifications deep within the XLA compiler.</p><p>DSLs. Besides GSPMD, many other works have combined user-facing tensor annotations with compiler support to enable flexible distributed training strategies. These include CoCoNeT <ref type="bibr" target="#b16">[18]</ref> for automatic computation-communication fusion, AutoSP <ref type="bibr" target="#b12">[14]</ref> for automatic sequence parallelism, and DynaFlow for controlling intra-device parallelism <ref type="bibr" target="#b31">[32]</ref>. Integration of these works is an interesting line of future work.</p><p>Slapo <ref type="bibr" target="#b8">[10]</ref> shares a similar motivation of user scheduling for distributed training. However, it does not consider intradevice parallelism and lacks a flexible runtime, offloading execution to general-purpose frameworks <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b39">40]</ref>. TVM <ref type="bibr" target="#b9">[11]</ref>, inspired by Halide <ref type="bibr" target="#b36">[37]</ref>, supports user scheduling and autotuning of tensor programs; we are inspired by these works and extend them to support distributed tensor programs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Auto-parallelism.</head><p>There have been numerous systems that aim to automatically find an optimal strategy <ref type="bibr">[19, 20, 25, 26, 28, 41, 43-45, 51, 56, 57]</ref>. To make the search problem tractable, many of these systems focus on a subset of strategies. They may not support execution of strategies that fall outside the search space and may thus miss opportunities such as fully overlapping communication and computation, as noted by <ref type="bibr" target="#b56">[57]</ref>. ByteScheduler <ref type="bibr" target="#b32">[33]</ref> and Centauri <ref type="bibr" target="#b7">[9]</ref> do consider communication scheduling and Centauri additionally provides communication partitioning primitives, similar to Piper. However, in general, these systems are still limited to the dimensions chosen by their developers and lack a unified IR for jointly scheduling the operations inserted by composed high-level strategies, such as in DualPipe. We hope Piper can serve as a common runtime for these autoparallelism systems.</p><p>nnScaler <ref type="bibr" target="#b24">[25]</ref> is the closest in approach. It allows the user to specify generic constraints that are similar to Piper directives. However, it does not support intra-device parallelism.</p><p>Many systems use profile-guided optimization to identify a good strategy. Notable examples include DeepCompile <ref type="bibr" target="#b41">[42]</ref> which searches over ZeRO and other memory optimizations, and Tessera <ref type="bibr" target="#b14">[16]</ref> which co-optimizes the PP partitioning and microbatch overlapping schedule and dynamically schedules backwards passes. In future work, we also plan to integrate these works' dynamic approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion</head><p>We present Piper, a distributed training system for PyTorch that decouples the distributed execution strategy specification from the model and runtime using a unified IR: the global training DAG. By making the placement, granularity, and ordering of computation and communication operations explicit, Piper allows users to express a wide range of distributed training strategies combining PP, DP, and EP with arbitrary ZeRO memory optimizations. Piper provides a useful interface for encoding both expert-designed schedules and future automated search over a rich space of composed strategies.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure1. DualPipe example combining PP-4 across layers with EP-2 for the expert layer and DP-2 for the non-expert attention layer. This placement uses PP stage interleaving; PP rank 0 gets the first and last layers, etc. We show a variant of DualPipe known as DualPipeV<ref type="bibr" target="#b34">[35]</ref> that places each layer on one PP rank instead of two.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .Figure 3 . 3 Figure 4 .</head><label>2334</label><figDesc>Figure2. DualPipeV schedule<ref type="bibr" target="#b34">[35]</ref> for 4-way PP, 8 microbatches, 8 layers. The placement is shown in Figure1. Combined forward-backward microbatches in bolded boxes get overlapped.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Piper overview. White rounded boxes are user inputs. Grey areas are system.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Transformations on the DAG IR. Each rounded box is a Chunk. Boxes with corners are Comms. Thin arrows are data dependencies. Wide arrows are transforms corresponding to scheduling directives. The schedule at the bottom shows the execution order once all data dependencies specified by the model and temporal dependencies specified by Order have been applied.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>3 def 13 defListing 1 .</head><label>3131</label><figDesc>forward ( self , x ) -&gt; 4 with sys . annotate ( PP ) : 5 h = self . embeddings ( x ) 6 h = self . layer2 ( self . layer1 ( x ) ) 7 with sys . annotate ( PP ) : 8 h = self . layer4 ( self . layer3 ( x ) ) 9 h = self . output ( h ) forward ( self , x ) : 14 x = self . router ( x ) 15 with sys . annotate ( EP ) : 16 x = self . experts ( x ) 17 return x MoE model annotated with PP and EP components.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>1</head><figDesc>PPStr, EPStr, DPStr = sys.stream(), sys.stream(), sys.stream() 2 Place((PP=0), device=[0,2], stream=PPStr) 3 Place((PP=1), device=[1,3], stream=PPStr) 4 Replicate((PP=0, EP=-), devices=[0,2], reduce_stream=DPStr) 5 Replicate((PP=1, EP=-), devices=[1,3], reduce_stream=DPStr) 6 Shard((PP=0, EP=*), devices=[0,2], stream=EPStr) 7 Shard((PP=1, EP=*), devices=[1,3], stream=EPStr) 8 MB = "microbatch" 9 Split((), dim=MB, num_microbatches=2) 10 Order([(PP=0, MB=0, PASS=F), (PP=0, MB=1, PASS=F), (PP=0, MB=0, PASS=B), (PP=0, MB=1, PASS=B)]) 11 Order([(PP=1, MB=0, PASS=F), [(PP=1, MB=1, PASS=F), (PP=1, MB=0, PASS=B)], (PP=1, MB=1, PASS=B)])</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. PP x EP throughput for 1F1B, Interleaved 1F1B and DualPipeV schedules.</figDesc><graphic coords="10,317.96,72.00,240.03,90.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. Peak Memory consumption of ZeRO-2 and ZeRO-3 sharding strategies for Piper and TorchTitan. full copy of parameters and gradients across multiple microbatches and OOMs at batch size 8 for ZeRO-2 and batch size 16 for ZeRO-3. TorchTitan's PP x ZeRO-3 implementation also does not save significant memory compared to ZeRO-2.For Piper, we achieve correct resharding by reducing gradients after every backward pass instead of accumulating gradients between PP microbatches. This adds communication time compared to TorchTitan but achieves the full ZeRO memory savings. As a result, Piper is able to execute with much higher batch sizes than TorchTitan without OOM: 8x higher for ZeRO-2 (up to batch size 32) and 3.3x higher for ZeRO-3 (up to batch size 40).</figDesc><graphic coords="11,317.96,72.00,240.04,98.42" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 .</head><label>9</label><figDesc>Figure 9. Piper PP x DP Scalability.</figDesc><graphic coords="12,54.00,72.00,240.04,100.82" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>PP x ZeRO support in the evaluated systems. TorchTitan claims to support ZeRO-2 and ZeRO-3 composed with PP<ref type="bibr" target="#b21">[23]</ref>, but we found that in practice gradient and weight states do not get resharded between all microbatches, so the memory savings is significantly less than expected. Piper supports all combinations of PP with ZeRO memory optimizations.</figDesc><table><row><cell>Framework</cell><cell cols="3">ZeRO-1 ZeRO-2 ZeRO-3</cell></row><row><cell>DeepSpeed</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell></row><row><cell>Megatron-LM</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell></row><row><cell>TorchTitan</cell><cell>✓</cell><cell>*</cell><cell>*</cell></row><row><cell>Piper</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row><row><cell cols="4">Framework Piper TT DeepSpeed Megatron</cell></row><row><cell cols="2">Tokens/s 8641 8637</cell><cell>9352</cell><cell>9942</cell></row><row><cell>± 701</cell><cell>977</cell><cell>52</cell><cell>1106</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">DeepSpeed: Extreme-scale model training for everyone</title>
+		<ptr target="https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">TensorFlow: a system for large-scale machine learning</title>
+		<author>
+			<persName><forename type="first">Martín</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianmin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manjunath</forename><surname>Kudlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Levenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajat</forename><surname>Monga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><forename type="middle">G</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benoit</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Warden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Zheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th USENIX Conference on Operating Systems Design and Implementation</title>
+		<meeting>the 12th USENIX Conference on Operating Systems Design and Implementation<address><addrLine>Savannah, GA, USA; USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>USENIX Association</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="265" to="283" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Py-Torch 2: Faster Machine Learning Through Dynamic Python Bytecode Transformation and Graph Compilation</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Ansel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalia</forename><surname>Gimelshein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Voznesensky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Berard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgeni</forename><surname>Burovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geeta</forename><surname>Chauhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Chourdia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Constable</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alban</forename><surname>Desmaison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Devito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elias</forename><surname>Ellison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiong</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Gschwind</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Hirsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherlock</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kshiteej</forename><surname>Kalambarkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Kirsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Lazos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Lezcano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanbo</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Luk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bert</forename><surname>Maher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunjie</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Puhrsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Reso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Saroufim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcos</forename><forename type="middle">Yukio</forename><surname>Siraichi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>Suk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Suo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eikan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajit</forename><surname>Mathews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Chanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumith</forename><surname>Chintala</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3620665.3640366</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<title level="s">ASPLOS &apos;24</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems<address><addrLine>La Jolla, CA, USA; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="929" to="947" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Hand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hurt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeontaek</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoming</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sudip</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brennan</forename><surname>Saeta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Schuh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Sepassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><forename type="middle">El</forename><surname>Shafey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandramohan</forename><forename type="middle">A</forename><surname>Thekkath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.12533[cs.DC</idno>
+		<ptr target="https://arxiv.org/abs/2203.12533" />
+		<title level="m">Pathways: Asynchronous Distributed Dataflow for ML</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Frostig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hawkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">James</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Leary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dougal</forename><surname>Maclaurin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Necula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skye</forename><surname>Wanderman-Milne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Jax: Autograd and xla</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<biblScope unit="page">2111</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mouxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunlong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingze</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashun</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongmeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenting</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2603.00729[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2603.00729" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Qwen3-Coder-Next Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Li-Wen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlei</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningxin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinmin</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanrun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuquan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengji</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziheng</forename><surname>Jiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.06858</idno>
+		<title level="m">Flux: Fast software-based communication overlap on gpus through kernel fusion</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Centauri: Enabling efficient scheduling for communication-computation overlap in large model training via communication partitioning</title>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuhong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianchao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangfei</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingcheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="178" to="191" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Slapo: A schedule language for progressive optimization of large deep learning model training</title>
+		<author>
+			<persName><forename type="first">Hongzheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><surname>Hao Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1095" to="1111" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">TVM: End-to-End Optimization Stack for Deep Learning</title>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thierry</forename><surname>Moreau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziheng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichen</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eddie</forename><forename type="middle">Q</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Ceze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Krishnamurthy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1802.04799</idno>
+		<ptr target="http://arxiv.org/abs/1802.04799" />
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.19437" />
+		<imprint>
+			<pubPlace>Ziyang Song</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Ziyi Gao, and Zizheng Pan. 2025. DeepSeek-V3 Technical Report. arXiv:2412.19437 [cs.CL</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Piper: Towards Flexible Pipeline Parallelism for PyTorch</title>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Frisella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvin</forename><surname>Oentoro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gilbert</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3766882.3767187</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th Workshop on Practical Adoption Challenges of ML for Systems</title>
+		<meeting>the 4th Workshop on Practical Adoption Challenges of ML for Systems<address><addrLine>Seoul, Republic; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+	<note>of Korea) (PACMI &apos;25)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">AutoSP: Unlocking Long-Context LLM Training Via Compiler-Based Sequence Parallelism</title>
+		<author>
+			<persName><forename type="first">Ahan</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Dani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masahiro</forename><surname>Tanaka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjia</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Fourteenth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Harlap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amar</forename><surname>Phanishayee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Seshadri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Devanur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Ganger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Gibbons</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1806.03377[cs.DC</idno>
+		<ptr target="https://arxiv.org/abs/1806.03377" />
+		<title level="m">PipeDream: Fast and Efficient Pipeline Parallel DNN Training</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Tessera: A Holistic Pipeline Parallelism Framework for Trillion-Parameter Heterogeneous MoE Training</title>
+		<author>
+			<persName><forename type="first">Weifang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Langshi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youyang</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiulong</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhua</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengping</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 20th USENIX Symposium on Operating Systems Design and Implementation (OSDI &apos;26)</title>
+		<meeting>the 20th USENIX Symposium on Operating Systems Design and Implementation (OSDI &apos;26)</meeting>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>To appear</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">GPipe: efficient training of giant neural networks using pipeline parallelism</title>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youlong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Bapna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mia</forename><surname>Xu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyoukjoong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiquan</forename><surname>Ngiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Curran Associates Inc</publisher>
+			<pubPlace>Red Hook, NY, USA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Breaking the computation and communication abstraction barrier in distributed machine learning workloads</title>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jangda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guodong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Hossein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nodehi</forename><surname>Sabet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saeed</forename><surname>Maleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youshan</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madanlal</forename><surname>Musuvathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><surname>Mytkowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Saarikivi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 27th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="402" to="416" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Beyond data and model parallelism for deep neural networks</title>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Aiken</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Machine Learning and Systems</title>
+		<meeting>Machine Learning and Systems</meeting>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Merak: An efficient distributed dnn training framework with automated 3d parallelism for giant foundation models</title>
+		<author>
+			<persName><forename type="first">Zhiquan</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xudong</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshi</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yabo</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linbo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Parallel and Distributed Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="1466" to="1478" />
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyoukjoong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.16668</idno>
+		<title level="m">Gshard: Scaling giant models with conditional computation and automatic sharding</title>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Pritam Damania, and Soumith Chintala</title>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanli</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Varma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omkar</forename><surname>Salpekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Noordhuis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Vaughan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.15704[cs.DC</idno>
+		<ptr target="https://arxiv.org/abs/2006.15704" />
+	</analytic>
+	<monogr>
+		<title level="m">PyTorch Distributed: Experiences on Accelerating Data Parallel Training</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">TorchTitan: One-stop PyTorch native solution for production ready LLM pretraining</title>
+		<author>
+			<persName><forename type="first">Wanchao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Less</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Constable</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Chin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iris</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SFN6Wm7YBI" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Sanket Purandare, Gokul Nadathur, and Stratos Idreos</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Lightning</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ai</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Faster PyTorch Training by Reducing Peak Memory (combining backward pass + optimizer step) -Lightning AIlightning</title>
+		<idno>23-04- 2026</idno>
+		<ptr target="https://lightning.ai/pages/community/tutorial/faster-pytorch-training-by-reducing-peak-memory/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">{nnScaler}:{Constraint-Guided} Parallelization Plan Generation for Deep Learning Training</title>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youshan</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanlu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saeed</forename><surname>Maleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilei</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">18th USENIX Symposium on Operating Systems Design and Implementation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="347" to="363" />
+		</imprint>
+	</monogr>
+	<note>OSDI 24</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Aceso: Efficient parallel DNN training through iterative bottleneck alleviation</title>
+		<author>
+			<persName><forename type="first">Guodong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youshan</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saeed</forename><surname>Maleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yungang</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sa</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Nineteenth European Conference on Computer Systems</title>
+		<meeting>the Nineteenth European Conference on Computer Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="163" to="181" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Visual Instruction Tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2023/file/6" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="34892" to="34916" />
+		</imprint>
+	</monogr>
+	<note>dcf277ea32ce3288914faf369fe6de0-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xupeng</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youhe</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaonan</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.13878</idno>
+		<title level="m">Galvatron: Efficient transformer training over multiple gpus using automatic parallelism</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Memory-Efficient Pipeline-Parallel DNN Training</title>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amar</forename><surname>Phanishayee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v139/narayanan21a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Machine Learning (Proceedings of Machine Learning Research</title>
+		<editor>
+			<persName><forename type="first">Marina</forename><surname>Meila</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 38th International Conference on Machine Learning ( Machine Learning Research</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">139</biblScope>
+			<biblScope unit="page" from="7937" to="7947" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Casper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Legresley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><forename type="middle">Anand</forename><surname>Korthikanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitri</forename><surname>Vainbrand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prethvi</forename><surname>Kashinkunti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julie</forename><surname>Bernauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amar</forename><surname>Phanishayee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.04473[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2104.04473" />
+		<title level="m">Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><surname>Nvidia</surname></persName>
+		</author>
+		<ptr target="https://developer.nvidia.com/nccl" />
+		<title level="m">NVIDIA Collective Communications Library (NCCL)</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">DynaFlow: Transparent and Flexible Intra-Device Parallelism via Programmable Operator Scheduling</title>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yile</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinbin</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziren</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongtao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengkai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baris</forename><surname>Kasikci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Machine Learning and Systems</title>
+		<meeting>Machine Learning and Systems</meeting>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>To appear</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">A generic communication scheduler for distributed DNN training acceleration</title>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangrui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bairen</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanxiong</forename><surname>Guo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th ACM Symposium on Operating Systems Principles</title>
+		<meeting>the 27th ACM Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="16" to="29" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Zero Bubble Pipeline Parallelism</title>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangxing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<idno>ArXiv abs/2401.10241</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page">267060979</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangxing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://hackmd.io/@ufotalent/r1lVXsa9Jg.Blog" />
+		<title level="m">DualPipe could be better without the Dual</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Learning Transferable Visual Models From Natural Language Supervision</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><forename type="middle">Wook</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v139/radford21a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Machine Learning (Proceedings of Machine Learning Research</title>
+		<editor>
+			<persName><forename type="first">Marina</forename><surname>Meila</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 38th International Conference on Machine Learning ( Machine Learning Research</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">139</biblScope>
+			<biblScope unit="page" from="8748" to="8763" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Halide: a language and compiler for optimizing parallelism, locality, and recomputation in image processing pipelines. SIGPLAN Not</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ragan-Kelley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Connelly</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Paris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frédo</forename><surname>Durand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saman</forename><surname>Amarasinghe</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2499370.2462176</idno>
+		<imprint>
+			<date type="published" when="2013-06">2013. June 2013</date>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="519" to="530" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">ZeRO: Memory Optimization Towards Training A Trillion Parameter Models</title>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.02054</idno>
+		<ptr target="http://arxiv.org/abs/1910.02054" />
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">James</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavel</forename><surname>Belevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://github.com/pytorch/PiPPy" />
+		<title level="m">Will Constable. 2022. PiPPy: Pipeline Parallelism for PyTorch</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Legresley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Casper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.08053</idno>
+		<ptr target="http://arxiv.org/abs/1909.08053" />
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Adapipe: Optimizing pipeline parallelism with adaptive recomputation and partitioning</title>
+		<author>
+			<persName><forename type="first">Zhenbo</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huanqi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenguang</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="86" to="100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Masahiro</forename><surname>Tanaka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Du</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Umesh</forename><surname>Chand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Zafar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiying</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.09983</idno>
+		<title level="m">DeepCompile: A Compiler-Driven Approach to Optimizing Distributed Deep Learning Training</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Piper: Multidimensional planner for dnn parallelization</title>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Jakub M Tarnawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amar</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Phanishayee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="24829" to="24840" />
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Unity: Accelerating {DNN} training through joint optimization of algebraic transformations and parallelization</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Unger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sina</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandeep</forename><surname>Baines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Efrain</forename><forename type="middle">Quintero</forename><surname>Narvaez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Ramakrishnaiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nirmal</forename><surname>Prajapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pat</forename><surname>Mccormick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamaludin</forename><surname>Mohd-Yusof</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">16th USENIX Symposium on Operating Systems Design and Implementation</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="267" to="284" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Supporting very large models using automatic dataflow graph partitioning</title>
+		<author>
+			<persName><forename type="first">Minjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Chin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyang</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fourteenth EuroSys Conference</title>
+		<meeting>the Fourteenth EuroSys Conference</meeting>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+			<biblScope unit="page" from="1" to="17" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Overlap communication with dependent computation via decomposition in large deep learning models</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinliang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Sabne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Berkin</forename><surname>Ilbeyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blake</forename><surname>Hechtman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Srinivasa Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcello</forename><surname>Maggioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 28th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="93" to="106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yifu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Less</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Wehrstedt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanchao</forename><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://discuss.pytorch.org/t/distributed-w-torchtitan-introducing-async-tensor-parallelism-in-pytorch/209487" />
+	</analytic>
+	<monogr>
+		<title level="m">Distributed w/ TorchTitan: Introducing Async Tensor Parallelism in PyTorch</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2026" to="2030" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Scaling deep learning training with MPMD pipeline parallelism</title>
+		<author>
+			<persName><forename type="first">Anxhelo</forename><surname>Xhebraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanfeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinod</forename><surname>Grover</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of Machine Learning and Systems</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">GSPMD: General and Scalable Parallelization for ML Computation Graphs</title>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyoukjoong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blake</forename><surname>Hechtman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Ly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcello</forename><surname>Maggioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoming</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.04663[cs.DC</idno>
+		<ptr target="https://arxiv.org/abs/2105.04663" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Context Parallelism for Scalable Million-Token Inference</title>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aya</forename><surname>Ibrahim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinfeng</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangsheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigory</forename><surname>Sizov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongsoo</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyu</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://proceedings.mlsys.org/paper_files/paper/2025/file/78834433" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Machine Learning and Systems</title>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Zaharia</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Joshi</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Lin</surname></persName>
+		</editor>
+		<meeting>Machine Learning and Systems</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">7</biblScope>
+		</imprint>
+	</monogr>
+	<note>edc3291f4c6cbbd2759324db-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Accelerating the training of large language models using efficient activation rematerialization and optimal hybrid parallelism</title>
+		<author>
+			<persName><forename type="first">Tailing</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xucheng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenglong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianchao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengru</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 USENIX Annual Technical Conference</title>
+		<title level="s">USENIX ATC</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="545" to="561" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">MM-LLMs: Recent Advances in MultiModal Large Language Models</title>
+		<author>
+			<persName><forename type="first">Duzhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenhui</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.findings-acl.738</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2024</title>
+		<editor>
+			<persName><forename type="first">Lun-Wei</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andre</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vivek</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12401" to="12430" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">DistTrain: Addressing Model and Data Heterogeneity with Disaggregated Training for Multimodal Large Language Models</title>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinmin</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yimin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanpeng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianjian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3718958.3750472</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGCOMM 2025 Conference</title>
+		<meeting>the ACM SIGCOMM 2025 Conference<address><addrLine>São Francisco Convent, Coimbra; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="24" to="38" />
+		</imprint>
+	</monogr>
+	<note>Portugal SIGCOMM &apos;25)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">DeepEP: an efficient expert-parallel communication library</title>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://github.com/deepseek-ai/DeepEP" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanli</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Varma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Chin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Less</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Shojanazeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alban</forename><surname>Desmaison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Balioglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pritam</forename><surname>Damania</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geeta</forename><surname>Chauhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajit</forename><surname>Mathews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11277[cs.DC</idno>
+		<ptr target="https://arxiv.org/abs/2304.11277" />
+		<title level="m">Py-Torch FSDP: Experiences on Scaling Fully Sharded Data Parallel</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Alpa: Automating inter-and {Intra-Operator} parallelism for distributed deep learning</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">16th USENIX Symposium on Operating Systems Design and Implementation</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="559" to="578" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Mist: Efficient Distributed Training of Large Language Models via Memory-Parallelism Co-Optimization</title>
+		<author>
+			<persName><forename type="first">Zhanda</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Giannoula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muralidhar</forename><surname>Andoorveedu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qidong</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karttikeya</forename><surname>Mangalam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bojian</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gennady</forename><surname>Pekhimenko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twentieth European Conference on Computer Systems</title>
+		<meeting>the Twentieth European Conference on Computer Systems</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1298" to="1316" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

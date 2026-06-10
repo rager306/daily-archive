@@ -1,0 +1,1548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">When to Align, When to Predict: A Phase Diagram for Multimodal Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-09">9 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Ilay</forename><surname>Kamai</surname></persName>
+							<email>ilay.kamai@campus.technion.ac.il</email>
+						</author>
+						<author>
+							<persName><forename type="first">Hugues</forename><surname>Van Assel</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Aviv</forename><surname>Regev</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hagai</forename><forename type="middle">B</forename><surname>Perets</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Randall</forename><surname>Balestriero</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Brown University</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta AI</settlement>
+									<country>FAIR</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Technion</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Genentech</surname></persName>
+						</author>
+						<title level="a" type="main">When to Align, When to Predict: A Phase Diagram for Multimodal Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-09">9 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1884E2B9231B138A24C17A604AA1BDA3</idno>
+					<idno type="arXiv">arXiv:2606.11190v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T12:00+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Cross-modal alignment (CA) and cross-modal prediction (CP) are the dominant paradigms for multimodal representation learning, yet there is no systematic understanding of when each succeeds, when each fails, and when cross-modal training helps at all -a gap that leaves practitioners, especially in scientific domains like biomedicine or astrophysics, with heterogeneous instruments and multiple levels of organization and measurement, unable to diagnose why standard methods underperform the best single modality. We develop a unified linear framework that addresses both questions. Under a spiked signal-plus-noise model with structured cross-modal nuisance correlation, we derive separation ratios for both objectives that expose complementary failure modes: alignment whitens each modality and fails when nuisance is strongly correlated across views; prediction encodes whatever is cross-predictable through a one-sided whitening, with recovery governed by source-modality quality. The resulting phase diagram partitions multimodal problems into four regimes: Both, CA only, CP only, and Neither. We present a data-driven procedure to locate real-world datasets in this diagram using a small labeled subsample, identifying the preferred objective and prediction direction before any cross-modal training. Experiments on synthetic data, stereo-vision benchmarks, image-caption pairs, and real astrophysical data validate the predictions in the nonlinear regime, including the Neither regime where cross-modal training is actively harmful. Our framework lets practitioners diagnose their multimodal problem and choose the right objective before committing to training. Code to reproduce the results is available at <ref type="url" target="https://github.com/IlayMalinyak/mm_align_vs_pred">https://github.com/IlayMalinyak/mm_align_vs_pred</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Multimodal representation learning aims to extract a shared latent structure from paired observations across different modalities, such as images and captions, audio and video, molecular cell profiles and tissue images, or different telescopes observing the same object. Multimodal learning is crucial when a single modality alone is insufficient to fully describe a phenomenon of interest or when the information in a single modality is degenerate or noisy. Moreover, combining multiple modalities of the same object is an important building block for foundational models. Multimodal learning has achieved many successes across domains and scales (e.g., <ref type="bibr" target="#b13">Cui et al. (2025)</ref>; <ref type="bibr" target="#b32">Parker et al. (2025)</ref>; <ref type="bibr" target="#b0">Alayrac et al. (2022)</ref>; <ref type="bibr" target="#b8">Bodnar et al. (2024)</ref>). However, the field is mostly empirical, and theoretical studies are relatively sparse, though phenomena like the modality gap in contrastive multimodal models <ref type="bibr" target="#b24">Liang et al. (2022)</ref> have started attracting principled analysis (e.g., Yossef <ref type="bibr" target="#b39">Levi and Gilboa (2024)</ref>).</p><p>Here, we focus on the interplay between the two leading multimodal learning paradigms -Cross-modal alignment and Cross-modal prediction. Cross-modal alignment (CA) projects paired samples into a common embedding space, encouraging matched pairs to be close; <ref type="bibr">CLIP Radford et al. (2021)</ref>, <ref type="bibr" target="#b16">ImageBind Girdhar et al. (2023)</ref>, and VICReg <ref type="bibr" target="#b7">Bardes et al. (2021)</ref> are prominent examples. Cross-modal prediction (CP) reconstructs one modality from the other through a bottleneck, so that the learned representation retains whatever is useful for prediction; masked autoencoders <ref type="bibr" target="#b18">He et al. (2021)</ref>, data2vec <ref type="bibr" target="#b4">Baevski et al. (2022)</ref>, and the decoder side of encoder-decoder models follow this approach. Both paradigms are widely used, yet they are typically studied in isolation and selected by practitioners based on empirical performance or architectural convenience rather than a principled understanding of their relative strengths and suitability to the problem at hand. We shed light on fundamental characteristics in multimodal learning, when implemented with CA or CP, and provide practical guidelines for success and failure modes of the two. We derive exact solutions and recovery conditions in the linear case, verify the results for the non-linear case using various experiments with deep neural networks, and provide a data-driven method for the analysis of multimodality problems. To the best of our knowledge, this is the first work to systematically compare CA and CP under a multimodal spiked model with structured cross-modal nuisance correlation, and to translate the resulting recovery conditions into a practical diagnostic procedure that applies to real paired datasets. Our main contributions are:</p><p>• Unified linear analysis of CA and CP. Using the known equivalences of CA with Canonical Correlation Analysis (CCA) and CP with truncated reduced-rank regression (RRR) as a starting point, we derive closed-form solutions for both objectives and analyze them under a spiked signal-plusnoise model with cross-modal nuisance correlation. We derive separation ratios ∆ CA and ∆ CP that determines when each method recovers the shared signal subspace, and exposes complementary failure modes.</p><p>• Phase diagram with four recovery regimes. The separation ratios partition the space of multimodal problems into four regions -CA only, CP only, Both, and Neither -visualized as a phase diagram in signal-noise space. We identify the Neither regime as the natural habitat of complementary scientific modalities and an important open problem for multimodal representation learning.</p><p>• Data-driven recovery regime estimation. We propose an algorithm that predicts the separation ratios for any paired dataset, based on a small labeled subsample, and before any cross-modal training. Beyond this regime prediction, the per-modality noise estimates identify which modality is stronger and in which direction CP should be applied, a non-trivial question to address in practice.</p><p>• Experimental validation across scales. Experiments on synthetic data, controlled stereo-vision benchmarks, and image-caption pairs confirm that the failure modes identified in the linear theory persist with deep networks. On real astrophysical data, pairing the same spectroscopic encoder with two photometric instruments of differing quality, we confirmed the predicted regime shift experimentally, including the 'Neither' regime where cross-modal training is actively harmful, and the stronger modality alone is the best representation.</p><p>The paper is organized as follows: in Section 3, we present the methods and construct a multimodal spiked model with both modality-specific and cross-modal correlated noise features for the linear case. We then derive signal recovery conditions and phase diagrams. In Section 4, we provide experimental results that support the theory and an algorithm for estimating recovery regimes. Conclusions are provided in Section 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Theory of multimodal learning. A small but growing body of work studies multimodal learning theoretically. One study <ref type="bibr" target="#b20">Huang et al. (2021)</ref> analyzed when using more modalities reduces population risk, showing through generalization bounds that the benefit depends on the gap in representation quality between modality subsets. Their linear analysis assumes orthonormal projections and full-rank covariance. Another work <ref type="bibr" target="#b26">Lu (2023)</ref> proves that multimodal learning can achieve lower sample complexity than unimodal learning by decoupling the complexity of the connection function from the predictor. However, their analysis does not capture the effects of modality-specific noise, nuisance features, or rank deficiency that arise in practice. Both works establish that multimodality can help under specific assumptions; our work characterizes when it works and when it can also hurt, and shows that the specific approach (i.e. CA or CP) used to combine modalities matters. In a complementary direction, <ref type="bibr" target="#b35">Swain et al. (2025)</ref> studies spike detection in a multimodal spiked covariance model, comparing self-covariance, cross-covariance, and jointcovariance decompositions under finite-sample (Wishart) noise. They derive Baik-Ben Arous-Péché (BBP) phase transitions for each matrix and produce phase diagrams showing which method detects the signal first as a function of signal strength and sampling ratio. Concurrently, <ref type="bibr" target="#b30">Mergny and Zdeborová (2025)</ref> establish BBP-type thresholds for partial least squares (PLS) and CCA under finite-sample Wishart noise, and <ref type="bibr" target="#b36">Tabanelli et al. (2025)</ref> extend this line to a multimodal spiked matrix-tensor model, showing that joint maximum-likelihood optimization is strictly worse than a sequential strategy. Both perform finite-sample BBP-type analyses of a single signal model. Our contribution is complementary, comparing CA against CP at the population level under structured cross-modal nuisance covariance η j in a matrix-matrix setting. This parameterization is what produces phenomena that prior spiked-model analyses didnot capture, like source-target asymmetry of CP, and the Neither regime in which both paradigms fail simultaneously, for example.</p><p>Theory of self-supervised and contrastive learning. Our work also connects to a rich literature on the theory of unimodal self-supervised learning (SSL), where "views" are generated by data augmentation rather than being structurally distinct modalities. Several works derive closed-form solutions for linear SSL models and analyze the role of augmentations in shaping learned representations (e.g., <ref type="bibr" target="#b10">Cabannes et al. (2023)</ref>; <ref type="bibr" target="#b5">Balestriero and LeCun (2022)</ref>). Most closely related is <ref type="bibr" target="#b38">Van Assel et al. (2025)</ref>, which compares joint-embedding and reconstruction-based SSL in a unified linear framework, the unimodal counterpart of our analysis. They show that joint-embedding methods impose a strictly weaker alignment condition on augmentations than reconstruction methods when irrelevant features have large magnitude, providing provable guidelines for choosing between the two paradigms. Our work extends this line of inquiry to the genuinely multimodal setting, where the two "views" are not designed augmentations of the same input but fixed, structurally distinct modalities with inherent asymmetries in quality and noise. This introduces new phenomena, such as modality bottlenecks, cross-modal nuisance correlation, and asymmetry of crossprediction, that do not arise in the unimodal SSL framework. Other theoretical works on contrastive and noncontrastive learning (e.g., <ref type="formula">Arora et al. (2019</ref> Beyond theory, our analysis also speaks to a core architectural choice: whether to add a predictor head on top of a joint embedding like in JEPA (LeCun (2022)) architectures (e.g., <ref type="bibr" target="#b3">Assran et al. (2023)</ref>; Balestriero and LeCun (2025)) or align embeddings directly (e.g., SimSiam Chen and He (2020), VICReg <ref type="bibr" target="#b7">Bardes et al. (2021)</ref>). This choice has typically been motivated by collapse prevention or by the presence of conditional context. Our analysis adds a complementary axis to this design choice in the multimodal case: even without conditional information or asymmetric features, the right choice between aligning and predicting depends on the noise structure of the modality pair.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Cross-Alignment and Cross Prediction Approaches</head><p>We study two objectives for multimodal representation learning. The first is cross-alignment (CA), which aligns paired samples in a shared latent space. The second is cross-prediction (CP), which predicts one modality from the other through an encoder-decoder factorization. Both are formalized below and analyzed throughout the paper. More details and proofs are deferred to Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Objectives</head><p>Let f X : R dx → R k and f Y : R dy → R k be encoders producing latent codes z (i)</p><p>x := f X (x i ) and z (i)</p><formula xml:id="formula_0">y := f Y (y i ) in a shared latent space of dimension k. Let f D : R k → R dy be a decoder. The two objectives are (CA) min f X ,f Y 1 n i ∥f X (x i ) -f Y (y i )∥ 2 2 s.t. 1 n i f X (x i ) f Y (y i ) ⊤ = I k ,<label>(1)</label></formula><formula xml:id="formula_1">(CP) min f X ,f D 1 n i ∥y i -f D (f X (x i ))∥ 2 2 .<label>(2)</label></formula><p>Figure <ref type="figure">1</ref> illustrates the two paradigms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cross-Prediction (CP)</head><p>xi yi fX z</p><p>i) x fD Cross-Alignment (CA) xi fX z (i) x yi fY z (i) y shared latent space R k Figure 1: Two multimodal learning paradigms studied in this work. (Left) Cross-prediction (CP), Equation (2): an encoder f X maps modality x to a latent code z, and a decoder f D reconstructs the paired target y. (Right) Crossalignment (CA), Equation (1): encoders f X and f Y project paired samples (x i , y i ) into a shared latent space where matched pairs are pulled together.</p><p>To understand when each objective succeeds or fails, we restrict to the linear case, where equation 1 and equation 2 admit closed-form solutions and the population geometry is fully tractable. This linear analysis captures the core mechanism and provides our main analysis tool, and its predictions transfer to the nonlinear regime in our experiments (Section 4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Linear analysis under a spiked model</head><p>With linear encoders f X (x) = Wx, f Y (y) = Vy for CA, and linear encoder f X (x) = Ex and decoder f D (z) = Dz for CP, both objectives admit closed-form solutions expressible through the SVDs of two modality-coupling matrices:</p><formula xml:id="formula_3">C := S -1/2 xx S xy S -1/2 yy , A := S yx S -1/2 xx ,<label>(3)</label></formula><p>where Σ xx , Σ yy , Σ xy denote the (population) (cross-)covariances. CA projects onto the leading k singular directions of C (symmetric whitening, equivalent to CCA <ref type="bibr" target="#b19">(Hotelling, 1936;</ref><ref type="bibr" target="#b1">Andrew et al., 2013)</ref>); CP projects onto the leading k singular directions of A (source-side whitening only, equivalent to truncated reduced-rank regression (RRR) <ref type="bibr" target="#b21">(Izenman, 1975;</ref><ref type="bibr" target="#b15">Eckart and Young, 1936)</ref>). Although CCA and RRR are classically connected (e.g., Donnat and Tuzhilina ( <ref type="formula">2024</ref>)), the two paradigms diverge once structured cross-modal nuisance is present, which is the regime our analysis characterizes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Spiked model.</head><p>To analyze recovery, we posit a signal-plus-noise model in which each modality decomposes into k shared signal coordinates and d -k modality-specific nuisance coordinates. In suitable orthogonal bases, the covariances are block diagonal:</p><formula xml:id="formula_4">S xx = diag K 2 + Γ (s) x , Γ (n) x , S yy = diag K 2 + Γ (s) y , Γ (n) y , S xy = diag K 2 , Γ xy ,<label>(4)</label></formula><p>where K = diag(κ 1 , . . . , κ k ) collects the cross-modal signal strengths, Γ</p><p>x , Γ</p><p>y are the view-specific noise variances on the shared coordinates, Γ</p><formula xml:id="formula_7">(n) x , Γ (n) y</formula><p>are the view-specific noise variances on the nuisance coordinates, and</p><formula xml:id="formula_8">Γ xy = diag(η 1 , . . . , η d-k ) encodes cross-modal nuisance correlation, with 0 ≤ η j ≤ γx j γy j . Full parameterization is given in Section A.</formula><p>Under this model, the singular values of C and A decompose cleanly into signal and nuisance contributions, yielding recovery conditions for each objective.</p><p>Proposition 3.1 (CA vs. CP separation). Under the spiked model equation 4, the singular values of C and A split into signal values {ρ i , τ i } i∈ k and nuisance values {ν j , ξ j } j∈ d-k , given by</p><formula xml:id="formula_9">ρ i = κ 2 i (κ 2 i + γ x i )(κ 2 i + γ y i ) , τ i = κ 2 i κ 2 i + γ x i , ν j = η j γx j γy j , ξ j = η j γx j .<label>(5)</label></formula><p>CA (resp. CP) recovers the shared signal subspace whenever its signal singular values exceed its nuisance singular values. Defining the separation ratios</p><formula xml:id="formula_10">∆ CA := min i ρ i max j ν j , ∆ CP := min i τ i max j ξ j ,<label>(6)</label></formula><p>full recovery holds when ∆ CA &gt; 1 (for CA) or ∆ CP &gt; 1 (for CP). In the homogeneous case (κ i ≡ κ, γ y i ≡ γ y , γy j ≡ γy ), the two ratios satisfy</p><formula xml:id="formula_11">∆ CA = ∆ CP • γy κ 2 + γ y .<label>(7)</label></formula><p>More generally, ∆ CA /∆ CP is monotonically non-decreasing in each γy j .</p><p>Proposition 3.2 (Partial recovery). Under the spiked model equation 4, the top-k singular vectors of C (resp. A) contain at least</p><formula xml:id="formula_12">r CA := {i : ρ i &gt; max j ν j } , r CP := {i : τ i &gt; max j ξ j }<label>(8)</label></formula><p>shared signal directions.</p><p>Full recovery is r = k (Proposition 3.1); r = 0 corresponds to complete failure; and the intermediate regime 0 &lt; r &lt; k is partial recovery, in which the learned representation is guaranteed to capture at least r signal directions mixed with nuisance. Partial recovery arises only under heterogeneous signal strengths: in the homogeneous case <ref type="figure" target="#fig_1">2</ref>) all signal singular values coincide, so r ∈ {0, k} and partial recovery collapses to the binary regime of Proposition 3.1. As κ i become increasingly heterogeneous, the four-region phase diagram of figure 2 smears into a graded continuum (Figure <ref type="figure" target="#fig_7">7</ref>, Section C).</p><formula xml:id="formula_13">κ i ≡ κ, γ x i ≡ γ x , γ y i ≡ γ y (Figure</formula><p>Failure modes. Equation ( <ref type="formula" target="#formula_9">5</ref>) exposes a fundamental asymmetry. CA's nuisance values ν j are cross-modal correlation coefficients in [0, 1], independent of nuisance variance: when any ν j → 1, no signal direction can match it under whitening (since ρ i &lt; 1 whenever any modality-specific noise is present), so ∆ CA &lt; 1 regardless of signal strength. CP's nuisance values ξ j = ν j γy j depend on the target nuisance variance: large γy j amplifies even moderate nuisance correlation into a recovery-breaking singular value (here and in Figure <ref type="figure" target="#fig_1">2</ref>, we hold ν j fixed when varying γy j , consistent with the (κ, ν) axes of the phase diagram). CP is also asymmetric: swapping source and target replaces γy j with γx j , so the direction of prediction matters. A direct corollary, demonstrated in Figure <ref type="figure" target="#fig_9">9</ref>, is that CP can achieve lower reconstruction MSE than CA while recovering the wrong subspace -the MSE objective itself does not distinguish signal from nuisance. The relation of equation 7 makes the complementarity explicit: ∆ CA and ∆ CP diverge as γy j grows, so a large target-side nuisance favors CA, while a small target-side nuisance favors CP. In the resulting phase diagram (Figure <ref type="figure" target="#fig_1">2</ref>) the (κ, ν) plane partitions into four regions -Both, CA only, CP only, Neither -with boundaries set by ∆ CA = 1 and ∆ CP = 1. Key takeaway. These failure modes suggest that CA is preferable when nuisance correlation is moderate, modality quality is uncertain, and modality-specific noise is large. CP may be preferable, with the correct source-target orientation, when the signal is strong and the target noise is weak.</p><p>Redundant vs. Complementary Modalities. The failure modes of CA and CP can be understood through a distinction between two regimes of multimodal data. Redundant modalities, such as imagecaption pairs, where captions are written to describe image content-share dominant structure across views, corresponding to large κ i and small ν j in our model, or the lower right corner in Figure <ref type="figure" target="#fig_1">2</ref>. In this regime, the redundancy assumption underlying standard multimodal SSL holds. Complementary modalities, by contrast, arise when each view provides a structurally distinct perspective on the same object, as in multisensor measurements in astrophysics and earth science, or multi-omics or multi-scale profiling in biology. Here, view-specific structure dominates the variance of each modality while cross-modal nuisance correlation is non-negligible, pushing toward large ν j and small effective κ i -precisely the Neither region (upper left corner) of Figure 2 where both paradigms fail. The intermediate region, which is represented by the center area in Figure 2 is noise dependent -CA is preferred when target noise is large, and CP is preferred when target noise is weak.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>To test the validity of our theory in real-world problems, we conducted experiments across varying levels of complexity and controllability. The first is a linear experiment that directly implements the spiked model, followed by non-linear experiments with synthetic vision datasets, simulating multi-modality by projecting the scene onto two virtual cameras. Next, we use COCO-MS, a real image-caption multi-modality dataset. Finally, we verify our predictions on a real-world scientific problem -an astrophysics multimodal experiment. In all non-linear experiments, we use the VICReg approach <ref type="bibr" target="#b7">(Bardes et al., 2021)</ref> as an approximation for the CA objective, and MSE reconstruction as CP. While VICReg does not use exactly the same orthogonality constraint, the covariance and variance regularization terms impose a similar behavior, and it was shown to be a formulation of DeepCCA <ref type="bibr" target="#b1">(Andrew et al., 2013)</ref>, the non-linear version of CCA (see e.g., <ref type="bibr" target="#b11">Chapman et al. (2023)</ref>). We verify this similarity by comparing VICReg and DeepCCA in our two synthetic experiments (see C). We provide implementation details of all experiments in Section B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Spiked Synthetic Data</head><p>We first verify the theoretical predictions of Section 3 using closed-form solvers on finite-sample, synthetic data drawn from the spiked covariance model. This confirmed that cross-modal noise correlation breaks CP well before CA (Figure <ref type="figure" target="#fig_2">3</ref>). The empirical subspace distance shows that CP fails to recover the signal (dist → 1) at ν ≈ 0.15, while CA maintains near-perfect recovery until ν ≈ 0.75 (Figure <ref type="figure" target="#fig_2">3</ref>, left). Based on the theoretical separation ratios (Figure <ref type="figure" target="#fig_2">3</ref>, right)∆ CP crosses the recovery threshold ∆ = 1 at a noise correlation roughly 5× lower than ∆ CA . The wide gap between the two thresholds validates the complementary failure modes identified in Section 3. We provide additional linear experiments in Section C. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Stereo vision experiments</head><p>Stereo-dSprites We next tested whether the complementary failure modes persist in a nonlinear setting using Stereo-dSprites, a synthetic stereo-vision benchmark, based on the dSprites dataset ( <ref type="formula">Matthey et al.  (2017)</ref>), with controlled nuisance alignment that simulates a multimodal visual setting. Two virtual cameras observe a shared 2D object on a 64 × 64 image. Here, shape is the signal (low pixel variance but perfectly correlated across views) whereas world position is the nuisance (high pixel variance and highly, but imperfectly, correlated, with the correlation controlled by a camera jitter parameter σ jitter ). We define nuisance alignment as ν max = 1 -σ jitter , and evaluate downstream shape classification via linear probe (details in Section B). Both experiments shows the expected trade-off between objectives -CA fails with perfectly correlated noise and improves as the alignment decreases, while CP shows the opposite behavior (Figure <ref type="figure" target="#fig_4">4</ref>). At full nuisance alignment (ν = 1), the cross-modal mapping is deterministic and CP's overcapacity bottleneck encodes both signal and nuisance without compression pressure, circumventing the theory's failure prediction. As soon as jitter breaks determinism (ν &lt; 1), CP is forced to compress, and the separation ratio governs recovery. These overall conclusions are also observed when we examine examples of latent features with different alignment values for CA and CP in the stereo-dSprites experiment with dimensionality reduction using UMAP <ref type="bibr" target="#b29">(McInnes et al., 2018)</ref> ((Figure <ref type="figure" target="#fig_5">5</ref>), colors: signal (shape); opacity: nuisance features (position)). The observed patterns align perfectly with the overall results, such that the opacity structure (Figure <ref type="figure" target="#fig_5">5</ref>) shows that in CA and CP each succeed where the other fails, and when a method fails, the model primarily captures the nuisance features (position).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stereo-3DShapes We replicate the Stereo-dSprites protocol on</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Image-Caption Experiments</head><p>We extended the analysis to a real image-caption dataset: MS-COCO <ref type="bibr" target="#b25">(Lin et al., 2014)</ref>, where captions are written to describe natural image content. As this is a true multimodal dataset, we used the natural caption-image pairing without artificial nuisance manipulation. We trained encoders from scratch (ResNet-18 for images, two-layer Transformer for captions) and varied modality-specific noise by applying visual style transforms of increasing strength to the image modality while keeping captions clean. As expected, we observed asymmetric performance for CP (Figure <ref type="figure" target="#fig_6">6</ref>); CP I→T strongly dominates at low noise (∼10 pp over CA), and degrades monotonically as image noise increases. The asymmetry matches the linear theory: ∆ CP depends only on source-side quantities, so image-side perturbations affect CP I→T but leave CP T →I (text source, unchanged) flat. The slight rise of CP T →I is consistent with noisy reconstruction targets acting as a regularizer, a finite-capacity effect outside the linear theory. CA is insensitive throughout, consistent with Σ yy normalization absorbing modality-specific variance. In both settings, color represents weak noise levels. In both panels, the trade-off between the methods is clearly seen. CA (solid, circles) peaks at moderate-to-low alignment and collapses at full alignment; CP (dashed, squares) shows the opposite pattern. The crossover at ν max ≈ 0.8 is consistent across datasets. Lower absolute ceilings in 3DShapes reflect the harder discrimination task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Predicting Recovery Regimes</head><p>We propose a lightweight supervised diagnostic that locates a paired dataset in the phase diagram before committing to cross-modal training. The diagnostic is supervised by design: a small labeled subsample classifies singular components of Ĉ and Â as signal or nuisance, allowing direct estimation of ∆ CA and ∆ CP without recovering the latent parameters (κ, γ, γ, η). The labeled budget is small relative to the scale of cross-modal training. the diagnostic is meant to inform, and the labels need not match the downstream target -in Section 4.5, regime prediction from log g correctly orders methods on binarity and age.</p><p>The estimation procedure is well-posed when the representation fed to the estimator approximately satisfies the linear spiked decomposition of Section 3.2: signal and nuisance directions must be meaningfully separable in the joint covariance structure of the paired data. This condition holds most directly in two-stage multimodal pipelines, where each modality is first encoded independently by a unimodal model, and the crossmodal objective operates on these frozen representations. The unimodal features are both the actual inputs to the cross-modal model and a representation in which signal and nuisance can be meaningfully separated; Two-stage pipelines are the dominant paradigm in scientific multimodal learning and in large foundationmodel stacks where modality-specific encoders are pretrained independently. In single-stage pipelines, the encoder and cross-modal objective are optimized jointly from raw data, and no unimodal representation satisfying the spiked decomposition exists prior to training. Applying the estimator to compact proxies of the raw inputs (e.g., pixel-PCA) is possible, but the resulting regime predictions are less reliable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Real Astrophysical Data (LAMOST × Kepler/TESS)</head><p>Finally, we validated regime estimation on real astrophysical data, pairing ground-based LAMOST <ref type="bibr" target="#b40">(Zhao et al. (2012)</ref>) spectra (2048-dim encoder) with space-based photometry from two instruments: Kepler <ref type="bibr" target="#b27">(Mathur et al. (2017)</ref>) and TESS <ref type="bibr" target="#b34">(Ricker et al. (2015)</ref>) (1024-dim encoders), using frozen pretrained features <ref type="bibr" target="#b22">Kamai et al. (2025)</ref> with lightweight projection/prediction heads (Section B). We estimated recovery regimes from a labeled subsample using surface gravity (log g), following Algorithm 1. Downstream evalua-  tion covered three physically distinct targets: binarity, log g, and age. Binarity and age are encoded through modality-specific mechanisms (spectroscopic radial-velocity variations vs. photometric eclipses for binarity; isochrone vs. gyrochronology for age), so agreement between a log g-based regime prediction and behavior on binarity and age tests whether the separation ratios capture the geometry of the modality pair rather than a task-specific artifact. The results show that the regime predictions hold as regime-level statements across all targets, with a revealing asymmetry in how each regime manifests (Table <ref type="table">1</ref>, 5 seeds per cell).</p><p>Kepler (Both). On every target, at least one of {CA, CP} matches or exceeds the best unimodal baseline, but the winner rotates with task. CP stays at the LAMOST ceiling where LAMOST dominates (log g, binarity); CA captures photometric signal where LAMOST is weak (age: +0.19 R 2 over LAMOST). The 'Both' prediction should be read as some cross-modal objective helps on every task, not as both objectives helping uniformly, consistent with ∆ CA and ∆ CP being very different.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TESS (Neither).</head><p>No cross-modal method exceeds LAMOST alone on any target, and the gap is well beyond seed variance. The prediction holds uniformly, with no task-level exceptions. Figure <ref type="figure" target="#fig_11">12</ref> visualizes the underlying singular-value decompositions of Ĉ and Â for both pairs. CP direction asymmetry. CP's recovery condition ∆ CP involves only source-side quantities, so swapping source and target produces a structurally different recovery condition: the preferred direction is the one in which the source modality more directly encodes the task signal. For log g and binarity, spectra encode the signal more directly than photometry (through absorption-line broadening rather than granulation/oscillation) so CP forward (spectra → photometry) succeeds while CP rev (photometry → spectra) fails. For age, photometric rotation periods provide a more direct signal via gyrochronology than spectroscopic activity indicators, so the preferred direction reverses: CP rev on age (R 2 = 0.497) outperforms forward CP.</p><p>Table 1: Astrophysical cross-modal results, mean ± std over 5 seeds. Best per row in bold (ties within seed std co-bolded). Kepler (Both, ∆ CA =1.13, ∆ CP =2.22): at least one cross-modal method matches or beats the best unimodal baseline on every target; CP preserves LAMOST's ceiling where LAMOST dominates, CA captures photometric signal where LAMOST is weak. TESS (Neither, ∆ CA , ∆ CP &lt;1): no cross-modal method beats LAMOST-only on any target. CP rev (photometry → spectra) fails on tasks where spectra carry the more direct signal (log g, binarity), but outperforms forward CP on age, where photometric rotation provides a more direct gyrochronological signal -the same source-quality principle in both directions.</p><p>Task CA CP CPrev LAMOST Photometry LAMOST × Kepler -Both regime Binarity (bal. acc.) 0.802±0.009 0.814±0.006 0.751±0.004 0.814 0.731 log g (R 2 ) 0.956±0.003 0.976±0.001 0.639±0.004 0.977 0.542 Age (R 2 ) 0.620±0.001 0.434±0.006 0.497±0.039 0.431 0.470 LAMOST × TESS -Neither regime Binarity (bal. acc.) 0.756±0.022 0.763±0.011 0.626±0.010 0.779 0.604 log g (R 2 ) 0.929±0.005 0.939±0.001 -0.312±0.001 0.942 -0.312 Age (R 2 ) 0.431±0.029 0.396±0.064 -0.072±0.004 0.503 -0.037 Key takeaway. Estimating effective recovery regimes is a practical and feasible analysis for real-world multimodal problems. It can indicate whether cross-modal learning is likely to succeed, identify which modality is the informative bottleneck, and guide the choice of objective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We studied cross-modal alignment and cross-modal prediction in a unified linear framework, deriving recovery conditions governed by separation ratios ∆ CA and ∆ CP that partition multimodal problems into four regimes and determine not only which method succeeds but whether cross-modal training helps at all. A data-driven estimation of these ratios identifies the preferred objective and prediction direction from a small labeled subsample, before any cross-modal training. Experiments span synthetic data, stereo-vision benchmarks, and image-caption pairs, with the sharpest validation on real astrophysical data: same spectroscopic encoder paired with two photometric instruments of differing quality yields two distinct predicted regimes, both confirmed across multiple downstream targets, and the predicted CP direction asymmetry is confirmed on all tasks. The Neither regime is the most important open problem raised by this work, the natural habitat of complementary scientific modalities, where each instrument provides a structurally distinct view yet neither paradigm extracts the shared signal. Escaping it likely requires objectives that go beyond pairwise crosscovariance, e.g., higher-order structure, auxiliary supervision, or modality-specific priors. We hope the phase diagram introduced here provides a principled starting point to solve it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Closed-form solutions and spiked model derivations</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Full statement of closed-form solutions</head><p>Theorem A.1 (Closed-form solutions for CA). Assume S xx and S yy are positive definite. Let C = PΦQ ⊤ be the SVD of</p><formula xml:id="formula_14">C := S -1/2 xx S xy S -1/2 yy with rank(C) = r ≥ k and ϕ 1 ≥ • • • ≥ ϕ r &gt; 0.</formula><p>The minimizers of equation 1 with linear encoders are</p><formula xml:id="formula_15">W ⋆ = UΦ -1/2 k P ⊤ k S -1/2 xx , V ⋆ = UΦ -1/2 k Q ⊤ k S -1/2 yy ,<label>(9)</label></formula><p>where P k , Q k contain the leading k columns and U ∈ R k×k is an arbitrary orthogonal matrix.</p><formula xml:id="formula_16">Theorem A.2 (Closed-form solutions for CP). Let A = U A ΣV ⊤ A be the SVD of A := S yx S -1/2 xx with σ 1 ≥ • • • ≥ σ r &gt; 0.</formula><p>The composed map B := DE at a minimizer of equation 2 with linear encoder and decoder is</p><formula xml:id="formula_17">B ⋆ = U A,k Σ k V ⊤ A,k S -1/2 xx .<label>(10)</label></formula><p>The factorization</p><formula xml:id="formula_18">B ⋆ = D ⋆ E ⋆ is non-unique: for any invertible M ∈ R k×k , (D ⋆ M, M -1 E ⋆ ) yields the same composed map.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Proof of Theorem A.1</head><p>Using the constraint</p><formula xml:id="formula_19">WS xy V ⊤ = I k , the objective reduces to min W,V Tr(WS xx W ⊤ ) + Tr(VS yy V ⊤ ) s.t. WS xy V ⊤ = I k .<label>(11)</label></formula><formula xml:id="formula_20">Let W ′ = WS 1/2 xx and V ′ = VS 1/2 yy , and define C := S -1/2 xx S xy S -1/2 yy . The problem becomes min W ′ ,V ′ ∥W ′ ∥ 2 F + ∥V ′ ∥ 2 F s.t. W ′ CV ′⊤ = I k .<label>(12)</label></formula><p>Let the SVD be C = PΦQ ⊤ . By unitary invariance, it suffices to take W ′ = UAP ⊤ and V ′ = UBQ ⊤ with U ∈ R k×k orthogonal, so the constraint reads AΦB ⊤ = I k and the objective is ∥A∥ 2 F + ∥B∥ 2 F . This decouples across singular directions, yielding the minimizer A = B = Φ -1/2 k and the choice of the k largest singular values. Hence</p><formula xml:id="formula_21">W ′ = UΦ -1/2 k P ⊤ k , V ′ = UΦ -1/2 k Q ⊤ k ,<label>(13)</label></formula><p>and the constraint holds iff U is orthogonal. Transforming back gives</p><formula xml:id="formula_22">W ⋆ = UΦ -1/2 k P ⊤ k S -1/2 xx , V ⋆ = UΦ -1/2 k Q ⊤ k S -1/2 yy .<label>(14)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Proof of Theorem A.2</head><p>Since E ∈ R k×dx and D ∈ R dy×k , the composed map B = DE satisfies rank(B) ≤ k. Conversely, any rank-k matrix B admits such a factorization, so minimizing over (D, E) is equivalent to minimizing over rank-k matrices B. Writing the CP objective in terms of B and expanding:</p><formula xml:id="formula_23">1 n i ∥y i -Bx i ∥ 2 = Tr(S yy ) -2 Tr(S yx B ⊤ ) + Tr(BS xx B ⊤ ) .<label>(15)</label></formula><formula xml:id="formula_24">Substituting B ′ := BS 1 2 xx and A := S yx S - 1 2 xx (so that S yx B ⊤ = A(B ′ ) ⊤ and BS xx B ⊤ = B ′ (B ′ ) ⊤ ): = Tr(S yy ) -2 Tr(A(B ′ ) ⊤ ) + Tr(B ′ (B ′ ) ⊤ ) (<label>16</label></formula><formula xml:id="formula_25">) = Tr(S yy ) -Tr(AA ⊤ ) + ∥B ′ -A∥ 2 F .<label>(17)</label></formula><p>Since Tr(S yy ) -Tr(AA ⊤ ) does not depend on B, and since S <ref type="bibr" target="#b15">(Eckart and Young, 1936;</ref><ref type="bibr" target="#b31">Mirsky, 1960)</ref>, the best rank-k approximation of A in Frobenius norm is</p><formula xml:id="formula_26">1 2 xx is invertible, minimizing over rank-≤ k matrices B is equivalent to minimizing ∥B ′ -A∥ 2 F over rank-≤ k matrices B ′ . By the Eckart-Young-Mirsky theorem</formula><formula xml:id="formula_27">(B ′ ) ⋆ = U k Σ k V ⊤ k . Transforming back via B ⋆ = (B ′ ) ⋆ S - 1 2</formula><p>xx gives the stated solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Implementation Details</head><p>Linear experiments. All linear experiments use closed-form solvers on population covariances drawn from the spiked model of Section 3. We set d = 20, k = 3 shared dimensions with signal strengths κ = (3.0, 2.0, 1.5), and consider a regime with clean signal in the target modality (γ (s) y = 0.05) but large target nuisance variance (γ (n) y = 50.0), with source-side parameters γ (s)</p><formula xml:id="formula_28">x = 0.5, γ (n) x = 1.0. We sweep the normalized noise correlation ν = η/ γ (n) x γ (n) y</formula><p>∈ [0, 0.95] and report subspace distance (averaged over 20 random rotations) and theoretical separation ratios. Subspace distances are computed as ∥P Û -P U ∥ F / √ 2k where P denotes the orthogonal projector, and averaged over 20 random rotations of the signal/noise bases. No optimization is involved; the solvers compute exact CA (CCA) and CP (truncated reduced-rank regression) solutions from the covariance matrices on a single CPU.</p><p>Stereo-dSprites. Two virtual cameras observe a shared 2D object (Square, Ellipse, or Heart) on a 64 × 64 grayscale canvas. World position P world ∈ [-0.5, 0.5] 2 serves as the aligned nuisance; camera jitter σ jitter ∈ {0.0, 0.05, 0.2, 0.5} controls de-alignment via per-view translation and rotation. View X receives Gaussian pixel noise σ strong = 0.1; View Y receives σ weak ∈ {0.2, 0.5, 0.9}. Each modality is encoded by a separate 4-layer CNN (1 × 64 × 64 → 128-dim) with ReLU activations. CA uses VICReg (25× invariance +25× variance +1× covariance) on 32-dimensional projections. CP uses MSE reconstruction via a transposedconvolutional decoder. All models are trained with Adam (lr=10 -3 ), batch size 64, for up to 100 epochs with early stopping (patience 5). Downstream evaluation uses a linear probe on frozen encoder features for 3-class shape classification, swept over 9 probe sizes (100 to ∼6,000 samples) and averaged over 5 seeds. We sweep n samples ∈ {10k, 50k, 100k} (see Figure <ref type="figure">11</ref> for 10k, 50k results). The entire sweep took approximately 24 hours on one L40S GPU.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stereo-3DShapes.</head><p>Built from Google's 3DShapes dataset (480K RGB images). Canonical images, one per shape at fixed hue, scale, and orientation, are rendered into stereo pairs via affine warping with the same jitter and noise protocol as dSprites. The signal is 4-class shape (Cube, Cylinder, Sphere, Capsule); additional nuisance factors include floor hue (10 values), wall hue (10), object hue (10), scale (8), and orientation (15), all fixed per canonical image and shared across views. Encoders are 4-layer CNNs (3 × 64 × 64 → 128-dim; channels 3 → 32 → 32 → 64 → 64, stride 2) with FC layers 1024 → 256 → 128. Training and evaluation follow the dSprites protocol with n samples = 100k, 10 probe sizes (100 to 10,000), and 3-4 seeds. The entire sweep took approximately 24 hours on one L40S GPU.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MS-COCO image-caption.</head><p>We pair each COCO 2017 image with its associated caption, using the dominant-object category (largest bounding box, 80 classes) as the downstream label. Images are 3×224×224 RGB, encoded by a ResNet-18 trained from scratch; captions are word-tokenized to length 64 and encoded by a 2-layer Transformer (4 heads, d embed = 256) followed by mean pooling and a linear projection to 128 dimensions. Neither encoder uses pretrained weights. Nuisance is injected into the image modality: each image is passed through k independent distortion groups (color cast, exposure, contrast, texture, saturation, spatial) drawn uniformly from six groups, with k controlled by a noise level ℓ ∈ {0.0, 0.2, 0.5} (expected k ≈ 6ℓ groups active). Within each active group, a random transform is applied at continuous intensity t ∼ Uniform(0.3, 1.0), so every sample receives a unique pixel-level distortion. Training uses AdamW (lr = 10 -3 , weight-decay = 10 -4 ) with 5-epoch linear warmup into cosine annealing, batch size 1024 per GPU across 4-6 GPUs via DDP, for 50 epochs. CA uses VICReg on projected embeddings from both encoders (invariance 25×, variance 25×, covariance 1×); CP I→T is the image encoder feeding a caption decoder under cross-entropy loss; CP T →I is the text encoder feeding a pixel decoder under MSE. Evaluation: each method is evaluated on its source /bottleneck encoder. For CA, the image encoder is probed (a symmetric choiceboth encoders are equally optimized under VICReg). For CP I→T , the image encoder (source). For CP T →I , the text encoder (source). Each frozen representation is fed to a linear probe trained for 30 epochs on the 80-class label; we report top-1 accuracy. The experiment took approximately 24 hours on 4 RTX6000 GPUs.</p><p>Astrophysical cross-modal. We pair LAMOST optical spectra (DR8, resolution R ∼ 1800, range 3690-9100 Å) with light curves from two photometric surveys -Kepler (DR25, 30-min cadence, ∼ 4 year baseline; 94,876 cross-matched observations) and TESS (QLP lightcurves; 821,878 cross-matched stars). Each modality uses its own pretrained unimodal encoder, frozen during cross-modal training. LAMOST spectra are encoded by a '1d ViT' that produces a 2048-dim CLS token; light curves are encoded by a multichannel network with parallel flux and frequency (ACF and FFT/Lomb-Scargle) branches combined through a mixer, producing a 1024-dim mean-pooled embedding. Both encoders were pretrained independently on their respective modalities before any cross-modal training. On these frozen features we train lightweight heads for each method: CA uses two projection MLPs (2048 → 512 and 1024 → 512) with a VICReg objective (invariance 25×, variance 25×, covariance 1×); CP uses a cross-predictor MLP with a 512-dim bottleneck and MSE loss. Optimization: AdamW (lr = 10 -3 , weight decay = 10 -4 ) with cosine annealing, batch size 256, early stopping on validation loss. Evaluation uses a linear probe on the cross-modal representation (concatenated projections for CA, bottleneck activations for CP) against held-out stellar labelslog g, age (regression), and binarity (classification). The cross-modal experiment took approximately 4 hours on one RTX6000 GPU.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Recovery Regime Prediction</head><p>Require: Paired embeddings Z x ∈ R n×dx , Z y ∈ R n×dy ; labels Y ∈ R n×L Ensure: ∆CA , ∆CP , predicted regime</p><p>1: {CA: read separation ratio from CCA spectrum} 2: Compute SVD of Ĉ = ( Σxx + εI) -1/2 Σxy ( Σyy + εI) -1/2 ; obtain ϕ CCA 3: Classify CCA components as signal/nuisance by elbow detection on per-component R 2 4: ∆CA ← min(ϕ CCA [signal]) / max(ϕ CCA [nuisance]) 5: {CP: read separation ratio from A-SVD spectrum} 6: Compute SVD of Â = Σyx ( Σxx + εI) -1/2 ; obtain σ A 7: Classify A-SVD components as signal/nuisance by elbow detection on per-component R 2 8: ∆CP ← min(σ A [signal]) / max(σ A [nuisance]) 9: return ( ∆CA , ∆CP ) and regime per ≷ 1</p><p>Recovery regime prediction. The pipeline takes paired embeddings Z x ∈ R n×dx , Z y ∈ R n×dy and labels Y ∈ R n×L for a labeled subsample. Under the spiked model, ∆CA and ∆CP are singular-value ratios of C and A respectively: signal and nuisance singular values appear together in each spectrum, distinguished only by which block of the spiked decomposition they belong to. We estimate each ∆ directly from the corresponding spectrum, classifying each component as signal or nuisance by its predictive power for the labels. For each decomposition, 5-fold Ridge regression of the component scores against the labels yields a per-component R 2 value (summed across label columns for the classification statistic), and piecewise-linear elbow detection on the sorted R 2 curve identifies the breakpoint between the signal block and the nuisance floor. The labeled subsample need not cover the full training set: in our experiments, n &lt; 1,000 samples suffice.   (a) dSprites (b) Shape3D Figure 11: Stereo-dSprites accuracy vs. nuisance alignment at 10k (Left) and 50k (Right) pretraining samples. The CA-CP crossover from Figure 4 persists across dataset scales. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Figures</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>);<ref type="bibr" target="#b17">HaoChen et al. (2021)</ref>;<ref type="bibr" target="#b37">Tian et al. (2021)</ref>) study downstream task performance as a function of augmentation design, but do not compare between alignment and prediction or address multimodal noise structure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Phase diagram for signal recovery in (κ, ν) space under the homogeneous model (all signal and noise components are equal). Solid and dashed lines respectively show the ∆ CA = 1 and ∆ CP = 1 boundaries from Proposition 3.1. (a) Large target nuisance (γ y ≫ γ y ). (b) Small target noise (γ y ∼ γ y ). Phase diagrams for the non-homogeneous case with partial recoveries are shown in Figure 7.</figDesc><graphic coords="6,72.00,72.00,468.01,201.43" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Recovery as a function of normalized noise correlation ν. (Left) Subspace distance between the estimated and true signal subspace (lower is better; shading shows ±1 std over 20 trials). CP fails at ν ≈ 0.15 while CA remains robust until ν ≈ 0.75. (Right) Theoretical separation ratios ∆ CA and ∆ CP (log scale). The dashed line marks ∆ = 1; recovery succeeds above this threshold.</figDesc><graphic coords="7,72.00,90.36,271.44,92.79" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Stereo-3DShapes (based on Burgess and Kim (2018)): RGB 64 × 64 stereo pairs of 3D-rendered objects (Cube, Cylinder, Sphere, Capsule) with controlled position jitter (details in Section B).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Linear probe accuracy vs. nuisance alignment ν max = 1 -σ jitter . (Left) Stereo-dSprites (3-class, grayscale, 100k samples). (Right) Stereo-3DShapes (4-class, RGB, 100k samples).In both settings, color represents weak noise levels. In both panels, the trade-off between the methods is clearly seen. CA (solid, circles) peaks at moderate-to-low alignment and collapses at full alignment; CP (dashed, squares) shows the opposite pattern. The crossover at ν max ≈ 0.8 is consistent across datasets. Lower absolute ceilings in 3DShapes reflect the harder discrimination task.</figDesc><graphic coords="8,72.00,72.00,468.00,225.94" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: UMAP embeddings of learned representations of the stereo-dSprites experiment (color = shape, intensity = position). From left to right: CA with aligned noise (σ jitter = 0), CA with misaligned noise (σ jitter = 0.5), CP with aligned noise, and CP with misaligned noise. All experiments have the same modality-specific noise (σ noise = 0.5). Each method succeeds exactly where the other fails, and on failures, the models learn the nuisance.</figDesc><graphic coords="9,72.00,72.00,467.99,114.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Top-1 accuracy vs. image style transform strength for MS-COCO experiment. CP shows an asymmetric nature: prediction of image from text results in similar performance as CA but prediction of text from an image results in much better performance. Both approaches converge to the same accuracy when image noise is high.</figDesc><graphic coords="9,72.68,268.61,154.44,119.16" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Partial recovery under heterogeneous signal spectra. Empirical recovery count r (number of signal directions with squared projection ≥ 0.8 onto the top-k recovered subspace) across the (κ, ν) plane, for signal spread ρ ∈ {1.0, 0.8, 0.6, 0.4} (columns, homogeneous → heterogeneous). (Top): CA. (Bottom): CP. Signal strengths follow a geometric decay κ i = κ ρ i-1 with k = 5, d = 20; noise parameters γ x = 1, γ y = 0.05, γy = 5. Overlaid curves: ∆ CA = 1 (solid) and ∆ CP = 1 (dashed) from the homogeneous theory of figure 2. At ρ = 1 the transition is sharp (r ∈ {0, k}) and the ∆ = 1 contours align with the empirical boundary, reproducing figure 2. As ρ decreases, intermediate counts r ∈ {1, . . . , k -1} fill a widening band in which stronger signal directions are recovered first; the four-region phase diagram smears into a graded continuum. Averaged over 10 seeds with n = 5,000.</figDesc><graphic coords="18,72.00,106.57,467.99,178.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Separation ratios ∆ CA and ∆ CP as a function of target nuisance variance γy , validating Proposition 3.1. Theory curves (dashed) are computed from the closed-form expressions in Theorems A.1 and A.2; empirical curves (solid) are estimated from finite-sample covariances averaged over 20 random rotations. As γy grows, ∆ CA increases unboundedly -CA's symmetric whitening suppresses high-variance nuisance on both sides -while ∆ CP remains approximately constant, since ξ j = η j / γx j does not depend on target nuisance variance: source-side whitening operates only on the source modality. Theory and empirical curves are in close agreement throughout, confirming the accuracy of the closed-form predictions at finite sample sizes.</figDesc><graphic coords="19,189.00,111.88,234.00,145.12" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: The variance trap: signal recovery vs. reconstruction quality for CA+Probe and direct CP, using the same parameter regime as Figure 3 (κ = (3.0, 2.0, 1.5), γy = 50.0, γx = 1.0). Green shading marks the regime where ∆ CA &gt; 1 &gt; ∆ CP . (a) Signal prediction MSE: in the green region, CA+Probe achieves near-zero signal MSE while CP's signal error climbs steeply, confirming that CP encodes the wrong subspace. (b) Total prediction MSE: CP achieves lower total MSE than CA+Probe across the same region, because it successfully reconstructs the high-variance nuisance components -a task at which CA+Probe, having discarded nuisance directions, cannot compete. Together, the two panels illustrate the core danger of using reconstruction error as a proxy for signal recovery: CP can achieve lower loss than CA while failing to recover the signal, precisely because the MSE objective does not distinguish signal from nuisance.</figDesc><graphic coords="19,165.60,450.32,280.80,112.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Comparison between VICReg and DeepCCA for dSprites and Shape3D experiments</figDesc><graphic coords="20,72.00,129.70,224.64,168.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Signal-nuisance decomposition underlying the regime predictions of Table 1. Each panel shows the sorted singular values (gray bars, left axis) and per-component R 2 against log g (teal line, right axis) used by Algorithm 1 to classify components as signal (green shading) or nuisance (red shading). Dashed horizontal line: nuisance floor max j νj (CCA panels) or max j ξj (A-SVD panels); ∆ &gt; 1 iff every classified signal singular value exceeds the nuisance floor. (Top): LAMOST × Kepler -both decompositions have signal components above the nuisance floor ( ∆ CA = 1.13, ∆ CP = 2.22; Both regime). (Bottom): LAMOST × TESS -no CCA component predicts log g above noise (R 2 ≈ 0 across all components, zero signal detected); the A-SVD has one candidate signal component but below the nuisance floor. Both ratios fall below one (Neither regime). The contrast between the two rows -same LAMOST encoder, same protocol, different photometric instrument -shows that instrument quality determines the signal-nuisance separation and hence the regime placement.</figDesc><graphic coords="21,72.00,159.44,468.01,330.57" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Non-uniqueness of the factorization. The product B ⋆ is uniquely determined (assuming distinct singular values), but the factorization B ⋆ = D ⋆ E ⋆ is not: for any invertible M ∈ R k×k , the pair (D ⋆ M, M -1 E ⋆ ) yields the same composed map. Hence E ⋆ is determined only up to left-multiplication by an invertible matrix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Full parameterization</head><p>For simplicity, assume d x = d y = d and that there exist orthogonal matrices Q x , Q y such that</p><formula xml:id="formula_29">S xx = Q x Λ x Q ⊤ x , Λ x = diag K 2 + Γ (s) x , Γ (n) x ,<label>(18)</label></formula><formula xml:id="formula_30">S yy = Q y Λ y Q ⊤ y , Λ y = diag K 2 + Γ (s) y , Γ (n) y ,<label>(19)</label></formula><formula xml:id="formula_31">S xy = Q x Λ xy Q ⊤ y , Λ xy = diag K 2 , Γ xy ,<label>(20)</label></formula><p>where</p><formula xml:id="formula_32">K = diag(κ 1 , . . . , κ k ) with κ 1 ≥ • • • ≥ κ k &gt; 0, Γ (s) x = diag(γ x 1 , . . . , γ x k ), Γ (s) y = diag(γ y 1 , . . . , γ y k ), Γ (n) x = diag(γ x 1 , . . . , γx d-k ), Γ (n) y = diag(γ y 1 , . . . , γy d-k ), and Γ xy = diag(η 1 , . . . , η d-k ) with 0 ≤ η j ≤ γx j γy j .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Singular-value decompositions</head><p>Lemma A.3 (Singular values of C and A). Under the spiked model, C and A are block diagonal in the bases defined by Q x , Q y . Their singular values are the union of the signal values ρ i , τ i and nuisance values ν j , ξ j given in equation 5.</p><p>Proof. In the bases</p><formula xml:id="formula_33">Q x , Q y , both C = S -1/2 xx S xy S -1/2 yy and A = S yx S -1/2 xx</formula><p>are block diagonal with signal and nuisance blocks. Direct computation on each block yields the stated expressions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Corollary A.4 (Recovery conditions).</head><p>If min i ρ i &gt; max j ν j , the top-k singular vectors of C align with the shared signal block, so the CA solution from Theorem A.1 recovers the shared signal subspace (up to rotation) and discards modality-specific noise. The analogous statement holds for A and CP with τ i , ξ j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Proof of Proposition 3.1</head><p>The singular-value expressions follow from Lemma A.3. For the ratio identity, we consider the homogeneous case (κ i ≡ κ, γ x i ≡ γ x , γ y i ≡ γ y , γx j ≡ γx , γy j ≡ γy , η j ≡ η), in which all ρ i collapse to a single value ρ, and likewise</p><formula xml:id="formula_34">τ i ≡ τ , ν j ≡ ν, ξ j ≡ ξ. Substituting equation 5 into ∆ CA /∆ CP = (ρ/ν)/(τ /ξ) yields ∆ CA ∆ CP = γy κ 2 + γ y .<label>(21)</label></formula><p>In the heterogeneous case, the same substitution yields the upper bound</p><formula xml:id="formula_35">∆ CA ∆ CP ≤ max j γy j min i (κ 2 i + γ y i ) ,<label>(22)</label></formula><p>since the indices achieving min i ρ i and min i τ i (and similarly the nuisance maxima) need not coincide. Monotonicity of ∆ CA /∆ CP in each γy j follows from ∆ CP being invariant in γy j (since ξ j = η j / γx j does not depend on target nuisance variance) and ∆ CA being non-increasing in ν j , with ν j non-increasing in γy j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 Proof of Proposition 3.2</head><p>We prove the CA case; the CP case is identical with ρ i , ν j replaced by τ i , ξ j and C replaced by A. By Lemma A.3, the singular values of C are the union {ρ i } i∈ k ∪ {ν j } j∈ d-k , with each ρ i corresponding to a singular vector in the signal block and each ν j to a singular vector in the nuisance block.</p><p>Let i be any signal index with ρ i &gt; max j ν j . Then ρ i exceeds every nuisance singular value, so at most k -1 values of C (the other signal values) can exceed ρ i , placing ρ i among the top k singular values. Since this holds for each of the r CA signal indices with ρ i &gt; max j ν j , the top-k singular vectors contain at least r CA vectors from the signal block.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pauline</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yana</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karel</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malcolm</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serkan</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengda</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sina</forename><surname>Samangooei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianne</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Nematzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahand</forename><surname>Sharifzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikolaj</forename><surname>Binkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricardo</forename><surname>Barreira</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2204.14198</idno>
+		<idno type="arXiv">arXiv:2204.14198</idno>
+		<title level="m">Oriol Vinyals, Andrew Zisserman, and Karen Simonyan. Flamingo: a Visual Language Model for Few-Shot Learning</title>
+		<imprint>
+			<date type="published" when="2022-04">April 2022</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints, art</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Deep canonical correlation analysis</title>
+		<author>
+			<persName><forename type="first">Galen</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Bilmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Livescu</surname></persName>
+		</author>
+		<idno>III-1247-III-1255. JMLR.org</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th International Conference on International Conference on Machine Learning</title>
+		<meeting>the 30th International Conference on International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+	<note>ICML&apos;13</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A theoretical analysis of contrastive unsupervised representation learning</title>
+		<author>
+			<persName><forename type="first">Sanjeev</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hrishikesh</forename><surname>Khandeparkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Khodak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orestis</forename><surname>Plevrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikunj</forename><surname>Saunshi</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:67855945" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Self-supervised learning from images with a joint-embedding predictive architecture</title>
+		<author>
+			<persName><forename type="first">Mahmoud</forename><surname>Assran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Duval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishan</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">G</forename><surname>Rabbat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Ballas</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:255999752" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="15619" to="15629" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexei</forename><surname>Baevski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ning</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiantong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Babu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Auli</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2202.03555</idno>
+		<idno type="arXiv">arXiv:2202.03555</idno>
+		<title level="m">General Framework for Self-supervised Learning in Speech, Vision and Language</title>
+		<imprint>
+			<date type="published" when="2022-02">February 2022</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints, art</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Contrastive and non-contrastive self-supervised learning recover global and local spectral embedding methods</title>
+		<author>
+			<persName><forename type="first">Randall</forename><surname>Balestriero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2205.11508</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page">248986152</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Randall</forename><surname>Balestriero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2511.08544</idno>
+		<idno type="arXiv">arXiv:2511.08544</idno>
+		<title level="m">LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2025-11">November 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">VICReg: Variance-Invariance-Covariance Regularization for Self-Supervised Learning</title>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Bardes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Ponce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2105.04906</idno>
+		<idno type="arXiv">arXiv:2105.04906</idno>
+		<imprint>
+			<date type="published" when="2021-05">May 2021</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints, art</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Bodnar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Bruinsma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Lucic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Vaughan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Brandstetter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maik</forename><surname>Garvan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">A</forename><surname>Riechert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyu</forename><surname>Weyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayesh</forename><forename type="middle">K</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kit</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">T</forename><surname>Thambiratnam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chun-Chieh</forename><surname>Archibald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Heider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">E</forename><surname>Welling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><surname>Turner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perdikaris</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2405.13063</idno>
+		<idno type="arXiv">arXiv:2405.13063</idno>
+		<title level="m">A Foundation Model for the Earth System. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2024-05">May 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Burgess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunjik</forename><surname>Kim</surname></persName>
+		</author>
+		<ptr target="https://github.com/deepmind/3d-shapes" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">3d shapes dataset</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The ssl interplay: Augmentations, inductive bias, and generalization</title>
+		<author>
+			<persName><forename type="first">Vivien</forename><surname>Cabannes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bobak</forename><surname>Kiani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Randall</forename><surname>Balestriero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Bietti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3252" to="3298" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">James</forename><surname>Chapman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lennie</forename><surname>Wells</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ana</forename><forename type="middle">Lawry</forename><surname>Aguila</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.01012</idno>
+		<idno type="arXiv">arXiv:2310.01012</idno>
+		<title level="m">Unconstrained Stochastic CCA: Unifying Multiview and Self-Supervised Learning. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2023-10">October 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Exploring Simple Siamese Representation Learning</title>
+		<author>
+			<persName><forename type="first">Xinlei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2011.10566</idno>
+		<idno type="arXiv">arXiv:2011.10566</idno>
+		<imprint>
+			<date type="published" when="2020-11">November 2020</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Towards multimodal foundation models in molecular cell biology</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alejandro</forename><surname>Tejada-Lapuerta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Brbić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julio</forename><surname>Saez-Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simona</forename><surname>Cristea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Goodarzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Lotfollahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><forename type="middle">J</forename><surname>Theis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41586-025-08710-y</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">640</biblScope>
+			<biblScope unit="issue">8059</biblScope>
+			<biblScope unit="page" from="623" to="633" />
+			<date type="published" when="2025-04">April 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Donnat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Tuzhilina</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2405.19539</idno>
+		<idno type="arXiv">arXiv:2405.19539</idno>
+		<title level="m">Canonical Correlation Analysis as Reduced Rank Regression in High Dimensions. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2024-05">May 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The approximation of one matrix by another of lower rank</title>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Eckart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gale</forename><surname>Young</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/BF02288367</idno>
+		<ptr target="https://doi.org/10.1007/BF02288367" />
+	</analytic>
+	<monogr>
+		<title level="j">Psychometrika</title>
+		<idno type="ISSN">1860-0980</idno>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="211" to="218" />
+			<date type="published" when="1936-09">September 1936</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alaaeldin</forename><surname>El-Nouby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mannat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Vasudev Alwala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishan</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Imagebind</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2305.05665</idno>
+		<idno type="arXiv">arXiv:2305.05665</idno>
+		<title level="m">One Embedding Space To Bind Them All. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2023-05">May 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Provable guarantees for self-supervised deep learning with spectral contrastive loss</title>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Haochen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Gaidon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">34</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinlei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2111.06377</idno>
+		<idno type="arXiv">arXiv:2111.06377</idno>
+		<title level="m">Masked Autoencoders Are Scalable Vision Learners. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2021-11">November 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Relations between two sets of variates</title>
+		<author>
+			<persName><forename type="first">Harold</forename><surname>Hotelling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="321" to="377" />
+			<date type="published" when="1936">1936</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">What makes multi-modal learning better than single (provably)</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzhuang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longbo</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.04538</idno>
+		<ptr target="https://arxiv.org/abs/2106.04538v2" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Reduced-rank regression for the multivariate linear model</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izenman</forename></persName>
+		</author>
+		<idno type="DOI">10.1016/0047-259X(75)90042-1</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/0047259X75900421" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Multivariate Analysis</title>
+		<idno type="ISSN">0047-259</idno>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="248" to="264" />
+			<date type="published" when="1975">1975</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Machine learning inference of stellar properties using integrated photometric and spectroscopic data</title>
+		<author>
+			<persName><forename type="first">Ilay</forename><surname>Kamai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">M</forename><surname>Bronstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hagai</forename><forename type="middle">B</forename><surname>Perets</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:280232312" />
+	</analytic>
+	<monogr>
+		<title level="j">The Astrophysical Journal</title>
+		<imprint>
+			<biblScope unit="volume">994</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<ptr target="https://www.semanticscholar.org/paper/775" />
+		<title level="m">A path towards autonomous machine intelligence version 0.9</title>
+		<imprint>
+			<date type="published" when="2022-06-27">2022-06-27, 2022. 42ed458b8c5b0f2094ea4ff5b64c557b1a34</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weixin</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongchan</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2203.02053</idno>
+		<idno type="arXiv">arXiv:2203.02053</idno>
+		<title level="m">Mind the Gap: Understanding the Modality Gap in Multi-modal Contrastive Representation Learning</title>
+		<imprint>
+			<date type="published" when="2022-03">March 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Microsoft coco: Common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lawrence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitnick</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2014: 13th European Conference</title>
+		<meeting><address><addrLine>Zurich, Switzerland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014">September 6-12, 2014. 2014</date>
+			<biblScope unit="page" from="740" to="755" />
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part V 13</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">A theory of multimodal learning</title>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arxiv.2309.12458</idno>
+		<idno type="arXiv">arXiv:2309.12458</idno>
+		<ptr target="https://arxiv.org/abs/2309.12458v2" />
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Revised stellar properties of kepler targets for the q1-17 (dr25) transit detection run</title>
+		<author>
+			<persName><forename type="first">Savita</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Huber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalie</forename><forename type="middle">M</forename><surname>Batalha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">R</forename><surname>Ciardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabienne</forename><forename type="middle">A</forename><surname>Bastien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allyson</forename><surname>Bieryla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><forename type="middle">A</forename><surname>Buchhave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">D</forename><surname>Cochran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Endl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gilbert</forename><forename type="middle">A</forename><surname>Esquerdo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elise</forename><surname>Furlan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><forename type="middle">B</forename><surname>Howell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Isaacson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">W</forename><surname>Latham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><forename type="middle">J</forename><surname>Macqueen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">R</forename><surname>Silva</surname></persName>
+		</author>
+		<idno type="DOI">10.3847/1538-4365/229/2/30</idno>
+		<ptr target="https://dx.doi.org/10.3847/1538-4365/229/2/30" />
+	</analytic>
+	<monogr>
+		<title level="j">The Astrophysical Journal Supplement Series</title>
+		<imprint>
+			<biblScope unit="volume">229</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">30</biblScope>
+			<date type="published" when="2017-03">mar 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Loic</forename><surname>Matthey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Lerchner</surname></persName>
+		</author>
+		<ptr target="https://github.com/deepmind/dsprites-dataset/" />
+		<title level="m">Disentanglement testing sprites dataset</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</title>
+		<author>
+			<persName><forename type="first">Leland</forename><surname>Mcinnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Healy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Melville</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.1802.03426</idno>
+		<idno type="arXiv">arXiv:1802.03426</idno>
+		<imprint>
+			<date type="published" when="2018-02">February 2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Spectral thresholds in correlated spiked models and fundamental limits of partial least squares</title>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Mergny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lenka</forename><surname>Zdeborová</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.17561</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Symmetric gauge functions and unitarily invariant norms</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mirsky</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/qmath/11.1.50</idno>
+	</analytic>
+	<monogr>
+		<title level="j">The Quarterly Journal of Mathematics</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="50" to="59" />
+			<date type="published" when="1960-01">January 1960</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liam</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francois</forename><surname>Lanusse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ollie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hehir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leopoldo</forename><surname>Sarra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Micah</forename><surname>Bowles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Wagner-Carena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siavash</forename><surname>Golkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Bietti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hatim</forename><surname>Bourfoune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Casserau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Cornette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keiya</forename><surname>Hirashima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geraud</forename><surname>Krawezik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Ohana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Mccabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rudy</forename><surname>Morel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Payel</forename><surname>Mukhopadhyay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariel</forename><surname>Pettee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno Regaldo-Saint</forename><surname>Blancard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Cranmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirley</forename><surname>Ho</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2510.17960</idno>
+		<idno type="arXiv">arXiv:2510.17960</idno>
+		<title level="m">AION-1: Omnimodal Foundation Model for Astronomical Sciences</title>
+		<imprint>
+			<date type="published" when="2025-10">October 2025</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints, art</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><forename type="middle">Wook</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2103.00020</idno>
+		<idno type="arXiv">arXiv:2103.00020</idno>
+		<title level="m">Learning Transferable Visual Models From Natural Language Supervision. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2021-02">February 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Transiting Exoplanet Survey Satellite (TESS)</title>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">R</forename><surname>Ricker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">N</forename><surname>Winn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Vanderspek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">W</forename><surname>Latham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gáspár</forename><forename type="middle">Á</forename><surname>Bakos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><forename type="middle">L</forename><surname>Bean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zachory</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">M</forename><surname>Berta-Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><forename type="middle">R</forename><surname>Buchhave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Paul</forename><surname>Butler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">J</forename><surname>Butler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Chaplin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jørgen</forename><surname>Charbonneau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Christensen-Dalsgaard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Drake</forename><surname>Clampin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Deming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><forename type="middle">De</forename><surname>Doty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Courtney</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">W</forename><surname>Dressing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Dunham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francois</forename><surname>Endl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Fressin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">J</forename><surname>Henning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">W</forename><surname>Holman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shigeru</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><forename type="middle">M</forename><surname>Ida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Garrett</forename><surname>Jenkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Jernigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Asher Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nobuyuki</forename><surname>Kaltenegger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hans</forename><surname>Kawai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kjeldsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><forename type="middle">M</forename><surname>Laughlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Lissauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Macqueen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">R</forename><surname>Marcy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">D</forename><surname>Mccullough</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Norio</forename><surname>Morton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Narita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enric</forename><surname>Paegert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Palle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Pepe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Pepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">A</forename><surname>Quirrenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitar</forename><surname>Rinehart</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sasselov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">'</forename><surname>Bun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Sato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Seager</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sozzetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Keivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stassun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillermo</forename><surname>Szentgyorgyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Torres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Udry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Villasenor</surname></persName>
+		</author>
+		<idno type="DOI">10.1117/1.JATIS.1.1.014003</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Astronomical Telescopes, Instruments, and Systems</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">14003</biblScope>
+			<date type="published" when="2015-01">January 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Arabind</forename><surname>Swain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Alexander Ridout</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Nemenman</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2507.22207</idno>
+		<idno type="arXiv">arXiv:2507.22207</idno>
+		<title level="m">Better Together: Cross and Joint Covariances Enhance Signal Detectability in Undersampled Data</title>
+		<imprint>
+			<date type="published" when="2025-07">July 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv e-prints, art.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Tabanelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Mergny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lenka</forename><surname>Zdeborova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florent</forename><surname>Krzakala</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2506.02664</idno>
+		<idno type="arXiv">arXiv:2506.02664</idno>
+		<title level="m">Computational Thresholds in Multi-Modal Learning via the Spiked Matrix-Tensor Model. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Understanding self-supervised learning dynamics without contrastive pairs</title>
+		<author>
+			<persName><forename type="first">Yonglong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinlei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surya</forename><surname>Ganguli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Joint Embedding vs Reconstruction: Provable Benefits of Latent Space Prediction for Self Supervised Learning</title>
+		<author>
+			<persName><forename type="first">Hugues</forename><surname>Van Assel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Ibrahim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tommaso</forename><surname>Biancalani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviv</forename><surname>Regev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Randall</forename><surname>Balestriero</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2505.12477</idno>
+		<idno type="arXiv">arXiv:2505.12477</idno>
+		<imprint>
+			<date type="published" when="2025-05">May 2025</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints, art</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Meir</forename><surname>Yossef</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Levi</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gilboa</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2411.14517</idno>
+		<idno type="arXiv">arXiv:2411.14517</idno>
+		<title level="m">The Double-Ellipsoid Geometry of CLIP. arXiv e-prints, art</title>
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">LAMOST spectral survey -An overview</title>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong-Heng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao-Quan</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Peng</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Cai</forename><surname>Deng</surname></persName>
+		</author>
+		<idno type="DOI">10.1088/1674-4527/12/7/002</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Research in Astronomy and Astrophysics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="723" to="734" />
+			<date type="published" when="2012-07">July 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
