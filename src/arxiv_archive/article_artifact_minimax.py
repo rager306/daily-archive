@@ -4,10 +4,25 @@ This module is intentionally pure: it prepares Anthropic-compatible MiniMax
 forced-tool requests and validates already-received tool-use responses, but it
 never performs network I/O. MiniMax output is helper evidence only and is never
 trusted for KG import or promoted to fact by this adapter.
+
+M050 (Bounded LLM Helper v2 Worker Pool) adds a work requester layer on top
+of the existing request/response functions:
+
+- request_article_artifact_classification(structure, ...) returns an
+  ArticleArtifactWorkRequest with deterministic work_id (per M048 patterns-review
+  01 §4.2 and M049 compute_work_id).
+- The actual MiniMax HTTP call lives in article_artifact_worker.py
+  (separated, bounded ProcessPoolExecutor, can run as parallel workers).
+- Reducer in article_artifact_reducer.py merges work.completed events
+  idempotently sorted by work_id.
+
+This file (article_artifact_minimax.py) is the **request and validation
+boundary**. The actual call to MiniMax lives elsewhere.
 """
 
 from __future__ import annotations
 
+import datetime
 import hashlib
 import json
 from dataclasses import dataclass
@@ -29,11 +44,23 @@ from arxiv_archive.minimax_structured import (
     build_minimax_structured_request,
     validate_minimax_tool_response,
 )
+from arxiv_archive.models_registry import (
+    BindingSpec,
+    ModelSpec,
+    ModelsRegistry,
+    compute_work_id,
+    get_model,
+    get_model_for_binding,
+    load_models_registry,
+)
 
 MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION = "m023-minimax-artifact-helper.v1"
 MINIMAX_ARTIFACT_HELPER_TOOL_NAME = "record_article_artifact_hints"
 MINIMAX_ARTIFACT_HELPER_DETECTOR = "minimax_artifact_helper_review_only"
 REQUEST_MODE = "forced_tool_redacted_article_structure"
+
+# Default binding_id for article artifact classification (M049 bindings)
+DEFAULT_ARTICLE_ARTIFACT_BINDING = "article-artifact-classify"
 
 
 @dataclass(frozen=True, repr=False)
@@ -67,6 +94,132 @@ class MiniMaxArtifactHelperResult:
         }
 
 
+@dataclass(frozen=True, repr=False)
+class ArticleArtifactWorkRequest:
+    """M050 work request: deterministic work_id + helper request + binding + run_id.
+
+    Per M048 patterns-review 01 §4.2 and ActiveGraph pattern 3.1 (serial audit
+    + parallel workers). The work_id is the deterministic cache key; the
+    helper request is the payload a bounded ProcessPoolExecutor worker would
+    dispatch to MiniMax.
+
+    Diagnostic-only output (ADR-006): no graph writes, no promotion authority.
+    """
+
+    work_id: str
+    binding_id: str
+    model_id: str
+    paper_id: str
+    input_sha256: str
+    max_candidates: int
+    helper_request: MiniMaxArtifactHelperRequest
+    created_at: str  # ISO 8601, but NOT included in work_id (deterministic)
+
+    def to_sanitized_dict(self) -> dict[str, Any]:
+        return {
+            "work_id": self.work_id,
+            "binding_id": self.binding_id,
+            "model_id": self.model_id,
+            "paper_id": self.paper_id,
+            "input_sha256": self.input_sha256,
+            "max_candidates": self.max_candidates,
+            "created_at": self.created_at,
+            "diagnostic_only": True,
+            "import_eligible": False,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+            "graph_import_allowed": False,
+        }
+
+
+def request_article_artifact_classification(
+    structure: dict[str, Any],
+    *,
+    max_candidates: int = 24,
+    binding_id: str = DEFAULT_ARTICLE_ARTIFACT_BINDING,
+    run_id: str | None = None,
+    registry: ModelsRegistry | None = None,
+) -> ArticleArtifactWorkRequest:
+    """Build a work request for article artifact classification.
+
+    Per M050 (Bounded LLM Helper v2) and M048 patterns-review 01 §4.2:
+    - Computes work_id = sha256(model_id || binding_id || paper_id || max_candidates || input_sha256)
+      via M049 compute_work_id.
+    - Wraps the existing build_article_artifact_minimax_request as the helper payload.
+    - Emits a serial audit event (work_id + binding + helper_request).
+
+    The actual MiniMax HTTP call happens in article_artifact_worker.py
+    (bounded ProcessPoolExecutor). This function does NOT perform network I/O.
+    """
+    if max_candidates < 1:
+        raise ValueError("max_candidates must be positive")
+
+    if registry is None:
+        registry = load_models_registry()
+    model = get_model_for_binding(registry, binding_id)
+
+    # Validate structure up front (same checks as build_article_artifact_minimax_request).
+    build_article_artifact_manifest_from_structure(structure)
+    summary = _summarize_redacted_structure(structure, max_candidates=max_candidates)
+    inputsha256 = _stable_hash(structure)
+    summarysha256 = _stable_hash(summary)
+    prompt = _build_prompt(summary, input_sha256=inputsha256, summary_sha256=summarysha256)
+    structured_request = build_minimax_structured_request(
+        prompt=prompt,
+        tool_name=MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
+        tool_description=(
+            "Record bounded, review-required article artifact hint candidates "
+            "from a redacted structure summary. Never assert facts or import eligibility."
+        ),
+        input_schema=article_artifact_minimax_hint_schema(max_candidates=max_candidates),
+        payload_class="redacted",
+    )
+    diagnostics = _base_diagnostics(
+        inputsha256=inputsha256,
+        summarysha256=summarysha256,
+        max_candidates=max_candidates,
+        response_validation_status="not_evaluated",
+        diagnostic_codes=(),
+    )
+    diagnostics.update(
+        {
+            "paper_id": str(structure.get("paper_id")),
+            "redacted_summary_counts": summary["counts"],
+        }
+    )
+    helper_request = MiniMaxArtifactHelperRequest(
+        structured_request=structured_request,
+        diagnostics=diagnostics,
+    )
+
+    # Compute work_id via M049 deterministic formula.
+    work_id = compute_work_id(
+        model_id=model.id,
+        binding_id=binding_id,
+        input_data={
+            "paper_id": str(structure.get("paper_id")),
+            "max_candidates": max_candidates,
+            "input_sha256": inputsha256,
+        },
+        prompt_data={
+            "task": "classify_article_artifact",
+            "tool_name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
+        },
+        run_id=run_id,
+    )
+
+    return ArticleArtifactWorkRequest(
+        work_id=work_id,
+        binding_id=binding_id,
+        model_id=model.id,
+        paper_id=str(structure.get("paper_id")),
+        input_sha256=inputsha256,
+        max_candidates=max_candidates,
+        helper_request=helper_request,
+        created_at=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+    )
+
+
 def build_article_artifact_minimax_request(
     structure: dict[str, Any], *, max_candidates: int = 24
 ) -> MiniMaxArtifactHelperRequest:
@@ -83,9 +236,9 @@ def build_article_artifact_minimax_request(
     # as MiniMax input. It rejects raw payload keys and source-of-truth markers.
     build_article_artifact_manifest_from_structure(structure)
     summary = _summarize_redacted_structure(structure, max_candidates=max_candidates)
-    input_sha256 = _stable_hash(structure)
-    summary_sha256 = _stable_hash(summary)
-    prompt = _build_prompt(summary, input_sha256=input_sha256, summary_sha256=summary_sha256)
+    inputsha256 = _stable_hash(structure)
+    summarysha256 = _stable_hash(summary)
+    prompt = _build_prompt(summary, input_sha256=inputsha256, summary_sha256=summarysha256)
     request = build_minimax_structured_request(
         prompt=prompt,
         tool_name=MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
@@ -97,8 +250,8 @@ def build_article_artifact_minimax_request(
         payload_class="redacted",
     )
     diagnostics = _base_diagnostics(
-        input_sha256=input_sha256,
-        summary_sha256=summary_sha256,
+        inputsha256=inputsha256,
+        summarysha256=summarysha256,
         max_candidates=max_candidates,
         response_validation_status="not_evaluated",
         diagnostic_codes=(),
@@ -120,9 +273,9 @@ def validate_article_artifact_minimax_response(
     if max_candidates < 1:
         raise ValueError("max_candidates must be positive")
     build_article_artifact_manifest_from_structure(structure)
-    input_sha256 = _stable_hash(structure)
+    inputsha256 = _stable_hash(structure)
     summary = _summarize_redacted_structure(structure, max_candidates=max_candidates)
-    summary_sha256 = _stable_hash(summary)
+    summarysha256 = _stable_hash(summary)
     schema = article_artifact_minimax_hint_schema(max_candidates=max_candidates)
     validation = validate_minimax_tool_response(
         content_blocks,
@@ -136,8 +289,8 @@ def validate_article_artifact_minimax_response(
         return MiniMaxArtifactHelperResult(
             candidates=(),
             diagnostics=_base_diagnostics(
-                input_sha256=input_sha256,
-                summary_sha256=summary_sha256,
+                inputsha256=inputsha256,
+                summarysha256=summarysha256,
                 max_candidates=max_candidates,
                 response_validation_status="invalid",
                 diagnostic_codes=tuple(diagnostic_codes),
@@ -149,7 +302,7 @@ def validate_article_artifact_minimax_response(
     semantic_diagnostics = _validate_tool_input_semantics(
         tool_input,
         structure=structure,
-        input_sha256=input_sha256,
+        input_sha256=inputsha256,
         max_candidates=max_candidates,
     )
     diagnostic_codes.extend(semantic_diagnostics)
@@ -157,8 +310,8 @@ def validate_article_artifact_minimax_response(
         return MiniMaxArtifactHelperResult(
             candidates=(),
             diagnostics=_base_diagnostics(
-                input_sha256=input_sha256,
-                summary_sha256=summary_sha256,
+                inputsha256=inputsha256,
+                summarysha256=summarysha256,
                 max_candidates=max_candidates,
                 response_validation_status="invalid",
                 diagnostic_codes=tuple(diagnostic_codes),
@@ -168,8 +321,8 @@ def validate_article_artifact_minimax_response(
 
     candidates = tuple(_sanitize_candidate(candidate) for candidate in tool_input.get("artifact_hints", []))
     diagnostics = _base_diagnostics(
-        input_sha256=input_sha256,
-        summary_sha256=summary_sha256,
+        inputsha256=inputsha256,
+        summarysha256=summarysha256,
         max_candidates=max_candidates,
         response_validation_status="valid",
         diagnostic_codes=tuple(diagnostic_codes),
@@ -506,8 +659,8 @@ def _string_or_none(value: Any) -> str | None:
 
 def _base_diagnostics(
     *,
-    input_sha256: str,
-    summary_sha256: str,
+    inputsha256: str,
+    summarysha256: str,
     max_candidates: int,
     response_validation_status: str,
     diagnostic_codes: tuple[str, ...],
@@ -519,8 +672,8 @@ def _base_diagnostics(
         "source_schema_version": REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION,
         "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
         "tool_name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
-        "input_sha256": input_sha256,
-        "redacted_summary_sha256": summary_sha256,
+        "input_sha256": inputsha256,
+        "redacted_summary_sha256": summarysha256,
         "max_candidates": max_candidates,
         "response_validation_status": response_validation_status,
         "diagnostic_codes": list(diagnostic_codes),
@@ -571,12 +724,15 @@ def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
 
 
 __all__ = [
+    "DEFAULT_ARTICLE_ARTIFACT_BINDING",
     "MINIMAX_ARTIFACT_HELPER_DETECTOR",
     "MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION",
     "MINIMAX_ARTIFACT_HELPER_TOOL_NAME",
+    "ArticleArtifactWorkRequest",
     "MiniMaxArtifactHelperRequest",
     "MiniMaxArtifactHelperResult",
     "article_artifact_minimax_hint_schema",
     "build_article_artifact_minimax_request",
+    "request_article_artifact_classification",
     "validate_article_artifact_minimax_response",
 ]
