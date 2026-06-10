@@ -169,6 +169,7 @@
 | D080 | M045-4s8e44 | trajectory-governance | How agents should preserve overall project trajectory across sessions and milestones | Use a unified project trajectory checker as a planning and closeout preflight, composing GSD/ADR/governance/GitNexus/codebase-memory evidence instead of adding narrow one-off guardrails. |
 | D081 | M046-3b7gp0 QW-1 (2026-06-09) | adr-framework | Accept ADR-001 (Scientific Papers as First Domain) | Drafted and accepted ADR-001 in M046-3b7gp0 QW-1 follow-up. ADR-001 isolates the first-domain framing previously implicit in ADR-000, names paper-domain requirements (R024, R027, R029, R031-R033, R050, R058, R060) as first-domain validation constraints, and defines a forward decision point for second-domain selection (R024 graph-readiness threshold). Status changed from Planned to Accepted; all 8 ADRs are now binding or deferred (zero Planned). |
 | D082 | M055 | architecture | Hybrid Parser Architecture | GROBID (header/citations) + OpenDataLoader (body/tables/layout) |
+| D083 | M055-kyxuqm S06 ADR-009 amendment | parser-benchmark / hybrid-parser-architecture / fulltext-routing | How M055deep should amend ADR-008 after 20-PDF GROBID fulltext versus OpenDataLoader routing evidence | Keep hybrid routing as the default, but require a fulltext-aware GROBID fallback when OpenDataLoader body evidence is low-quality, unavailable, or below threshold. |
 
 ## ADR Index
 
@@ -183,6 +184,7 @@
 | ADR-007 | Accepted | `doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md` | Quant-mind Pattern Source Not Runtime Dependency |
 | ADR-001 | Accepted | `doc/adr/ADR-001-scientific-papers-as-first-domain.md` | Scientific Papers as First Domain |
 | ADR-008 | Accepted (binding) | `doc/adr/ADR-008-hybrid-parser-architecture.md` | Hybrid Parser Architecture |
+| ADR-009 | Accepted (binding) | `doc/adr/ADR-009-amend-hybrid-parser.md` | Fulltext-Aware Hybrid Parser Routing |
 
 ## Typed Graph Projection
 

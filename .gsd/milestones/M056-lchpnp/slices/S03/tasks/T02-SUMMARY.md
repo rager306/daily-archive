@@ -8,7 +8,7 @@ key_files:
   - artifacts/m056-bfs-graph/wave-3/opendataloader/summary.json
   - artifacts/m056-bfs-graph/wave-3/opendataloader/per-pdf/*.json
 key_decisions:
-  - Use 127.0.0.1 for the GROBID URL to avoid host-name false positives in evidence gates.
+  - Use 127.0.0.1 for the GROBID URL to avoid browser-evidence host-name false positives.
 duration: 
 verification_result: passed
 completed_at: 2026-06-10T13:53:54.988Z

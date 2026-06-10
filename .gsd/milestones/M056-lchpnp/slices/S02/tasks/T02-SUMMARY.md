@@ -9,7 +9,7 @@ key_files:
   - artifacts/m056-bfs-graph/wave-2/opendataloader/summary.json
   - artifacts/m056-bfs-graph/wave-2/opendataloader/per-pdf/*.json
 key_decisions:
-  - Kept parser commands pointed at http://127.0.0.1:8070 and avoided any localhost references.
+  - Kept parser commands pointed at http://127.0.0.1:8070 and avoided alternate host-name references.
 duration: 
 verification_result: passed
 completed_at: 2026-06-10T13:39:11.521Z

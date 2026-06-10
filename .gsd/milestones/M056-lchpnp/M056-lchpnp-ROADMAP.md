@@ -19,10 +19,10 @@
 - [ ] **S05: Wave 5: refs 121-150** `risk:medium` `depends:[S04]`
   > After this: 30 more PDFs (cumulative 170) with per-wave analysis.
 
-- [ ] **S06: Wave 6: remaining 16 refs (151-166)** `risk:medium` `depends:[S05]`
+- [x] **S06: Wave 6: remaining 16 refs (151-166)** `risk:medium` `depends:[S05]`
   > After this: 16 final PDFs (cumulative 167 = 1 anchor + 166 refs) with closing analysis.
 
-- [ ] **S07: Final REPORT + candidate-edges.json + ADR-010** `risk:low` `depends:[S06]`
+- [x] **S07: Final REPORT + candidate-edges.json + ADR-010** `risk:low` `depends:[S06]`
   > After this: Comprehensive REPORT.md (167-PDF BFS), candidate-edges.json (citation graph), ADR-010 (BFS scale evidence for ADR-002).
 
 ## Boundary Map
