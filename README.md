@@ -206,6 +206,32 @@ Schema versioning: bump `schema_version` in models.yaml on breaking changes; bum
 
 M046 07-2026-assessment Recommendation 6 marked done with M049 evidence.
 
+M050 LLM helper v2 worker pool (Track A) — requester + worker + reducer:
+
+- `request_article_artifact_classification(structure, *, max_candidates, binding_id, run_id)`: emits an `ArticleArtifactWorkRequest` with deterministic `work_id` via M049 `compute_work_id`.
+- `article_artifact_worker.run_worker_pool(work_requests, *, structures, transport, max_workers, storage_dir)`: bounded ProcessPoolExecutor (1-2 workers, NOT distributed), pluggable Transport (HttpTransport for real MiniMax, MockTransport for tests).
+- `article_artifact_reducer.merge_article_artifact_results(results)`: idempotent dedup by work_id, sorted output (ActiveGraph pattern 3.6).
+- `article_artifact_reducer.aggregate_article_artifact_log(results_dir)`: reads content-addressed dir, emits per-binding-id + validation_status counts.
+- 5-flag safety block (graph_import_allowed, graphdb_written, ladybugdb_written, production_import_attempted, import_eligible) explicit on every output. All false per ADR-006.
+
+```bash
+# Run M050 tests
+uv run pytest tests/test_m050_article_artifact_worker.py tests/test_m050_article_artifact_reducer.py tests/test_m050_e2e_pipeline.py -q
+```
+
+M051 bounded PDF acquisition (Track B) — 5 linked target records from M041:
+
+- `scripts/acquire_linked_target_pdfs.py`: bounded download from arxiv.org (3 retries, 30s timeout, max-workers=1 sequential, atomic write).
+- `scripts/audit_m054_pdf_acquisition.py`: deterministic markdown audit with 5-flag safety block.
+- `scripts/update_m043_target_subset_post_m054.py`: idempotent M043 manifest update with per-record `local_pdf_present_post_m054` block.
+- 5/5 PDFs acquired (9.0 MB), audit + M043 update both emitted.
+- M045 next_gate closed: bounded local PDF acquisition for the 5 linked target records.
+
+```bash
+# Run M051 tests
+uv run pytest tests/test_acquire_linked_target_pdfs.py -q
+```
+
 Pre-commit hooks (mandatory M044 architecture guardrail):
 
 ```bash
@@ -259,9 +285,9 @@ After M046:
 - 8 ADRs all binding or deferred (zero Planned); ADR-001 (Scientific Papers as First Domain) joins the register.
 - 2026 best-practices assessment covers 7 categories with 7 actionable recommendations (medium/low priority).
 - Reverse ADR audit: 0 violations at code level.
-- Next gate (per M045 follow-ups, unchanged by M046): bounded local PDF acquisition for the 5 linked target records.
+- Next gate (per M045 follow-ups, M051 closed): live GROBID/OpenDataLoader/Adaptix pilot on the 5 acquired PDFs (M052 RLM S09 on Track A, M055 GROBID expansion on Track B).
 
-M046 roadmap proposal (not yet executed): Quick wins (M044 pre-commit, trajectory severity tuning) → parallel tracks A (Agent/Bounded AI) and B (Graph/First-domain validation) → convergence at M057 (first positive graph-readiness attempt) or M058 (explicit deferral).
+M046 roadmap proposal: Quick wins (M044 pre-commit, trajectory severity tuning, M048 patterns review, M049 models registry) → parallel tracks A (M050 LLM helper worker pool, M052 RLM S09, M053 RLM S10) and B (M051 bounded PDF acquisition, M055 GROBID expansion, M056 GraphDB comparison, M057 hybrid pilot) → convergence at M058 (graph-readiness gate v1) or explicit deferral.
 
 M045 unified trajectory preflight for planning and closeout:
 
