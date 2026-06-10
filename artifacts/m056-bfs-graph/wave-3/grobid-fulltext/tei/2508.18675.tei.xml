@@ -1,0 +1,1428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Requirements Development and Formalization for Reliable Code Generation: A Multi-Agent Vision</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-08-26">26 Aug 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xu</forename><surname>Lu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Weisong</forename><surname>Sun</surname></persName>
+							<email>weisong.sun@ntu.edu.sg</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yiran</forename><surname>Zhang</surname></persName>
+							<email>yiran002@e.ntu.edu.sg</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ming</forename><surname>Hu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Cong</forename><surname>Tian</surname></persName>
+							<email>ctian@mail.xidian.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+							<email>zhijin@whu.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+							<email>yangliu@ntu.edu.sg</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="laboratory">ICTT and ISN Lab Xidian University Xi&apos;an</orgName>
+								<orgName type="institution">Nanyang Technological University Singapore</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="laboratory">ICTT and ISN Lab Xidian University Xi&apos;an</orgName>
+								<orgName type="institution" key="instit1">Nanyang Technological University Singapore</orgName>
+								<orgName type="institution" key="instit2">Singapore Management University Singapore ecnu</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Wuhan University Wuhan</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">Nanyang Technological University Singapore</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Requirements Development and Formalization for Reliable Code Generation: A Multi-Agent Vision</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-08-26">26 Aug 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CB668E39AD6EBBDAEE797566A1008140</idno>
+					<idno type="arXiv">arXiv:2508.18675v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>automated code generation</term>
+					<term>formal specification</term>
+					<term>large language model</term>
+					<term>multi-agent</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Automated code generation has long been considered the holy grail of software engineering. The emergence of Large Language Models (LLMs) has catalyzed a revolutionary breakthrough in this area. However, existing methods that only rely on LLMs remain inadequate in the quality of generated code, offering no guarantees of satisfying practical requirements. They lack a systematic strategy for requirements development and modeling. Recently, LLM-based agents typically possess powerful abilities and play an essential role in facilitating the alignment of LLM outputs with user requirements. In this paper, we envision the first multi-agent framework for reliable code generation based on requirements development and formalization, named ReDeFo. This framework incorporates three agents, highlighting their augmentation with knowledge and techniques of formal methods, into the requirements-to-code generation pipeline to strengthen quality assurance. The core of ReDeFo is the use of formal specifications to bridge the gap between potentially ambiguous natural language requirements and precise executable code. ReDeFo enables rigorous reasoning about correctness, uncovering hidden bugs, and enforcing critical properties throughout the development process. In general, our framework aims to take a promising step toward realizing the long-standing vision of reliable, auto-generated software.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. Introduction</head><p>Automated Code Generation (ACG) <ref type="bibr" target="#b0">[1]</ref> has long been regarded as an elusive yet highly desirable goal in software engineering, promising to dramatically improve productivity and reduce development effort. The recent rise of Large Language Models (LLMs) has cast a new light on this vision, offering unprecedented capabilities in understanding, reasoning, and *Weisong Sun is the corresponding author. This research is supported by the National Natural Science Foundation of China (62192734, 62192731, 62372347), the Fundamental Research Funds for the Central Universities (ZYTS25076), and the National Research Foundation, Singapore, and DSO National Laboratories under the AI Singapore Programme (AISG Award No: AISG2-GC-2023-008).</p><p>synthesizing code that align with human intent <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>. LLMbased or LLM-agent-based ACG techniques accelerate software development by an end-to-end transformation from highlevel specifications, which are typically expressed in Natural Language Requirements (NLRs) to executable code <ref type="bibr" target="#b3">[4]</ref>- <ref type="bibr" target="#b6">[7]</ref>. Its potential lies in boosting development efficiency, reducing human error, and enabling rapid prototyping. However, despite these advantages, the quality and correctness of generated code often remain uncertain. The primary challenge is the lack of guarantees about the consistency between high-level specifications and code, which can lead to unreliable software and elevated maintenance costs <ref type="bibr" target="#b7">[8]</ref>. Therefore, the need for a sound transition from ambiguous NLRs to precise executable code is highlighted, with a systematic strategy for requirements development and modeling being especially essential.</p><p>Formal methods provide a rigorous approach to establishing software correctness by mathematically proving that a program adheres to its formal specifications <ref type="bibr" target="#b8">[9]</ref>. Applications of formal methods in the broader domain of program verification have achieved notable success, including detecting subtle bugs, enforcing safety and security guarantees, and supporting highassurance software development <ref type="bibr" target="#b9">[10]</ref>. Naturally, this leads us to consider whether ACG can be integrated with formal methods, as such integration could revolutionize the way we produce software by ensuring that the generated code is not only syntactically correct but also semantically faithful to the given requirements.</p><p>In this paper, we propose a multi-agent framework, requirements development and formalization (ReDeFo), to address this challenge. The framework begins with NLRs and proceeds through formal specification <ref type="bibr" target="#b10">[11]</ref> to verified code generation. It leverages distinct types of agents together that work collaboratively to bridge the gap between informal human intent and provably correct software artifacts. To the best of our knowledge, this is the first multi-agent framework for ACG with formal correctness guarantees.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. ReDeFo Framework</head><p>The overview of ReDeFo is illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, which depicts a multi-agent pipeline designed to transform NLRs to verified code. The overall process involves three functionally specialized agents, i.e., Analyst, Formalizer, and Coder who are responsible for completing the requirements development, formalization, and code generation tasks, respectively.</p><p>Upon receiving user-provided NLRs, the Analyst autonomously analyzes the text to refine each functionality into more detailed sub-requirements <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b12">[13]</ref>. Based on this understanding, it further extracts or infers system constraints and functional behaviors, identifies architectural components, and constructs an initial architecture model. The aforementioned results are then organized and summarized into informal, yet structured specifications. Further, the Formalizer is responsible for translating the informal specifications into formal specifications using domain-specific logic, formal semantics, and modeling guidelines. Finally, the Coder uses both the refined NLRs and formal specifications to generate code modules that meet the given requirements. The agent synthesizes executable code from the formal models, while retaining alignment with the original informal descriptions. Formal verification is then performed on the architecture model and generated code to guarantee correctness with respect to the specifications.</p><p>When facing ambiguous requirements, conflicting constraints, or uncertain decisions, agents can pose clarification questions or request confirmations from domain experts. Re-DeFo advocates human-in-the-loop interaction by incorporating expert judgment at critical points and facilitating more active expert participation beyond post-hoc review. Based on feedback produced throughout the pipeline, software engineers and formal methods experts can either review intermediate artifacts or respond to clarification questions and confirmation requests posed by the agents. The feedback may comprise verification failures, unmet constraints, or inconsistencies between artifacts, etc. Through a modular and collaborative workflow, the framework produces a comprehensive set of artifacts, including requirement specifications, architecture model, informal and formal specifications, verified architecture model/software components, and verification reports, thus culminating in a trustworthy software product. Moreover, the requirements and formal specifications, along with the verified code, constitute a high-quality corpus of aligned data.</p><p>A. Agents in ReDeFo 1) Analyst: Acting as a pivotal agent in ReDeFo, the Analyst is responsible for interpreting and structuring the NLRs. To fulfill its role effectively, the Analyst performs the following actions: (1) Refinement and slicing of requirements, where each function is analyzed in detail to uncover implicit constraints or behaviors and express them as self-contained, formalization-ready sub-requirements. (2) Elaboration of vague or underspecified requirements, refining ambiguous or high-level descriptions into concrete, actionable statements. (3) Identification of system constraints or behaviors that are directly formalizable. They are critical properties that can be expressed in precise terms and mapped relatively easily into formal representations. (4) Functional decomposition and architectural design, whereby the overall system is broken down into modular components that reflect logical or domainspecific divisions.</p><p>The above actions are supported by a range of necessary domain knowledge and engineering expertise: (1) Basic understanding of formal specification languages and their capabilities, enabling the identification of formalizable content within informal text. (2) Methods for extracting semantic meaning from NLRs, including structured techniques in requirements engineering <ref type="bibr" target="#b13">[14]</ref> such as use case analysis, goal modeling, and scenario-based modeling. (3) Skills in drafting requirements that closely mirror formal semantics, thereby easing the translation to formal specifications in the next phase. (4) Expertise in system architecture and modular design, allowing the agent to produce a viable and maintainable component layout.</p><p>2) Formalizer: The Formalizer undertakes the task of translating informal requirements into precise, unambiguous formal specifications. It engages in several key actions to accomplish the task: (1) Selection of suitable formalisms and generation of formal specification segments from informal requirement slices <ref type="bibr" target="#b14">[15]</ref>- <ref type="bibr" target="#b17">[18]</ref>. (2) Composition of specification segments by merging similar or overlapping statements that describe the identical or logically entailed underlying semantics, thus preserving coherence and reducing redundancy. (3) Completion of specifications, which serves to infer and explicitly describe implicit semantics not fully captured in the informal requirements. (4) Consistency assessment, whereby the agent evaluates the logical soundness and completeness of the specifications to detect contradictions, gaps, or ambiguities.</p><p>The actions rely on a solid foundation of domain-specific formal knowledge: (1) Proficiency in formal specification syntax and semantics, including understanding of popular formalisms used in model checking <ref type="bibr" target="#b18">[19]</ref>, theorem proving <ref type="bibr" target="#b19">[20]</ref>, static analysis <ref type="bibr" target="#b20">[21]</ref>, etc. (2) Methodologies for formally describing system properties cover both functional and non-functional aspects, such as invariants <ref type="bibr" target="#b21">[22]</ref>, pre/postconditions <ref type="bibr" target="#b22">[23]</ref>, and temporal logic assertions <ref type="bibr" target="#b23">[24]</ref>. (3) Strategies for evaluating soundness and completeness of specifications <ref type="bibr" target="#b24">[25]</ref>, e.g., structural checks, behavioral coverage analysis, and traceability/consistency verification. (4) Semantic interpretation skills, supporting the detection of misalignments between the informal intent and its formalized representation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) Coder:</head><p>The Coder is the final component in ReDeFo, tasked with programming the specifications into verified, executable code. The Coder organizes a series of coordinated actions: (1) Module code generation, where the agent synthesizes executable code based on the requirements and formal specifications for each module <ref type="bibr" target="#b25">[26]</ref> verification methodologies as well as their respective strengths, limitations, and applicable contexts. For example, using model checking for state-based systems with bounded complexity, or theorem proving for systems requiring high expressiveness and rigor. (2) Mapping strategies from formal specification to code, possibly including language-specific implementation patterns and automated code synthesis techniques <ref type="bibr" target="#b26">[27]</ref>. (3) Expertise in modular composition and integration, a useful knowledge that system-level functionality and correctness are preserved during module integration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Knowledge Acquisition for Agents</head><p>The effectiveness of the proposed framework depends heavily on the quality of the knowledge injected in each agent. It is essential to endow the agents with deep and broad background knowledge in order to fully leverage their strong reasoning and generation capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Real-World Software Projects:</head><p>Real-world software projects serve as the richest and most pragmatic source of knowledge for agents within the framework. Among all artifacts in a software system, source code is typically the most complete and well-maintained. We are confident that LLMs at the heart of agents have already internalized diverse programming paradigms, coding idioms, and implementation strategies used across different domains and contexts.</p><p>In contrast, NLRs in such projects are often sparse, outdated, or entirely missing. We can reverse-engineer requirements from the code itself, including identifying implicit functional behavior, reconstructing user stories, and deducing systemlevel constraints based on program logic and structure <ref type="bibr" target="#b27">[28]</ref>. Similarly, architectural model is also frequently absent. Therefore, we can analyze module boundaries, call hierarchies, and data flow patterns to infer the underlying software architecture <ref type="bibr" target="#b28">[29]</ref>. Furthermore, informal and formal specifications are rarely present in real-world codebases. As a result, a feasible way is to extract informal specifications by summarizing source code and comments <ref type="bibr" target="#b27">[28]</ref>, and even attempt to derive formal specifications by identifying verifiable properties, preconditions, and invariants directly from implementations <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b30">[31]</ref>. By engaging in the above process, agents can gradually develop a comprehensive understanding of how requirements, architecture, specifications, and code are interrelated. They learn to construct internal mappings among these artifacts and accumulate experience in writing formal specifications that reflect real-world software logic.</p><p>2) Authoritative Literature: Authoritative literature forms a foundational pillar of knowledge for agents. These resources provide the theoretical grounding, methodological rigor, and historical context that complement the practical patterns observed in source code.</p><p>Classic textbooks and reference works in software engineering offer systematic knowledge across core areas such as requirements engineering, software architecture, coding practices, testing, and project management. These materials define the best practices and design principles that help agents reason about software quality, scalability, and maintainability.</p><p>Equally important are texts that bridge formal methods with software engineering. Agents should learn the methodologies for specifying, modeling, and verifying key properties using mathematical rigor. Topics such as model checking <ref type="bibr" target="#b31">[32]</ref>, deductive verification <ref type="bibr" target="#b32">[33]</ref>, theorem proving <ref type="bibr" target="#b33">[34]</ref>, abstract interpretation <ref type="bibr" target="#b34">[35]</ref>, and SMT (Satisfiability Modulo Theories) <ref type="bibr" target="#b35">[36]</ref> are essential to enable the Formalizer and Coder to produce reliable, provably correct artifacts.</p><p>3) Professional Experts: Obviously, two major categories of experts are relevant to ReDeFo, i.e., software engineers and formal methods experts. Software engineers contribute by validating functional requirements, refining architecture designs, and promoting best practices in code generation. Their experience provides grounded insight into practical development processes, common pitfalls, and robust design patterns. Formal methods experts, on the other hand, play a crucial role in verifying specification quality, guiding the formulation of formal properties, and applying proof techniques. They possess the know-how to select and use formal verification tools <ref type="bibr" target="#b36">[37]</ref>- <ref type="bibr" target="#b39">[40]</ref> effectively, interpret verification outcomes, and ensure that specifications are both expressive and provable. By simulating the knowledge and feedback from these experts (e.g., Fine-tuning <ref type="bibr" target="#b40">[41]</ref>, CoT <ref type="bibr" target="#b41">[42]</ref> and RAG <ref type="bibr" target="#b42">[43]</ref>), agents can operate with greater accuracy and adaptability, marrying theoretical rigor with practical feasibility. III. Case Study</p><p>In this section, we demonstrate the potential capabilities of ReDeFo through a practical example. The selected case is typical control software in the safety-critical aerospace domain, which imposes strict constraints on functional correctness, compliance with domain standards, and hardware-dependent operations. The system is named Solar Search (SS), which aims to accomplish the functionality of solar acquisition. SS is composed of several subsystems, with the mode-switching component as the central one. The process of solar acquisition involves four separate stages, namely modes. The four modes switch from each other based on specific conditions. ReDeFo is applied to generate the mode-switching component with intermediate outputs to show the stepwise progression. All the artifacts produced through the pipeline are presented in Figure <ref type="figure" target="#fig_1">2</ref>.</p><p>The coarse NLRs clearly define four modes, along with switch conditions between them. The refined NLRs are built upon the coarse ones, enriched with more detailed inputs, outputs and functional descriptions of the four modes. Upon reviewing the refined NLRs, the Analyst produces a component diagram and a state diagram to represent the architecture. The content extracted from the system-related NLRs is transformed into system-level properties, capturing the high-level behavioral expectations of the system. The content extracted from the mode-specific NLRs is mapped to mode-level properties, focusing on the low-level input, output and behavior within individual operational modes.</p><p>The semantic meaning of the natural language is further interpreted by the Formalizer, and necessary constraints are applied to eliminate any remaining ambiguities. Here the high-level informal specifications are transformed into LTL (Linear Temporal Logic) specifications <ref type="bibr" target="#b43">[44]</ref>, and the low-level informal specifications into ACSL (ANSI/ISO C Specification Language) specifications <ref type="bibr" target="#b44">[45]</ref>.</p><p>The Coder generates C code for each mode according to the low-level formal specifications and the refined NLRs. The Coder also generates a code skeleton to integrate the four modes. Subsequently, the Coder performs the verification on two aspects of the system. First, model checking the behavior model of the system (state diagram1) against the LTL specifications using the model checker NuSMV <ref type="bibr" target="#b45">[46]</ref>. Second, deductive reasoning is applied to each mode function annotated with ACSL specifications using the program analyzer Frama-C <ref type="bibr" target="#b46">[47]</ref>.</p><p>In our experience, humans can be involved in the process of requirement refinement, architecture model verification, and mode-related function verification. Humans assist in revising the NLRs obtained during requirement refinement, based on the user intent elaborated by the Analyst. Architecture model verification reveals inconsistencies between the architecture model and the requirements, which humans can resolve. Moderelated function verification can leverage verification results, with human assistance, to adjust the low-level formal specifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. Challenges and Opportunities</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Completeness and Consistency of Formal Specifications</head><p>One of the key challenges is how to generate formal specifications that are sufficiently complete. What we mean by "complete" is that formal specifications are capable of specifying all essential aspects of the NLRs. Incomplete specifications may lead to a divergence between what the system is expected to do and what the verification process can guarantee. In practice, NLRs are often ambiguous, under-specified, or inconsistent. In this case, the Formalizer encounters difficulties in inferring all relevant system properties, especially those that are implicit or only loosely defined. Therefore, specification completeness requires not only the ability to parse and formalize explicit requirements but also to infer hidden assumptions, identify missing properties, and reason about potential corner cases.</p><p>Another critical issue lies in maintaining consistency between the informal requirements and the corresponding formal specifications. Misalignment may occur due to semantic drift during translation, misunderstanding of domain-specific language, or the inherent difficulty of preserving intent across different levels of abstraction. Such inconsistency undermines the trustworthiness of the entire pipeline. Even if the code is formally verified against the specification, any mismatch 1LLMs can easily convert the state diagram into a model representation that is compatible with many formal tools.</p><p>between the specification and the original intent still renders the system incorrect from the user's perspective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. High-Quality Code from Formal Specifications</head><p>The challenge pertains to the Coder's ability to synthesize high-quality, verifiable code from formal specifications. Although formal specifications provide a clear semantic target, the actual process of generating robust, maintainable, and idiomatic code that meets this target is non-trivial. Similar to informal requirements, the semantic gap between formal specifications and executable code still poses a fundamental difficulty. Some specifications may admit many correct implementations, and choosing the most suitable one requires understanding performance constraints, usability factors, and deployment contexts. Moreover, verification tools vary in capability and may impose restrictions on how code must be structured to be verifiable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Practical Deployment</head><p>The real-world deployment of our framework raises several practical challenges. As mentioned earlier, the availability of high-quality training data for each agent remains a concern. Informal and formal specifications are often missing or underdocumented in real-world software projects, making it difficult to pretrain or fine-tune the agents effectively. The humanin-the-loop review process, although beneficial for quality assurance, introduces additional complexity. It is non-trivial to define when and how expert feedback should be requested, how it is incorporated into agent decisions, and how to balance automation with human judgment. Scalability and performance pose important engineering concerns. As the system scales to larger projects with numerous components and deeper formal properties, the computational cost of verification and the complexity of code synthesis may grow substantially.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. Conclusion</head><p>This paper proposes ReDeFo that combines software engineering and formal methods to achieve verifiable ACG. By dividing responsibilities among Analyst, Formalizer, and Coder agents, the framework creates a structured pipeline from NLRs to verified executable code, supporting consistency, traceability, and correctness throughout the software development lifecycle. Aiming to improve each agent's powerful reasoning and generation capabilities, we emphasize the significance of deep background knowledge, drawn from real-world projects, authoritative literature, and professional experts. While promising, the framework still faces key challenges such as ensuring specification completeness, maintaining semantic alignment, and producing requirement-compliant verified code. Addressing these challenges presents both a research opportunity and a practical path toward more intelligent and trustworthy development of software systems.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Overview of the proposed framework ReDeFo</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Main artifacts of ReDeFo on a practical example</figDesc></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Logic, arithmetic, and automata</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Church</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the international congress of mathematicians</title>
+		<meeting>the international congress of mathematicians</meeting>
+		<imprint>
+			<date type="published" when="1962">1962</date>
+			<biblScope unit="volume">1962</biblScope>
+			<biblScope unit="page" from="23" to="35" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Deepseek llm: Scaling open-source language models with longtermism</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.02954</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anadkat</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">A survey on large language models for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.00515</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K S</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">6</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Chatdev: Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Requirements are all you need: From requirements to code with llms</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE 32nd International Requirements Engineering Conference (RE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="416" to="422" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="21" to="558" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Formal methods: State of the art and future directions</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Wing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys (CSUR)</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="626" to="643" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Formal methods: Practice and experience</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Woodcock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Larsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bicarregui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fitzgerald</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM computing surveys (CSUR)</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="36" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nissanke</surname></persName>
+		</author>
+		<title level="m">Formal Specification: Techniques and Applications</title>
+		<imprint>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Envisioning intelligent requirements engineering via knowledge-guided multi-agent collaboration</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Automated Software Engineering -New Ideas and Emerging Results Track</title>
+		<meeting>the 40th International Conference on Automated Software Engineering -New Ideas and Emerging Results Track<address><addrLine>Seoul, South Korea</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2025-11-20">20 November 2025</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Elicitron: An llm agent-based simulation framework for design requirements elicitation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ataei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Grandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tessier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.16045</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Requirements engineering for software and systems</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Laplante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kassab</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>Auerbach Publications</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Formal specifications from natural language</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Tillman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Metzger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Siber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Finkbeiner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.01962</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">NL2LTL -a python package for converting natural language (NL) instructions to linear temporal logic (LTL) formulas</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fuggitti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chakraborti</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>in AAAI, 2023, system Demonstration</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">From informal to formal-incorporating and evaluating llms on natural language requirements to verifiable formal proofs</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.16207</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Autoformalization with large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Staats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jamnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Szegedy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page">368</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Principles of model checking</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Baier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-P</forename><surname>Katoen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Automated theorem proving: A logical basis</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">W</forename><surname>Loveland</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Introduction to static analysis</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Rival</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Software verification using k-induction</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">F</forename><surname>Donaldson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Haller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kroening</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Rümmer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Static Analysis: 18th International Symposium</title>
+		<meeting><address><addrLine>Venice, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011-09-14">2011. September 14-16, 2011. 2011</date>
+			<biblScope unit="page" from="351" to="368" />
+		</imprint>
+	</monogr>
+	<note>Proceedings 18</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">An axiomatic basis for computer programming</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">A R</forename><surname>Hoare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="576" to="580" />
+			<date type="published" when="1969">1969</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Temporal logic</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rescher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Urquhart</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Completeness and consistency of tabular requirements: An smt-based verification approach</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Menghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Balai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Valovcin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sticksel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rajhans</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TSE.2025.3530820</idno>
+		<ptr target="https://doi.org/10.1109/TSE.2025.3530820" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Software Eng</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="595" to="620" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Combining llm code generation with formal specifications and reactive program synthesis</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Holzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rothkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Koenig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Santolucito</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.19736</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Synthesis of reactive (1) designs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bloem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jobstmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Piterman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pnueli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sa'ar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer and System Sciences</title>
+		<imprint>
+			<biblScope unit="volume">78</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="911" to="938" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Source code summarization in the era of large language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International Conference on Software Engineering</title>
+		<meeting>the 47th International Conference on Software Engineering<address><addrLine>Ottawa, Ontario, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2025-05-03">27 April-3 May 2025</date>
+			<biblScope unit="page" from="419" to="431" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Knowledge-based multiagent framework for automated software architecture design</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM International Conference on the Foundations of Software Engineering-Ideas, Visions and Reflections</title>
+		<meeting>the 33rd ACM International Conference on the Foundations of Software Engineering-Ideas, Visions and Reflections<address><addrLine>Trondheim, Norway</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2025-06-27">Mon 23 -Fri 27 June 2025</date>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Enchanting program specification synthesis by large language models using static analysis and program verification</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Computer Aided Verification</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="302" to="328" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Specgen: Automated generation of formal program specifications via large language models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.08807</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Logics of specification languages</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Merz</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="401" to="451" />
+		</imprint>
+	</monogr>
+	<note>The specification language tla+</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">ACSL: ANSI/ISO C Specification Language</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Baudin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-C</forename><surname>Filliâtre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Marché</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Monate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Moy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Prevosto</surname></persName>
+		</author>
+		<ptr target="http://frama-c.com/download/acsl.pdf" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Interactive theorem proving and program development: Coq&apos;Art: the calculus of inductive constructions</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bertot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Castéran</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cousot</surname></persName>
+		</author>
+		<title level="m">Principles of abstract interpretation</title>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Satisfiability modulo theories</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tinelli</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="305" to="343" />
+		</imprint>
+	</monogr>
+	<note>Handbook of model checking</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">The nuxmv symbolic model checker</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cavada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cimatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dorigatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Griggio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mariotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Roveri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tonetta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification: 26th International Conference, CAV 2014, Held as Part of the Vienna Summer of Logic</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014-07-18">2014. July 18-22, 2014. 2014</date>
+			<biblScope unit="page" from="334" to="342" />
+		</imprint>
+	</monogr>
+	<note>Proceedings 26</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">L</forename><surname>Correnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cuoq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Kirchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maroneze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Prevosto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Puccetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Signoles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yakobowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-C</forename><surname>Frama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manual</forename><surname>User</surname></persName>
+		</author>
+		<ptr target="http://frama-c.com/download/frama-c-user-manual.pdf" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Cpachecker: A tool for configurable software verification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Keremoglu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification: 23rd International Conference, CAV 2011</title>
+		<meeting><address><addrLine>Snowbird, UT, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">July 14-20, 2011. 2011</date>
+			<biblScope unit="page" from="184" to="190" />
+		</imprint>
+	</monogr>
+	<note>Proceedings 23</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Z3: An efficient smt solver</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">De</forename><surname>Moura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bjørner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on Tools and Algorithms for the Construction and Analysis of Systems</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="337" to="340" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24" to="824" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Retrievalaugmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>-T. Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">in 18th annual symposium on foundations of computer science (sfcs 1977)</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pnueli</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1977">1977</date>
+			<publisher>ieee</publisher>
+			<biblScope unit="page" from="46" to="57" />
+		</imprint>
+	</monogr>
+	<note>The temporal logic of programs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Acsl: Ansi/iso c specification</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Baudin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-C</forename><surname>Filliâtre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Marché</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Monate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Moy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Prevosto</surname></persName>
+		</author>
+		<ptr target="https://frama-c.com/html/acsl.html" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Nusmv 2: An opensource tool for symbolic model checking</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cimatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Giunchiglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giunchiglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pistore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Roveri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sebastiani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tacchella</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification: 14th International Conference, CAV 2002 Copenhagen</title>
+		<meeting><address><addrLine>Denmark</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">July 27-31, 2002. 2002</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="359" to="364" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Frama-c: A software analysis perspective</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Kirchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kosmatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Prevosto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Signoles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yakobowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Formal aspects of computing</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="page" from="573" to="609" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

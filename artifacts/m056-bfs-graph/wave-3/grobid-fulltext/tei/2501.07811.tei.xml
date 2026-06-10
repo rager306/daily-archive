@@ -1,0 +1,1650 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CodeCoR: An LLM-Based Self-Reflective Multi-Agent Framework for Code Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-01-14">14 Jan 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ruwei</forename><surname>Pan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Chongqing University</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Chongqing University</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chao</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Chongqing University</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CodeCoR: An LLM-Based Self-Reflective Multi-Agent Framework for Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-01-14">14 Jan 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B157548C959E21845BE8D4CD3A9E57AD</idno>
+					<idno type="DOI">10.1145/nnnnnnn.nnnnnnn</idno>
+					<idno type="arXiv">arXiv:2501.07811v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code generation aims to produce code that fulfills requirements written in natural languages automatically. Large language Models (LLMs) like ChatGPT have demonstrated promising effectiveness in this area. Nonetheless, these LLMs often fail to ensure the syntactic and semantic correctness of the generated code. Recently, researchers proposed multi-agent frameworks that guide LLMs with different prompts to analyze programming tasks, generate code, perform testing in a sequential workflow. However, the performance of the workflow is not robust as the code generation depends on the performance of each agent. To address this challenge, we propose CodeCoR, a self-reflective multi-agent framework that evaluates the effectiveness of each agent and their collaborations. Specifically, for a given task description, four agents in CodeCoR generate prompts, code, test cases, and repair advice, respectively. Each agent generates more than one output and prunes away the low-quality ones. The generated code is tested in the local environment: the code that fails to pass the generated test cases is sent to the repair agent and the coding agent re-generates the code based on repair advice. Finally, the code that passes the most number of generated test cases is returned to users. Our experiments on four widely used datasets, HumanEval, HumanEval-ET, MBPP, and MBPP-ET, demonstrate that CodeCoR significantly outperforms existing baselines (e.g., CodeCoT and MapCoder), achieving an average Pass@1 score of 77.8%.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Code generation aims to automatically produce code that fulfills requirements expressed in natural language <ref type="bibr" target="#b0">[1]</ref>. Successful code generation can significantly enhance the productivity and quality of software development, and remains a pivotal area of research in artificial intelligence, natural language processing, and software engineering <ref type="bibr" target="#b1">[2]</ref>. In recent years, Large language models (LLMs) such as ChatGPT have demonstrated promising performance in code generation with advanced language understanding and generation capabilities <ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref>.</p><p>Previously, researchers leveraged the Chain-of-Thought (CoT) prompting method to aid LLMs in better task understanding by clarifying prompts through step-by-step reasoning <ref type="bibr" target="#b5">[6]</ref>. For example, Li et al. <ref type="bibr" target="#b6">[7]</ref> developed a Structured Chain-of-Thought (SCoT), which mitigates CoT's limitations by employing a predefined framework of semantic steps that closely align with programming paradigms, including control structures like loops and conditional branches. Jiang et al. <ref type="bibr" target="#b7">[8]</ref> noted that CoT often suffers from disorganized and inefficient reasoning and introduced a self-planning CoT that guides the prompt generation process based on the code's objectives.</p><p>Recently, researchers proposed multi-agent frameworks to guide LLMs with different prompts to analyze programming tasks, generate code, and repair bugs in a sequential workflow. Huang et al.'s <ref type="bibr" target="#b8">[9]</ref> CodeCoT and Islam et al.'s <ref type="bibr" target="#b9">[10]</ref> MapCoder are two representative models. CodeCoT <ref type="bibr" target="#b8">[9]</ref> involves three agents for task understanding, test case generation, and code generation. The generated code is required to pass the generated test cases, otherwise the agent will generate new code. Meanwhile, MapCoder <ref type="bibr" target="#b9">[10]</ref> is a state-of-the-art multi-agent framework that generates similar step-by-step solution descriptions for a given programming task, then generates the corresponding code, and finally repairs bugs with the test cases provided in testing data. However, we observed that the performance of existing multi-agent frameworks is not robust, as the performance of each agent can significantly affect the quality of the final output. As illustrated by Figure <ref type="figure" target="#fig_0">1</ref>, in a sequential workflow, once the prompt agent misunderstands the intent of task description, the misunderstanding will be propagated to the follow-up coding agent and test agent. The error is amplified and the generation effort is wasted. In this study, we introduce CodeCoR ("Code Collaboration and Repair"), a self-reflective multiagent framework for code generation, which enhances the effectiveness of each agent and their collaborations. Specifically, CodeCoR consists of four LLM-based agents: 1) prompt agent, which generates prompts with the CoT technique <ref type="bibr" target="#b5">[6]</ref> for task understanding; 2) coding agent, which generates code for a given programming description; 3) test agent, which generates test cases according to the task; and 4) repair agent, which generates repair advice for the code. CodeCoR is self-reflective: each agent generates more than one output and prunes away the low-quality ones; the generated code is tested in the local environment; the code that fails to pass the generated test cases will be sent to the repair agent, and the coding agent re-generates code based on repair advice. Finally, the code that passes the most number of generated test cases returns to users.</p><p>We evaluate the proposed framework, CodeCoR, on widely used datasets <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref> including HumanEval, HumanEval-ET, MBPP, and MBPP-ET. Experimental results show that the state-of-theart method, MapCoder, achieves an average Pass@1 score of 72.8%, while our CodeCoR significantly outperforms MapCoder, achieving an average Pass@1 score of 77.8%. Moreover, we conduct ablation studies to confirm the necessity of each major component of CodeCoR.</p><p>In summary, our major contributions include:</p><p>• We propose CodeCoR, a self-reflective multi-agent framework involving four collaborative agents (i.e., prompt agent, coding agent, Test Agent, and Repair Agent) for effective code generation. Pruning methods are designed to evaluate the effectiveness of each agent and their collaborations, enhancing the framework's self-reflective ability.</p><p>• We demonstrate the effectiveness of CodeCoR through extensive experiments on multiple datasets. The experimental results show that CodeCoR significantly outperforms existing state-of-the-art methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Automatic Code Generation</head><p>Automatic code generation has become a significant research area within software engineering. Recent studies have concentrated on employing LLMs to generate code that can pass a set of given test cases. Initial efforts focused on developing scalable models like GPT-2 <ref type="bibr" target="#b12">[13]</ref> and GPT-3 <ref type="bibr" target="#b13">[14]</ref>, which are designed to accommodate growing data volumes and computational demands, achieving considerable success in generating natural language text. Subsequently, researchers extended these models to the domain of code generation. For example, Chen et al. <ref type="bibr" target="#b14">[15]</ref> proposed a straightforward filtering approach that only selects outputs that pass test cases. Further research, such as AlphaCode <ref type="bibr" target="#b15">[16]</ref> and CodeT <ref type="bibr" target="#b16">[17]</ref>, investigated complex test case generation and rule-based sample ranking methods.</p><p>Recent studies have increasingly focused on improving code quality through self-revision mechanisms, wherein models iteratively improve based on feedback. For instance, Self-Edit <ref type="bibr" target="#b17">[18]</ref> employs public test case results to guide its self-revision processes. Additionally, Self-Correct <ref type="bibr" target="#b18">[19]</ref> and CodeRL <ref type="bibr" target="#b19">[20]</ref> incorporate secondary models that assess output correctness and make necessary adjustments. Moreover, Olausson et al. <ref type="bibr" target="#b20">[21]</ref> and Benicio et al. <ref type="bibr" target="#b21">[22]</ref> have proposed techniques that utilize natural language explanations or reflections to aid in more effective code revisions. This reflective process enables models to evaluate and reason about their outputs, identifying and rectifying errors to significantly improve code quality.</p><p>Research conducted by Roziere et al. <ref type="bibr" target="#b22">[23]</ref> and Huang et al. <ref type="bibr" target="#b23">[24]</ref> underscores the value of largescale pre-training and robust testing in enhancing code quality and reliability. Additionally, Jiang et al. <ref type="bibr" target="#b7">[8]</ref> introduced Self-Planning, a methodology that improves code generation quality by structuring the prompt generation process to ensure semantic correctness. Although beneficial, Self-Planning encounters challenges in more complex code generation tasks. Specifically, integrating comprehensive semantic steps during prompt generation often complicates the maintenance of both syntactical accuracy and semantic correctness. These challenges highlight the limitations of current methods and underscore the motivation behind the CodeCoR framework, which aims to address the misalignment between syntactical accuracy and semantic correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Multi-Agent Model for Collaborative Coding</head><p>Early implementations of multi-agent frameworks focused on basic collaborative strategies <ref type="bibr" target="#b24">[25]</ref>. For example, the Self-Collaboration Framework introduced by Dong et al. <ref type="bibr" target="#b25">[26]</ref> outlines a structure in which LLMs assume specific roles including analyst, coder, and tester. This framework employs role-specific instructions to assign tasks to each LLM, effectively transforming them into domain-specific experts. Extensive experiments have confirmed the framework's effectiveness in significantly improving code generation quality and efficiency through self-collaboration among LLMs.</p><p>Subsequent advancements in multi-agent frameworks include the MetaGPT Framework developed by Hong et al. <ref type="bibr" target="#b26">[27]</ref>, which incorporates human-like Standard Operating Procedures (SOPs) to enhance robustness and reduce unproductive interactions among LLM agents. MetaGPT introduces a groundbreaking executive feedback mechanism that debugs and executes code during runtime, achieving strong performance on benchmarks like HumanEval and MBPP. This framework prioritizes structured communication and role specialization, further refining collaborative processes within multi-agent frameworks. Furthermore, ChatDev <ref type="bibr" target="#b27">[28]</ref> enables agents to ask for clarifications to reduce incorrect or irrelevant code suggestions before generating responses. Recently, Huang et al. <ref type="bibr" target="#b8">[9]</ref> proposed the CodeCoT framework, which primarily addresses the issue of syntax errors by incorporating self-examination and improvement mechanisms. This framework enhances the reliability and practicality of code generation, ensuring that the generated code meets both semantic requirements and syntactical standards.</p><p>Despite these advancements, multi-agent frameworks still encounter significant challenges, particularly as sequential multi-agent frameworks the workflow is not robust as the code generation depends on the performance of each agent. Islam et al. <ref type="bibr" target="#b9">[10]</ref> proposed MapCoder, which replicates the human programming cycle using four specialized agents-retrieval, planning, coding, and debugging agents. As a multi-agent framework with a sequential workflow, MapCoder achieves state-of-the-art accuracy in code generation. However, it still faces limitations in that its performance is not robust as the code generation depends on the performance of each agent and cannot confirm the effectiveness of each agent and their collaborations due to its sequential workflow. Our CodeCoR improves the existing multi-agent frameworks by enhancing the self-reflective capabilities of the framework. 3.1 Overview Figure 2 depicts the CodeCoR process, which includes four LLM-based agents: Prompt Agent, Test Agent, Coding Agent, and Repair Agent. Each agent is assigned a specific task within the generation phases: Prompt Generation, Test Case Generation, Code Generation, and Code Repairing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHODOLOGY</head><p>• Phase-I: Prompt Generation. The process commences with Phase-I: Prompt Generation. Initially, the task description is provided to the Prompt Agent, which generates a series of CoT prompts and stores them in the CoT Pool. A pruning method is employed to prune the CoT prompts that decompose the task well, offering detailed step-by-step instructions that facilitate the subsequent generation of code and test cases. • Phase-II: Test Case Generation. In Phase-II, the selected CoT prompts direct the Test Agent in generating a pool of test cases. The Test Agent employs a pruning method to select high-quality test cases, thereby ensuring their executability and effectiveness. • Phase-III: Code Generation. During Phase-III, the Coding Agent produces a variety of code snippets in the Code Snippet Pool based on the CoT prompts. Through pruning, promising code snippets are selected, enhancing the efficiency of code generation. • Phase-IV: Result Checking. Upon entering Phase-IV, the code generated by the Coding Agent is evaluated against the test cases provided by the Test Agent, and errors are identified by executing the code in a local environment. If all test cases pass, the code is then stored in the Ranked Code Set. If not, it will be determined whether the failed code requires repair based on its repair round and failed cases. In the CodeCoR framework, code cannot be repaired when the failed test cases in the current round are similar to those in the previous round, indicating that the remaining failed test cases cannot be resolved. If no repair is required, the code is ranked based on its number of passed cases and repair rounds, and directly added to the Ranked Code Set. • Phase-V: Code Repairing. Otherwise, the process proceeds to Phase-V. In the Code Repairing phase, the Repair Agent generates repair advice, and a pruning method is employed to eliminate low-quality advice. The advice, along with the erroneous code, is forwarded to the Coding Agent for correction, generating a newly repaired code snippet. The repaired code undergoes further pruning and testing, initiating a new iteration. Ultimately, the highest-ranked code that successfully passes the majority of test cases is presented to the user.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Agents</head><p>CodeCoR consists of four agents (Prompt Agent, Test Agent, Coding Agent, and Repair Agent), whose prompts are illustrated in Figure <ref type="figure" target="#fig_2">3</ref>. In the Figure, each agent provides an example of its output, when the code task is to write a function that returns the decimal part of a floating-point number.</p><p>Prompt Agent. The focus is on generating high-quality CoT prompts, which are essential for guiding the subsequent phases of code and test case generation. When the Prompt Agent receives a task description, it produces a variety of CoT prompts and stores them in the CoT Pool. To ensure the quality of the prompts, the Prompt Agent employs a pruning method (shown in Section 3.3) to remove the low-quality ones.</p><p>Test Agent. The Test Agent generates a variety of test cases guided by the selected CoT prompts, which are subsequently stored in the Test Case Pool. To prune low-quality or redundant test cases, the Test Agent uses a pruning method to select only those that effectively assess the executability of the code. This ensures that the test cases are robust and capable of accurately verifying whether the generated code meets the expected requirements. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Coding Agent.</head><p>Once the CoT prompts are selected, they are passed to the Coding Agent, which generates a variety of code snippets, thereby forming the Code Snippet Pool. The Coding Agent also employs a pruning method to identify and select promising code snippets that demonstrate potential for correctness and efficiency. This approach significantly enhances the quality and accuracy of the final code, reducing the need for further revisions and repairs.</p><p>Repair Agent. During the code repairing phase, the Repair Agent addresses failed code snippets by generating targeted repair advice. Next, the Repair Agent employs a pruning method to eliminate low-quality or ineffective repair advice. The pruned repair advice, along with the unrepaired code, is passed back to the Coding Agent for correction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Pruning Methods</head><p>Traditional multi-agent frameworks guide LLMs with different prompts to analyze programming tasks, generate code, test with generated test cases, and repair tested bugs in a sequential workflow. However, the workflow is not robust as the code generation depends on the performance of each agent. Consequently, the workflow of CodeCoR is designed to be self-reflective by employing pruning methods and ranking the generated code. Figure <ref type="figure" target="#fig_3">4</ref> illustrates the pruning process of the CodeCoR framework, detailing the interactions and functionalities of its components. By pruning the low-quality outputs, CodeCoR enhances the efficiency of the multi-agent framework. By ranking the results in the Ranked Code Set, CodeCoR outputs the highest-ranked generated code. Figure <ref type="figure" target="#fig_4">5</ref> shows the prompts used by agents and the workflow for pruning the low-quality outputs.</p><p>Prompt Pruning. After the Prompt Agent generates a series of CoT prompts for the coding task, it evaluates each prompt's clarity, relevance, conciseness, and context. An example prompt is shown in Figure <ref type="figure" target="#fig_4">5</ref>. Scores such as [1, 1, 1, 1] are assigned by the Prompt Agent based on specific evaluation criteria. Each 1 or 0 indicates whether a particular criterion is met or not. The specific criteria are as follows:</p><p>• Clarity: whether the prompt or advice is clear or not.</p><p>• Relevance: whether it is directly related to the task or not.</p><p>• Conciseness: whether it is concise and not overly complex.</p><p>• Context: whether enough contextual information is provided.</p><p>If the prompt passes all four criteria with a score of [1, 1, 1, 1], it will be selected. Otherwise, the prompt will be pruned.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Test Pruning.</head><p>After the Test Agent generates test cases, it uses another prompt to classify them. Empty input, incomplete format test cases, or invalid test cases are pruned. Specifically, empty inputs are cases where no data is provided, incomplete format test cases lack significant components necessary for execution, and invalid test cases are cases without the expected data types or falling outside reasonable ranges. Code Pruning. The Coding Agent executes the generated code snippets in the local environment.</p><p>If code contains syntax errors, such as missing semicolons, unmatched parentheses, unclosed strings, or incorrect indentation, it cannot be compiled and will be pruned by the Coding Agent.</p><p>Repair Pruning. For each failed code snippet, the Repair Agent provides a single piece of repair advice per repair round. If the repair advice cannot meet clarity, relevance, conciseness, and context requirements (as evaluated by the Repair Agent with the specific prompt in Figure <ref type="figure" target="#fig_4">5</ref>), the advice is pruned and the failed test cases replace the repair advice. Then, the failed test cases and code are directly submitted, along with the failed code, to the Coding Agent for repair.</p><p>By employing these pruning methods, CodeCoR enhances its self-reflective capabilities and ensures the effectiveness of each agent and their collaborations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Overall Algorithm</head><p>The CodeCoR process algorithm (Algorithm 1) generates and repairs code to ensure the final output is accurate. In Phase-I, based on the task description 𝑇 𝑑 , the Prompt Agent generates CoT prompts in the 𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙 and prunes unpromising ones. In Phase-II, the Test Agent generates and prunes test cases in the 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙 using the selected CoT prompts ensuring the generated test cases are robust and executable. In Phase-III, the Coding Agent uses the selected CoT prompts 𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙 to generate multiple code snippets. Then, the Coding Agent uses prune_code_snippets to retain promising code snippets and improve the efficiency of the subsequent phases.</p><p>In Phase-IV, code snippets in the 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡_𝑝𝑜𝑜𝑙 are tested against the test cases in the 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙. Each snippet is executed using the function 𝑒𝑥𝑒𝑐𝑢𝑡𝑒_𝑐𝑜𝑑𝑒 in the local environment. If the 𝑒𝑥𝑒𝑐𝑢𝑡𝑖𝑜𝑛_𝑟𝑒𝑠𝑢𝑙𝑡 is 'pass', the code snippet is added to the 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡. If the snippet fails but shows potential for improvement, as indicated by 𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑠_𝑟𝑒𝑝𝑎𝑖𝑟 , it is added to the 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 for further repair. Otherwise, if the failed code snippet does not require repair, it is added to the 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡 directly.</p><p>In Phase-V, the Repair Agent generates 𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 via 𝑔𝑒𝑛𝑒𝑟𝑎𝑡𝑒_𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 and prunes the advice using 𝑝𝑟𝑢𝑛𝑒_𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 to ensure their effectiveness in guiding the Coding Agent to repair the 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠. The repair advice is provided to the Coding Finally, CodeCoR outputs the highest-ranked code snippet from the 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡 using 𝑠𝑒𝑙𝑒𝑐𝑡_ℎ𝑖𝑔ℎ𝑒𝑠𝑡_𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒. This guarantees that the final output 𝐶 𝑓 is the most efficient and accurate code snippet.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EVALUATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Research Questions</head><p>This study aims to evaluate CodeCoR to answer the following research questions (RQs):</p><p>• RQ1. How effective and efficient does CodeCoR perform? • RQ2. How effective are the major components of CodeCoR? • RQ3. What are the cost implications of CodeCoR?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Datasets</head><p>We evaluate CodeCoR's effectiveness utilizing four widely adopted code generation datasets: HumanEval <ref type="bibr" target="#b10">[11]</ref> and MBPP <ref type="bibr" target="#b28">[29]</ref>, along with their enhanced versions, HumanEval-ET and MBPP-ET <ref type="bibr" target="#b11">[12]</ref>. HumanEval and HumanEval-ET are designed to provide diverse programming challenges to assess the model's problem-solving capabilities and adaptability. HumanEval is a hand-written evaluation dataset consisting of 164 Python programming problems that assess functional correctness by evaluating language comprehension, reasoning, algorithms, and simple mathematics through unit tests. These problems involve handling specific programming scenarios, necessitating the model to possess comprehension and flexible application skills in Python. Meanwhile, MBPP and MBPP-ET offer a comprehensive collection of Python programming problems aimed at evaluating the model's proficiency in Python syntax and its ability to handle various coding scenarios. These problems are more closely aligned with real-world programming demands, allowing for an examination of the model's performance in practical coding tasks. By integrating the usage of HumanEval and MBPP, representing two different types of datasets, we comprehensively evaluate CodeCoR's performance in handling diverse programming tasks, thereby gaining a better understanding of the model's comprehensiveness and practicality. Furthermore, the enhanced versions, HumanEval-ET and MBPP-ET, increase the challenge levels by introducing more comprehensive test cases, making them more suitable for assessing advanced model performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Baselines</head><p>In this study, we endeavor to show the efficacy of CodeCoR through comparative analyses with a spectrum of prominent LLMs, encompassing both open-source and proprietary variants (see Table <ref type="table" target="#tab_0">1</ref> for details). These methodologies have been empirically demonstrated to yield substantive enhancements in LLM performance across intricate code generation scenarios. The results of the baselines are obtained from previous studies under the same experimental setting <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Evaluation Metrics</head><p>We employ three key metrics to comprehensively evaluate the correctness and quality of the generated code. First, we utilize the widely adopted Pass@1 metric, which measures the proportion of generated code snippets that correctly perform the intended task on the first attempt without any modifications <ref type="bibr" target="#b14">[15]</ref>. Additionally, to assess the textual similarity between the generated code and reference implementations, we include Edit Distance, which quantifies the minimum number of edits (insertions, deletions, substitutions) required to transform the generated code into a reference code snippet, reflecting the structural fidelity of the output <ref type="bibr" target="#b44">[45]</ref>. Furthermore, we use the BLEU score, a metric borrowed from the field of machine translation, to evaluate the linguistic accuracy and fluency of the generated code compared to one or more reference code <ref type="bibr" target="#b45">[46]</ref>. Together, these metrics provide a holistic view of the generated code's functionality, structural integrity, and linguistic quality. Detailed formulas for these metrics are given in our project webpage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">How does CodeCoR perform? (RQ1)</head><p>The evaluation results of CodeCoR and the baselines are shown in Table <ref type="table" target="#tab_1">2</ref>, demonstrating that CodeCoR achieves state-of-the-art performance compared to baseline models on the HumanEval and MBPP datasets. In these evaluations, the GPT-3.5-turbo language model was employed to perform the code generation tasks. In Table <ref type="table" target="#tab_1">2</ref>, the GPT-3.5-turbo achieves the highest average Pass@1 score 5 CodeX <ref type="bibr" target="#b16">[17]</ref> Codex is a pre-trained language model that not only generates diverse coding solutions efficiently but also automates test case generation to streamline solution evaluation. 6 GPT-3.5-turbo <ref type="bibr" target="#b33">[34]</ref> GPT-3.5 stands out with refined language processing capabilities, offering improved factuality and detailed text generation, tailored for complex linguistic tasks. 7 ReAct <ref type="bibr" target="#b34">[35]</ref> React is a sophisticated programming model that efficiently handles tensor computations, reducing redundancies and enhancing performance through advanced compilation techniques.</p><p>8 Reflexion <ref type="bibr" target="#b35">[36]</ref> Reflexion uses a new approach to enhance language agents through linguistic feedback instead of traditional weight updates, significantly boosting learning efficiency and decision-making across various tasks, including coding and sequential decision-making.</p><p>9 ToT <ref type="bibr" target="#b36">[37]</ref> ToT enhances LLMs by structuring decision-making through branching reasoning paths, improving performance on complex tasks.</p><p>10 RAP <ref type="bibr" target="#b37">[38]</ref> RAP transforms large language models into both world models and reasoning agents, enhancing their problem-solving abilities with a strategic planning algorithm that efficiently balances exploration and exploitation in complex reasoning tasks.</p><p>11 Self-Edit <ref type="bibr" target="#b17">[18]</ref> Self-Edit enhances code generation by using a generate-and-edit approach that corrects errors in competitive programming tasks based on execution results.</p><p>12 Self-Planning <ref type="bibr" target="#b7">[8]</ref> Self-planning introduces a two-phase code generation method for LLMs that first plans solution steps and implements code accordingly.</p><p>13 Self-Debugging <ref type="bibr" target="#b38">[39]</ref> Self-Debugging enhances LLMs by teaching them to independently debug and explain their code, significantly boosting performance on complex programming benchmarks by leveraging novel debugging techniques without human feedback.</p><p>14 Self-Collaboration <ref type="bibr" target="#b25">[26]</ref> Self-Collaboration organizes LLMs into virtual teams performing specialized roles-analyst, coder, and tester-dramatically improving their ability to manage complex coding tasks autonomously.</p><p>15 SCoT <ref type="bibr" target="#b39">[40]</ref> SCoT enhances LLMs like ChatGPT in code generation by using structured reasoning steps aligned with programming constructs.</p><p>16 CodeChain <ref type="bibr" target="#b40">[41]</ref> CodeChain improves LLMs' code generation for complex tasks by using iterative revisions and modularization.</p><p>17 INTERVENOR <ref type="bibr" target="#b41">[42]</ref> INTERVENOR optimizes LLMs for code repair by using interactive roles to enhance debugging and repair processes.</p><p>18 CodeCoT <ref type="bibr" target="#b8">[9]</ref> CodeCoT improves code generation by integrating chain-of-thought reasoning with a selfexamination phase to iteratively correct syntax errors.</p><p>19 PaLM Coder <ref type="bibr" target="#b42">[43]</ref> PaLM Coder utilizes Google's PaLM to enhance code generation efficiency and accuracy across various programming tasks.</p><p>20 Claude-instant-1 <ref type="bibr" target="#b43">[44]</ref> Claude-instant-1 is a real-time conversational AI model optimized for rapid responses and effective code generation through interactive dialogues.</p><p>21 GPT-4 <ref type="bibr" target="#b33">[34]</ref> GPT-4 is a multimodal language model that excels in understanding both text and images, significantly advancing its capacity for complex reasoning and achieving human-level performance on professional benchmarks.</p><p>22 MapCoder <ref type="bibr" target="#b9">[10]</ref> MapCoder is a multi-agent framework, which replicates the human programming cycle using four specialized agents-retrieval, planning, coding, and debugging agents.</p><p>and shows better performance than other Code LLMs. Thus, we used the GPT-3.5-turbo to evaluate our work. The evaluation results indicate that CodeCoR significantly outperforms prompting-only models on the HumanEval and MBPP datasets. On the HumanEval dataset, CodeCoR achieves a Pass@1 score of 86.6%, whereas Self-Planning <ref type="bibr" target="#b7">[8]</ref>, SCoT <ref type="bibr" target="#b39">[40]</ref>, and Reflexion score 65.2%, 60.6%, and 68.1%, respectively. On the MBPP dataset, CodeCoR scores 79.2%, significantly higher than Self-Planning, SCoT, and Reflexion <ref type="bibr" target="#b35">[36]</ref>, which score 58.6%, 67.0%, and 55.7%, respectively. These results indicate that CodeCoR outperforms existing prompting strategies. When comparing CodeCoR with multi-agent frameworks, CodeCoR also excels. For instance, CodeCoR achieves a Pass@1 score of 86.6% on the HumanEval dataset, whereas MapCoder <ref type="bibr" target="#b9">[10]</ref> and CodeCoT <ref type="bibr" target="#b8">[9]</ref> achieve 80.5%, and 79.3%, respectively. On the MBPP dataset, CodeCoR scores 79.2%, compared to 78.9% and 67.7% for MapCoder and CodeCoT, respectively. These results demonstrate that CodeCoR significantly enhances code generation effectiveness compared to other multi-agent frameworks.  We also compare CodeCoR with the baseline models in terms of Average Edit Distance and Average BLEU score. We select four models for comparison. The selection of these four models -SCoT <ref type="bibr" target="#b39">[40]</ref>, CodeChain <ref type="bibr" target="#b40">[41]</ref>, Self-Planning <ref type="bibr" target="#b7">[8]</ref>, and MapCoder <ref type="bibr" target="#b9">[10]</ref> -is based on their representativeness and state-of-the-art performance in code generation. Specifically, SCoT, CodeChain, and Self-Planning are chosen for their exceptional semantic capabilities, representing the most advanced semantic baselines, while MapCoder is selected for its state-of-the-art code generation capabilities. Specifically, utilizing the reference solutions and the generated code files in the HumanEval and MBPP datasets, we calculated the edit distance between the generated code and the reference code for each task, as well as the BLEU score. For each task, we aligned the standard code with the generated code by task id. Subsequently, we computed the edit distance and BLEU score for each task and aggregated these scores. The final average edit distance and average BLEU score were derived by averaging the scores across all tasks.</p><p>The comparison results are shown in Tables 3. On the HumanEval dataset, CodeCoR achieves an average edit distance of 378.79 and an average BLEU score of 0.276, significantly outperforming most models. Although Self-Planning and MapCoder have similar average edit distances to CodeCoR, CodeCoR's notably higher average BLEU score indicates its generated code is semantically closer to the reference code. On the MBPP dataset, CodeCoR again demonstrates exceptional performance with an average edit distance of 166.61 and an average BLEU score of 0.351. This significantly surpasses the results of Self-Planning and SCoT, highlighting CodeCoR's substantial advantage in generating high-quality code. When considering the mean values across both datasets, CodeCoR displays superior performance in both average edit distance and average BLEU score. Specifically, it achieves a mean average edit distance of 272.70, and a mean average BLEU score of 0.314, which are the highest among all models. CodeCoR achieved the best results on both edit distance and BLEU score, which reflects that the code obtained by CodeCoR is the closest to the standard code in the dataset, rather than just passing the test cases of the dataset.</p><p>Answer to RQ1: CodeCoR achieves higher performance on four widely used datasets over existing LLM-based code generation models; the code generated by CodeCoR shows higher textual similarity and shorter edit distance to the ground-truth code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">How effective are the major components of CodeCoR? (RQ2)</head><p>In this section, we analyze how major components of CodeCoR (as illustrated in Figure <ref type="figure">2</ref>) affect its effectiveness. We compare the effectiveness of CodeCoR with the following four variants: CodeCoR not follow the traditional sequential multi-agent framework. It aims to verify whether the Pruning Method can optimize the generation process by improving the efficiency and quality of agent interactions. This variant cannot prune the outputs of the agents and selects the high-quality outputs of the framework.</p><p>The evaluation results are depicted in Table <ref type="table" target="#tab_3">4</ref>. Each major component significantly impacts the performance of CodeCoR. The lack of the Prompt Agent results in a reduction in Pass@1 for each dataset: 77.4% for the HumanEval dataset and 70.1% for the HumanEval-ET dataset. This highlights the importance of the Prompt Agent in providing clear context and correct direction for the task, which plays a key role in maintaining the quality and accuracy of the generated code. Specifically, the absence of the Test Agent results in significant Pass@1 reductions across various datasets: 45.1% on HumanEval, 43.3% on HumanEval-ET, 52.1% on MBPP, and 40.6% on MBPP-ET. This shows the importance of syntactic validation in maintaining the quality and reliability of the generated code. When the Repair Agent is omitted, there are notable declines in Pass@1 scores: 75.6% on HumanEval, 75.6% on HumanEval-ET, 67.7% on MBPP, and 48.6% on MBPP-ET. The Repair Agent plays a critical role in self-correction, enabling the system to address and rectify errors effectively. Its absence leads to a significant decrease in the overall quality of the code, as the system becomes less capable of correcting errors autonomously. When the Pruning Method is removed, Pass@1 scores drop to 77.4% on HumanEval, 79.2% on HumanEval-ET, 67.7% on MBPP, and 58.1% on MBPP-ET. This module is essential for managing the flow and processing of inputs, ensuring that the generated code remains coherent and of high quality. Its absence can lead to increased noise and errors in the code generation process, resulting in performance degradation.</p><p>Answer to RQ2: Our CodeCoR framework exhibits better performance than its variants, confirming the effectiveness and necessity of its major components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">What are the cost implications of CodeCoR? (RQ3)</head><p>The cost implications of most multi-agent frameworks are much higher than that of singleagent frameworks. Therefore, in terms of studying cost implications, we selected three singleagent methods and one multi-agent method to compare with CodeCoR. Table <ref type="table" target="#tab_4">5</ref> provides an empirical assessment of various code generation frameworks-CodeCoR, MapCoder, CodeChain, SCoT, and Self-Planning. The experiment was conducted in the Python environment with the first ten programming problems from the HumanEval dataset. We employed psutil <ref type="bibr" target="#b46">[47]</ref>, the Python library, for monitoring costs. We recorded execution time, CPU usage, memory usage, disk I/O, and Network I/O to evaluate the cost of CodeCoR. The experiments were conducted on a dedicated server to ensure that other services or processes did not influence our measurements.</p><p>In terms of runtime, CodeCoR exhibits superior performance with a time cost of 123.69 seconds, significantly outperforming SCoT and Self-Planning, which recorded a time cost of 251.79 seconds We also measure the memory utilization of CodeCoR and CodeChain. The results show that they have memory usage of merely 0.01 GB, compared to SCoT's increment of 0.21 GB, suggesting a potential area for optimization in the memory management of SCoT. Regarding disk I/O, SCoT's activity significantly exceeds that of other frameworks, especially in disk writes reaching up to 162.90 MB, whereas CodeCoR maintains a more efficient disk write volume of 11.49 MB.</p><p>Analysis of network traffic shows that despite SCoT having the highest data transmission and reception figures, CodeCoR, along with other frameworks, demonstrates a more balanced use of network resources. This balance indicates that CodeCoR manages network data efficiently and economically, controlling resource consumption without compromising the communication quality.</p><p>Overall, the results show that the cost of CodeCoR is lower than other code generation frameworks. It can be attributed to efficient task decomposition, effective pruning strategies, and parallel processing capabilities. The decomposition of tasks reduces the whole coding and repair complex, saving resources. The pruning methods ensure that only the most promising outputs are used at each step and agents can handle their work in parallel, which reduces the runtime.</p><p>Answer to RQ3: Our CodeCoR framework incurs less code generation runtime than other representative LLM-based models. Meanwhile, CodeCoR does not require high usage of other computation resources like CPU, memory, disk I/O, and network.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">DISCUSSION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Can CodeCoR work with other LLMs?</head><p>In Section 5.1, we use GPT-3.5-turbo to evaluate the generality of CodeCoR. This section evaluates and assesses the performance of various methods applied to two powerful LLMs: CodeLlama <ref type="bibr" target="#b47">[48]</ref> and GPT-4 <ref type="bibr" target="#b33">[34]</ref>. CodeLlama is a specialized model designed for coding tasks, equipped with advanced training techniques such as infilling and long context handling. Conversely, GPT-4 is a multi-modal model that excels in text comprehension and demonstrates exceptional prowess in complex reasoning tasks.</p><p>As illustrated in Table <ref type="table" target="#tab_5">6</ref>, we observe the performance of various prompting methods on the CodeLlama model. For instance, in the HumanEval dataset, CodeCoR achieves a score of 43.9%, which surpasses CodeCoT's 34.1%, Self-Planning's 22.6%, SCoT's 17.4%, and CodeChain's 15.9%. Similarly, in the HumanEval-ET dataset, CodeCoR scores 37.8%, outperforming all other prompting To demonstrate the practical applicability of CodeCoR, we tested the framework on various datasets including HumanEval and HumanEval-ET using GPT-4. The results indicated significant improvements in accuracy compared to existing methods. For instance, on the HumanEval dataset, CodeCoR achieved a Pass@1 accuracy of 94.5%, and on the HumanEval-ET dataset, it achieved 83.5%. These results are significantly higher compared to other methods such as CodeChain, SCoT, Self-Planning, and CodeCoT, as shown in Table <ref type="table" target="#tab_5">6</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Why does CodeCoR work?</head><p>The efficacy of CodeCoR can be attributed to its innovative multi-agent architecture, which enhances specialization and collaboration across various stages of the code generation process. By designating specialized agents for tasks such as generating CoT prompts, synthesizing code, creating test cases, and repairing code, this architecture ensures that each function is executed by an agent optimized for that specific task, thereby improving the efficiency and accuracy of code generation.</p><p>Moreover, the effectiveness of CodeCoR also stems from the enhanced collaboration and specialization among its agents. The iterative feedback mechanism implemented in CodeCoR is another core factor, where agents operate in a loop, continually testing and refining generated code based on feedback from local execution environments. This iterative process ensures that both semantic and syntactical errors are progressively minimized, enhancing the quality of the code output.</p><p>The Repair Agent plays a crucial role in enhancing the robustness of CodeCoR by continuously monitoring the generated code to detect and correct semantic and syntactical errors. As an example, Figure <ref type="figure" target="#fig_6">6</ref> shows an error in the generated code when a Repair Agent is not utilized. Specifically, the code in the second subfigure contains an unnecessary conditional check when comparing strings of the same length, which leads to failures of certain test cases. The Repair Agent can identify such an error and fix it, ensuring semantic correctness. This example highlights the critical role of the Repair Agent in maintaining the semantic accuracy of the generated code.</p><p>In summary, the promising results of CodeCoR can be attributed to three main factors: its selfreflective multi-agent framework enhances specialization and collaboration; an effective iterative feedback mechanism; and the error detection and correction capabilities. These elements work together to improve the effectiveness and efficiency of code generation. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">How does the number of repair rounds affect the performance of the agents?</head><p>In CodeCoR, the number of repair rounds is a key factor for the performance of the framework. The coding repair process of each code snippet is stopped when the code cannot be repaired to pass more test cases. In this experiment, we force the code repair process to stop by setting different numbers of repair rounds. The results in Figure <ref type="figure" target="#fig_7">7</ref> show that the overall performance of the four agents reaches the best when the number of repair rounds is 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Threats to Validity</head><p>While our study demonstrates promising results, there are several potential threats to validity:</p><p>• We ensured a consistent experimental setup across all trials to minimize variations, although minor fluctuations in execution environments could still introduce variability. To reduce the likelihood of random factors influencing our conclusions, we conducted 10 rounds of experiments for each trial and averaged the results.</p><p>• We mitigated internal validity concerns by carefully controlling experimental variables and conducting multiple trials to ensure consistency. Despite these efforts, experimenter bias and errors remain potential threats, which we addressed by using automated tools to minimize human errors and biases. • Construct validity was considered by selecting well-established metrics to evaluate our results, ensuring they accurately reflect the theoretical constructs. However, the suitability of these metrics could be questioned, and future studies could explore alternative evaluation metrics to validate our findings further.</p><p>• While our experiments were designed to reflect real-world scenarios, the specific datasets and settings used might limit the broader applicability of our findings. To address this, we plan to validate our approach on a wider range of datasets and in different environments in future research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>This paper proposes CodeCoR, a multi-agent framework designed to improve the self-reflection ability of code generation. It features a comprehensive workflow that allows for the observation and evaluation of the generation process. By employing four agents (including Prompt Agent, Coding Agent, Test Agent, and Repair Agent) along with various pruning methods for pruning low-quality outputs, CodeCoR significantly enhances code generation performance, achieving the average Pass@1 score of 77.8% on four public datasets and outperforming existing LLM-based methods. The experimental results demonstrate that the self-reflective capability of CodeCoR improves the accuracy and efficiency of code generation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Examples of misunderstanding of sequential workflow.</figDesc><graphic coords="2,65.55,259.75,354.91,200.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 . 1 OverviewFigure 2</head><label>212</label><figDesc>Fig. 2. Overview of the CodeCoR framework</figDesc><graphic coords="4,45.83,415.81,394.32,196.89" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Examples of prompts and outputs for four agents.</figDesc><graphic coords="6,45.83,84.68,394.34,351.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. The hierarchical structure of the pruning process</figDesc><graphic coords="7,75.40,84.69,335.17,261.02" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5. The pruning prompts of agents and the workflow for pruning the low-quality outputs</figDesc><graphic coords="8,45.83,84.69,394.32,183.44" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Algorithm 1</head><label>1</label><figDesc>CodeCoR Process Require: Task description 𝑇 𝑑 Ensure: Final code 𝐶 𝑓 1: Phase-I: Prompt Generation 2: 𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙 ← 𝑔𝑒𝑛𝑒𝑟𝑎𝑡𝑒_𝐶𝑜𝑇 _𝑝𝑟𝑜𝑚𝑝𝑡𝑠 (𝑇 𝑑 ) 3: 𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙 ← 𝑝𝑟𝑢𝑛𝑒_𝐶𝑜𝑇 _𝑝𝑟𝑜𝑚𝑝𝑡𝑠 (𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙) 4: Phase-II: Test Case Generation 5: 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙 ← 𝑔𝑒𝑛𝑒𝑟𝑎𝑡𝑒_𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒𝑠 (𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙) 6: 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙 ← 𝑝𝑟𝑢𝑛𝑒_𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒𝑠 (𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙) 7: Phase-III: Code Generation 8: 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡_𝑝𝑜𝑜𝑙 ← 𝑔𝑒𝑛𝑒𝑟𝑎𝑡𝑒_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 (𝐶𝑜𝑇 _𝑝𝑜𝑜𝑙) 9: 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡_𝑝𝑜𝑜𝑙 ← 𝑝𝑟𝑢𝑛𝑒_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡_𝑝𝑜𝑜𝑙) 10: Phase-IV: Result Checking 11: for 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡 in 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡_𝑝𝑜𝑜𝑙 do 12: 𝑒𝑥𝑒𝑐𝑢𝑡𝑖𝑜𝑛_𝑟𝑒𝑠𝑢𝑙𝑡, 𝑒𝑟𝑟𝑜𝑟 _𝑚𝑒𝑠𝑠𝑎𝑔𝑒𝑠 ← 𝑒𝑥𝑒𝑐𝑢𝑡𝑒_𝑐𝑜𝑑𝑒 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡, 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙) 13: if 𝑒𝑥𝑒𝑐𝑢𝑡𝑖𝑜𝑛_𝑟𝑒𝑠𝑢𝑙𝑡 == "𝑝𝑎𝑠𝑠" then 14: 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡 .𝑎𝑝𝑝𝑒𝑛𝑑 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡) 15: else if 𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑠_𝑟𝑒𝑝𝑎𝑖𝑟 (𝑒𝑟𝑟𝑜𝑟 _𝑚𝑒𝑠𝑠𝑎𝑔𝑒𝑠) then 16: 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠.𝑎𝑝𝑝𝑒𝑛𝑑 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡) 17: else 18: 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡 .𝑎𝑝𝑝𝑒𝑛𝑑 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡) 19: Phase-V: Code Repairing 20: while 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 ≠ ∅ do 21: 𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 ← 𝑔𝑒𝑛𝑒𝑟𝑎𝑡𝑒_𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 (𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠) 22: 𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 ← 𝑝𝑟𝑢𝑛𝑒_𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 (𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠) 23: 𝑟𝑒𝑣𝑖𝑠𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 ← 𝑎𝑝𝑝𝑙𝑦_𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠 (𝑟𝑒𝑝𝑎𝑖𝑟 _𝑠𝑢𝑔𝑔𝑒𝑠𝑡𝑖𝑜𝑛𝑠) 24: for 𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡 in 𝑟𝑒𝑣𝑖𝑠𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 do 25: 𝑒𝑥𝑒𝑐𝑢𝑡𝑖𝑜𝑛_𝑟𝑒𝑠𝑢𝑙𝑡, 𝑒𝑟𝑟𝑜𝑟 _𝑚𝑒𝑠𝑠𝑎𝑔𝑒𝑠 ← 𝑒𝑥𝑒𝑐𝑢𝑡𝑒_𝑐𝑜𝑑𝑒 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡, 𝑡𝑒𝑠𝑡_𝑐𝑎𝑠𝑒_𝑝𝑜𝑜𝑙) 26: if 𝑒𝑥𝑒𝑐𝑢𝑡𝑖𝑜𝑛_𝑟𝑒𝑠𝑢𝑙𝑡 == "𝑝𝑎𝑠𝑠" then 27: 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡 .𝑎𝑝𝑝𝑒𝑛𝑑 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡) 28: else if 𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑠_𝑟𝑒𝑝𝑎𝑖𝑟 (𝑒𝑟𝑟𝑜𝑟 _𝑚𝑒𝑠𝑠𝑎𝑔𝑒𝑠) then 29: 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠.𝑎𝑝𝑝𝑒𝑛𝑑 (𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡) 30: 𝑓 𝑎𝑖𝑙𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑛𝑖𝑝𝑝𝑒𝑡𝑠 ← [] 31: 𝐶 𝑓 ← 𝑠𝑒𝑙𝑒𝑐𝑡_ℎ𝑖𝑔ℎ𝑒𝑠𝑡_𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒 (𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡) 32: return 𝐶 𝑓 Agent to repair the code snippets. These repaired code snippets restart Phase-IV, and the process iterates until all the code snippets are added to the 𝑟𝑎𝑛𝑘𝑒𝑑_𝑐𝑜𝑑𝑒_𝑠𝑒𝑡.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 6 .</head><label>6</label><figDesc>Fig. 6. The diagram illustrates the improvements in code generation accuracy with the integration of a Repair Agent. The first sub-figure gives a coding task. The second sub-figure shows code produced by a single agent without a Repair Agent, which contains a semantic error. The third sub-figure shows the code generated under the guidance of the Repair Agent, which is correct both syntactically and semantically.</figDesc><graphic coords="17,75.40,84.68,335.20,289.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 7 .</head><label>7</label><figDesc>Fig. 7. Pass@1 results under different repair rounds on HumanEval datasets</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Baseline code generation models.</figDesc><table><row><cell cols="2">No. Name</cell><cell>Description</cell></row><row><cell>1</cell><cell>Incoder [30]</cell><cell>InCoder is a unique generative model that excels in programming synthesis and zero-shot code</cell></row><row><cell></cell><cell></cell><cell>infilling, leveraging bidirectional context to enhance performance on complex coding tasks.</cell></row><row><cell>2</cell><cell>CodeGeeX [31]</cell><cell>CodeGeeX is a multilingual, 13-billion parameter model which excels in code generation and</cell></row><row><cell></cell><cell></cell><cell>translation across 23 languages.</cell></row><row><cell>3</cell><cell>Starcoder [32]</cell><cell>Starcoder is a 15.5B parameter model known for its extensive multilingual code generation</cell></row><row><cell></cell><cell></cell><cell>capabilities.</cell></row><row><cell>4</cell><cell cols="2">CodeGen-Mono [33] Codegen-Mono excels in zero-shot Python code generation, uniquely leveraging its open-source</cell></row><row><cell></cell><cell></cell><cell>Multi-Turn Programming Benchmark to enhance program synthesis.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Comparison of code generation models for HumanEval, HumanEval-ET, MBPP, and MBPP-ET datasets (Pass@1 scores). The best approach is highlighted in bold.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>GPT-3.5</cell><cell cols="4">Human-Human-MBPP MBPP</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>-turbo</cell><cell>Eval</cell><cell>Eval-ET</cell><cell></cell><cell>-ET</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Few-Shot</cell><cell>67.7</cell><cell>54.9</cell><cell>65.8</cell><cell>48.3</cell></row><row><cell>Code LLMs</cell><cell cols="5">Human-Human-MBPP MBPP Avg. Eval Eval-ET -ET</cell><cell>ReAct Reflexion ToT</cell><cell>56.9 68.1 54.4</cell><cell>49.4 50.6 42.7</cell><cell>67.0 70.0 65.8</cell><cell>45.9 47.4 40.8</cell></row><row><cell>Incoder (6.7B)</cell><cell>15.2</cell><cell>11.6</cell><cell>17.6</cell><cell>14.3</cell><cell>14.7</cell><cell>RAP</cell><cell>63.1</cell><cell>52.4</cell><cell>71.4</cell><cell>46.7</cell></row><row><cell>CodeGeeX (1.3B)</cell><cell>18.9</cell><cell>15.2</cell><cell>26.9</cell><cell>20.4</cell><cell>20.4</cell><cell>Self-Edit</cell><cell>62.2</cell><cell>54.3</cell><cell>56.4</cell><cell>45.9</cell></row><row><cell>Claude-instant-1</cell><cell>31.1</cell><cell>28.1</cell><cell>26.9</cell><cell>19.9</cell><cell>26.5</cell><cell>Self-Planning</cell><cell>65.2</cell><cell>48.8</cell><cell>58.6</cell><cell>41.5</cell></row><row><cell>CodeGen-Mono</cell><cell>32.9</cell><cell>25.0</cell><cell>38.6</cell><cell>31.6</cell><cell>31.5</cell><cell>Self-Debugging</cell><cell>61.6</cell><cell>45.8</cell><cell>60.1</cell><cell>52.3</cell></row><row><cell>(16.1B)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Self-</cell><cell>74.4</cell><cell>56.1</cell><cell>68.2</cell><cell>49.5</cell></row><row><cell>PaLM Coder</cell><cell>43.9</cell><cell>36.6</cell><cell>32.3</cell><cell>27.2</cell><cell>35.0</cell><cell>Collaboration</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>StarCoder (15.5B)</cell><cell>34.1</cell><cell>25.6</cell><cell>43.6</cell><cell>33.4</cell><cell>34.2</cell><cell>INTERVENOR</cell><cell>75.6</cell><cell>54.8</cell><cell>69.8</cell><cell>47.1</cell></row><row><cell>CodeX (175B)</cell><cell>47.0</cell><cell>31.7</cell><cell>58.1</cell><cell>38.8</cell><cell>43.9</cell><cell>SCoT</cell><cell>60.6</cell><cell>53.4</cell><cell>67.0</cell><cell>51.9</cell></row><row><cell>GPT-3.5-turbo</cell><cell>57.3</cell><cell>42.7</cell><cell>52.2</cell><cell cols="2">36.8 47.3</cell><cell>CodeChain</cell><cell>62.8</cell><cell>54.3</cell><cell>59.1</cell><cell>45.5</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Vanilla CodeCoT</cell><cell>69.5</cell><cell>58.5</cell><cell>67.7</cell><cell>48.6</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>CodeCoT</cell><cell>79.3</cell><cell>69.5</cell><cell>67.7</cell><cell>58.1</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>MapCoder</cell><cell>80.5</cell><cell>77.4</cell><cell>78.9</cell><cell>54.4</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>CodeCoR</cell><cell>86.6</cell><cell>80.5</cell><cell>79.2</cell><cell>65.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Comparison of models on the HumanEval and MBPP datasets based on Average Edit Distance andAverage BLEU score, including the mean values across both datasets.</figDesc><table><row><cell>Method</cell><cell cols="2">Average Edit Distance</cell><cell cols="3">Average BLEU Score</cell></row><row><cell></cell><cell cols="5">HumanEval MBPP Mean HumanEval MBPP Mean</cell></row><row><cell>CodeCoR</cell><cell>378.79</cell><cell>166.61 272.70</cell><cell>0.276</cell><cell>0.351</cell><cell>0.314</cell></row><row><cell>Self-Planning</cell><cell>387.53</cell><cell>538.52 463.03</cell><cell>0.249</cell><cell>0.127</cell><cell>0.188</cell></row><row><cell>SCoT</cell><cell>334.97</cell><cell>538.52 436.75</cell><cell>0.263</cell><cell>0.127</cell><cell>0.195</cell></row><row><cell>CodeChain</cell><cell>357.20</cell><cell>301.81 329.51</cell><cell>0.263</cell><cell>0.259</cell><cell>0.261</cell></row><row><cell>MapCoder</cell><cell>396.2</cell><cell>167.18 282.49</cell><cell>0.236</cell><cell>0.353</cell><cell>0.295</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>The impact of major components of CodeCoR on HumanEval and MBPP datasets(Pass@1) Prompt Agent This variant of CodeCoR operates without the Prompt Agent. The task description replaces the selected CoT prompts in the CoT Pool and is directly passed to the Test Agent and Coding Agent to guide the generation of test cases and code snippets. • w/o Test Agent: This variant is CodeCoR without the Test Agent, which is responsible for validating the syntactic accuracy of the generated code. The goal is to access whether the absence of the Test Agent leads to an increase in syntax errors. The generated code is executed directly in the local environment. If the code fails, the code and feedback are forwarded to the Repair Agent. • w/o Repair Agent: This variant of CodeCoR removes the Repair Agent, which is responsible for correcting errors in the generated code. Its purpose is to verify whether the Repair Agent can enhance the overall quality and reliability of the code by systematically analyzing and fixing these errors. If the generated code cannot pass the test cases generated by the Test Agent, the code and feedback are directly sent to the Coding Agent for repairs. • w/o Pruning Method: This variant is CodeCoR without the Pruning Method, which makes</figDesc><table><row><cell>Variant</cell><cell cols="4">HumanEval HumanEval-ET MBPP MBPP-ET</cell></row><row><cell>w/o Prompt Agent</cell><cell>77.4</cell><cell>70.1</cell><cell>58.4</cell><cell>46.4</cell></row><row><cell>w/o Test Agent</cell><cell>45.1</cell><cell>43.3</cell><cell>52.1</cell><cell>40.6</cell></row><row><cell>w/o Repair Agent</cell><cell>75.6</cell><cell>75.6</cell><cell>67.7</cell><cell>48.6</cell></row><row><cell>w/o Pruning Method</cell><cell>77.4</cell><cell>79.2</cell><cell>67.7</cell><cell>58.1</cell></row><row><cell>CodeCoR</cell><cell>86.6</cell><cell>80.5</cell><cell>79.2</cell><cell>65.2</cell></row><row><cell>• w/o</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Cost comparison of code generation modelsThe results demonstrate CodeCoR's pronounced efficiency in execution. Additionally, both CodeCoR and MapCoder maintain a CPU usage rate of 0.8%, substantially lower than the 5.2% CPU usage observed in SCoT, indicating that CodeCoR achieves rapid task completion while conserving CPU resources.</figDesc><table><row><cell></cell><cell>Run</cell><cell cols="4">CPU Memory Disk Disk</cell><cell>Net</cell><cell>Net</cell></row><row><cell>Method</cell><cell cols="2">Time Usage</cell><cell>Usage</cell><cell cols="4">Read Write Send Receive</cell></row><row><cell></cell><cell>(s)</cell><cell>(%)</cell><cell>(GB)</cell><cell cols="3">(MB) (MB) (MB)</cell><cell>(MB)</cell></row><row><cell>CodeCoR</cell><cell>123.69</cell><cell>0.8</cell><cell>0.01</cell><cell>0.36</cell><cell>11.49</cell><cell>0.14</cell><cell>0.30</cell></row><row><cell>MapCoder</cell><cell>166.45</cell><cell>0.8</cell><cell>0.02</cell><cell>0.48</cell><cell>12.78</cell><cell>0.25</cell><cell>0.36</cell></row><row><cell>CodeChain</cell><cell>121.80</cell><cell>0.4</cell><cell>0.01</cell><cell>1.25</cell><cell>16.21</cell><cell>0.16</cell><cell>0.22</cell></row><row><cell>SCoT</cell><cell>251.79</cell><cell>5.2</cell><cell>0.21</cell><cell cols="3">55.32 162.90 0.72</cell><cell>1.15</cell></row><row><cell cols="2">Self-Planning 242.92</cell><cell>0.2</cell><cell>0.02</cell><cell>1.02</cell><cell>31.16</cell><cell>0.35</cell><cell>0.74</cell></row><row><cell cols="2">and 242.92 seconds, respectively.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 .</head><label>6</label><figDesc>Comparison of different methods on HumanEval and HumanEval-ET datasetsmethods. On the MBPP and MBPP-ET datasets, CodeCoR also leads with scores of 40.6% and 32.3%, respectively. This further substantiates CodeCoR's superior performance across various benchmarks when applied to the CodeLlama model.</figDesc><table><row><cell>Method</cell><cell>GPT-4</cell><cell></cell><cell cols="2">CodeLlama (34B)</cell></row><row><cell></cell><cell cols="4">HumanEval HumanEval-ET HumanEval HumanEval-ET</cell></row><row><cell>CodeChain</cell><cell>89.0</cell><cell>61.6</cell><cell>15.9</cell><cell>14.0</cell></row><row><cell>SCoT</cell><cell>78.9</cell><cell>69.5</cell><cell>17.4</cell><cell>14.9</cell></row><row><cell>Self-Planning</cell><cell>83.5</cell><cell>76.8</cell><cell>22.6</cell><cell>20.1</cell></row><row><cell>CodeCoT</cell><cell>86.6</cell><cell>77.4</cell><cell>34.1</cell><cell>29.9</cell></row><row><cell>ChatDev</cell><cell>84.1</cell><cell>72.7</cell><cell>23.6</cell><cell>20.6</cell></row><row><cell>MetaGPT</cell><cell>85.9</cell><cell>74.0</cell><cell>26.5</cell><cell>23.1</cell></row><row><cell>MapCoder</cell><cell>93.9</cell><cell>82.9</cell><cell>42.7</cell><cell>37.0</cell></row><row><cell>CodeCoR</cell><cell>94.5</cell><cell>83.5</cell><cell>43.9</cell><cell>37.8</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>, Vol. 1, No. 1, Article . Publication date: January 2025.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">DATA AVAILABILITY</head><p>Our source code, experimental data, and concrete examples of prompts and generated code are available at <ref type="url" target="https://anonymous.4open.science/r/CodeCoR-3EFC">https://anonymous.4open.science/r/CodeCoR-3EFC</ref>.</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Program synthesis: challenges and opportunities</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kroening</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Philosophical Transactions of the Royal Society A: Mathematical, Physical and Engineering Sciences</title>
+		<imprint>
+			<biblScope unit="volume">375</biblScope>
+			<biblScope unit="issue">2104</biblScope>
+			<biblScope unit="page">20150403</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Program synthesis</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Programming Languages</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="1" to="119" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with filtered pre-training data</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Incorporating discrete structures into neural models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.05783</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Codet5+: Open code generation model pretrained on text-to-code and code-to-code tasks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qiu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.07930</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022-01">2022. January 2025</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24" to="824" />
+		</imprint>
+	</monogr>
+	<note>Publication date</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Structured chain-of-thought prompting for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06599</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Self-planning code generation with large language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Codecot and beyond: Learning to program and test like a developer</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08784</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Mapcoder: Multi-agent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Parvez</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.11403" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Evaluating large language models trained on code</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Codescore: Evaluating code generation by learning code execution</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2301.09043" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Language models are unsupervised multitask learners</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Codet: Code generation with generated tests</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-G</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.10397</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Self-edit: Fault-aware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04087</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Generating sequences by learning to self-correct</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.00053</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Coderl: Mastering code generation through pretrained models and deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="21" to="314" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Is self-repair a silver bullet for code generation?</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">X</forename><surname>Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Tensor-based channel estimation and data-aided tracking in irs-assisted mimo systems</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">B A</forename><surname>Benicio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L F</forename><surname>De Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sokal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Fazal-E-Asim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Makki</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fodor</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.10499" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Leveraging automated unit tests for unsupervised code translation</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Charton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Harman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lample</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.06773</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Scriptoriumws: A code generation assistant for weak supervision</title>
+		<author>
+			<persName><forename type="first">T.-H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schoenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Vishwakarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR Deep Learning for Code Workshop</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Multi-agent systems and simulation: a survey from an application perspective</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">G</forename><surname>Troitzsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Multi-agent systems: Simulation and applications</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="53" to="75" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K S</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Chatdev: Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2307.07924" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2108.07732" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>-T. Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.05999</idno>
+		<title level="m">Incoder: A generative model for code infilling and synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Codegeex: A pre-trained model for code generation with multilingual evaluations on humaneval-x</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17568</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you!</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Gpt-4 technical report</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.08774" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2210.03629" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.10601" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.14992" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Structured chain-of-thought prompting for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.06599" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Codechain: Towards modular code generation through chain of self-revisions with representative sub-modules</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gokul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Joty</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08992</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Intervenor: Prompt the coding ability of large language models with the interactive chain of repairing</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.09868</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Palm: Scaling language modeling with pathways</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">240</biblScope>
+			<biblScope unit="page" from="1" to="113" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.09583</idno>
+		<title level="m">Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Binary codes capable of correcting deletions, insertions, and reversals</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">I</forename><surname>Levenshtein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Soviet physics doklady</title>
+		<imprint>
+			<date type="published" when="1966">1966</date>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="707" to="710" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Bleu: a method for automatic evaluation of machine translation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Papineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roukos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-J</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th annual meeting of the Association for Computational Linguistics</title>
+		<meeting>the 40th annual meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="311" to="318" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Psutil documentation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rodola</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kozhevnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Evtimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bhatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Défossez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.12950" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

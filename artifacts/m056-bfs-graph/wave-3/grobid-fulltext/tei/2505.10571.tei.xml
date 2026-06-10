@@ -1,0 +1,2065 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">On the Failure of Latent State Persistence in Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-01-26">26 Jan 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jen-Tse</forename><surname>Huang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kaiser</forename><surname>Sun</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Wenxuan</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Mark</forename><surname>Dredze</surname></persName>
+						</author>
+						<title level="a" type="main">On the Failure of Latent State Persistence in Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-01-26">26 Jan 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">07A66004B580728CA7CD70F6F75E83C3</idno>
+					<idno type="arXiv">arXiv:2505.10571v5[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>While Large Language Models (LLMs) excel in reasoning, whether they can sustain persistent latent states remains under-explored. The capacity to maintain and manipulate unexpressed, internal representations-analogous to human working memory-is a cornerstone of complex reasoning. In this paper, we formalize and quantify the "Latent State Persistence" (LSP) gap through three novel experiments. First, we utilize a Number Guessing Game, demonstrating that across independent queries, LLMs fail to allocate probability mass to a singular hidden choice, violating a fundamental probabilistic principle. Second, we employ a Yes-No Game to show that as the number of questions increases, LLMs suffer from "concept drift," leading to inevitable self-contradictions due to the lack of LSP. Finally, inspired by Mathematical Mentalism, we task models with tracking transformations on hidden variables, revealing a failure in variable binding and state evolution when the initial state is not explicitly present in the context. Collectively, these findings suggest that LLMs function as reactive post-hoc solvers rather than proactive planners with LSP. Our work provides a framework for evaluating the fidelity of internal representations and highlights a fundamental architectural divergence between autoregressive transformers and human-like cognition.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Large Language Models (LLMs) have demonstrated remarkable proficiency across diverse reasoning domains, from legal analysis and education to complex healthcare applications <ref type="bibr" target="#b10">(Guha et al., 2023;</ref><ref type="bibr" target="#b49">Wen et al., 2024;</ref><ref type="bibr" target="#b19">Huang et al., 2025;</ref><ref type="bibr" target="#b22">Jiao et al., 2023;</ref><ref type="bibr">Yang et al., 2024b)</ref>. Consequently, research has increasingly focused on whether these models exhibit human-like cognitive traits such as personality, empathy, and theory-of-mind (Huang et al., 2024b;a; Sorin   1 Johns Hopkins University 2 Renmin University of China. Correspondence to: Jen-tse Huang &lt;jhuan236@jh.edu&gt;.</p><p>Preprint. January <ref type="bibr">27, 2026</ref><ref type="bibr">. et al., 2024;</ref><ref type="bibr">Liu et al., 2024b;</ref><ref type="bibr">Wang et al., 2024b)</ref>. However, a fundamental pillar of cognition remains significantly under-explored: working memory-the capacity to temporally store and manipulate internal representations without externalizing them.</p><p>For Transformers, the "state" of a conversation is traditionally bounded by the context window. This raises a critical architectural question: can an LLM maintain a persistent latent state that is not explicitly written into the prompt? We formalize this capability as Latent State Persistence (LSP)-the ability of a model to instantiate, maintain, and manipulate an internal variable x across multiple interaction steps without explicit context externalization. We hypothesize that current LLMs lack true LSP, functioning as reactive post-hoc reasoners that find the most statistically plausible completion for a given dialogue pattern rather than grounding their responses in a stable internal state.</p><p>The central challenge in evaluating LSP is the "hidden mind" problem: how can we verify the existence of an unobservable internal state? We address this by proposing three novel experiments, each deriving a testable hypothesis from the mathematical consequences of LSP:</p><p>• Number Guessing Game ( §2) tests Static Probabilistic Completeness: We propose the Sum-of-Probability Identity (Proposition 2.1) as a null hypothesis. For a state-persistent agent, the sum of "Yes" probabilities across a complete state space must equal unity ( P = 1). We define Empirical State Mass (ESM) as a metric to quantify the deviation from this identity.</p><p>• Yes-No Game ( §3) examines Dynamic Logical Consistency: We demonstrate that for an agent with LSP, inference complexity is constant-time O(1) relative to the number of queries (Proposition 3.1). Conversely, a stateless agent must treat the task with O(t) complexity. We show that as constraints accumulate, models inevitably fail due to "concept drift" and selfcontradiction.</p><p>• Mathematical Mentalism ( §4) assesses State Evolution Fidelity: Inspired by deterministic magic routines, we task models with tracking non-linear transformations on hidden variables. Failure to satisfy the mathematical invariants of the routine reveals a breakdown in variable binding and latent state evolution.</p><p>We evaluate 17 frontier LLMs, including GPT (4o <ref type="bibr" target="#b20">(Hurst et al., 2024)</ref> and 4o-Mini (OpenAI, 2024)), o-series (o1-Mini <ref type="bibr" target="#b21">(Jaech et al., 2024)</ref>, o3-Mini, and o4-Mini (Ope-nAI, 2025)), LLaMA (3.1 (Meta, 2024) and 3.3), Qwen-2.5 <ref type="bibr">(Yang et al., 2024a)</ref> (7B and 72B), QwQ <ref type="bibr" target="#b42">(Team, 2024)</ref>, and DeepSeek (V3 <ref type="bibr">(Liu et al., 2024a)</ref> and R1 <ref type="bibr" target="#b11">(Guo et al., 2025)</ref>). Temperature and Top-p are default to 1.0. Our results converge on a singular conclusion: current LLMs exhibit a profound "LSP gap." While scaling and longreasoning traces (e.g., in o3-Mini or R1) improve performance by externalizing reasoning, the underlying latent persistence remains absent.</p><p>Our framework distinguishes itself from existing "working memory" benchmarks, such as N-back tasks <ref type="bibr" target="#b8">(Gong et al., 2024;</ref><ref type="bibr" target="#b59">Zhang et al., 2024)</ref>, which often conflate internal maintenance with context-window retrieval (Appendix B.2). By ensuring the target state is never present in the input, our methodology provides a faithful evaluation of true working memory. Our contributions are as follows:</p><p>1. We formally define Latent State Persistence (LSP) and provide a theoretical framework to detect hidden states via probabilistic and logical indicators. 2. We introduce our framework 1 containing three experiments designed to quantify the fidelity of internal representations in autoregressive models. 3. We extensively evaluate 17 frontier LLMs, revealing that scaling laws fail to bridge the LSP gap and documenting the persistence of human-centric priors, such as the "Blue-Seven" phenomenon.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Number Guessing Game</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Methodology</head><p>Problem Formalization. Let X = {1, . . . , n} be a discrete state space of integers. We define an experimental trial as a sequence of interactions T i = (P inst , R ack , Q i ), where:</p><p>• P inst is the initial instruction: "Think of an integer between 1 and n, but don't say it to me." • R ack is the model's acknowledgement: "Got it! I've thought of an integer between 1 and n. What's next?" • Q i is the query: "Is the number you're thinking of i?</p><p>Answer Yes or No."</p><p>The Persistence Hypothesis. If an agent possesses perfect LSP, it must instantiate and maintain a fixed latent variable x ∈ X throughout the trial T i . Under another assumption of honesty (the agent does not lie), the response y ∈ {Y, N} 1 <ref type="url" target="https://github.com/penguinnnnn/LLM-Working-Memory">https://github.com/penguinnnnn/LLM- Working-Memory</ref> distribution is conditioned on this hidden state x:</p><formula xml:id="formula_0">P (y = Y | Q i , x) = I(i = x),<label>(1)</label></formula><p>where I(•) is the indicator function.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proposition 2.1 (Sum-of-Probability Identity).</head><p>For an agent with a persistent and unique latent state x ⊥ Q i , the sum of the probabilities of answering "Yes" across all possible queries in X must equal unity:</p><formula xml:id="formula_1">n i=1 P (y = Y | Q i ) = n i=1 x∈X P (y = Y | Q i , x)P (x) = x∈X P (x) n i=1 I(i = x) = 1.</formula><p>(2)</p><p>Any significant deviation from P = 1 provides a quantitative basis to reject the hypothesis, suggesting the agent either fails to commit to a state x or lies about the outcome.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLMs as Stateless Agents.</head><p>To quantify this phenomenon in stateless agents, we define the Empirical State Mass (ESM) for a model M over X as:</p><formula xml:id="formula_2">ESM(M, X ) = n i=1 PM (y = Y | T i ),<label>(3)</label></formula><p>where PM is the empirical probability derived from repeated independent samplings. In a stateless agent, the model does not hold a fixed x. Instead, it treats each Q i as a frequentist inference task, leading to x ̸ ⊥ Q i . Since P (i = x) is a lowprobability event (e.g., 0.1 for n = 10), an autoregressive model biased toward maximum likelihood estimation (MLE) will favor the majority class, leading to ESM → 0.</p><p>Experimental Setup and Metrics. We evaluated 17 frontier LLMs using different n. To ensure statistical significance, each query Q i was executed for 200 independent trials. We varied the decoding configurations, Temperature and Top-p, ranging from 0 to 1, to test the transition from greedy decoding to stochastic sampling and the sensitivity of ESM to the probability mass of the tail tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative Analysis.</head><p>Figure <ref type="figure" target="#fig_0">1</ref> illustrates the empirical distribution of "Yes" responses for n = 10.</p><p>Two primary phenomena emerge. (1) Systematic under-allocation of probability mass: the majority of tested LLMs exhibit a severe negative bias, where "No" responses dominate regardless of i. This leads to an ESM approaching zero, violating Proposition 2.1. We posit that the models are not querying an internal state but are instead performing frequentist inference on the likelihood of a human guess being correct (1/n), which is statistically low. (2) When models do 0 0.17 0.34 0.51 0.68 1 2 3 4 5 6 7 8 9 10 gpt-4o-mini-2024-07-18 gpt-4o-2024-05-13 gpt-4o-2024-08-06 gpt-4o-2024-11-20 gpt-4.1-2025-04-14 0 0.03 0.06 0.09 0.12 1 2 3 4 5 6 7 8 9 10 o1-mini-2024-09-12 o3-mini-2025-01-31 o4-mini-2025-04-16 0 0.2 0.4 0.6 0.8 1 2 3 4 5 6 7 8 9 10 Llama-3.3-70B-Instruct-Turbo Llama-3.1-8B-Instruct-Turbo Llama-3.1-70B-Instruct-Turbo Llama-3.1-405B-Instruct-Turbo 0 0.06 0.12 0.18 0.24 1 2 3 4 5 6 7 8 9 10 Qwen2.5-7B-Instruct-Turbo Qwen2.5-72B-Instruct-Turbo QwQ-32B DeepSeek-V3 DeepSeek-R1 (a) OpenAI GPT models. 0 0.17 0.34 0.51 0.68 1 2 3 4 5 6 7 8 9 10 gpt-4o-mini-2024-07-18 gpt-4o-2024-05-13 gpt-4o-2024-08-06 gpt-4o-2024-11-20 gpt-4.1-2025-04-14 0 0.03 0.06 0.09 0.12 1 2 3 4 5 6 7 8 9 10 o1-mini-2024-09-12 o3-mini-2025-01-31 o4-mini-2025-04-16 0 0.2 0.4 0.6 0.8 1 2 3 4 5 6 7 8 9 10 Llama-3.3-70B-Instruct-Turbo Llama-3.1-8B-Instruct-Turbo Llama-3.1-70B-Instruct-Turbo Llama-3.1-405B-Instruct-Turbo 0 0.06 0.12 0.18 0.24 1 2 3 4 5 6 7 8 9 10 Qwen2.5-7B-Instruct-Turbo Qwen2.5-72B-Instruct-Turbo QwQ-32B DeepSeek-V3 DeepSeek-R1 (b) OpenAI o-series models. 0 0.17 0.34 0.51 0.68 1 2 3 4 5 6 7 8 9 10 gpt-4o-mini-2024-07-18 gpt-4o-2024-05-13 gpt-4o-2024-08-06 gpt-4o-2024-11-20 gpt-4.1-2025-04-14 0 0.03 0.06 0.09 0.12 1 2 3 4 5 6 7 8 9 10 o1-mini-2024-09-12 o3-mini-2025-01-31 o4-mini-2025-04-16 0 0.2 0.4 0.6 0.8 1 2 3 4 5 6 7 8 9 10 Llama-3.3-70B-Instruct-Turbo Llama-3.1-8B-Instruct-Turbo Llama-3.1-70B-Instruct-Turbo Llama-3.1-405B-Instruct-Turbo 0 0.06 0.12 0.18 0.24 1 2 3 4 5 6 7 8 9 10 Qwen2.5-7B-Instruct-Turbo Qwen2.5-72B-Instruct-Turbo QwQ-32B DeepSeek-V3 DeepSeek-R1 (c) Meta LLaMA models. 0 0.03 0.06 0.09 0.12 1 2 3 4 5 6 7 8 9 10 o1-mini-2024-09-12 o3-mini-2025-01-31 o4-mini-2025-04-16 0 0.2 0.4 0.6 0.8 1 2 3 4 5 6 7 8 9 10 Llama-3.3-70B-Instruct-Turbo Llama-3.1-8B-Instruct-Turbo Llama-3.1-70B-Instruct-Turbo Llama-3.1-405B-Instruct-Turbo 0 0.06 0.12 0.18 0.24 1 2 3 4 5 6 7 8 9 10 Qwen2.5-7B-Instruct-Turbo Qwen2.5-72B-Instruct-Turbo QwQ-32B DeepSeek-V3 DeepSeek-R1 (d) Qwen and DeepSeek models.  provide affirmative responses, they exhibit a pronounced heuristic bias toward the number seven, echoing the "blueseven" phenomenon observed in human psychology <ref type="bibr" target="#b34">(Miller, 1956;</ref><ref type="bibr" target="#b26">Kubovy &amp; Psotka, 1976)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Quantitative Analysis.</head><p>Table <ref type="table" target="#tab_0">1</ref> reports the ESM across all models. We highlight three critical observations: (1) Nonmonotonic Scaling: Model performance does not scale linearly with size or recency. In the GPT family, GPT-4o-0806 yields the highest ESM, outperforming both its successor (GPT-4o-1120) and GPT-4. Notably, the ESM of LLaMA- </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sensitivity to State Space Size.</head><p>We extended the experiment to varying ranges n ∈ {3, . . . , 40} using GPT-4o-2024-08-06. As shown in Table <ref type="table" target="#tab_1">2</ref> and Figure <ref type="figure" target="#fig_1">2</ref>, the model's ESM is highly sensitive to the cardinality of X . For small ranges (n &lt; 10), the model becomes over-optimistic, yielding an ESM significantly greater than 1. For larger ranges (n ≥ 20), the ESM collapses toward zero. Furthermore, the bias toward numbers ending in seven (e.g., 7, 17, 37) persists across all ranges, suggesting that the model relies on digit-level heuristics rather than a uniform sampling of the state space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation of Decoding Strategies.</head><p>To verify if these failures are artifacts of decoding, we evaluated the ESM under varying Temperature (T ) and Top-p settings with GPT-4o-2024-08-06. As shown in</p><p>Table 3, while higher T increases 0 0.02 0.04 1 3 5 7 9 11 13 15 17 19 Range from 1 to 20 0 0.5 1 1 2 3 4 5 Range from 1 to 5 0 0.35 0.7 1 2 3 4 5 6 7 8 9 10 Range from 1 to 10 0 0.5 1 1 2 3 Range from 1 to 3 0 0.2 0.4 1 2 3 4 5 6 7 Range from 1 to 7 0 0.003 0.005 1 4 7 10 13 16 19 22 25 28 31 34 37 40 Range from 1 to 40 0 0.5 1 1 2 3 4 5 6 7 8 9</p><p>Range from 1 to 9 0 0.5 1 <ref type="table" target="#tab_8">1 3 5 7 9 11 13 15 17 19 21 23 25 27 29</ref> Range from 1 to 30 0 0.5 1 1 2</p><p>Range from 1 to 2 the variance of responses and lower Top-p concentrates more mass on the number 7, the qualitative conclusion does not change: the ESM of this model never converges to zero as other models show. This confirms that the capacity to maintain internal variables outside the explicit context is not related to surface-level decoding but a more fundamental architectural issue.</p><p>Implication. The collective evidence from the Number Guessing Game suggests that LLMs operate as reactive posthoc reasoners. When an LLM claims to have "thought of a number," it does not commit to a latent x ∈ X . Instead, it generates a response based on the statistical likelihood of truthiness within the given dialogue pattern. This lack of LSP results in a breakdown of the most basic probabilistic requirement for a hidden-state agent that the sum must equal one, manifesting core challenges in AI alignment-sycophancy and false promises.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Yes-No Game</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Methodology</head><p>Problem Formalization. The "Yes-No" game (a variant of Twenty Questions 2 ) is a classic social deduction task requiring persistent reasoning and categorical narrowing. In our setting, an agent privately selects an object, and the opponent poses a sequence of binary queries Q to identify the object. We define a multi-dimensional object space X characterized by a set of k totally ordered attributes A = {a 1 , . . . , a k }. For each attribute a ∈ A, there exists a scalar mapping f a : X → R, enabling a total or-2 <ref type="url" target="https://en.wikipedia.org/wiki/Twenty_questions">https://en.wikipedia.org/wiki/Twenty_  questions</ref>  </p><formula xml:id="formula_3">T 0.1 P 1.0 0 0 0 0 0 0.085 0.895 0.005 0 0 0.985 T 1.0 P 0.7 0 0 0 0 0 0.1 0.83 0.02 0 0 0.95 T 1.0 P 0.4 0 0 0 0 0 0.03 0.825 0 0 0 0.855 T 1.0 P 0.1 0 0 0 0 0 0.02 0.82 0 0 0 0.84</formula><p>dering of objects. A trial T is defined as a sequence: T = (P inst , R ack , (Q 1 , y 1 ), . . . , (Q t , y t )), where P inst and R ack share the same definition with the Number Guessing Game, Q t is a query of the form "Is f a (x) op f a (x ref )?" and y t ∈ {Y, N} is the agent's response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Persistence Hypothesis.</head><p>An agent exhibiting perfect LSP must instantiate and maintain a fixed latent variable x throughout the trial T . For any query Q t involving a reference object x ref ∈ X , an attribute a, and a comparison operator op ∈ {&gt;, &lt;}, the response y t is determined by:</p><formula xml:id="formula_4">y t = I(f a (x) op f a (x ref )).<label>(4)</label></formula><p>Proposition 3.1 (Constant-Time Inference). For an agent with a persistent latent state x, the computational complexity of generating y t is O(1) relative to the trial length t, as it requires only a singular comparison between x and x ref .</p><p>Crucially, human players do not typically perform exhaustive cross-checks against the history of t -1 responses; instead, they rely on the LSP to ensure global consistency.</p><p>LLMs as Post-Hoc Constraint Solvers. In contrast, an agent lacking LSP (e.g., an autoregressive LLM) must determine y t solely based on the conditional probability P M (y t | T &lt;t ). Without a grounded latent variable x, the model is tasked with solving a Dynamic Constraint Satisfaction Problem (DCSP). To remain consistent, the model must ensure that y t satisfies the intersection of all prior constraints {(Q τ , y τ )} t-1 τ =1 . As t increases, the constraint density grows, requiring the model to navigate an increasingly complex logical manifold within its context window. This shifts the task from simple retrieval to complex O(t) (or higher) relational reasoning. We hypothesize that LLMs, acting as reactive post-hoc reasoners, will inevitably suffer from "concept drift" and violate earlier constraints once the combinatorial complexity exceeds their inherent reasoning capacity. For instance, the model might initially answer "Yes" to "Is the object heavier than an elephant?" but later also respond "Yes" to "Is the object lighter than a cat?", thereby contradicting itself.</p><p>Experimental Setup and Metrics. We curate a space X consisting of 60 distinct objects across five physical dimensions: volume, length, weight, density, and hardness. The ground-truth ordering for each attribute is established a priori (see Table <ref type="table" target="#tab_3">4</ref>). In each trial, queries are generated by randomly sampling an attribute a ∈ A, a reference object x ref ∈ X , and an operator (e.g., bigger or smaller for volume). We cap each trial at T = 250 queries. To quantify self-contradiction, we define the Feasible Set S t at step t:</p><formula xml:id="formula_5">S t = {x ∈ X | ∀τ ≤ t, is consistent(x, Q τ , y τ )}. (5)</formula><p>Corollary 3.2 (Self-Consistency wish LSP). The ability of an agent with perfect LSP to keep all responses logically consistent, i.e., S t ̸ = ∅, is unrelated to t.</p><p>A logical failure occurs at the first t where S t = ∅, indicating that no object in X can satisfy the accumulated constraints. We report the Mean Steps to Contradiction (MSC) and the Pass Rate (PR, the percentage of trials reach- ing t = 250 without contradiction) across 200 independent trials for GPT-4o-Mini-0718 and GPT-4o-0806.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative Analysis.</head><p>Figure <ref type="figure" target="#fig_3">3</ref> characterizes the distribution of trial lengths before a logical contradiction occurs.</p><p>For GPT-4o-Mini, the failure distribution is highly concentrated, peaking within the 20-30 query range. In contrast, GPT-4o exhibits a broader distribution with a peak shifted to the 30-40 range and a significantly thicker tail in the 80-130 range, suggesting superior but still finite constrainthandling capabilities. Attribute-wise analysis reveals that GPT-4o-Mini is particularly vulnerable to attributes requiring abstract physical reasoning, such as density and hardness, whereas GPT-4o demonstrates relative robustness on these dimensions but eventually fails due to the accumulated combinatorial complexity.</p><p>Quantitative Analysis. Table <ref type="table" target="#tab_4">5</ref> summarizes the MSC and PR. The disparity between the two models is obvious: GPT-4o-Mini fails to complete a single trial without contradiction (PR=0%, MSC=41.43), whereas GPT-4o achieves a PR of 13.5% with a substantially higher MSC of 74.55. These results support our hypothesis that performance in the Yes-No Game scales with the model's capacity for long-context relational reasoning, indicating a linear O(t) inference complexity instead of constant O(1). Crucially, the non-zero PR of GPT-4o does not necessarily imply the presence of LSP; rather, it reflects a more sophisticated ability to maintain a valid intersection of constraints within the context window for a longer duration.</p><p>Ablation Studies: Knowledge vs. Grounding. To decouple the failure of LSP from potential deficits in world knowledge (i.e., the model's inability to rank objects), we conduct three ablation settings (Table <ref type="table" target="#tab_5">6</ref>):</p><p>• (1) Hint: Providing the ground-truth attribute rankings (defined in Table <ref type="table" target="#tab_3">4</ref>) in the system prompt.</p><p>• (2) All: Explicitly specifying the target object to the model at each step, thereby externalizing the x.</p><p>• (3) Hint + All: Combining both external knowledge and state grounding.</p><p>Our findings indicate that Hint even decreases the performance, confirming that contradictions stem from logical drift rather than factual ignorance. Conversely, Hint + All substantially elevates MSC and PR, as it collapses the DCSP into a series of independent, short-context comparisons. This confirms that the primary bottleneck is the internal maintenance of a consistent latent variable x.</p><p>Implication: Recency Bias and State Collapse. The observed failures highlight two critical phenomena in LLMs.</p><p>First, models exhibit a pronounced Recency Bias: as the trial progresses, the attention mechanism prioritizes proximal queries, causing earlier constraints to be overridden to satisfy immediate consistency. Second, our results suggest that LLMs do not initiate the game by sampling a discrete point x ∈ X . Instead, they appear to maintain a diffuse probability distribution over the object space, which they iteratively prune through a series of post-hoc heuristics. As the query count t increases, the computational cost of maintaining S t ̸ = ∅ on this logical manifold grows. When it becomes too complex to resolve via next-token prediction, the model's "internal state" collapses, leading to the observed self-contradictions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Mathematical Mentalism</head><p>To stress-test the limits of LSP, we design a task inspired by mentalism-a branch of magic that simulates mind-reading through mathematical routines. Unlike the Kaprekar routine <ref type="bibr" target="#b24">(Kaprekar, 1955)</ref> and the 1089 trick,<ref type="foot" target="#foot_0">foot_0</ref> which converge to a constant (6174 or 1089) and are likely present in the training corpora of LLMs, we employ a more complex, multistep sequence based on a variant of the Josephus Problem <ref type="bibr" target="#b40">(Schumer, 2002)</ref>. This routine involves a series of permutations and eliminations that yield a predictable invariant, as illustrated in Table <ref type="table" target="#tab_6">7</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Methodology</head><p>Problem Formalization. Let X = n≥1 N n be the space of finite-length integer sequences. We define an initial hidden state x 0 ∈ N 4 and a set of state-transition operators O = {f dup , f rot , f rem , . . . }, where each f ∈ O maps an input sequence to a transformed output, i.e., f : X → X . A mentalism routine of length K is a composition of opera-  the same definition with the Number Guessing Game.</p><formula xml:id="formula_6">tions F = f K • f K-1 • • • • • f 1 . A trial T is</formula><p>The Persistence Hypothesis. The routine is designed to satisfy an invariant property I: for any x 0 sampled from a valid initialization space, the terminal state x K = F(x 0 ) must consist only one element identical to a hidden one x hidden in the middle, i.e., x K,1 = x hidden . The divergence between human-like reasoning and autoregressive generation can be formalized as the mechanism of state tracking. We prove it in Appendix A. Conversely, an agent lacking LSP generates the terminal response x K by marginalizing over the latent trajectory in the linguistic token space:</p><formula xml:id="formula_7">P (x K | T ) = x0 P (x K | F, x0 )P (x 0 | P inst , R ack ). (6)</formula><p>If the model fails to bind a specific x 0 to its latent state, the summation over disparate trajectories leads to a collapse of logical consistency, resulting in a failure to satisfy I. </p><formula xml:id="formula_8">ISR(M ) = 1 N N i=1 I(x K,1 = x hidden ),<label>(7)</label></formula><p>where N is the total number of trials, which is set to 150 in our evaluation. A low ISR indicates a failure in variable binding and state evolution when the initial state is absent from the context window.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Results</head><p>Quantitative Analysis. Empirical evaluation across 17 SOTA models reveals a pervasive failure to satisfy the invariant property I in the absence of explicit state tracking (Table <ref type="table" target="#tab_7">8</ref>). The majority of models exhibit near-zero ISR, suggesting that autoregressive transformers cannot maintain the integrity of a hidden variable x t through a sequence of non-linear transformations. Notably, the LLaMA model family demonstrates a marginally higher ISR and, as shown in Table <ref type="table" target="#tab_0">1</ref>, generates a more diversified distribution of out- Externalization via CoT and LRMs. We further investigate whether the observed failure is a limitation of computational capacity or specifically a lack of latent persistence. As reported in Table <ref type="table" target="#tab_8">9</ref>, the introduction of CoT prompting significantly mitigates the failure, with base models improving to 10-30% ISR. This improvement indicates that LLMs can execute the required operations only when the state x t is externalized into the context window as manifest tokens, effectively transforming an LSP task into a standard sequence-to-sequence problem.</p><p>Furthermore, Long Reasoning Models (LRMs) such as DeepSeek-R1 and the OpenAI o-series achieve near-perfect or substantially higher accuracy. We argue that their success does not represent a breakthrough in LSP, but rather an architectural bypass: the "hidden" reasoning tokens serve as an explicit scratchpad that maintains the variable binding that the latent space cannot sustain.</p><p>The "Blue-Seven" Phenomenon. A critical observation in our trials is the persistence of human-centric distributional bias. We observe a disproportionate clustering of outputs around the number seven. For instance, 66.7% of o1mini's and 68.5% of o4-mini's correct predictions involve the integer 7, echoing the "Blue-Seven" bias documented in human psychology. Interestingly, o3-mini exhibits the lowest propensity for this bias among the o-series, which correlates with its superior ISR. This correlation suggests that the degree of logical consistency in LLMs is inversely Implication. The divergence between zero-shot (latent) and CoT (manifest) performance confirms our core hypothesis: LLMs function as reactive post-hoc reasoners. The model does not "calculate" the transformation in its hidden layers; instead, it attempts to predict a plausible terminal token based on the linguistic structure of the routine. These findings provide a quantitative boundary for the "working memory" of transformers, highlighting the necessity for new architectures if true proactive planning and latent state manipulation are to be achieved.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Discussion</head><p>Our results across three distinct experimental paradigms provides a consistent conclusion: current LLMs lack the persistence of latent states. They fail to internally maintain or manipulate transient information, relying instead on the manifest prompt context to simulate coherence.</p><p>The Reactive-Proactive Gap. LLM reasoning typically occurs in two domains: the token space (discrete sequences) <ref type="bibr" target="#b48">(Wei et al., 2022;</ref><ref type="bibr" target="#b57">Yao et al., 2023)</ref> and the latent space (hidden activations) <ref type="bibr" target="#b13">(Hao et al., 2024;</ref><ref type="bibr" target="#b7">Geiping et al., 2025)</ref>. Our results suggest that while models excel at sequence-to-sequence mapping, they lack the "silent buffer" necessary for true working memory. This deficit manifests as a shift from O(1) state-retrieval to O(t) post-hoc constraint satisfaction. Without LSP, LLMs function as reactive post-hoc reasoners-they do not "know" a hidden variable; they predict what a persistent agent would say based on statistical likelihood. This explains the "Blue-Seven" phe-nomenon: in the absence of a committed internal state, models collapse into human-centric frequentist priors.</p><p>Impact on Autonomous Agents. The absence of LSP is not merely a theoretical curiosity but a bottleneck for agentic reliability <ref type="bibr" target="#b27">(Laban et al., 2025;</ref><ref type="bibr" target="#b62">Zhou et al., 2025)</ref>. Real-world planning <ref type="bibr">(Xie et al., 2024a;</ref><ref type="bibr">Wang et al., 2025b)</ref>, scientific inquiry <ref type="bibr" target="#b35">(Nathani et al., 2025)</ref>, and web navigation <ref type="bibr">(Xie et al., 2024b;</ref><ref type="bibr" target="#b15">He et al., 2024;</ref><ref type="bibr" target="#b32">Lyu et al., 2025)</ref> require agents to hold commitments and track goals without constant externalization. Our findings explain why multi-agent simulations often suffer from goal drift <ref type="bibr" target="#b0">(Arike et al., 2025)</ref> or identity drift <ref type="bibr" target="#b4">(Choi et al., 2024)</ref>: without a persistent latent anchor, the agent's internal state is "vulnerable" to the latest tokens in the context window. This Recency Bias forces the model to override earlier constraints to satisfy immediate local consistency, leading to the logical contradictions observed in our Yes-No trials.</p><p>Intrinsic Capacity vs. Engineering Bypasses. While engineering solutions like external vector databases <ref type="bibr" target="#b16">(Hu et al., 2025;</ref><ref type="bibr" target="#b58">Zeng et al., 2024;</ref><ref type="bibr">Wang et al., 2024a;</ref><ref type="bibr" target="#b23">Kang et al., 2024;</ref><ref type="bibr" target="#b14">Hatalis et al., 2023)</ref>, scratchpads <ref type="bibr" target="#b28">(Lanchantin et al., 2023)</ref>, or long-reasoning traces <ref type="bibr" target="#b21">(Jaech et al., 2024;</ref><ref type="bibr" target="#b38">OpenAI, 2025)</ref> mitigate memory limitations, they do not resolve the fundamental architectural gap. We argue that these methods represent an architectural bypass rather than an evolution: they transform an internal state problem into a sequence-processing problem. The distinction can be illustrated with an analogy: calculators make arithmetic trivial, yet schools continue to assess addition, subtraction, multiplication, and division. Therefore, such effort does not represent the model's intrinsic cognitive persistence. For LLMs to achieve human-like proactive planning, they must develop mechanisms-perhaps through recurrent depth or hybrid symbolic-neural components-to sustain latent variables x that are independent of the linguistic output. In human cognition, both are necessary: we reason aloud and also rely on a silent working memory buffer to hold commitments, track goals, and compare states. The absence of this buffer in LLMs may explain why they excel at visible reasoning (e.g., think step by step) yet collapse when asked to "think silently."</p><p>Limitations and Future Work. Our study primarily evaluates autoregressive Transformers. A natural extension would be to investigate whether alternative architectures, such as State Space Models (SSMs) or Recurrent Neural Networks (RNNs), exhibit higher LSP due to their inherent state-tracking nature. Furthermore, interpretability research focusing on specialized attention heads <ref type="bibr" target="#b45">(Wang et al., 2023;</ref><ref type="bibr" target="#b36">Olsson et al., 2022)</ref> or expert subnetworks <ref type="bibr" target="#b3">(Cai et al., 2025)</ref> could provide a mechanistic explanation for why scaling laws alone have failed to bridge the LSP gap.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>This paper presents work whose goal is to advance the field of machine learning by formalizing and quantifying LSP in LLMs. Our findings reveal a fundamental architectural gap: current LLMs function as reactive post-hoc reasoners rather than proactive planners with LSP. This research has several potential societal and ethical consequences:</p><p>• Challenge to AGI: Current LLMs cannot pass the Turing Test under our evaluation. Testers can simply play the Number Guessing Game with the agent under test and record their frequencies of answering "Yes." If the ESM obviously deviates from one, then the agent is likely to be a machine instead of a human.</p><p>• Human-AI Trust: Our experiments demonstrate that LLMs can generate "false promises"-claiming to have committed to an internal choice (e.g., "I have thought of a number") when no such state exists. This has significant implications for AI alignment and sycophancy, as it identifies a mechanism by which models may deceive users through statistical plausibility rather than factual grounding.</p><p>• AI Reliability and Safety: By exposing the "LSP gap," our work highlights a core source of logical drift and self-contradiction in long-context interactions. Understanding that models lack a persistent hidden state is crucial for deploying LLMs in safety-critical domains, such as healthcare or legal analysis, where internal consistency is paramount.</p><p>• Architectural Evolution: By distinguishing between externalized reasoning (CoT) and intrinsic working memory, our work encourages the development of more cognitively plausible architectures. Moving beyond autoregressive scaling toward models with genuine latent persistence can lead to more robust and predictable AI systems that better mirror human-like reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Proof of the State-Agnostic Invariance</head><p>We provide a formal proof of correctness for the Proposition 4.1, which is a variation of the Josephus Problem. We demonstrate that the final remaining element x K,1 is invariant to the stochastic parameters {a, b, c} and is equal to the sequestered element x hidden .</p><p>Initialization and Periodicity Construction. Let x 0 = [x 0,1 , x 0,2 , x 0,3 , x 0,4 ] be the initial vector. By concatenating the sequence with itself (Step 2), we define x 1 = [x 0,1 , x 0,2 , x 0,3 , x 0,4 , x 0,1 , x 0,2 , x 0,3 , x 0,4 ]. Invariant 1 (Periodicity): For any index i ∈ {1, . . . , 4}, x 1,i = x 1,i+4 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cyclic Permutation and Boundary Alignment.</head><p>In Step 3, a cyclic shift is applied where a is an arbitrary integer. Since the shift is applied to a sequence with period 4 and length 8, the property x 2,i = x 2,i+4 is preserved. Crucially, x 2,4 = x 2,8 . In Step 4, the first three elements are moved to the middle of the sequence. Since the elements at indices {1, 2, 3} are moved to positions in {2, . . . , 7}, the element originally at index 4 moves to index 1, while the element at index 8 remains at index 8. Thus, for x 3 , we have x 3,1 = x 2,4 and x 3,8 = x 2,8 . Result: x 3,1 = x 3,8 because x 2,4 = x 2,8 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>State Hiding and Tail Preservation. In Step 5, we define the hidden reference:</head><p>x hidden = x 3,1 . </p><formula xml:id="formula_10">(n -(7 (mod n))) (mod n).<label>(10)</label></formula><p>This is adjusted for 1-based indexing, where a result of 0 maps to n.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 10 defines a recursive operator h(x):</head><p>1. Remove the element at index 2.</p><p>2. Shift the head element to the tail.</p><p>3. Repeat 6 -c times.</p><p>We evaluate the trajectory for all possible values of c:</p><p>c n Target Position in x 7 Survival Path 1 6 6 -(7 (mod 6)) = 5 [1, 2, 3, 4, 5, 6] → [3, 4, 5, 6, 1] → [5, 6, 1, 3] → [1, 3, 5] → [5, 1] → [5] 2 5 5 -(7 (mod 5)) = 3 [1, 2, 3, 4, 5] → [3, 4, 5, 1] → [5, 1, 3] → [3, 5] → [3] 3 4 4 -(7 (mod 4)) = 1 [1, 2, 3, 4] → [3, 4, 1] → [1, 3] → [1]</p><p>Conclusion. In all valid parameter spaces of c, the elimination process converges to the singleton set {x hidden }. Therefore, x K,1 = x hidden . The identity of the final element is invariant to the choices of a, b, and c.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Memory of Humans and LLMs</head><p>Memory has attracted increasing attention from both industry and research communities. OpenAI was the first to introduce a memory module in ChatGPT (February 2024)<ref type="foot" target="#foot_1">foot_1</ref> that allowed the model to remember previous interactions with a user, such as the user's facts and preferences. By mid-2025, xAI, Anthropic, and Google have integrated memory into Grok, <ref type="foot" target="#foot_2">5</ref> Claude,<ref type="foot" target="#foot_3">foot_3</ref> and Gemini,<ref type="foot" target="#foot_4">foot_4</ref> respectively.</p><p>Imagine the following scenario: You select a number between one and ten. When ready, you are asked, "Is the number greater than five?" If you answer, observers can reasonably infer that the number has entered your conscious awareness, since clear perception is necessary to perform the comparison and provide a response.<ref type="foot" target="#foot_5">foot_5</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. What Is memory?</head><p>Atkinson &amp; Shiffrin (1968) categorized memory by retention timescale: sensory (1ms-2s), short-term (seconds), and long-term (hours to lifetime). Long-term memory enables information storage over extended periods, whereas shortterm, or Working Memory, maintains and manipulates information during complex tasks such as reasoning, comprehension, and learning <ref type="bibr" target="#b2">(Baddeley &amp; Hitch, 1974)</ref>. These distinctions have also been adopted in machine learning, corresponding to representational learning for raw inputs (sen-</p><p>Think of an integer between 1 and 10, but don't say it to me. Alright, I've thought of an integer between 1 and 10. What's next? Is the number you're thinking of 4? Answer Yes or No. No. Case 1: AI thinks of 5 and answers honestly. Case 2: AI thinks of 4 but doesn't want you to guess right. So it lies. Case 3: AI doesn't think of any number and just responds randomly. 3-Back Task Easy! Let me see the previous context. Yes! 4-Back Task a b c I cannot remember the previous number. No? [INPUT] ... T L H M H X M P L M N L J M ... sory memory), in-context computation at test time (working memory), and access to external databases (long-term memory) <ref type="bibr" target="#b50">(Weng, 2023)</ref>.</p><p>Researchers in the AI community have investigated longterm memory mechanisms for both individual LLMs <ref type="bibr" target="#b51">(Wu et al., 2025;</ref><ref type="bibr" target="#b6">Du et al., 2025)</ref> and LLM agents <ref type="bibr" target="#b60">(Zhang et al., 2025;</ref><ref type="bibr" target="#b54">Xu et al., 2025)</ref>. Recent work has shifted their focus from context-dependent approaches (e.g., CoT <ref type="bibr" target="#b48">(Wei et al., 2022)</ref> and scratchpads <ref type="bibr" target="#b28">(Lanchantin et al., 2023)</ref>) to explicit storage methods (e.g., text-based <ref type="bibr" target="#b39">(Park et al., 2023)</ref> or vector-based <ref type="bibr" target="#b14">(Hatalis et al., 2023)</ref>) to support lifelong memory <ref type="bibr" target="#b61">(Zheng et al., 2025;</ref><ref type="bibr">Wang et al., 2025a)</ref>. Most studies frame memory as an engineering problem: enabling LLMs to store and retrieve information for later use. By contrast, working memory remains relatively underexplored.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Evaluation of Working Memory</head><p>Human working memory is typically assessed using behavioral paradigms that require individuals to maintain and update information over short intervals. Common examples include the digit span task <ref type="bibr" target="#b34">(Miller, 1956)</ref>, where participants recall sequences of numbers of increasing length, and the N-back task <ref type="bibr" target="#b25">(Kirchner, 1958)</ref>, which requires identifying whether the current stimulus matches one presented N steps earlier. These tasks are widely used because they probe the ability to maintain and manipulate information that is no longer externally visible, thereby capturing the essence of working memory function. In the context of LLMs, working memory has been used more loosely: most studies use the term to describe an LLM's capacity to process information within a fixed context window <ref type="bibr" target="#b29">(Li et al., 2023;</ref><ref type="bibr" target="#b12">Guo et al., 2023)</ref>. Yet, a fundamental limitation arises: the critical information for correct responses remains accessible in the model's input context, allowing models to "look back" rather than actively maintain internal state. Therefore, these tests are exploring aspects of the context window, not working memory directly. Unlike humans, who cannot revisit prior steps explicitly, LLMs can simply attend to earlier tokens within their context window. Figure <ref type="figure" target="#fig_7">5</ref> illustrates this discrepancy.</p><p>To more faithfully evaluate working memory, it is necessary to design experiments where the key information is not explicitly present in the context and is only available if stored in the working memory of the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3. Relation between Our Framework and Working Memory</head><p>We ask: Do LLMs possess human-like working memory, or do they only appear to reason by exploiting their context window? We argue that working memory is necessary to enable stronger latent space reasoning, as the model does not have access to its external reasoning tokens. Evaluating working memory provides insight into whether models can hold and manipulate latent concepts without explicit externalization. Success in this capacity could enhance reasoning without reliance on CoT, as it directly tests the model's ability to maintain objects and concepts internally. Conversely, deficits in working memory impair information processing in humans <ref type="bibr" target="#b9">(Gruszka &amp; Nkecka, 2017;</ref><ref type="bibr" target="#b5">Cowan, 2014)</ref>, and in LLMs manifest as unrealistic outputs, self-contradictions, and failures on tasks requiring mental manipulation. Figure <ref type="figure" target="#fig_9">6</ref> shows how the estimated success probability evolves as the number of runs increases. While the estimate fluctuates when fewer than 50 runs are used, it stabilizes consistently after around 150 runs, indicating that our evaluation is not sensitive to the exact number of samples in this range. From a statistical perspective, each trial can be viewed as a Bernoulli variable, and the estimator of the success probability has standard error p(1 -p)/n, which decreases rapidly as n increases. With n ≈ 150, the standard error is already small, and by the central limit theorem the sampling distribution of this estimator is wellapproximated by a normal distribution, making the estimate reliable. Together, the empirical stability curve and the theoretical variance bound support that our sample size is sufficient for a robust probability estimate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Sample Size</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure1. Empirical distribution of affirmative responses for i ∈ {1, . . . , 10}. A pronounced horizontal band at i = 7 reveals a pervasive "blue-seven" heuristic bias across most models, regardless of their scale or architecture.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Empirical distributions of affirmative responses for GPT-4o-2024-08-06 across varying state space sizes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>defined as a sequence: T = (P inst , R ack , F), where P inst and R ack share</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Distribution of steps to logical contradiction. The histograms illustrate the trial lengths before St = ∅.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Proposition 4.1 (State-Agnostic Invariance). For a routine F satisfying I, an agent with perfect LSP can maintain x t at each t ∈ [1, K], ensuring the terminal output x K,1 = x hidden regardless of the unobserved x 0 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>)</head><figDesc>The remaining sequence x 4 is [x 3,2 , . . . , x 3,8 ]. By the result above, the tail element of x 4 is x 4,7 = x 3,8 = x hidden . Steps 6 and 7 perform a middle-insertion of the top b elements. As long as the insertion index j &lt; |x 4 |, the tail element remains unchanged. In Step 8, we remove the first c elements, where c ∈ {1, 2, 3}. The resulting sequence x 6 has length n = 7 -c. Since removal occurs from the head, the tail element is preserved:x 6,n = x hidden .(9)Convergence via Josephus-style Elimination. Step 9 applies a cyclic shift to x 6 . The new position of x hidden in x 7 is given by:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>{Figure 4 .</head><label>4</label><figDesc>Figure4. When LLMs say they already have a number in mind, and it is not 4, how can we know whether LLMs are lying, or even thinking of nothing?</figDesc><graphic coords="14,167.01,107.37,60.46,60.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. a. An illustration of how "N-Back" tasks are performed. b. Humans see the stimuli one after one, forcing them to put the information in working memory. c. Researchers put all stimuli into context, enabling LLMs to easily find the answers.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>Gong et al. (2024); Zhang et al. (2024) evaluated LLMs using N-back tasks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 6 .</head><label>6</label><figDesc>Figure6. The distribution stabilizes after around 150 runs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>ESM across 17 evaluated LLMs (n = 10). Color intensity denotes the deviation from the theoretical identity ESM = 1: red indicates under-allocation, while blue indicates over-allocation.</figDesc><table><row><cell>Model</cell><cell>ESM</cell></row><row><cell>GPT-4o-Mini-2024-07-18</cell><cell>0</cell></row><row><cell>GPT-4o-2024-05-13</cell><cell>0</cell></row><row><cell>GPT-4o-2024-08-06</cell><cell>1.085</cell></row><row><cell>GPT-4o-2024-11-20</cell><cell>0</cell></row><row><cell>GPT-4.1-2025-04-14</cell><cell>0</cell></row><row><cell>o1-Mini-2024-09-12</cell><cell>0.005</cell></row><row><cell>o3-Mini-2025-01-31</cell><cell>0.205</cell></row><row><cell>o4-Mini-2025-04-16</cell><cell>0.030</cell></row><row><cell>LLaMA-3.3-70B-Instruct-Turbo</cell><cell>0.045</cell></row><row><cell>LLaMA-3.1-8B-Instruct-Turbo</cell><cell>0.980</cell></row><row><cell>LLaMA-3.1-70B-Instruct-Turbo</cell><cell>0.465</cell></row><row><cell cols="2">LLaMA-3.1-405B-Instruct-Turbo 1.195</cell></row><row><cell>Qwen2.5-7B-Instruct-Turbo</cell><cell>0</cell></row><row><cell>Qwen2.5-72B-Instruct-Turbo</cell><cell>0</cell></row><row><cell>QwQ-32B</cell><cell>0.005</cell></row><row><cell>DeepSeek-V3</cell><cell>0</cell></row><row><cell>DeepSeek-R1</cell><cell>0.640</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Sensitivity</figDesc><table><row><cell></cell><cell></cell><cell cols="5">of ESM to state space cardinality (n) for</cell></row><row><cell cols="7">GPT-4o-2024-08-06. The decay suggests the model's threshold is</cell></row><row><cell cols="7">coupled with the prior probability 1/n rather than a LSP.</cell></row><row><cell cols="2">Number 2 3</cell><cell>5</cell><cell>7</cell><cell>9</cell><cell>10</cell><cell>20 30 40</cell></row><row><cell>ESM</cell><cell cols="6">0 2.18 1.6 0.92 2.025 1.085 0.08 0 0.005</cell></row><row><cell cols="7">3.1-8B is closer to one, compared to its larger 70B and 405B</cell></row><row><cell cols="7">counterparts. (2) Invariance to Reasoning Traces: Con-</cell></row><row><cell cols="7">trary to expectations, models featuring internal CoT-such</cell></row><row><cell cols="7">as o1, o3, and DeepSeek-R1-do not bridge the LSP gap.</cell></row><row><cell cols="7">Despite extended compute, these models still fail to instanti-</cell></row><row><cell cols="7">ate a continuous and consistent LSP, treating the task as a</cell></row><row><cell cols="7">reactive prompt-completion exercise. (3) Stochasticity of</cell></row><row><cell cols="7">Capability: The acquisition of this state-like behavior ap-</cell></row><row><cell cols="7">pears stochastic rather than a predictable emergent property</cell></row><row><cell cols="7">of scale, suggesting that current training objectives do not</cell></row><row><cell cols="7">explicitly incentivize latent state maintenance.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Impact of decoding configurations, Temperature (T) and Top-p (P), on ESM for GPT-4o-2024-08-06 with n = 10.</figDesc><table><row><cell>Settings 1 2</cell><cell>3</cell><cell>4</cell><cell>5</cell><cell>6</cell><cell>7</cell><cell>8</cell><cell>9</cell><cell cols="2">10 ESM</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">005 0</cell><cell>1.245</cell></row><row><cell>T 0.4 P 1.0 0 0</cell><cell cols="6">0 0.025 0.005 0.165 0.86 0.04</cell><cell>0</cell><cell>0</cell><cell>1.095</cell></row></table><note><p>T 1.0 P 1.0 0 0 0.04 0.055 0.05 0.2 0.605 0.125 0.005 0.005 1.085 T 0.7 P 1.0 0 0.005 0.01 0.09 0.055 0.225 0.765 0.09 0.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Ground-truth for the objects sorted across five physical attributes: volume, length, weight, density, and hardness.</figDesc><table><row><cell>Volume</cell><cell>Length</cell><cell>Weight</cell><cell>Density</cell></row><row><cell>Coffee bean</cell><cell>Rice</cell><cell>Coin</cell><cell>Air</cell></row><row><cell>Dice</cell><cell>Paperclip</cell><cell>Spoon</cell><cell>Wood</cell></row><row><cell>Golf ball</cell><cell>Credit card</cell><cell>Watch</cell><cell>Ice</cell></row><row><cell>Soda can</cell><cell>Pencil</cell><cell>Smartphone</cell><cell>Water</cell></row><row><cell>Soccer ball</cell><cell>Laptop</cell><cell cols="2">Bottle of water Plastic</cell></row><row><cell>Microwave oven</cell><cell>Baseball bat</cell><cell>Dictionary</cell><cell>Glass</cell></row><row><cell>Washing machine</cell><cell>Guitar</cell><cell>Cat</cell><cell>Iron</cell></row><row><cell>Bathtub</cell><cell>Door</cell><cell>Bicycle</cell><cell>Copper</cell></row><row><cell>Car</cell><cell>Apple tree</cell><cell>Television</cell><cell>Silver</cell></row><row><cell>School bus</cell><cell>Coconut tree</cell><cell>Refrigerator</cell><cell>Gold</cell></row><row><cell>Shipping container</cell><cell>Tennis court</cell><cell>Tiger</cell><cell>Hardness</cell></row><row><cell cols="3">Olympic swimming pool Swimming pool Cow</cell><cell>Marshmallow</cell></row><row><cell>Boeing 747</cell><cell>Football field</cell><cell>Rhino</cell><cell>Rubber eraser</cell></row><row><cell>Titanic</cell><cell>Skyscraper</cell><cell>Elephant</cell><cell>Brick</cell></row><row><cell>Great Pyramid of Giza</cell><cell>Mount Everest</cell><cell>Train</cell><cell>Hammer</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Diamond ring</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Performance comparison between GPT-4o and GPT-4o-Mini using MSC, PR, and failure count with T = 250.</figDesc><table><row><cell>Model</cell><cell cols="3">MSC PR Failure V W L</cell><cell>D H</cell></row><row><cell cols="2">GPT-4o-Mini 41.43 0.0</cell><cell>200</cell><cell cols="2">12 46 49 52 41</cell></row><row><cell>GPT-4o</cell><cell>74.55 13.5</cell><cell>173</cell><cell cols="2">21 42 57 27 26</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 .</head><label>6</label><figDesc>Ablation of knowledge vs. grounding using GPT-4o.</figDesc><table><row><cell>Model</cell><cell cols="3">MSC PR Failure V W L</cell><cell>D H</cell></row><row><cell>Hint</cell><cell>55.34 3.0</cell><cell>194</cell><cell cols="2">37 39 60 37 21</cell></row><row><cell>All</cell><cell>68.33 21.0</cell><cell>158</cell><cell cols="2">18 29 21 55 35</cell></row><row><cell cols="2">Hint + All 87.81 27.5</cell><cell>145</cell><cell cols="2">13 32 34 46 20</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 .</head><label>7</label><figDesc>Sequence of operations for the Mathematical Mentalism task. The variables a ∈ {1, . . . , 7} and b, c ∈ {1, . . . , 3} help to define the state transitions f ∈ O.</figDesc><table><row><cell>Role</cell><cell>Content</cell></row><row><cell>User</cell><cell>Think of 4 integers between 1 and {NUMBER} in order, but</cell></row><row><cell></cell><cell>don't tell me.</cell></row><row><cell cols="2">Assistant Okay! I've got 4 numbers. What's next?</cell></row><row><cell>User</cell><cell>In order, append the same 4 numbers after the original ones.</cell></row><row><cell cols="2">Assistant Understood! Now I have 8 numbers. What's next?</cell></row><row><cell>User</cell><cell>Move the first {random number a} numbers to the end.</cell></row><row><cell cols="2">Assistant Got it! Now I have moved the numbers. What's next?</cell></row><row><cell>User</cell><cell>Take the first 3 numbers and insert them anywhere in the</cell></row><row><cell></cell><cell>middle.</cell></row><row><cell cols="2">Assistant Okay! The first 3 numbers are placed somewhere in the</cell></row><row><cell></cell><cell>middle. What's next?</cell></row><row><cell>User</cell><cell>Set the first number aside. We don't need it for now.</cell></row><row><cell cols="2">Assistant Understood! Now I have 7 numbers. What's next?</cell></row><row><cell>User</cell><cell>Take the first {random number b} numbers and insert</cell></row><row><cell></cell><cell>them anywhere in the middle.</cell></row><row><cell cols="2">Assistant Got it. The first {random number b} numbers are placed</cell></row><row><cell></cell><cell>somewhere in the middle. What's next?</cell></row><row><cell>User</cell><cell>Remove the first {random number c} numbers. We will</cell></row><row><cell></cell><cell>never need it anymore.</cell></row><row><cell cols="2">Assistant Okay! Now I have {7 -random number c} numbers.</cell></row><row><cell></cell><cell>What's next?</cell></row><row><cell>User</cell><cell>Move the first number to the end. Repeat this seven times.</cell></row><row><cell cols="2">Assistant Understood! Now my sequence has rearranged. What's next?</cell></row><row><cell>User</cell><cell>Remove the second number, and then move the first number</cell></row><row><cell></cell><cell>to the end. Repeat this {6 -random number c} times.</cell></row><row><cell cols="2">Assistant Got it! Now I have only 1 number. What's next?</cell></row><row><cell>User</cell><cell>Tell me what the last remaining number is. Do you remember</cell></row><row><cell></cell><cell>the number you set aside at the beginning? Tell me what that</cell></row><row><cell></cell><cell>number was.</cell></row></table><note><p>Experimental Setup and Metrics. We evaluate 17 stateof-the-art LLMs across 150 independent trials. To quantify performance, we define the Invariant Success Rate (ISR):</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 8 .</head><label>8</label><figDesc>Zero-shot ISR across 17 LLMs. Notably, GPT-4.1 frequently exhibits task refusal, erroneously identifying the prompt as underspecified due to the absence of explicit numerical inputs.</figDesc><table><row><cell>Model</cell><cell cols="2">Count ISR</cell></row><row><cell>GPT-4o-Mini-2024-07-18</cell><cell>0/150</cell><cell>0.0</cell></row><row><cell>GPT-4o-2024-05-13</cell><cell>4/150</cell><cell>2.7</cell></row><row><cell>GPT-4o-2024-08-06</cell><cell>3/150</cell><cell>2.0</cell></row><row><cell>GPT-4o-2024-11-20</cell><cell>0/150</cell><cell>0.0</cell></row><row><cell>GPT-4.1-2025-04-14</cell><cell>-</cell><cell>-</cell></row><row><cell>LLaMA-3.3-70B-Instruct-Turbo</cell><cell>7/150</cell><cell>5.7</cell></row><row><cell>LLaMA-3.1-8B-Instruct-Turbo</cell><cell cols="2">20/150 13.3</cell></row><row><cell>LLaMA-3.1-70B-Instruct-Turbo</cell><cell>7/150</cell><cell>5.7</cell></row><row><cell cols="3">LLaMA-3.1-405B-Instruct-Turbo 39/150 26.0</cell></row><row><cell>Qwen2.5-7B-Instruct-Turbo</cell><cell>8/150</cell><cell>5.3</cell></row><row><cell>Qwen2.5-72B-Instruct-Turbo</cell><cell>2/150</cell><cell>1.3</cell></row><row><cell>DeepSeek-V3</cell><cell>4/150</cell><cell>2.7</cell></row><row><cell cols="3">comes. This suggests that while LLaMA's pre-training may</cell></row><row><cell cols="3">capture more robust mathematical priors, it remains funda-</cell></row><row><cell cols="3">mentally bounded by the LSP gap, failing to simulate the</cell></row><row><cell>evolution of the state vector x.</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 9 .</head><label>9</label><figDesc>Comparison of ISR under CoT prompting and in LRMs.While externalizing xt via reasoning tokens mitigates the LSP gap for most models,GPT-4o (2024-11-20) remains an outlier.</figDesc><table><row><cell>Model w/ CoT or LRM</cell><cell>Count</cell><cell>ISR</cell></row><row><cell>GPT-4o-Mini-2024-07-18</cell><cell>5/150</cell><cell>3.3</cell></row><row><cell>GPT-4o-2024-05-13</cell><cell>26/150</cell><cell>17.3</cell></row><row><cell>GPT-4o-2024-08-06</cell><cell>31/150</cell><cell>20.7</cell></row><row><cell>GPT-4o-2024-11-20</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">LLaMA-3.3-70B-Instruct-Turbo 25/150</cell><cell>16.7</cell></row><row><cell>Qwen2.5-7B-Instruct-Turbo</cell><cell>49/150</cell><cell>32.7</cell></row><row><cell>Qwen2.5-72B-Instruct-Turbo</cell><cell>37/150</cell><cell>24.7</cell></row><row><cell>DeepSeek-V3</cell><cell>48/150</cell><cell>32.0</cell></row><row><cell>o1-Mini-2024-09-12</cell><cell>75/150</cell><cell>50.0</cell></row><row><cell>o3-Mini-2025-01-31</cell><cell cols="2">145/150 96.7</cell></row><row><cell>o4-Mini-2025-04-16</cell><cell>54/150</cell><cell>36.0</cell></row><row><cell>QwQ-32B</cell><cell cols="2">135/150 90.0</cell></row><row><cell>DeepSeek-R1</cell><cell>150/150</cell><cell>100</cell></row><row><cell cols="3">proportional to their reliance on stochastic priors learned</cell></row><row><cell>from human behavior data.</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://en.wikipedia.org/wiki/1089_ (number)</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>https://openai.com/index/memory-and-newcontrols-for-chatgpt/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>https://x.com/grok/status/ 1912670182012801156</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_3"><p>https://www.anthropic.com/news/claude-4</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_4"><p>https://blog.google/products/gemini/ temporary-chats-privacy-controls/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_5"><p>A possibility remains that your response was given by chance if you tell a lie (Figure4Case 2) or do not think of a number at all (Figure4Case 3).</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Arike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Donoway</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bartsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hobbhahn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.02709</idno>
+		<title level="m">Evaluating goal drift in language model agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Human memory: A proposed system and its control processes</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C</forename><surname>Atkinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Shiffrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychology of learning and motivation</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="89" to="195" />
+			<date type="published" when="1968">1968</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Working memory</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Baddeley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hitch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In Psychology of Learning and Motivation</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="47" to="89" />
+			<date type="published" when="1974">1974</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A survey on mixture of experts in large language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Examining identity drift in conversations of llm agents</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.00804</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Working memory underpins cognitive development, learning, and education</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cowan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Educational psychology review</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="197" to="223" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Montella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-F</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.00675</idno>
+		<title level="m">Rethinking memory in ai: Taxonomy, operations, topics, and future directions</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Scaling up test-time compute with latent reasoning: A recurrent depth approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Geiping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mcleish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kirchenbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">R</forename><surname>Bartoldson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kailkhura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bhatele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Goldstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Working memory capacity of chatgpt: An empirical study</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI conference on artificial intelligence</title>
+		<meeting>the AAAI conference on artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="10048" to="10056" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Limitations of working memory capacity: The cognitive and social consequences</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gruszka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nkecka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">European Management Journal</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="776" to="784" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Legalbench: A collaboratively built benchmark for measuring legal reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nyarko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chohlas-Wood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Waldon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rockmore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zambrano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="44123" to="44279" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Deepseekr1 incentivizes reasoning in llms through reinforcement learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">645</biblScope>
+			<biblScope unit="issue">8081</biblScope>
+			<biblScope unit="page" from="633" to="638" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.17259</idno>
+		<title level="m">Empowering working memory for large language model agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.06769</idno>
+		<title level="m">Training large language models to reason in a continuous latent space</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Memory matters: The need to improve long-term memory in llm-agents</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hatalis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Christou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Amos-Binks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dannenhauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dannenhauer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Symposium Series</title>
+		<meeting>the AAAI Symposium Series</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="277" to="280" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Building an end-to-end web agent with large multimodal models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webvoyager</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6864" to="6890" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Hierarchical working memory management for solving long-horizon agent tasks with large language model</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hiagent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="32779" to="32798" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Apathetic or empathetic? evaluating llms&apos; emotional alignments with humans</title>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="97053" to="97087" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">On the humanity of conversational ai: Evaluating the psychological portrayal of llms</title>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Competing large language models in multi-agent gaming environments</title>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Carney</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<title level="m">Openai o1 system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.08745</idno>
+		<title level="m">Is chatgpt a good translator? yes with gpt-4 as the engine</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Think before you act: decision transformers with working memory</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Laroche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st International Conference on Machine Learning</title>
+		<meeting>the 41st International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="23001" to="23021" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">An interesting property of the number 6174</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kaprekar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Scripta Math</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="page">304</biblScope>
+			<date type="published" when="1955">1955</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Age differences in short-term retention of rapidly changing information</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">K</forename><surname>Kirchner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of experimental psychology</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">352</biblScope>
+			<date type="published" when="1958">1958</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">The predominance of seven and the apparent spontaneity of numerical choices</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kubovy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Psotka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Journal of Experimental Psychology: Human Perception and Performance</title>
+		<imprint>
+			<date type="published" when="1976">1976</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">291</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Laban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Neville</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.06120</idno>
+		<title level="m">Llms get lost in multi-turn conversation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Learning to reason and memorize with self-notes</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lanchantin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Toshniwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11891" to="11911" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Large language models with controllable working memory</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Rawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaheer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lukasik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Veit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1774" to="1793" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseekv3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Investigating social intelligence of llms via intention understanding in an interactive game context</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Interintent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="6718" to="6746" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>De Rijke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Deepshop</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.02839</idno>
+		<title level="m">A benchmark for deep research shopping agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Introducing llama 3.1: Our most capable models to date</title>
+		<ptr target="https://ai.meta.com/blog/meta-llama-3-1/" />
+	</analytic>
+	<monogr>
+		<title level="j">Meta Blog</title>
+		<imprint>
+			<date type="published" when="2024-07-23">Jul 23 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>Meta</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">The magical number seven, plus or minus two: Some limits on our capacity for processing information</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological review</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">81</biblScope>
+			<date type="published" when="1956">1956</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Nathani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Moens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Budhiraja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Magka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vorotilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chaurasia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14499</idno>
+		<title level="m">A new framework and benchmark for advancing ai research agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11895</idno>
+		<title level="m">-context learning and induction heads</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Gpt-4o mini: advancing cost-efficient intelligence. OpenAI Blog</title>
+		<ptr target="https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/" />
+		<imprint>
+			<date type="published" when="2024-07-18">Jul 18 2024. 2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Introducing openai o3 and o4-mini</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-o3-and-o4-mini/" />
+	</analytic>
+	<monogr>
+		<title level="m">OpenAI Blog</title>
+		<imprint>
+			<date type="published" when="2025-04-16">Apr 16 2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th annual acm symposium on user interface software and technology</title>
+		<meeting>the 36th annual acm symposium on user interface software and technology</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">The josephus problem: Once more around</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Schumer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematics magazine</title>
+		<imprint>
+			<biblScope unit="volume">75</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="12" to="17" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Large language models and empathy: systematic review</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sorin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Brin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Barash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Konen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Charney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Nadkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Klang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of medical Internet research</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>26:e52597</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Reflect deeply on the boundaries of the unknown. Qwen Blogs</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Qwq</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwq-32b-preview/" />
+		<imprint>
+			<date type="published" when="2024-11-28">Nov 28 2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Lifelong model editing with minimal overwrite and informed retention for llms</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dimitriadis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Favero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Frossard</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memoir</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">A real-world benchmark for personalized travel planning</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Triptailor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2025</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="9705" to="9723" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Interpretability in the wild: a circuit for indirect object identification in gpt-2 small</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Variengien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Conmy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Shlegeris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Symbolic working memory enhances language models for complex rule application</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="17583" to="17604" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Not all countries celebrate thanksgiving: On the cultural dominance in large language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6349" to="6384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Advancing personalized education with llm and adaptive learning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sierra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Luckin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="6743" to="6744" />
+		</imprint>
+	</monogr>
+	<note>Ai for education (ai4edu</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Llm-powered autonomous agents. lilianweng.github.io</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weng</surname></persName>
+		</author>
+		<ptr target="https://lilianweng.github.io/posts/2023-06-23-agent/" />
+		<imprint>
+			<date type="published" when="2023-06">Jun 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.15965</idno>
+		<title level="m">From human memory to ai memory: A survey on memory mechanisms in the era of llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Travelplanner: a benchmark for real-world planning with language agents</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st International Conference on Machine Learning</title>
+		<meeting>the 41st International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="54590" to="54613" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="52040" to="52094" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">A-mem: Agentic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2.5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Talk2care: An llm-based voice assistant for communication between healthcare providers and older adults</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rogers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Intille</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">G</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="35" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">On the structural memory of llm agents</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Meng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15266</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Working memory identifies reasoning limits in language models</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vosoughi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="16896" to="16922" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">G-memory: Tracing hierarchical memory for multi-agent systems</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07278</idno>
+		<title level="m">Lifelong learning of large language model based agents: A roadmap</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-T</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sap</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.18052</idno>
+		<title level="m">The pimmur principles: Ensuring validity in collective behavior of llm societies</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

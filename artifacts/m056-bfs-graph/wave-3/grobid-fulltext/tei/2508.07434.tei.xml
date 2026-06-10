@@ -1,0 +1,1966 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Let&apos;s Revise Step-by-Step: A Unified Local Search Framework for Code Generation with LLMs</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-08-10">10 Aug 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhiyi</forename><surname>Lyu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianguo</forename><surname>Huang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Yanchen</forename><surname>Deng</surname></persName>
+							<email>ycdeng@ntu.edu.sg</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Steven</forename><surname>Hoi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Alibaba Group</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Let&apos;s Revise Step-by-Step: A Unified Local Search Framework for Code Generation with LLMs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-08-10">10 Aug 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3E897640F6AA27A15A576724064E7237</idno>
+					<idno type="arXiv">arXiv:2508.07434v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) with inference-time scaling techniques show promise for code generation, yet face notable efficiency and scalability challenges. Construction-based tree-search methods suffer from rapid growth in tree size, high token consumption, and lack of anytime property. In contrast, improvement-based methods offer better performance but often struggle with uninformative reward signals and inefficient search strategies. In this work, we propose ReLoc, a unified local search framework which effectively performs step-by-step code revision. Specifically, ReLoc explores a series of local revisions through four key algorithmic components: initial code drafting, neighborhood code generation, candidate evaluation, and incumbent code updating, each of which can be instantiated with specific decision rules to realize different local search algorithms such as Hill Climbing (HC) or Genetic Algorithm (GA). Furthermore, we develop a specialized revision reward model that evaluates code quality based on revision distance to produce fine-grained preferences that guide the local search toward more promising candidates. Finally, our extensive experimental results demonstrate that our approach achieves superior performance across diverse code generation tasks, significantly outperforming both construction-based tree search as well as the state-of-the-art improvement-based code generation methods.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) like GPT-4 <ref type="bibr" target="#b0">(Achiam et al., 2023)</ref> and Claude <ref type="bibr">(Wang et al., 2024a)</ref> have demonstrated remarkable capabilities in code-related tasks, including code generation <ref type="bibr" target="#b2">(Chen et al., 2021;</ref><ref type="bibr" target="#b3">Austin et al., 2021)</ref>, repair <ref type="bibr" target="#b4">(Xia and Zhang, 2022;</ref><ref type="bibr" target="#b5">Jiang et al., 2023;</ref><ref type="bibr" target="#b6">Jin et al., 2023)</ref>, and optimization <ref type="bibr" target="#b7">(Shypula et al., 2023;</ref><ref type="bibr" target="#b8">Cummins et al., 2023)</ref>. However, when facing challenging tasks, their auto-regressive token generation process prohibits the use of additional computational resources to achieve better performance <ref type="bibr" target="#b9">(Yao et al., 2023;</ref><ref type="bibr" target="#b10">Snell et al., 2024)</ref>. To fully unleash the power of LLMs, recent studies have focused on inference-time scaling techniques like construction-based treesearch algorithms <ref type="bibr" target="#b11">(Feng et al., 2023;</ref><ref type="bibr">Wang et al., 2024b)</ref>, which incrementally build a high-quality full response via exploring a tree of intermediate reasoning steps guided by a value model <ref type="bibr" target="#b13">(Wang et al., 2023)</ref> or a Process-based Reward Model (PRM) <ref type="bibr" target="#b14">(Lightman et al., 2023)</ref>.</p><p>Despite their potential, construction-based tree-search methods suffer from a rapid increase in tree size and excessive token consumption as the number of reasoning steps grows, which inevitably leads to insufficient exploration given a practical budget. Besides, these methods do not hold the anytime property <ref type="bibr" target="#b15">(Zilberstein, 1996)</ref>, since they cannot return a response until they find a reasoning path from the root to a leaf in the search tree. In contrast, recent approaches <ref type="bibr">(Li et al., 2024a;</ref><ref type="bibr" target="#b17">Light et al., 2024</ref>) that utilize multi-turn improvements <ref type="bibr" target="#b18">(Zheng et al., 2024)</ref> on complete responses for code generation have shown promise. These multi-turn approaches explore a series of local revisions on the code by feeding the execution feedback from public test cases <ref type="bibr">(Xia et al., 2024)</ref> back to the LLM, which mirrors how humans iteratively refine code drafts and enjoys the anytime property.</p><p>def s(w, v, W): n = len(v) d = [[0]*(n)] for j in range(W+1): if w[0] &lt;= j: d[0][j] = v[0] for i in range(1, n): for j in range(W+1): if w[i] &lt;= j: d[i][j] = max(d[i][j], d[i][j-w[i]]+v[i]) return d[n-1][W] Code B: DP def s(w, v, W): n = len(v) d = [[0]*(W+1) for _ in range(n)] for j in range(W+1): if w[0] &lt;= j: d[0][j] = v[0] for i in range(1, n): for j in range(W+1): if w[i] &lt;= j: d[i][j] = max(d[i-1][j], d[i-1][j-w[i]] + v[i]) As the tied pass rate offers no guidance, a revision reward model instead prioritizes candidates that are easier to revise into correct solutions.</p><p>However, the existing improvement-based approaches still face significant challenges in efficiently finding high-quality codes <ref type="bibr" target="#b20">(Olausson et al., 2023)</ref>. First, many of those methods rely on ad-hoc reward functions (e.g., the pass rate on the public test cases or simply an LLM's self-evaluated score) to measure the code quality, which may fail to provide informative direction to guide the search process (cf. Figure <ref type="figure" target="#fig_0">1</ref>).</p><p>In more detail, since the number of public test cases is usually small (e.g., 2-3 test cases per task), the pass rate often collapse to binary signals (i.e., 0% or 100%), offering little guidance in selecting promising code revisions. LLM-based self-evaluation, on the other hand, is prone to hallucinations <ref type="bibr">(Zhang et al., 2024a)</ref> and can mislead the search by inaccurately assessing a code revision's potential. Second, the inefficient code revision generation and search algorithms exacerbate the token consumption. For example, the agentic methods <ref type="bibr">(Li et al., 2024a;</ref><ref type="bibr">Wang et al., 2024a)</ref> exploit complex workflows which would consume a large number of tokens even over a few improvement iterations. Besides, search algorithms like Monte Carlo Tree Search (MCTS) <ref type="bibr">(Li et al., 2024b)</ref> often require a significant number of improvement iterations to balance exploration and exploitation, leading to excessive computational overhead, e.g., running at least 50 iterations for comparable performance which consumes over 20,000 tokens on a single task.</p><p>An extended discussion of related work is available in the Appendix.</p><p>In light of this, we introduce a lightweight, unified local search framework for improvement-based code generation with LLMs. The core idea behind our approach is to explore the neighborhood of the incumbent code with simple-yet-effective decision rules. To this end, we first frame the iterative improvement process within a local search framework with four key algorithmic components: initial code drafting, neighborhood code generation, candidate evaluation and incumbent code updating. Each component can be instantiated with a specific decision rule, allowing the development of different local search algorithms for code generation with LLMs. Furthermore, to facilitate candidate evaluation in each iteration, we develop a specialized revision reward model tailored for local search which is trained to prefer the code with a smaller revision distance, i.e., the minimum number of revision steps required to transform it into a corrected version. Intuitively, instead of solely maximizing the pass rate on the public test cases which sometimes can be uninformative, our reward model works directly on the textual space and guides the local search to explore the codes close to the correct ones. Specifically, our main contributions are summarized as follows. 1) We propose ReLoc, a lightweight and unified local search framework for code generation. ReLoc can be effectively instantiated into different local search algorithms such as Hill Climbing (HC) (Russell and Norvig, 2016) and Genetic Algorithm (GA) <ref type="bibr" target="#b24">(Mitchell, 1998)</ref> by implementing each algorithmic component with a specific decision rule. 2) We develop a revision reward model trained with pairwise supervisions derived from revision distance comparisons. By constructing win/loss pairs based on which candidate is closer to the corrected code, we train the reward model using the Bradley-Terry framework <ref type="bibr" target="#b25">(Bradley and Terry, 1952)</ref> to produce fine-grained preferences that guide the local search toward promising candidates, even when explicit correctness signals are uninformative.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) We conduct extensive experimental evaluations on popular code generation benchmarks</head><p>including LiveCodeBench <ref type="bibr" target="#b26">(Jain et al., 2024)</ref> and TACO <ref type="bibr" target="#b27">(Li et al., 2023)</ref>. The results demonstrate that our local search approaches consistently outperform both construction-based tree- the tree is labeled with its revision distance, i.e., the minimum number of revisions needed to reach a correct version. Pairwise comparisons in local region create preference data. search methods and existing improvement-based approaches, achieving a 33.8%→38.4% improvement in Pass@1 on LiveCodeBench and an 11.5%→15.3% gain on TACO over the strongest baseline, while reducing token consumption by 37% (cf. Figure 4). 2 Preliminaries Code generation tasks. A code generation task can be defined as a triple T i = ⟨x i , u i , v i ⟩ where where x i is the problem statement given in natural language, u i is a set of public test cases, and v i is a set of private test cases. A code sample a is deemed correct if it passes all test cases in both u i and v i . Given a set of code generation tasks T = {T 1 , . . . , T N }, the performance of a code generation policy π is measured by Pass</p><formula xml:id="formula_0">@k = E Ti∼T 1 - ( n-c i k ) ( n k )</formula><p>, where n is the total number of codes sampled for each task with policy π and c i is the number of correct code samples for task T i <ref type="bibr" target="#b2">(Chen et al., 2021)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improvement-based code generation.</head><p>The improvement-based code generation process can be formalized as an episodic Partially Observable Markov Decision Process (POMDP), defined by the tuple ⟨S, A, O, p, r, T ⟩.</p><p>The state s t ∈ S includes the code generation task T i , the current code sample a t , the execution feedback from public test cases f (a t ; u) and the one from private test cases f (a t ; v) for each time step t. Particularly, the initial state s 0 = T i . The action a t ∈ A is a token sequence which constitutes a code sample. The state transition function p : S × A → S deterministically updates the state by evaluating the code sample a t+1 , yielding s t+1 . The observation o t ∈ O is a subset of s t , consisting of ⟨x i , u i ⟩, a t and f (a t ; u), as the LLM can only access public test cases and the corresponding feedback. The reward function r assigns a reward of 1 if the last time step code sample a T passes all test cases, where T is the time horizon. The history τ t = (o 0 , a 1 , o 1 , . . . , o t ) captures the whole trajectory of actions and observations up to the t-th time step. Finally, the policy π outputs code revision based on the history for each time step, i.e., a t+1 ∼ π(•|τ t ).</p><p>Local search. Local search <ref type="bibr" target="#b28">(Pirlot, 1996)</ref> is an important class of heuristic methods to solve computationally challenging optimization problems. Instead of systematically exploring the whole solution space, local search iteratively improves an incumbent solution by exploring its local neighborhood until a given termination condition is met. Local search naturally enjoys the anytime property <ref type="bibr" target="#b15">(Zilberstein, 1996)</ref>, in the sense that it can return a solution at anytime and the solution quality is monotonically non-decreasing over time by simply caching the best solution found so far.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>While existing improvement-based methods offer the advantage of iterative code revision through multi-turn interactions, they suffer from two critical limitations: (1) inefficient exploration due to complex revision workflows that consume excessive tokens, and (2) inaccurate reward functions that provide limited guidance for selecting promising candidates. To address these challenges, we introduce a lightweight and unified Revision Local Search (ReLoc) framework, which leverages simple-yet-efficient decision rules to perform step-by-step code revision (cf. Figure <ref type="figure" target="#fig_1">2</ref>). In Section 3.1, we elaborate the essentials and key algorithmic components of ReLoc. To address the limitations of prior ad-hoc evaluation heuristics, we further introduce a revision reward model trained to rank code candidates according to their revision distance in Section 3.2. Finally, we show the flexibility and expressiveness of our ReLoc framework by implementing two well-known local search algorithms (i.e., Hill Climbing and Genetic Algorithm) in Section 3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Local Search Framework</head><p>As shown in Algorithm</p><p>1, our ReLoc framework consists of four algorithmic components that can be instantiated with different decision rules: (1) DRAFTCODE, which generates an initial code sample population P 0 based on the problem statement x i and public test cases u i of code generation task T i ; (2) GENERATENEIGHBORHOOD, which constructs a set of neighborhood code samples P t by prompting the LLM π to propose new code revisions based on the history and the execution feedback from the public test cases; (3) EVALUATECANDIDATES, which assigns each candidate in current neighborhood P t with a score measuring its quality; and (4) UPDATEINCUMBENT, which implements the move strategy by selecting the next incumbent solution a t from the neighborhood P t . Finally, we maintain the best-so-far code sample a * with score e * to enforce the anytime property. Algorithm 1 ReLoc: Revision local search framework for code generation with LLMs Input: Code generation task T i , LLM π, iteration limit T Output: Code sample a * 1: P 0 ← generate initial code sample population with DRAFTCODE 2: E 0 ← evaluate code samples P 0 with EVALUATECANDIDATES 3: a 0 ← select a code sample from P 0 with UPDATEINCUMBENT, a * ← a 0 , e * ← E 0 [a 0 ] 4: for t = 1, . . . , T do 5: P t ← generate neighborhood code samples with GENERATENEIGHBORHOOD 6: E t ← evaluate code samples P t with EVALUATECANDIDATES 7: a t ← select a code sample from P t with UPDATEINCUMBENT 8: if E t [a t ] &gt; e * then 9: a * ← a t , e * ← E t [a t ] 10: return a *</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Revision Reward Model</head><p>A key question in implementing ReLoc is how to evaluate the quality of the generated code candidates (cf. EVALUATECANDIDATES), which determines the search direction for each iteration. As we will show in Section 4.2, simple heuristics like pass rate on public test cases or LLM-based self-evaluation scores fail to effectively guide the search direction, since they often either collapse to binary signals or are prone to hallucinations. Outcome-based reward model <ref type="bibr" target="#b29">(Shen and Zhang, 2024)</ref>, on the other hand, solely focuses on the correctness of the code samples rather than how likely an incorrect candidate will be revised into a correct code in future steps, which is also not applicable to our scenario.</p><p>Instead of directly assessing the correctness, we train a specialized revision reward model to rank code samples according to their revision distance, i.e., the minimal number of revision steps required to transform it into the correct version. This way, in addition to prioritizing correct code samples, we also effectively differentiate incorrect ones and enable local search to focus on promising candidates with smaller revision distance, thus guaranteeing the overall search efficiency even when the correctness signals are uninformative (e.g., 0% pass rate on public test cases for all candidates).</p><p>To train our reward model, given a training task T i , we build a special code tree (cf. Figure <ref type="figure" target="#fig_1">2(b)</ref>) where the root is an incorrect code a 1 0 sampled from the LLM policy. Then we incrementally expand the tree in a breadth-first fashion up to a depth limit d max . That is, for each incorrect code sample a j d-1 in the (d -1)-th layer, we prompt the LLM π to generate K code revisions for d-th layer:</p><formula xml:id="formula_1">a K(j-1)+k d ∼ π •|REV ISE_P T x i , a j d-1 , f (a j d-1 ; u i ) k ∈ {1, . . . , K},<label>(1)</label></formula><p>where REV ISE_P T is the prompt template instructing the LLM π to revise the code sample a j d-1</p><p>according to the problem statement x i and execution feedback f (a j d-1 ; u i ) on public test cases, and the generated code revision a K(j-1)+k d is then inserted to the tree as a child of a j d-1 . Once the code tree is built, we recursively label the revision distance of each code sample in the tree according to the following rule:</p><formula xml:id="formula_2">γ(a j d ) =      0, a j d is correct; ∞, a j d is incorrect ∧ Ch(a j d ) = ∅; 1 + min a∈Ch(a j d ) γ(a), otherwise,<label>(2)</label></formula><p>where Ch(a j d ) is the children of a j d in the code tree. Note that a code sample is considered correct if and only if it passes all public test cases u i and private test cases v i . After that, we proceed to build win/loss pairs of code samples and train our reward model with Bradley-Terry framework <ref type="bibr" target="#b25">(Bradley and Terry, 1952;</ref><ref type="bibr" target="#b30">Ouyang et al., 2022)</ref>. Particularly, we confine the comparison within a small region around a code sample in the code tree to reflect the locality of the local search. Specifically, for code sample a j d , we consider the following neighborhood code samples:</p><formula xml:id="formula_3">N (a j d ) = {P a(a j d )} ∪ Ch(a j d ) ∪ Sib(a j d ),<label>(3)</label></formula><p>where P a(a j d ) is its parent and Sib(a j d ) = {a|a ∈ Ch(P a(a j d )) ∧ a ̸ = a j d } is the siblings of a j d . Then for each code sample a ′ ∈ N (a j d ) with γ(a j d ) &lt; γ(a ′ ), we model the preference probability as</p><formula xml:id="formula_4">P(a j d ≻ a ′ |x i ) = σ R ϕ (a j d |x i ) -R ϕ (a ′ |x i ) ,<label>(4)</label></formula><p>where σ(•) is the sigmoid function and R ϕ (a|x i ) represents the learned reward score for code samples a given problem statement x i . The learning objective of the reward model is to maximize the expected log-probability:</p><formula xml:id="formula_5">max ϕ E (xi,a,a ′ )∼D [log P(a ≻ a ′ |x i )],<label>(5)</label></formula><p>where the pair dataset D is constructed by collecting the pairs of code samples in each code tree.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Case Study</head><p>To demonstrate the flexibility and expressiveness of our ReLoc framework, we now present two well-known local search algorithms, i.e., Hill Climbing (HC) (Russell and Norvig, 2016) and Genetic Algorithm (GA) <ref type="bibr" target="#b24">(Mitchell, 1998)</ref> for improvement-based code generation with LLMs by instantiating each algorithmic component with specific decision rules. Pseudocodes can be found in the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DRAFTCODE.</head><p>It is widely acknowledged that the quality of the initial solution has a significant impact on the performance of local search <ref type="bibr" target="#b31">(Lourenço et al., 2018)</ref>. Therefore, to guarantee the quality of the initial code sample population P 0 , we adopt a Plan-then-Generate paradigm by firstly prompting the LLM to enumerate N diverse natural language plans that outline different algorithmic strategies. Then for each plan, we prompt the LLM to synthesize a corresponding code implementation, forming a candidate pool P 0 = {a 1 0 , . . . , a N 0 }.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GENERATENEIGHBORHOOD.</head><p>For each iteration t, we generate neighborhood code samples P t according to the following rules.</p><p>• Hill Climbing. Given the incumbent code sample a t-1 and the feedback f (a t-1 ; u i ) from public test cases u i , we generate the neighborhood code revisions by first prompting the LLM to propose K natural language revision strategies Q t = {q 1 t , . . . , q K t } (e.g., "fix condition logic", "refactor loop"). Then for each strategy q k t , we prompt the LLM π to generate a candidate code revision:</p><formula xml:id="formula_6">P t = {a 1 t , . . . , a K t }, a k t ∼ π • | HC_P T x i , a t-1 , f (a t-1 ; u i ), q k t ,<label>(6)</label></formula><p>where HC_P T is the prompt template instructing the LLM to generate a code revision based on problem statement x i , previous code a t-1 , execution feedback f (a t-1 ; u i ) and revision strategy q k t .</p><p>• Genetic Algorithm. For each iteration t &gt; 1, we select two parent code samples a, a ′ from the history (a 0 , . . . , a t-1 ) according to their fitness, i.e., the scores evaluated by EVALUATECANDIDATES. Particularly, we select parent code samples from P 0 when t = 1.</p><p>Then we prompt the LLM to generate K new candidates:</p><formula xml:id="formula_7">P t = {a 1 t , . . . , a K t }, a k t ∼ π (• | GA_P T (x i , a, f (a; u i ), a ′ , f (a ′ ; u i ))) ,<label>(7)</label></formula><p>where GA_P T is the prompt template<ref type="foot" target="#foot_0">foot_0</ref> instructing the LLM to generate a code revision by combining the strengths or addressing the shared weaknesses of the parent code samples.</p><p>To maintain diversity, we also implement an aging mechanism where each code sample is disqualified from being selected as a parent after it has been used in this role 3 times.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EVALUATECANDIDATES.</head><p>To evaluate the candidate code samples P t , we propose a synergistic approach that leverages both public test cases and the learned revision reward model. Let P pass = {a ∈ P t | f (a; u i ) = pass} be the subset of candidates that pass all public test cases. Then, the evaluation score of candidate a is defined as:</p><formula xml:id="formula_8">E t [a] =    R ϕ (a|x i ), if P pass = ∅; R ϕ (a|x i ), if a ∈ P pass ; -∞, otherwise.<label>(8)</label></formula><p>That is, when no candidate passes all public tests, we fall back to using the reward model R ϕ to score all candidates. If there are successful candidates, we score them using R ϕ , while assigning the rest with a score of -∞. This way, we provide fine-grained preferences that guide the local search toward promising candidates by explicitly differentiating the candidates with the same correctness signal.</p><p>UPDATEINCUMBENT. Given the current code samples P t and the corresponding evaluation scores, UPDATEINCUMBENT aims to select a code sample as the incumbent solution for iteration t. Technically, decision rules like ϵ-greedy, Boltzmann distribution (Landau and Lifshitz, 2013) or more complex simulated annealing acceptance rule <ref type="bibr" target="#b33">(Delahaye et al., 2018</ref>) can be applied. Here we choose to greedily select the one with the maximum evaluation score for simplicity and efficiency, i.e., a t = arg max a∈Pt E t [a], where ties are broken alphabetically.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we present extensive empirical evaluations to demonstrate our superiority across diverse code-related tasks. Our experiments aim to answer the following research questions:</p><p>• RQ1: How well do our local search methods perform on code-related tasks compared to state-of-the-art construction-based and improvement-based approaches?</p><p>• RQ2: Can our proposed revision reward model provide more effective guidance for local search than heuristic rewards or outcome-based reward model?</p><p>• RQ3: How does the performance of our local search methods scale with increasing token budgets at inference time?</p><p>• RQ4: What are the individual contributions of planning, revision strategies, and execution feedback to the overall performance of our local search methods?  <ref type="bibr" target="#b27">(Li et al., 2023)</ref>, which aggregates problems from CodeContests, APPS <ref type="bibr" target="#b34">(Hendrycks et al., 2021)</ref>, and other sources. From TACO's original 25,443 training and 1,000 test problems, we randomly sample 4,000 and 200 respectively due to computational constraints. Both datasets provide 2-3 public test cases per problem. For code repair, we construct a buggy-code dataset by sampling incorrect solutions from diverse models (Qwen2.5-7B/32B/70B, GPT-4o) to ensure a range of error types and complexities. Implementation details. Our base model throughout the experiments is Qwen2.5-32B-Instruct.</p><p>During training, we use the training splits of Live-CodeBench and TACO to construct code revision pairs as described in Section 3.2, where we expand code trees via breadth-first search up to a maximum depth of d max = 5, with K = 3 revisions per node. These pairs are used to train a specialized revision reward model based on Qwen2.5-7B-Instruct, following the reward modeling procedure from <ref type="bibr" target="#b35">(von Werra et al., 2020)</ref>. The distribution of pairwise comparisons is shown in Figure <ref type="figure" target="#fig_2">3</ref>. For inference, we adopt decoding settings consistent with <ref type="bibr" target="#b26">(Jain et al., 2024)</ref>, using a temperature of 0.2 and top-p of 0.95. To ensure fair comparison across all methods, we fix the token budget to 7K tokens per problem. Additional implementation and training details are provided in the Appendix.</p><p>Baselines. We compare our methods with the following approaches. (1) Construction-based approaches like ToT <ref type="bibr" target="#b9">(Yao et al., 2023)</ref> and RAP <ref type="bibr" target="#b36">(Hao et al., 2023)</ref>, which build solutions via search (BFS or MCTS); (2) Improvement-based methods with self-evaluation, which leverage internal assessment mechanisms to guide search, such as CodeTree (Li et al., 2024a) and Reflexion (Shinn et al., 2023), which use multi-agent evaluation or test case generation with reflective learning; and Plan-and-Search (Wang et al., 2024c), which prompts LLMs to search among candidate solution plans expressed in natural language. (3) Improvement-based methods with pass rate, which utilize performance on public test cases to provide reward signals, including Best-of-N (BoN) (Cobbe et al., 2021), which randomly samples N solutions and filters according to the pass rate; SFS (Light et al., 2024), which employs MCTS to revise code using pass rate as the reward function; and OPRS (Yu et al., 2024), which combines self-scoring and pass rate to guide beam search. 4.2 Empirical Results Performance comparison. We systematically compare our local search methods against stateof-the-art baselines and present the results in Table 1. It can be concluded that ReLoc consistently outperforms all baseline methods across both LiveCodeBench and TACO benchmarks on the Pass@1 metric. Specifically, ReLoc_HC achieves the best performance of 38.4% and 33.4% on Live-CodeBench, while ReLoc_GA reaches 15.3% and 11.5% on TACO. It is interesting to find that ReLoc_HC outperforms ReLoc_GA on the easier LiveCodeBench benchmark, while the reverse is observed on the more challenging TACO tasks. This phenomenon highlights the distinct merits of each algorithm: ReLoc_HC is particularly effective for straightforward tasks where the underlying solution is relatively obvious and the primary challenge lies in fixing minor bugs or syntax errors, while ReLoc_GA excels in more complex scenarios by strategically integrating the advantages from parent code samples to discover non-trivial solutions for conceptually challenging tasks in TACO. Compared to construction-based methods like ToT and RAP, ReLoc exhibits significantly superior performance under the same computational budget, thanks to the anytime property of local search algorithms. On the other hand, improvement-based methods with self-evaluation often are prone to hallucinations, leading to unreliable assessments of code quality. While such methods can be somewhat effective for guiding high-level search, as evidenced by Plan Search, they cannot fully leverage the detailed execution feedback. Unlike Plan Search that explores high-level strategies in an abstract plan space, ReLoc implements fine-grained planning and code-level revision, achieving an average improvement of 4.9% over Plan Search on Code gen tasks. Finally, the improvement-based techniques using pass rates from public test cases struggle with sparse or binary reward signals, which also offer insufficient guidance for search. SFS-based MCTS methods require extensive exploration with high computational costs, while ORPS employing beam search suffers from low exploration efficiency, unable to select the most promising code candidates. ReLoc adeptly navigates these challenges through lightweight decision rules, guided by a revision reward model, achieving an average improvement of 5.6% over pass rate-based methods across different tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of revision reward model.</head><p>To evaluate the effectiveness of our revision reward model when guiding local search, we conduct controlled experiments on LiveCodeBench and TACO on ReLoc_HC with different reward functions. Specifically, we compare revision reward model against five baselines: public test case pass rate, LLM-generated test case pass rate, LLM self-evaluation, Skywork-27B reward model <ref type="bibr" target="#b41">(Liu et al., 2024)</ref>, and ORM-7B, i.e., an outcome-based reward model trained with the same architecture as the revision reward model (Qwen2.5-7B).</p><p>As shown in Table <ref type="table" target="#tab_1">2</ref>, pass rate and self-evaluation heuristics offer weak guidance. That is not surprising because execution-based scores are often coarse or binary, while self-evaluated scores often suffer from hallucinations, leading to unreliable rankings. In contrast, methods using a reward model perform better, with our revision reward model outperforming ORM by 35.9%→38.4% and 9.7%→13.3% on LiveCodeBench and TACO. We attribute this to the ability of the revision reward model to differentiate incorrect candidates based on their likelihood of future correction, which is a property the ORM lacks due to its exclusive focus on code correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inference-time scaling law.</head><p>To further evaluate the scaling performance of ReLoc_HC with increasing computational resources, we vary the token budget from 1K to 15K. We compare our method against three representative baselines: BoN, ORPS, and ToT. Figure <ref type="figure" target="#fig_3">4</ref> illustrates the scaling behavior of different methods on the LiveCodeBench and TACO benchmarks. Notably, as the token budget increases, ReLoc_HC demonstrates a faster improvement in terms of Pass@1, highlighting the benefit of guided local search and our learned revision reward model. This is particularly evident in the LiveCodeBench, where ReLoc_HC reaches over 40% Pass@1 under a 15K token budget, outperforming the BoN with the same budget by a significant margin.   Ablation study. We conduct an ablation study on both ReLoc_HC and ReLoc_GA to assess the importance of each design choice. As shown in Table <ref type="table" target="#tab_2">3</ref>, removing natural language plans during initialization and replacing them with randomly sampled code reduces performance. Notably, eliminating revision strategies significantly reduces the number of generated tokens (e.g., from 7.1K to 4.7K in ReLoc_HC). However, this also limits the diversity of candidate code samples explored during the search, ultimately resulting in inferior performance. Furthermore, execution feedback plays a particularly crucial role, as it enables precise and targeted revision in each iteration, improving the overall Pass@1 accuracy by 2.1%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work</p><p>, we present ReLoc, a lightweight and unified local search framework for improvementbased code generation with LLMs. Unlike computationally expensive construction-based inferencetime scaling methods like ToT and MCTS, ReLoc finds high-quality solutions and enjoys the anytime property by exploring a series of local revisions of an established code sample. Besides, compared to the existing improvement-based methods, ReLoc leverages simple yet effective decision rules to navigate the search space. Furthermore, a specialized revision reward model effectively differentiates code samples based on the potential of each code sample being corrected in future steps, which provides fine-grained preferences when the correctness signal is uninformative. Finally, we show the flexibility and expressiveness of ReLoc by developing two well-known local search algorithms, i.e., Hill Climbing and Genetic Algorithm. Extensive experiments on benchmarks like LiveCodeBench and TACO validate the effectiveness of ReLoc in significantly improving code generation performance while reducing computational cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Related Work</head><p>Code Generation with Large Language Models. Recent advances in large language models (LLMs) have significantly boosted code generation by leveraging pretraining on large-scale code corpora <ref type="bibr" target="#b42">(Lu et al., 2021;</ref><ref type="bibr" target="#b43">Christopoulou et al., 2022;</ref><ref type="bibr" target="#b44">Guo et al., 2024;</ref><ref type="bibr" target="#b45">Hui et al., 2024)</ref>. At inference time, two main strategies have emerged to further enhance performance. Construction-based methods generate solutions step-by-step, often guided by value models <ref type="bibr" target="#b9">(Yao et al., 2023;</ref><ref type="bibr">Wang et al., 2024b)</ref>, process-based reward models <ref type="bibr" target="#b14">(Lightman et al., 2023)</ref>, or planning techniques like Monte Carlo Tree Search <ref type="bibr" target="#b36">(Hao et al., 2023;</ref><ref type="bibr" target="#b46">Zhou et al., 2023)</ref>. In contrast, improvement-based approaches iteratively refine full code drafts using multi-turn updates, agentic workflows <ref type="bibr">(Wang et al., 2024a;</ref><ref type="bibr" target="#b47">Zhong et al., 2024;</ref><ref type="bibr">Zhang et al., 2024b)</ref>, and test-time feedback, sometimes with multi-agent collaboration <ref type="bibr">(Li et al., 2024a;</ref><ref type="bibr" target="#b49">Zan et al., 2024)</ref>. While effective, many of these methods are resource-intensive and complex. Our work introduces a lightweight local search framework that streamlines key components into an efficient and scalable loop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Models.</head><p>Reward models play a central role in RLHF <ref type="bibr" target="#b30">(Ouyang et al., 2022)</ref>, providing learning signals for policy optimization. To reduce dependence on human-labeled data, RLAIF <ref type="bibr" target="#b50">(Lee et al., 2023)</ref> proposed an automated reward data pipeline. More recently, reward models have been extended to reasoning tasks. Math-Shepherd <ref type="bibr" target="#b13">(Wang et al., 2023)</ref> and others <ref type="bibr" target="#b51">(Zhang et al., 2025)</ref> trained process-based reward models to guide inference-time strategies, while outcome-based models have supported tree search <ref type="bibr" target="#b52">(Jiang et al., 2024)</ref>. Generative Reward Models (GRMs) <ref type="bibr" target="#b53">(Mahan et al., 2024;</ref><ref type="bibr" target="#b54">McAleese et al., 2024;</ref><ref type="bibr">Zhang et al., 2024c;</ref><ref type="bibr" target="#b56">Chen et al., 2025)</ref> further leverage CoTbased self-critique for scoring outputs. Distinct from these paradigms, we propose a reward model trained to estimate revision distance, capturing the minimal steps needed to reach a correct solution. This enables more efficient candidate evaluation and improves the effectiveness of iterative code refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experimental Setup.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Revision Reward Model</head><p>This section outlines the hyperparameters and settings used during the training phase of the revision reward model. We trained the revision reward model on Qwen2.5-7B-Instruct using the TRL library <ref type="bibr" target="#b35">(von Werra et al., 2020)</ref> with DeepSpeed ZeRO Stage 2 on 4 NVIDIA H100 GPUs. The training was conducted for one epoch on a combined dataset of LiveCodeBench and TACO. Table <ref type="table" target="#tab_3">4</ref> details the training configuration. We use Qwen2.5-32B-Instruct as the inference model throughout all experiments, with a decoding temperature of 0.2 and a top-p value of 0.95. All algorithms are run under a fixed token budget of 7,000 tokens per task.</p><p>For Hill Climbing (HC), we initialize with 5 draft codes and expand 3 neighbors for each candidate during each improvement iteration.</p><p>For the Genetic Algorithm (GA), we similarly maintain a population of 5 draft codes. In each iteration, we select 2 codes from the candidate pool as parent codes, with each code allowed to be selected as a parent up to 3 times.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Evaluation on GPT-4o</head><p>To further validate the effectiveness of RELOC, we conduct experiments on the closed-source model gpt-4o-2024-1120. Specifically, we evaluate RELOC and several baselines, including the state-ofthe-art Plan Search algorithm and Best of N sampling, on the LIVECODEBENCH benchmark. For RELOC, we employ the revision reward model trained as described in Section B.1 to guide the search process.</p><p>In our evaluation, the revision reward model guiding RELOC's local search was trained entirely on data sampled from the open-source Qwen2.5-32B-Instruct model, a setting that differs in both distribution and model family from the target inference model, GPT-4o. Remarkably, as shown in Table <ref type="table" target="#tab_4">5</ref>, RELOC achieves the highest Pass@1 score (44.2%) while consuming only 8.7K tokens on average-representing a 52% reduction in token usage compared to Plan Search. This underscores the efficiency of RELOC's local search mechanism.</p><p>More importantly, these results demonstrate that the revision reward model, trained on Qwengenerated code trajectories, generalizes robustly to guide search on GPT-4o. This transferability is nontrivial: GPT-4o may exhibit different stylistic tendencies, error patterns, and semantic representations compared to Qwen2.5-32B. Yet, the reward model still provides reliable signals for ranking candidate revisions, suggesting that it captures model-agnostic features of code quality-such as syntactic closeness to correct solutions, functional coherence, and local editability.</p><p>Such robustness to distributional shifts suggests broader applicability of our approach. It indicates that RELOC, and particularly its reward model component, can serve as a plug-and-play module to improve inference-time performance across diverse LLMs, without the need for costly re-annotation or model-specific retraining. This is particularly valuable for deployment in scenarios involving closed-source or frequently updated models, where direct supervision signals or fine-tuning access are unavailable.   The feedback indicates that the main issue is the function returns only the first element of min-k and max-k, instead of the entire lists. [/explanation]</p><p>[direction] Modify the return statement to return the full min-k and max-k lists.</p><p>[/direction]</p><p>[direction] Include input validation to ensure K is a non-negative integer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[/direction]</head><p>...  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: In the 0-1 Knapsack problem, the LLM favors an efficient but incorrect greedy solution (Code A) over a conceptually correct yet buggy DP version (Code B). As the tied pass rate offers no guidance, a revision reward model instead prioritizes candidates that are easier to revise into correct solutions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>/Figure 2 :</head><label>2</label><figDesc>Figure 2: (a) Overview of the ReLoc framework. Starting from an initial draft code, ReLoc iteratively generates a neighborhood of candidate code samples around the current incumbent code. Each candidate is assessed by the EVALUATECANDIDATES, which utilizes an interpreter and our revision reward model. (b) Training the Revision Reward Model. A code tree is constructed by iteratively revising an initial incorrect code. Each code sample in the tree is labeled with its revision distance, i.e., the minimum number of revisions needed to reach a correct version. Pairwise comparisons in local region create preference data.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Distribution of 872K training pairs by revision distance difference (γ(loss)γ(win)).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Scaling Law. Pass@1 accuracy of ReLoc_HC (Ours) compared to baselines (BoN, ORPS, ToT) on LiveCodeBench and TACO benchmarks as token budget increases from 1K to 15K.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Pass@1 accuracy (%) of different methods on the LiveCodeBench and TACO benchmarks. All methods are evaluated under the same token budget (7K) to ensure fair comparison. Methods are categorized as construction-based (Con.) or improvement-based (Imp.), and further distinguished by reward functions: PRM ( ), self-evaluation ( ), pass rate ( ), and revision reward model ( ).</figDesc><table><row><cell>Methods</cell><cell>Cat. Rew.</cell><cell cols="2">LiveCodeBench</cell><cell></cell><cell>TACO</cell></row><row><cell></cell><cell></cell><cell cols="4">Code gen Code repair Code gen Code repair</cell></row><row><cell>RAP</cell><cell>Con.</cell><cell>22.9</cell><cell>21.2</cell><cell>5.4</cell><cell>4.1</cell></row><row><cell>TOT</cell><cell>Con.</cell><cell>25.6</cell><cell>20.4</cell><cell>6.8</cell><cell>3.7</cell></row><row><cell>Code Tree</cell><cell>Imp.</cell><cell>27.7</cell><cell>24.1</cell><cell>8.2</cell><cell>5.6</cell></row><row><cell>Reflexion</cell><cell>Imp.</cell><cell>25.6</cell><cell>23.9</cell><cell>7.1</cell><cell>6.1</cell></row><row><cell>Plan Search</cell><cell>Imp.</cell><cell>32.7</cell><cell>31.3</cell><cell>11.2</cell><cell>8.2</cell></row><row><cell>BoN</cell><cell>Imp.</cell><cell>30.2</cell><cell>30.5</cell><cell>10.8</cell><cell>6.3</cell></row><row><cell>SFS</cell><cell>Imp.</cell><cell>32.1</cell><cell>27.3</cell><cell>10.5</cell><cell>8.1</cell></row><row><cell>ORPS</cell><cell>Imp.</cell><cell>28.8</cell><cell>26.6</cell><cell>9.8</cell><cell>7.8</cell></row><row><cell cols="2">ReLoc_HC (Ours) Imp.</cell><cell>38.4</cell><cell>33.4</cell><cell>13.3</cell><cell>9.7</cell></row><row><cell cols="2">ReLoc_GA (Ours) Imp.</cell><cell>35.7</cell><cell>29.9</cell><cell>15.3</cell><cell>11.5</cell></row><row><cell cols="2">4.1 Experimental Setup</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Benchmarks. We evaluate our methods on two benchmarks: LiveCodeBench<ref type="bibr" target="#b26">(Jain et al., 2024)</ref></p><p>, using 511 problems from May 2023-May 2024 for training and 268 problems from Jul 2024-Jan 2025 for testing; and TACO</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Pass@1 accuracy of ReLoc_HC with different reward functions under a 7K token budget. Our revision reward model achieves the highest Pass@1 on both LiveCodeBench and TACO, demonstrating strong inference-time performance without relying on test case generation or self-evaluation.</figDesc><table><row><cell>Reward Function</cell><cell>Gen Test</cell><cell>Self</cell><cell>Reward</cell><cell cols="2">LiveCodeBench TACO</cell></row><row><cell></cell><cell>Case</cell><cell>Score</cell><cell>Model</cell><cell></cell><cell></cell></row><row><cell>Pass Rate</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>33.5</cell><cell>10.3</cell></row><row><cell>w/ Gen Test case</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>29.0</cell><cell>8.4</cell></row><row><cell>Self Evaluation</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>29.3</cell><cell>9.2</cell></row><row><cell>Skywork-27B</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>31.9</cell><cell>9.4</cell></row><row><cell>ORM-7B</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>35.9</cell><cell>9.7</cell></row><row><cell>Revision Reward Model (Ours)</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>38.4</cell><cell>13.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Ablation study of ReLoc. We evaluate the impact of core components in both ReLoc_HC and ReLoc_GA. Removing natural language plans, revision strategies, or execution feedback.</figDesc><table><row><cell>Method</cell><cell cols="2">LiveCodeBench</cell><cell>TACO</cell><cell></cell></row><row><cell></cell><cell cols="4">Pass@1 (%) Tokens (1K) Pass@1 (%) Tokens (1K)</cell></row><row><cell>ReLoc_HC</cell><cell>38.4</cell><cell>7.1</cell><cell>13.3</cell><cell>7.6</cell></row><row><cell>w/o Natural Language Plans</cell><cell>36.9</cell><cell>6.5</cell><cell>13.7</cell><cell>7.1</cell></row><row><cell>w/o Revision Strategies</cell><cell>35.9</cell><cell>4.7</cell><cell>11.7</cell><cell>5.5</cell></row><row><cell>w/o Execution Feedback</cell><cell>34.8</cell><cell>7.5</cell><cell>11.4</cell><cell>7.7</cell></row><row><cell>ReLoc_GA</cell><cell>35.7</cell><cell>6.8</cell><cell>15.3</cell><cell>7.7</cell></row><row><cell>w/o Natural Language Plans</cell><cell>34.3</cell><cell>4.9</cell><cell>12.9</cell><cell>6.6</cell></row><row><cell>w/o Execution Feedback</cell><cell>34.6</cell><cell>5.8</cell><cell>13.5</cell><cell>6.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Revision reward model training Configuration ParameterValue</figDesc><table><row><cell>Mixed Precision</cell><cell>bf16</cell></row><row><cell>Batch Size per Device</cell><cell>8</cell></row><row><cell>Number of Epochs</cell><cell>1</cell></row><row><cell>Gradient Checkpointing</cell><cell>True</cell></row><row><cell>Learning Rate</cell><cell>5.0e-6</cell></row><row><cell>Logging Steps</cell><cell>25</cell></row><row><cell>Evaluation Strategy</cell><cell>Steps</cell></row><row><cell>Evaluation Interval</cell><cell>Every 500 steps</cell></row><row><cell>Save Interval</cell><cell>Every 3000 steps</cell></row><row><cell>Max Sequence Length</cell><cell>2048</cell></row><row><cell>Push to Hub</cell><cell>False</cell></row><row><cell>Optimizer</cell><cell>paged_adamw_32bit</cell></row><row><cell>Warmup Ratio</cell><cell>0.05</cell></row><row><cell cols="2">Learning Rate Scheduler Cosine</cell></row><row><cell>Number of GPUs</cell><cell>4 × NVIDIA H100</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Performance comparison onGPT-4o (gpt-4o-2024GPT-4o (gpt-4o- -1120)).</figDesc><table><row><cell>Methods</cell><cell>Rew.</cell><cell cols="2">Pass@1 (%) Tokens (1K)</cell></row><row><cell>Plan Search</cell><cell>self-evaluation</cell><cell>42.7</cell><cell>16.7</cell></row><row><cell>BoN</cell><cell>Pass Rate</cell><cell>41.8</cell><cell>12.2</cell></row><row><cell cols="2">ReLoc_HC (Ours) Revision Reward Model</cell><cell>44.2</cell><cell>8.7</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Write diverse observations based on the problem to guide the generation of draft code.</figDesc><table><row><cell>Attribute</cell><cell>Description</cell></row><row><cell>DRAFTCODE</cell><cell>You are an expert Python programmer. You will be given a competitive</cell></row><row><cell></cell><cell>programming question (problem specification). You will return 5 useful,</cell></row><row><cell></cell><cell>non-obvious, and correct observations about the problem, like hints to solve</cell></row><row><cell></cell><cell>the problem. You will NOT return any code. Be as creative as possible,</cell></row><row><cell></cell><cell>going beyond what you think is intuitively correct. For each observation</cell></row><row><cell></cell><cell>should be between tag [OBSERVATION] and [/OBSERVATION].</cell></row><row><cell>Outputs</cell><cell>[OBSERVATION]</cell></row><row><cell></cell><cell>Observation 1: A permutation can be fixed with at most one swap if and</cell></row><row><cell></cell><cell>only if it has at most 2 inversions.</cell></row><row><cell></cell><cell>[/OBSERVATION]</cell></row><row><cell></cell><cell>[OBSERVATION]</cell></row><row><cell></cell><cell>Observation 2: Only 3-cycles (like "bca" and "cab") cannot be solved with a</cell></row><row><cell></cell><cell>single swap operation.</cell></row><row><cell></cell><cell>[/OBSERVATION]</cell></row><row><cell></cell><cell>...</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>ReLoc_HC generates diverse modification strategies for incumbent code Attribute Description HC_NEIGHBORYou are an expert in debugging Python code. You will be provided with a code snippet that requires debugging, along with a revision history for reference. Your task is to begin by writing a brief textual explanation of the current code-summarize its intended behavior and any evident issues between [explanation] and [/explanation]. Next, propose three refinement directions that could help improve the code. Please put each direction between tag [direction] and [/direction]. Important: Do not include any Python code in your response-only the explanation and the three refinement directions.</figDesc><table><row><cell>Outputs</cell><cell>[explanation]</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 8 :</head><label>8</label><figDesc>ReLoc_HC revises code according to different strategies Attribute Description HC_NEIGHBORYou are a helpful programming assistant and an expert in Python. The user has written code that contains errors. You will be provided with a Python programming problem, the user's code, revision history, an explanation, and directions for refinement. Your task is to debug and revise the code to correctly solve the problem. Generate a corrected version of the complete program, incorporating the explanation, refinement directions, and revision history. Output only one corrected program enclosed within a single pair of code delimiters. Do not include any additional commentary or text. Outputs</figDesc><table><row><cell>def minimumBoxes ( apple_packs , box_capacities ) :</cell></row><row><cell>for box_capacity in box_capacities :</cell></row><row><cell>current_capacity += box_capacity</cell></row><row><cell>boxes_used += 1</cell></row><row><cell>if current_capacity &gt;= total_apples :</cell></row><row><cell>return boxes_used</cell></row><row><cell>return boxes_used</cell></row><row><cell>apple_packs = [1 , 3 , 2]</cell></row><row><cell>box_capacities = [4 , 3 , 1 , 5 , 2]</cell></row><row><cell>print ( minimumBoxes ( apple_packs , box_capacities ) )</cell></row><row><cell>apple_packs = [5 , 5 , 5]</cell></row><row><cell>box_capacities = [2 , 4 , 2 , 7]</cell></row><row><cell>print ( minimumBoxes ( apple_packs , box_capacities ) )</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 9 :</head><label>9</label><figDesc>ReLoc_GA directly prompts LLM to generate neighborhood by referencing parent code Attribute Description GA_NEIGHBOR You are a helpful programming assistant and an expert in Python. The user has written code that contains errors. You will be provided with a Python programming problem and the user's code intended to solve it. Your task is to refer to the input code and revise it to correctly solve the problem. Generate a corrected version of the complete program. Output only one corrected program enclosed within a single pair of code delimiters. Do not include any additional commentary or text. Outputs</figDesc><table><row><cell>def minimumBoxes ( apple_packs , box_capacities ) :</cell></row><row><cell>for box_capacity in box_capacities :</cell></row><row><cell>current_capacity += box_capacity</cell></row><row><cell>boxes_used += 1</cell></row><row><cell>if current_capacity &gt;= total_apples :</cell></row><row><cell>return boxes_used</cell></row><row><cell>return boxes_used</cell></row><row><cell>apple_packs = [1 , 3 , 2]</cell></row><row><cell>box_capacities = [4 , 3 , 1 , 5 , 2]</cell></row><row><cell>print ( minimumBoxes ( apple_packs , box_capacities ) )</cell></row><row><cell>apple_packs = [5 , 5 , 5]</cell></row><row><cell>box_capacities = [2 , 4 , 2 , 7]</cell></row><row><cell>print ( minimumBoxes ( apple_packs , box_capacities ) )</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>All prompt templates are provided in the Appendix.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Step by Step Revisions</head><p>Below, we demonstrate how ReLoc guides Qwen2.5-32B-Instruct step by step to revise completely incorrect draft code into correct code.</p><p>from typing import List class Solution: def canSplitArray(self, nums: List[int], m: int) -&gt; bool: n = len(nums) if n &lt;= 2: return True prefix_sum = [0] * (n + 1) for i in range(n): prefix_sum[i + 1] = prefix_sum[i] + nums[i] dp = [[False] * n for _ in range(n)] for i in range(n -1): dp[i][i + 1] = (prefix_sum[i + 2] -prefix_sum[i] &gt;= m) or (nums[i] &gt;= m) or (nums[i + 1] &gt;= m) for length in range(3, n + 1): for i in range(n -length + 1): j = i + length -1 for k in range(i, j): left_sum = prefix_sum[k + 1] -prefix_sum[i] right_sum = prefix_sum[j + 1] -prefix_sum[k + 1] if (left_sum &gt;= m or k -i + 1 == 1) and (right_sum &gt;= m or j -k == 1): dp[i][j] = dp[i][j] or (dp[i][k] and dp[k + 1][j]) return dp[0][n -1] Did not use Dynamic Programming (DP) structure, instead used recursion, extremely inefficient and may result in timeout. No memoization of intermediate states, leading to repeated calculations of subproblems. Split logic lacks DP state transition control, unable to effectively construct solutions from small intervals to large intervals. Missing dp[i][i] initialization, confused logic, low efficiency from typing import List class Solution: def canSplitArray(self, nums: List[int], m: int) -&gt; bool: def can_split(segment: List[int], m: int) -&gt; bool: if len(segment) &lt;= 2: return True for i in range(1, len(segment)): left, right = segment[:i], segment[i:] if (sum(left) &gt;= m or len(left) == 1) and (sum(right) &gt;= m or len(right) == 1): if can_split(left, m) and can_split(right, m): return True return False return can_split(nums, m) Use recursion, without DP (Dynamic Programming), without pruning LLM LLM Revision strategie LLM LLM Using prefix sum is somewhat redundant; the correct version directly uses sum(nums[i:j]). Failed to initialize dp[i][i] = True: missing basic state definition. Initial interval checking logic is not rigorous: correct code adds more accurate judgment for two elements (nums[i] + nums[i+1] &gt;= m). Revision strategie DraftCode Step 1 from typing import List class Solution: def canSplitArray(self, nums: List[int], m: int) -&gt; bool: n = len(nums) if n &lt;= 2: return True dp = [[False] * n for _ in range(n)] for i in range(n): dp[i][i] = True for i in range(n -1): dp[i][i + 1] = (nums[i] &gt;= m) or (nums[i + 1] &gt;= m) or (nums[i] + nums[i + 1] &gt;= m) for length in range(3, n + 1): for i in range(n -length + 1): j = i + length -1 for k in range(i, j): left_sum = sum(nums[i:k+1]) right_sum = sum(nums[k+1:j+1]) if (dp[i][k] and (k -i + 1 == 1 or left_sum &gt;= m)) and \ (dp[k+1][j] and (j -k == 1 or right_sum &gt;= m)): dp[i][j] = True break return dp[0][n -1] from typing import List class Solution: def canSplitArray(self, nums: List[int], m: int) -&gt; bool: n = len(nums) if n &lt;= 2: return True prefix_sum = [0] * (n + 1) for i in range(n): prefix_sum[i + 1] = prefix_sum[i] + nums[i] dp = [[False] * n for _ in range(n)] for i in range(n -1): dp[i][i] = True dp[i][i + 1] = (prefix_sum[i + 2] -prefix_sum[i] &gt;= m) or (nums[i] &gt;= m) or (nums[i + 1] &gt;= m) for length in range(3, n + 1): for i in range(n -length + 1): j = i + length -1 for k in range(i, j): left_sum = prefix_sum[k + 1] -prefix_sum[i] right_sum = prefix_sum[j + 1] -prefix_sum[k + 1] if (left_sum &gt;= m or k -i + 1 == 1) and (right_sum &gt;= m or j -k == 1): dp[i][j] = dp[i][j] or (dp[i][k] and dp[k + 1][j]) return dp[0][n -1] Unnecessary use of prefix sum: correct version reverts to sum(nums[i:j]) for clearer logic. Although dp[i]  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>[i] = True was added, initialization is incomplete (should be for all i, not just first n-1).Still missing break statement -should immediately exit when dp[i]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>ReLoc step-by-step revise incorrect code</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Openhands: An open platform for AI software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>In ICLR, 2024a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Less training, more repairing please: Revisiting automated program repair via zero-shot learning</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESEC/FSE</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="959" to="971" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Impact of code language models on automated program repair</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaud</forename><surname>Lutellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSE</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1430" to="1442" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Inferfix: End-to-end program repair with LLMs</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Syed</forename><surname>Shahriar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESEC/FSE</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1646" to="1656" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Shypula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yimeng</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milad</forename><surname>Hashemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Parthasarathy Ranganathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.07867</idno>
+		<title level="m">Learning performance-improving code edits</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Large language models for compiler optimization</title>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cummins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volker</forename><surname>Seeker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejan</forename><surname>Grubisic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Elhoushi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youwei</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kim</forename><surname>Hazelwood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07062</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Scaling LLM test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03314</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">Marcus</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17179</idno>
+		<title level="m">Alphazero-like tree-search can guide large language model decoding and training</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanchen</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyi</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jujie</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14283</idno>
+		<title level="m">Q*: Improving multi-step reasoning for LLMs with deliberative planning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08935</idno>
+		<title level="m">Math-shepherd: Verify and reinforce LLMs step-by-step without human annotations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Using anytime algorithms in intelligent systems</title>
+		<author>
+			<persName><forename type="first">Shlomo</forename><surname>Zilberstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Magazine</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="73" to="73" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Codetree: Agent-guided tree search for code generation with large language models</title>
+		<author>
+			<persName><forename type="first">Jierui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.04329</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Scattered forest search: Smarter code space exploration with LLMs</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Light</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenchao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujiang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziniu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Cheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.05010</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kunhao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juliette</forename><surname>Decugis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taco</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Negrevergne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.08105</idno>
+		<title level="m">What makes large language models reason in (multi-turn) code generation? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying LLM-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Theo X Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Solar-Lezama</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.09896</idno>
+		<title level="m">Is self-repair a silver bullet for code generation? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Self-alignment for factuality: Mitigating hallucinations in LLMs via self-evaluation</title>
+		<author>
+			<persName><forename type="first">Xiaoying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>Meng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.09267</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">RethinkMCTS: Refining erroneous thoughts in monte carlo tree search for code generation</title>
+		<author>
+			<persName><forename type="first">Qingyao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kounianhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.09584</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Artificial Intelligence: A Modern Approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Norvig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">An Introduction to Genetic Algorithms</title>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Mitchell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Rank analysis of incomplete block designs: I. the method of paired comparisons</title>
+		<author>
+			<persName><forename type="first">Ralph</forename><surname>Allan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bradley</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milton</forename><forename type="middle">E</forename><surname>Terry</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="324" to="345" />
+			<date type="published" when="1952">1952</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Armando Solar-Lezama, Koushik Sen, and Ion Stoica. Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">King</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07974</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rongao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Taco</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.14852</idno>
+		<title level="m">Topics in algorithmic code generation dataset</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">General local search methods</title>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Pirlot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Operational Research</title>
+		<imprint>
+			<biblScope unit="volume">92</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="493" to="511" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Policy filtration in rlhf to fine-tune llm for code generation</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.06957</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="27730" to="27744" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Iterated local search: Framework and applications</title>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Ramalhinho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lourenço</forename><surname>Olivier C Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Stützle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of Metaheuristics</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="129" to="168" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">Lev Davidovich Landau and Evgenii Mikhailovich Lifshitz. Course of Theoretical Physics</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Simulated annealing: From basics to applications</title>
+		<author>
+			<persName><forename type="first">Supatcha</forename><surname>Daniel Delahaye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Chaimatanan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mongeau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of Metaheuristics</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1" to="35" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.09938</idno>
+		<title level="m">Measuring coding challenge competence with APPS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Younes</forename><surname>Leandro Von Werra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Belkada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Thrush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gallouédec</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/trl" />
+		<title level="m">TRL: Transformer reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14992</idno>
+		<title level="m">Reasoning with language model is planning with world model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Planning in natural language improves LLM search for code generation</title>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfeng</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaskar</forename><surname>Nath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Hendryx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Summer</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugh</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.03733</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Outcome-refining process supervision for code generation</title>
+		<author>
+			<persName><forename type="first">Zhuohao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizheng</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yidong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengran</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikun</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15118</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chris Yuhao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jujie</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahui</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.18451</idno>
+		<title level="m">Skywork-reward: Bag of tricks for reward modeling in LLMs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Codexglue: A machine learning benchmark dataset for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrosio</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2102.04664</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Pangu-coder: Program synthesis with function-level language modeling</title>
+		<author>
+			<persName><forename type="first">Fenia</forename><surname>Christopoulou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerasimos</forename><surname>Lampouras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milan</forename><surname>Gritta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guchun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongqi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.11280</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14196</idno>
+		<title level="m">DeepSeek-Coder: When the large language model meets programming-the rise of code intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12186</idno>
+		<title level="m">Qwen2. 5-coder technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04406</idno>
+		<title level="m">Language agent tree search unifies reasoning acting and planning in language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Debug like a human: A large language model debugger via verifying runtime execution step-by-step</title>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16906</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianjie</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.07339</idno>
+		<title level="m">Codeagent: Enhancing code generation with tool-integrated agent systems for real-world repo-level coding challenges</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ailun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongshuai</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.14354</idno>
+		<title level="m">Swe-bench-java: A github issue resolving benchmark for java</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Rlaif vs. rlhf: Scaling reinforcement learning from human feedback with ai feedback</title>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samrat</forename><surname>Phatale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Mansoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Ferret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kellie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colton</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Carbune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Rastogi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.00267</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangzhen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07301</idno>
+		<title level="m">The lessons of developing process reward models in mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiapeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.11694</idno>
+		<title level="m">Enhancing llm reasoning with reward-guided tree search</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dakota</forename><surname>Mahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duy</forename><surname>Van Phung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chase</forename><surname>Blagden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Castricato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan-Philipp</forename><surname>Fränken</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.12832</idno>
+		<title level="m">Chelsea Finn, and Alon Albalak. Generative reward models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nat</forename><surname>Mcaleese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rai</forename><surname>Michael Pokorny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Felipe Ceron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgenia</forename><surname>Uribe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maja</forename><surname>Nitishinskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Trebacz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leike</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.00215</idno>
+		<title level="m">Llm critics help catch llm bugs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lunjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Kazemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.15240</idno>
+		<title level="m">Generative verifiers: Reward modeling as next-token prediction</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaotang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.02387</idno>
+		<title level="m">Rm-r1: Reward modeling as reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

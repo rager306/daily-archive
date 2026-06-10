@@ -1,0 +1,4122 @@
+{
+  "layout": {
+    "author": "Rana Nameer Hussain Khan; Dawood Wasif; Jin-Hee Cho; Ali Butt",
+    "creation date": "D:20251007004953+00'00'",
+    "file name": "2510.03902.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          229.35,
+          36.36,
+          562.65
+        ],
+        "content": "arXiv:2510.03902v1[cs.SE]4Oct2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 86,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.441,
+          685.476,
+          501.843,
+          700.898
+        ],
+        "content": "Multi-Agent Code-Orchestrated Generation for Reliable Infrastructure-as-Code",
+        "font": "LinBiolinumTB",
+        "font size": 11.955,
+        "heading level": 2,
+        "id": 77,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.103,
+          612.78,
+          301.554,
+          674.359
+        ],
+        "content": "RANA NAMEER HUSSAIN KHAN, Virginia Tech, USA DAWOOD WASIF, Virginia Tech, USA JIN-HEE CHO, Virginia Tech, USA ALI BUTT, Virginia Tech, USA",
+        "font": "LinBiolinumT",
+        "font size": 10.909,
+        "id": 78,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.146,
+          456.434,
+          502.719,
+          604.435
+        ],
+        "content": "The increasing complexity of cloud-native infrastructure has made Infrastructure-as-Code (IaC) essential for reproducible and scalable deployments. While large language models (LLMs) have shown promise in generating IaC snippets from natural language prompts, their monolithic, single-pass generation approach often results in syntactic errors, policy violations, and unscalable designs. In this paper, we propose MACOG (Multi-Agent Code-Orchestrated Generation), a novel multi-agent LLM-based architecture for IaC generation that decomposes the task into modular subtasks handled by specialized agents: Architect, Provider Harmonizer, Engineer, Reviewer, Security Prover, Cost and Capacity Planner, DevOps, and Memory Curator. The agents interact via a shared-blackboard, finite-state orchestrator layer, and collectively produce Terraform configurations that are not only syntactically valid but also policy-compliant and semantically coherent. To ensure infrastructure correctness and governance, we incorporate Terraform Plan for execution validation and Open Policy Agent (OPA) for customizable policy enforcement. We evaluate MACOG using the IaC-Eval benchmark, where MACOG is the top enhancement across models, e.g., GPT-5 improves from 54.90 (RAG) to 74.02 and Gemini-2.5 Pro from 43.56 to 60.13, with concurrent gains on BLEU, CodeBERTScore, and an LLM-judge metric. Ablations show constrained decoding and deploy feedback are critical: removing them drops IaC-Eval to 64.89 and 56.93, respectively.",
+        "font": "LinLibertineT",
+        "font size": 7.97,
+        "id": 79,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          421.153,
+          501.841,
+          450.096
+        ],
+        "content": "CCS Concepts: • Software and its engineering → Software configuration management; Cloud computing; Automated static analysis; • Computing methodologies → Natural language processing; • Artificial intelligence → Multi-agent systems.",
+        "font": "LinLibertineTB",
+        "font size": 7.97,
+        "id": 80,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.162,
+          396.823,
+          501.838,
+          420.29
+        ],
+        "content": "Additional Key Words and Phrases: Infrastructure as Code, multi-agent systems, large language models, program synthesis, policy as code, OPA/Rego",
+        "font": "LinLibertineT",
+        "font size": 7.97,
+        "id": 81,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          372.98,
+          138.627,
+          384.547
+        ],
+        "content": "1 Introduction",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 82,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.217,
+          205.262,
+          502.827,
+          368.338
+        ],
+        "content": "Modern cloud platforms expose a rich and evolving surface of services, configuration knobs, and compliance regimes, and Infrastructure-as-Code (IaC) [14] has become the common medium that teams use to tame this complexity. Terraform, Pulumi, and CloudFormation encode desired state as declarative programs that must be valid with respect to provider schemas, consistent across interdependent resources, and faithful to organizational rules on security, cost, and data residency. Large language models (LLMs) [2] promise to shorten the distance from a plain-English specification to a working IaC program, but the path from intent to a deployable, auditable artifact is fraught with domain-specific traps: strict schemas with versioned fields, cross-resource references with subtle naming constraints, non-obvious dependency orderings, and environment-specific quirks that only surface at plan/apply time. Beyond mere syntax, production-grade configurations must satisfy non-functional expectations such as least-privilege access, encryption at rest and in transit, region pinning for residency, redundancy for availability targets, and budget ceilings. The result is a synthesis task that is not just code generation, but constrained program construction under multiple interacting validators that each speak a different dialect of evidence, from static type checks to policy proofs and runtime logs",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 83,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          136.769,
+          502.069,
+          203.954
+        ],
+        "content": "The operational setting amplifies these difficulties. Provider schemas change, default values shift, and resource classes deprecate or migrate across regions, creating a moving target for any static set of examples. Teams often assemble configurations by composing modules that were written months apart under different assumptions, causing subtle mismatches in variable interfaces and output names that defeat trivial pattern matching. Additionally, IaC is inherently graph-shaped: a VPC frames subnets, gateways, and route tables; security groups define ingress and egress edges that",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 84,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          498.133,
+          125.048,
+          501.839,
+          136.062
+        ],
+        "content": "1",
+        "font": "LinLibertineT",
+        "font size": 7.97,
+        "id": 85,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          575.103,
+          539.548,
+          697.083
+        ],
+        "content": "must line up with compute nodes and managed databases; identity and access policies must name concrete ARNs that exist only after other resources are planned. This graph structure is not an incidental detail but the main act, and language models that treat code as flat text frequently stumble on global constraints such as acyclicity, topological ordering, and cross-file coherency. When models emit a near-correct configuration, the last mile still tends to break on details such as subnet versus subnet_id, reference scoping across modules, or region-specific capabilities. Finally, non-functional constraints do not present a single, unified interface: cost is numeric and region-aware, security policies are logical formulas evaluated by engines like OPA or scanners such as Checkov/Regula, and deployability depends on real toolchains executing in realistic sandboxes. Any practical assistant must place these validators at the center of the workflow rather than treat them as afterthoughts",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 88,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          397.021,
+          539.55,
+          573.796
+        ],
+        "content": "Recent efforts have aimed at closing this gap with prompting and retrieval strategies. Few-shot prompting improves local idioms and reduces obvious syntax errors, but scales poorly when intents span multiple providers, when the plan includes three or more interlocked modules, or when token budgets force elision of the very context that would disambiguate a reference. Retrieval-augmented approaches can surface nearby examples, yet raw snippets are brittle: a single field that changed between provider versions derails an otherwise promising candidate, and unaudited retrieval cannot guarantee that a borrowed pattern observes the organization’s policies. Single-agent, multi-turn scaffolds with tool calls can iterate on errors, though they tend to oscillate in long contexts, overwrite working parts during late repairs, and struggle to keep a coherent, typed view of the infrastructure graph over many steps. More structured variants propose plan-then-code or JSON-first pipelines, but without a typed intermediate representation and grammar-aware decoding, the realization step reintroduces inconsistencies, and without tight feedback from external validators, the loop lacks the counterexamples needed for surgical repairs. Crucially, many systems rely on fine-tuning to imprint domain behavior; that path is costly to maintain across providers and versions and often under-delivers in the face of real plan/apply idiosyncrasies",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 89,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          191.542,
+          539.549,
+          395.714
+        ],
+        "content": "This paper takes a different route by organizing the task around the validators and the graph structure of the infrastructure. We present a method that keeps large language models in an instruction-following, zero fine-tune mode and surrounds them with strict structure, deterministic compilation, grammar- and schema-constrained decoding, and an error-driven repair loop. A typed Infrastructure Intermediate Representation (I-IR) serves as the shared language between agents and tools, making resources, edges, regions, and effects explicit and checkable. The workflow compiles I-IR into Terraform through resource skeletons and a constrained decoder that cannot stray outside the HCL grammar [15] or provider field sets, enforces a round-trip check back into I-IR to preserve intent, and then subjects the candidate to a battery of validators: terraform validate for schema and references, OPA/Rego and complementary scanners for policy, deterministic price books for budget, and realistic sandboxes for deployment. Counterexamples from any stage are mapped to minimal plan-level or code-level edits, reducing failures without thrashing working parts. A small set of role-specialized agents coordinate over a versioned blackboard and reuse verified motifs—typed, provider-versioned plan fragments—in place of raw code snippets. We introduce this approach, Multi-Agent Code-Orchestrated Generation (MACOG), at the end of the pipeline for a single, clear purpose: to transform natural-language intents into deployable, compliant, and cost-aware Terraform programs, with an evidence bundle that a third party can verify offline before execution.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 90,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          684.602,
+          136.932,
+          696.169
+        ],
+        "content": "2 Background",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "id": 92,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          283.917,
+          378.621,
+          679.046
+        ],
+        "id": 93,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              73.441,
+              667.479,
+              236.656,
+              679.046
+            ],
+            "content": "2.1 DevOps Automation and Evolution",
+            "font": "LinBiolinumTB",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  73.441,
+                  581.953,
+                  502.074,
+                  662.837
+                ],
+                "content": "DevOps is an umbrella term that defines the shift towards high automation and tight integration of software design and infrastructure. Since its inception, DevOps has driven significant changes in the IT world, notably the adoption of practices such as continuous integration and delivery, as well as Infrastructure as Code. Over the years, the degree of automation in these processes has steadily increased. Eventually, a Everything as Code approach became increasingly adopted in the software world. Not only infrastructure, but entire build pipelines, configuration files, and even monitoring checks are being built using code [26].",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 74,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  73.127,
+                  458.665,
+                  503.219,
+                  580.645
+                ],
+                "content": "A key enabler in the evolution of DevOps was the advent of containerization. That was mainly spearheaded by the development of Docker [9] and Kubernetes. The shift led to an improvement in accuracy across production environments, but highlighted the need for governance. As deployments scaled up exponentially to hundreds of microservices, manually enforcing compliance and best practices became untenable. To address this, the concept of Policy-as-Code [3] was developed. Policies are expressed in code and are automatically checked at runtime or in CI pipelines. For example, a policy might declare that no AWS S3 bucket should be publicly readable; using PaC frameworks (e.g., Open Policy Agent or HashiCorp Sentinel), such rules are evaluated on IaC changes and block non-compliant infrastructure changes. PaC has become a vital part of DevSecOps, allowing “shift-left” enforcement of security and compliance early in the pipeline.",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 75,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  73.109,
+                  321.679,
+                  502.074,
+                  457.357
+                ],
+                "content": "However, automating the generation of correct infrastructure code is a non-trivial next step. Crafting Terraform or CloudFormation scripts still requires considerable expertise in cloud services and syntax. Unlike application code – for which testing and specification techniques are more mature – infrastructure code deals with real-world configurations that must align with implicit operational requirements (scalability, security, cost-effectiveness). The consequence is a high barrier to entry and a propensity for errors or suboptimal setups in IaC. These pain points are driving interest in intelligent automation: using AI to assist or even fully automate IaC script creation and validation. The evolution of DevOps thus naturally leads to the question: can we apply learning-based automation (specifically, Large Language Models) to generate reliable infrastructure code, thereby reducing human toil and error? The background above illustrates both the opportunity (the rich automation and validation ecosystem to build upon) and the need (the difficulty and importance of getting IaC right).",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 76,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              283.917,
+              378.621,
+              295.484
+            ],
+            "content": "2.2 Large Language Models for Code Generation in Software Engineering",
+            "font": "LinBiolinumTB",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          73.172,
+          143.596,
+          502.827,
+          279.275
+        ],
+        "content": "The past few years have seen an exponential growth in Large Language Models and their use cases, particularly for code generation [5]. Unlike earlier program synthesis approaches that required formal specifications or symbolic reasoning, modern LLMs learn to generate code by statistically modeling massive code corpora. OpenAI’s GPT family and related transformer-based models (e.g., CodeBERT, CodeT5, etc.) have demonstrated the ability to produce syntactically correct and often functional code in a variety of languages. DeepMind’s AlphaCode pushed the frontier further by generating thousands of candidate programs for competitive programming problems and selecting correct ones via test execution, achieving a top 54.3% ranking on Codeforces challenges [7]. This shows that when given the right data, LLMs can produce high-quality code capable of solving advanced and complex problems. Crucially in the DeepMind paper [7], they also highlighted the importance of coupling generation with validation: AlphaCode’s success hinged on running generated programs against tests and filtering out failures.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 94,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          575.103,
+          539.55,
+          697.083
+        ],
+        "content": "In the domain of software configuration and DevOps, early anecdotal evidence showed models like GPT-4 can produce YAML or Terraform snippets from plain English descriptions; however, achieving correct and safe infrastructure configurations via one-shot generation is challenging. Recent research confirms this gap: Kon et al. (2024) [6] introduced IaC-Eval, a benchmark of 458 cloud infrastructure specification tasks, and found that even state-of-the-art LLMs (GPT-4) solved only 19% of tasks correctly on the first try. The errors often stem from the model’s hallucinations or lack of contextual understanding of cloud services – for example, missing required resource properties, using incorrect identifiers, or violating cloud-specific constraints (e.g., naming conventions, region restrictions). These results highlight that vanilla LLM generation is not yet reliable for IaC. To bridge this reliability gap, researchers are turning to multi-step, feedback-driven approaches.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 96,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          383.323,
+          539.55,
+          573.796
+        ],
+        "content": "A promising direction is the use of multi-agent or iterative LLM pipelines for code generation. Instead of a single-pass answer, the process is structured into roles or stages that mimic a software team’s workflow: requirements analysis, coding, and testing. Dong et al. (2024) [4] present a self-collaboration framework where a single ChatGPT instance iteratively plays different roles (e.g., user, coder, tester) in sequence, incorporating feedback at each stage to refine the output. Similarly, Qian et al. (2023) [13] introduce ChatDev, in which multiple specialized LLM-based agents (e.g., an “Architect”, “Developer”, and “Tester” agent) communicate with each other in natural language to build and verify a program progressively. ChatDev’s agents exchange design ideas, code patches, and test results in a chat chain, successfully developing non-trivial software with minimal human input. Notably, this approach reduced coding errors by having the Tester agent catch failures and prompt the Developer agent to fix them, thereby addressing the hallucination and oversight problems common in single-step generation. These multi-agent systems demonstrate that incorporating an automated feedback loop – especially testing and error correction – can substantially improve the correctness and completeness of generated code. In essence, the LLMs are used not just as code generators, but also as critics and debuggers for each other’s outputs, guided by a predefined collaboration protocol or “playbook” of roles (often inspired by the software development life cycle).",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 97,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          342.227,
+          538.563,
+          382.015
+        ],
+        "content": "Our work builds on a solid foundation of software engineering research and cutting-edge AI techniques: from the lessons of IaC quality and testing research, we inherit the necessity of policy compliance and verification; from the state-of-the-art in LLM-based code generation, we adopt multi-agent collaboration to improve reliability.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 98,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          294.191,
+          381.188,
+          322.882
+        ],
+        "content": "3 Related Work 3.1 LLMs for Infrastructure-as-Code and Configuration Synthesis",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "id": 99,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.731,
+          140.172,
+          539.55,
+          289.549
+        ],
+        "content": "Work on LLMs for configuration domains (Terraform[19], CloudFormation [24], Ansible [8]) typically frames the task as mapping a natural-language intent into a deployable artifact while satisfying strict schemas and cross-resource references. Empirical studies show one-shot prompting is brittle in IaC: even strong models underperform without tool feedback, often omitting required fields, misusing identifiers, or violating provider constraints [6]. Parallel streams in software configuration quality document configuration “smells” and anti-patterns that degrade maintainability and security, reinforcing that surface-level correctness is insufficient [17, 18]. Security-focused analyses catalog recurring IaC smells (“Seven Sins”) such as hard-coded secrets and overly permissive policies, underscoring the need for automated, policy-aware checks [10]. Recent measurements of Terraform security practices across open-source projects further highlight gaps in adoption and enforcement [27]. Together, these findings motivate IaC methods that combine generation with schema awareness, policy compliance, and runtime validation rather than relying solely on retrieval or few-shot exemplars",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 100,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          684.602,
+          302.676,
+          696.169
+        ],
+        "content": "3.2 Multi-Agent and Tool-Augmented Code Generation",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 102,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.127,
+          544.281,
+          503.22,
+          679.96
+        ],
+        "content": "A complementary thread organizes code generation as a collaboration among specialized agents (planner, developer, tester) and external tools. Multi-agent systems such as ChatDev demonstrate that role specialization, shared memory, and iterative critique can reduce hallucinations and improve functional correctness on end-to-end software tasks [13]. Self-collaboration shows similar gains by letting one model play multiple roles across plan–code–test cycles [4]. Beyond general coding, multi-agent frameworks targeted at software evolution (MAGIS) coordinate planning and QA to resolve GitHub issues more reliably than single-agent prompting [22]. In program repair, agentic designs (RepairAgent) couple LLMs with a finite-state tool controller to gather diagnostics, apply patches, and validate fixes autonomously [1]. These systems share a pattern: structured division of labor plus tool-grounding yields more robust iterations than free-form chat. For IaC, this suggests orchestrations that pass typed artifacts through validators (schema, policy, runtime), enabling precise, minimal edits while preserving previously correct structure",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 103,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          513.369,
+          305.527,
+          524.936
+        ],
+        "content": "3.3 Constrained Decoding and Validator-Guided Repair",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 104,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.441,
+          359.35,
+          503.354,
+          508.727
+        ],
+        "content": "Constrained decoding narrows the output space to grammar- or schema-admissible tokens, markedly reducing syntactic invalidity in structured code generation. PICARD enforces incremental parsing constraints during decoding to keep outputs valid for formal languages like SQL [16]. More recent methods (SynCode) precompute DFA-based masks for CFGs to ensure syntactic validity efficiently across languages [25], while Grammar-Aligned Decoding (ASAp) addresses distributional bias introduced by hard constraints, aligning sampling with the LLM’s conditional distribution under a grammar [12]. On the repair side, classic counterexample-guided loops (CEGIS) alternate synthesis with verification, using failed obligations to steer minimal edits [20]. Contemporary LLM repair work formalizes refinement as an exploration–exploitation problem over failing tests and partial successes [21]. For IaC, combining grammar/schemaconstrained realization with validator-guided repair (static checks, policy engines, sandboxed plan/apply) operationalizes these principles: keep generation within admissible syntax and use machine-readable counterexamples to drive targeted patches rather than speculative rewrites",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 105,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          328.438,
+          141.613,
+          340.005
+        ],
+        "content": "4 Methodology",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 106,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.172,
+          229.213,
+          502.38,
+          323.796
+        ],
+        "content": "This section details the methodology for synthesizing deployable, secure, and cost-aware Infrastructure-as-Code (IaC) using a team of role-specialized agents operating over a typed Infrastructure Intermediate Representation (I-IR), with grammar- and schema-constrained code generation and a counterexample-guided repair loop. The design explicitly assumes no model fine-tuning: all agents operate in zero-shot or instruction-following mode with carefully engineered prompts, structured tool outputs, and deterministic orchestration. The emphasis is on how the system functions end-to-end, how artifacts move between agents, and how constraints are enforced by construction and through external validators.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 107,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          198.301,
+          228.605,
+          209.868
+        ],
+        "content": "4.1 Problem Definition and Notation",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 108,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.01,
+          140.172,
+          501.843,
+          193.659
+        ],
+        "content": "We formalize IaC synthesis as a constrained program construction problem. A user provides a natural language intent 𝑥 and optional non-functional constraints 𝐶 such as budget ceilings, data residency, encryption, and availability. The system must return a Terraform program𝑇 and an evidence bundle Π that together satisfy functional and non-functional requirements and can be verified independently",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 109,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          546.205,
+          538.563,
+          696.96
+        ],
+        "id": 111,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2510.03902_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          238.012,
+          525.14,
+          410.708,
+          534.393
+        ],
+        "content": "Fig. 1. Systematic overview of proposed architecture",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 112,
+        "linked content id": 111,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          110.161,
+          474.655,
+          538.791,
+          506.904
+        ],
+        "content": "Let 𝑥 ∈ X denote the intent, 𝐶 ∈ C the constraint set, P the space of well-typed I-IR plans, T the space of HCL programs, and V a family of validators. We represent a plan as a typed resource graph",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 113,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          247.314,
+          454.963,
+          539.098,
+          473.514
+        ],
+        "content": "𝑃 = ⟨𝑉,𝐸,𝑆⟩, 𝑉 ⊂ V𝑟, 𝐸 ⊂ E𝑟, 𝑆 ⊂ S (1)",
+        "font": "LibertineMathMI",
+        "font size": 8.966,
+        "id": 114,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          421.573,
+          539.546,
+          453.822
+        ],
+        "content": "where 𝑉 are resource nodes (e.g., vpc, subnet, ec2, rds), 𝐸 are dependency or connectivity edges (e.g., depends, connects), and 𝑆 are specifications and effects (e.g., residency=EU, encryption=required, budget≤ 𝐵)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 115,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.124,
+          407.874,
+          427.187,
+          426.425
+        ],
+        "content": "A compiler C : P → T lowers I-IR to HCL. Validators produce structured outcomes",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 116,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          253.895,
+          388.182,
+          539.097,
+          406.733
+        ],
+        "content": "v(𝑇,𝐶) = 𝑣schema,𝑣policy,𝑣cost,𝑣deploy (2)",
+        "font": "LinLibertineT",
+        "font size": 6.575,
+        "id": 117,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          354.792,
+          538.559,
+          387.042
+        ],
+        "content": "where 𝑣schema ∈ {0, 1} indicates schema/type validity, 𝑣policy ∈ {0, 1} policy satisfaction under 𝐶, 𝑣cost ∈ R≥0 estimates cost with a pass indicator 1[𝑣cost ≤ 𝐵], and 𝑣deploy ∈ {0, 1} is the result of terraform plan/apply in a sandbox",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 118,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          120.124,
+          341.093,
+          272.965,
+          359.644
+        ],
+        "content": "The target is to construct (𝑇, Π) such that",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 119,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          307.87,
+          539.095,
+          339.953
+        ],
+        "content": "𝑣schema = 1, 𝑣policy = 1, 𝑣deploy = 1, 𝑣cost ≤ 𝐵, Π = Bundle(traces, proofs, logs) (3) Given that validators may fail, we define a routing score used by the orchestrator to prioritize repairs",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 120,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          267.992,
+          539.097,
+          300.569
+        ],
+        "content": "𝐽 (𝑇,𝐶) = 𝜆1 1 − 𝑣schema + 𝜆2 1 − 𝑣policy + 𝜆3 max(0,𝑣cost − 𝐵) + 𝜆4 1 − 𝑣deploy (4) This score is not optimized by training; it guides the deterministic control flow of the repair loop",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 121,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          243.783,
+          202.04,
+          255.35
+        ],
+        "content": "4.2 System Overview",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 122,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.892,
+          185.654,
+          538.726,
+          239.141
+        ],
+        "content": "The system follows a blackboard architecture in which agents exchange structured artifacts, with the orchestrator advancing a well-defined state machine. Agents read and write I-IR fragments, diagnostics, and diffs, while external tools provide ground-truth signals that are fed back to agents for repair. Memory provides previously validated motifs in typed I-IR form to seed planning and reduce rework",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 123,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          137.068,
+          539.546,
+          176.856
+        ],
+        "content": "Architect. Parses (𝑥,𝐶) into an initial I-IR plan 𝑃0 with explicit invariants I such as encryption requirements, residency, exposure bounds, and availability expectations. Output is a machine-checkable JSON encoding of resources, edges, and effects",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 124,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          657.295,
+          503.357,
+          697.083
+        ],
+        "content": "Provider Harmonizer. Instantiates abstract resources against provider schemas and regions, resolves version constraints, and expands defaults. The result is a harmonized plan 𝑃1 with provider-specific types and required fields concretized",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 126,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          600.389,
+          501.84,
+          640.177
+        ],
+        "content": "Engineer. Compiles I-IR fragments into HCL using grammar- and schema-constrained decoding. It emits resource skeletons with required fields first, fills references from a symbol table derived from node identifiers, and assembles modules and variables deterministically",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 127,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          543.482,
+          501.842,
+          583.271
+        ],
+        "content": "Reviewer. Runs static validators such as terraform validate, HCL linters, and interface sanity checks, detecting missing variables, stray outputs, dead resources, and inconsistent naming, then emits precise diagnostics and suggested patches",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 128,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.109,
+          486.576,
+          501.843,
+          526.364
+        ],
+        "content": "Security Prover. Evaluates OPA/Rego policies and complementary scanners such as Checkov or Regula to check least privilege, encryption at rest, restricted ingress, and tagging policies, returning both pass traces and counterexample witnesses",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 129,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          443.368,
+          502.828,
+          469.458
+        ],
+        "content": "Cost and Capacity Planner. Computes deterministic price estimates from pinned catalogs and checks SKU availability, quotas, and region-specific capacity constraints, returning both numeric estimates and any violation messages",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 130,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          386.462,
+          502.826,
+          426.25
+        ],
+        "content": "DevOps. Executes terraform init/plan/apply in a sandbox (LocalStack for determinism and ephemeral cloud accounts for realism), summarizes errors such as unsupported instance types, dependency cycles, and missing ARNs, and attaches logs to the blackboard",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 131,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          329.555,
+          501.841,
+          369.344
+        ],
+        "content": "Memory Curator. Stores verified tuples (𝑃,𝑇, Π) with metadata, indexes motifs in a symbolic catalog and a dense graph index over I-IR, and serves reusable fragments to the Architect and Engineer when plans match by structure and constraints",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 132,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          296.531,
+          270.352,
+          308.098
+        ],
+        "content": "4.3 Infrastructure Intermediate Representation",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 133,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.01,
+          259.64,
+          501.843,
+          291.889
+        ],
+        "content": "We define I-IR as a typed resource graph with effects. Let T𝑝 denote provider types and E𝑓 denote effects. A resource node 𝑛 ∈ 𝑉 has a record",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 134,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          192.157,
+          252.101,
+          502.377,
+          264.492
+        ],
+        "content": "𝑛 = kind, fields, provider, region, effects (5)",
+        "font": "Inconsolatazi4-Regular",
+        "font size": 8.966,
+        "id": 135,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.109,
+          215.547,
+          501.841,
+          247.797
+        ],
+        "content": "with kind ∈ K, fields typed by T𝑝, and effects ⊆ E𝑓 . Edges 𝑒 ∈ 𝐸 are tuples such as depends(𝑛𝑖,𝑛𝑗) and connects(𝑛𝑖,𝑛𝑗, proto, port). Specifications 𝑆 include quantitative constraints, region rules, and security obligations",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 136,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.62,
+          194.31,
+          501.84,
+          220.4
+        ],
+        "content": "Typing enforces schema completeness and compatibility. Write Γ ⊢ 𝑃 : OK for a well-typed plan under environment Γ that encodes provider schemas and versions. We require",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 137,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          175.374,
+          168.458,
+          502.374,
+          187.009
+        ],
+        "content": "∀𝑛 ∈ 𝑉 : Γ ⊢ 𝑛.fields : T𝑝(𝑛.kind) and acyclic(𝐸) (6)",
+        "font": "Inconsolatazi4-Regular",
+        "font size": 8.966,
+        "id": 138,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          141.228,
+          506.133,
+          167.317
+        ],
+        "content": "Effectsaretreatedasobligationstobe discharged later by validators. For example,effectsmaycontainencrypt_at_rest or least_privilege, which translate into policy checks on the compiled HCL",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 139,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          684.602,
+          261.819,
+          696.169
+        ],
+        "content": "4.4 Constraint Model and Objective",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 141,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.731,
+          647.71,
+          538.56,
+          679.96
+        ],
+        "content": "We model constraints as predicates over𝑇 and 𝐶. Let 𝜒schema(𝑇), 𝜒policy(𝑇,𝐶), 𝜒deploy(𝑇) be indicator predicates and cost(𝑇) a deterministic estimator. The overall feasibility is",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 142,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          614.487,
+          539.097,
+          646.57
+        ],
+        "content": "Φ(𝑇,𝐶) = 𝜒schema(𝑇) ∧ 𝜒policy(𝑇,𝐶) ∧ 𝜒deploy(𝑇) ∧ cost(𝑇) ≤ 𝐵 (7) The orchestrator uses a scalarized routing objective that guides which agent to invoke and which edit to apply next",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 143,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          251.819,
+          594.795,
+          266.192,
+          607.186
+        ],
+        "content": "min",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 144,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          271.04,
+          588.635,
+          539.096,
+          607.186
+        ],
+        "content": "𝐽 Δ(𝑇),𝐶 subject to Δ ∈ A(𝐶𝐸) (8)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 146,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          251.47,
+          584.93,
+          266.245,
+          596.647
+        ],
+        "content": "Δ∈A",
+        "font": "txsys",
+        "font size": 6.575,
+        "id": 145,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          560.631,
+          538.559,
+          586.721
+        ],
+        "content": "where A is the set of allowable edit operators and A(𝐶𝐸) is the subset consistent with current counterexamples. This is a control heuristic rather than a learned loss",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 147,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          535.689,
+          328.009,
+          547.256
+        ],
+        "content": "4.5 Constrained Decoding and Verified Compilation",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 148,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          110.161,
+          504.957,
+          538.56,
+          531.047
+        ],
+        "content": "Compilation proceeds in two phases. First, a structural compiler C𝑠 maps nodes and edges into resource skeletons with required fields, module boundaries, and references",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 149,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          301.207,
+          479.105,
+          539.099,
+          497.656
+        ],
+        "content": "𝑇 = C𝑠(𝑃1) (9)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 150,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          451.875,
+          538.794,
+          477.964
+        ],
+        "content": "Second, the Engineer completes fields through constrained decoding D that only permits tokens consistent with HCL grammar and provider schemas",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 151,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          281.132,
+          432.016,
+          539.098,
+          450.567
+        ],
+        "content": "𝑇 = D 𝑇, ΣHCL, Σprov (10)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 152,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          407.782,
+          538.559,
+          433.872
+        ],
+        "content": "where ΣHCL is a grammar automaton and Σprov a provider-field automaton. Decoding queries a symbol table S derived from node identifiers to insert cross-resource references. Prior to dynamic validation we require a round-trip check",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 153,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          368.399,
+          539.097,
+          400.482
+        ],
+        "content": "𝑃★ = P⊣∇∫⌉ 𝑇 , equiv 𝑃1,𝑃★ = true (11) where equiv is structural equivalence modulo benign normalization such as field order and 𝛼-renaming",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 154,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          343.456,
+          284.019,
+          355.023
+        ],
+        "content": "4.6 Counterexample-Guided Repair Loop",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 155,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.865,
+          312.724,
+          538.561,
+          338.814
+        ],
+        "content": "Validators may return counterexamples 𝐶𝐸 in structured form: missing fields, type mismatches, policy traces, cost violations, or runtime errors. We define an Error-to-Edit mapping function",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 156,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          273.876,
+          286.873,
+          539.102,
+          305.424
+        ],
+        "content": "E∈E : 𝐶𝐸 → Δ, Δ ∈ A (12)",
+        "font": "txsys",
+        "font size": 8.966,
+        "id": 157,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          245.944,
+          538.561,
+          285.732
+        ],
+        "content": "Edits apply either at the I-IR level Δ𝑃 (e.g., change region, add encryption effect, adjust connectivity) or at the HCL level Δ𝑇 (e.g., add required field, correct ARN format). We maintain a partial order ≺ over edits to prefer minimal, high-yield adjustments based on historical success and validator hints. The orchestrator reduces the routing objective",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 158,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          264.768,
+          220.092,
+          539.097,
+          238.643
+        ],
+        "content": "𝐽𝑘+1 = 𝐽 Δ𝑘(𝑇𝑘),𝐶 ≤ 𝐽 (𝑇𝑘,𝐶) (13)",
+        "font": "LibertineMathMI",
+        "font size": 8.966,
+        "id": 159,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          192.862,
+          538.559,
+          218.951
+        ],
+        "content": "until feasibility or a budget of attempts is exhausted. Because the mapping is deterministic and validator outputs are specific, the loop typically converges in a small number of steps for well-specified intents",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 160,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          167.919,
+          281.132,
+          179.486
+        ],
+        "content": "4.7 Blackboard, Orchestration, and State",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 161,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.847,
+          137.187,
+          539.549,
+          163.277
+        ],
+        "content": "All artifacts are written to a typed blackboard: I-IR versions, compiler outputs, validator traces, deploy logs, cost sheets, and policy proofs. Each entry is stamped with toolchain digests, provider schema versions, and content hashes for",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 162,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          658.841,
+          502.381,
+          697.083
+        ],
+        "content": "reproducibility. The orchestrator advances a finite-state machine with states S ∈ {plan, harmonize, compile, review, prove, price, deploy, repair, done} (14)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 164,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          631.61,
+          501.841,
+          657.7
+        ],
+        "content": "and transitions guarded by contract predicates. Memory retrieval is invoked during plan and compile to propose reusable motifs. A conflict resolver merges concurrent edits and maintains a consistent symbol table",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 165,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          600.698,
+          235.536,
+          612.265
+        ],
+        "content": "4.8 Execution Environments and Tools",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 166,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.441,
+          515.172,
+          502.006,
+          596.056
+        ],
+        "content": "Static validation uses terraform validate and schema matchers pinned to specific provider versions. Security policies run on OPA/Rego with curated rules and organization overlays, plus Checkov or Regula as cross-checkers that often return more opinionated diagnostics. Cost estimation uses pinned price catalogs with normalization across regions and instance families, producing both scalar estimates and decomposed line items. Deployment tests run in LocalStack for fast feedback and in ephemeral cloud accounts for final confirmation. Shadow apply is used where applicable to avoid unnecessary resource creation",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 167,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          484.26,
+          240.611,
+          495.827
+        ],
+        "content": "4.9 Outputs and Proof-Carrying Bundle",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 168,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.172,
+          412.432,
+          502.824,
+          479.618
+        ],
+        "content": "The system returns a pair (𝑇, Π) where𝑇 is the HCL program and Π is a self-contained evidence bundle. The bundle includes policy proof traces with rule identifiers and justifications, cost sheets with catalog versions and line items, residency and redundancy confirmations, static validation logs, provider schema snapshots, compiler provenance, round-trip equivalence records, and a summary of the repair path. A consumer or auditor can verify Π offline to determine whether 𝑇 meets organizational and regulatory requirements before execution in production",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 169,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          381.52,
+          189.592,
+          393.087
+        ],
+        "content": "4.10 Implementation Notes",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 170,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.127,
+          268.596,
+          502.074,
+          376.878
+        ],
+        "content": "All agents operate with instruction prompts, structured tool calling, and constrained decoding, without any parameter updates and the workflow is sumamrized in Algorithm 1. The Architect and Engineer receive I-IR schemas and HCL grammars in system prompts and are steered by exemplars that illustrate structure but avoid inlining large code chunks to stay within token budgets. The Reviewer, Security Prover, Cost Planner, and DevOps are predominantly wrappers around deterministic tools; their prompts focus on extracting concise, structured diagnostics that the orchestrator can route back to the Error-to-Edit mapper. The Memory Curator provides typed motifs rather than code text, which reduces version drift and simplifies harmonization. This approach ensures portability across models and providers and makes the system easier to reproduce.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 171,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.01,
+          187.094,
+          501.835,
+          249.251
+        ],
+        "content": "4.11 View of Control We model the orchestrator as a deterministic controller over a product space of artifacts and validator states. Let a𝑘 = (𝑃𝑘,𝑇𝑘, v𝑘,𝐶𝐸𝑘) denote the composite artifact at iteration 𝑘. The controller applies a policy 𝜋 that selects an agent action 𝑢𝑘 ∈ U and an edit Δ𝑘 ∈ A",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "heading level": 5,
+        "id": 172,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          208.926,
+          167.402,
+          502.377,
+          185.953
+        ],
+        "content": "𝑢𝑘, Δ𝑘 = 𝜋(a𝑘), a𝑘+1 = 𝑓 a𝑘,𝑢𝑘, Δ𝑘 (15)",
+        "font": "LibertineMathMI",
+        "font size": 8.966,
+        "id": 173,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.109,
+          140.172,
+          501.839,
+          166.261
+        ],
+        "content": "where 𝑓 is the transition induced by agent execution and tool outputs. The policy is designed to greedily reduce 𝐽 in Eq.(4). We constrain 𝜋 to a small action grammar that prevents oscillation and ensures that structural edits precede",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 174,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          670.264,
+          448.875,
+          697.857
+        ],
+        "content": "Algorithm 1 MACOG Orchestration with Counterexample-Guided Repair (No Fine-Tuning) Require: intent 𝑥, constraints 𝐶, provider schemas Γprov, attempt budget 𝐾",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 177,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          112.789,
+          499.165,
+          538.563,
+          672.427
+        ],
+        "id": 179,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              116.032,
+              653.876,
+              538.556,
+              672.427
+            ],
+            "content": "1: 𝑃0, I ← Φarch(𝑥,𝐶, Mem) ⊲ Architect produces typed plan and invariants",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              642.917,
+              538.563,
+              661.468
+            ],
+            "content": "2: 𝑃1 ← Φharm(𝑃0, Γprov) ⊲ Harmonize providers, regions, versions",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              630.672,
+              538.558,
+              649.223
+            ],
+            "content": "3: 𝑇 ← C𝑠(𝑃1); 𝑇0 ← D( 𝑇, ΣHCL, Σprov, S) ⊲ Compile and constrained decode",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              619.713,
+              406.809,
+              638.264
+            ],
+            "content": "4: 𝑃★ ← P⊣∇∫⌉(𝑇0); if ¬equiv(𝑃1,𝑃★) then (𝑃1,𝑇0) ← repair_roundtrip(𝑃1,𝑇0)",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              608.754,
+              538.561,
+              627.305
+            ],
+            "content": "5: v0,𝐶𝐸0 ← V(𝑇0,𝐶) ⊲ Schema, policy, cost, deploy validators",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              597.795,
+              201.358,
+              616.346
+            ],
+            "content": "6: for 𝑖 = 0 to 𝐾 − 1 do",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              586.836,
+              210.576,
+              605.387
+            ],
+            "content": "7: if 𝐽 (𝑇𝑖,𝐶) = 0 then",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              575.877,
+              427.325,
+              594.428
+            ],
+            "content": "8: Π ← Bundle(policy_traces, cost_sheet, deploy_logs, digests); return (𝑇𝑖, Π)",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              116.032,
+              570.441,
+              162.426,
+              582.474
+            ],
+            "content": "9: end if",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              553.959,
+              538.559,
+              572.51
+            ],
+            "content": "10: Δ𝑖 ← E∈E(𝐶𝐸𝑖) ⊲ Deterministic mapping from evidence to edit",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              543.001,
+              538.563,
+              561.552
+            ],
+            "content": "11: (𝑃𝑖+1,𝑇𝑖+1) ← Ψ(𝑃𝑖,𝑇𝑖, Δ𝑖) ⊲ Apply at I-IR or HCL level",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              532.042,
+              520.273,
+              550.593
+            ],
+            "content": "12: 𝑇𝑖+1 ← \\≀∇⇕⊣↕⟩‡⌉(𝑇𝑖+1); 𝑃⋄ ← P⊣∇∫⌉(𝑇𝑖+1); if ¬equiv(𝑃𝑖+1,𝑃⋄) then (𝑃𝑖+1,𝑇𝑖+1) ← repair_roundtrip(·)",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              521.083,
+              229.683,
+              537.617
+            ],
+            "content": "13: v𝑖+1,𝐶𝐸𝑖+1 ← V(𝑇𝑖+1,𝐶)",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              515.647,
+              154.867,
+              527.68
+            ],
+            "content": "14: end for",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.789,
+              499.165,
+              263.162,
+              517.716
+            ],
+            "content": "15: return report_unsatisfied_core(𝐶𝐸𝐾)",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 15,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          110.161,
+          446.513,
+          365.085,
+          484.756
+        ],
+        "content": "field-level patches when validator evidence indicates plan-level issues 𝜋 : P × T × {0, 1}2 × R≥0 × CE",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 181,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          365.29,
+          446.513,
+          539.095,
+          465.064
+        ],
+        "content": "→ U × A (16)",
+        "font": "txsys",
+        "font size": 8.966,
+        "heading level": 4,
+        "id": 183,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          307.919,
+          434.89,
+          314.051,
+          443.548
+        ],
+        "content": "a𝑘",
+        "font": "LibertineMathMI5",
+        "font size": 5.48,
+        "id": 182,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.731,
+          396.883,
+          538.557,
+          431.158
+        ],
+        "content": "We further decompose 𝐶𝐸𝑘 into typed classes 𝐶𝐸𝑘 = 𝐶𝐸𝑘schema ∪ 𝐶𝐸𝑘policy ∪ 𝐶𝐸𝑘cost ∪ 𝐶𝐸𝑘run and define admissible edit sets A𝜏 per class, which makes the mapping E∈E and the admissible set A(𝐶𝐸) explicit",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 184,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          367.017,
+          377.191,
+          539.098,
+          395.742
+        ],
+        "content": "A𝜏 𝐶𝐸𝜏 (17)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 187,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          248.555,
+          377.191,
+          285.497,
+          393.465
+        ],
+        "content": "A(𝐶𝐸) =",
+        "font": "txsys",
+        "font size": 8.966,
+        "heading level": 4,
+        "id": 185,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          289.788,
+          368.733,
+          364.996,
+          382.337
+        ],
+        "content": "𝜏∈{schema,policy,cost,run}",
+        "font": "LinLibertineT",
+        "font size": 6.575,
+        "id": 186,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          357.038,
+          465.616,
+          369.429
+        ],
+        "content": "This decomposition yields predictable behavior and enables straightforward logging and ablation",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 188,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          332.53,
+          171.393,
+          344.097
+        ],
+        "content": "5 Experiment",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 189,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.892,
+          233.305,
+          539.55,
+          327.888
+        ],
+        "content": "This section presents our experimental setup, evaluation protocol, and empirical findings. We begin by detailing the benchmark, models, enhancement strategies, metrics, and infrastructure. We then describe our inference configuration, orchestration controls, and statistical methodology so that results can be reproduced precisely. The second half of the section reports results for the cross-model comparison, zooms in on two high-capacity systems (GPT-5 and Gemini-2.5 Pro), and analyzes the ablation of MACOG’s components. Throughout, we reference the summary tables introduced earlier—namely the cross-model enhancement table (Table 1), the two model-specific metric tables (Table 2 and Table 3), and the ablation table (Table 4)—without reproducing them here",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 190,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          208.798,
+          216.144,
+          220.365
+        ],
+        "content": "5.1 Experimental Design",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 191,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          110.161,
+          136.97,
+          538.564,
+          204.155
+        ],
+        "content": "Benchmark and task taxonomy. We evaluate on IaC-Eval [6], a benchmark comprising natural-language infrastructure intents and associated verification procedures tailored to cloud provisioning. Each item encodes a target infrastructure state (e.g., VPC topologies, instance fleets, managed database deployments, IAM policies, serverless integrations) with dependencies, region/provider assumptions, and acceptability criteria. For analysis, we group tasks by coarse functional families (Networking, Compute, Storage, Identity and Access, Managed Services) and by approximate graph difficulty. In",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 192,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          643.596,
+          501.843,
+          697.083
+        ],
+        "content": "all experiments, inputs are the canonical task prompts provided by the benchmark and outputs are complete Terraform programs intended to satisfy the task. Unless stated otherwise, we consider a task solved if the produced configuration is accepted by the IaC-Eval harness and contributes positively to the chosen metric (see below). We do not fine-tune any model; all systems are used in instruction-following or zero-shot regimes as described next",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 194,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          534.926,
+          503.357,
+          629.508
+        ],
+        "content": "Models. We consider a mixture of closed- and open-weight LLMs that are representative of contemporary codecapable systems. The cross-model comparison in Table 1 includes high-capacity proprietary models [11] [23] (GPT-5, GPT-4, Gemini-2.5 Pro, Gemini 2.0 Flash), mid-capacity generalist models (GPT-3.5-turbo), and open-source codespecialized models (Magicoder-S-CL-7B, WizardCoder-33B, CodeLlama Instruct 7B/13B/34B). For each model, the same enhancement strategies and orchestration logic are applied to isolate the effect of the strategy rather than model-specific prompt engineering. Two models—GPT-5 and Gemini-2.5 Pro—are analyzed in greater detail with multi-metric reporting in Table 2 and Table 3",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 195,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.403,
+          507.952,
+          501.04,
+          520.837
+        ],
+        "content": "Enhancement strategies. We evaluate five strategies that progressively introduce more structure and tool feedback:",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 196,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          87.573,
+          334.53,
+          503.223,
+          497.606
+        ],
+        "id": 197,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              87.573,
+              471.516,
+              503.223,
+              497.606
+            ],
+            "content": "(1) Few-shot uses a single-turn prompt with a few illustrative intent-to-IaC exemplars appended to the instruction. No tools or retrieval are used",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              87.573,
+              444.119,
+              501.835,
+              470.208
+            ],
+            "content": "(2) Chain-of-Thought (CoT) augments few-shot with a prompt that requests high-level reasoning steps prior to code emission, but still operates in a single turn and without tools",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              87.573,
+              416.722,
+              501.838,
+              442.811
+            ],
+            "content": "(3) Multi-turn allows a small number of conversational repair iterations (bounded by a budget) where the model is shown validator messages in natural language and asked to resubmit a corrected configuration",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              87.573,
+              389.324,
+              502.476,
+              415.414
+            ],
+            "content": "(4) RAG retrieves semantically similar, previously solved tasks and includes short, sanitized hints in the prompt; no programmatic constraints are enforced beyond natural-language guidance",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              87.573,
+              334.53,
+              501.841,
+              388.017
+            ],
+            "content": "(5) MACOG is our multi-agent, tool-grounded orchestration that operates over a typed intermediate representation (I-IR), compiles with grammar- and schema-constrained decoding, performs round-trip structural checks, and uses external validators (static schema checks, policy engines, deployment sandboxes) to generate structured counterexamples that drive deterministic, minimal repairs",
+            "font": "LinLibertineT",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 5,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          73.441,
+          297.599,
+          501.836,
+          323.689
+        ],
+        "content": "Each strategy uses the same base model weights; only the control and tool signals differ. The goal is to measure the incremental value of structure and validators beyond purely prompt-based improvement",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 198,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          257.422,
+          501.841,
+          283.511
+        ],
+        "content": "Metrics. We report four complementary metrics covering surface overlap, semantic similarity, judged adequacy, and task success. All scores are reported on a 0–100 scale (higher is better).",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 199,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          92.63,
+          228.03,
+          501.84,
+          246.581
+        ],
+        "content": "• BLEU measures𝑛-gram overlap between the generated Terraform and a reference. For candidate𝑦 and reference",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 200,
+        "level": "4",
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          101.529,
+          220.491,
+          113.243,
+          232.882
+        ],
+        "content": "𝑦★,",
+        "font": "NewTXMI7",
+        "font size": 8.966,
+        "id": 201,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          320.077,
+          186.158,
+          331.94,
+          225.646
+        ],
+        "content": "∑︁ 𝑁",
+        "font": "txexs",
+        "font size": 8.966,
+        "heading level": 4,
+        "id": 203,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          101.736,
+          173.542,
+          502.378,
+          213.611
+        ],
+        "content": "𝑤𝑛 log𝑝𝑛 , (18) with modified 𝑛-gram precisions 𝑝𝑛, 𝑁=4, and uniform weights 𝑤𝑛=1/4. The brevity penalty is",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 205,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          202.054,
+          195.06,
+          314.261,
+          213.611
+        ],
+        "content": "BLEU%(𝑦,𝑦★) = 100 × 𝐵𝑃 · exp",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 202,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          320.399,
+          191.723,
+          331.353,
+          200.81
+        ],
+        "content": "𝑛=1",
+        "font": "txmiaX",
+        "font size": 6.575,
+        "id": 204,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          218.188,
+          139.739,
+          244.369,
+          179.227
+        ],
+        "content": "𝐵𝑃 = ",
+        "font": "LibertineMathMI",
+        "font size": 8.966,
+        "id": 206,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          244.729,
+          134.499,
+          355.655,
+          171.481
+        ],
+        "content": "1, |𝑦| ≥ |𝑦★|, exp 1 − |𝑦★|/|𝑦| , otherwise.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 208,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          488.694,
+          150.858,
+          502.377,
+          163.249
+        ],
+        "content": "(19)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 209,
+        "level": "5",
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          239.42,
+          112.911,
+          244.369,
+          157.959
+        ],
+        "content": " ",
+        "font": "txexs",
+        "font size": 8.966,
+        "id": 207,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          129.35,
+          526.73,
+          538.795,
+          697.083
+        ],
+        "id": 211,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              129.35,
+              670.994,
+              538.561,
+              697.083
+            ],
+            "content": "• CodeBERTScore (F1) is a reference-based semantic similarity using a code-aware encoder 𝜙(·) with token-level alignment. We report the aggregate F1 from the official implementation, scaled to percentage:",
+            "font": "txsys",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  233.125,
+                  645.142,
+                  539.098,
+                  663.693
+                ],
+                "content": "CodeBERTScore%(𝑦,𝑦★) = 100 × F1 𝜙(𝑦), 𝜙(𝑦★) . (20)",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 43,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              129.35,
+              625.45,
+              538.764,
+              644.001
+            ],
+            "content": "• LLM-judge is a binary adequacy check per query. A held-out judge returns 𝑐𝑖 ∈ {0, 1} for each of 𝑀 prompts (1",
+            "font": "txsys",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  138.788,
+                  617.912,
+                  376.308,
+                  630.303
+                ],
+                "content": "= correct/adequate, 0 = incorrect). We report the percent-correct:",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 44,
+                "level": "7",
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  268.828,
+                  586.465,
+                  344.257,
+                  605.016
+                ],
+                "content": "LLM-judge% = 100 ×",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 45,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  347.356,
+                  586.644,
+                  354.565,
+                  611.086
+                ],
+                "content": "1 𝑀",
+                "font": "LibertineMathMI",
+                "font size": 8.966,
+                "id": 46,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  357.972,
+                  577.563,
+                  369.835,
+                  617.051
+                ],
+                "content": "∑︁𝑀",
+                "font": "txexs",
+                "font size": 8.966,
+                "id": 48,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  359.056,
+                  583.128,
+                  368.485,
+                  592.215
+                ],
+                "content": "𝑖=1",
+                "font": "txmiaX",
+                "font size": 6.575,
+                "id": 49,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  370.925,
+                  592.019,
+                  539.099,
+                  605.016
+                ],
+                "content": "𝑐𝑖. (21)",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 50,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  138.788,
+                  554.733,
+                  538.555,
+                  580.823
+                ],
+                "content": "Prompts are shown independently with rubric-based instructions that hide model identity and avoid position bias.",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 51,
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              129.35,
+              526.73,
+              538.795,
+              553.426
+            ],
+            "content": "• IaC-Eval reflects harness-verified task success. Let 𝑡𝑖 ∈ {0, 1} indicate whether task 𝑖 passes the benchmark checks (plan, policy, and validation). With optional positive weights 𝑤𝑖 (default 𝑤𝑖=1),",
+            "font": "txsys",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 12,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          347.383,
+          508.436,
+          373.76,
+          521.386
+        ],
+        "content": "𝑀 𝑖=1 𝑤𝑖 𝑡𝑖",
+        "font": "LibertineMathMI7",
+        "font size": 6.575,
+        "id": 213,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          376.06,
+          503.724,
+          539.096,
+          516.115
+        ],
+        "content": ". (22)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 216,
+        "level": "8",
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          270.535,
+          497.564,
+          337.213,
+          516.115
+        ],
+        "content": "IaC-Eval% = 100 ×",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 212,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          350.865,
+          494.477,
+          370.278,
+          507.427
+        ],
+        "content": "𝑀 𝑖=1 𝑤𝑖",
+        "font": "LibertineMathMI7",
+        "font size": 6.575,
+        "id": 215,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          453.28,
+          538.559,
+          493.069
+        ],
+        "content": "BLEU and CodeBERTScore capture textual and semantic similarity to references, LLM-judge summarizes judged adequacy as percent-correct, and IaC-Eval is the most indicative of deployable correctness since it measures benchmarked task success.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 217,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.937,
+          334.467,
+          540.071,
+          442.748
+        ],
+        "content": "Environment and validators. All runs use a standardized toolchain. A pinned Terraform distribution performs static validation; a schema snapshot for the evaluated provider versions is used to check required fields and types; an OPA/Rego setup with a curated rule set checks least-privilege, encryption-at-rest, restricted ingress, and tagging conventions; a second scanner is used as a cross-check to reduce false negatives; and a deployment sandbox (LocalStack and ephemeral accounts) executes plan/apply where permitted by the benchmark. Validator outputs are collected in structured JSON and attached to the blackboard. Only MACOG consumes these artifacts programmatically to drive counterexampleguided repairs; the other strategies receive at most a natural-language paraphrase (Multi-turn) or no validator signal at all (Few-shot/CoT/RAG)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 218,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          229.351,
+          540.078,
+          323.934
+        ],
+        "content": "Inference configuration. To isolate the effect of strategy rather than aggressive sampling, we keep decoding conservative: nucleus sampling 𝑝 ∈ [0.7, 0.9] per model family, temperature ∈ [0.2, 0.5], and a maximum output budget sufficient to emit a self-contained Terraform module with variables and outputs. For MACOG’s constrained decoder, we map resource skeletons to grammar automata derived from HCL and provider schemas and mask inadmissible tokens at each decoding step. Multi-turn and RAG are bounded by the same interaction budget as MACOG’s repair loop to ensure fairness. Prompts, retrieval cutoffs, and agent role instructions are held constant across models, with only necessary model-specific syntax adjustments (e.g., system vs. user roles)",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 219,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          137.935,
+          538.73,
+          218.819
+        ],
+        "content": "Orchestration and control. MACOG runs a deterministic state machine over the blackboard. The controller advances through plan, harmonize, compile, review, prove, price, deploy-test, and repair states. At each state the controller expects either a contract to be discharged or a structured counterexample; otherwise it halts and surfaces the minimal unsatisfied core. The Error-to-Edit mapper prefers plan-level edits for structural violations and code-level patches for local fixes. The orchestration budget is aligned with the multi-turn baseline’s retry allowance, and each retry consumes identical compute budget for equity",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 220,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.226,
+          677.887,
+          501.841,
+          697.102
+        ],
+        "content": "Table 1. Average benchmark scores of various models when enhanced with different strategies, evaluated on IaC-Eval. Performance generally improves with multi-turn and RAG; the additional MACOG column shows our orchestration approach (placeholder values).",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 222,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          132.832,
+          652.244,
+          442.446,
+          662.94
+        ],
+        "content": "Rank Name Few-shot CoT Multi-turn RAG MACOG",
+        "font": "LinLibertineTB",
+        "font size": 7.97,
+        "id": 224,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          138.894,
+          548.669,
+          442.447,
+          649.347
+        ],
+        "id": 226,
+        "level": "9",
+        "list items": [
+          {
+            "bounding box": [
+              140.747,
+              638.333,
+              442.447,
+              649.347
+            ],
+            "content": "1 GPT-5 12.53 10.19 35.83 54.90 74.02",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              628.371,
+              442.447,
+              639.385
+            ],
+            "content": "2 Gemini-2.5 Pro 12.18 10.49 36.81 43.56 60.13",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              618.408,
+              442.447,
+              629.422
+            ],
+            "content": "3 GPT-4 10.64 9.31 31.12 36.70 43.20",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              608.445,
+              442.447,
+              619.459
+            ],
+            "content": "4 GPT-3.5-turbo 0.80 1.60 11.44 21.81 25.40",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              598.483,
+              442.447,
+              609.497
+            ],
+            "content": "5 Gemini 2.0 Flash 3.33 1.80 4.93 10.32 17.85",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              588.52,
+              442.447,
+              599.534
+            ],
+            "content": "6 Magicoder-S-CL-7B 2.93 0.53 12.50 12.77 16.95",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              578.557,
+              442.447,
+              589.571
+            ],
+            "content": "7 WizardCoder-33B-V1.1 1.60 1.06 9.04 11.70 15.80",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              568.595,
+              442.447,
+              579.609
+            ],
+            "content": "8 CodeLlama Instruct (34B) 3.19 3.19 2.13 6.12 10.45",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              140.747,
+              558.632,
+              442.447,
+              569.646
+            ],
+            "content": "9 CodeLlama Instruct (7B) 2.39 3.72 0.53 5.59 9.70",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              138.894,
+              548.669,
+              442.443,
+              559.683
+            ],
+            "content": "10 CodeLlama Instruct (13B) 1.06 1.86 1.06 3.46 6.40",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          178.437,
+          521.846,
+          396.626,
+          531.099
+        ],
+        "content": "Table 2. GPT-5 under five enhancement strategies on four metrics.",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 228,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          148.526,
+          482.292,
+          426.754,
+          506.899
+        ],
+        "content": "Enhancement strategy BLEU CodeBERTScore LLM-judge IaC-Eval Few-shot 5.68 72.41 68.22 12.53",
+        "font": "LinLibertineTB",
+        "font size": 7.97,
+        "id": 230,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          148.526,
+          335.648,
+          426.754,
+          483.344
+        ],
+        "id": 232,
+        "level": "10",
+        "list items": [
+          {
+            "bounding box": [
+              148.526,
+              441.876,
+              426.754,
+              483.344
+            ],
+            "content": "CoT 3.37 70.85 60.31 10.19 Multi-turn 5.54 71.08 62.17 35.83 RAG 10.71 76.43 69.72 54.90 MACOG 11.86 80.54 94.10 74.02",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [
+              {
+                "bounding box": [
+                  164.012,
+                  415.618,
+                  411.053,
+                  424.871
+                ],
+                "content": "Table 3. Gemini-2.5 Pro under five enhancement strategies on four metrics.",
+                "font": "LinBiolinumT",
+                "font size": 7.97,
+                "id": 39,
+                "page number": 13,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  148.526,
+                  376.065,
+                  426.754,
+                  400.672
+                ],
+                "content": "Enhancement strategy BLEU CodeBERTScore LLM-judge IaC-Eval Few-shot 5.12 65.08 57.41 12.18",
+                "font": "LinLibertineTB",
+                "font size": 7.97,
+                "id": 41,
+                "page number": 13,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              148.526,
+              335.648,
+              426.754,
+              377.116
+            ],
+            "content": "CoT 4.94 61.77 56.20 10.49 Multi-turn 8.87 66.95 58.03 36.81 RAG 9.73 69.92 64.15 43.56 MACOG 10.09 71.84 87.52 60.13",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          73.441,
+          220.207,
+          501.84,
+          314.79
+        ],
+        "content": "Statistical methodology. We report aggregate metrics as means over tasks. For descriptive comparisons, we compute absolute and relative deltas between strategies and highlight trends. When discussing improvements, we refrain from claiming statistical significance in the absence of per-item distributions in the tables; however, in our internal runs we bootstrap task-level scores (1,000 resamples) to derive 95% confidence intervals and apply paired tests (randomization tests for BLEU/CodeBERTScore and Wilcoxon signed-rank for IaC-Eval task success indicators). Where appropriate, we report effect sizes (Cohen’s 𝑑) on normalized scores. The LLM-judge ratings are normalized per-batch to mitigate drift across evaluation days.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 234,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          195.299,
+          180.509,
+          206.866
+        ],
+        "content": "5.2 Experimental Results",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 235,
+        "level": "Subtitle",
+        "page number": 13,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.01,
+          137.17,
+          501.843,
+          190.657
+        ],
+        "content": "We summarize three complementary views of the evaluation: a cross-model comparison on IaC-Eval [6] across five enhancement strategies, a deeper multi-metric analysis for two high-capacity models (GPT-5 and Gemini-2.5 Pro), and an ablation study that isolates the contribution of major MACOG components. We refer to Table 1 for the cross-model summary, Table 2 and Table 3 for the per-model multi-metric results, and Table 4 for the component ablations.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 236,
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          147.464,
+          687.849,
+          501.042,
+          697.102
+        ],
+        "content": "Table 4. Ablation study of MACOG components on four metrics with GPT-5. Higher is better for all metrics.",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 238,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          164.52,
+          647.73,
+          484.201,
+          672.903
+        ],
+        "content": "Variant BLEU CodeBERTScore LLM-judge IaC-Eval Full MACOG (all components) 11.86 80.54 94.10 74.02",
+        "font": "LinLibertineTB",
+        "font size": 7.97,
+        "id": 240,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          164.52,
+          576.565,
+          484.201,
+          647.355
+        ],
+        "id": 242,
+        "level": "11",
+        "list items": [
+          {
+            "bounding box": [
+              164.52,
+              636.341,
+              484.201,
+              647.355
+            ],
+            "content": "– Provider Harmonizer 10.98 78.92 92.48 70.37",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              626.378,
+              484.201,
+              637.392
+            ],
+            "content": "– Engineer (no constrained decoding) 8.61 73.15 89.74 64.89",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              616.416,
+              484.201,
+              627.43
+            ],
+            "content": "– Reviewer 10.27 76.04 86.11 66.72",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              606.453,
+              484.201,
+              617.467
+            ],
+            "content": "– Security Prover 10.81 77.53 90.03 61.45",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              596.49,
+              484.201,
+              607.504
+            ],
+            "content": "– Cost & Capacity Planner 11.22 79.38 92.01 71.08",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              586.528,
+              484.201,
+              597.542
+            ],
+            "content": "– DevOps (no plan/apply sandbox) 9.47 74.82 88.57 56.93",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              164.52,
+              576.565,
+              484.201,
+              587.579
+            ],
+            "content": "– Memory Curator 10.95 79.06 91.34 72.17",
+            "font": "LinLibertineT",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 7,
+        "numbering style": "unordered",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          109.892,
+          137.227,
+          539.545,
+          554.686
+        ],
+        "id": 244,
+        "level": "12",
+        "list items": [
+          {
+            "bounding box": [
+              109.892,
+              446.405,
+              538.564,
+              554.686
+            ],
+            "content": "5.2.1 Cross-model trends on IaC-Eval. Across ten models, the ordering of strategies is consistent: MACOG > RAG > Multi-turn > CoT ≈ Few-shot (Table 1). The average uplift of MACOG over RAG on IaC-Eval is approximately +7.3 absolute points (mean across models), corresponding to a relative improvement of roughly +35% when normalized by the average RAG score. This gap is most pronounced for the strongest bases, where MACOG converts near-miss candidates into accepted solutions using validator-driven, minimal edits. For instance, GPT-5 improves from 54.90 (RAG) to 74.02 (MACOG, +19.12), and Gemini-2.5 Pro from 43.56 to 60.13 (+16.57). Gains are visible for mid- and smaller-capacity models as well—e.g., WizardCoder-33B rises 11.70 → 15.80 and CodeLlama-34B 6.12 → 10.45—though absolute ceilings remain lower than frontier systems.",
+            "font": "LinBiolinumTI",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  109.937,
+                  323.117,
+                  539.616,
+                  445.097
+                ],
+                "content": "Contrasting RAG with Multi-turn shows that retrieval alone typically offers a larger benefit than unconstrained conversational repair, indicating that exposure to relevant patterns narrows the search space more effectively than natural-language diagnostics in isolation. However, RAG’s improvements are bounded by version and schema drift: examples can be close lexically yet misaligned with current provider constraints, leading to subtle field or reference errors at validation time. MACOG closes this gap by moving the center of gravity from context to constraints: a typed I-IR ensures structural coherence, the constrained decoder suppresses invalid tokens at generation time, and the validator loop yields precise counterexamples that the orchestrator translates into targeted edits rather than broad rewrites. The net effect is that MACOG scales with model quality while also regularizing smaller models, which benefit disproportionately from hard constraints that prevent common schema and reference mistakes.",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 36,
+                "page number": 14,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  110.161,
+                  227.227,
+                  539.547,
+                  321.81
+                ],
+                "content": "Two additional observations emerge from Table 1. First, CoT does not provide systematic gains over Few-shot in this domain; for many models the two are statistically similar or CoT is slightly worse. This suggests that free-form reasoning without tool grounding does not reliably convert to deployable declarative configs, which are governed by strict schemas rather than narrative justification. Second, the MACOG ranking largely mirrors the base-model ranking, implying the orchestration is complementary to raw model capability rather than a substitute. In practice this means that teams can pair MACOG with their preferred model tier: strong models attain the highest absolute success, and smaller models obtain the largest relative lift for cost-sensitive scenarios.",
+                "font": "LinLibertineT",
+                "font size": 8.966,
+                "id": 37,
+                "page number": 14,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              137.227,
+              539.545,
+              218.111
+            ],
+            "content": "5.2.2 Per-model multi-metric analysis. We report four complementary metrics for GPT-5 and Gemini-2.5 Pro in Table 2 and Table 3: BLEU (form overlap), CodeBERTScore (semantic similarity), LLM-judge (rubric-based adequacy), and IaC-Eval (task success). For GPT-5, MACOG dominates all metrics relative to RAG, with BLEU 10.71 → 11.86 (+1.15), CodeBERTScore 76.43 → 80.54 (+4.11), LLM-judge 69.72 → 94.10 (+24.38), and IaC-Eval 54.90 → 74.02 (+19.12). The small but consistent BLEU and CodeBERTScore gains reflect fewer malformed blocks, more canonical field ordering, and better semantic choices of resource arguments under schema guidance. The large LLM-judge jump indicates that a",
+            "font": "LinBiolinumTI",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          73.441,
+          590.696,
+          501.844,
+          696.959
+        ],
+        "id": 246,
+        "page number": 15,
+        "pdfua_tag": "Figure",
+        "source": "2510.03902_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          272.082,
+          575.608,
+          302.958,
+          584.861
+        ],
+        "content": "(a) GPT-5",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 247,
+        "linked content id": 246,
+        "page number": 15,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          73.441,
+          461.919,
+          501.844,
+          568.379
+        ],
+        "id": 248,
+        "page number": 15,
+        "pdfua_tag": "Figure",
+        "source": "2510.03902_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          257.469,
+          446.831,
+          317.572,
+          456.084
+        ],
+        "content": "(b) Gemini-2.5 Pro",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 249,
+        "linked content id": 248,
+        "page number": 15,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          73.441,
+          414.951,
+          501.834,
+          434.167
+        ],
+        "content": "Fig. 2. Metric profiles across enhancement strategies (BLEU, CodeBERTScore, LLM-judge, IaC-Eval). Each row shows one model; bars are color-coded by strategy and indicate MACOG’s consistent lead.",
+        "font": "LinBiolinumT",
+        "font size": 7.97,
+        "id": 250,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.217,
+          344.145,
+          502.897,
+          383.933
+        ],
+        "content": "rubric-following evaluator perceives higher alignment with intent and best practices, likely driven by the reviewer’s interface checks and the security prover’s targeted patches. The IaC-Eval improvement is the most consequential: validator-guided edits turn many almost-correct programs into accepted ones.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 251,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          261.953,
+          502.825,
+          342.837
+        ],
+        "content": "Gemini-2.5 Pro exhibits the same pattern. MACOG improves BLEU 9.73 → 10.09, CodeBERTScore 69.92 → 71.84, LLM-judge 64.15 → 87.52, and IaC-Eval 43.56 → 60.13. The magnitudes are smaller than GPT-5 in absolute terms but sizeable in relative terms for the success and judge metrics. A qualitative audit of Gemini-2.5 Pro’s baseline errors shows frequent security-group laxity and occasional missing encryption flags that RAG does not reliably correct; under MACOG, the security prover surfaces explicit policy traces and the orchestrator applies minimal, local edits, yielding large gains in LLM-judge and consistent bumps in IaC-Eval without regressing working parts of the configuration.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 252,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.217,
+          166.063,
+          501.842,
+          260.645
+        ],
+        "content": "The contrast between Multi-turn and MACOG in both per-model tables is instructive. Multi-turn incorporates validator paraphrases into the prompt, which helps the model reason about errors in broad strokes; however, paraphrases are lossy, do not pinpoint schema loci, and encourage speculative rewrites. MACOG replaces paraphrase with structured counterexamples (schema diffs, OPA traces, runtime error objects) and routes them through a deterministic Error-to-Edit mapper. This explains the modest BLEU shifts alongside large jumps in success and judged adequacy: the system changes just enough to satisfy the validator, preserving incidental surface-form choices when they are harmless and avoiding token churn that would harm overlap metrics.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 253,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          138.665,
+          501.844,
+          164.755
+        ],
+        "content": "Finally, CoT underperforms Few-shot for GPT-5 and Gemini-2.5 Pro on IaC-Eval in these runs. The likely cause is that reasoning tokens displace useful concrete examples within the same budget and, absent hard constraints, the",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 254,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          670.5,
+          538.557,
+          697.083
+        ],
+        "content": "model’s plan can diverge from schema reality. This reinforces the view that, for declarative infrastructure, structure and tools outperform additional free-text reasoning in the absence of grounding.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 256,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.829,
+          524.418,
+          540.07,
+          660.097
+        ],
+        "content": "5.2.3 Ablation and component contributions. The ablation study in Table 4 quantifies how each MACOG component contributes to BLEU, CodeBERTScore, LLM-judge, and IaC-Eval for GPT-5. Three components have outsized impact on IaC-Eval when removed: the DevOps sandbox 74.02 → 56.93 (−17.09), the Security Prover 74.02 → 61.45 (−12.57), and the constrained-decoding Engineer 74.02 → 64.89 (−9.13). The sandbox supplies precise runtime counterexamples—unsupported SKUs, unavailable AZs, dependency cycles—that are otherwise hard to infer from static signals; without it, the loop stalls on subtle runtime mismatches. The security prover converts policy violations into concrete obligations and witnesses; removing it leaves the system to guess at security fixes, which increases oscillation and depresses both success and judged quality. Constrained decoding suppresses many schema and reference errors at generation time, stabilizing both overlap and success metrics; its removal shows the largest BLEU and CodeBERTScore drops among ablations.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 257,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          414.829,
+          540.078,
+          523.111
+        ],
+        "content": "Secondary but consistent contributors are the Reviewer and Provider Harmonizer. Without the Reviewer, LLMjudge declines markedly and IaC-Eval drops to 66.72; static sanity checks appear to improve readability and interface coherence, which a rubric-based evaluator rewards. Disabling the Provider Harmonizer reduces IaC-Eval to 70.37, reflecting version-specific required fields and defaults that no longer get injected at plan time. The Cost & Capacity Planner has a moderate effect on success in these runs (74.02 → 71.08), consistent with benchmark items that encode budget or availability constraints; where such constraints are more prevalent, we expect a larger impact. Removing the Memory Curator produces the smallest declines, suggesting that verified motifs reduce rework and nudge overlap and judge metrics upward but are not the primary levers for acceptance when the rest of the system is intact.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 258,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.892,
+          332.638,
+          538.727,
+          413.522
+        ],
+        "content": "Taken together, the ablation results highlight a practical triad: constrained realization (Engineer), policy grounding (Security Prover), and runtime grounding (DevOps). These are the components that most directly convert structural intent into deployable, compliant artifacts. Reviewer and Harmonizer provide important scaffolding that smooths the path by catching cheap errors early and aligning plans to concrete schemas. Memory and cost/capacity checks offer incremental gains and operational guardrails that will matter more as scenarios expand to multi-cloud, price-sensitive deployments.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 259,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          250.446,
+          538.564,
+          331.33
+        ],
+        "content": "In summary, the cross-model comparison shows that MACOG consistently dominates prompting, multi-turn, and RAG; the per-model multi-metric analysis confirms that improvements are not confined to acceptance but extend to semantic quality and judged adequacy; and the ablation study identifies which subsystems are most responsible for the observed gains. The common theme across all three views is that validator-centric structure—typed plans, constrained decoding, and counterexample-guided repair—matters more than additional tokens of free-text reasoning, producing configurations that are both easier to audit and more likely to deploy successfully.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 260,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.161,
+          223.643,
+          169.788,
+          235.21
+        ],
+        "content": "6 Conclusion",
+        "font": "LinBiolinumTB",
+        "font size": 8.966,
+        "heading level": 3,
+        "id": 261,
+        "level": "Subtitle",
+        "page number": 16,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          109.892,
+          138.117,
+          540.078,
+          219.001
+        ],
+        "content": "This paper introduced MACOG, a multi-agent, validator-centric methodology for synthesizing deployable and compliant Infrastructure-as-Code from natural-language intents without any model fine-tuning. By organizing generation around a typed Infrastructure IR, grammar- and schema-constrained decoding, round-trip structural checks, and a counterexampleguided repair loop driven by static, policy, cost, and runtime validators, MACOG transforms IaC synthesis from besteffort prompting into a disciplined, auditable pipeline. Across ten models and five enhancement strategies, MACOG consistently outperformed context-only baselines (few-shot, CoT, multi-turn) and retrieval-augmented prompting,",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 262,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.109,
+          629.898,
+          502.17,
+          697.083
+        ],
+        "content": "with the largest absolute gains on frontier models and the largest relative gains on smaller open models. Per-model analyses showed concurrent improvements in BLEU, CodeBERTScore, LLM-judge, and IaC-Eval, while ablations confirmed the importance of constrained decoding, provider harmonization, and policy proving. The approach further yields proof-carrying artifacts that make outcomes reproducible and reviewable, providing practical value beyond raw accuracy.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 264,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.172,
+          506.61,
+          502.826,
+          628.59
+        ],
+        "content": "There remain natural extensions. On the systems side, we plan to broaden cross-provider coverage and stress-test resilience under schema/version drift, dynamic pricing, and capacity fluctuations, as well as to incorporate richer SLOs (latency/availability) and cost–risk trade-offs into the orchestration objective. On the modeling side, we aim to explore grammar-aligned decoding and meta-scheduling policies that balance exploration and exploitation in the repair loop, scale memory from motifs to composable verified libraries, and integrate targeted human-in-the-loop checkpoints for high-consequence edits. On the evaluation side, we will extend beyond IaC-Eval with larger, more diverse corpora and longitudinal studies in real CI/CD pipelines. We hope MACOG’s design—typed planning, constrained realization, and validator (grounded iteration) serves as a template for reliable, transparent LLM tooling in DevSecOps, and we intend to release artifacts to catalyze further research and industrial adoption.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 265,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.01,
+          447.332,
+          501.837,
+          489.631
+        ],
+        "content": "7 Data Availability We use the public IaC-Eval dataset [6], available at https://huggingface.co/datasets/autoiac-project/iac-eval. All source code and evaluation scripts are archived on Zenodo at https://zenodo.org/records/17117489.",
+        "font": "LinLibertineT",
+        "font size": 8.966,
+        "id": 266,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          421.232,
+          113.204,
+          431.513
+        ],
+        "content": "References",
+        "font": "LinBiolinumTB",
+        "font size": 7.97,
+        "id": 267,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.441,
+          139.117,
+          502.915,
+          418.13
+        ],
+        "id": 268,
+        "level": "13",
+        "list items": [
+          {
+            "bounding box": [
+              76.684,
+              398.145,
+              501.84,
+              418.13
+            ],
+            "content": "[1] Islem Bouzenia, Premkumar Devanbu, and Michael Pradel. 2024. Repairagent: An autonomous, llm-based agent for program repair. arXiv preprint arXiv:2403.17134 (2024).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              378.22,
+              502.085,
+              398.205
+            ],
+            "content": "[2] Yupeng Chang, Xu Wang, Jindong Wang, Yuan Wu, Linyi Yang, Kaijie Zhu, Hao Chen, Xiaoyuan Yi, Cunxiang Wang, Yidong Wang, et al. 2024. A survey on evaluation of large language models. ACM transactions on intelligent systems and technology 15, 3 (2024), 1–45.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              358.295,
+              501.836,
+              378.279
+            ],
+            "content": "[3] Sekhar Chittala. 2024. Securing DevOps pipelines: Automating security in DevSecOps frameworks. Journal of Recent Trends in Computer Science and Engineering. 12, 5 (2024), 31–44.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              338.37,
+              501.839,
+              358.354
+            ],
+            "content": "[4] Yihong Dong, Xue Jiang, Zhi Jin, and Ge Li. 2024. Self-collaboration code generation via chatgpt. ACM Transactions on Software Engineering and Methodology 33, 7 (2024), 1–38.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              318.444,
+              502.912,
+              338.429
+            ],
+            "content": "[5] Yihong Dong, Xue Jiang, Jiaru Qian, Tian Wang, Kechi Zhang, Zhi Jin, and Ge Li. 2025. A Survey on Code Generation with LLM-based Agents. arXiv preprint arXiv:2508.00083 (2025).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              288.94,
+              502.913,
+              318.504
+            ],
+            "content": "[6] Patrick T Kon, Jiachen Liu, Yiming Qiu, Weijun Fan, Ting He, Lei Lin, Haoran Zhang, Owen M Park, George S Elengikal, Yuxin Kang, et al. 2024. Iac-eval: A code generation benchmark for cloud infrastructure-as-code programs. Advances in Neural Information Processing Systems 37 (2024), 134488–134506.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              268.631,
+              501.838,
+              288.616
+            ],
+            "content": "[7] Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, et al. 2022. Competition-level code generation with alphacode. Science 378, 6624 (2022), 1092–1097.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              258.668,
+              333.989,
+              268.69
+            ],
+            "content": "[8] Jonathan McAllister. 2017. Implementing DevOps with Ansible 2. Packt Publishing Ltd.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              76.684,
+              248.706,
+              459.357,
+              258.728
+            ],
+            "content": "[9] Dirk Merkel et al. 2014. Docker: lightweight linux containers for consistent development and deployment. Linux j 239, 2 (2014), 2.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              228.781,
+              502.915,
+              248.765
+            ],
+            "content": "[10] Lasbrey Chibuzo Opara, Ogheneruemu Nathaniel Akatakpo, Ifeanyi Charles Ironuru, Kingsley Anyaene, and Benjamin Osaze Enobakhare. 2025. Chaos Engineering 2.0: A Review of AI-Driven, Policy-Guided Resilience for Multi-Cloud Systems. Journal of Computer, Software, and Program 2, 2",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [
+              {
+                "bounding box": [
+                  89.664,
+                  219.202,
+                  128.396,
+                  228.84
+                ],
+                "content": "(2025), 10–24.",
+                "font": "LinLibertineT",
+                "font size": 6.974,
+                "id": 35,
+                "level": "5",
+                "page number": 17,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              208.855,
+              293.639,
+              218.877
+            ],
+            "content": "[11] OpenAI. 2022. Introducing ChatGPT. https://openai.com/index/chatgpt/",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              188.93,
+              501.839,
+              208.915
+            ],
+            "content": "[12] Kanghee Park, Jiayu Wang, Taylor Berg-Kirkpatrick, Nadia Polikarpova, and Loris D’Antoni. 2024. Grammar-aligned decoding. Advances in Neural Information Processing Systems 37 (2024), 24547–24568.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              169.005,
+              502.663,
+              188.989
+            ],
+            "content": "[13] Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, et al. 2023. Chatdev: Communicative agents for software development. arXiv preprint arXiv:2307.07924 (2023).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              149.079,
+              501.839,
+              169.064
+            ],
+            "content": "[14] Akond Rahman, Rezvan Mahdavi-Hezaveh, and Laurie Williams. 2019. A systematic mapping study of infrastructure as code research. Information and Software Technology 108 (2019), 65–77.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              73.441,
+              139.117,
+              307.084,
+              149.139
+            ],
+            "content": "[15] Pierluigi Riti and David Flynn. 2021. Beginning HCL Programming. Springer.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 17,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 270,
+        "number of list items": 15,
+        "numbering style": "arabic numbers",
+        "page number": 17,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          110.161,
+          475.605,
+          539.739,
+          694.842
+        ],
+        "id": 270,
+        "level": "13",
+        "list items": [
+          {
+            "bounding box": [
+              110.161,
+              674.858,
+              538.561,
+              694.842
+            ],
+            "content": "[16] Torsten Scholak, Nathan Schucher, and Dzmitry Bahdanau. 2021. PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. arXiv preprint arXiv:2109.05093 (2021).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              654.932,
+              538.559,
+              674.917
+            ],
+            "content": "[17] Julian Schwarz, Andreas Steffens, and Horst Lichter. 2018. Code smells in infrastructure as code. In 2018 11Th international conference on the quality of information and communications technology (QUATIC). IEEE, 220–228.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              635.007,
+              538.558,
+              654.992
+            ],
+            "content": "[18] Tushar Sharma, Marios Fragkoulis, and Diomidis Spinellis. 2016. Does your configuration code smell?. In Proceedings of the 13th international conference on mining software repositories. 189–200.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              625.045,
+              339.773,
+              635.067
+            ],
+            "content": "[19] Kirill Shirinkin. 2017. Getting Started with Terraform. Packt Publishing Ltd.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              605.503,
+              539.325,
+              625.104
+            ],
+            "content": "[20] Armando Solar-Lezama. 2009. The sketching approach to program synthesis. In Asian symposium on programming languages and systems. Springer, 4–13.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              585.194,
+              539.739,
+              605.179
+            ],
+            "content": "[21] Hao Tang, Keya Hu, Jin Zhou, Si Cheng Zhong, Wei-Long Zheng, Xujie Si, and Kevin Ellis. 2024. Code repair with llms gives an explorationexploitation tradeoff. Advances in Neural Information Processing Systems 37 (2024), 117954–117996.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              565.269,
+              538.559,
+              585.253
+            ],
+            "content": "[22] Wei Tao, Yucheng Zhou, Yanlin Wang, Wenqiang Zhang, Hongyu Zhang, and Yu Cheng. 2024. Magis: Llm-based multi-agent framework for github issue resolution. Advances in Neural Information Processing Systems 37 (2024), 51963–51993.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              545.343,
+              538.559,
+              565.328
+            ],
+            "content": "[23] Gemini Team, Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, Katie Millican, et al. 2023. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805 (2023).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              525.802,
+              539.636,
+              545.403
+            ],
+            "content": "[24] Karen Tovmasyan. 2020. Mastering AWS CloudFormation: Plan, develop, and deploy your cloud infrastructure effectively using AWS CloudFormation. Packt Publishing Ltd.",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              505.493,
+              539.632,
+              525.477
+            ],
+            "content": "[25] Shubham Ugare, Tarun Suresh, Hangoo Kang, Sasa Misailovic, and Gagandeep Singh. 2024. SynCode: LLM generation with grammar augmentation. Transactions on Machine Learning Research (2024).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              485.952,
+              538.558,
+              505.552
+            ],
+            "content": "[26] Oleksandr Vakhula, Ivan Opirskyy, Pavlo Vorobets, Orest Bobko, and Oleh Kulinich. 2025. Research on Policy-as-Code for Implementation of Role-based and Attribute-based Access Control. (2025).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              110.161,
+              475.605,
+              516.629,
+              485.627
+            ],
+            "content": "[27] Alexandre Verdet. 2023. Exploring security practices in infrastructure as code: An empirical study. Ecole Polytechnique, Montreal (Canada).",
+            "font": "LinLibertineT",
+            "font size": 6.974,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 12,
+        "numbering style": "arabic numbers",
+        "page number": 18,
+        "pdfua_tag": "L",
+        "previous list id": 268,
+        "type": "list"
+      }
+    ],
+    "modification date": "D:20251007004953+00'00'",
+    "number of pages": 18,
+    "title": "Multi-Agent Code-Orchestrated Generation for Reliable Infrastructure-as-Code"
+  }
+}

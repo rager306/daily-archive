@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AgentSM: Semantic Memory for Agentic Text-to-SQL</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-01-22">22 Jan 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Asim</forename><surname>Biswal △•</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chuan</forename><surname>Lei</surname></persName>
+							<email>chuan.lei@oracle.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Oracle Corporation □ Snowflake Inc</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiao</forename><surname>Qin</surname></persName>
+							<email>xiao.qin@snowflake.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Aodong</forename><surname>Li</surname></persName>
+							<email>aodongli@amazon.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Balakrishnan</forename><surname>Narayanaswamy</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tim</forename><surname>Kraska</surname></persName>
+							<email>timkrask@amazon.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">•</forename><surname>Amazon</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Web</forename><surname>Services</surname></persName>
+						</author>
+						<title level="a" type="main">AgentSM: Semantic Memory for Agentic Text-to-SQL</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-01-22">22 Jan 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">11F8347D0084528A71A4FB996F994248</idno>
+					<idno type="arXiv">arXiv:2601.15709v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advances in LLM-based Text-to-SQL have achieved remarkable gains on public benchmarks such as BIRD and Spider. Yet, these systems struggle to scale in realistic enterprise settings with large, complex schemas, diverse SQL dialects, and expensive multistep reasoning. Emerging agentic approaches show potential for adaptive reasoning but often suffer from inefficiency and instability-repeating interactions with databases, producing inconsistent outputs, and occasionally failing to generate valid answers. To address these challenges, we introduce Agent Semantic Memory (AgentSM), an agentic framework for Text-to-SQL that builds and leverages interpretable semantic memory. Instead of relying on raw scratchpads or vector retrieval, AgentSM captures prior execution traces-or synthesizes curated ones-as structured programs that directly guide future reasoning. This design enables systematic reuse of reasoning paths, which allows agents to scale to larger schemas, more complex questions, and longer trajectories efficiently and reliably. Compared to state-of-the-art systems, AgentSM achieves higher efficiency by reducing average token usage and trajectory length by 25% and 35%, respectively, on the Spider 2.0 benchmark. It also improves execution accuracy, reaching a state-of-the-art accuracy of 44.8% on the Spider 2.0 Lite benchmark.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Text-to-SQL seeks to enable interaction with structured data by translating natural language tasks into executable SQL queries. This capability is particularly valuable in enterprise data analytics and business intelligence, where non-technical users need to extract insights from large, complex databases without mastering SQL or detailed schema knowledge.</p><p>Recent advances in large language models (LLMs) <ref type="bibr" target="#b36">[37]</ref>, prompting strategies <ref type="bibr" target="#b20">[21]</ref>, and post-training techniques <ref type="bibr" target="#b33">[34]</ref> have driven notable progress in Text-to-SQL performance across benchmarks such as BIRD <ref type="bibr" target="#b15">[16]</ref> and Spider <ref type="bibr" target="#b34">[35]</ref>. However, most existing Text-to-SQL systems remain difficult to scale in realistic enterprise settings, where challenges such as deep nested schemas, diverse SQL dialects, and domain-specific business logic lead to degraded accuracy and efficiency.</p><p>To evaluate Text-to-SQL systems under more realistic conditions, the Spider 2.0 benchmark <ref type="bibr" target="#b13">[14]</ref> was recently introduced, featuring complex, multi-dialect databases and extremely long contexts. Traditional Text-to-SQL approaches-including vector-based schema retrieval <ref type="bibr" target="#b14">[15]</ref>, candidate generation with majority voting <ref type="bibr" target="#b20">[21]</ref>, and self-consistency decoding <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b26">27]</ref>-struggle when applied on their own to this benchmark, revealing fundamental limitations in their ability to generalize and scale. These shortcomings have led to *Work done at Amazon Web Services.</p><p>growing interest in agentic Text-to-SQL methods <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b29">30]</ref>, where agents iteratively interact with databases to inspect schemas, validate partial queries, and adapt to dialectal differences.</p><p>While agentic systems demonstrate improved adaptability to large and complex schemas, there is a challenging tradeoff between computational cost and accuracy that makes these systems difficult to scale. Agents often incur substantial redundancy, repeatedly retracing identical exploration steps across queries on the same database, which inflates execution cost and latency. They are also prone to planning variance, where suboptimal initial reasoning paths lead to inconsistent or failed outcomes. Moreover, the inherently iterative nature of these systems results in high computational cost and latency, as each step consumes additional tokens and time. Under practical constraints such as step limits, token limits, or latency budgets, these inefficiencies significantly reduce both overall accuracy and efficiency <ref type="bibr" target="#b16">[17]</ref>.</p><p>To address these limitations, we present Agent Semantic Memory (AgentSM), a scalable, stable, and efficient agentic framework for Text-to-SQL. Instead of treating each query as an isolated interaction, AgentSM introduces a structured semantic memory that captures and reuses trajectories from prior executions. Each trajectory is enriched and stored with semantic annotations to support future retrieval and reasoning. When a new query arrives on a known database, AgentSM reuses relevant portions of prior trajectories, eliminating redundant exploration and ensuring more consistent behavior. In addition, frequently co-occurring tool sequences are automatically coupled into composite tools, shortening trajectories and improving execution efficiency.</p><p>Beyond Text-to-SQL, AgentSM provides a generalizable foundation for other agentic data tasks-including information extraction, data cleaning, and data transformation-where structured trajectory reuse is critical for scalable and high-quality performance.</p><p>In summary, our contributions are as follows: <ref type="bibr" target="#b0">(1)</ref> We present AgentSM, an agentic framework that captures and leverages structured semantic memory for enterprise-level Text-to-SQL. (2) We design a structured semantic memory that encodes prior trajectories in an interpretable and retrievable format. This memory enables agents to retrieve relevant past experiences, improving efficiency and reasoning consistency.</p><p>(3) We introduce composite tools to AgentSM that streamline decision-making, reduce latency, and alleviate hallucination in agent planning and tool usage during complex multi-step query generation. These tools reduce both agent turns and token usage. (4) We conduct extensive experiments demonstrate that AgentSM achieves state-of-the-art accuracy of 44.8% on the Spider 2.0 Lite Data discovery What tables exist? e.g., sales, regions Initial SQL SELECT ... Schema analysis Check foreign keys Check sample rows Refined SQL WITH... Result validation Check data types Verify correctness Output results Format response Return to user x missing constraints Data Exploration Query Generation Validation &amp; Output X syntax error benchmark. Ablation studies further show that AgentSM effectively shortens average trajectory length by 25% and improves execution accuracy by 35%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">BACKGROUND AND PROBLEM FORMULATION 2.1 Agentic Text-to-SQL</head><p>Modern ReAct-based agents <ref type="bibr" target="#b32">[33]</ref> follow a standard pattern of reasoning and action steps. At each step, the agent observes the current state of the task, reasons about the next appropriate action, and executes an action that often involves tool use. For example, a code agent observes intermediate program states or execution outputs, reasons about modifications or next steps, and acts by generating and executing code to advance toward the final solution.</p><p>Figure <ref type="figure" target="#fig_0">1</ref> shows the standard workflow of an agentic Text-to-SQL system, which generally follows three phases: data exploration, SQL query generation/execution, and response validation. During the data exploration phase, the agent explores and understands the database schema, identifying relevant tables, columns, and values needed for the task. In enterprise environments, schema information is often parsed and stored offline in files, which the agent can reference alongside simple exploratory SQL queries to understand the data. The agent then attempts to generate SQL queries to answer the given task, often in parts, before synthesizing a final query. Without encountering any errors, the agent can choose to validate its response or directly output it. When errors occur, such as syntax violations or unexpected query results, the agent can revise the SQL or return to data exploration for additional context, depending on the nature of the error.</p><p>We identify three key opportunities within these standard workflows that motivate our proposed solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.1">Repeated exploration.</head><p>Analysis of agent reasoning patterns reveals that data exploration is inherently repetitive across queries on the same database. In fact, Liu et al. <ref type="bibr" target="#b16">[17]</ref> highlight the repetitive nature of agent trajectories on the BIRD benchmark <ref type="bibr" target="#b15">[16]</ref>, reporting that fewer than 10-20% of the trajectories are distinct. We observe the same behavior for agents operating in general Text-to-SQL settings. In the initial steps, the agent consistently performs a set of basic exploration actions. It begins by reading schema files or performing PRAGMA queries to obtain understanding of the database schema, including table structures, column names, and data types. If external knowledge files are available, the agent reads them for additional context about the database or task. If the agent requires additional help dealing with particularly large schemas, then it consults the help of tools, such as vector search, or issues additional SQL queries to understand the contents of candidate tables.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Opportunity 1.</head><p>Reuse prior trajectories to eliminate redundant exploration and improve efficiency on new questions over the same database.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.2">Strategy selection.</head><p>Traditional Text-to-SQL systems have converged toward highly precise, pipeline-style solutions that consist of a fixed sequence of steps to every question <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b26">27]</ref>. Similarly, agentic Text-to-SQL approaches remain heavily reliant on prompt engineering <ref type="bibr" target="#b6">[7]</ref>, where carefully designed instructions define the agent's workflow and tool use to ensure consistency.</p><p>However, enforcing a single dominant strategy across all queries can be suboptimal in terms of both accuracy and efficiency. While standardized routines can be effective for common cases, they often fail on out-of-distribution queries. For example, Figure <ref type="figure" target="#fig_1">2</ref> reveals that the agent chose to perform vector search in only 30% of questions on the 'firebase' database in Spider 2.0, likely due to the nested schema and sufficient prior knowledge gained from prior exploration steps. In such cases, adhering to a rigid strategy can introduce irrelevant context, unnecessary computation, and wasted steps that otherwise contribute to more targeted actions to solve the given query. Opportunity 2. Dynamically adapt trajectories according to the characteristics of each task and database, rather than relying on a fixed, one-size-fits-all strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.3">Reducing variance.</head><p>Agent behavior in Text-to-SQL generation inherently exhibits variance across runs. Small deviations, including trivial syntax errors, in intermediate steps can derail the reasoning process, causing the agent to abandon a correct reasoning path and pursue an alternative one. This instability leads to inconsistent query generation and, consequently, variation in final results <ref type="bibr" target="#b30">[31]</ref>.</p><p>Deterministic behavior cannot be enforced reliably even by setting the model temperature to zero for agents. Moreover, even if a strictly deterministic setting was possible, it prevents the agent from exploring alternative reasoning paths, limiting its ability to discover solutions to previously unseen or complex tasks <ref type="bibr" target="#b35">[36]</ref>. Common Text-to-SQL strategies, such as candidate generation and query refinement, explicitly rely on controlled model variance to improve the likelihood of a correct SQL being generated. However, once new contexts are introduced into the reasoning workflow, subsequent steps can diverge unpredictably, even under deterministic settings.</p><p>Opportunity 3. Optimize the trade-off between tool complexity and trajectory length to minimize variance and enhance accuracy and robustness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Problem Statement</head><p>In this paper, we aim to to develop an agentic Text-to-SQL system that, given a natural language query 𝑞, a database 𝐷 and a set of tools U, produces an optimized reasoning trajectory</p><formula xml:id="formula_0">𝜏 (𝑞, 𝐷, 𝑢) = arg max 𝜏 ∈𝑇 (𝑞,𝐷,U ) Acc(𝜏)</formula><p>where 𝑇 (𝑞, 𝐷, 𝑢) denotes the space of executable reasoning trajectories composed of tool usages and intermediate reasoning steps, and Acc(𝜏) measures the accuracy of the generated SQL query.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHODOLOGY</head><p>Figure <ref type="figure" target="#fig_2">3</ref> depicts a full overview of the AgentSM framework, which consists of two agents with a trajectory-reading method and careful tool design to improve agent performance on Text-to-SQL tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">AgentSM Architecture</head><p>Agents. We introduce two main agents in our framework, the planner agent and the schema linking agent. Inspired by the ReAct framework, agents alternate between observation, reasoning, and action cycles. In our implementation, both agents are coding agents that take actions by writing Python code. Unlike prior methods, however <ref type="bibr" target="#b13">[14]</ref>, we do not restrict the functions or code that the agent can write to a limited, predefined action space. Instead, we provide a broad range of authorized libraries which the agent may use to help with data exploration and analysis, including Pandas and NumPy.</p><p>The planner agent serves as the system's core reasoning component. It constructs a high-level execution plan, iteratively issues SQL queries, performs reasoning and data wrangling, and applies query refinements before producing the final answer. Unlike multi-agent pipelines that delegate SQL generation to a dedicated agent <ref type="bibr" target="#b28">[29]</ref>, we intentionally integrate SQL generation within the planner's reasoning loop. This design choice ensures that the planner agent directly leverages the schema and data understanding gathered through exploration, avoiding the context loss commonly observed when control is handed off to specialized sub-agents. Moreover, by letting the planner generate and execute SQL, AgentSM avoids unnecessary inter-agent communication overhead and latency.</p><p>The schema linking agent is managed by the planner agent, and its role is to perform fine-grained data exploration for the task, when the planner agent requires deeper inspection of candidate tables. It has access to specialized tools including a vector search tool, which performs a similarity search on a precomputed index of schema information to narrow a list of tables and columns relevant for a given question. The schema linking agent operates within a small budget (e.g., 5 steps) to perform basic queries to interpret nested structures, probe candidate columns, and validate potential join paths, before returning its findings (i.e., mapping question tokens to schema elements) to the planner agent. Delegating deeper exploration to a separate agent allows the planner agent to not drift in its reasoning and keep only relevant information in context.</p><p>Although prior work has proposed complex multi-agent systems (e.g., introducing query fixers, decomposers, or evaluators <ref type="bibr" target="#b6">[7]</ref>), we deliberately keep AgentSM's architecture simple with two tightly coupled agents. This decision is guided by empirical findings <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b27">28]</ref> that excessive agent decomposition leads to communication overhead, fragmented memory, and increased behavioral variance. In Text-to-SQL tasks, contextual knowledge is often highly localized: understanding a schema's nested hierarchy requires maintaining persistent state over multiple exploration and reasoning cycles. Therefore, introducing additional agents would necessitate a shared memory <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b23">24]</ref> to prevent context fragmentation. However, shared memory introduces nontrivial challenges in retrieval efficiency, consistency management, and error propagation, which we leave as future work.</p><p>Tools. Each agent in AgentSM is equipped with a carefully selected set of tools designed to balance flexibility, robustness, and efficiency. The planner agent is provided with tools for trajectory retrieval, output validation, and result saving. The trajectory retrieval tool allows the planner to review reasoning traces from semantically similar questions before starting a new task, helping it avoid redundant exploration steps. The validation and saving tools ensure that the final SQL and results follow consistent formatting and can be correctly persisted. The schema linking agent, on the other hand, is equipped with tools specialized for fine-grained schema exploration, particularly the vector search tool that retrieves semantically relevant tables and columns from a precomputed index. Restricting this capability to the schema linking agent prevents redundant searches between the two agents.</p><p>Both agents share a set of general-purpose tools for local directory exploration and SQL execution on supported backends such as BigQuery, Snowflake, and SQLite. To improve execution robustness, we incorporate self-refinement into the SQL execution tools. When a query fails or returns an empty result, the SQL execution tools automatically attempt a correction based on the received feedback. This mechanism reduces the likelihood that a single execution error derails the reasoning trajectory.</p><p>In addition to these basic tools, we introduce composite tools, special types of tool that combine the logic of single-purpose tools that frequently co-occur in consecutive steps. These composite tools, described in Section 3.3, simplify planning, reduce unnecessary tool usage, and improve consistency across runs.</p><p>What is the highest number of answers received for a single Python 2 specific question on Stack Overflow, excluding any discussions that involve Python 3?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Synthesis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Store</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Raw Trajectories</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Example Qs</head><p>Ext. Knowledge DB schema Q syn : Synthetic Question Set</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>+ Step Classification + Semantic Annotations</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AGENTSM in Action</head><p>Planner Agent Schema Linking Agent</p><p>Table Retrieval Exploration SQL Relevant tables =============== posts_wiki.. (sim: 0.42) ----------Columns: creation_date edit_date ... SELECT * FROM posts LIMIT 10 Retrieve most similar question on same db Found similar question on db… # Question "What is …" ## Schema Analysis **Step 1** ```python ddl_content = read_file(...) ```I terative query generation WITH py3posts AS ( SELECT * ... ) Trajectory Reuse Execution tools </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Trajectory Synthesis and Retrieval</head><p>Synthetic question exploration. We make a key insight that data exploration is inherently reusable: once an agent has examined the schema, inspected columns, and issued exploratory queries, those interaction traces remain valuable for subsequent questions on the same database. Crucially, this property extends to synthetic questions, questions that can be formulated and executed offline that are deliberately designed to elicit data exploration. By enriching the trajectory store with such exploration-rich traces, AgentSM effectively reduces redundant probing and enhances agent performance on real queries.</p><p>Algorithm 1 outlines the process for generating the full synthetic question set 𝑄 syn . First, we ensure that each database present in our query distribution is covered by at least one synthetic question (Lines 2-4). We allocate additional synthetic questions across databases proportionally to the distribution these databases on the query set, up to a fixed total question budget 𝑛 (Line 6). This allocation strategy naturally emphasizes large, complex schemas, where additional exploration traces are most beneficial (Lines 7-11).</p><p>For each selected schema 𝑆, we prompt an LLM with the schema, external knowledge file, and a set of existing questions to generate diverse candidate questions that involves different operators, tables, and columns. The number of questions generated per schema follows the same distribution as the full query set. The prompts used to generate candidate questions can be found in the repository 1 .</p><p>Each synthetic question 𝑞 ∈ 𝑄 syn is then consumed by an agent equipped with SQL and file-reading tools only to produce a trajectory 𝑇 (𝑞), which is stored for reuse. Although the answers to these synthetic questions are not evaluated, the resulting trajectories provide dense and diverse exploration traces. When the agent encounters new queries in future, these traces provide rich context, allowing it to leverage past exploration rather than repeating it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step classification.</head><p>Agent workflows are non-linear, consisting of sequence of distinct states that the agent enters and exits during execution. In practice, a Text-to-SQL agent alternates among three primary phases depicted in Figure <ref type="figure" target="#fig_0">1:</ref> (1) exploring the database to understand the data, ( <ref type="formula" target="#formula_3">2</ref> queries, and (3) validating results or producing an answer. Similar stage decompositions have been observed in prior work <ref type="bibr" target="#b16">[17]</ref>.</p><p>Grounding trajectory reuse in these phases is essential: exploration steps are often generalizable across questions, execution steps encode database-specific reasoning, and validation steps highlight patterns of error correction and output formatting. Step classification helps avoid presenting the agent with a noisy sequence of mixed tool invocations and rendering reuse ineffective.</p><p>To classify steps, we apply a lightweight text-pattern matching using regular expressions rather than relying on step position in the trajectory. While exploration often occurs early, agents may re-enter this exploration phase later when encountering execution errors or missing context. We therefore identify intent based on tool usage and query patterns. For example, file listing and reading operations are matched as exploration, while complex SQL queries beginning with 'WITH' (common table expressions) are almost always recognized as main query execution. We also explored LLM-based step classification and observed comparable accuracy but substantially higher cost and latency.</p><p>Each classified step is parsed and saved in a separate trajectory file. During trajectory reading, the agent selectively loads only the trajectory segment corresponding to the relevant phase for reference. For example, during data exploration phase, the agent retrieves and reads the relevant exploration trajectories that include basic schema analysis and external knowledge reading actions, enabling efficient reuse of prior context without redundant steps.</p><p>Trajectory structure. Agent trajectories are typically long, complex sequences that interleave text, code, reasoning traces, and execution outputs. Reading raw trajectories introduces significant noise and increases the lost-in-the-middle effect, where valuable information is buried amid verbose agent debugging logs and intermediate outputs.</p><p>To help the agent extract useful knowledge more effectively, we impose a structured representation on each trajectory. In particular, we store agent trajectories in markdown format, with semantically meaningful headers automatically generated by a lightweight LLM (e.g., Claude Haiku 4.5). This structure segments the trajectory into interpretable sections, improving both retrieval and readability.</p><p>As shown in Table <ref type="table" target="#tab_0">1</ref>, structured trajectories, whether represented in markdown or JSON, yield substantial improvements in both execution accuracy and average step reduction compared to unstructured logs, based on a sample of 20 benchmark questions. We adopt markdown as the format for its consistency with external knowledge files and human readability. The implementation details of step classification and trajectory structure generation can be found in the repository<ref type="foot" target="#foot_0">foot_0</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory selection.</head><p>Having established a structured representation for storing agent trajectories, we next describe how these stored trajectories are retrieved and reused during inference. Among the synthetic questions 𝑄 𝑠𝑦𝑛 for which trajectories are synthesized and saved, we first restrict retrieval to those associated with the same database as the given question 𝑞. This filtering narrows the search space to relevant trajectories:</p><formula xml:id="formula_1">𝑄 𝑑 = {𝑞 ′ ∈ 𝑄 syn | db(𝑞 ′ ) = db(𝑞)} (<label>1</label></formula><formula xml:id="formula_2">)</formula><p>From this filtered subset 𝑄 𝑑 , we then select the most relevant trajectory 𝑇 based on its associated question 𝑞 ′ that has the highest semantic similarity to the given question 𝑞:</p><formula xml:id="formula_3">𝑞 * = arg max 𝑞 ′ ∈𝑄 𝑑 sim(𝑞 ′ , 𝑞)<label>(2)</label></formula><formula xml:id="formula_4">𝑇 = traj(𝑞 * ) (<label>3</label></formula><formula xml:id="formula_5">)</formula><p>This strategy is effective for data exploration reuse, as semantically similar questions tend to probe the same set of tables during their initial exploration steps. The agent naturally prioritizes tables with their schema semantically similar to the question before performing deeper searches. Consequently, selecting trajectories based on question similarity leads to effective trajectory reuse. Further improvements in retrieval quality could be achieved through finer-grained alignment between questions and stored trajectories. For example, schema-level retrieval could identify which tables are relevant to a question and restrict trajectory retrieval to those involving the same tables. Alternatively, trajectory-level alignment could leverage the agent's initial plan to retrieve similar prior executions and adjust the reasoning strategy before execution. We leave these directions to future work, as fine-grained retrieval risks missing relevant context essential for accurate reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Composite Tools</head><p>Composite tool construction. Across trajectories, we observe that certain tool pairs consistently co-occur in sequence. Figure <ref type="figure" target="#fig_5">4b</ref> illustrates how the get_ext → get_ddl pattern frequently appears when the agent needs to access an external knowledge file and the database schema at the beginning of the exploration phase. As such, these tools can be combined into a single composite tool local_exploration.</p><p>As shown in Figure <ref type="figure" target="#fig_5">4a</ref>, agents rarely chain multiple tool invocations within a single reasoning step, instead issuing one call per step, even when such sequences are highly regular and deterministic. This pattern leads to inefficiency: the agent spends valuable steps on executing repetitive exploration routines rather than focusing on higher-level reasoning and problem solving.  To mitigate this overhead, we introduce composite tools, which combine commonly co-occurring tool sequences into single higherlevel operations. Formally, we construct a composite tool:</p><formula xml:id="formula_6">𝐶 = ⟨𝑡 1 , 𝑡 2 , . . . , 𝑡 𝑘 ⟩ if 𝑓 (𝑡 1 , 𝑡 2 , . . . , 𝑡 𝑘 ) 𝑁 ≥ 𝜏</formula><p>where 𝑡 𝑖 ∈ T , T is the tool set, 𝑓 (•) counts the trajectories containing the subsequence (𝑡 1 , 𝑡 2 , . . . , 𝑡 𝑘 ), 𝑁 is the total number of trajectories, and 𝜏 is a chosen support threshold.</p><p>In practice, AgentSM follows several heuristics to construct effective composite tools while preserving modularity. First, tools are combined only when they co-occur within the same reasoning phase (e.g., data exploration or validation), ensuring that composite tools remain semantically coherent. Second, tools that appear across multiple phases are excluded from composition to preserve their agility for reuse in different contexts. Finally, to avoid excessive aggregation, we constrain the maximum size of composite tools, preventing all tools collapse into a single monolithic operator.</p><p>Each composite tool is then assigned a descriptive name and natural language summary by an LLM, which the agent can reference during prompting. At inference time, the agent uses these composite tools directly, effectively replacing repeated multi-step exploration with single high-level actions and freeing more trajectory budget for reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EVALUATION</head><p>In this section, we evaluate the effectiveness of AgentSM on Spider 2, a widely recognized benchmark for agentic Text-to-SQL systems. Our evaluation is designed to answer the following key questions: (1) How do trajectory synthesis and retrieval influence the agent's efficiency and accuracy? (2) How does the optimized tool design improve agent's efficiency and accuracy?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Evaluation Setup</head><p>Dataset. Spider 2.0 <ref type="bibr" target="#b13">[14]</ref> is a large-scale benchmark of 547 Text-to-SQL workflow problems that emulate the challenges of enterprisescale data analysis. Unlike traditional Text-to-SQL benchmarks, Spider 2.0 requires solving tasks that involve extremely long contexts, nested schemas, and diverse SQL dialects. The databases in Spider 2.0 often span thousands of columns and are deployed in production systems such as BigQuery and Snowflake. This makes Spider 2.0 a natural workload for agentic approaches, where agents must iteratively plan and issue queries to reach a final answer. We select this benchmark to evaluate our method, as our framework is specifically designed to operate in such complex environments that reward iterative reasoning and tool use.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics.</head><p>We measure execution accuracy as the percentage of execution output matches to the gold output using the evaluation function provided by the authors of the original benchmark. We adopt this metric as per the original benchmark. We report accuracy for BigQuery, Snowflake, and SQLite questions, along with an overall result.</p><p>We also report the average agent trajectory length in both reasoning steps, as well as the number of input and output tokens. We also report average end-to-end latency for a single execution.</p><p>Experimental setup. We evaluate our method using the Claude 3-7 <ref type="bibr" target="#b0">[1]</ref> and Claude 4 Sonnet [2] models. Several agent frameworks have risen in popularity, including LangChain <ref type="bibr" target="#b11">[12]</ref>, smolagents <ref type="bibr" target="#b7">[8]</ref>, etc. While our approach is framework-agnostic, for evaluation we implement it using smolagents as the foundation of our agentic Text-to-SQL system.</p><p>For all evaluated systems, we employ the MiniLM-L6-v2 model <ref type="bibr" target="#b22">[23]</ref> from SentenceTransformers for generating embeddings and use the FAISS <ref type="bibr" target="#b9">[10]</ref> library for vector similarity search. We run ArcticSQL-7B with vLLM <ref type="bibr" target="#b10">[11]</ref> on a cluster of 8×A100 80GB GPUs.</p><p>Baselines. For our main experiments on Spider 2.0 Lite, we compare AgentSM against two baselines: SpiderAgent <ref type="bibr" target="#b13">[14]</ref> and a standard coding agent (CodingAgent) implemented using the smolagents <ref type="bibr" target="#b7">[8]</ref> framework equipped with basic SQL execution tools described in Section 2. We evaluate both baselines with Claude 3-7 <ref type="bibr" target="#b0">[1]</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Table <ref type="table" target="#tab_1">2</ref> contains the execution accuracy for each method on the full Spider 2.0 Lite benchmark with 547 questions. We report execution accuracy for BigQuery instances, Snowflake instances, and SQLite instances along with overall accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Accuracy.</head><p>AgentSM substantially outperforms the prior agentic baseline SpiderAgent <ref type="bibr" target="#b13">[14]</ref>, achieving higher accuracies across each SQL dialect and an overall 14.1% improvement in execution accuracy. AgentSM also outperforms a standard coding agent implemented using the same agent framework <ref type="bibr" target="#b7">[8]</ref> and model <ref type="bibr" target="#b1">[2]</ref> by over 20%. Based on our evaluation, AgentSM would rank No. 1 on the Spider 2.0 Lite leaderboard, with an overall accuracy of 44.8% at the time of paper submission. Notably, we achieve this result without using a powerful reasoning model such as Qwen3 <ref type="bibr" target="#b2">[3]</ref> or OpenAI's o3 <ref type="bibr" target="#b18">[19]</ref>, which other top systems rely on. Across all SQL dialects, the questions on the Snowflake database are the most challenging for the agents. The platform has more questions on databases with larger and nested schemas. For this platform alone, our method performs better with an older model Claude 3-7 Sonnet than Claude-4 Sonnet.</p><p>Efficiency. To understand how AgentSM improves agent efficiency, we revisit the standard agentic workflow (i.e., CodingAgent) and analyze how our method reshapes the agent's progression through three key stages: database exploration, query execution, and answer validation. We randomly sample 75 questions from the Spider 2.0 Lite dataset and classify each step in the agent's trajectory as one of the three stages, based on the reasoning trace and executed queries. We aggregate these stage annotations across instances to measure the proportion of each trajectory devoted to exploration versus execution.</p><p>As shown in Figure <ref type="figure" target="#fig_7">5</ref>, AgentSM transitions from exploration to execution significantly earlier, completing tasks with fewer overall steps. In contrast, a standard coding agent not utilizing synthesized trajectories repeatedly issues exploratory queries and spends most of its steps analyzing schemas rather than composing or validating SQL queries. By leveraging structured semantic memory, AgentSM alleviates redundant data exploration, maintains consistent reasoning efficiency, and scales gracefully to larger databases and more complex questions.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation Studies</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Effectiveness of trajectory reading and composite tools.</head><p>We conduct ablation studies on two key components of AgentSM, the synthesized trajectory and the composite tools, to report their respective effects on accuracy and efficiency. Table <ref type="table">3</ref> reports the average trajectory length and accuracy for a sample of 75 examples from Spider 2.0 Lite with and without trajectory reading. We observe that enabling trajectory reading reduces the average trajectory length of the agent by 25% while improving accuracy by 35%. This is consistent with the results reported in Section 4.2.</p><p>Composite tools have a similarly pronounced impact on agent trajectory length and accuracy. Without composite tools, the agent requires the largest number of steps across all sample instances, yet achieving the lowest overall execution accuracy.</p><p>The observed accuracy gains naturally stem from the reduction in average trajectory length, which can be attributed to two factors: (1) longer trajectories often correspond to inherently more complex questions, and (2) as trajectory length increases, the agent becomes more likely to reach the maximum step threshold before solving the question. By reducing the number of steps spent on data exploration, AgentSM effectively mitigates the issues, allowing the agent to allocate more steps toward reasoning and to iteratively refine its final queries before reaching the maximum steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Impact of gold tables.</head><p>We further evaluate AgentSM on Spider 2.0 Lite with gold tables (as provided by Spider 2.0).</p><p>Using the gold tables and columns, our method achieves 55.3% execution Method Execution Accuracy Steps Avg. Length Latency EX (%) Δ EX Total Avg Δ Steps Input Toks Output Toks Δ Input Time (s) Δ Time No trajectory reading 17.3 -34.7 1527 20.36 +4.37 360K 5.6K +8K 348.6 +96.2 No composite tools 16.2 -35.8 1557 20.76 +4.77 398K 5.8K +46K 523.7 +271.3 Full method 52.0 -1167 15.99 -352K 5.2K -252.4 -Table <ref type="table">3</ref>: Effects of synthesized trajectory and composite tools on execution accuracy, step count, token usage, and latency over 75 sampled questions. Deltas are computed relative to the full method. Removing either component increases token usage and latency while sharply decreasing execution accuracy.</p><p>accuracy on the question subset (listed in Table <ref type="table" target="#tab_1">2</ref>). The results indicate a substantial improvement in execution accuracy compared to the base configuration of our method. This highlights that schema linking is still a significant hurdle in these complex database scenarios, as agents often struggle to identify the right tables and columns when data and the given question are ambiguous.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Error Analysis</head><p>We provide a detailed error analysis on the full Spider 2.0 Lite evaluation to better understand the remaining failure cases of AgentSM. Among the 245 incorrect instances, 34% occur on BigQuery, 22% on SQLite, and 44% on Snowflake, which shows the highest relative error rate. Within Snowflake, 5% of failures stem from exceeding the step budget, 30% from schema-linking errors caused by nested schemas, and the remainder from logical or dialect-specific syntax errors during query generation.</p><p>We further examine how structured semantic memory influences the agent's success rate. When relevant trajectories are available, AgentSM can reuse past reasoning steps to provide useful context for new queries. This is particularly effective for schema-linking, where prior trajectories often highlight useful table and join patterns, helping the agent quickly identify the relevant portions of a large schema. In contrast, the benefit is limited for queries that demand complex mathematical operations or intricate CTE reasoning. These tasks typically require deeper reasoning or problem decomposition that cannot be easily inferred from previous trajectories.</p><p>Finally, we observe that AgentSM's performance varies across domains. Commonly used databases (e.g., city, weather, census) achieve 60-78% accuracy, whereas heterogeneous databases (e.g., github_repos, idc) lag behind at 14-40%. These results suggest that AgentSM excels in domains with consistent schema patterns and recurring reasoning structures, but remains challenged by highly domain-specialized data sources.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">RELATED WORK</head><p>Text-to-SQL. Recent Text-to-SQL work has spanned supervised fine-tuning, prompt engineering, and reinforcement learning based solutions. Supervised systems such as DIN-SQL <ref type="bibr" target="#b21">[22]</ref> and MAC-SQL <ref type="bibr" target="#b28">[29]</ref> utilize a pipeline with structured decoding, schema linking, and decomposition components to generate SQL queries. Prompting based methods <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b20">21]</ref> leverage LLMs in few-shot or zero-shot settings, often augmented with modular pipelines that include candidate generation, majority voting, and execution verification. More recently, reinforcement techniques using group relative policy optimization (GRPO) engineer rewards to improve model performance on Text-to-SQL tasks <ref type="bibr" target="#b4">[5]</ref>. Multi-agent systems, such as Agentic-Data, explore utilizing a combination of planning, exploration, and validation agents to iteratively work towards an answer <ref type="bibr" target="#b25">[26]</ref>. These techniques have steadily improved overall performance on the Spider <ref type="bibr" target="#b34">[35]</ref> and BIRD <ref type="bibr" target="#b15">[16]</ref> benchmarks, however they often assume clean, well-aligned schemas and struggle with ambiguity, nested queries, and relational complexity found in enterprise settings.</p><p>Coding Agents. Recent work on coding agents explore how LLMs can use external tools, such as web-search and code, to solve tasks through iterative reasoning. Approaches like ReACT <ref type="bibr" target="#b31">[32]</ref> and Reflexion <ref type="bibr" target="#b24">[25]</ref> highlight the effectiveness of planning, execution, and feedback stages for complex tasks. In line with these approaches, agentic Text-to-SQL systems decompose query generation into steps of interleaved tool executions and reasoning, allowing models to inspect schemas, validate partial queries, and iteratively refine the final answer. SpiderAgent <ref type="bibr" target="#b13">[14]</ref> formalizes this trend as an initial solution for Spider2.0. Recent works <ref type="bibr" target="#b17">[18]</ref> have also extended this broad strategy with memory-guided refinement. While effective, most of these solutions rely on a fresh state for the agent or maintain some intra-task memory, unlike our solution which leverages inter-task memory to re-use database exploration reasoning across examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Memory.</head><p>Research on agentic memory can be broadly categorized into action-oriented memory, focused on persisting agent state, and knowledge-oriented memory, focused on persisting the knowledge agents gain from interaction. The most basic approach treats the language model's context window as a scratchpad-like working memory, where agents maintain notes. MemGPT <ref type="bibr" target="#b19">[20]</ref> addresses the challenge of limited context windows by implementing a memory hierarchy that mimics operating system memory management, effectively bridging the previous two approaches. More recently, Mem0 <ref type="bibr" target="#b5">[6]</ref> utilized graph representations of memory, maintaining memory with standard graph knowledge base structure: a collection of nodes (entities) and edges (relationships between entities). These forms of memory are limited in the amount of structure they can represent in their information for the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>In this paper, we introduce AgentSM, a framework that enables agents to reuse reasoning steps across related Text-to-SQL tasks within the same database. By exploiting the inherent repetition in data exploration, AgentSM synthesizes, stores and retrieves structured trajectories to substantially reduce redundant exploration and improve execution efficiency. Moreover, our solution, equipped with semantic memory, enhances scalability, allowing agents to handle larger schemas and more complex queries. As a result, AgentSM delivers significant gains in efficiency across agent turns, token usage, and latency. On the Spider 2.0 Lite benchmark, AgentSM achieves an execution accuracy of 44.8%.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: The standard workflow for Text-to-SQL agents is a series of steps alternating between data exploration, query generation, and answer validation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Distribution of the first seven steps in agent trajectories on the firebase from Spider 2<ref type="bibr" target="#b13">[14]</ref>, reporting the percentage of instances in which each specific action is taken.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: An overview of the AgentSM architecture that leverages trajectories in structured semantic memory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Algorithm 1 : 10 𝑞</head><label>110</label><figDesc>1 https://tinyurl.com/xcey6h33 Synthetic Question Generation. GenQ(𝑆, 𝐾, 𝑄) generates a new question using an LLM over the database schema 𝑆, external knowledge 𝐾, and existing questions 𝑄 for 𝑆 ∈ D. Allocation(𝑆, 𝑛, 𝑝) returns an integer budget 𝑘 for the max number of questions on 𝑆 based on the query distribution 𝑝 (Q) and the remaining global budget 𝑛. Input: Databases D, target count 𝑛, query distribution 𝑝 (Q) Output: Synthetic question set 𝑄 syn 1 𝑄 syn ← ∅; 2 foreach schema 𝑆 ∈ D do 3 𝑞 ← GenQ 𝑆, 𝐾, 𝑄 ; 4 𝑄 syn ← 𝑄 syn ∪ {𝑞 }; 5 while |𝑄 syn | &lt; 𝑛 do 6 𝑘 ← Allocation 𝑆, 𝑛, 𝑝 (Q) ; 7 for 𝑖 ← 1 to 𝑘 do 8 if |𝑄 syn | = 𝑛 then 9 break ← GenQ 𝑆, 𝐾, 𝑄 ; 11 𝑄 syn ← 𝑄 syn ∪ {𝑞 }; 12 return 𝑄 syn ;</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>{tables: …, columns:...} get_ext + get_ddl ⇒ local_exploration (new tool) (b) Composite tool formation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Analysis of tool usage and composite tool construction. (a) shows that most steps use zero or one tool, motivating composition. (b) illustrates how frequently co-occurring tools are merged into a higher-level composite tool.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>3 https://spider2-sql.github.io/</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Trajectory composition: median steps split into exploration vs. execution and validation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>) formulating and executing candidate Average trajectory length (in steps) and execution accuracy on a sample of Spider 2.0 Lite questions, under different trajectory formats. Reading raw, unstructured trajectories yield no improvement compared to without using any trajectory. In contrast, structured representations, in either Markdown or JSON format, significantly reduce the average number of steps and improve the overall execution accuracy.</figDesc><table><row><cell>Method</cell><cell cols="2">Avg Steps Accuracy (%)</cell></row><row><cell>No trajectory</cell><cell>22.62</cell><cell>25</cell></row><row><cell>Naive</cell><cell>22.62</cell><cell>25</cell></row><row><cell>Markdown</cell><cell>16.50</cell><cell>50</cell></row><row><cell>JSON</cell><cell>15.12</cell><cell>50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>and Claude 4 Sonnet [2] as the underlying LLMs. The performance of Comparison of execution accuracy, step/token length, and latency for methods on the Spider 2.0 Lite dataset. * This result is quoted directly from the original SpiderAgent paper.</figDesc><table><row><cell>Method</cell><cell cols="7">EX (%) BigQuery Snowflake SQLite Overall Steps Input Toks Output Toks Avg. Length</cell><cell>Avg Latency (s)</cell></row><row><cell>SpiderAgent (claude-3-7-sonnet)</cell><cell>37.6</cell><cell>12.6</cell><cell>40.7</cell><cell>28.7</cell><cell>18.9</cell><cell>200K</cell><cell>4K</cell><cell>363.2</cell></row><row><cell>SpiderAgent (claude-4-sonnet)</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>27.8  *</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>CodingAgent (claude-4-sonnet)</cell><cell>27.3</cell><cell>11.1</cell><cell>42.2</cell><cell>24.7</cell><cell>18.1</cell><cell>200K</cell><cell>4K</cell><cell>325.5</cell></row><row><cell>AgentSM (claude-3-7-sonnet)</cell><cell>40.5</cell><cell>33.3</cell><cell>42.2</cell><cell>38.4</cell><cell>16.8</cell><cell>299K</cell><cell>5K</cell><cell>226.4</cell></row><row><cell>AgentSM (claude-4-sonnet)</cell><cell>52.2</cell><cell>35.0</cell><cell>51.9</cell><cell>44.8</cell><cell>16.4</cell><cell>300K</cell><cell>5K</cell><cell>247.1</cell></row><row><cell>AgentSM (claude-4-sonnet, gold tables)</cell><cell>62.0</cell><cell>44.0</cell><cell>79.2</cell><cell>57.6</cell><cell>15.8</cell><cell>268K</cell><cell>5K</cell><cell>194.3</cell></row><row><cell cols="3">other state-of-the-art systems is available on the official Spider 2.0</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>leaderboard 3 .</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://tinyurl.com/492ymhcn</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/claude" />
+		<title level="m">Claude 3.7 Sonnet</title>
+		<imprint>
+			<publisher>Large Language Model</publisher>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/claude" />
+		<title level="m">Claude 4 Sonnet</title>
+		<imprint>
+			<publisher>Large Language Model</publisher>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06749</idno>
+		<ptr target="https://arxiv.org/abs/2503.06749" />
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Reflective Multi-Agent Collaboration based on Large Language Models</title>
+		<author>
+			<persName><forename type="first">Xiaohe</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2024/file/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="138595" to="138631" />
+		</imprint>
+	</monogr>
+	<note>fa54b0edce5eef0bb07654e8ee800cb4-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Text-to-SQL with Reinforcement Learning via Execution-Guided Reward Modeling</title>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weidong</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.12345</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19413[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2504.19413" />
+		<title level="m">Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Minghang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Ramachandran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lanxiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anupam</forename><surname>Datta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.00675[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2502.00675" />
+		<title level="m">ReFoRCE: A Text-to-SQL Agent with Self-Refinement, Consensus Enforcement, and Column Exploration</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugging</forename><surname>Face</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/smolagents" />
+		<title level="m">Lightweight framework for building language model agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>SmolAgents</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mourad</forename><surname>Gridach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Nanavati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khaldoun</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zine</forename><forename type="middle">El</forename><surname>Abidine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lenon</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Mack</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.08979[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2503.08979" />
+		<title level="m">Agentic AI for Scientific Discovery: A Survey of Progress, Challenges, and Future Directions</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Billion-Scale Similarity Search with FAISS</title>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthijs</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hervé</forename><surname>Jégou</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TBDATA.2019.2921572</idno>
+		<ptr target="https://doi.org/10.1109/TBDATA.2019.2921572" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Transactions on Big Data</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Efficient Memory Management for Large Language Model Serving with PagedAttention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGOPS 29th Symposium on Operating Systems Principles</title>
+		<meeting>the ACM SIGOPS 29th Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">LangChain</title>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://github.com/langchain-ai/langchain" />
+	</analytic>
+	<monogr>
+		<title level="m">Large Language Model application framework</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">MCS-SQL: Leveraging Multiple Prompts and Multiple-Choice Selection For Text-to-SQL Generation</title>
+		<author>
+			<persName><forename type="first">Dongjun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Choongwon</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehyuk</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heesoo</forename><surname>Park</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.07467[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2405.07467" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoqing</forename><surname>Suo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.07763</idno>
+		<title level="m">Spider 2.0: Evaluating language models on real-world enterprise text-to-sql workflows</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinmei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tieying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianjun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiping</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.14778/3749646.3749723</idno>
+		<ptr target="https://doi.org/10.14778/3749646.3749723" />
+		<title level="m">OmniSQL: Synthesizing High-Quality Text-to-SQL Data at Scale. Proc. VLDB Endow</title>
+		<imprint>
+			<date type="published" when="2025-09">2025. Sept. 2025</date>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="page" from="4695" to="4709" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Can llm already serve as a database interface? a big bench for large-scale database grounded text-to-sqls</title>
+		<author>
+			<persName><forename type="first">Jinyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiying</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Huo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soujanya</forename><surname>Ponnapalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreya</forename><surname>Shankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sepanta</forename><surname>Zeighami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samion</forename><surname>Suwito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natacha</forename><surname>Crooks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><forename type="middle">G</forename><surname>Parameswaran</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.00997[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2509.00997" />
+		<title level="m">Supporting Our AI Overlords: Redesigning Data Systems to be Agent-First</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16055</idno>
+		<ptr target="https://arxiv.org/abs/2402.16055" />
+		<title level="m">CodeAct: LLM-Based Autonomous Programming via Tool-Use and Reflection</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://platform.openai.com/docs/models" />
+		<title level="m">OpenAI o3 Reasoning Model</title>
+		<imprint>
+			<publisher>Large Language Model</publisher>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08560[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2310.08560" />
+		<title level="m">MemGPT: Towards LLMs as Operating Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">CHASE-SQL: Multi-Path Reasoning and Preference Optimized Candidate Selection in Text-to-SQL</title>
+		<author>
+			<persName><forename type="first">Mohammadreza</forename><surname>Pourreza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeounoh</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayan</forename><surname>Talaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarlok</forename><surname>Gaurav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fatma</forename><surname>Saberi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">O</forename><surname>Ozcan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Arik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.01943[cs.LG</idno>
+		<ptr target="https://arxiv.org/abs/2410.01943" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">DIN-SQL: Decomposed In-Context Learning of Text-to-SQL with Self-Correction</title>
+		<author>
+			<persName><forename type="first">Mohammadreza</forename><surname>Pourreza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davood</forename><surname>Rafiei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11015[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2304.11015" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</title>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+		<ptr target="https://www.sbert.net/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Rezazadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ange</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuying</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Bao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.18279[cs.MA</idno>
+		<ptr target="https://arxiv.org/abs/2505.18279" />
+		<title level="m">Collaborative Memory: Multi-User Memory Sharing in LLM Agents with Dynamic Access Control</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language Agents with Verbal Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.11366" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS) Workshop on LLMs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihui</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingzhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.05002[cs.DB</idno>
+		<ptr target="https://arxiv.org/abs/2508.05002" />
+		<title level="m">AgenticData: An Agentic Data Analytics System for Heterogeneous Data</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">CHESS: Contextual Harnessing for Efficient SQL Synthesis</title>
+		<author>
+			<persName><forename type="first">Shayan</forename><surname>Talaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadreza</forename><surname>Pourreza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Chen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Saberi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.16755[cs.LG</idno>
+		<ptr target="https://arxiv.org/abs/2405.16755" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Khanh-Tung</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dung</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh-Duong</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc-Viet</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Barry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hoang</forename><forename type="middle">D</forename><surname>Sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nguyen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.06322[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2501.06322" />
+		<title level="m">Multi-Agent Collaboration Mechanisms: A Survey of LLMs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linzheng</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian-Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11242[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2312.11242" />
+		<title level="m">MAC-SQL: A Multi-Agent Collaborative Framework for Text-to-SQL</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.18596[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2503.18596" />
+		<title level="m">LinkAlign: Scalable Schema Linking for Real-World Large-Scale Multi-Database Text-to-SQL</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Junde</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueming</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.04644[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2502.04644" />
+		<title level="m">Agentic Reasoning: A Streamlined Framework for Enhancing LLM Reasoning with Agentic Tools</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2210.03629" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2210.03629" />
+		<title level="m">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoheng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Borchmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.20315[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/2505.20315" />
+		<title level="m">Arctic-Text2SQL-R1: Simple Rewards, Strong Reasoning in Text-to-SQL</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irene</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingning</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanelle</forename><surname>Roman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.08887[cs.CL</idno>
+		<ptr target="https://arxiv.org/abs/1809.08887" />
+		<title level="m">Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Semantic Parsing and Text-to-SQL Task</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bingxi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Geng Foo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Theobalt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hossein</forename><surname>Rahmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.17692[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2508.17692" />
+		<title level="m">LLM-based Agentic Reasoning Frameworks: A Survey from Methods to Scenarios</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Large language models are improving exponentially</title>
+		<author>
+			<persName><forename type="first">Glenn</forename><surname>Zorpette</surname></persName>
+		</author>
+		<ptr target="https://spectrum.ieee.org/large-language-model-performance" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

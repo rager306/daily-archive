@@ -1,0 +1,1538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">GEOGRAMBENCH: BENCHMARKING THE GEOMETRIC PROGRAM REASONING IN MODERN LLMS</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-10">10 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shixian</forename><surname>Luo</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zezhou</forename><surname>Zhu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Yuan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yuncheng</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Lianlei</forename><surname>Shan</surname></persName>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Yong</forename><surname>Wu</surname></persName>
+							<email>wuyong5@lixiang.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Li</forename><surname>Auto</surname></persName>
+						</author>
+						<title level="a" type="main">GEOGRAMBENCH: BENCHMARKING THE GEOMETRIC PROGRAM REASONING IN MODERN LLMS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-10">10 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">49FDC61C1A1AA1F732FD08EA955AB967</idno>
+					<idno type="arXiv">arXiv:2505.17653v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Geometric spatial reasoning forms the foundation of many applications in artificial intelligence, yet the ability of large language models (LLMs) to operate over geometric spatial information expressed in procedural code remains underexplored. In this paper, we address this gap by formalizing the Program-to-Geometry task, which challenges models to translate programmatic drawing code into accurate and abstract geometric reasoning. To evaluate this capability, we present GeoGramBench, a benchmark of 500 carefully refined problems organized by a tailored three-level taxonomy that considers geometric complexity rather than traditional mathematical reasoning complexity. Our comprehensive evaluation of 19 frontier LLMs reveals consistent and pronounced deficiencies: even the most advanced models achieve less than 50% accuracy at the highest abstraction level. By systematically analyzing model behaviors, our study exposes key limitations in program-driven spatial reasoning and positions GeoGramBench as an important resource for benchmarking and advancing behavioral research in symbolic-to-spatial geometric reasoning.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Spatial reasoning is fundamental to both human cognition and artificial intelligence, supporting applications ranging from robotics and autonomous navigation to automated design <ref type="bibr" target="#b4">(Davis et al., 2011)</ref>. With the rise of large language models (LLMs), interest has grown in evaluating their ability to interpret geometric transformations and spatial relations in complex environments <ref type="bibr">(Yang et al., 2024b;</ref><ref type="bibr" target="#b28">Tang et al., 2025)</ref>.</p><p>Mathematical geometric spatial reasoning is a specialized subdomain of spatial reasoning, requiring models to comprehend intricate geometric relationships and perform deep spatial reasoning. Researchers have recently developed multiple benchmarks including Mathverse <ref type="bibr">(Zhang et al., 2024b)</ref>, GeoSense <ref type="bibr" target="#b34">(Xu et al., 2025)</ref>, and Euclid <ref type="bibr">(Zhang et al., 2024a)</ref> to assess LLMs' capabilities in visual geometry comprehension. Another emerging direction leverages procedural geometric code, such as Asymptote code, as a symbolic and structured interface for expressing geometry problems and probing spatial reasoning. While some existing benchmarks (e.g., AIME24 (MAA, 2025), MATH-500 <ref type="bibr">(Zhang et al., 2024b)</ref>) include subsets containing Asymptote code, there is a lack of systematic, dedicated benchmarks specifically designed to evaluate LLMs' ability to perform program-driven spatial geometric reasoning. In this work, we formalize this unique setting as the Program-to-Geometry task, referring to the translation and abstraction process from procedural code to internal spatial representations.</p><p>Preliminary studies <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref> have shown that current LLMs struggle to bridge procedural geometry code to spatial reasoning. We expanded these investigations on a broader range of models further corroborate these observations, confirming this pronounced deficiency. For example, as shown in Figure <ref type="figure" target="#fig_2">1</ref>, advanced models such as <ref type="bibr">DeepSeek-R1 (Guo et al., 2025)</ref> suffer substantial drops in accuracy: 23.5% in AIME24 and 10.9% in MATH-500, when transitioning from text-only problems Problem: The area of ∆ABC is 6 square centimeters. 𝐴𝐵 ∥ 𝐷𝐸. 𝐵𝐷 = 4𝐵𝐶. What is the number of square centimeters in the area of ∆𝐶𝐷𝐸 ? <ref type="bibr">[asy]</ref> draw((-.3,-3)--(.1,1)--(-1,0) \ --(3,0)--cycle); label("$A$",(.1,1),N); label("$B$",(-1,0),W); label("$C$",(0,0),NE); label("$D$",(3,0),E); label("$E$",(-.3,-3),S); [/asy] Answer: 54 visualize (a) Example of a problem from PT C in MATH-500.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORKS</head><p>Visual Geometric Perception To study visual geometric reasoning, several benchmarks such as Euclid <ref type="bibr">(Zhang et al., 2024a)</ref>, MM-Math <ref type="bibr" target="#b27">(Sun et al., 2024)</ref>, GeoSense <ref type="bibr" target="#b34">(Xu et al., 2025)</ref>, Math-Verse <ref type="bibr">(Zhang et al., 2024b)</ref>, and MathVista <ref type="bibr" target="#b19">(Lu et al., 2023)</ref> have been introduced, each incorporating visual geometric content. These datasets measure large multi-modal models' comprehension of visual geometric concepts and their handling of mathematical problems with visual components. Their focus is mainly on diagram interpretation rather than procedural geometric code understanding, which represents a different but equally important aspect of geometric spatial reasoning.</p><p>Mathematical Reasoning Benchmarks A diverse array of benchmarks has been developed to evaluate the mathematical reasoning abilities of large language models (LLMs). Datasets such as GSM8K <ref type="bibr" target="#b3">(Cobbe et al., 2021)</ref>, <ref type="bibr">MATH-500 (Lightman et al., 2023)</ref>, OlympiadBench <ref type="bibr" target="#b7">(He et al., 2024)</ref>, Minerva-MATH <ref type="bibr" target="#b13">(Lewkowycz et al., 2022)</ref>, CollegeMath <ref type="bibr" target="#b29">(Tang et al., 2024)</ref>, MMLU-STEM <ref type="bibr" target="#b8">(Hendrycks et al., 2020)</ref>, and AIME24 (MAA, 2025) primarily focus on algebraic, arithmetic, and word-problem reasoning. Many of these benchmarks target complex multi-step solutions, ranging from advanced high school mathematics to the level of international mathematical olympiads.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Symbolic Graphics Perception and Generation</head><p>A growing line of work targets the symbolic understanding and manipulation of SVG code for LLMs. Benchmarks such as SGP-Bench <ref type="bibr" target="#b25">(Qiu et al., 2024)</ref>, SVG Taxonomy <ref type="bibr" target="#b35">(Xu &amp; Wall, 2024)</ref>, and SVGenius <ref type="bibr">(Chen et al., 2025a)</ref> focus on SVG code parsing and perception, probing models' abilities to interpret, understand, and reason about symbolic vector graphics. Other efforts, such as SGP-GenBench <ref type="bibr">(Chen et al., 2025b)</ref>, provide benchmarks for evaluating models' capabilities in SVG code generation, while methods like Chat2SVG <ref type="bibr" target="#b33">(Wu et al., 2025)</ref> propose approaches for improving SVG generation from natural language instructions. Together, these works lay important foundations for assessing both the comprehension and generative aspects of symbolic graphics in LLMs. However, there is still a lack of benchmarks specifically designed to test the construction of geometric spatial structures and deeper reasoning within geometry, which is the focus of GeoGramBench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PROGRAM-TO-GEOMETRY</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">TASK DEFINITION</head><p>We define Program-to-Geometry as the task in which a model interprets procedural code to construct mathematical geometric representations, and subsequently reasons over these representations to solve geometry problems. This paradigm provides a comprehensive assessment of two fundamental capabilities: (a) the ability to accurately construct mathematical geometric diagrams from symbolic instructions, and (b) the ability to perform spatial reasoning and mathematical problem solving based on these constructed diagrams.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">TAXONOMY</head><p>An effective taxonomy is critical for evaluating benchmark quality and pinpointing capability bottlenecks in the Program-to-Geometry task, which requires translating procedural geometric code into diagrammatic understanding. Traditional taxonomies, such as those based on topological complexity <ref type="bibr" target="#b41">(Zhou et al., 2025)</ref>, logical intricacy <ref type="bibr" target="#b17">(Lin et al., 2025)</ref>, or reasoning difficulty (e.g., high school to olympiad levels) <ref type="bibr" target="#b21">(MAA, 2025;</ref><ref type="bibr" target="#b26">Sun et al., 2025;</ref><ref type="bibr" target="#b9">Hendrycks et al., 2021)</ref>, focus on reasoning steps rather than the geometric structures central to this task. To address this, we propose a new taxonomy tailored to the Program-to-Geometry task, defined by the geometric complexity of diagrams derived from procedural code. This three-level hierarchy reflects the types and number of geometric elements:</p><p>• Primitive Recognition (Primitive): Problems involving procedural code that specify only one or two geometric primitives (e.g., points, lines, arcs, circles, polygons), focusing on basic mathematical properties such as length, area, or angle.</p><p>• Local Relation Composition (Compositional): Problems with multiple local geometric elements, requiring the recognition, integration, and composition of spatial relationships among subcomponents of the diagram.</p><p>• Global Abstract Integration (Abstract): Items demanding spatial direction, parameterization, recursion, 3D objects, composite structures, or advanced geometric operations (e.g., rotation, folding, projection), thus requiring not only the construction of complex diagrams but also global and stepwise spatial reasoning across the entire configuration.</p><p>To validate this taxonomy, we analyzed the QwQ-32B <ref type="bibr">(Team, 2025a)</ref> performance on the MATH-500 (Lightman et al., 2023) dataset, comparing accuracy across reasoning complexity (per MATH-500 annotations) and geometry complexity for text-only (P T ) and text+code (P T C ) problems (see Figure <ref type="figure" target="#fig_3">2</ref>). For P T , accuracy decreases with increasing reasoning complexity, consistent with existing benchmarks. In contrast, for P T C , accuracy is largely independent of reasoning complexity, with significant drops tied to geometric intricacy. This trend, validated by a clear accuracy decline on MATH-500 as geometric complexity increases, confirms that geometric complexity, rather than reasoning steps, is the primary challenge in this task. Thus, our taxonomy provides a robust framework for evaluating model capabilities in Program-to-Geometry task.</p><p>3.3 TASK DATA FORMAT 98 96.8 92.9 79.4 56.9 86.2 50 60 70 80 90 100 Level-1,2 Level-3,4 Level-5 Accuracy (%) 86.1 81.7 75 50 60 70 80 90 100 Primitive Compositional Abstract ℙ! (Reasoning Complexity) ℙ!,# (Reasoning Complexity) ℙ!,# (Geometric Complexity) Each problem consists of two parts: a textual description and geometric drawing code, such as written in Asymptote or Matplotlib style. The model receives both the text and the code as input. The target is a numeric answer, which may represent a length, area, volume, angle, ratio, or count. This setup requires the model to parse the drawing code, form an internal geometric representation, and reason through the mathematical question to produce the correct numeric solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">RESEARCH QUESTIONS</head><p>Understanding the capabilities of large language models (LLMs) in the Program-to-Geometry task requires a systematic investigation into their ability to process and reason over procedural geometric code. This task demands a sequence of essential, hierarchically related skills: from recognizing basic geometric elements to composing complex spatial configurations and leveraging chain-of-thought (CoT) reasoning to enhance problem-solving. Investigating these capabilities is motivated by the need to identify specific bottlenecks in LLMs performance, guiding the development of models better equipped for spatial reasoning applications. Based on this task definition and taxonomy, we articulate the following research questions to structure our analysis of LLMs' behavior in the Program-to-Geometry task:</p><p>RQ1: Is there evidence that LLMs can understand and represent basic geometric elements from program code?</p><p>RQ2: How effectively can LLMs compose and abstract geometric elements into coherent spatial configurations as specified by program code?</p><p>RQ3: How does CoT reasoning influence LLMs' spatial geometric reasoning abilities with program code?</p><p>These research questions are fundamental to evaluating the progression of LLMs capabilities in this domain, and their investigation is critical for advancing our understanding of how to enhance symbolic-to-spatial reasoning in future models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">BENCHMARK CONSTRUCTION</head><p>In this section, we present the systematic construction process of GeoGramBench, a dedicated benchmark for Program-to-Geometry reasoning. We first introduce a critical challenge inherent to this task domain, namely answer leakage, before detailing our comprehensive data construction pipeline that forms the foundation of our benchmark (more details in Appendix C).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">ANSWER LEAKAGE CHALLENGES</head><p>In the Program-to-Geometry task, a significant challenge arises from the potential for answer leakage within the code itself. The program code that generates geometric figures often contains precise numerical specifications that directly or indirectly reveal the answers sought. Benchmark like Math-500 <ref type="bibr" target="#b16">(Lightman et al., 2023)</ref>, we discovered numerous instances where answers were</p><p>Problem: ...What is the height, in inches, of each black bar? visualize Problem: ...Calculate the area of the bounding rectangle. visualize [asy] ... (21.6,2.7)--(0,2.7) ... draw((0,2.7)...) [/asy] Answer: 2.7 [asy] ... (8,1)--(0,1) ... draw((0, 1)...) [/asy] Answer: 2.7 [asy] real r = 1; ... pair C = (2r, -r -sqrt(4*r^2 -r^2)); draw(box((0,0),(w, C.y -r)) [/asy] Answer: [asy] real r = 3; ... pair C = (2r, -8.2); draw(box((0,0),(w, C.y -r)) [/asy] Answer: 8 + 4 3 8 + 4 3</p><p>Figure <ref type="figure">3</ref>: Illustration of two types of answer leakage in procedural code, highlighted in red. On the left is direct leakage, where the answer is explicitly given by a coordinate value in the Asymptote code; in this case, we rescale the coordinates to preserve the geometric shape. On the right is indirect leakage, where the answer can be computed from code parameters; here, we modify the procedural code to mask such critical information.</p><p>directly embedded in the Asymptote code. Similar issues persist across various open-source geometry problem collections we collected. As illustrated in Figure <ref type="figure">3</ref>, we categorize two types of answer leakage in the procedural code. Direct leakage occurs when the answer is explicitly encoded as a coordinate value in the Asymptote code (e.g., a circle's radius or segment's length). Indirect leakage occurs when the answer can be computed from code parameters or formulas.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">COLLECTION AND PREPROCESSING</head><p>We first aggregated approximately 905K candidate problems from three open-source mathematics datasets, including NuminaMath-1.5 <ref type="bibr" target="#b15">(Li et al., 2024)</ref>, HARP <ref type="bibr" target="#b38">(Yue et al., 2024)</ref>, and Omni-MATH <ref type="bibr" target="#b5">(Gao et al., 2024)</ref>, with a focus on sources rich in geometry content. We filtered for problems containing embedded Asymptote code by searching for [asy] and [/asy] tags, resulting in a subset comprising about 1% (9,260 problems). We then deduplicated this subset using an n-gram (n = 8) similarity approach <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, reducing the set to 1,782 unique items. Finally, by following the schema from s1 <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref> and leveraging GPT-4o <ref type="bibr" target="#b10">(Hurst et al., 2024)</ref> for prompt-based classification, we selected only geometry problems, yielding 1,247 geometry-focused items for subsequent curation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">HUMAN REFINEMENT AND VERIFICATION</head><p>To ensure data quality and suitability for geometry code understanding tasks, we implemented a two-stage manual verification process, conducted by a team of four experts (each holding a master's degree or higher in mathematics or related fields). The first round aimed to standardize problem types and formats, while the second round focused on enhancing overall problem quality.</p><p>In the first round, we performed initial screening and format normalization: (a) non-relevant questions (such as hyperlink chains, multi-part items, and proofs) were filtered out according to best practices from BigMath <ref type="bibr" target="#b0">(Albalak et al., 2025)</ref>; (b) convertible multiple-choice questions were transformed into open-form computation problems by removing options, while those not amenable to conversion were discarded entirely; and (c) answers were standardized into consistent L A T E X format. At the end of this screening, 547 candidate problems remained.</p><p>In the second round, we implemented a rigorous three-pronged refinement process to improve problem quality:</p><p>• Decontamination: To minimize community-sourced contamination, we systematically revised problem statements by removing redundant descriptive information that might enable direct textual inference. Additionally, we adjusted problem conditions and modified corresponding answers to maintain mathematical consistency. Furthermore, we adjusted the answer requirements (such as replacing queries about lengths with those about area, volume, or ratios) to further reduce the risk of leakage and promote authentic geometric reasoning.</p><p>• Answer Leakage Prevention: As detailed in Section 4.1, to address this task-specific vulnerability, we implemented two targeted strategies: systematically rescaling coordinates while preserving geometric relationships for direct leakage, and modifying or masking code parameters for indirect leakage. These interventions ensure that answers cannot be derived through mere code inspection (see Figure <ref type="figure">3</ref>).</p><p>• Accuracy Verification: Each answer was manually checked for correctness; items with ambiguous, unverifiable, or doubtful solutions were removed.</p><p>Through this thorough process, we ultimately obtained 392 high-quality, contamination-free geometry problems for augmentation and evaluation.</p><p>Problem: In ∆𝐴𝐵𝐶, suppose ∠𝐶 = 3∠𝐴, 𝑎 = 27, and 𝑐 = 48. What is the value of 𝑏?</p><p>[asy] pair A=origin, B=(14,0), C=(10,6); draw(A--B--C--cycle); label("$A$ ", A, SW); label(" $B$ ", B, SE); label(" $C$ ", C, N); ... [/asy]</p><p>Answer: 35 visualize Problem: Square 𝐴𝐵𝐶𝐷 has side length 4, and 𝑀 is the midpoint of 𝐶𝐷 ... What is the distance from 𝑃 to 𝐴𝐷?</p><p>[asy] draw(Circle((2,0),2)); draw(Circle((0,4),4)); filldraw(Circle((2,0), 0.07)); ... label(" $M$ ",(2,0),S); label(" $P$ ",(3.6,1.4),N); [/asy] Answer:</p><p>!" # visualize Problem: Older television screens have an aspect ratio of 4 ∶ 3 , meaning the width is to the height as 4 is to 3 ... 4.4 BENCHMARK AUGMENTATION A ng le A re a Ratio Co un t A re a R a ti o Count P ri m it iv e (2 0 .4 % ) L e n g t h Com pos ition al (55 .8% ) An gle Length A bs tr ac t (2 3. 8% ) Ang le Leng th A re a V ol um e Rat io Count GeoGramBench Figure 5: Statistics of GeoGramBench.</p><p>To enhance difficulty balance and problem diversity, we supplemented GeoGramBench with additional items: 5 geometry problems from AIME24 (MAA, 2025), 42 from MATH-500 <ref type="bibr" target="#b16">(Lightman et al., 2023)</ref>, and 61 geometric problems adapted from Mathverse <ref type="bibr">(Zhang et al., 2024b)</ref>. For the Mathverse subset, we selected representative solid geometry problems and manually transcribed diagrams into matplotlib code to diversify the procedural drawing code within the dataset. Our experiments indicate minimal impact from the choice of drawing language (see Appendix A). Altogether, GeoGramBench comprises 500 geometry problems, supporting robust evaluation across a variety of geometric phenomena.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">DIFFICULTY AND SUBTYPE CATEGORIZATION</head><p>Building on our theoretical and empirical insights in Section 3.2, we categorize all 500 GeoGram-Bench problems into three ascending difficulty levels: Primitive Recognition, Local Relation Composition, and Global Abstract Integration, based on the type and number of geometric elements and the spatial relationships involved (see Figure <ref type="figure">4</ref>). The categorization is implemented through a combination of GPT-4o <ref type="bibr" target="#b10">(Hurst et al., 2024)</ref> assisted classification and thorough human expert review.</p><p>The resulting distribution, detailed in Figure <ref type="figure">5</ref>, establishes GeoGramBench as the largest and most diverse benchmark for the Program-to-Geometry task to date.</p><p>To facilitate a deeper analysis of LLMs performance and failure modes, we further categorize these problems based on problem-solving objectives, identifying common challenges across geometric properties. This subtype classification divides the three levels into six task types: angle, length, area, volume, ratio, and count, determined via manual annotation. Figure <ref type="figure">5</ref> illustrates the distribution of GeoGramBench's 500 problems, highlighting the diverse representation of multiple task types within each category, including the introduction of volume tasks in the most complex level, enabling targeted investigation into specific reasoning difficulties (e.g., 3D structures or angle computations) to guide future model improvements. Detailed subtype statistics and definitions are provided in Appendix C.8, underscoring GeoGramBench's value as a diagnostic tool for evaluating LLMs capabilities across this varied range of problem types.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENT</head><p>We benchmark 19 popular LLMs on GeoGramBench, providing a broad comparative analysis in this section. Section 5.1 details our evaluation framework and prompt engineering strategies. Section 5.2 introduces the tested models, followed by quantitative comparisons in Section 5.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">EVALUATION PROTOCOLS</head><p>For open-source models, we adopt the <ref type="bibr" target="#b20">Luo et al. (2025)</ref> framework for evaluation, while for closedsource models, we utilize official APIs with identical prompt templates (Let's think step by step and output the final answer within \boxed{}.). All result parsing is standardized using <ref type="bibr" target="#b20">Luo et al. (2025)</ref>, with assistance from GPT-4o when necessary. Each problem is evaluated in a zero-shot setting: the model input consists strictly of the problem text and the procedural geometry drawing code. For each problem instance, we sample 8 responses using temperature 0.6, and report final accuracy as the mean over these 8 outputs, which balances model stochasticity and answer reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">EVALUATION MODELS</head><p>We evaluate a total of 19 mainstream LLMs, including both proprietary APIs and leading open-source systems. The closed-source models include GPT-5 (OpenAI, 2025), GPT-4o <ref type="bibr" target="#b10">(Hurst et al., 2024)</ref>, GPT-o3-mini <ref type="bibr" target="#b24">(Pfister &amp; Jud, 2025)</ref>, the GPT-o1 series <ref type="bibr" target="#b11">(Jaech et al., 2024)</ref>, and Gemini-Pro-1.5 <ref type="bibr" target="#b30">(Team et al., 2023)</ref>. The open-source models cover a wide range of scales, including DeepSeek-R1 <ref type="bibr" target="#b6">(Guo et al., 2025)</ref>, DeepSeek-v3-0324 <ref type="bibr" target="#b18">(Liu et al., 2024)</ref>, Qwen3 <ref type="bibr">(Team, 2025b)</ref> and QwQ-32B <ref type="bibr">(Team, 2025a)</ref>, as well as other prominent models from 32B down to 1.5B parameters: DeepSeek-R1-Distill variants <ref type="bibr" target="#b6">(Guo et al., 2025)</ref>, Bespoke-Stratos-32B <ref type="bibr" target="#b12">(Labs, 2025)</ref>, s1.1-32B <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, Sky-T1-mini-7B <ref type="bibr" target="#b34">(Li et al., 2025)</ref>, and DeepScaleR-1.5B-preview <ref type="bibr" target="#b20">(Luo et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">MAIN RESULTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Closed-source models outperform open-source models.</head><p>Table <ref type="table" target="#tab_0">1</ref> shows that the latest GPT-5 model achieves state-of-the-art performance, with an overall average accuracy of 75.01%. GPT-5 also obtains the highest scores in both the Primitive and Compositional levels. Among open-source models, Qwen3-235B-Thinking-2507 ranks second, surpassing earlier closed-source models like GPT-o1 and GPT-o3-mini, with an average accuracy of 74.00%. GPT-o1 and GPT-o3-mini follow, each with average accuracies around 70%.</p><p>All models perform below 50% in the Abstract level. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">BEHAVIOR ANALYSIS OF LLMS</head><p>We address our RQs through both quantitative and qualitative analyses based on benchmarking results and model responses. Furthermore, we summarize several common failure patterns observed across different models.</p><p>RQ1: Is there evidence that LLMs can understand and represent basic geometric elements from program code?</p><p>RQ1 investigates the fundamental ability of LLMs to recognize basic geometry elements, which can be quantitatively measured by the evaluation results of Primitive Recognition.</p><p>As shown in Table <ref type="table" target="#tab_0">1</ref>, most of the models achieve 60% accuracy on the Primitive Recognition level, suggesting that they can effectively parse and build basic geometric scenes from procedural codes. Qualitatively, some of the model responses explicitly reveal the capability to interpret and reconstruct geometric information. As shown in Figure <ref type="figure" target="#fig_6">6</ref>, models frequently examine the procedural code for geometry understanding: "Now, looking at the Asymptote code", "Let me parse the Asymptote code a bit", and "maybe I should try to visualize this". They can also identify simple geometric relationships according to the procedural code. For example, "c is (2,0), so c/2 is (1,0). So the inner arc is between points a/2 and c/2", and "path inner = arc(d, a/2, c/2, CW);...path outer = arc(d, c, a, CCW);". These behavior demonstrate that LLMs are intent and capable to map procedural code into internal geometric structures. In conclusion, modern LLMs are able to construct basic geometric representations from procedural code.</p><p>RQ2: How effectively can LLMs compose and abstract geometric elements into coherent spatial configurations as specified by program code?</p><p>RQ2 investigates LLMs' capability of the geometry composition and global representation abstraction. According to the results in Table <ref type="table" target="#tab_0">1</ref>, all models experience a significant drop in accuracy from Compositional problems to Global Abstract Integration. For example, GPT-o1 drops from 76.12% to 44.67%, and DeepSeek-R1 drops from 75.13% to 40.86%. These results indicate that current LLMs may lack of compositional and spatial abstraction ability to solve complex geometry problems. Qualitatively, while models can often parse and assemble some local structures, small errors in local constructions frequently appear, preventing LLMs to construct a complete and coherent global representation. As illustrated in Figure <ref type="figure" target="#fig_6">6</ref>, a model may read a piece of code like "path inner = arc(d, a/2, c/2, CW)" and reason about directions ("which would be the other direction compared to the inner counterclockwise path before"), but a single mistake in local spatial assignment may generate downstream confusion: "maybe I got the direction of the angle wrong?... the actual angle between the points is \theta, so the area calculations still hold.". This phenomena suggests that modern LLMs may not good at capturing complex compositional geometry relationships for high level spatial reasoning. In summary, although LLMs have made progress in local geometric parsing, their ability to synthesize and reason over globally consistent spatial structures in Program-to-Geometry tasks remains limited.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ3: How does CoT reasoning influence LLMs' spatial geometric reasoning abilities with program code?</head><p>Qualitatively, while models frequently perform iterative self-reflection and verification of code ("Let me check again"), and repeatedly parse diagram instructions, their CoT trajectories rarely correct or update internal geometric understanding, as shown in Figure <ref type="figure" target="#fig_6">6</ref>. For instance, the model may cycle through algebraic steps and verbalize uncertainty ("Hmm, this is a bit confusing without seeing the actual diagram. Since I can't see the diagram, maybe I should proceed with the information given."), yet consistently fails to resolve spatial relationships or integrate local shapes into a whole. This observation illustrates that CoT may lead LLMs fall into repetitive symbolic reasoning. Such repetitiveness does not beneficial for LLMs to construct high level spatial representations as a whole, even leading to confusion about complex geometry relationships. Quantitatively, our experimental results show a downward trend in accuracy as geometric complexity increases, consistent with our benchmark taxonomy's emphasis on geometric intricacy rather than reasoning steps. This suggests that most LLMs exhibit weak internal geometric representation capabilities, and long CoT reasoning provides limited benefit for improving this aspect. To further investigate this, we conducted an quantitative experiment using Token Budget Forcing (BF) <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, detailed in Appendix E, which extends CoT reasoning and provides a robust validation of its limitations. These findings highlight a critical bottleneck: while CoT enhances mathematical reasoning in other domains, its effectiveness in Program-to-Geometry tasks is constrained by LLMs' weak spatial abstraction capabilities.</p><p>Common Failure Patterns Through extensive qualitative analysis of model responses, conducted by manually reviewing a substantial number of failure cases, we distilled several prevalent failure patterns that are shared across multiple LLMs. Due to the current lack of accurate automated assessment methods for this process, our analysis is based on representative examples rather than exhaustive annotation. Nevertheless, these patterns foreground critical limitations in current model behavior. (1) The models exhibit a pronounced preference for algebraic methods, frequently relying on coordinate calculations rather than leveraging geometric constructions, even when the latter would be significantly more efficient. This algebraic bias often results in the neglect of essential geometric heuristics. (2) LLMs rarely introduce auxiliary lines or points, a classic strategy in geometry that can simplify complex problems, indicating limited flexibility in exploring alternative geometric solutions. (3) Models consistently struggle with instructions that involve spatial orientation, such as distinguishing between clockwise and counterclockwise directions or interpreting vertical and horizontal references. These difficulties often lead to misinterpretation or incorrect reasoning steps. (4) A common issue is the confusion in mapping symbolic relationships (e.g., angle or vertex labels) to their corresponding geometric elements in the diagram, reflecting an insufficient internal spatial representation and a lack of robust grounding for abstract symbols. Answer: 120 Response:Okay, so I need to find the measure of angle ADC in degrees,... Hmm, let's start by understanding the problem step by step. First, the larger circle has a radius of 2, ... Now, looking at the Asymptote code, it seems like the shaded regions are two parts... Wait, actually, looking at the Asymptote code... Let me parse the Asymptote code a bit...between the two arcs? Wait, maybe I should try to visualize this. Since both circles are centered at D,... Since both circles are centered at D, the inner circle has radius 1, and the outer has radius 2. Points A and C are on the outer circle..., then along the outer arc back to C and then to A? Wait, maybe I'm getting confused here. Let me think again.... Since a is a point on the outer circle (radius 2), a/2 would be the same direction but radius 1. Similarly, c is (2,0), so c/2 is (1,0) , path inner = arc(d, a/2, c/2, CW);... path outer = arc(d, c, a, CCW); going counterclockwise.....So that's an arc from a/2 to c/2 going (which would be the other direction compared to the inner counterclockwise path before), and then connecting back to D and forming a triangle? ...Hmm, this is a bit confusing without seeing the actual diagram. Since I can't see the diagram, maybe I should proceed with the information give...Alternatively, maybe the shaded area is the area of the larger sector minus the area of the smaller sector, plus some other regions? Hmm, perhaps I need to break it down. Maybe I should approach it mathematically. Wait, perhaps it's the area of the larger segment minus the smaller segment? ...Alternatively, let me try to compute the area step by step. First, Hmm, not sure...So starting at a/2, going counterclockwise ...Wait, but then why is it shaded? Maybe region2 is actually the triangle? Wait, no, because the path is the arc and then the two radii, so it's a sector. Hmm. Wait, but is that correct?..,Wait, but maybe I miscomputed region1. according to the Asymptote code, region1 is (a-a/2)..inner..(c/2--c)..outer..cycle. So that path starts at A, goes to a/2 (midpoint?), ... maybe I made a mistake in calculating the area of region1. Let me recast the problem... follows the inner arc to c/2, then to c, then follows the outer arc back to A. So that area is like a closed loop that goes from A down to the inner circle Let me check again.... Essentially, it's the area of the larger sector ( from C to A counterclockwise) minus the area of the smaller sector (from C' to A' clockwise). Hmm, but let me check again ...Let me see the Asymptote code again: region2 is arc(d, a/2, c/2, CCW)..(c/2--d--a/2)..cycle. Hmm, that seems straightforward, but let me check again... Alternatively , maybe I got the direction of the angle wrong? Let me think: ...Thus, the measure of ( \angle ADC ) is ( \boxed{150}).</p><p>It exemplifies the model's motivation to move from code parsing to spatial interpretation.</p><p>Although the model repeatedly attempted to reason, engaging in multiple rounds of self-questioning and re-examination of the Asymptote code, it was ultimately unable to arrive at the correct approach.</p><p>RQ2: Compositional Completeness RQ3: CoT Reasoning visualize RQ1: Construction Evidence</p><p>The model demonstrates a clear weakness in mapping code to spatial imagery, struggling to correctly interpret directions such as counterclockwise (CCW). Overall, our behavior analysis offers an in-depth diagnosis of how contemporary LLMs process programmatic geometric information and where their reasoning strategies fall short. By systematically linking model behaviors to distinct task attributes, we not only clarify the boundaries of current capabilities, but also map out the critical obstacles restricting progress in symbolic-to-spatial reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">CONCLUSION</head><p>In this work, we present GeoGramBench, the first large-scale benchmark for evaluating LLMs on the challenging Program-to-Geometry task, which connects procedural code with geometric reasoning. Our experiments on 19 leading models show that even the strongest models achieve less than 50% accuracy on complex problems, revealing critical gaps in symbolic to spatial understanding.</p><p>Through a new taxonomy and comprehensive analysis, we identify major shortcomings and establish GeoGramBench as an important resource for advancing this research direction. We hope this benchmark will encourage further progress toward models with better spatial abstraction and symbolic reasoning, pushing forward the development of AI with stronger spatial intelligence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ETHICS STATEMENT</head><p>This work introduces a mathematical reasoning benchmark and does not involve human subjects, personal data, sensitive information, or real-world deployments. The dataset is constructed purely from publicly available mathematical problem sources and procedural code, with rigorous data cleaning and verification to ensure research integrity. We are not aware of any ethical risks or concerns related to privacy, fairness, safety, discrimination, or legal compliance in this study.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REPRODUCIBILITY STATEMENT</head><p>The complete details of GeoGramBench dataset construction are provided in Section 4 and Appendix C. We include all evaluation code in the supplementary materials, along with detailed instructions for running experiments. For model evaluation, we access closed-source models via their official APIs, and open-source models are obtained from Hugging Face (<ref type="url" target="https://huggingface.co/">https://huggingface.co/</ref>), complying with their respective terms of use.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A EFFECT OF DRAWING LANGUAGE ON PROGRAM-TO-GEOMETRY PERFORMANCE</head><p>A key motivation for our investigation is to determine to what extent challenges in Program-to-Geometry reasoning arise from the logic of geometric construction itself, rather than from surface-level code syntax or unfamiliarity with specific drawing languages. To test this, we translated 5 geometry questions containing Asymptote code from AIME24 and 42 questions from MATH-500 into equivalent Python matplotlib code, holding geometric content constant while varying only the programmatic language. As shown in Figure <ref type="figure">7</ref>, QwQ-32B exhibits less than 1% difference in absolute accuracy between the Asymptote and Matplotlib versions on both benchmarks. This minimal gap provides strong evidence that the principal bottleneck in Program-to-Geometry task performance is not due to the choice of drawing language, but rather stems from deeper difficulties in spatial abstraction and geometric reasoning from code. This result reinforces our conclusion that surface syntax is not the main limiting factor for LLMs in this domain. Figure 8: Visualization generated from the drawing code Drawing Code (Asymptote): import graph; unitsize(0.1cm); pair A = (0,0); pair B = (70,0); pair C = (70,16); pair D = (0,16);</p><p>pair E = (3,16); pair F = (90,16); pair G = (90,33); pair H = (3,33); dot(A^^B^^C^^D^^E^^F^^G^^H); label("\$A\$", A, S); label("\$B\$", B, S); label("\$C\$", C, N); label("\$D\$", D, N); label("\$E\$", E, S); label("\$F\$", F, S); label("\$G\$", G, N); label("\$H\$", H, N);</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>draw(E--D--A--B--C--E--H--G--F--C);</head><p>Drawing Code (Matplotlib): </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B PREVENTING INFORMATION LEAKAGE IN PROCEDURAL GEOMETRY CODE</head><p>A critical aspect of dataset curation for Program-to-Geometry evaluation is the prevention of information leakage through the procedural drawing code. In this context, information leakage refers to situations where the answer to a geometry problem is either explicitly or implicitly encoded in the program, enabling a model (or human) to bypass genuine geometric reasoning and instead extract the solution directly from code inspection.</p><p>We identify two primary forms of leakage:</p><p>• Direct leakage: The answer appears explicitly in the code, for example as a coordinate, length, or parameter value (e.g., a circle radius or segment described directly in the Asymptote code).</p><p>• Indirect leakage: The answer can be inferred by performing simple calculations or extracting formula results from the parameters or structure of the code, even though it is not written verbatim.</p><p>To mitigate these risks, we systematically reviewed all procedural code in the dataset. For direct leakage, critical coordinates and parameters are rescaled or randomized while preserving the diagram's structure. For indirect leakage, problem variables and code formulas are modified or masked to preclude simple reverse engineering of the answer.</p><p>Below we present concrete examples comparing original and mitigated code for selected problems. Each example includes its problem statement and paired Asymptote code, annotated as "before" and "after" modification. Example 2: Problem Statement: In rectangle ABCD, point M is the midpoint of AD. The area of △AM C is 12, and AD AB = 3 2 . Find the length of side AD.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Answer: 8</head><p>Before modification (Leakage present): size(4cm); draw((0,4)-(0,0)-(6,0)-(6,8) -(0,8)-(0,4)-(6,8)-(0,0)); label(\"$A$\", (0,0), SW); label(\"$B$\", (6, 0), SE); label(\"$C$\", (6,8), NE); label(\"$D$\", (0, 8), NW); label(\"$M$\", (0, 4), W); After modification (Leakage mitigated): size(4cm); draw((0,2)--(0,0)--(3,0)--(3,4) --(0,4)--(0,2)--(3,4)--(0,0)); label("$A$", (0,0), SW); label(\"$B$\", (3, 0), SE); label(\"$C$\", (3,4), NE); label(\"$D$\", (0, 4), NW); label(\"$M$\", (0, 2), W); </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C DETAILED BENCHMARK CURATION</head><p>We assemble a team of four experts (each holding a Master's degree or higher in mathematics or related fields) to ensure data quality. Our team manually verifies and refines samples from three aspects: question reformulation and standardization, decontamination, answer verification and leakage prevention.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 INTRODUCTION TO ASYMPTOTE CODE</head><p>Asymptote is a vector graphics language designed for technical drawing and geometric visualization. "Asymptote code" refers to structured source code written in the Asymptote language, which describes geometric primitives (such as points, lines, circles, polygons, 2D and 3D shapes), spatial relationships, and drawing instructions. The Asymptote syntax supports mathematical expressions, procedural constructs, and graphical commands, enabling precise programmatic construction of geometric diagrams.</p><p>C.2 STANDARDIZATION OF PROCEDURAL CODE Our standardization pipeline for procedural code involves the following key steps: 1. Initial Filtering: We collect a large set of mathematical problems and filter for those containing embedded Asymptote code by searching for [asy] and [/asy] tags. This step isolates problems that include geometry drawing code. 2. Syntax Validation: We use the Asymptote tool to check for syntax correctness in each drawing code snippet. Problems with invalid syntax or unrenderable diagrams are excluded. 3. Diagram Verification and Adjustment: We confirm that each code snippet produces a valid and clear geometric diagram in Asymptote. If necessary, we adjust canvas size and proportions to avoid visual overlap, ambiguity, or unclear geometric elements.</p><p>4. Answer Leakage Prevention: As described in Section 4.1, we systematically review each code segment for direct or indirect answer leakage. Direct leakage (where answers appear explicitly in the code) is handled by rescaling coordinates or revising geometry. Indirect leakage (where answers can be inferred from code parameters) is prevented by masking or modifying the relevant parts of the code to ensure the answer cannot be obtained by inspection alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 QUESTION REFORMULATION AND ANSWER STANDARDIZATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question reformulation</head><p>The formulation of each sample in GeoGramBench should be simple QA pairs for convenient evaluation. To achieve this, we start to deal with multiple choice questions, proofbased questions and multi-part problems, which are not in QA format. Multiple choice questions can be transformed into open-ended computation problems by preserving the correct choice as the answer and removing all other choices. Some of the proof-based questions can be transformed into computation problems (like "Prove that P A = 4P B" can be rewrite to "Compute the ratio between P A and P B"), whereas others are not suitable for such transformation (like "Prove that AB ≥ 3P R). Multi-part problem always consists of several sub-problems, which can be simplified into a single question format by retaining one of the computable sub-questions. Questions amenable to conversion can be retained and reformulated into new QA samples, while others may be excluded from the benchmark. According to the aforementioned rules, our team members carefully assess the formulation of each question and perform corresponding modifications and deletion.</p><p>Answer standardization Considering the diversity and complexity of mathematical expressions, answer standardization is crucial for accurately evaluating model-generated responses. Our team manually modify the answer of each question by removing arithmetic operators (like +, -), letters and characters that irrelevant for computation and evaluation (like \text{cm^2}), and standardize each answer into L A T E X format as simple as possible (like simplify \frac{28}{\sqrt{7}}} to 4\sqrt{7}). The above operations successfully ensure the consistency of question formulation and answer standardization, which benefits subsequent data processing and contributes reliable benchmarking. The resulting subset contains 547 candidate samples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 DECONTAMINATION</head><p>Most of the samples we collected originates from public datasets and internet resources, which indicates a high possibility that these data has already been included in the LLMs' pre-training corpora. Besides, current data samples contains a certain degree of redundancy and unnecessary information, which may introduce unexpected bias to benchmarking. To mitigate the above influences as much as possible, our team manually perform data decontamination for all the 547 samples from three aspects:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Extraneous information removal</head><p>We believe hyperlinks and code comments are not only unnecessary information for mathematic geometry spatial reasoning, but also introduce text bias for mathematic geometry problem reasoning. As a result, each member in our team carefully examine and delete all these contents in each question;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problem statement rephrasing</head><p>To prevent samples from being solved solely based on question statement, encourage LLMs focus on mathematic geometry spatial reasoning, we reduce some comprehensive and specific mathematical expressions in question text. To minimize the overlap between LLMs' pre-training corpora and benchmarking samples, our team modifies the given condition and question objective of some samples;</p><p>Coordinate modification In some samples, the coordinates used to generate pictures are identical to the given conditions in the problem statement, which may enable LLMs to derive answer through algebraic geometry reasoning based on text solely. Such problem solving approach cannot effectively evaluate the mathematic geometry spatial reasoning ability of LLMs. To decrease the possibility of LLMs using algebraic geometry problem solving approach, we adjust the coordinates in each samples program code, which maintains the geometric shape and relationship of the original picture. The above decontamination methods ensures each item in GeoGramBench is a completely new sample, contributing to valuable and reliable mathematic geometry spatial reasoning benchmarking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5 ANSWER VERIFICATION AND LEAKAGE PREVENTION</head><p>Answer verification We observe that some of the original answers are wrong to the corresponding questions after decontamination. To avoid such circumstances, we carefully verify the answer of each sample one by one by both referencing the original question from the Internet and calculate answer by ourselves. The QA pairs that cannot be searched on the Internet are removed.</p><p>Answer leakage prevention We find some of the correct answers are already leaked in the code of samples during verification. As shown in Figure <ref type="figure">9</ref>, 10, the answer can explicitly equals to the answer, or implicitly computed according to the code for generating image. This situation may allow</p><p>LLMs access the answer in advance, which harm to the evaluation of mathematic geometry spatial reasoning. To prevent answer leakage, our team manually revised the code for all samples once again by rescaling coordinates and masking codes with numbers. Answer verification and leakage prevention guarantee the correctness of all the samples and the fairness of benchmarking.</p><p>After human verification and refinement, we ultimately obtained 392 high-quality, contamination-free geometry problems for later augmentation and evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6 AUGMENTATION</head><p>We introduce additional samples to enhance difficulty and diversity of GeoGramBench: 5 geometry problems from AIME24 MAA (2025), 42 from MATH-500 Lightman et al. ( <ref type="formula">2023</ref>), and 61 geometric problems adapted from Mathverse <ref type="bibr">Zhang et al. (2024b)</ref>. The 47 samples from AIME24 and MATH-500 are retained without modification dur to their high quality. For the Mathverse subset, we first filter 119 samples with two key words: Vision Intensive and Solid Geometry. These samples focus on solid geometry questions, with the majority of problem solving information presented in image. This advantages makes them highly suitable for mathematic geometry spatial reasoning evaluation. However, Mathverse only provides the original images without the plotting code for reproducing the picture. Thus, our team decide to write python matplotlib code with our own to construct new evaluation samples in GemGramBench. Notably, we do not ask for multimodal models (like GPT-4o) for help because such models performs poorly when transforming solid geometry picture to matplotlib code.</p><p>Altogether, GeoGramBench comprises 500 hand-crafted geometry problems, which contributes to valuable and reliable mathematic geometry spatial reasoning evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.7 TAXONOMY CLASSIFICATION PROMPT DETAILS</head><p>In constructing the GeoGramBench taxonomy, we categorized all 500 problems into three ascending difficulty levels: Primitive Recognition, Local Relation Composition, and Global Abstract Integration, based primarily on the geometric and spatial complexity of each problem. This classification process was conducted through a combination of large language model (GPT-4o) assisted clustering and meticulous human expert correction. The initial clustering enabled an efficient, scalable filtering of geometry problems, while human review ensured rigor, consistency, and alignment with the intended definitions of each difficulty level.</p><p>To ensure reproducibility and transparency, we provide below the actual prompt used in the taxonomy assignment stage:</p><p>Given a geometry problem and its drawing code of diagram: There are three categories of geometry problems:</p><p>1. Primitive Recognition -The asy diagram/code contains very few geometric elements (e.g., one or two basic shapes, or minimal labeled points/lines).</p><p>-The solution can be reached with direct observation or a single basic calculation; no significant composition, auxiliary constructions, or synthesis are required.</p><p>-Tests only elementary recognition or reading from the diagram. 2. Local Relation Composition -The asy diagram/code includes multiple geometric elements (points, lines, circles, polygons, etc.) combined in a finite and explicitly described way. -The solution requires synthesizing, coordinating, or combining several local relationships, auxiliary constructions, or properties. The process involves several steps, but remains within standard 2D geometry.</p><p>-The primary challenge is combining and reasoning locally among elements shown in the diagram.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Global Abstract Integration</head><p>-The asy diagram/code may be complex, recursive, or defined by folding, projection, 3D arrangement, or abstract/global spatial processes.</p><p>-The solution needs global synthesis: either full configuration analysis, recursive processes, or 3D/limit/extreme configuration reasoning.</p><p>-Tests the model's ability to reconstruct and reason about a highly integrated or abstract global geometric structure.</p><p>Instructions: 1. Classify the problem into one category: Primitive Recognition, Local Relation Composition, or Global Abstract Integration. 2. For geometric elements, consider only what is explicit in the asy code. 3. Judge the solution/reasoning requirement based on the problem's actual goal and what conceptual/computational effort is needed to reach the answer. 4. Briefly justify your classification: refer to relevant features in the diagram and in the problem's required reasoning process. Output format: -Category: [Primitive Recognition / Local Relation Composition / Global Abstract Integration] -Justification: [A short explanation, citing relevant diagram elements and the level of reasoning/effort required.]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.8 SUBTYPE DISTRIBUTION AND DEFINITION</head><p>To provide a more granular analysis of geometry problem-solving, GeoGramBench includes six distinct task subtypes: Angle, Length, Area, Volume, Ratio, and Count. Each subtype captures different aspects of mathematical reasoning:</p><p>• Angle: Problems that require determining unknown angles.</p><p>• Length: Problems involving the calculation or comparison of lengths of line segments, perimeters, or distances between points.</p><p>• Area: Tasks focused on finding the area of various geometric shapes or regions (triangles, circles, polygons, composite shapes).</p><p>• Volume: Problems dedicated to computing the volume of three-dimensional objects such as cubes, spheres, prisms, or their composites.</p><p>• Ratio: Questions centered on the proportional relationships among lengths, areas, or other geometric quantities, often requiring understanding of similarity, scale, or division.</p><p>• Count: Problems that entail counting geometric objects or features, such as the number of sides, vertices, faces, or qualifying structures within a diagram.</p><p>Table 2 presents the detailed distribution of these subtypes across the three levels of GeoGramBench: Primitive, Compositional, and Abstract. This diverse coverage facilitates diagnostic evaluation of LLMs' performance across a wide range of geometric reasoning skills. Experimental Setup The baseline model is s1.1-32B <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, fine-tuned via supervised learning on the s1k dataset (a collection of 1,000 general reasoning examples designed to enhance long chain-of-thought (CoT) capabilities). Given the limited availability of high-quality programmatic geometry data, we partitioned GeoGramBench into a test set of 200 problems (spanning the Primitive, Compositional, and Abstract levels) and a training set of 300 problems. The training set was enriched with detailed reasoning chains distilled from <ref type="bibr">DeepSeek-R1 (Guo et al., 2025)</ref>, creating a high-quality distillation dataset for fine-tuning. We performed ablation studies by incrementally adding 50, 100, 150, and 300 code-based geometry training samples from the GeoGramBench training set to the original s1k data. The combined dataset was used for fine-tuning, following the protocol from <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>. Experimental Analysis Adding domain-specific data from GeoGramBench leads to a clear improvement in accuracy. Comparing Exp. 3 (100 samples) to the baseline (Exp. 1), the average accuracy increases by 3.02 percentage points, with notable gains across all levels-Primitive (+1.84%), Compositional (+3.66%), and Abstract (+2.82%). This demonstrates that exposure to task-specific examples enhances the model's ability to resolve ambiguities in geometric code, improving both logical reasoning and internal geometric representations. However, the gains plateau with further data increases. Tripling the added samples from 100 (Exp. 3) to 300 (Exp. 5) yields only a marginal additional improvement of 0.59 percentage points (3.60% vs. 3.02%), with Abstract accuracy even declining slightly from 18.62% to 17.83%. This suggests that while initial data exposure mitigates unfamiliarity, the model's performance is ultimately constrained by intrinsic weaknesses in geometric spatial representation, which additional data alone cannot fully address.</p><p>Implications These results validate GeoGramBench's effectiveness as a resource for improving LLMs' performance on Program-to-Geometry tasks, with as few as 100 in-domain examples yielding significant benefits. The benchmark's potential generalizability to other spatial reasoning tasks is also suggested, given the diverse geometric properties (e.g., angle, volume) it encompasses. However, the plateau effect highlights the need for architectural or training advancements beyond data augmentation to enhance spatial abstraction, positioning GeoGramBench as a valuable testbed for future research in this area.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E TOKEN BUDGET FORCING EXPERIMENT</head><p>To deepen our understanding of CoT's influence on symbolic-to-spatial geometric reasoning, we conducted a quantitative experiment using Token Budget Forcing (BF) <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, a technique that extends CoT by appending "Wait" tokens (N-Ignore) to delay conclusion. This method has previously improved the s1 model's performance on AIME24 (MAA, 2025) from 50.0% to 56.7%, prompting its application to the Program-to-Geometry task. We implemented BF on the s1.1-32B model <ref type="bibr" target="#b22">(Muennighoff et al., 2025)</ref>, a variant of Qwen2.5-32B-Instruct <ref type="bibr">(Yang et al., 2024a)</ref> optimized for long CoT reasoning, evaluated across GeoGramBench.</p><p>Table <ref type="table">4</ref> presents the results, showing accuracy and token counts with N-Ignore values of 0 (baseline), 1, 2, 4, and 6. The experiment extended the CoT length significantly. For example, setting N-Ignore to 6 increased the token count by 77.4% to 18,710, yet yielded only marginal accuracy gains, peaking at 54.90% with N-Ignore values of 1, 2, and 4. This represents only a 0.30% improvement over the baseline of 54.60%, before accuracy declined slightly at N=6. Per-level analysis reveals modest improvements (e.g., +0.53% in Compositional at N=4), with Abstract showing minimal change (+0.31% at N=1). This suggests that while BF expands reasoning capacity, it does not substantially enhance the model's ability to construct accurate spatial representations from code.</p><p>Table 4: Performance of s1.1-32B with Token Budget Forcing (BF) on GeoGramBench. Accuracies (%) are averaged over 8 samples per problem, with token counts reflecting CoT length. BF N-Ignore Token Count Primitive Compositional Abstract Avg. No 0 10,544 75.37 58.96 26.58 54.60 Yes 1 11,336 76.47 58.78 26.89 54.90 Yes 2 12,319 76.47 58.78 26.89 54.90 Yes 4 15,245 75.49 59.49 26.89 54.90 Yes 6 18,710 74.50 59.13 26.89 54.40</p><p>The plateau in performance despite increased token counts indicates that the limitation lies not in the length of reasoning but in the model's ability to update internal geometric models. This reinforces the qualitative observation that CoT's symbolic focus hinders effective spatial abstraction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F ANALYSIS OF PREDICTION VARIABILITY</head><p>To further assess the reliability and consistency of model performance on our benchmark, we provide a detailed analysis of prediction variability using standard deviation as a measure of uncertainty.</p><p>For each of the 500 benchmark questions, we sampled 8 responses at a temperature of 0.6 for each model. For every question, we computed the standard deviation of these 8 binary outcomes (correct or incorrect), and then averaged these standard deviation values over all questions for each model.</p><p>We report the results both overall and by difficulty level (Primitive, Compositional, Abstract).</p><p>We find that for most models and difficulty levels, the overall variance is low (typically below 0.03 overall), suggesting that models produce consistent results across multiple independent samples. However, variance is notably higher in the Abstract category for certain models, with maximum deviation values reaching 0.1. This elevated variability typically occurs on harder spatial tasks, where model confidence is lower or outputs are less stable, highlighting the increased uncertainty when </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G MORE BEHAVIOR ANALYSIS OF LLMS</head><p>Problem statement:</p><p>In quadrilateral ABCD, angle BAD and angle CDA are trisected as shown. What is the degree measure of angle AF D? Answer: 80 Geometric Code: size(150); pair A , B, C, D; A = (0,0); B = (2, 4); C = (7,4); D = (7, -2); draw( (0,0)--(2,4) --(7,4) --(7, -2)--cycle); label("$A$", A, SW); label("$B$", B, NW); label("$C$", C, NE); label("$D$", D, SE); pair E, F; E = (4.5-.2,1-.2); F = (5, 3); draw(A--E--D); draw(A--F--D); label("$E$", E, N); label("$F$", F, NW); dot(A);dot(B);dot(C);dot(D);dot(E);dot(F); label("$x$", (1, 1.5), S); label("$x$", (2, 1), S+W); label("$x$", (2, -1), N+N+N+W); label("$y$", (5.5+.3, .5-.3), S); label("$y$", (6.5+.3, 0)); label("$y$", (5+.5, -1.5+.3)); label("$110^{\\circ}$",(2.5,3.5)); label("$100^{\\circ}$ ",(6.5-.2,3.5)); Response from QwQ-32B &lt;think&gt; Okay, so I need to find the measure of angle AFD in this quadrilateral ABCD where angles BAD and CDA are trisected ...... First, let me note down the coordinates again to get a better idea: -A: (0,0) -B: (2,4) -C: (7,4) -D: (7,-2) . So quadrilateral ABCD has vertices at these points.Let me sketch this mentally. Starting at A (0,0), going to B (2,4), then to C (7,4), then to D (7,-2), and back to A. So AB is a line going up to the right, BC is a horizontal line to the right, CD goes down to the right, and DA goes straight left down to A. Wait, actually, D is at (7,-2), so DA would go from (7,-2) back to (0,0). Hmm, so DA is a line from the lower right back to the origin. Angles BAD and CDA are being trisected ...... Alternatively, since both E and F are connected from A to D, but through different paths? Maybe E is on one trisection and F on another? Hmm, this is getting a bit confusing without seeing the actual figure. Let me try to reconstruct based on coordinates. First, let's compute angles BAD and CDA to see their measures, which can then be trisected. Starting with angle BAD. This is the angle at vertex A between points B, A, and D.Coordinates: -Point B: (2,4) -Point A: (0,0) -Point D: (7,-2) So vectors AB and AD can be calculated ...... Now, arccos(0.1592). Let me use a calculator for better precision. Using a calculator, arccos(0.1592): cos(80 u00b0) u2248 0.1736 cos(81 u00b0) u2248 0.1564 So 0.1592 is between 80 and 81 degrees. Let me compute the difference: At 80 u00b0: 0.1736 At 81 u00b0: 0.1564 Difference between 80 and 81 u00b0 is 1 u00b0, and the difference in cos is -0.0172 per degree... Alternatively, maybe angle at B is 110 u00b0, angle at C is 100 u00b0, then angles at A and D would need to be 360 -210 = 150 u00b0, so angle BAD + angle CDA = 150 u00b0, so if angle BAD is trisected into 3x and angle CDA into 3y, then 3x + 3y = 150 u00b0, so x + y = 50 u00b0, then angle AFD would be 180 -x -y = 130 u00b0? Wait, no, in triangle AFD, angles at A and D would be x and y, so angle AFD = 180 -(x + y) = 180 -50=130 u00b0, but that contradicts coordinate. Alternatively, maybe angle at B is 110 u00b0, angle at C is 100 u00b0, then angles at A and D would need to be 360 -210 = 150 u00b0, so angle BAD + angle CDA = 150 u00b0, so if angle BAD is trisected into 3x and angle CDA into 3y, then 3x + 3y = 150 u00b0, so x + y = 50 u00b0, then angle AFD would be 180 -x -y = 130 u00b0? Wait, no, in triangle AFD, angles at A and D would be x and y, so angle AFD = 180 -(x + y) = 180 -50=130 u00b0, but that contradicts coordinate. Alternatively, maybe angle AFD is an external angle or something else ...... which is 80.8 u00b0, so the closest integer is 81 u00b0. Since the problem likely expects an integer, I'll go with 81 as the answer. **Final Answer** 81 To find the degree measure of angle ∠AF D in quadrilateral ABCD where angles ∠BAD and ∠CDA are trisected, we start by analyzing the given coordinates and using vector calculations. The coordinates of the points are: -A = (0, 0) -B = (2, 4) -C = (7, 4) -D = (7, -2) -F = (5, 3) We need to determine the angle at point F between points A, F , and D. This angle is formed by the vectors -→ F A and --→ F D. 1. **Calculate vectors:** --→ F A = A -F = (0 -5, 0 -3) = (-5, -3) ---→ F D = D -F = (7 -5, -2 -3) = (2, -5) 2. **Compute the dot product:** -→ F A • --→ F D = (-5)(2) + (-3)(-5) = -10 + 15 = 5 3. **Compute the magnitudes of the vectors:** -| -→ F A| = (-5) 2 + (-3) 2 = √ 25 + 9 = √ 34 -| --→ F D| = 2 2 + (-5) 2 = √ 4 + 25 = √ 29 4. **Calculate the cosine of the angle:** cos(θ) = -→ F A • --→ F D | -→ F A|| --→ F D| = 5 √ 34 √ 29 = 5 √ 986 5. **Determine the angle using the arccosine function:** θ = arccos 5 √ 986 Using a calculator, we find that: θ ≈ 80.8 • First, looking at the Asymptote code, they define point A at (0,0), B at (3,0), C at (6,0), D at (9,0), E is labeled as Ep which is (9,3), and G is at (6,3). So, let me note down these coordinates:</p><p>-A: (0, 0) -B: (3, 0) -C: (6, 0) -D: (9, 0) -E: (9, 3) -G: (6, 3) ... Alternatively, maybe the square is oriented differently? But since the problem didn't specify orientation, but the Asymptote code had coordinates with C at (6,0), D at (9,0), E at (9,3), G at (6,3). Wait, but maybe it's better to compute coordinates step by step.... Alternatively, since BEFH is a rectangle, then H must be such that BH is equal and parallel to EF, and FH is equal and parallel to BE. Alternatively, since BE is from B to E, then to get to F from E, we move in the direction perpendicular to BE ... Alternatively, perhaps I chose the direction incorrectly. Let me try with the other perpendicular direction. If instead of (3,4), we take (-3,-4). Then vector EF would be (-3,-4). Then point F would be E(3,3) + (-3,-4) = (0,-1). Then vector FH would be equal to BE? Wait, no. Wait, in a rectangle, opposite sides are equal. So FH should be equal and parallel to BE. Hmm, perhaps I need to think differently. Alternatively, since BE is one side, and EF is another side, then FH should be equal and parallel to BE, and HB should be equal and parallel to EF. So if vector BE is (-4,3), then vector FH should also be (-4,3). Starting from F, adding vector BE gives H = F + BE. Wait, but maybe I need to think of the rectangle as B -&gt; E -&gt; F -&gt; H -&gt; B ... In the Asymptote figure, points are: A(0,0), B(3,0), C(6,0), D(9,0), E(9,3), G(6,3) We need to find H's coordinates.H is extension(B, H0, A, G). Let's try to compute H0 and then the line. Which is point B. So line BH0 is the line from B(3,0) to H0(3,0), which is a point. Not helpful... Vector Ep -B = (9-3, 3-0)=(6,3) Vector Ep -(2*B -Ep) = Ep -(-3,-3) = (9 -(-3), 3 -(-3)) = (12,6) So the two vectors are (6,3) and (12,6), which are in the same direction (since (12,6)=2*(6,3)). So the angle between them is zero, so the bisector is the same line. Hence, the angle bisector is undefined, or the line itself. So H0 is along that line. ... Ah, yes! Because vector BE is (6,3), and vector HB is (3/5, -6/5). Their dot product is indeed zero. So the calculation is correct. Therefore, the answer is 1 . **Final Answer** 1 Given quadrilateral (CDEG) is a square with (CD = 3) and quadrilateral (BEFH) is a rectangle with (BE = 5), we need to find the length of (BH). 1. **Coordinates and Setup**: -In the Asymptote code, points (C), (D), (E), and (G) form a square with (CD = 3). The coordinates are (C(6,0)), (D(9,0)), (E(9,3)), and (G(6,3)).</p><p>-The problem states (BE = 5), but in the Asymptote coordinates, (BE) is calculated as ( (9 -3) 2 + (3 -0) 2 = √ 45 = 3 √ 5). To scale this to (BE = 5), the scaling factor is ( 3 = 1). Thus, the length of (BH) is ( 1 ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H A HYPOTHESIS ON INTERNAL GEOMETRIC REPRESENTATIONS IN LLMS</head><p>Drawing on both quantitative results and behavior analyses, we hypothesize that large language models confronted with procedural geometry code engage in a multi-stage internal reasoning process closely aligned with the pipeline illustrated in Figure <ref type="figure" target="#fig_13">13</ref>.</p><p>The process begins with the extraction of local geometric features or substructures ({z 1 , z 2 , . . . }) from the input text and code ({T, C}), corresponding to the abilities probed in RQ1. Our evidence shows that models are generally able to parse and represent these local primitives with high accuracy in simpler cases.</p><p>The next critical stage involves integrating these local elements into a coherent, global representation (Z 1 ), reflecting the compositional reasoning explored in RQ2. This is where we observe a pronounced bottleneck: small errors or ambiguities in local geometry can disrupt subsequent steps, making it difficult for models to build a structurally correct and complete diagram as complexity increases.</p><p>Subsequently, models iteratively attempt to update and refine their global geometric understanding, often through chain-of-thought (CoT) reasoning or self-reflective steps, in hopes of reconciling inconsistencies and clarifying spatial relationships. Despite such iterative efforts, our analysis of model outputs indicates that most fail to achieve robust global integration, as highlighted by the continued drop in accuracy and recurring spatial confusion on the most complex tasks (RQ3).</p><p>Finally, the model produces an answer (A), leveraging whatever spatial structure has been successfully constructed and refined. Our overall findings suggest that while LLMs can recognize and extract local geometric information, and to some extent initiate the integration process, there remain significant limitations in aggregating and refining these components into a globally consistent geometric representation for accurate problem solving. Overcoming these integration and synthesis difficulties is likely to be a key research frontier for closing the gap in Program-to-Geometry spatial reasoning.</p><p>These findings point to the need for future research on more robust scene composition and iterative spatial integration mechanisms in LLMs, as well as the development of benchmarks and training strategies tailored to these specific bottlenecks. </p><formula xml:id="formula_0">{T, C} {z 1 , z 2 , . . . } Z 1 Z 2 A ↑ RQ1 ↑ RQ2 ↑ RQ3</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I LIMITATION AND FUTURE WORK</head><p>While GeoGramBench provides a rigorous assessment of LLMs' abilities on mathematical geometry problems described by procedural code, it does not address reasoning in real-world 3D scenarios. In addition, our analysis of failure patterns remains largely qualitative due to the lack of robust automated tools for systematic error diagnosis. Current approaches to failure mode analysis often</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Accuracy comparison of models on PT vs. PT C in AIME24.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Accuracy comparison of models on PT vs. PT C in MATH-500.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview and performance analysis on text-only (P T ) and text+code (P T C ) geometry problems. (a) The procedural code is wrapped with [asy][/asy] and its geometric figure is visualized to facilitate understanding. (b) and (c) show accuracy comparisons of models on P T and P T C subsets in AIME24 (|P T C | = 5, |P T | = 25) and MATH-500 (|P T C | = 42, |P T | = 458), respectively. In both benchmarks, accuracy consistently drops for problems with procedural code.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Effect of reasoning and geometric complexity.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :Figure 5 :</head><label>45</label><figDesc>Figure4: Representative examples from GeoGramBench illustrating the three ascending Program-to-Geometry difficulty levels: Primitive Recognition, Local Relation Composition, and Global Abstract Integration. Each category is exemplified by two sampled problems, highlighting the increasing spatial complexity and abstraction across levels.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Question: In the diagram, two circles ... How many degree s are in the measure of (the smaller) ∆𝐴𝐷𝐶 ? [asy] ... guide region1 = (a-a/2)..inner..(c/2--c)..outer..cycle; guide region2 = arc(d, a/2, c/2,CCW).. (c/2--d--a/2)..cycle; fill(region1, gray(0.75)); fill(region2, gray(0.75)); ... [/asy]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Illustrative solution process generated by the QwQ-32B model on a Local Relation Composition problem. The model initially attempts to construct spatial representations from the provided code, then interprets geometric elements such as direction and region, exhibiting behavior aligned with all three research questions (RQ1-RQ3): local construction, compositional integration, and chain-of-thought-based refinement. Multiple rounds of reflection and verification are observed, although these iterative steps do not consistently yield correct or fully integrated solutions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :Figure 8 :</head><label>78</label><figDesc>Figure 7: Comparison of QwQ-32B accuracy on equivalent geometry problems expressed in Asymptote versus Matplotlib code (AIME24 and MATH-500). The negligible performance gap demonstrates that Program-to-Geometry capability is independent of drawing language syntax. Example Problem Statement: Rectangles ABCD and EF GH are drawn such that D, E, C, F are collinear. Also, A, D, H, G all lie on a circle. If BC = 16, AB = 107, F G = 17, and EF = 184, what is the length of CE?</figDesc><graphic coords="14,210.96,522.33,190.08,84.86" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>[A, B, C, D, E, F, G, H]: plt.plot(pt[0], pt[1], 'ko') plt.text(A[0], A[1]-1, "\$A\$", ha='center', va='top', fontsize =13) plt.text(B[0], B[1]-1, "\$B\$", ha='center', va='top', fontsize =13) plt.text(C[0], C[1]+1, "\$C\$", ha='center', va='bottom', fontsize=13) plt.text(D[0], D[1]+1, "\$D\$", ha='center', va='bottom', fontsize=13) plt.text(E[0], E[1]-1, "\$E\$", ha='center', va='top', fontsize =13) plt.text(F[0], F[1]-1, "\$F\$", ha='center', va='top', fontsize =13) plt.text(G[0], G[1]+1, "\$G\$", ha='center', va='bottom', fontsize=13) plt.text(H[0], H[1]+1, "\$H\$", ha='center', va='bottom'color='black')plt.xlim(-5, 95) plt.ylim(-5, 38) plt.gca().set_aspect('equal') plt.axis('off') plt.tight_layout() plt.show()</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>Figure 9: Side-by-side comparison of Asymptote code: before (left) and after (right) information leakage mitigation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Side-by-side comparison of Asymptote code: before (left) and after (right) information leakage mitigation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 11 :Figure 12 :</head><label>1112</label><figDesc>Figure 11: Visualization generated from the drawing code</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>Finding Coordinates of (H)**: -In the Asymptote figure, line (AG) is from (A(0,0)) to (G(6,3)). The parametric form of (AG) is ((6t, 3t)). -Point (F) on (AG) is found by ensuring (EF) is perpendicular to (BE). Solving, (F) is at ( 42 5 , 21 5 ). -Point (H) is determined by the rectangle properties, resulting in (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Illustration of the hypothesized multi-stage internal geometry representations process in LLMs for Program-to-Geometry tasks. The model first extracts local geometric substructures ({z 1 , z 2 , . . .}) from the problem statement ({T, C}), then integrates these into a coherent global structure (Z 1 ), which is further iteratively refined and updated (Z 2 , . . .), before finally predicting the answer (A). Each stage corresponds to a core research question: RQ1 (local construction), RQ2 (compositional integration), and RQ3 (global abstraction and reasoning). Dashed arrows indicate how both input information and intermediate representations propagate throughout the process.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>As the geometric program complexity increases, accuracy drops sharply for all models on the Abstract level, with no model surpassing 50%.Most challenging subtypes: angle and volume.At the Primitive and Compositional levels, which focus on 2D geometric figures, the angle subtype is most challenging, as it requires the model to reconstruct and reason about implicit spatial relationships in 2D, which is difficult with only code input. In contrast, length or count subtypes are typically more straightforward, often solvable with direct algebraic or counting methods. At the Abstract level, dominated by 3D geometric figures, the most difficult subtypes shift to area and especially volume. Area and volume problems require complete 3D spatial understanding, making them especially difficult at the Abstract level. This means models struggle much more with these tasks. Angle problems can sometimes be simplified to 2D scenarios using vector or triangle-based techniques, so their relative difficulty is lower compared to area and volume. The key point is not that angle questions become simple, but that area and volume tasks in 3D geometry present a much greater challenge for current models. Thus, the stark accuracy drop for area and volume in the Abstract level reflects the greater demand for true 3D spatial integration and highlights the significant challenges that current models face in higher-dimensional reasoning.Angle Length Area Ratio Count Avg. Angle Length Area Ratio Count Avg. Angle Length Area Volume Ratio Count</figDesc><table><row><cell>Model</cell><cell></cell><cell>Primitive</cell><cell></cell><cell></cell><cell>Compositional</cell><cell></cell><cell></cell><cell></cell><cell>Abstract</cell><cell></cell><cell></cell><cell></cell><cell>ALL</cell></row><row><cell></cell><cell cols="5">Avg. Closed-source Models</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT-5</cell><cell>90.44 85.80</cell><cell cols="3">87.50 93.75 87.50 99.17 84.59 74.02</cell><cell cols="3">86.65 88.20 77.50 90.32 39.26 70.91</cell><cell cols="2">80.67 19.29</cell><cell>21.76</cell><cell cols="3">53.13 80.67 75.01</cell></row><row><cell>GPT-o3-mini</cell><cell>83.49 69.57</cell><cell cols="3">87.50 92.24 76.47 89.47 76.10 51.96</cell><cell cols="3">78.91 77.37 75.42 79.55 42.67 55.36</cell><cell cols="2">59.56 30.14</cell><cell>30.60</cell><cell cols="3">59.38 71.32 70.00</cell></row><row><cell>GPT-o1</cell><cell>85.92 71.15</cell><cell cols="3">88.39 92.67 88.23 90.13 76.12 50.00</cell><cell cols="3">80.63 79.60 69.07 79.55 44.67 64.28</cell><cell cols="2">58.15 35.30</cell><cell>36.20</cell><cell cols="3">62.50 57.78 70.92</cell></row><row><cell>GPT-o1-preview</cell><cell>73.95 57.21</cell><cell cols="3">84.82 80.17 70.59 74.34 55.87 36.41</cell><cell cols="3">56.68 57.08 58.69 57.58 25.33 48.21</cell><cell cols="2">29.89 15.17</cell><cell>23.71</cell><cell>53.13</cell><cell>37.5</cell><cell>53.15</cell></row><row><cell>GPT-o1-mini</cell><cell>78.89 68.30</cell><cell cols="3">86.16 84.91 74.26 77.63 63.31 43.48</cell><cell cols="3">65.89 68.68 59.66 57.20 27.14 34.14</cell><cell cols="2">43.48 15.44</cell><cell>20.69</cell><cell cols="3">31.25 49.26 58.94</cell></row><row><cell>GPT-4o</cell><cell>40.02 25.48</cell><cell cols="2">46.43 47.84 38.23 40.13 21.36</cell><cell>9.78</cell><cell>23.00 21.93 22.03 20.45</cell><cell>4.51</cell><cell>14.29</cell><cell>6.52</cell><cell>0.70</cell><cell>2.10</cell><cell>25.00</cell><cell>8.82</cell><cell>21.40</cell></row><row><cell>Gemini-Pro-1.5</cell><cell>48.77 54.81</cell><cell cols="3">49.50 54.81 47.32 53.33 31.41 20.00</cell><cell cols="3">29.97 32.30 34.07 35.89 14.39 19.64</cell><cell>23.13</cell><cell>9.78</cell><cell>4.17</cell><cell cols="3">28.13 29.17 31.64</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Open-source Models</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Qwen3-235B-Thinking-2507 89.09 84.10</cell><cell cols="3">88.00 90.38 91.07 94.17 79.12 68.75</cell><cell cols="3">81.68 83.71 68.38 83.06 49.05 60.71</cell><cell cols="2">63.75 44.84</cell><cell>31.48</cell><cell cols="3">50.00 68.33 74.00</cell></row><row><cell>DeepSeek-R1</cell><cell>84.68 73.86</cell><cell cols="3">87.50 87.98 89.29 85.83 75.13 66.80</cell><cell cols="3">76.85 78.93 70.10 72.98 40.86 60.71</cell><cell cols="2">53.75 34.78</cell><cell>24.07</cell><cell cols="3">59.38 58.33 69.17</cell></row><row><cell>DeepSeek-v3-0324</cell><cell>79.73 66.35</cell><cell cols="3">87.50 81.90 80.89 82.23 68.71 52.72</cell><cell cols="3">71.85 73.58 64.19 60.98 28.29 51.79</cell><cell cols="2">45.65 16.51</cell><cell>18.53</cell><cell cols="3">56.25 41.91 62.05</cell></row><row><cell>Qwen3-32B</cell><cell>86.89 82.39</cell><cell cols="3">87.50 84.13 91.96 92.50 75.18 60.00</cell><cell cols="3">78.12 81.32 63.48 78.23 43.28 66.07</cell><cell cols="2">50.62 37.50</cell><cell>24.54</cell><cell>68.75</cell><cell>67.5</cell><cell>69.98</cell></row><row><cell>QwQ-32B</cell><cell>85.17 75.57</cell><cell cols="3">86.50 82.21 90.18 90.83 73.12 51.88</cell><cell cols="3">77.70 79.63 65.93 69.35 37.92 44.64</cell><cell cols="2">53.23 31.25</cell><cell>25.46</cell><cell cols="3">46.88 59.17 67.12</cell></row><row><cell cols="2">DeepSeek-Distill-Qwen-32B 79.78 67.61</cell><cell cols="3">83.50 77.88 83.93 90.00 67.83 51.88</cell><cell cols="3">69.03 75.28 59.07 67.34 35.92 50.00</cell><cell cols="2">48.13 26.90</cell><cell>21.76</cell><cell cols="3">53.13 60.00 62.68</cell></row><row><cell>Bespoke-Stratos-32B</cell><cell>62.50 40.34</cell><cell cols="3">72.50 62.50 71.43 70.00 42.56 33.13</cell><cell cols="3">42.05 46.35 43.38 37.90 17.02 28.57</cell><cell>26.25</cell><cell>8.97</cell><cell>15.28</cell><cell cols="3">46.88 19.17 40.55</cell></row><row><cell>s1.1-32B</cell><cell>75.37 50.57</cell><cell cols="3">84.00 77.40 80.00 80.00 58.96 39.38</cell><cell cols="3">61.65 62.50 57.11 56.88 26.58 33.93</cell><cell cols="2">40.00 16.58</cell><cell>18.52</cell><cell cols="3">43.75 45.83 54.60</cell></row><row><cell>DeepSeek-Distill-Qwen-7B</cell><cell>72.79 60.80</cell><cell cols="3">82.50 67.79 75.00 80.83 58.74 40.62</cell><cell cols="3">58.10 67.56 53.68 55.24 24.16 33.93</cell><cell cols="2">40.62 11.68</cell><cell>18.52</cell><cell cols="3">31.25 44.17 53.38</cell></row><row><cell>Sky-T1-mini-7B</cell><cell>71.45 57.95</cell><cell cols="3">79.50 64.42 75.89 85.83 57.75 40.00</cell><cell cols="3">58.81 64.61 51.23 57.26 24.79 35.71</cell><cell cols="2">38.75 13.32</cell><cell>18.06</cell><cell cols="3">34.38 45.83 52.70</cell></row><row><cell cols="2">DeepSeek-Distill-Qwen-1.5B 60.29 48.86</cell><cell>76.50 55.29 62.5</cell><cell cols="2">56.67 39.02 21.25</cell><cell cols="2">41.19 46.49 32.11 34.27 11.03</cell><cell>7.14</cell><cell>19.38</cell><cell>4.62</cell><cell>9.26</cell><cell cols="3">21.88 21.67 36.70</cell></row><row><cell>DeepScaleR-1.5B-preview</cell><cell>65.44 52.27</cell><cell cols="3">80.50 57.21 69.64 70.00 47.89 30.63</cell><cell cols="3">51.14 53.09 42.16 44.35 15.76 12.50</cell><cell>16.25</cell><cell>9.78</cell><cell>16.67</cell><cell cols="3">21.88 31.67 43.83</cell></row></table><note><p>For example, Qwen3-235B-Thinking-2507 achieves 89.09% accuracy on the Primitive level and 79.12% on the Compositional level, but only 49.05% on the Abstract level. Similarly, GPT-5 reaches 90.44% on the Primitive level and 84.59% on the Compositional level, but falls to just 39.26% on the Abstract level. This trend underscores significant limitations in current LLMs' ability to construct and reason about complex geometric figures and spatial relationships, particularly when deeper geometric abstraction is required. Accuracy (%) of selected closed-source and open-source LLMs on GeoGramBench across three difficulty levels. For each model, the lowest-performing subtype within each level is highlighted with a background color ( ), and for each subtype, the highest accuracy among all models is shown in bold.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Distribution of GeoGramBench problems by subtype within each complexity category.To address the potential influence of data scarcity on LLMs' performance in the Program-to-Geometry task, we conducted data ablation experiments to systematically evaluate the impact of adding domain-specific examples from GeoGramBench. These experiments aim to clarify whether the observed performance gaps are primarily due to a lack of training data or inherent modeling limitations, while also assessing the benchmark's effectiveness in enhancing spatial reasoning capabilities.</figDesc><table><row><cell cols="4">Subtype Primitive Compositional Abstract</cell></row><row><cell>Angle</cell><cell>22</cell><cell>20</cell><cell>7</cell></row><row><cell>Length</cell><cell>25</cell><cell>88</cell><cell>20</cell></row><row><cell>Area</cell><cell>26</cell><cell>89</cell><cell>46</cell></row><row><cell>Ratio</cell><cell>14</cell><cell>51</cell><cell>4</cell></row><row><cell>Count</cell><cell>15</cell><cell>31</cell><cell>15</cell></row><row><cell>Volume</cell><cell>0</cell><cell>0</cell><cell>27</cell></row><row><cell>Total</cell><cell>102</cell><cell>279</cell><cell>119</cell></row><row><cell cols="4">D IMPACT OF DOMAIN-SPECIFIC DATA ON LLMS' PERFORMANCE</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Data ablation results on s1.1-32B fine-tuned with increasing GeoGramBench samples added to s1k. Accuracies (%) are reported on a 200-problem test subset. ∆ denotes improvement over the baseline (Exp. 1). Bold highlights the best per level.</figDesc><table><row><cell cols="6">Exp. # Added Samples Primitive Compositional Abstract Avg.</cell><cell>∆</cell></row><row><cell>1</cell><cell>0</cell><cell>59.38</cell><cell>46.00</cell><cell>15.80</cell><cell>38.18</cell><cell>-</cell></row><row><cell>2</cell><cell>50</cell><cell>57.99</cell><cell>49.61</cell><cell>16.18</cell><cell cols="2">39.80 +1.62</cell></row><row><cell>3</cell><cell>100</cell><cell>61.22</cell><cell>49.66</cell><cell>18.62</cell><cell cols="2">41.20 +3.02</cell></row><row><cell>4</cell><cell>150</cell><cell>61.11</cell><cell>50.90</cell><cell>18.38</cell><cell cols="2">41.73 +3.55</cell></row><row><cell>5</cell><cell>300</cell><cell>61.11</cell><cell>51.42</cell><cell>17.83</cell><cell cols="2">41.79 +3.60</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Standard deviation of model predictions (across 8 samples per question) by difficulty level.Thinking-2507 and DeepSeek-R1 show consistently low standard deviation values across all levels, indicating strong and stable reasoning ability. In contrast, models like DeepSeek-v3-0324 or GPT-o1-mini can exhibit substantially higher variance, especially in the Abstract category, reflecting greater instability and inconsistency for challenging problems.</figDesc><table><row><cell>Model</cell><cell cols="4">Overall Primitive Compositional Abstract</cell></row><row><cell>GPT-o3-mini</cell><cell>0.033</cell><cell>0.036</cell><cell>0.020</cell><cell>0.093</cell></row><row><cell>GPT-o1</cell><cell>0.033</cell><cell>0.034</cell><cell>0.030</cell><cell>0.058</cell></row><row><cell>GPT-o1-preview</cell><cell>0.025</cell><cell>0.061</cell><cell>0.033</cell><cell>0.029</cell></row><row><cell>Gemini-Pro-1.5</cell><cell>0.015</cell><cell>0.030</cell><cell>0.026</cell><cell>0.011</cell></row><row><cell>GPT-o1-mini</cell><cell>0.038</cell><cell>0.050</cell><cell>0.031</cell><cell>0.088</cell></row><row><cell>GPT-o1-preview</cell><cell>0.027</cell><cell>0.042</cell><cell>0.035</cell><cell>0.045</cell></row><row><cell>Qwen3-235B-Thinking-2507</cell><cell>0.007</cell><cell>0.011</cell><cell>0.007</cell><cell>0.023</cell></row><row><cell>DeepSeek-R1</cell><cell>0.008</cell><cell>0.008</cell><cell>0.010</cell><cell>0.017</cell></row><row><cell>DeepSeek-v3-0324</cell><cell>0.046</cell><cell>0.060</cell><cell>0.032</cell><cell>0.103</cell></row><row><cell cols="5">solving complex geometric problems. For instance, relatively advanced models such as Qwen3-</cell></row><row><cell>235B-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Published as a conference paper at ICLR 2026 rely on LLM-based evaluation, but their reliability is questionable-these methods require LLMs with very high reasoning capabilities, and the faithfulness of their chain-of-thought processes is still an open research problem. Moreover, although our supervised fine-tuning experiments indicate that GeoGramBench can improve LLM performance on Program-to-Geometry tasks, the evaluation of its effectiveness on a broader range of spatial reasoning challenges is still preliminary and warrants more thorough investigation.</p><p>In future work, we plan to extend GeoGramBench to include real-world 3D scenarios. We also intend to explore the potential of this benchmark for guiding model training on more diverse spatial tasks, such as those encountered in robotics and other applied domains. We encourage further research to build on GeoGramBench, develop more advanced evaluation and probing techniques, and systematically investigate model behavior in a variety of procedural and spatial contexts, ultimately advancing our understanding of spatial reasoning in large language models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J THE USE OF LARGE LANGUAGE MODELS (LLMS)</head><p>In this work, GPT-4o was utilized as a general-purpose aid for polishing writing, specifically for grammar correction and refining sentence expression. No content was generated by LLMs for research ideation, experimental design, data analysis, or substantive scientific contribution. We take full responsibility for the final content.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Big-math: A large-scale, high-quality math dataset for reinforcement learning in language models</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Albalak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duy</forename><surname>Phung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishk</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Castricato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anikait</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chase</forename><surname>Blagden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Violet</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dakota</forename><surname>Mahan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.17387</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Svgenius: Benchmarking llms in svg understanding, editing and generation</title>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haolei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guiyang</forename><surname>Hou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM International Conference on Multimedia</title>
+		<meeting>the 33rd ACM International Conference on Multimedia</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="13289" to="13296" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Symbolic graphics programming with large language models</title>
+		<author>
+			<persName><forename type="first">Yamei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoquan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeju</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaipeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yandong</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.05208</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021-10">Oct 2021</date>
+		</imprint>
+		<respStmt>
+			<orgName>Cornell University -arXiv,Cornell University -arXiv</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">The theory of multiple intelligences</title>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Christodoulou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Seider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><forename type="middle">Earl</forename><surname>Gardner ; Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Christodoulou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Seider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<editor>RJ Sternberg &amp; SB Kaufman</editor>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<publisher>Cambridge Handbook of Intelligence</publisher>
+			<biblScope unit="page" from="485" to="503" />
+		</imprint>
+	</monogr>
+	<note>The theory of multiple intelligences</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Omni-math: A universal olympiad level mathematic benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingxiu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.07985</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Olympiadbench: A challenging benchmark for promoting agi with olympiad-level bilingual multimodal scientific problems</title>
+		<author>
+			<persName><forename type="first">Chaoqun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renjie</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhuo</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Leng Thai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14008</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Carney</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<title level="m">Openai o1 system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Bespoke-stratos: The unreasonable effectiveness of reasoning distillation</title>
+		<author>
+			<persName><forename type="first">Bespoke</forename><surname>Labs</surname></persName>
+		</author>
+		<ptr target="https://www.bespokelabs.ai/blog/bespoke-stratos-the-unreasonable-effectiveness-of-reasoning-distillation" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Solving quantitative reasoning problems with language models</title>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Ramasesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrose</forename><surname>Slone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imanol</forename><surname>Schlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theo</forename><surname>Gutman-Solo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="3843" to="3857" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengkun</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiarong</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14382</idno>
+		<title level="m">S*: Test time scaling for code generation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Numinamath: The largest public dataset in ai4maths with 860k pairs of competition math problems and solutions</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Soletskyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziju</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hugging Face repository</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Bill Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radha</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Poovendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zebralogic</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.01100</idno>
+		<title level="m">On the scaling limits of llms for logical reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mathvista</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.02255</idno>
+		<title level="m">Evaluating mathematical reasoning of foundation models in visual contexts</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">DeepScaleR: Surpassing o1-preview with a 1.5b model by scaling rl</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Y</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Roongta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Erran</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://pretty-radio-b75.notion.site/DeepScaleR-Surpassing-O1-Preview-with-a-1-5B-Model-by" />
+	</analytic>
+	<monogr>
+		<title level="m">Raluca Ada Popa, and Ion Stoica</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Scali ng-RL-19681902c1468005bed8ca303013a4e2</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">American invitational mathematics examination -aime. in american invitational mathematics examination -aime 2024</title>
+		<author>
+			<persName><surname>Maa</surname></persName>
+		</author>
+		<ptr target="https://maa.org/math-competitions/american-invitational-mathematics-examination-aime" />
+		<imprint>
+			<date type="published" when="2025-02">February 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.19393</idno>
+		<title level="m">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Gpt-5 system card</title>
+		<ptr target="https://openai.com/index/gpt-5-system-card/" />
+		<imprint>
+			<date type="published" when="2025-08">August 2025</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Understanding and benchmarking artificial intelligence: Openai&apos;s o3 is not agi</title>
+		<author>
+			<persName><forename type="first">Rolf</forename><surname>Pfister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansueli</forename><surname>Jud</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07458</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zeju</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiwen</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><forename type="middle">Z</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><forename type="middle">M</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">J</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernhard</forename><surname>Schölkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08313</idno>
+		<title level="m">Can large language models understand symbolic graphics programs? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21380</idno>
+		<title level="m">Challenging the boundaries of reasoning: An olympiad-level math benchmark for large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Mm-math: Advancing multimodal math evaluation with process evaluation and fine-grained classification</title>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05091</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kexian</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyao</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodong</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhening</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaifeng</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.19990</idno>
+		<title level="m">Lego-puzzles: How good are mllms at multi-step spatial reasoning? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengyang</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingxing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benyou</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.02884</idno>
+		<title level="m">Mathscale: Scaling instruction tuning for mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Qwq-32b: Embracing the power of reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwq-32b/" />
+		<imprint>
+			<date type="published" when="2025-03">March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Qwen3 technical report</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.09388" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Chat2svg: Vector graphics generation with large language models and image diffusion models</title>
+		<author>
+			<persName><forename type="first">Ronghuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanchao</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Liao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Computer Vision and Pattern Recognition Conference</title>
+		<meeting>the Computer Vision and Pattern Recognition Conference</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="23690" to="23700" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liangyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxiu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bu</forename><surname>Pi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyong</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.12597</idno>
+		<title level="m">Evaluating identification and application of geometric principles in multimodal reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Exploring the capability of llms in performing low-level visual analytic tasks on svg data visualizations</title>
+		<author>
+			<persName><forename type="first">Zhongzheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Wall</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE Visualization and Visual Analytics (VIS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="126" to="130" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Thinking in space: How multimodal large language models see, remember, and recall spaces</title>
+		<author>
+			<persName><forename type="first">Jihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shusheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><forename type="middle">W</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rilyn</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14171</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lovish</forename><surname>Albert S Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moskovitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaditya K</forename><surname>Dj Strouse</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Harp</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.08819</idno>
+		<title level="m">A challenging human-annotated math reasoning benchmark</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiarui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ollie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Willie</forename><surname>Neiswanger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Euclid</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.08737</idno>
+		<title level="m">Supercharging multimodal llms with synthetic high-fidelity visual descriptions</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Mathverse: Does your multi-modal llm truly see the diagrams in visual math problems?</title>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongzhi</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haokun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengshuo</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="169" to="186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoming</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beidi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05252</idno>
+		<title level="m">Gsm-infinite: How do your llms behave over infinitely increasing context length and reasoning complexity? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

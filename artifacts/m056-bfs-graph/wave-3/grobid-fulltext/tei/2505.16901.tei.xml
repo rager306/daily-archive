@@ -1,0 +1,2507 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Code Graph Model Code Graph Model (CGM): A Graph-Integrated Large Language Model for Repository-Level Software Engineering Tasks</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-23">23 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Hongyuan</forename><surname>Tao</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ying</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">ShanghaiTech University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhenhao</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongen</forename><surname>Peng</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xukun</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bingchang</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yingguang</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ziyin</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">Shanghai Jiaotong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhaogui</forename><surname>Xu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Haipeng</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">ShanghaiTech University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Linchao</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">Shanghai Jiaotong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hang</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianguo</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Peng</forename><surname>Di</surname></persName>
+							<affiliation key="aff0">
+							</affiliation>
+						</author>
+						<title level="a" type="main">Code Graph Model Code Graph Model (CGM): A Graph-Integrated Large Language Model for Repository-Level Software Engineering Tasks</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-23">23 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6CA3670E39A566CBF9611DB2EB91721E</idno>
+					<idno type="arXiv">arXiv:2505.16901v4[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CS-3</term>
+					<term>5 denotes Claude-3</term>
+					<term>5-Sonnet, DS-V3 represents DeepSeek-V3 separability_matrix nested_models</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advances in Large Language Models (LLMs) have shown promise in functionlevel code generation, yet repository-level software engineering tasks remain challenging. Current solutions predominantly rely on proprietary LLM agents, which introduce unpredictability and limit accessibility, raising concerns about data privacy and model customization. This paper investigates whether open-source LLMs can effectively address repository-level tasks without requiring agent-based approaches. We demonstrate this is possible by enabling LLMs to comprehend functions and files within codebases through their semantic information and structural dependencies. To this end, we introduce Code Graph Models (CGMs), which integrate repository code graph structures into the LLM's attention mechanism and map node attributes to the LLM's input space using a specialized adapter. When combined with an agentless graph RAG framework, our approach achieves a 43.00% resolution rate on the SWE-bench Lite benchmark using the open-source Qwen2.5-72B model. This performance ranks first among open weight models, second among methods with open-source systems, and eighth overall, surpassing the previous best open-source model-based method by 12.33%.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The dream of automating software engineering (SE) has long captivated both the SE and artificial intelligence (AI) communities <ref type="bibr">(Ma et al., 2024a;</ref><ref type="bibr">Xia et al., 2024;</ref><ref type="bibr">Zhang et al., 2023b)</ref>. Recent advancements in Large Language Models (LLMs) have shown promising results, particularly in code generation at the function level, with models achieving resolution rates above 90% on benchmarks such as HumanEval <ref type="bibr" target="#b4">(Chen et al., 2021)</ref>. Unfortunately, real-world SE tasks extend far beyond isolated functions or self-contained code files. This is exemplified by repository-level issue resolution <ref type="bibr" target="#b19">(Jimenez et al., 2024;</ref><ref type="bibr" target="#b64">Zan et al., 2024)</ref>, which encompasses not only software maintenance-addressing bugs and technical debt-but also software evolution, which involves introducing new features and enhancements <ref type="bibr">(Liu et al., 2024d)</ref>.</p><p>The complexity of repository-level coding tasks has led researchers and practitioners to assume that sophisticated strategies are necessary for their completion <ref type="bibr">(Yang et al., 2024b)</ref>. Indeed, current leading approaches typically utilize LLM agents powered by proprietary models like GPT-4/4o (Ope-nAI, 2024a) and Claude 3.5 Sonnet (Anthropic, 2024). These agents are designed to leverage tools, execute commands, observe environmental feedback, and plan subsequent actions <ref type="bibr">(Ma et al., 2024b)</ref>. Nevertheless, these methods suffer from two problems. First, the agent-driven mechanism introduces unpredictability in decision-making <ref type="bibr">(Xia et al., 2024)</ref>. As the reasoning processes become intricate in tackling complex problems, the accumulation of errors can hinder the generation of optimal solutions <ref type="bibr" target="#b1">(Antoniades et al., 2024)</ref>. Second, the reliance on closed-source models creates substantial barriers for the broader SE community <ref type="bibr" target="#b38">(Manchanda et al., 2024;</ref><ref type="bibr" target="#b70">Zhu et al., 2024)</ref>, including limited accessibility, inability to enhance or customize models for specific tasks, and serious security concerns regarding the privacy of sensitive code repositories when interacting with external API services.</p><p>The above two challenges lead to a bold question: Can open-source LLMs be employed in an agentless manner to complete repository-level coding tasks? At first glance, this seems improbable. Closed-source agent-based approaches can resolve up to 55% of issues on the popular SWE-bench Lite benchmark<ref type="foot" target="#foot_0">foot_0</ref> for issue fixing, whereas existing methods using open-source models have only achieved a maximum resolution rate of 30.67% as of May 2025 <ref type="bibr" target="#b2">(Aor, 2024)</ref>.</p><p>Despite these initial reservations, we posit that the answer is "Yes", and the key lies in empowering the open-source LLMs to fully comprehend code repositories, not just the information within individual functions and files, but also the dependencies across functions and files. To move forward to this goal, we propose Code Graph Models (CGMs), to jointly model the semantic and structural information of code repositories. Specifically, we first construct a code graph for each repository, which characterizes the hierarchical and reference dependencies between code entities. We then develop a method to integrate this graph into the LLM through two key mechanisms. (i) Semantic Integration: Node attributes (containing code or comments) are first encoded by a pretrained text encoder and then mapped to the LLM's input space via an adapter, enabling the model to understand the semantic information of all nodes. (ii) Structural Integration: The graph structure is incorporated into the LLM through the attention mask, allowing direct message passing only between neighboring nodes in each layer of the LLM, similar to spatial Graph Neural Networks (GNNs) <ref type="bibr" target="#b3">(Chami et al., 2022)</ref>. The entire system-comprising the text encoder, adapter, and LLM decoder-is then fine-tuned using Low Rank Adaptation (LoRA) <ref type="bibr" target="#b16">(Hu et al., 2021)</ref>. The resulting CGM can tackle repository-level coding tasks by using both the code graph and user instructions (text format). To further augment the abilities of the CGM, we develop a specially designed Graph Retrieval-Augmented Generation (RAG) framework, consisting of four modules: Rewriter, Retriever, Reranker, and Reader (i.e., CGM). The first three modules focus the CGM on the subgraph that is most pertinent to the user's query or issue.</p><p>Our approach has demonstrated remarkable results on the SWE-bench Lite benchmark, reaching a 43.00% resolution rate using the open-source Qwen2.5-72B model and our agentless RAG framework. As of May 2025, this performance ranks first among methods utilizing open-source 2 Related Works</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Large Language Models for Code</head><p>Recent advancements in LLMs have shown remarkable success in generating code at self-contained function or file levels <ref type="bibr">(Zhang et al., 2023b)</ref>. This includes powerful closed-source models like GPT-4/4o (OpenAI, 2024a), Gemini-2.0 <ref type="bibr" target="#b45">(Pichai et al., 2024)</ref>, and Claude 3.5 Sonnet (Anthropic, 2024), as well as open-source alternatives such as Llama 3.1 <ref type="bibr" target="#b9">(Dubey et al., 2024)</ref>, Qwen 2.5 <ref type="bibr">(Yang et al., 2024a)</ref>, and DeepSeek-V3 <ref type="bibr">(Liu et al., 2024a)</ref>. Additionally, code-specialized open-source models have also emerged, including StarCoder <ref type="bibr">(Li et al., 2023a;</ref><ref type="bibr" target="#b34">Lozhkov et al., 2024)</ref>, DeepSeek-Coder <ref type="bibr" target="#b70">(Zhu et al., 2024;</ref><ref type="bibr">Guo et al., 2024)</ref>, and Qwen-Coder <ref type="bibr" target="#b17">(Hui et al., 2024)</ref>. However, these models struggle with repository-level coding tasks that better reflect practical software development scenarios. Even the most capable closed-source models achieve only modest success rates on the SWE-bench Lite benchmark <ref type="bibr" target="#b19">(Jimenez et al., 2024)</ref> for real-world issue fixing, while open-source models lag further behind with a maximum resolution rate of 26% <ref type="bibr" target="#b59">(Xie et al., 2025)</ref>. Although closed-source models show superior performance, their limited accessibility and data privacy concerns hinder widespread adoption in the SE community. Furthermore, their proprietary nature prevents fine-tuning on task-specific data to improve performance, if even such data is available.</p><p>For open-source LLMs to better handle repository-level tasks, they must develop a comprehensive understanding of both semantic and structural information within codebases. DeepSeek-Coder <ref type="bibr" target="#b70">(Zhu et al., 2024)</ref> has attempted to address this challenge by pre-training models on topologically sorted repository codes. However, this approach faces two major limitations: real-world repositories often contain more code than can fit within the model's maximum context length; and the conversion of repository structure into text format tends to obscure explicit dependencies that exist in the codebase.</p><p>To overcome these challenges, we propose representing repositories as text-rich graphs and aligning them with LLMs via self-supervised continual pre-training. This approach preserves code repository structure while enabling more effective processing and understanding of complex dependencies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Graphs in Code Language Models</head><p>The integration of graph structures into code language models can be classified into three main approaches <ref type="bibr">(Zhang et al., 2024c)</ref>: (1) attention mask modification, (2) graph-to-text conversion, and (3) positional encoding augmentation. In the first approach, models like GraphCodeBERT <ref type="bibr" target="#b11">(Guo et al., 2020)</ref> and StructCoder <ref type="bibr" target="#b51">(Tipirneni et al., 2024)</ref> modify attention masks to capture relationships between code tokens in Abstract Syntax Trees (ASTs) and Data Flow Graphs (DFGs). The second approach, demonstrated by TreeBERT <ref type="bibr" target="#b18">(Jiang et al., 2021)</ref> and UniXcoder <ref type="bibr" target="#b12">(Guo et al., 2022)</ref>, transforms ASTs or node paths into textual sequences that can be processed by language models. The third approach, exemplified by TPTrans <ref type="bibr" target="#b44">(Peng et al., 2021)</ref>, leverages relative positional encodings to represent structural relationships within ASTs.</p><p>While these approaches have shown promise, they primarily focus on Transformer encoders and small-scale language models (such as BERT or CodeT5) and are limited to file-or function-level tasks. In contrast, our work enhances decoder-only LLMs to handle repository-level tasks. We construct text-rich code graphs for entire codebases, moving beyond simple ASTs or DFGs. Inspired by GraphCodeBERT and StructCoder, we incorporate graph structures through attention masks in LLMs. However, due to the text-rich nature of the graphs, each node's text or semantic information is processed by a pretrained text encoder and then projected onto the LLM's input space via an adapter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Agent-drive Methods for Software Engineering</head><p>LLM-based agents like Devin (Cognition, 2023) have shown the potential to solve real-world SE problems through their reasoning <ref type="bibr" target="#b35">(Luo et al., 2024;</ref><ref type="bibr">Wang et al., 2024b)</ref> and interactive capabilities <ref type="bibr" target="#b15">(Hong et al., 2023;</ref><ref type="bibr" target="#b21">Kong et al., 2024;</ref><ref type="bibr" target="#b60">Xie et al., 2024;</ref><ref type="bibr">Ma et al., 2024b)</ref>. Along this direction, researchers have worked to enhance LLM agents through various approaches, including specialized agent-computer interfaces (ACI) <ref type="bibr" target="#b61">(Xue et al., 2023;</ref><ref type="bibr" target="#b22">Lee et al., 2024;</ref><ref type="bibr">Yang et al., 2024b;</ref><ref type="bibr">Zhang et al., 2024a)</ref>, fine-grained search <ref type="bibr">(Zhang et al., 2024b;</ref><ref type="bibr" target="#b1">Antoniades et al., 2024;</ref><ref type="bibr">Ma et al., 2024b)</ref>, and expanded action spaces <ref type="bibr">(Wang et al., 2024c)</ref>.</p><p>However, these agent-based approaches face several drawbacks. First, they typically delegate decision-making to the agents, allowing them to determine both the timing and nature of actions. While agents base their decisions on previous actions and environmental feedback, the expansive action space and complex feedback mechanisms can lead to repetitive behaviors or accumulating errors, ultimately resulting in suboptimal solutions <ref type="bibr" target="#b1">(Antoniades et al., 2024)</ref>. Second, resolving a single issue often requires 30-40 interaction turns, making the process time-consuming and complicating the identification of specific turns that resulted in unsatisfactory outcomes <ref type="bibr">(Xia et al., 2024)</ref>. Third, the inherent unpredictability of agent behavior and reliance on closed-source models creates obstacles for leveraging data to improve performance, despite the abundance of such data in practice, such as issue-patch pairs for issue fixing <ref type="bibr" target="#b19">(Jimenez et al., 2024)</ref>. While SWE-Gym <ref type="bibr">(Pan et al., 2024a)</ref> attempts to address trainability, it may introduce bias by only training with the trajectories that lead the SWE agent to correct answers. As a remedy, we propose the CGM, built on open-source LLMs and enhanced through an agentless Graph RAG framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Agentless Methods for Software Engineering</head><p>Agentless models offer a more controlled approach to simulating real-world SE processes by following well-defined, fixed steps rather than relying on LLM agents to make autonomous decisions or use complex tools. They help avoid the issues of unpredictability and lengthy interaction chains. These methods typically operate in two main stages: localization and editing <ref type="bibr" target="#b41">(Ouyang et al., 2024)</ref>. The localization stage identifies relevant code snippets within a repository, while the editing stage generates or modifies code based on these identified sections. This framework is particularly effective for repository-level code completion tasks, especially when combined with RAG <ref type="bibr" target="#b49">(Shrivastava et al., 2023;</ref><ref type="bibr">Zhang et al., 2023a)</ref>. For more complex tasks like issue fixing, enhanced approaches with additional steps exist <ref type="bibr">(Xia et al., 2024;</ref><ref type="bibr">Ma et al., 2024a)</ref>. For instance, Agentless <ref type="bibr">(Xia et al., 2024)</ref> implements a comprehensive ten-step pipeline, dedicating four steps to improving localization accuracy. This method has achieved a promising resolution rate of 40.67% on SWE-bench Lite, comparable to state-of-the-art (SOTA) agent-based methods, though it relies on the closed-source model Claude-3.5 Sonnet.</p><p>Recent research has also focused on enhancing code understanding by incorporating structural information through graph-enhanced repository modeling <ref type="bibr" target="#b7">(Ding et al., 2022;</ref><ref type="bibr">Liu et al., 2024c</ref>;  <ref type="bibr" target="#b41">Ouyang et al., 2024)</ref>. However, even when graph structures are used during retrieval, existing methods typically flatten the retrieved code snippets into linear text sequences for downstream model prompting. This flattening process fails to preserve the inherent heterogeneity between graph and text modalities. As a remedy, we propose the CGM that explicitly aligns these two distinct modalities, enabling better preservation and utilization of structural information throughout the entire process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Code Graph Construction</head><p>Before delving into the CGM, it is crucial to understand the repository-level code graph that CGM utilizes and the process of its construction. The primary aim of this code graph is to offer a structured representation of the structural and semantic information inherent in complex codebases.</p><p>We represent each repository as a directed graph G = (V, E), where V is the set of distinct entities in the codebase and E is the set of edges between these entities. To be specific, the code graph includes up to seven types of nodes and five types of edges (details are provided in Appendix B). The node types vary in granularity, ranging from the repository level (REPO) to fine-grained attributes. The edge types comprise both hierarchical (i.e., contains) and reference dependencies (calls/imports/extends).</p><p>As shown in Figure <ref type="figure" target="#fig_0">2</ref>, the hierarchical dependencies (i.e., the solid edges) span the code graph. In other words, all nodes are interconnected by edges reflecting hierarchical dependencies, establishing a top-down tree structure. This structure mirrors the organization of code entities as dictated by file systems and programming language syntax rules. Building this tree graph begins with AST parsing <ref type="bibr" target="#b7">(Ding et al., 2022)</ref>. During this phase, code entities and their hierarchical dependencies are identified in a recursive manner: the root node (i.e., REPO) is added to the graph first, followed by its children (i.e., PKG and T-FILE), until all nodes without descendants (i.e., FUNC) are processed.</p><p>With each recursion, directed edges are added from parents to children.</p><p>On the other hand, reference dependencies (i.e., the dashed edges) capture interactions between different entities, such as class inheritance, function calls, and module imports. Unlike hierarchical edges, which maintain a vertical hierarchy, reference edges create horizontal connections that may introduce cycles, such as those caused by recursive calls. These edges are typically not part of an AST. To derive them, we conduct a lightweight semantic analysis to resolve symbols, such as references or calls to classes and attributes. Once a target symbol is identified, an edge is added from the source node to the target node in the code graph.</p><p>Concerning node attributes, we retain the original content and line range of each node. This approach enables explicit graph traversal and retrieval and facilitates training models with enhanced semantic understanding capabilities. During post-processing, we remove the text contained in the child nodes from the parent nodes within the tree graph derived from the hierarchical dependencies.</p><p>The resulting code graph is a text-rich graph (Jin et al., 2024) in which each node encapsulates a corresponding code snippet. 4 Code Graph Models (CGMs) Extractor Inferer Code Entity &amp; Keywords D Graph-aware Attention Mask Adjacency Matrix Answer Given the contexts: [node token] {query} The following files may need to be modified: {selected_files} LoRA Text Token Node Token Node Embed Trainable Frozen E Text Encoder A D LLM-Decoder Texts Adapter A E LoRA (a) Rewriter ISSUE: Modeling's `separability_matrix` does not compute separability correctly for nested CompoundModels Consider the following model: ```python from astropy.modeling import models ... 5.0 ① Code Graph Inferer Nodes Extractor Nodes Selected Subgraph (b) Retriever (c) Reranker (d) Reader / Code Graph Model (CGM) Subgraph Subgraph Text of Selected Files Extractor Nodes Inferer Text 1: File name containing 'separable.py'. 2: Functions or methods handling... File1.py File2.py FileN.py In this section, we elaborate on the architecture of the Code Graph Model (CGM), the training strategy we adopted, and how we enhance the CGM via the Graph RAG framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Model Architecture</head><p>The architecture of the CGM is illustrated in Figure <ref type="figure" target="#fig_1">3(d</ref>). CGM takes the code graph as inputs, enhancing the LLM's comprehension of both semantic and structural information within the graph. Below, we detail how CGM integrates both aspects into the LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Integration:</head><p>The code graphs are text-rich, with semantic information only residing in the textual contents of the nodes. As shown in Figure <ref type="figure" target="#fig_1">3</ref>(d), we integrate the node information into the LLM decoder D by transforming node text into node tokens through an encoder E and an adapter A.</p><p>Specifically for the encoder, we utilize the pretrained encoder from CodeT5+ <ref type="bibr" target="#b57">(Wang et al., 2023)</ref>, chosen for its proven effectiveness in processing both source code and text (comments and documentation). For nodes containing lengthy text, we segment the content into chunks of 512 tokens each. These chunks are processed independently by the encoder. To maintain graph consistency, we duplicate the source node for each chunk, preserving identical connections to other nodes. The chunks within a node are fully connected, and their sequential order is maintained through position embeddings in the LLM decoder D. We fine-tune the encoder using Low-Rank Adaptation (LoRA) <ref type="bibr" target="#b16">(Hu et al., 2021)</ref> to optimize its performance for downstream tasks.</p><p>The adapter A serves as a bridge between the encoder and LLM, projecting encoder outputs into the LLM's input embedding space. Following successful practices in Vision Language Models (VLMs) <ref type="bibr">(Liu et al., 2024b;</ref><ref type="bibr">Wang et al., 2024a)</ref>, we implement the adapter as a two-layer MLP with GELU activation <ref type="bibr" target="#b14">(Hendrycks &amp; Gimpel, 2016)</ref>. The adapter is trained from scratch with random initialization.</p><p>Unlike VLMs, which bridge different modalities, CGM's encoder E and decoder D are of the same modality, simplifying the alignment process. Furthermore, we compress each 512-token chunk (shown as gray tokens in Figure <ref type="figure" target="#fig_1">3(d</ref>)) into a single node token (black tokens in Figure <ref type="figure" target="#fig_1">3(d</ref>)) for the LLM decoder. This compression effectively extends the LLM's context length by a factor of 512, enabling the processing of extensive code repository contexts. Similar techniques, referred to as soft prompt compression, have been shown to enhance long-context modeling in recent studies <ref type="bibr" target="#b29">(Liao et al., 2024;</ref><ref type="bibr" target="#b50">Tan et al., 2024;</ref><ref type="bibr">Li et al., 2024)</ref>.</p><p>Structural Integration: Besides node information, another challenge is integrating the graph structure into the LLM decoder D. While LLMs excel at processing sequential data, they are not inherently designed to capture graph structures <ref type="bibr">(Jin et al., 2024)</ref>. Traditional approaches have attempted to incorporate repository-level structural information by simply linearizing code snippets into sequences <ref type="bibr" target="#b70">(Zhu et al., 2024;</ref><ref type="bibr" target="#b41">Ouyang et al., 2024)</ref>, but this transformation often fails to preserve the explicit relationships between code entities.</p><p>To better maintain structural relationships, we introduce a graph-aware attention mask to replace the causal attention mask solely between node tokens in the LLM. This mask is derived from the code graph's adjacency matrix, taking into account the node duplication process described earlier.</p><p>We then fine-tune the LLM with LoRA to adapt it to both the new attention mechanism and the node tokens from the adapter A. This approach ensures that attention occurs only between neighboring nodes in the code graph, mimicking the message passing mechanism frequently used in spatial GNNs <ref type="bibr" target="#b52">(Veličković et al., 2018;</ref><ref type="bibr" target="#b48">Shehzad et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Training Strategies</head><p>Given the pretrained encoder E and decoder D, the training of the CGM consists of two main phases:</p><p>Subgraph Reconstruction Pre-training: This phase focuses on training the CGM to effectively capture both the semantic and structural aspects of code graphs. To achieve this, we introduce a novel pre-training task that requires the model to reconstruct code content from its corresponding code graph, a process we refer to as Graph-to-Code.</p><p>In this task, the inputs are subgraphs randomly sampled from large-scale code graphs, with a limited number of nodes. This constraint ensures that the corresponding output code remains below 8,000 tokens, allowing for computational efficiency and manageable context sizes during training. To enhance the meaningfulness of the output code, we employ a hierarchical approach that preserves the inherent dependencies within the code graphs as they are translated into text. Concretely, for higher-level nodes (e.g., REPO and PACKAGE), we position them at the beginning of the output sequence or their respective files to maintain hierarchical consistency. We then utilize the approach from DeepSeek-Coder <ref type="bibr" target="#b70">(Zhu et al., 2024)</ref> to perform topological sorting on all file nodes, thereby establishing a structured order for the code content. Lastly, intra-file nodes (e.g., CLASS and FUNCTION) are sorted by line numbers and concatenated within their respective files, culminating in a coherent text sequence that accurately represents the sampled subgraph.</p><p>Noisy Fine-tuning: This phase fine-tunes CGM on real-world issue-patch pairs <ref type="bibr" target="#b19">(Jimenez et al., 2024)</ref>, adapting it to practical software debugging and code editing tasks. As displayed in Figure <ref type="figure" target="#fig_1">3</ref>(d), the model learns to generate code patches based on two inputs: (i) a subgraph and (ii) a text prompt that indicates the "oracle" files-files that require modification according to the ground-truth patch.</p><p>The subgraph is constructed by combining the oracle files, their downstream nodes, and one-hop neighbors from the repository-level code graph. To improve model robustness, we intentionally introduce noise into the prompts: 10% include an irrelevant file that doesn't require modification, while another 10% omit at least one oracle file. This controlled noise exposure helps the model better generalize to real-world scenarios where inputs may be incomplete or contain irrelevant information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">The Graph RAG Framework</head><p>This section presents our Graph RAG framework, a streamlined extension of CGM designed for automated resolution of real-world repository tasks. The framework consists of four core modules: Rewriter, Retriever, Reranker, and Reader (the proposed CGM). This compact architecture stands in contrast to the SOTA agentless method, which requires ten distinct steps <ref type="bibr">(Xia et al., 2024)</ref>.</p><p>As illustrated in Figure <ref type="figure" target="#fig_1">3</ref>, the framework operates sequentially. First, Rewriter enhances the original issue description to help Retriever identify relevant nodes in the code graph. Retriever then constructs a connected subgraph using both lexical and semantic search techniques. This subgraph serves as input for both Reranker and Reader. Reranker analyzes the subgraph to identify the Top K files likely to be modified. Finally, Reader (CGM) generates the code patch using both the subgraph from Retriever and the selected files from Reranker. Rewriter and Reranker are implemented by prompting the open-source Qwen2.5-72B-instruct <ref type="bibr">(Yang et al., 2024a)</ref>, while the semantic search in Retriever utilizes the open-source CGE-Large model (CodeFuse, 2024). In Appendix D, we provide a case study on how CGM solve a specific issue from scratch. Meanwhile, we report the computational costs of our framework, including the cost of code graph construction, in Appendix C.4</p><p>Rewriter comprises two subcomponents: Extractor and Inferer, as illustrated in Figure <ref type="figure" target="#fig_1">3(a)</ref>. Extractor identifies key code elements from the user query, including file names, function names, and relevant keywords. Inferer then enriches the query's semantics by providing more detailed functional descriptions. The specific prompts for both components are detailed in Appendix F.</p><p>Retriever generates a connected subgraph from the code graph for subsequent modules. As shown in Figure <ref type="figure" target="#fig_1">3(b)</ref>, Extractor nodes (blue nodes) are first identified through string matching with the code elements and keywords extracted earlier. Next, Inferer nodes are located (red nodes) through semantic search, comparing the Inferer's output with each node's textual information. These anchor nodes are then expanded to include their one-hop neighbors, capturing local programming dependencies <ref type="bibr">(Pan et al., 2024b)</ref>. To ensure connectivity and incorporate upstream information, these expanded nodes are connected to the Root node (REPO in Figure <ref type="figure" target="#fig_0">2</ref>). Finally, each FILE node in the subgraph is expanded to include all its internal nodes, aligning with Reranker's file-level output.</p><p>The result is a repository-enhanced context subgraph representing the user query, asdenoted by the shaded nodes in Figure <ref type="figure" target="#fig_1">3(b)</ref>.</p><p>Reranker further refines the subgraph generated by Retriever, selecting only the Top K files deemed most likely to be revised. This refinement is necessary because Retriever's output includes files that may only be referenced and not modified. Reranker operates in two steps: first, it selects K = 10 files based on the original user query and file names; next, it narrows this selection down to K = 5 files by individually scoring each one according to how relevant its file skeleton <ref type="bibr">(Xia et al., 2024</ref>) is to the user query. The specific prompt for Reranker can be found in the Appendix F.</p><p>Table 1: Performance comparison of open source system on SWE-bench Lite and Verified. CS-3.5 denotes Claude-3.5-Sonnet-20241022, DS-V3 represents DeepSeek-V3, Q2.5C-32B means Qwen2.5-Coder-32B and Q2.5-72B stands for Qwen2.5-72B-Instruct. The icons and denote open and closed-source models, respectively. (a): SWE-bench Lite Method LLM Agent % R Rank All DARS Agent CS-3.5 Yes 47.00 1 6 CGM-SWE-PY Q2.5-72B No 43.00 2 8 Lingxi CS-3.5 Yes 42.67 3 10 CodeAct-v2.1 CS-3.5 Yes 41.67 4 11 PatchKitty-0.9 CS-3.5 Yes 41.33 5 12 Composio SK CS-3.5 Yes 41.00 6 14 Agentless-v1.5 CS-3.5 No 40.67 7 32 Moatless CS-3.5 Yes 39.00 8 19 Patched.Codes CS-3.5 Yes 37.00 9 20 CGM-Multi Q2.5-72B No 36.67 10 23 AppMap CS-3.5 Yes 36.00 11 24 Agentless Lite o3-mini No 32.33 13 31 Agentless-v1.5 GPT-4o No 32.00 14 32 Moatless DS-V3 Yes 30.67 16 35 SWE-Fixer Q2.5-72B Yes 24.67 26 51 Lingma SWE-GPT Q2.5-72B No 22.00 28 57 (b): SWE-bench Verified Method LLM Agent % R Rank All OpenHands NA Yes 65.80 1 1 PatchPilot-v1.1 NA NA 64.60 2 5 SWE-Agent CS-3.7 Yes 62.40 3 10 Agentless-v1.5 CS-3.5 No 50.80 4 25 CGM-SWE-PY Q2.5-72B No 50.40 5 26 Composio SK NA Yes 48.60 6 31 Agentless Lite o3-mini No 42.40 8 39 Composio SK CS-3.5 Yes 40.60 10 47 SWE-Agent Q2.5C-32B No 40.20 11 48 Agentless-v1.5 GPT-4o No 38.80 12 50 SWE-Fixer Q2.5-72B Yes 32.80 14 54 Lingma SWE-GPT Q2.5-72B No 30.20 15 58 Lingma Agent Q2.5-72B Yes 28.80 16 60 Lingma SWE-GPT Q2.5-72B No 25.40 18 64 SWE-Agent GPT-4o Yes 23.20 16 67 SWE-Agent GPT-4 Yes 22.40 17 68</p><p>Reader receives two inputs: the subgraph from Retriever as node tokens (black tokens) and the selected files with their full contents as text tokens (gray tokens), as depicted in Figure <ref type="figure" target="#fig_1">3(d</ref>). These inputs are combined using the prompt template in the white box on the left of the figure. The graph and text tokens complement each other by providing global and local information related to the user query. Using this comprehensive information, Reader (i.e., the CGM) generates the final response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head><p>In this section, we assess the performance of the CGM on two primary tasks: repository-level issue resolution and code completion, for both Python and Java programming languages. We also conduct a series of ablation studies to validate the effectiveness of the model design and training strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Repository-Level Issue Fixing</head><p>This section evaluates the proposed CGM against other SOTA methods in resolving real-world software issues. We use three benchmark datasets: SWE-bench Lite, containing 300 issues from 11 Python repositories, SWE-bench Verified, containing 500 issues from 12 Python repositories, and SWE-bench-java Verified, comprising 91 issues from 6 Java repositories. All benchmarks utilize developer-written unit tests to verify the correctness of model-generated patches, ensuring rigorous evaluation. Performance is measured using the resolution rate (% R), defined as the percentage of successfully resolved issue instances. We present results for two variants of our model: CGM-Multi, trained for both issue resolution and code completion tasks across Python and Java repositories, and CGM-SWE-PY, specifically optimized for Python issue resolution. Detailed information regarding the datasets and implementations can be found in Appendix C.5.</p><p>As shown in</p><p>Table 1(a), our CGM-SWE-PY model achieves a 43% resolution rate on SWE-bench Lite, placing it first among methods utilizing open-source models, second among those that implement open-source methods but use closed-source models, and eighth overall. Notably: (i) When compared to other methods based on open-source models, CGM-SWE-PY outperforms Moatless+DeepSeek-V3 by 12.33% (Aor, 2024), despite DeepSeek-V3's generally superior performance in various coding benchmarks compared to our LLM decoder Qwen2.5-72B (Liu et al., 2024a). Furthermore, it exceeds Lingma SWE-GPT by 21%, even though the latter employs carefully curated COT (chain-</p><p>Table 2: Performance evaluation on SWE-bench-java Verified. DS-V2 denotes DeepSeek-Chat-V2, DSC-V2 represents DeepSeek-Coder-v2, GPT-4o refers to GPT-4o-2024-05-13, DB-128K stands for Doubao-Pro-128k, and GPT-4o-MINI indicates GPT-4o-MINI-2024-07-18. The icons and denote open-source and closed-source methods or models, respectively. METHOD LLM AGENT % R RANK CGM-MULTI Q2.5-72B NO 14.29 1 SWE-AGENT DS-V2 YES 9.89 2 SWE-AGENT DSC-V2 YES 7.69 3 SWE-AGENT GPT-4O YES 6.59 4 SWE-AGENT DB-128K YES 1.10 5 SWE-AGENT GPT-4O-MINI YES 1.10 6 of-thought) data to boost Qwen2.5-72B's effectiveness in issue resolution. (ii) In relation to other agentless frameworks, CGM-SWE-PY slightly surpasses Agentless+Claude-3.5-Sonnet by 2.33% and significantly outperforms Agentless+GPT-4o by 11.00%. This achievement is particularly noteworthy given that Agentless leverages a complex ten-step pipeline with more powerful closedsource models, while CGM-SWE-PY operates on a simpler four-step Graph RAG framework. We attribute this success to CGM's enhanced capacity to interpret both semantic and structural information within repositories. (iii) While the top methods on SWE-bench Lite are entirely closedsource regarding both models and implementations, CGM-SWE-PY's results are within 10% of these systems. This indicates that CGM-SWE-PY has the potential to compete with leading agentbased methodologies. Compared to other open-sourced model-based methods, CGM significantly narrows the gap between open-source models and closed-source methods in issue-fixing scenarios. (iv) Our multi-task model, CGM-Multi, achieves a resolution rate of 36.67% on SWE-bench Lite, ranking 23rd overall. The relatively lower performance compared to CGM-SWE-PY can be attributed to its broader focus, which encompasses both issue fixing and code completion tasks across Python and Java repositories. (v) We further apply CGM-SWE-PY to a larger Python benchmark-SWEbench Verified in Table 1(b), where CGM-SWE-PY ranks first again among open weight models, and fifth among methods with open-source system.</p><p>In the SWE-bench-java evaluation for Java repositories as shown in Table <ref type="table">2</ref>, CGM-Multi records a resolution rate of 14.29%, significantly outclassing SWE-Agent build upon both closed-source and open-source models. These findings further substantiate the effectiveness of our proposed GCM and the specially designed Graph RAG framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Repository-Level Code Completion</head><p>In this section, we evaluate the CGM's performance on code completion tasks at the repository level for both Python and Java programming languages. Our evaluation uses two benchmarks: CrossCodeEval and ComplexCodeEval. Concretely, CrossCodeEval focuses on cross-file code completion, while ComplexCodeEval encompasses more intricate tasks, including API recommendations and test case generation. Performance is measured using two metrics: Edit Match (EM) and Edit Similarity (ES), evaluating how similar the generated code is to the ground-truth code. Detailed information regarding the datasets, metrics, and the implementation of baseline models can be found in Appendix C.6.</p><p>Table <ref type="table" target="#tab_0">3</ref> presents the results for CGM-Multi, which uses Qwen2.5-72B-instruct as its LLM decoder. We compare it with similarly sized large language models, including Mistral-Large-Instruct-123B, DeepSeek-V2.5-236B, and the standalone Qwen2.5-72B-instruct. For all models, context retrieval for code completion is performed by identifying one-hop neighbors of the target file (that requires completion) in the code graph. While CGM-Multi processes the entire subgraph as input, baseline models only receive the textual content from the nodes. Results show that CGM-Multi performs on par with or exceeds other models on CrossCodeEval. More importantly, it greatly outperforms .00 78.86 43.00 72.60 Table 4: Comparison of CGM with RAG variants on CrossCodeEval. Results are reported for Java and Python across multiple base models. Evaluation metrics include EM and ES. CODELLAMA-7B DEEPSEEK-CODER-7B METHOD JAVA PYTHON JAVA PYTHON EM ES EM ES EM ES EM ES NORAG 20.60 54.50 13.70 44.10 24.20 59.30 19.40 52.50 BM25 23.42 66.13 21.76 69.09 22.49 66.78 23.30 70.84 REPOFUSE / / 24.80 71.05 / / 27.92 73.09 RLCODER 26.23 67.61 26.60 72.27 26.09 67.31 30.28 74.42 R2C2 35.60 58.50 23.60 42.90 41.60 64.60 32.70 54.00 CGM-MULTI 36.42 75.28 31.03 73.90 41.65 74.76 33.88 71.19 STARCODER-7B QWEN2.5-CODER-7B METHOD JAVA PYTHON JAVA PYTHON EM ES EM ES EM ES EM ES NORAG 21.60 55.90 17.00 49.50 37.31 78.78 33.63 73.19 BM25 22.16 67.80 22.33 69.60 49.37 82.63 43.15 78.66 REPOFUSE / / 24.20 70.82 / / / / RLCODER 24.73 69.08 25.82 72.11 / / / / R2C2 38.10 63.60 30.90 51.90 / / / / CGM-MULTI 37.44 73.77 31.00 71.66 51.61 84.62 46.23 82.16</p><p>the baseline models on ComplexCodeEval, demonstrating its superior capability in handling complex tasks through comprehensive subgraph analysis.</p><p>Next, we evaluate CGM against other RAG methods for CrossCodeEval. The comparison includes several established systems: BM25, the default retrieval method in CrossCodeEval <ref type="bibr" target="#b8">(Ding et al., 2024)</ref>; RLcoder <ref type="bibr">(Wang et al., 2024d)</ref>, which employs reinforcement learning for retrieval optimization; RepoFuse <ref type="bibr" target="#b28">(Liang et al., 2024)</ref>, which integrates code graphs during retrieval but converts retrieved code snippets into linear text sequences; and R2C2 <ref type="bibr" target="#b6">(Deng et al., 2024)</ref>, which combines retrieved code snippets with Tree-sitter-generated abstract context as the input to the LLM. In our CGM implementation, we still construct input subgraphs by combining target files with their one-hop neighbors. We evaluate these methods using various base models for generation, including CodeLlama-7B, StarCoder-7B, DeepSeek-Coder-7B, and Qwen2.5-Coder-7B. This diverse set of comparison methods enables a comprehensive evaluation of CGM's effectiveness in long-context retrieval and understanding. As shown in Table <ref type="table">4</ref>, CGM typically outperforms other RAG methods, regardless of the base model used, suggesting that graph-based context retrieval is more effective for code completion tasks. Moreover, CGM's superiority over RepoFuse, which also uses code graphs for retrieval, can be attributed to CGM's explicit integration of structural information within the subgraph, whereas RepoFuse flattens node context into text sequences, obscuring the explicit dependencies among code entities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Ablation Studies</head><p>In this section, we present key findings from our ablation studies, with detailed analysis available in Appendix C.7. Our investigation reveals four crucial insights: (i) Graph RAG: Our assessment of the Graph RAG modules shows that the presence of Rewriter, Retriever, and Reranker is essential for achieving optimal performance on the SWE-bench Lite benchmark. Notably, Reranker plays a pivotal role as it dictates which files should be modified. (ii) Semantic Integration: Joint finetuning of all three components-encoder E , the adapter A, and the decoder D-yields superior performance compared to keeping any component fixed. (iii) Structural Integration: The integration of graph structural information through attention masking is essential for optimal performance. (iv) Training Strategies: The subgraph reconstruction task, as described in Section 4.2, significantly contributes to improving the CGM's overall performance. (v) Backbone Generalization: Moreover, CGM can also be generalized on backbones with different sizes, demonstrating its potential for resource-constrained scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we present CGM, a novel graph-enhanced LLM architecture designed for comprehensive repository-level code understanding. By seamlessly integrating both semantic and structural information from codebases through a specialized encoder-adapter framework and graphaware attention mechanisms, CGM demonstrates that sophisticated agent-based approaches and closed-source models are not necessarily required for complex SE tasks. When combined with our custom-designed Graph RAG framework, CGM achieves a remarkable 43.00% resolution rate in real-world issue-fixing scenarios on SWE-bench Lite, using only open-source models. Our work establishes a new direction for developing powerful, transparent, and accessible tools for automated SE.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Case in Issue Fix Scenario</head><p>ISSUE: The last checkpoint is being automatically restored when a checkpoint exists. This is an issue for me when the model has previously been trained with different settings or I want to train a network from scratch...</p><p>Trainer TrainerCallbackConfigMixin TrainerDDPMixin TrainerDPMixin TrainerEvaluationLoopMixin fit() ---a/pytorch_lightning/trainer/callback_config.py +++ b/pytorch_lightning/trainer/callback_config.py @@ -12,6 +12,9 @@ class TrainerCallbackConfigMixin(ABC): # the proper values/initialisation should be done in child class default_save_path: str logger: Union[LightningLoggerBase, bool] + weights_save_path: str + ckpt_path: str + checkpoint_callback: ModelCheckpoint ... tpu_train() ddp_train() callback_config.py trainer.py evaluation_loop.py Class Function distrib_data_parallel.py distrib_parts.py contains extends calls </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Details of Code Graph</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Node and Edge Types in Code Graph</head><p>This section provides the node and edge types defined in our code graph. Table <ref type="table">5</ref> and Table <ref type="table" target="#tab_1">6</ref> detail the categories of nodes and edges, respectively. For now, code graph supports two objected-oriented programming language (Python and Java).</p><p>Table 5: Node Types in Code Graph.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Node Type Description</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REPO Virtual node, represents the root of the repository PACKAGE</head><p>Virtual node, acts as a representation of a directory in the file system FILE Files ending with ".py" TEXTFILE Files that do not end with ".py", such as Markdown (.md) files and text (.txt) files CLASS In object-oriented programming, a class is a blueprint for creating objects FUNCTION Refers to the function within classes or standalone function ATTRIBUTE Includes global variables, member variables, and local variables Handling of Complex Dependiences</p><p>During the construction of code graph, we explicitly address both dynamic calls and multiple inheritance in the following way.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamic Calls:</head><p>We employ a conservative resolution approach following the over-approximation principle <ref type="bibr">(Li et al., 2023b)</ref>. When encountering base class method calls (e.g., Base.method()), we include all possible overriding implementations from subclasses in the calls set. This ensures we don't miss any potential execution paths.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multiple Inheritance:</head><p>We utilize the Class Hierarchy Analysis (CHA) algorithm <ref type="bibr" target="#b47">(Sawin &amp; Rountev, 2011)</ref> to properly handle inheritance relationships, including cases where classes inherit from multiple parent classes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Search on Code Graph</head><p>Graph search can be easily implemented in code graph. The first step usually begins with finding the source node. This can be achieved by many ways, such as indexing, keyword and embedding matching. Starting from the source node, different strategies can be applied, such as one-hop neighborhood, depth-first search (DFS), breadth-first search (BFS), random walk, etc. It is up to the application scenarios to decide which search algorithm is the best. The result of graph search could be a sub-graph of the whole repository-level graph, containing the most relevant context for specific problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Implementation Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Details of Training CGM</head><p>This section details how we train CGM-Multi (multi-language version), CGM-SWE-PY (tailored for Python issue fixing), and CGM 7B series (based on different 7B base models).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.1 Training Data</head><p>As mentioned in section 4, we construct training data for different training phase of CGM respectively. Meanwhile, to enhance the model's ability in code completion, we also construct code completion samples for fine-tuning of code completion task. To explore the performance of CGM across different programming languages, our data includes both Python and Java. When constructing the training data, we filter out the repositories involved in the test sets for testing to avoid data leakage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data for Subgraph Reconstruction Pre-training:</head><p>We obtain 500k Python and 360k Java subgraphs (with the maximum length of 8k tokens) from a total of 20k high-star Github repositories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data for Issue Fixing:</head><p>We collect 200k issue-patch pairs (100k per language), from GitHub pullrequests. Among the 100k Python pairs, 14k are sourced from the SWEBench training set <ref type="bibr">(Yang et al., 2024b)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data for Code Completion:</head><p>The code completion samples are self-constructed from the above repositories, 250k per language.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.2 CGM-Multi</head><p>We initialize CGM-Multi with Qwen2.5-72B-Instruct <ref type="bibr">(Yang et al., 2024a)</ref> as the base LLM. Then pretrain it using subgraph reconstruction data and fine-tuning data (issue-fixing and code completion) in both two languages (Python and Java). To ensure balance between different languages, we use 360k subgraph reconstruction data for both languages. Training uses 4-bit QLoRA on 64 A100s (batch=32, lr=1e-4, and epoch=2). The encoder combines CodeT5+ <ref type="bibr" target="#b57">(Wang et al., 2023)</ref> with LoRA (rank=64, and alpha=32), and the adapter uses a two-layer MLP with GELU activation. The first C.4.1 Code Graph Construction</p><p>The construction of a repository-level code graph usually takes 3 minutes or more depending on the complexity of the code repository (such as the implementations of different classes and the calling relationships between codes). Since code graph construction can be performed offline, it does not impact real-time inference workflows. Additionally, optimizations such as incremental updates and parallel processing can further reduce latency for large-scale repositories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4.2 Cost of Each Module</head><p>We analyze the runtime and resource requirements of each key module in our system, focusing on LLM inference overhead, memory consumption, and latency scaling.</p><p>Rewriter:</p><p>• Requires two sequential LLM calls (Qwen2.5-72B-Instruct).</p><p>Retriever:</p><p>• Anchor node matching and subgraph generation take 3-7 seconds per issue.</p><p>• Lightweight CPU operation.</p><p>Reranker:</p><p>• Requires two sequential LLM calls (Qwen2.5-72B-Instruct).</p><p>• Latency additive to Rewriter ( 2× single-call time).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reader (CGM):</head><p>• Table <ref type="table" target="#tab_2">8</ref> reports the memory consumption and inference latency.</p><p>• Latency increases by 0.5-0.7s per 1k tokens (1k→8k: 3.9s→8.6s). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5 Experimental Setup of Issue Fixing</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5.1 Implementation Details of CGM</head><p>To adapt CGM in the issue-fix scenario, we extend CGM to a GraphRAG framework (as described in section 4). In this scenario, the inputs of CGM are the corresponding subgraph and prompt generated by R3 (Rewriter, Retriever, Reranker). In the experiment, we compare two pre-trained CGMs, CGM-Multi and CGM-SWE-PY (see Appendix C.1 for training details), as Reader in our Graph RAG framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5.2 Datasets</head><p>The following three benchmarks, which focus on repository-level issue fixing, are all evaluated using the Docker executable environment. • EM: The exact match accuracy (EM) is determined by an indicator function. This function takes a value of 1 when the prediction y is exactly equal to the reference y * , and 0 otherwise.</p><p>• ES: The Levenshtein edit similarity (ES) is calculated using the formula</p><formula xml:id="formula_0">ES = 1 - Lev(y, y * ) max(∥y∥, ∥y * ∥) . (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>Here, ∥ • ∥ is used to compute the length of a string, and Lev() is employed to calculate the Levenshtein distance between the two strings y and y * .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6.4 Baselines: Base Model</head><p>Given the subgraph same to CGM (see Appendix C.6.1), we textualize the graph into text sequnce and input into the following baselines based on the prompt templates provided by each benchmark <ref type="bibr" target="#b8">(Ding et al., 2024;</ref><ref type="bibr" target="#b10">Feng et al., 2024)</ref>. Since these base models have limitations on context length, we perform truncation on text inputs larger than 8k.</p><p>Mistral-Large-2 (mis, 2024) is a model developed by Mistral AI with 123 billion parameters. It stands out with a remarkable 128k tokens context length, proficiently handling dozens of languages and over 80 programming languages, excelling in code generation, mathematics, and reasoning. To be specific, we chose Mistral-Large-Instruct-2411 as the latest version of Mistral-Large to compare with CGM.</p><p>DeepSeek-V2.5 <ref type="bibr" target="#b70">(Zhu et al., 2024)</ref> is a strong Mixture-of-Experts (MoE) language model characterized by economical training and efficient inference. It comprises 236B total parameters, of which 21B are activated for each token.</p><p>Qwen2.5 <ref type="bibr">(Yang et al., 2024a)</ref> is a decoder-only LM series whose size varies from 0.5B to 72B trained on 18 trillion tokens. Its context length support up to 128K tokens and can generate up to 8K tokens.</p><p>Qwen2.5-Coder <ref type="bibr" target="#b17">(Hui et al., 2024)</ref> is a series of code-specific language models developed by Alibaba.</p><p>Derived from Qwen2.5, it comes in six sizes, is trained on a vast 5.5-trillion-token corpus, and excels in various code-related tasks, outperforming many models of the same or larger size. Since it uses a specific format and tokens for training on the fill-in-middle code completion task, we followed this prompt setting during the evaluation to obtain its true performance.</p><p>For the inference of the baseline model, we all deployed the above models using the VLLM framework with the model's default settings. All models inference on 4 A100s with 80G VRAM, except for DeepSeek-V2.5, which requires 8 A100s. C.6.5 Baselines: RAG Method BM25 <ref type="bibr" target="#b46">(Robertson et al., 2009)</ref> is a classic information-retrieval algorithm based on the probabilistic model. Its core idea is to rank documents based on the relevance between query and documents. It serves as a traditional retrieval method that does not regard the structural information naturally existing in the coding task, and only performs similarity matching based on word frequency and text length. It was used in the original CrossCodeEval dataset to search for cross-file information based on the code snippets. In our experiments, we directly use the BM25 results provided by CrossCodeEval.</p><p>R2C2-Coder <ref type="bibr" target="#b6">(Deng et al., 2024)</ref> is a method that aims to enhance and benchmark the real-world repository-level code completion abilities of code Large Language Models. In particular, R<ref type="foot" target="#foot_1">foot_1</ref> C 2 -Enhance reduces cross-file information to skeleton 2 text by syntactically analyzing the content of code files. The cross-file context is retrieved using BM25 after forming a candidate retrieval pool together with the context obtained from semantic-based retrieval. It takes into account structural information of the code but does not establish graph relations across code files.</p><p>RepoFuse <ref type="bibr" target="#b28">(Liang et al., 2024)</ref> is a solution for the Context-Latency Conundrum in repository-level code completion. It constructs Code Knowledge Graph by analyzing the code graph dependencies in the repository and uses the repository-level graphs for retrieval. It integrates the Rationale Context obtained by analyzing the repository code structure and the Analogy Context based on the retrieval of similar code blocks, and filtering the context by scoring function.</p><p>RLCoder <ref type="bibr">(Wang et al., 2024d</ref>) is a reinforcement-learning-based framework for repository-level code completion, which can effectively improve code completion performance and has good generalization ability. During training, the RLRetriever is trained with a reward mechanism based on weighted perplexity to learn retrieval, while a stop-signal mechanism is introduced to filter candidate codes.</p><p>In inference, the trained RLRetriever retrieves useful candidate codes from the code repository and inputs them together with the incomplete code into the generator to complete code generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.7 Details of Ablation Study</head><p>In this section, we first conduct an ablation study on our Graph RAG framework to verify the effectiveness of each component by SWE-bench Lite (Table <ref type="table" target="#tab_4">10</ref>). Then, we conduct the other ablation study on CGM itself to evaluate the effectiveness of model design by CrossCodeEval dataset (Table <ref type="table" target="#tab_5">11</ref>). • w/o Rewriter: We directly perform semantic search based on the original issue descriptions, obtain the anchor nodes from the code graph, and provide them to Retriever. Removing Rewriter results in an 8.33% performance drop, which proves its effectiveness in enhancing the original issue descriptions.</p><p>• w/o Retriever: Since there is no Retriever to provide filtered files and subgraphs, we input all the files in the original codebase into Reranker's Stage 1 for selection, and at the same time append the key information output by Rewriter into Reranker's prompts. Based on the files output by Reranker, we build a subgraph using these files and their one-hop neighbors, as the graph modality input of CGM. The exclusion of Retriever results in an 11.33% performance degradation, a more severe drop than removing Rewriter, highlighting its importance in providing issue-related subgraph.</p><p>• w/o Reranker: We use the top 5 files that are most similar to the query in embedding space (during semantic search) from the FILE node obtained by Retriever and provide them to Reader as the files to be modified. Removing Reranker results in the largest performance drop (decreased by -24.67%), emphasizing its importance in improving the precision of retrieval results and providing the right, relevant files to Reader.</p><p>• w/o R3: To evaluate the effectiveness of the RAG module, we create a baseline which removes the first three modules (Rewriter, Retriever, and Reranker) and feed the entire (truncated when the length exceeds the context length of the base model) repository graph as input to Reader during fine-tuning. Removing the RAG module leads to a poor performance (decreased by 33.33%), possibly due to excessive noise from the unfiltered repository graph and information loss from context-window truncation.</p><p>• w/o CGM Reader (FlatGraph): To verify the effectiveness of CGM Reader in jointly modeling semantics and structure, we create a naive graph-based baseline which flattens code snippets based on topological structure <ref type="bibr">(Guo et al., 2024)</ref>, representing an alternative Reader with structure-enhanced fine-tuning. The naive graph-based Reader only achieves 5.33% on SWE-bench Lite, far behind the proposed CGM (decreased by 37.67%).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.7.2 Variants of CGM</head><p>In Table <ref type="table" target="#tab_5">11</ref>, we compare CGM with its variants in the following three aspects. The CGM we use here is trained on Qwen2.5-Coder-7B Instruct (see Appendix C.1 for training details).</p><p>• Semantic Integration: To verify the design of CGM in understanding semantic information, we compare it with four types of variants: (1) freeze all parameters (include Encoder, Adapter, and LLM Decoder) (2) training the Adapter A (3) training the LLM Decoder D (4) training both the Adapter A and LLM Decoder D. Table <ref type="table" target="#tab_5">11</ref> demonstrates that training the adapter A alone leads to significant improvements in the EM performance: a 22.26% increase for Java and a 21.43% increase for Python when comparing CGM-A with GGM-Freeze. Additionally, further training the LLM decoder D in conjunction with the adapter A esults in further enhancements, yielding a 5.33% improvement for Java and a 4.80% improvement for Python. Finally, when the encoder E , the adapter A, and the decoder D are all trained together, we observe an additional increase of 5.71% for Java and 6.12% for Python. This data illustrates that fine-tuning the encoder E , the adapter A, and the decoder D is essential to effectively align the graph and code modalities.</p><p>• Structural Integration: To verify the design of CGM in integrating structural information, we remove the graph-aware attention mask during training, and use the original causal mask (denoted as "w/o MASK"). As shown in Table <ref type="table" target="#tab_5">11</ref>, substituting the graph-aware attention mask in the CGM with a standard causal mask results in a drop of 8.61% in EM performance for Java and 5.56% for Python. This demonstrates the necessity of incorporating the structural information from the code graph into the CGM to maintain optimal performance.</p><p>• Training Strategy: We remove the subgraph reconstruction pre-training task to verify the effectiveness of this task, denoted as "w/o RECON". Subgraph reconstruction pre-training plays a crucial role, contributing 7.65% to the overall EM improvements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.8 Generalization of CGM on Different Backbones</head><p>To evaluate CGM with different backbones, we trained CGM using Llama3.1-70B-Instruct, Qwen2.5-Coder-32B-Instruct, and Qwen2.5-Coder-7B-Instruct, in addition to Qwen2.5-72B. The results are summarized in Table <ref type="table" target="#tab_6">12</ref>.</p><p>We find that the performance of CGM positively correlates with the LLM decoder's inherent coding and instruction-following abilities. For example, Llama3.1-70B-Instruct CGM's performance decreased 17.67% compared to Qwen2.5-72B, possibly due to weaker inherent coding abilities (see Table <ref type="table">2</ref> in <ref type="bibr">(Yang et al., 2024a)</ref>). Still, it surpassed Lingma-SWEGPT <ref type="bibr">(Ma et al., 2024a)</ref> built on Llama3.1-70B-Instruct by 18.33%, demonstrating CGM's power in improving open-source LLMs. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D CGM for Issue Fixing: A Case Study</head><p>In this section, we take a real issue from the django/django repository as an example to show how CGM solves a specific problem. Figure <ref type="figure" target="#fig_3">5</ref> provides the original issue description and the intermediate outputs produced at each stage of our Graph RAG framework<ref type="foot" target="#foot_2">foot_2</ref> , and Figure <ref type="figure" target="#fig_4">6</ref> gives the generated patches along with the gold patch.</p><p>To evaluate the effectiveness of graph modality in assisting solving practical issues, we also compare the patches generated by CGM with and without code graph (as shown in Figure <ref type="figure" target="#fig_4">6</ref>). For the latter, the input of CGM is only the context files provided by Reranker, and does not include the subgraph generated by Retriever.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Issue:</head><p>Use Admin Inline verbose_name as default for Inline verbose_name_plural Description Django allows specification of a verbose_name and a verbose_name_plural for Inline classes in admin views. However, verbose_name_plural for an Inline is not currently based on a specified verbose_name. Instead, it continues to be based on the model name, or an a verbose_name specified in the model's Meta class. This was confusing to me initially (I didn't understand why I had to specify both name forms for an Inline if I wanted to overrule the default name), and seems inconsistent with the approach for a model's Meta class (which does automatically base the plural form on a specified verbose_name). I propose that verbose_name_plural for an Inline class should by default be based on the verbose_name for an Inline if that is specified. I have written a patch to implement this, including tests. Would be happy to submit that.</p><p>Rewriter:</p><p>"rewriter_inferer_output": [ "File names containing 'admin' AND classes related to 'Inline' to locate the definition of Inline classes.", "Functions or methods handling the setting of 'verbose_name' and 'verbose_name_plural' within 'admin' directory to find where these attributes are processed.", "Code snippets where 'InlineModelAdmin' is defined or used to identify the base class for admin inlines.", "File name containing 'options.py' AND functions related to 'get_verbose_name_plural' to find where the pluralization logic is currently implemented.", "Functions or methods handling the initialization of Inline classes within 'admin' directory to find where default values are set." ], "rewriter_extractor_output_entity": [ "django/contrib/admin/options.py" ], "rewriter_extractor_output_keyword": [ "verbose_name", "verbose_name_plural", "Inline" ]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retriever:</head><p>Key Results django.util.text { "nodeType": "File", "id": 52874, "fileName": "text.py", "filePath": "django/utils", "text": "import html.entities\nimport tags and … " } { "nodeType": "File", "id": 53224, "fileName": "__init__.py", "filePath": "django/utils/translation", "text": "\"\"\"\nInternationalization support … " } Reranker:</p><p>"FineRanker": { "django/contrib/admin/options.py": { "system_prompt": "You are an experienced software developer ...", "user_prompt": "\n&lt;repository&gt;\ndjango/django\n&lt;/repository&gt;...", "response": "[start_of_analysis]\nThe issue describes a ..." },  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Limitations</head><p>We have limited this work to Python and Java-two popular object-oriented languages-so the current code graph schema is untested on other paradigms. Although these languages cover a large part of real-world issue-fixing scenarios, extending our framework to other paradigms (e.g., multiparadigm languages like Rust, or functional languages such as Haskell) will require re-examining how code graphs are built to capture paradigm-specific structures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Prompt Template Example</head><p>This section shows the prompt templates used by Rewriter (Figure <ref type="figure" target="#fig_5">7</ref> and Figure <ref type="figure">8</ref>) and Reranker (Figure <ref type="figure" target="#fig_6">9</ref> and Figure <ref type="figure" target="#fig_7">10</ref>) in our Graph RAG framework.</p><p>Prompts: &lt;issue&gt; {ISSUE TEXT} &lt;/issue&gt; This is an issue related to repository '{REPO NAME}'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instructions:</head><p>1. Analysis: -Analyze the provided issue description. Identify the relevant File, Class, or Function involved.</p><p>-Determine the specific problem or error encountered and note any clues that may assist in locating the relevant or problematic area.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Extraction:</head><p>-After the analysis, extract ALL the mentioned code entities (File, Class, or Function), especially Files.</p><p>-Then extract three potential and meaningful keywords, responding in the following format:</p><p>[start_of_analysis] &lt;detailed_analysis&gt; [end_of_analysis]</p><p>[start_of_related_code_entities] &lt;entity_name_with_path&gt; [end_of_related_code_entities]</p><p>[start_of_related_keywords] &lt;keywords&gt; [end_of_related_keywords]</p><p>Notes:</p><p>-Pay attention to the information in the error logs (if exists).</p><p>-The buggy code exists solely in the project described in the issue (e.g., django, sklearn).</p><p>Buggy location is usually not in the tests files or external packages. -Your extracted entities should be CONCISE, ACCURATE and INFORMATIVE. -Provide the relative path for code entities if specified (e.g., package/foo.py). Relative path is relative to the repository itself, do not include suffix like '/home/username/', '/etc/service/' or '/tree/master'. -Do not include any additional information such as line numbers or explanations in your extraction result. Preferred extraction Examples of Code Entities: -repo/cart.py -Class User() -def getData() Preferred extraction Examples of Keywords: -train_loop -hooks -docker Unpreferred extraction Examples of keywords: -something wrong -input validation -TypeError Prompts: &lt;issue&gt; {ISSUE TEXT} &lt;/issue&gt; This is an issue related to repository '{REPO NAME}'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task:</head><p>Based on the issue description provided, identify the characteristics of code entities (files, functions, class) that might need to be modified. For each characteristic, generate a search query that could help locate relevant code entities in a codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instructions:</head><p>First, analyze the issue description and identify keywords, features, and functionalities that are likely relevant to the modification of code entities. Then, create queries that capture these characteristics, focusing on: -File names that may implement relevant functionalities.</p><p>-Functions or methods that are related to the features described in the issue.</p><p>-Any patterns or structures that might be relevant to the functionalities mentioned. For example:</p><p>-File related to the initialization of a neural network.</p><p>-Function related to the training process.</p><p>-Code used to configure the service.</p><p>Please answer in the following format:</p><p>[start_of_analysis] &lt;detailed_analysis&gt; [end_of_analysis]</p><p>[start_of_related_queries] query 1: query 2: ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[end_of_related_queries]</head><p>Notes:</p><p>-Your queries should be DETAILED, ACCURATE and INFORMATIVE.</p><p>-Your queries should be a complete sentences and do not include additional explanation.</p><p>-The number of queries is up to five, so be focus on the important characteristics.</p><p>-Your queries should focus on the repository code itself, rather than other information like commit history.</p><p>-Pay attention to the information in the error logs (if exists).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preferred Query Examples:</head><p>-Look for references to "tqdm" or "progress_bar" within the training loop files to find where progress bars are currently updated.</p><p>-Code snippets where 'gethostbyname' function from 'socket' module is called.</p><p>-File name containing 'mysql.py' AND functions related to 'MySQLStatementSamples' initialization.</p><p>-Functions or methods handling hostname resolution or encoding within 'datadog_checks' directory.</p><p>-Find all occurrences of "early_stopping" within files that also mention "Trainer" to identify where early stopping logic is implemented and potentially needs adjustment for non-default 'val_check_interval'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 8: Prompt for Inferer in Rewriter.</head><p>Prompts: You are an experienced software developer who specializes in extracting the most relevant files for solving issues from many reference files.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task:</head><p>Based on the information received about the issue from a repository, find the most likely few files from among those that may be able to resolve the issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instructions: 1. Analysis:</head><p>-Analyze the provided issue description and files, and pay attention to the relevance of the provided files with the given issue, especially those might be modified during fixing the issue.</p><p>-Determine the specific problem or error mentioned in the issue and note any clues that could help your judgment. 2. Extraction: -Based on your analysis, choose the Top **10** relevant files which might be used in fixing the issue.</p><p>-You should choose files from the provided files, and should not modify their name in any way.</p><p>Respond in the following format:</p><p>[start_of_analysis] &lt;detailed_analysis&gt; [end_of_analysis]</p><p>[start_of_relevant_files] 1. &lt;file_with_its_path&gt; 2. &lt;file_with_its_path&gt; 3. ...</p><p>[end_of_relevant_files]</p><p>Notes:</p><p>-You can refer to to the information in the error logs (if exists).</p><p>-The relevant file usually exists in the project described in the issue (e.g., django, sklearn). File need modification is usually not in the tests files or external packages.</p><p>-The file you choose should be contained in the provided files.</p><p>-Provide the file path with files. Do not include redundant suffix like '/home/username/', '/etc/service/' or '/tree/master'. -Do not include any additional information such as line numbers or explanations in your extraction result. -Files for initialization and configuration might be modified during changing the code. Preferred extraction Examples of Related Files: 1. src/utils/file_handler.py 2. core/services/service_manager.py 3. ... &lt;repository&gt; {REPO NAME} &lt;/repository&gt; &lt;issue&gt; {ISSUE TEXT} &lt;/issue&gt; &lt;reference_python_file_list&gt; {REFERENCE PYTHON FILES} &lt;/reference_python_file_list&gt; &lt;other_reference_file_list&gt; {OTHER REFERENCE FILES} &lt;/other_reference_file_list&gt; Prompts: You are an experienced software developer who specializes in assessing the relevance of the file for solving the issue in software repositories.</p><p>Task: For a file provided, evaluate the likelihood that modifying this file would resolve the given issue, and assign a score based on specific criteria.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instructions: 1. Analysis:</head><p>-Analyze the provided issue description and the content of the single relevant file, pay attention to any keywords, error messages, or specific functionalities mentioned that relate to the file.</p><p>-Determine how closely the contents and functionality of the file are tied to the problem or error described in the issue.</p><p>-Consider the role of the file in the overall project structure (e.g., configuration files, core logic files versus test files, or utility scripts). 2. Scoring: -Based on your analysis, assign a score from 1 to 5 that represents the relevance of modifying the given file in order to solve the issue.</p><p>Score Specifications: 1. **Score 1**: The file is almost certainly unrelated to the issue, with no apparent connection to the functionality or error described in the issue. 2. **Score 2**: The file may be tangentially related, but modifying it is unlikely to resolve the issue directly; possible in rare edge cases. 3. **Score 3**: The file has some relevance to the issue; it might interact with the affected functionality indirectly and tweaking it could be part of a broader fix. 4. **Score 4**: The file is likely related to the issue; it includes code that interacts directly with the functionality in question and could plausibly contain bugs that lead to the issue. 5. **Score 5**: The file is very likely the root cause or heavily involved in the issue and modifying it should directly address the error or problem mentioned. Respond in the following format: [start_of_analysis] &lt;detailed_analysis&gt; [end_of_analysis] [start_of_score] Score &lt;number&gt; [end_of_score] Notes: -The content of the file shows only the structure of this file, including the names of the classes and functions defined in this file. -You can refer to to the information in the error logs (if exists). &lt;repository&gt; {REPO NAME} &lt;/repository&gt; &lt;issue&gt; {ISSUE TEXT} &lt;/issue&gt; &lt;file_name&gt; {FILE NAME} &lt;/file_name&gt; &lt;file_content&gt; {FILE CONTENT} &lt;/file_content&gt; </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: An example of our repository-level code graph, where "PKG", "FUNC", and "T-FILE" represents "PACKAGE", "FUNCTION", and "TEXTFILE" respectively. In this graph, solid lines represent hierarchical dependencies (i.e., contains), while dashed lines represent reference dependencies (calls/imports/extends).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Architecture of CGM and its Graph RAG extension: Given an issue, (a) Rewriter extracts code entities and keywords from the issue (Extractor), and modifies the original issue into more detailed queries (Inferer). Based on this, (b) Retriever locates relevant nodes from the corresponding code graph; then expands these nodes to a connected subgraph by including neighboring and upstream nodes. (c) Reranker ranks retrieved results in two stages: File Name Rank and File Skeleton Rank, selecting the most relevant files for modification. Finally, (d) Reader (CGM) takes the retrieved graph and selected files as input. Each node's code content is encoded by an Encoder E , producing a node token via the Adapter A. Node tokens are then concatenated with text tokens in the prompt before entering the LLM decoder D, where the adjacency matrix replaces its original attention mask.</figDesc><graphic coords="6,319.92,332.64,204.32,145.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Illustration of a real-world issue from pytorch-lightning codebase, where a user wants to disable automatic checkpoint loading. Given the original issue, the corresponding diff-formatted patch (bottom left) shows all the code modifications in a linear fashion. Compared to code sequences, the relationships between them can be more clear if we represent the code as a graph (bottom right), where containment (solid lines), inheritance (dashed lines), and function calls (dotted lines) explicitly demonstrate the connections between different code snippets.</figDesc><graphic coords="17,66.93,129.59,253.33,141.28" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: The given issue and the intermediate outputs produced by Rewriter, Retriever, and Reranker, respectively.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Patches generated by CGM (with or without code graph), along with the gold patch. Green boxes represent successful patches and the red box represents unsuccessful one.</figDesc><graphic coords="31,95.56,83.72,206.84,273.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Prompt for Extractor in Rewriter.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Prompt for Reranker in Stage 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Prompt for Reranker in Stage 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Performance comparison on CrossCodeEval and ComplexCodeEval benchmarks. DeepSeek-236B represents DeepSeek-V2.5-236B, Mixtral-123B denotes Mistral-Large-Instruct-2411, and Qwen2.5-72B refers to Qwen2.5-72B-Instruct. Baseline models are evaluated using FIM (Fill-in-Middle) and one-hop expansion.</figDesc><table><row><cell></cell><cell cols="3">CROSSCODEEVAL</cell><cell></cell><cell cols="4">COMPLEXCODEEVAL</cell></row><row><cell>METHOD</cell><cell cols="2">JAVA</cell><cell cols="2">PYTHON</cell><cell cols="2">JAVA</cell><cell cols="2">PYTHON</cell></row><row><cell></cell><cell>EM</cell><cell>ES</cell><cell>EM</cell><cell>ES</cell><cell>EM</cell><cell>ES</cell><cell>EM</cell><cell>ES</cell></row><row><cell>MIXTRAL-123B</cell><cell cols="8">47.17 82.23 53.92 82.42 37.00 64.81 31.00 62.48</cell></row><row><cell>DEEPSEEK-236B</cell><cell cols="8">44.74 83.81 58.54 85.03 36.00 63.08 32.00 60.60</cell></row><row><cell>QWEN2.5-72B</cell><cell cols="8">37.31 78.78 58.50 81.56 26.00 54.14 28.00 57.12</cell></row><row><cell cols="6">CGM-MULTI-72B 50.21 80.76 61.20 84.30 47</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6 :</head><label>6</label><figDesc>Edge Types in Code Graph.</figDesc><table><row><cell>Edge Type</cell><cell>Description</cell></row><row><cell>contains</cell><cell>Indicating a hierarchical relationship in which one entity contains another entity</cell></row><row><cell>calls</cell><cell>This type of edge captures the dynamic invocation relationship</cell></row><row><cell>extends</cell><cell>Representing an inheritance relationship, where one class extends another class</cell></row><row><cell>imports</cell><cell>Represent dependencies where one file imports another class/function</cell></row><row><cell cols="2">implements This edge is exclusively applicable to Java, denoting the relation where a class</cell></row><row><cell></cell><cell>implements an interface</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 8 :</head><label>8</label><figDesc>Inference Time and Memory Cost of CGM (Qwen2.5-72B).</figDesc><table><row><cell cols="3"># Input Tokens Time (s) Memory (GB)</cell></row><row><cell>1,000</cell><cell>3.934</cell><cell>68.79</cell></row><row><cell>2,000</cell><cell>4.408</cell><cell>68.98</cell></row><row><cell>3,000</cell><cell>5.055</cell><cell>69.43</cell></row><row><cell>4,000</cell><cell>5.808</cell><cell>70.26</cell></row><row><cell>5,000</cell><cell>6.432</cell><cell>70.77</cell></row><row><cell>6,000</cell><cell>7.163</cell><cell>70.98</cell></row><row><cell>7,000</cell><cell>7.838</cell><cell>71.44</cell></row><row><cell>8,000</cell><cell>8.553</cell><cell>72.02</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 9 :</head><label>9</label><figDesc>The statistics of the CrossCodeEval for Java and Python.</figDesc><table><row><cell>Feature</cell><cell cols="2">Java Python</cell></row><row><cell cols="2"># Repositories 239</cell><cell>471</cell></row><row><cell># Files</cell><cell>745</cell><cell>1368</cell></row><row><cell># Examples</cell><cell cols="2">2139 2665</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 10 :</head><label>10</label><figDesc>Impact of each RAG (Retrieval-Augmented Generation) component on the performance of CGM for issue fixing. Results are reported as the resolve rate (% R) on SWE-bench Lite, demonstrating the contribution of rewriter, retriever, and reranker modules.Variants of Graph RAG FrameworkThe Graph RAG framework, comprising Rewriter, Retriever, Reranker, and Reader, extends CGM to real-world issue fixing. In Table10, we verify the effectiveness of each component in our Graph RAG framework by removing them. Here, we use CGM-SWE-PY (see Appendix C.1 for training details) as Reader.</figDesc><table><row><cell>SETTING</cell><cell>% R</cell></row><row><cell>-W/O REWRITER</cell><cell>34.67</cell></row><row><cell>-W/O RETRIEVER</cell><cell>31.67</cell></row><row><cell>-W/O RERANKER</cell><cell>18.33</cell></row><row><cell>-W/O R3</cell><cell>9.67</cell></row><row><cell>-W/O CGM READER (FLATGRAPH)</cell><cell>5.33</cell></row><row><cell>C.7.1</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 11 :</head><label>11</label><figDesc>Impact of training strategies on CGM's performance. Results are reported for CrossCodeEval (Java and Python) in terms of EM and ES. Here, E denotes the encoder, A denotes the adapter, D denotes the LLM, and "combined" refers to the full CGM setup (w/ mask, w/ Recon, A + LoRA w/ E + D).</figDesc><table><row><cell>SETTING</cell><cell cols="3">CROSSCODEEVAL</cell></row><row><cell></cell><cell>JAVA</cell><cell></cell><cell cols="2">PYTHON</cell></row><row><cell></cell><cell>EM</cell><cell>ES</cell><cell>EM</cell><cell>ES</cell></row><row><cell>MODULE</cell><cell></cell><cell></cell><cell></cell></row><row><cell>-FREEZE</cell><cell cols="4">17.91 58.28 11.78 51.60</cell></row><row><cell>-A</cell><cell cols="4">41.70 77.25 34.90 74.54</cell></row><row><cell>-LORA W/ D</cell><cell cols="4">46.84 82.06 38.76 76.02</cell></row><row><cell cols="5">-A + LORA W/ D 49.51 83.21 43.15 79.84</cell></row><row><cell>MASK</cell><cell></cell><cell></cell><cell></cell></row><row><cell>-W/O MASK</cell><cell cols="4">48.71 83.40 42.21 80.46</cell></row><row><cell>TRAINING</cell><cell></cell><cell></cell><cell></cell></row><row><cell>-W/O RECON</cell><cell cols="4">42.78 80.29 39.77 75.87</cell></row><row><cell>CGM</cell><cell></cell><cell></cell><cell></cell></row><row><cell>-COMBINED</cell><cell cols="4">51.61 84.62 46.23 82.16</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 12 :</head><label>12</label><figDesc>CGM with Different Backbones.</figDesc><table><row><cell>BACKBONE</cell><cell>% R</cell></row><row><cell>-QWEN2.5-72B-INSTRUCT</cell><cell>43.00</cell></row><row><cell>-LLAMA3.1-70B-INSTRUCT</cell><cell>25.33</cell></row><row><cell cols="2">-QWEN2.5-CODER-32B-INSTRUCT 28.67</cell></row><row><cell>-QWEN2.5-CODER-7B-INSTRUCT</cell><cell>4.00</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 13 :</head><label>13</label><figDesc>The Repositories and funcitons selected from ComplexCodeEval-Python.</figDesc><table><row><cell>Repository</cell><cell>Function</cell></row><row><cell>IntelLabs/coach</cell><cell>validate_output_action_space</cell></row><row><cell>scikit-learn-contrib/category_encoders</cell><cell>transform</cell></row><row><cell>boto/boto3</cell><cell>document_collections</cell></row><row><cell>flink-extended/ai-flow</cell><cell>get_conn</cell></row><row><cell>indico/indico</cell><cell>_process</cell></row><row><cell>aleju/imgaug</cell><cell>_generate_intersection_points</cell></row><row><cell>lucyparsons/OpenOversight</cell><cell>send_email</cell></row><row><cell>williamfzc/stagesepx</cell><cell>load_frames</cell></row><row><cell>dj-stripe/dj-stripe</cell><cell>_resync_instances</cell></row><row><cell>biosustain/potion</cell><cell>parse_request</cell></row><row><cell>MLBazaar/BTB</cell><cell>_fit</cell></row><row><cell>mljar/mljar-supervised</cell><cell>from_json</cell></row><row><cell>archesproject/arches</cell><cell>save</cell></row><row><cell>uber/causalml</cell><cell>causalsens</cell></row><row><cell>digiteinfotech/kairon</cell><cell>request</cell></row><row><cell>DeepLabCut/DeepLabCut</cell><cell>interpolate</cell></row><row><cell>WeblateOrg/weblate</cell><cell>check_component</cell></row><row><cell>oxan/djangorestframework-dataclasses</cell><cell>to_internal_value</cell></row><row><cell>etsy/boundary-layer</cell><cell>load</cell></row><row><cell>grafana/oncall</cell><cell>authenticate</cell></row><row><cell>trypromptly/LLMStack</cell><cell>process</cell></row><row><cell>weihuayi/fealpy</cell><cell>grad</cell></row><row><cell>django-cas-ng/django-cas-ng</cell><cell>get</cell></row><row><cell>lociii/jukebox</cell><cell>index</cell></row><row><cell>LAMDA-NJU/Deep-Forest</cell><cell>fit_transform</cell></row><row><cell>jazzband/django-simple-history</cell><cell>history_form_view</cell></row><row><cell>fabfuel/ecs-deploy</cell><cell>assume_role</cell></row><row><cell>waterdipai/datachecks</cell><cell>log</cell></row><row><cell>pfnet/pfrl</cell><cell>select_action</cell></row><row><cell>bhch/django-jsonform</cell><cell>render</cell></row><row><cell>allenai/OLMo</cell><cell>sample_nodes</cell></row><row><cell>AI4Finance-Foundation/ElegantRL</cell><cell>init_before_training</cell></row><row><cell>someengineering/fixinventory</cell><cell>parse_args</cell></row><row><cell>ssube/onnx-web</cell><cell>run</cell></row><row><cell>IntelAI/nauta</cell><cell>create_tensorboard</cell></row><row><cell>scikit-learn/scikit-learn</cell><cell>fit</cell></row><row><cell>awslabs/aws-embedded-metrics-python</cell><cell>probe</cell></row><row><cell>amundsen-io/amundsen</cell><cell>init</cell></row><row><cell>DataCanvasIO/DeepTables</cell><cell>fit</cell></row><row><cell>diyan/pywinrm</cell><cell>build_session</cell></row><row><cell>adamchainz/django-perf-rec</cell><cell>set_and_save</cell></row><row><cell>ihmeuw-msca/CurveFit</cell><cell>fit</cell></row><row><cell>google-research/weatherbench2</cell><cell>compute</cell></row><row><cell>langroid/langroid</cell><cell>load</cell></row><row><cell>jina-ai/jcloud</cell><cell>_get_post_params</cell></row><row><cell>tfeldmann/organize</cell><cell>from_string</cell></row><row><cell>georgia-tech-db/evadb</cell><cell>exec</cell></row><row><cell>sibson/redbeat</cell><cell>is_due</cell></row><row><cell>bread-and-pepper/django-userena</cell><cell>process_request</cell></row><row><cell>betodealmeida/shillelagh</cell><cell>supports</cell></row><row><cell>kakaoenterprise/JORLDY</cell><cell>sample</cell></row><row><cell>openstack/neutron</cell><cell>get_total_reservations_map</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 14 :</head><label>14</label><figDesc>The Repositories and funcitons selected from ComplexCodeEval-Java.</figDesc><table><row><cell>Repo</cell><cell>Function</cell></row><row><cell>apache/tajo</cell><cell>findScalarFunctions</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://www.swebench.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>The file skeleton is a hierarchical structure of the contents of a code file, containing class and function declarations, without specific definitions and comments.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>The complete outputs are provided in an anonymous online repository due to space constraints: https: //anonymous.4open.science/r/CGM-EF59/Supplemental/case_study/case_study.md.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>, Jianguo Li &lt;lijg.zero@antgroup.com&gt; and Peng Di &lt;dipeng.dp@antgroup.com&gt;.</p></div>
+			</div>
+
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>• SWE-bench Lite <ref type="bibr" target="#b19">(Jimenez et al., 2024)</ref>: SWE-bench Lite contains 300 self-contained repository-level issues from 11 repositories, designed to test the model's understanding of repository-level code changes and its ability to generate correct patches primarily focused on Python. It provides a realistic software engineering environment, including execution contexts, to evaluate the model's ability to resolve real-world issues.</p><p>• SWE-bench Verified (OpenAI, 2024b): SWE-bench Verified contains 500 self-contained repository-level issues from 12 repositories. This dataset contains samples that have been verified to be non-problematic by human annotators.</p><p>• SWE-bench-java Verified <ref type="bibr" target="#b64">(Zan et al., 2024)</ref>: This dataset include 91 Java issues from 6 repositories, enabling cross-language evaluation. Like SWE-bench Lite, it provides execution environments to validate the correctness of generated patches.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>layer of the adapter maps the CodeT5+ output dimension of 256 to 8192, and the second layer maintains the dimension of 8192, which aligns with the LLM's hidden dimension. We adopt Xformers <ref type="bibr" target="#b23">(Lefaudeux et al., 2022)</ref> for efficient attention computation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.3 CGM-SWE-PY</head><p>CGM-SWE-PY, as a model specifically designed for SWE-bench Lite, is pre-trained using python subgraph reconstruction data (the entire 500k) and fine-tuned on specific python issue-fixing data (the 14k sourced from SWEBench training set). Besides, all details of training and parameters are set the same as CGM-Multi.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.4 CGM 7B Series</head><p>We train several small-scale CGMs based on the existing 7B base models to compare with small-scale models on code completion benchmarks. Specifically, we trained CGMs in seperate language based on CodeLlama-7B, StarCoder-7B, DeepSeek-Coder-7B, and Qwen2.5-Coder-7B-Instruct, respectively. For each model in each language, we use training data in the target language during both pretraining and fine-tuning stages. For example, we train CodeLlama-7B with 500k Python subgraph reconstruction data and 250k Python code completion samples, and then evaluate it on the Python test set of crosscodeeval.</p><p>Except for modifying the parameters in LoRA (set rank=32, and alpha=16), other training/parameter settings are consistent with CGM-Multi.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Recall Results for the Graph RAG Framework</head><p>We provide the recall of each component of our Graph RAG framework (in the file level), as shown in Table <ref type="table" target="#tab_9">7</ref>. The recall of each component on SWE-bench-java Verified are lower than those on SWE-bench Lite. One possible reason may be that the issues in SWE-bench Lite usually requires modifying one file, while the issues on the SWE-bench-java Verified sometimes need to modify multiple files.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Hyperparameters for Inference</head><p>We use the same parameter settings for inference with LLMs (CGMs and Qwen2.5-72B-Instruct in the Graph RAG framework), setting top k = 20, top p = 0.8, temperature = 0.7, and repetition penalty = 1.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Cost Analysis</head><p>In this section, we present a cost analysis of the overall process, including the time required for code graph construction and computational expenses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5.3 Evaluation Metrics</head><p>Resolve Rate (% R): The metrics used in the above benchmarks is Resolve Rate, which evaluates the correctness of generated patches for the issue-fix task. A patch is considered resolved if it correctly addresses the issue and is a superset of the ground-truth edits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6 Experimental Setup of Code Completion</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6.1 Implementation Details of CGM</head><p>As a simpler scenario than issue fixing, the files that need to be modified are given in the code completion tasks. Therefore, we obtain the input subgraph of CGM through a heuristic method, rather than the Graph RAG framework. To be specific, we take the given incomplete file as the center node, obtaining its one-hop ego graph from the repository-level code graph. Note that nodes that need to be completed are not considered in this process. The resulting subgraph (graph modalities), and the incomplete files (text modalities), form the inputs to the CGM.</p><p>In this experiment, we use two size of CGMs for evaluation. Training details for the large-scale CGM-Multi (72B) and small-scale CGM 7B series can be found in the Appendix C.1. C.6.2 Datasets</p><p>• CrossCodeEval <ref type="bibr" target="#b8">(Ding et al., 2024)</ref> is an emerging benchmark for cross-file code completion, which is constructed from a wide range of real-world repositories from GitHub in four popular programming languages: Python, Java, TypeScript, and C#. In our experiments, we evaluate the model's code completion ability on only two languages, Java and Python. As shown in Table <ref type="table">9</ref>, we provide the dataset statistics of the CrossCodeEval benchmark for Java and Python.</p><p>• ComplexCodeEval <ref type="bibr" target="#b10">(Feng et al., 2024)</ref> is a new benchmark for evaluating the performance of large code models in complex development scenarios. It includes 3,897 Java samples from 1,055 Java code repositories and 7,184 Python samples from 2,107 Python code repositories. Following the original setup of this benchmark, we randomly selected 100 samples each in Python and Java for the evaluation. Table <ref type="table">13</ref> and Table <ref type="table">14</ref> show the information of the selected samples. When evaluating the code completion capability, unlike the original setup which requires the model to complete the second half of the function, we ask the model to complete the middle line of the function given the contextual information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6.3 Evaluation Matrics</head><p>When evaluating a prediction code y in comparison to the reference ground truth y * , the above benchmarks utilize the following two metrics: the exact match accuracy (EM) and the Levenshtein edit similarity (ES).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 7 :</head><label>7</label><figDesc>Recall performance of each Graph RAG module on SWE-bench Lite and SWE-bench-java Verified. The table shows the recall percentage for Retriever, Reranker Stage 1, and Reranker Stage 2 components.</figDesc><table><row><cell>MODULE</cell><cell cols="2">SWE-BENCH LITE SWE-BENCH-JAVA VERIFIED</cell></row><row><cell></cell><cell>% RECALL</cell><cell>% RECALL</cell></row><row><cell>RETRIEVER</cell><cell>94</cell><cell>87</cell></row><row><cell>RERANKER STAGE 1</cell><cell>89</cell><cell>74</cell></row><row><cell>RERANKER STAGE 2</cell><cell>87</cell><cell>60</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet" />
+		<title level="m">Claude 3.5 sonnet</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>fluent in 80+ programming languages</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Antonis</forename><surname>Antoniades</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Örwall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.20285</idno>
+		<title level="m">Swe-search: Enhancing software agents with monte carlo tree search and iterative refinement</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><surname>Aor</surname></persName>
+		</author>
+		<ptr target="https://github.com/aorwall/moatless-tools" />
+		<title level="m">Aoatless-tools</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Machine learning on graphs: A model and comprehensive taxonomy</title>
+		<author>
+			<persName><forename type="first">Ines</forename><surname>Chami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sami</forename><surname>Abu-El-Haija</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Perozzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Murphy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">89</biblScope>
+			<biblScope unit="page" from="1" to="64" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Codefuse</forename><surname>Codefuse-Cge</surname></persName>
+		</author>
+		<ptr target="https://www.cognition.ai/introducing-devin" />
+	</analytic>
+	<monogr>
+		<title level="j">Cognition. Introducing devin</title>
+		<imprint>
+			<date type="published" when="2023">2024. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">R2c2-coder: Enhancing and benchmarking real-world repositorylevel code completion abilities of code large language models</title>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congnan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqiao</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01359</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yangruibo</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uddin</forename><surname>Wasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murali</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Krishna Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parminder</forename><surname>Nallapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10007</idno>
+		<title level="m">Cocomic: Code completion by jointly modeling in-file and cross-file context</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Crosscodeeval: A diverse and multilingual benchmark for cross-file code completion</title>
+		<author>
+			<persName><forename type="first">Yangruibo</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wasi</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantian</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nihal</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Murali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parminder</forename><surname>Nallapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Complexcodeeval: A benchmark for evaluating large code models on more complex code</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chun</forename><forename type="middle">Yong</forename><surname>Chong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaozheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the 39th IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1895" to="1906" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.08366</idno>
+		<title level="m">Pre-training code representations with data flow</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Unixcoder: Unified cross-modal pre-training for code representation</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.03850</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14196</idno>
+		<title level="m">Deepseek-coder: When the large language model meets programming-the rise of code intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Gimpel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.08415</idno>
+		<title level="m">Gaussian error linear units (gelus)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">Meta programming for multi-agent collaborative framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<title level="m">Low-rank adaptation of large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12186</idno>
+		<title level="m">Qwen2. 5-coder technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Treebert: A tree-based pre-trained model for programming language</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Lyu</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Uncertainty in Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="54" to="63" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Large language models on graphs: A comprehensive survey</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Contrastrepair: Enhancing conversation-based automated program repair via contrastive test case pairs</title>
+		<author>
+			<persName><forename type="first">Jiaolong</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofei</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangqing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoning</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.01971</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cheryl</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longji</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jen-Tse</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhouruixin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Michael R Lyu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.17153</idno>
+		<title level="m">A unified debugging approach via llm-based multi-agent synergy</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Lefaudeux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><surname>Massa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vittorio</forename><surname>Caggiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Naren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieru</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Tintore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Labatut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Haziza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Wehrstedt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigory</forename><surname>Sizov</surname></persName>
+		</author>
+		<ptr target="https://github.com/facebookresearch/xformers" />
+		<title level="m">xformers: A modular and hackable transformer modelling library</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Incorrectness proofs for object-oriented programs via subclass reflection</title>
+		<author>
+			<persName><forename type="first">Wenhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quang</forename><surname>Loc Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahui</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ngan</forename><surname>Chin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Asian Symposium on Programming Languages and Systems</title>
+		<imprint>
+			<biblScope unit="page" from="269" to="289" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Springer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Focusllm: Scaling llm&apos;s context by parallel decoding</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yike</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rong</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyong</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoheng</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gehao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xunjin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Di</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14323</idno>
+		<title level="m">Repository-level code completion with fused dual context</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">E2llm: Encoder elongated large language models for long-context understanding and reasoning</title>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxiao</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.06679</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Graphcoder: Enhancing repository-level code completion via code context graph-based retrieval and language model</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ailun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07003</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yexuan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.00899</idno>
+		<title level="m">Marscode agent: Ai-native automated bug fixing</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Lozhkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouamane</forename><surname>Tazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmytro</forename><surname>Pykhtar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.19173</idno>
+		<title level="m">Starcoder 2 and the stack v2: The next generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Repoagent: An llm-powered open-source framework for repository-level code documentation generation</title>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yesai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingli</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16667</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Lingma swe-gpt: An open development-process-centric language model for automated software improvement</title>
+		<author>
+			<persName><forename type="first">Yingwei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongyu</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongchang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.00622</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yingwei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingping</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongyu</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01422</idno>
+		<title level="m">How to understand whole software repository? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiya</forename><surname>Manchanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Boettcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matheus</forename><surname>Westphalen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasser</forename><surname>Jasser</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.12004</idno>
+		<title level="m">The open source advantage in large language models (llms)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Hello gpt</title>
+		<ptr target="https://openai.com/index/hello-gpt-4o/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Introducing swe-bench verified</title>
+		<ptr target="https://openai.com/index/introducing-swe-bench-verified/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siru</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengzhao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.14684</idno>
+		<title level="m">Repograph: Enhancing ai software engineering with repository-level code graph</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Training software engineering agents and verifiers with swe-gym</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navdeep</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.21139</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Enhancing repository-level code generation with integrated contextual information</title>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohu</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.03283</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Integrating tree path in transformer for code representation</title>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="9343" to="9354" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Introducing gemini 2.0: our new ai model for the agentic era</title>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Sundar Pichai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<ptr target="https://blog.google/technology/google-deepmind/google-gemini-ai-update" />
+		<imprint>
+			<date type="published" when="2024-12">-december-2024/, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: Bm25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Assumption hierarchy for a cha call graph construction algorithm</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Sawin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atanas</forename><surname>Rountev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2011 IEEE 11th International Working Conference on Source Code Analysis and Manipulation</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="35" to="44" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ahsan</forename><surname>Shehzad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagufta</forename><surname>Abid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ciyuan</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karin</forename><surname>Verspoor</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.09777</idno>
+		<title level="m">Graph transformers: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Repository-level prompt generation for large language models of code</title>
+		<author>
+			<persName><forename type="first">Disha</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="31693" to="31715" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shishir</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raluca</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ada</forename><surname>Popa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lloco</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.07979</idno>
+		<title level="m">Learning long contexts offline</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Structcoder: Structure-aware transformer for code generation</title>
+		<author>
+			<persName><forename type="first">Sindhu</forename><surname>Tipirneni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandan K</forename><surname>Reddy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Knowledge Discovery from Data</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="20" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Graph attention networks</title>
+		<author>
+			<persName><forename type="first">Petar</forename><surname>Veličković</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arantxa</forename><surname>Casanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adriana</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Liò</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Qwen2-vl: Enhancing vision-language model&apos;s perception of the world at any resolution</title>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12191</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01030</idno>
+		<title level="m">Executable code actions elicit better llm agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Opendevin: An open platform for ai software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16741</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruikai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zibin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rlcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.19487</idno>
+		<title level="m">Reinforcement learning for repository-level code completion</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Q</forename><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven Ch</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hoi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.07922</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Open code large language models for code understanding and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Swe-fixer: Training open-source llms for effective and efficient github issue resolution</title>
+		<author>
+			<persName><forename type="first">Chengxing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wai</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difan</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.05040</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">How to pet a two-headed snake? solving cross-repository compatibility issues with hera</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhouyang</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanshan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangke</forename><surname>Liao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the 39th IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="694" to="705" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Acwrecommender: A tool for validating actionable warnings with weak supervision</title>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanping</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 38th IEEE/ACM International Conference on Automated Software Engineering (ASE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1876" to="1880" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15793</idno>
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ailun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongshuai</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.14354</idno>
+		<title level="m">Swe-bench-java: A github issue resolving benchmark for java</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12570</idno>
+		<title level="m">Repocoder: Repository-level code completion through iterative retrieval and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianjie</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.07339</idno>
+		<title level="m">Codeagent: Enhancing code generation with tool-integrated agent systems for real-world repo-level coding challenges</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Autocoderover: Autonomous program improvement</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1592" to="1604" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Unifying the perspectives of nlp and software engineering: A survey on language models for code</title>
+		<author>
+			<persName><forename type="first">Ziyin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingchang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07989</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Galla: Graph aligned large language models for improved source code understanding</title>
+		<author>
+			<persName><forename type="first">Ziyin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Di</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.04183</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">Deepseek-coder-v2: Breaking the barrier of closed-source models in code intelligence</title>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11931</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

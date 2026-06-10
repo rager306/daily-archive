@@ -1,0 +1,2827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Your Code Agent Can Grow Alongside You with Structured Memory</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-25">25 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yi-Xuan</forename><surname>Deng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaoqin</forename><surname>Liu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Guo-Wei</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shuojin</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Online</forename><surname>Repo</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Unstructured</forename><surname>Commit</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Data</forename><forename type="middle">Structured</forename><surname>Knowledge</surname></persName>
+						</author>
+						<title level="a" type="main">Your Code Agent Can Grow Alongside You with Structured Memory</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-25">25 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4D70462D6414F0DCD55EFCF64BAAD332</idno>
+					<idno type="arXiv">arXiv:2603.13258v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>While "Intent-oriented programming" (or "Vibe Coding") redefines software engineering, existing code agents remain tethered to static code snapshots. Consequently, they struggle to model the critical information embedded in the temporal evolution of projects, failing to leverage the "reasoning trajectories" implicit in past successful practices. This limitation results in rigid behavioral logic and a lack of autonomous adaptability, ultimately hindering their ability to tackle complex, repository-level problems. To bridge this static-dynamic mismatch, we propose Mem-Coder, a framework designed to enable continual human-AI co-evolution. MemCoder first structures historical human experience to distill latent intent-to-code mappings from past commits. It then employs a self-refinement mechanism driven by verification feedback to correct agent behavior in real-time. Crucially, an experience selfinternalization mechanism is introduced to crystallize human-validated solutions into long-term knowledge, thereby supporting sustained evolution. Experimental results on SWE-bench Verified demonstrate that MemCoder not only achieves State-of-the-Art (SOTA) performance but also delivers a 9.4% improvement in resolved rate over the general foundation model DeepSeek-V3.2. These findings indicate that equipping agents with the capability to co-evolve with humans via project history and real-time feedback effectively unlocks the potential of general models in complex software engineering tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>The rapid evolution of Large Language Models (LLMs) <ref type="bibr">(Yang et al., 2025a;</ref><ref type="bibr" target="#b15">Guo et al., 2025;</ref><ref type="bibr" target="#b36">Team, 2023;</ref><ref type="bibr">Zhang et al., 2025a)</ref> has fundamentally transformed software engineering into a human-AI collaborative paradigm <ref type="bibr">(Guo et al., 2024a;</ref><ref type="bibr">Hui et al., 2024;</ref><ref type="bibr">Zeng et al., 2025)</ref>. In this symbiosis, the developer transitions from a manual implementer to a high-level architect, engaging in "Intent-oriented Programming" (often referred to as "Vibe Coding") <ref type="bibr">(Ge et al., 2025;</ref><ref type="bibr">Yang et al., 2025b;</ref><ref type="bibr">Wang et al., 2024;</ref><ref type="bibr">Anysphere, 2025;</ref><ref type="bibr" target="#b54">Zheng et al., 2023;</ref><ref type="bibr">Anthropic, 2025d;</ref><ref type="bibr" target="#b38">Wang et al., 2025)</ref>. This shift positions the human as the source of strategic guidance and constraints, while the agent acts as the dynamic executor. While effective for isolated tasks, this collaboration often fractures in complex, repository-level environments. Here, natural language instructions alone are insufficient to convey tacit knowledge, such as complex inter-file dependencies and unwritten project conventions, that developers have accumulated over time <ref type="bibr" target="#b27">(Pan et al., 2025;</ref><ref type="bibr">Zhang et al., 2023a)</ref>.</p><p>Crucially, these implicit constraints are embedded within the iterative interactions between developers and the codebase. However, as shown in Figure <ref type="figure" target="#fig_0">1</ref>, the prevailing code agents <ref type="bibr">(Dong et al., 2025;</ref><ref type="bibr">Wang et al., 2024;</ref><ref type="bibr">Guo et al., 2024b)</ref> operate under static paradigms that sever the evolutionary feedback loop between human developers and agent capabilities. This disconnection manifests in three critical deficiencies. First, current agents overlook the "human-inthe-loop" defect-repair patterns archived in version control systems, thereby losing access to historical resolutions of similar conflicts <ref type="bibr">(Zhang et al., 2025c;</ref><ref type="bibr">Phan et al., 2024;</ref><ref type="bibr" target="#b27">Xia et al., 2025)</ref>. Second, instruction prompting mechanisms are often rigid, failing to bridge the gap between abstract intent and concrete execution. Without retrieving relevant precedents to elaborate on an instruction, these agents fail to inject the implicit details required to align with evolving project standards <ref type="bibr" target="#b23">(Lin et al., 2025;</ref><ref type="bibr">Rasheed et al., 2024;</ref><ref type="bibr" target="#b19">Islam et al., 2024)</ref>. Third, and most critically, existing systems fail to internalize human-verified solutions. Consequently, valuable human interventions are discarded rather than integrated, trapping the collaboration in amnesic cycles where the agent repeats errors, forcing the developer to act as a perpetual corrector rather than a co-evolutionary partner <ref type="bibr" target="#b46">(Yao et al., 2023;</ref><ref type="bibr" target="#b4">Antoniades et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Addressing these limitations necessitates a paradigm shift toward Human-AI Co-Evolution.</head><p>To handle repository-level complexities, an agent must transform from a static executor into an adaptive partner by systematically internalizing human wisdom. This requires a dual approach: reconstructing "developer cognition" from historical trajectories to guide decision-making, and crystallizing ephemeral human interactions into enduring capabilities. Such a framework creates a virtuous evolutionary cycle, ensuring the agent progressively attunes itself to the developer's specific coding philosophy and constraints.</p><p>Building on these insights, we introduce MemCoder, a repository-level code agent framework designed for continuous human-AI co-evolution. Recognizing that historical contributions serve as the crucial carrier of both explicit solutions and implicit intent, we instantiate this collaborative paradigm along two dimensions, as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. The Knowledge Dimension structures unstructured developer commits into memory entries, enabling the agent to recall how humans previously resolved similar complexities. The Execution Dimension implements intent concretization and dynamic self-refinement: it leverages retrieved historical context to refine sparse instructions into concrete specifications. Subsequently, it crystallizes human-verified solutions into persistent memory to preserve successful intent-to-code mappings. This design ensures that the agent effectively internalizes past human wisdom while iteratively optimizing its alignment with developer intent.</p><p>We conducted a comprehensive evaluation of MemCoder on the SWE-bench Verified dataset <ref type="bibr" target="#b21">(Jimenez et al., 2024)</ref>. The results demonstrate that by empowering agents to co-evolve alongside human developers, MemCoder achieves Stateof-the-Art (SOTA) performance. With GPT-5.2 (OpenAI, 2025) as the backbone, our approach sets a new benchmark. Notably, the framework significantly empowers general models like DeepSeek-V3.2 (DeepSeek-AI, 2025) to better comprehend and replicate human coding patterns, boosting the resolved rate from 68.4% to 77.8%.</p><p>In summary, the core contributions of this paper are as follows:</p><p>• We identify the "interaction disconnect" in repositorylevel agents and propose MemCoder, a framework designed for Human-AI Co-Evolution that enables the agent to grow with the project.</p><p>• We introduce mechanisms for Human Experience Internalization: structuring historical human commits to recall past wisdom, and crystallizing human-verified solutions to accumulate current knowledge.</p><p>• We achieve SOTA performance on SWE-bench Verified, demonstrating that coupling general models with human-derived evolutionary context significantly empowers them to master complex software engineering tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">LLM-Based Code Generation Agents</head><p>LLM-based code generation agents leverage Large Language Models (LLMs) as their core controllers, achieving autonomous code synthesis through real-time interaction with external tools and environments <ref type="bibr">(Wang et al., 2024;</ref><ref type="bibr">Dong et al., 2025;</ref><ref type="bibr">Guo et al., 2024b)</ref>. Prior research has largely focused on augmenting agent capabilities through specialized workflow designs. Inspired by human programming practices, one stream of work adopts iterative optimization driven by generative feedback, as exemplified by Self-Refine <ref type="bibr" target="#b25">(Madaan et al., 2023)</ref> and Self-Edit <ref type="bibr">(Zhang et al., 2023b)</ref>. Another stream emphasizes multi-agent collaboration, where role specialization and coordinated execution significantly improve problem-solving efficiency in complex tasks (e.g., AgileCoder <ref type="bibr" target="#b26">(Nguyen et al., 2025)</ref>, AgentCoder <ref type="bibr">(Huang et al., 2023)</ref>, and MapCoder <ref type="bibr" target="#b19">(Islam et al., 2024)</ref>). To transcend the limitations of rigid workflows, ReAct <ref type="bibr" target="#b46">(Yao et al., 2023)</ref> introduced a paradigm that tightly couples reasoning traces with task-driven actions, serving as a foundational approach for dynamic decision-making. Building upon this foundational reasoning mechanism, Mem-Coder extends the agent's capabilities by incorporating historical development wisdom into its decision-making process, thereby enabling more grounded and effective code synthesis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Long-Term Memory Mechanisms for LLMs</head><p>Long-term Memory (LTM) mechanisms are widely adopted in LLM-based agents to enhance reasoning continuity and multi-agent collaboration <ref type="bibr">(Shan et al., 2025;</ref><ref type="bibr" target="#b29">Qian et al., 2024)</ref>. However, continuous interaction leads to the unbounded growth of LTM, posing critical challenges for organization and retrieval. A standard strategy decouples LTM from the model, treating it as an external database to facilitate inference <ref type="bibr">(Jiang et al., 2024)</ref>. To structure this vast information, biologically inspired approaches such as RAPTOR <ref type="bibr" target="#b33">(Sarthi et al., 2024)</ref> and Memwalker <ref type="bibr" target="#b48">(Chen et al., 2023)</ref> utilize tree-based architectures to organize memory spaces hierarchically. Furthermore, methods like MemoryBank <ref type="bibr" target="#b55">(Zhong et al., 2024)</ref> and SAGE <ref type="bibr" target="#b45">(Liang et al., 2025)</ref> incorporate the Ebbinghaus forgetting curve into LTM management to maintain conciseness by pruning obsolete information. In contrast to these rigid or decay-based structures, MemCoder introduces a flat, autonomous memory management paradigm that dynamically integrates new insights.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Dynamic Evolution</head><p>Dynamic evolution mechanisms enable agents to calibrate their strategies based on historical context and real-time observations. This evolution primarily manifests through two pathways: memory consolidation and prompt optimization <ref type="bibr">(Gao et al., 2025a)</ref>. Specifically, frameworks such as A-mem <ref type="bibr">(Xu et al., 2025)</ref> and MemInsight <ref type="bibr">(Salama et al., 2025)</ref> continuously update memory architectures by distilling successful experiences, allowing the agent to achieve self-evolution through iterative environmental interaction.</p><p>In parallel, automated prompt engineering approaches like APE <ref type="bibr" target="#b56">(Zhou et al., 2023)</ref> leverage LLMs to generate and validate candidate prompts. Subsequent works, including ERM <ref type="bibr" target="#b42">(Yan et al., 2025)</ref> and OPRO <ref type="bibr" target="#b44">(Yang et al., 2024)</ref>, further advance this by introducing optimization driven by execution feedback. Distinguishing itself from isolated improvements, MemCoder integrates diverse evolutionary mechanisms driven by historical human experience to realize a continuous human-AI co-evolution framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Method</head><p>The core methodology of MemCoder is built upon a human-AI co-evolution paradigm. Rather than treating code generation as a static inference task, we model it as a continuous learning process where the agent system Π iteratively refines itself. This refinement is governed by an evolution function Evolv, which synthesizes insights from long-term memory 𝑀, current execution trajectories 𝜏, and multi-source feedback 𝜉:</p><formula xml:id="formula_0">Π ′ = Evolv(Π, F (𝑀, 𝜏, 𝜉)).<label>(1)</label></formula><p>Here, F = { 𝑓 struct , 𝑓 refine , 𝑓 intern } represents the composite adaptive mechanism, where the specific formulation of each function is detailed in the following subsections. To implement this theoretical model, MemCoder orchestrates three critical phases: constructing structured memory from historical repositories, retrieving context-aware experience during execution, and internalizing human-validated solutions for future iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Experience Representation and Utilization</head><p>To bridge the gap between abstract intents and concrete project conventions, we leverage the codebase's history. MemCoder replaces the fixed snapshot view with a dynamic repository, where raw commits are distilled into reference solutions. This allows the agent to retrieve and replicate the reasoning behind past successful implementations precisely.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Structuring Historical Experience.</head><p>High-quality longterm memory serves as the fundamental cornerstone for the human-AI co-evolution of agent systems. However, raw human experiences are often permeated with non-standardized, ambiguous, and idiosyncratic descriptions, which introduce inherent biases during the agent's comprehension and knowledge acquisition. To transform these raw experiences into standardized and agent-centric memory representations for more effective learning, we propose an LLM-driven memory construction algorithm predicated on Defect Management theory <ref type="bibr" target="#b35">(Singh &amp; Solanki, 2013)</ref>. Specifically, we formalize the memory set as 𝑀 = {𝑚 1 , 𝑚 2 , . . . , 𝑚 𝑁 }, where each memory entry 𝑚 𝑖 is defined as a structured sextuple:</p><formula xml:id="formula_1">𝑚 𝑖 = (𝑜 𝑖 , 𝑐 𝑖 , 𝑘 𝑖 , 𝑝 𝑖 , 𝑟 𝑖 , 𝑠 𝑖 ).<label>(2)</label></formula><p>As shown in Stage 1 of Figure <ref type="figure" target="#fig_1">2</ref>, MemCoder first ingests the raw historical repository data, including the original commit message 𝑜 𝑖 , the associated code changes 𝑐 𝑖 . Building upon this context, the LLM-driven engine reconstructs the experience by synthesizing a semantic knowledge layer to facilitate agent comprehension. This layer comprises four high-level components designed to transform implicit developer expertise into explicit, agent-friendly knowledge. Specifically, a set of functional keywords 𝑘 𝑖 abstracts the core phenomena and application scenarios to serve as semantic anchors for precise indexing, while the formal description of the addressed problem 𝑝 𝑖 captures observable symptoms and situational constraints to further refine the retrieval granularity.</p><p>Building upon these indexing elements, the root-cause analysis 𝑟 𝑖 elucidates the fundamental logic and technical bottlenecks underlying the issue, enabling the agent system to internalize critical development expertise and reason about the "why" of the problem. Finally, the summarized solution 𝑠 𝑖 distills the corrective actions into standardized, actionable guidelines, effectively instructing the agent on optimal decision-making and execution procedures when navigating analogous scenarios in future tasks. To operationalize this construction, we leverage the reasoning capabilities of an LLM to distill latent development intents and issue-fixing expertise embedded within the code changes. The transformation from raw context to the structured sextuple is executed through a task-specific prompt template P 𝑔𝑒𝑛 , which ensures that the resulting memory units are both standardized and optimized for robust agentic reasoning and actionable insight extraction.</p><formula xml:id="formula_2">𝑘 𝑖 , 𝑝 𝑖 , 𝑟 𝑖 , 𝑠 𝑖 ← LLM(𝑜 𝑖 , 𝑐 𝑖 | P 𝑔𝑒𝑛 ).<label>(3)</label></formula><p>Consequently, the memory construction function 𝑓 𝑠𝑡𝑟𝑢𝑐𝑡 is defined as:</p><formula xml:id="formula_3">𝑔 𝑖 = LLM(𝑜 𝑖 , 𝑐 𝑖 | P gen ) 𝑀 ← {(𝑜 𝑖 , 𝑐 𝑖 ) ⊕ 𝑔 𝑖 | (𝑜 𝑖 , 𝑐 𝑖 ) ∈ H } ,<label>(4)</label></formula><p>which indicates that the agent transforms the collection of historical commits H into high-quality long-term memory through LLM and a prompt template.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context-Aware Dual-Stage Retrieval.</head><p>Long-term memory serves as a vast knowledge repository for autonomous agent systems, and a precise retrieval mechanism acts as the critical interface for accessing this information. The quality of content generated by agents, including code synthesis, test case generation, and prompt augmentation, is fundamentally constrained by the relevance of the retrieved memories. Consequently, developing an effective memory retrieval mechanism is of paramount importance. To ensure scalable and efficient retrieval from extensive longterm memory, we employ an embedding model to encode each reconstructed memory entry 𝑚 𝑖 into a dense, highdimensional vector. This process constructs a vectorized database 𝐸 = {e 1 , e 2 , . . . , e N }, defined as:</p><formula xml:id="formula_4">e i = Embed(𝑘 𝑖 ⊕ 𝑝 𝑖 ).<label>(5)</label></formula><p>We implement a two-stage "retrieval-then-rerank" pipeline to identify historical memories most relevant to the current problem. In the first stage, given a search query 𝑞 derived from the problem description, we perform a rapid approximate nearest neighbor (ANN) search <ref type="bibr">(Aumüller et al., 2020)</ref>, implemented using Facebook AI Similarity Search (FAISS) <ref type="bibr" target="#b9">(Douze et al., 2025)</ref>. This stage retrieves a candidate set I comprising a selection of the most similar entries based on cosine similarity.</p><formula xml:id="formula_5">I = arg top 𝑖 ∈ {1,..., 𝑁 } q ⊤ e 𝑖 ∥q∥ ∥e 𝑖 ∥ .<label>(6)</label></formula><p>It should be noted that I encompasses a broader pool of entries than the final selection. By maintaining a robust candidate set, the system effectively mitigates the risk of recall loss during the initial retrieval phase, thereby safeguarding the quality of the filtered historical experiences.</p><p>In the second stage, to address the semantic bottleneck inherent in bi-encoder architectures, we employ a cross-encoder reranker for fine-grained semantic matching. This model processes the raw text of both the query and the candidate entries to capture nuanced semantic dependencies. Unlike the initial retrieval phase, the final ranking is determined exclusively by the reranking score:</p><formula xml:id="formula_6">𝛼 𝑖 = CrossEnc(𝑞, 𝑘 𝑖 ⊕ 𝑝 𝑖 ) ∀𝑖 ∈ I.<label>(7)</label></formula><p>The search query 𝑞 is autonomously synthesized by the agent based on its internal reasoning state and task context. This mechanism enhances the precision and adaptivity of the retrieval process, empowering the agent to proactively explore historical knowledge through nuanced formulations tailored to the specific requirements of the issue at hand.</p><p>By utilizing the reranker's output as the primary metric for relevance, the system effectively filters out false positives from the initial ANN search, providing the agent with highfidelity historical insights to guide the subsequent code generation process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Self-Refinement and Internalization</head><p>The capacity for continual learning from itself and humans is widely recognized as a quintessential hallmark of agentic evolution. Constrained by the inherent staticity of backbone LLMs, agent systems must explore alternative dimensions to facilitate evolution. To this end, MemCoder investigates this potential through the dual perspectives of prompt optimization and memory updating. The technical details are elaborated as follows.</p><p>Dynamic Self-Refinement. During execution, long-term memory is typically treated as immutable, limiting an agent's ability to adapt to real-time feedback and to interpret repository-specific conventions. To address this limitation, MemCoder introduces a Refining Sub-agent, proactively invoked by the Primary Agent (Stage 2 in Figure <ref type="figure" target="#fig_1">2</ref>), which retrieves human-validated successful experiences from structured memory to ground execution in repository-specific patterns and proven intent-to-code mappings.</p><p>Leveraging the retrieved context, the Refining Sub-agent synthesizes targeted test code 𝑡 and iteratively constructs a verification checklist 𝑙. By aligning current execution with historically successful practices, this process concretizes developer intent beyond abstract instructions. The resulting checklist directly guides the subsequent decision-making of the Primary Agent, enabling execution-time refinement while remaining consistent with the repository's evolutionary trajectory.</p><p>Concretely, the Refining Sub-agent employs a specialized prompt template P 𝑟 𝑒 𝑓 𝑖𝑛𝑒 to guide the LLM in generating both the test code 𝑡 and the verification checklist 𝑙. The generation is conditioned on a multidimensional context integrating the problem description 𝑝, execution trace 𝜏, environmental feedback 𝜉, and retrieved historical experiences from memory 𝑀, formalized as:</p><formula xml:id="formula_7">𝑡, 𝑙 ← LLM( 𝑝, 𝜏, 𝜉 | 𝑀, P 𝑟 𝑒 𝑓 𝑖𝑛𝑒 ).<label>(8)</label></formula><p>Through iterative invocation, the Refining Sub-agent updates its verification logic by reconciling execution feedback with retrieved successful precedents, allowing the agent to deepen its understanding of the codebase and generate higher-quality, repository-aligned code without modifying long-term memory during execution. During this phase, the adaptive refinement function 𝑓 𝑟 𝑒 𝑓 𝑖𝑛𝑒 updates the feedback state:</p><formula xml:id="formula_8">𝜉 ′ ← 𝜉 ∪ {𝑡, 𝑙},<label>(9)</label></formula><p>highlighting the Refining Sub-agent as the primary driver of execution-time adaptation and a key enabler of human-AI co-evolution within MemCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Internalization for Experience.</head><p>MemCoder updates its long-term memory by integrating human-verified experiences, thereby preserving the critical alignment between high-level intent and concrete code implementation. At this stage, the memory internalization function 𝑓 𝑖𝑛𝑡𝑒𝑟 𝑛 is formulated as:</p><formula xml:id="formula_9">𝑀 𝑁 +1 ← 𝑀 𝑁 ∪ {𝑚 𝑁 +1 },<label>(10)</label></formula><p>signifying the realization of a closed-loop evolution process within the agent system. Unlike historical commits, these experiences originate from model-generated solutions and human validation, enabling the memory to gradually shift from human-only priors to human-agent co-evolved knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiment</head><p>In this section, we conduct extensive experiments to demonstrate the effectiveness of our proposed method and evaluate the contribution of each individual component to the overall performance of the agent system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Experimental Settings</head><p>Benchmarks. To evaluate the effectiveness of the proposed framework on real-world software engineering tasks, we adopt SWE-bench <ref type="bibr" target="#b21">(Jimenez et al., 2024)</ref> as our primary benchmark. SWE-bench is a large-scale, execution-based benchmark designed to assess the end-to-end software engineering capabilities of LLM-based agents. It consists of 2,294 task instances collected from real GitHub issues and corresponding pull requests across 12 widely used opensource Python repositories. The benchmark poses significant repository-level challenges, requiring agents to reason over entire codebases, handle complex cross-file dependencies, and generate functional code patches to resolve bugs or implement features. Evaluation is performed by executing generated patches against unit test suites, emphasizing functional correctness rather than textual similarity, and thus providing a rigorous measure of agents' autonomous problem-solving ability in practical development settings.</p><p>To improve evaluation efficiency, we conduct our experiments on SWE-bench Verified, a manually curated, highquality subset of 500 task instances widely used by existing baselines. Compared to the full benchmark, SWE-bench Verified offers more precise problem specifications and more rigorous test designs, enabling a more reliable assessment of the code patch generation quality of agent frameworks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models.</head><p>Our experiments are primarily conducted using DeepSeek-V3.2 (DeepSeek-AI, 2025) as the backbone LLM, selected for its exceptional code generation and tool-calling capabilities. It serves as an ideal choice for the core reasoning engine within an LLM-based autonomous programming framework. Additionally, we verify the absolute performance of our method using the more powerful GPT-5.2 (OpenAI, 2025). Experimental results demonstrate that our approach achieves performance levels comparable to the current State-of-the-Art (SOTA) on the SWE-bench Verified leaderboard.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics and Baselines.</head><p>We follow the official evaluation methodology provided by SWE-bench. Task instances are executed locally to generate code patches in git diff format, which are then submitted via the official sb-cli tool for evaluation. We report the primary metrics: the resolution rate and the number of resolved issues. For the SWE-bench Verified dataset, we benchmark our method against the top six performing approaches on the official leaderboard, ensuring a comprehensive comparison with the current state of the field. To ensure a fair evaluation and prevent temporal leakage, we strictly restrict the agent at test time to retrieve only historical experiences created prior to the corresponding test issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Performance on Repository-Level Code Generation</head><p>On the SWE-bench Verified benchmark, MemCoder demonstrates robust software engineering code generation capabilities, achieving performance on par with the SOTA. In Figure <ref type="figure" target="#fig_2">3</ref>, we report the performance of MemCoder on GPT-5.2 and provide a comparison with the top six methods <ref type="bibr" target="#b38">(Wang et al., 2025;</ref><ref type="bibr">OpenAI, 2025;</ref><ref type="bibr">DeepSeek-AI, 2025;</ref><ref type="bibr">Gao et al., 2025b;</ref><ref type="bibr" target="#b27">Xia et al., 2025;</ref><ref type="bibr">Zhang et al., 2025b;</ref><ref type="bibr" target="#b13">Gemini Team, 2025;</ref><ref type="bibr">Anthropic, 2025a)</ref> on the current leaderboard and backbone models. We conduct experiments under the pass@1 MemCoder is built upon the OpenHands framework <ref type="bibr" target="#b38">(Wang et al., 2025)</ref>. To provide a clearer illustration of the performance gains introduced by our approach, Table <ref type="table" target="#tab_0">1</ref> summarizes the performance of various LLMs (DeepSeek-AI, 2025; OpenAI, 2025; Anthropic, 2025c;b; Gemini Team, 2025) integrated with the OpenHands agent framework and MemCoder on the SWE-bench Verified benchmark, with all data sourced from the official OpenHands. While the official OpenHands results are reported under pass@3, MemCoder achieves a solved rate of 83.8% with GPT-5.2 under the more restrictive pass@2 setting, highlighting improved efficiency per attempt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Ablation Study</head><p>To investigate the individual contributions of various modules within MemCoder, we conducted a series of ablation studies. Specifically, we evaluated several variant agent configurations by systematically removing the commit retrieval module, the experience representation module, and the dynamic self-refine module. These experiments were performed using DeepSeek-V3.2 as the backbone model on the SWE-bench Verified benchmark. The experimental results are summarized in Table <ref type="table" target="#tab_1">2</ref>.  <ref type="figure">-47</ref>)</p><p>Table <ref type="table" target="#tab_1">2</ref> demonstrates that all three proposed modules contribute positively to the performance enhancement of Mem-Coder. Notably, the retrieval module yields the most significant performance gains for the overall framework, underscoring that the self-evolving capability of agentic systems can effectively enhance their efficacy in repository-level code generation. To provide deeper insights into the underlying mechanisms of the retrieval module, we perform a comprehensive exploration across three key dimensions: experience representation, retrieval granularity, and retrieval quantity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experience Representation.</head><p>MemCoder introduces an LLM-based experience construction mechanism to standardize and structure raw commits within code repositories, ensuring that the vast scale of historical data remains "agentfriendly." To evaluate the actual performance gains derived from structured experiences, we conducted a controlled comparison across three distinct memory configurations while keeping other variables constant: (i) No historical experience; (ii) Raw commits and patch records without structuring; and (iii) Structured memory polished by an LLM. As shown in Table <ref type="table" target="#tab_1">2</ref>, the resolved rate for the "w/o all," "w/o DSR &amp; ER," and "w/o DSR" settings are 68.4%, 73%, and 76.4%, respectively. These results indicate that even raw, unstructured historical data can provide a baseline performance boost compared to the zero-experience setting.</p><p>However, the efficiency of information extraction is often hampered by noise, semantic ambiguity, and the inherent gap between human linguistic habits and the processing patterns of backbone LLMs. In contrast, structured memory with a unified style yields more significant and stable performance improvements. These empirical findings substantiate that structured memory is pivotal for enhancing the overall performance of MemCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval Granularity.</head><p>While the agent framework autonomously determines the timing of retrieval tool invocation and the scope of information acquisition, we can modulate the agent's behavior by manipulating the initial retrieval parameter, top-k. By adjusting the initial top-k, we investigate the non-linear effects of retrieval granularity on the agent's dynamic interaction patterns and decisionmaking quality. Figure <ref type="figure">4</ref> reveals a significant trade-off between initial information bandwidth and iterative retrieval frequency.</p><p>With a smaller initial top-k, the agent framework compensates by increasing retrieval frequency to ensure sufficient information acquisition. Conversely, as the initial top-k increases, the retrieval frequency gradually declines. This indicates that a broader initial field of view effectively enhances the information "hit rate" per retrieval, enabling the agent to terminate the search process earlier. Concurrently, a marginal increase in retrieved information volume cor-</p><p>1 2 4 8 16 32 Default top-k Value 75.5 35.0 5.9 75.0 35.4 5.1 76.0 40.9 4.7 78.0 46.4 4.4 79.0 63.2 4.1 78.0 88.6 4.1 Resolved Rate(%) Avg. Experience Avg. Tool Calls Figure 4. Performance of MemCoder across various top-k values. The metrics include resolved rate, average number of retrieved historical experiences, and average tool call frequency. All experiments are conducted using DeepSeek-V3.2 as the backbone model and evaluated on a randomly sampled 200-instance subset of the SWE-bench Verified dataset.</p><p>relates with improved agent performance, suggesting that appropriately augmenting the agent's access to historical experience enhances its capabilities. However, this gain in interaction efficiency does not translate into a sustained linear growth in the resolved rate; the performance curve tends to plateau at larger top-k values. Furthermore, the retrieval frequency ceases to decline, indicating an intrinsic need for the agent to retrieve multi-faceted information to support task completion. Meanwhile, an excessively large top-k significantly dilutes the signal-to-noise ratio of valid evidence, introducing unnecessary context overhead. Thus, the data suggest that a moderate initial retrieval granularity serves as the most effective configuration, maximizing performance while avoiding the diminishing returns and noise associated with excessive information accumulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval Quantity.</head><p>To intuitively demonstrate the impact of the quantity of retrieved historical experiences on the performance of the agent system, we constrained the agent to a single retrieval tool invocation and observed performance variations by modulating the top-k parameter (the number of results returned). Figure <ref type="figure" target="#fig_3">5</ref> illustrates that within a lower top-k range, increasing the retrieval scale yields steady performance improvements. This suggests that, at this stage, a greater volume of feedback enables the agent to acquire more historical experiences conducive to resolving the current problem. However, as top-k exceeds 8, the rate of performance gain diminishes, eventually plateauing within a specific range. This implies that with a single retrieval oppor- tunity, the agent has already sufficiently acquired the most representative experiences, rendering additional retrieval results redundant. Conversely, when top-k becomes excessively large, the agent suffers from performance degradation due to an overload of context information.</p><p>These results underscore the "signal-to-noise ratio" challenge inherent in Retrieval-Augmented Generation (RAG): while expanding the retrieval scope enhances the probability of recalling relevant information, it simultaneously dilutes the effective density of the context. An excessively large top-k leads to the accumulation of irrelevant segments, which not only taxes the model's attention mechanism but also exacerbates the "Lost-in-the-Middle" phenomenon, resulting in the degeneration of inference capabilities. Consequently, rather than indiscriminately increasing the volume of retrieval, prioritizing the precision of retrieval results proves more critical for enhancing agent performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion</head><p>We proposed MemCoder to address the limitation where static code agents fail to capture the critical information embedded in the temporal evolution of projects. Our approach reconstructs developer cognition by structuring historical commits and leveraging this retrospective wisdom to guide the agent in verifying and refining its own execution. Experimental results on SWE-bench Verified demonstrate that MemCoder achieves State-of-the-Art performance and effectively unlocks the potential of general models like DeepSeek-V3.2 in complex engineering tasks. These findings validate the critical importance of Human-AI Co-Evolution. By continuously internalizing the reasoning trajectories embedded in human history, the agent transcends its role as a mere executor to become an adaptive partner capable of growing alongside the developer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Impact Statement</head><p>This paper presents work whose goal is to advance the field of machine learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Prompt of Refining Agent</head><p>This text serves as an explanatory note for Section C. The Refining Agent is a core component of MemCoder, responsible for generating test code and synthesizing signals from test outcomes, environment interaction feedback, and retrieved historical experience to produce a clear and actionable instruction checklist for the primary agent. The quality of the generated tests and instruction checklist directly affects the overall performance of the agent; therefore, we provide the Refining Agent with detailed guidance in its prompt.</p><p>You are a specialized Code Debugging Analysis Agent, designed to analyze code changes and provide detailed debugging insights. &lt;ROLE&gt; Your primary role is to thoroughly analyze code patches, identify potential bugs and edge cases, retrieve relevant historical context, provide specific and actionable debugging recommendations, and clearly document the entire analysis process. &lt;/ROLE&gt; &lt;INPUT_MODES&gt; You will typically receive two high-level inputs in your context: -A natural-language ** problem description ** . -A ** git patch string ** (referred to as 'git_patch'). ** This parameter is always provided and is non-empty. ** Your job is to treat 'git_patch' as the candidate fix for the described problem, and you MUST do BOTH: 1) Generate a minimal, runnable reproduction test (or tests) for the problem and show how to run them. 2) Provide a step-by-step debug / review flow to validate and iterate on the patch. &lt;/INPUT_MODES&gt; &lt;AVAILABLE_TOOLS&gt; You have access to the following specialized debugging tools: ** execute_bash ** , ** str_replace_editor ** , ** think ** , ** finish ** , ** execute_ipython_cell ** , ** task_tracker ** and ** repo_commit_search ** . &lt;/AVAILABLE_TOOLS&gt; &lt;STRUCTURED_DEBUGGING_WORKFLOW&gt; Follow this structured, multi-part workflow. For each section, choose the most relevant template(s) and fill in concrete details from the current repository and patch. 0. TEST REPRODUCTION, PATCH VERIFICATION &amp; HYPOTHESIS GENERATION (MANDATORY FIRST STEP) Before you start the detailed structural/debugging analysis below, you MUST first: * ** Analyze the Patch Mechanism ** :</p><p>-Quote the exact lines deleted and added by the 'git_patch'.</p><p>-Explain the * mechanistic * effect of these changes.</p><p>-Explicitly state if the patch introduces a behavior change vs just a warning/log. * ** Leverage Retrieval Tools ** : Use 'repo_commit_search' to find existing test files and commits related to the current issue. ** Your goal is to find commits that provide highquality reference material for your specific tasks: ** -** Test Case Reference ** : Find commits that added or modified tests for the affected components. Study their structure, fixtures, and assertion patterns to ensure your reproduction test follows the project's established testing standards. -** Debug Workflow &amp; Fix Strategy ** : Find commits addressing similar bugs in the same area. Analyze the historical "fix strategies" to inform your own debugging flow and checklist. -Each request must include 'problem_statement' and an integer 'top_k'; -Construct a 'problem_statement' that contains both concise keywords and a detailed problem description for the ** bug ** you are trying to fix. -Follow progressive retrieval: The initial topk value is 8 and, on the nth call, set top_k = n * 8. Aim to stop within 3 calls, but if you still cannot resolve the issue, you may continue querying. -After every retrieval, synthesize all retrieved information to prioritize applying and validating a fix; only request another retrieval if additional evidence is needed. ** Always reference the retrieved patterns when designing your tests and debug flow. ** -When results are weak, either continue the top_k progression or refine the query with concrete modules, file paths, function or class names, error messages, failing tests, stack traces, or alternative phrasings.</p><p>-Keep each attempt focused on a distinct perspective and ground your plan and edits in the retrieved commits. * Derive a minimal, runnable test that ** faithfully reproduces the problem described in the issue / context ** . * Use the tools available to you to:</p><p>-Implement this minimal test (prefer the repo's existing test framework, e.g. 'pytest', or the dominant framework in the project). -** Phase A Base code (without applying any candidate patch) ** :</p><p>-Run the test against the base code state ("before patch").</p><p>-Confirm that this test actually reproduces the described problem. -** Phase B Patched code ** :</p><p>-Apply the provided 'git_patch' and run the ** same test ** again against the patched behavior. * Record clearly:</p><p>-The complete test code (so that a developer can copy-paste and run it).</p><p>-The exact commands or IPython snippets you used to run the test.</p><p>-For the base code, the actual or expected result: which assertions passed/failed, what exception/stack trace occurred, and how that compares to the expected broken behavior.</p><p>-The actual or expected result on the patched behavior as well, explicitly comparing base vs patched outcomes. * ** Hypothesis Generation ** :</p><p>-If the error is cryptic, generate at least 2 hypotheses about the root cause.</p><p>-Propose a specific check to distinguish between these hypotheses. * Use the insights from retrieved commits to understand:</p><p>-How tests are typically structured in this repository.</p><p>-What testing utilities or fixtures are available.</p><p>-How similar bugs were tested and fixed in the past. ** Template L-1: Explicit invariants and expected behavior ** List and verify the core invariants of the functionality before and after the fix, pinpointing broken branches or special cases. ** Template L-2: Branch, dtype, and state coverage ** Enumerate key branches and condition dimensions, describe expected outputs and corresponding test coverage for each branch, and pay attention to subtle type and state differences. ---4. ** HISTORY &amp; GIT CONTEXT ** {Trace change context and tests via Git history while referencing similar fixes and patterns to derive design rules.} ---5. ** FIX STRATEGY &amp; DESIGN OPTIONS ** You do not implement the fix, but you must propose concrete and well-justified strategies. ** Template F-1: Enumerate and compare candidate strategies ** Enumerate and compare candidate fix strategies, assess their impact on invariants, compatibility, and related feature risks, and provide clear preferred options with rationale. ** Template F-2: Local patch vs systemic change ** Determine whether a localized patch suffices; if systemic changes are needed, outline the minimal upstream/downstream call sites to update and the affected modules and components. ---6. ** TESTING, VALIDATION &amp; CHECKLIST ** Finally, design how to validate the fix and guard against regressions. ** Template T-1: Test scenario matrix ** Design a compact test matrix covering typical, edge, and regression cases, specifying expected pre/post-fix behavior and key assertions for each scenario. ** Template T-2: Verification checklist ** Create a concise verification checklist covering bug reproduction, invariant validation , branch/state coverage, focused test updates, and regression checks. &lt;/STRUCTURED_DEBUGGING_WORKFLOW&gt; &lt;OUTPUT_FORMAT&gt; Your final report (via 'finish' tool) should include, at minimum: ## Summary Brief overview of the code change being analyzed and the main suspected problem. ## Code Structure Analysis Key findings from the ** CODE STRUCTURE ANALYSIS ** section (classes, functions, modules, data models, invariants). ## Reproduction &amp; Code Path How the issue can be reproduced, and a brief trace of the key execution path. ## Logic &amp; Invariants Important invariants, branches, and where they might break. ## Historical Context Summarize related commits, prior similar fixes, and how the affected code evolved. ## Recommendations Provide specific code adjustments, how to validate them, and note key design trade-offs. ## Test Suggestions &amp; Checklist Define focused tests covering edges/boundaries/errors and a regression check matching the original failure. &lt;/OUTPUT_FORMAT&gt;</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Comparison of MemCoder with existing methods. MemCoder facilitates evolution by learning the intrinsic mapping from high-level intent to concrete code implementation, derived from structured memory.</figDesc><graphic coords="1,298.34,179.51,219.80,146.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Architectural overview of MemCoder, illustrating a closed-loop human-AI co-evolution paradigm.In Stage 1, MemCoder reconstructs developer cognition by distilling raw commit histories into structured long-term memory, capturing latent intent-to-code mappings from historical human practices. In Stage 2, the agent performs context-aware dual-stage retrieval to access relevant experience, while a Refining Sub-agent enables execution-time self-refinement through prompt concretization, automated test generation, and verification feedback. Crucially, human-validated solutions are subsequently internalized into long-term memory, closing the evolutionary loop and enabling the agent to progressively align with repository-specific conventions across iterations.</figDesc><graphic coords="4,350.90,231.51,95.38,94.14" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Comparison of MemCoder with the top 6 methods on the SWE-bench Verified leaderboard as of January 20, 2026.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Performance of MemCoder across various top-k values with the retrieval frequency restricted to one. The metric displayed is the Resolve Rate (%). All experiments are conducted using DeepSeek-V3.2 as the backbone model and evaluated on a randomly sampled 200-instance subset of the SWE-bench Verified dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Branching behavior: * If the test ** does NOT fail on the base code ** (cannot reproduce the problem before any patch): Notify the Main Agent and request more detailed information for investigation. * If the test ** fails on base code but passes after applying the patch ** : Confirm that the fix is effective, but subsequent analysis should focus on risk points not covered by the test. * If the test ** fails both on base code and after applying the patch ** , or fails differently after the patch: Provide detailed failure cases, test code, and a debugging guide based on specific code locations to guide the patch repair. Relevant information should be summarized in the Test Appendix. After you complete this initial test reproduction &amp; patch verification step, proceed with the structured analysis sections 1-6 below, making sure to reference the test you just designed and its result whenever relevant. ---1. ** CODE STRUCTURE ANALYSIS ** (MANDATORY FIRST SECTION) Your first task is always to understand how the modified code fits into the overall code structure. Choose at least one of the following templates. Fill in all placeholders with real symbols from the codebase. ** Template CSA-CLASS-1: Class hierarchy and method responsibilities ** Comprehensively document the class hierarchies, responsibilities, and the core contracts/invariants of the modified methods involved in the patch. ** Template CSA-CLASS-2: Method relationships and overrides ** Trace the call-flow dependencies and polymorphic relationships surrounding the modified methods. ** Template CSA-FUNC-1: Function-level call graph ** Document the functional roles, dependencies, and critical invariants within the call chain of each modified function. ** Template CSA-FUNC-2: Module responsibilities and cross-module calls ** Outline the responsibilities of the modules involved in the change and their intermodule call and data flow dependencies. ** Template CSA-DATA-1: Data models and invariants ** Identify the core data structures affected by the change and document their field type constraints and key invariants. ** Template CSA-STATE-1: Control flow and state transitions ** Analyze the explicit or implicit state machines impacted by the patch, defining their valid states and critical transition points that require guarding. ---2. ** REPRODUCTION &amp; CODE PATH TRACING ** After understanding structure, ensure you can reproduce or at least clearly reason about the problematic behavior. Select one or more templates: ** Template R-1: Minimal reproduction and main path ** Construct a minimal reproducing example and trace the execution path to pinpoint the first observable deviation between expected and actual behavior. ** Template R-2: Parameter and environment matrix ** Systematically vary key input and environmental parameters to determine the specific conditions under which the bug manifests and how it qualitatively alters behavior. ---3. ** LOGIC &amp; INVARIANT ANALYSIS ** Now analyze the core logic and invariants that should hold across the modified code.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Comparative analysis of LLM performance under Open-Hands vs. MemCoder on SWE-bench Verified.</figDesc><table><row><cell>Method</cell><cell>Setting Resolved(%)</cell></row><row><cell>MemCoder + GPT-5.2</cell><cell>pass@2 83.8 (419)</cell></row><row><cell>MemCoder + GPT-5.2</cell><cell>pass@1 78.8 (394)</cell></row><row><cell>MemCoder + DeepSeek-V3.2</cell><cell>pass@1 77.8 (389)</cell></row><row><cell cols="2">OpenHands + Claude Opus 4.5 pass@3 77.6 (388)</cell></row><row><cell cols="2">OpenHands + Claude Sonnet 4.5 pass@3 74.6 (373)</cell></row><row><cell>OpenHands + GPT-5.2</cell><cell>pass@3 74.4 (372)</cell></row><row><cell>OpenHands + Gemini 3 pro</cell><cell>pass@3 70.4 (352)</cell></row><row><cell cols="2">evaluation protocol. The experimental results show that</cell></row><row><cell cols="2">MemCoder delivers exceptional performance, reaching a</cell></row><row><cell cols="2">level comparable to existing SOTA approaches.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Ablation study of MemCoder on the SWE-bench Verified</figDesc><table><row><cell cols="3">dataset using DeepSeek-V3.2. The notation 'w/o' indicates experi-</cell></row><row><cell cols="3">ments where specific modules were removed. The abbreviations</cell></row><row><cell cols="3">CR, ER, and DSR denote the commit retrieval module, experience</cell></row><row><cell cols="3">representation module, and the dynamic self-refine module, respec-</cell></row><row><cell>tively.</cell><cell></cell><cell></cell></row><row><cell>Method</cell><cell>Resolved(%)</cell><cell>Δ</cell></row><row><cell>MemCoder</cell><cell>77.8 (389)</cell><cell>-</cell></row><row><cell>w/o DSR</cell><cell>76.4 (382)</cell><cell>-1.4%(-7)</cell></row><row><cell>w/o DSR &amp; ER</cell><cell>73.0 (365)</cell><cell>-4.8%(-24)</cell></row><row><cell>w/o CR</cell><cell>71.6 (358)</cell><cell>-6.2%(-31)</cell></row><row><cell>w/o all</cell><cell>68.4 (342)</cell><cell>-9.4%(</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX A. Case Study</head><p>To intuitively illustrate the impact of retrieving historical experience on the agent's behavior, we select the instance with instance_id django__django-16315 as a representative example. As shown, without access to the retrieved experience, the agent applies fixes at an incorrect location. In contrast, the historical experience highlights a prior modification to the function on_conflict_suffix_sql, effectively signaling an issue in the current code's invocation of this function, which in turn guides the agent to successfully repair the bug.</p><p>Problem Statement When calling bulk_create or bulk_update, if a model field uses db_column and the column name has mixed case, the generated SQL will fail. For example: qs.bulk_create(instances, update_conflicts=True, update_fields=["sectorid"], unique_fields=["blacklistid"]) The INSERT statement correctly uses the db_column name: INSERT INTO "Activity_BlackListed" ("BlacklistID", ...) VALUES (%s, ...) However, the ON CONFLICT clause uses the field name instead of db_column: ON CONFLICT("blacklistid") DO UPDATE SET "sectorid" = EXCLUDED."sectorid" This causes PostgreSQL to raise an error: column "blacklistid" does not exist. The correct SQL should use the column names: ON CONFLICT("BlacklistID") DO UPDATE SET "SectorID" = EXCLUDED."SectorID" + def on_conflict_suffix_sql(self, fields, on_conflict, update_fields, unique_fields): + if on_conflict == OnConflict.UPDATE: + conflict_suffix_sql = 'ON DUPLICATE KEY UPDATE %(fields)s' + field_sql = '%(field)s = VALUES(%(field)s)' + if not self.connection.mysql_is_mariadb: + if self.connection.mysql_version &gt;= (8, 0, 19): + conflict_suffix_sql = f'AS new {conflict_suffix_sql}' + field_sql = '%(field)s = new.%(field)s' + elif self.connection.mysql_version &gt;= (10, 3, 3): + field_sql = '%(field)s = VALUE(%(field)s)' + fields = ', '.join([ + field_sql % {'field': field} + for field in map(self.quote_name, update_fields) + ]) + return conflict_suffix_sql % {'fields': fields} + return super().on_conflict_suffix_sql( + fields, on_conflict, update_fields, unique_fields, + ) SQLInsertCompiler(SQLCompiler): + def get_column_name(field): + """Get column name from either a field object or field name.""" + if isinstance(field, str): + # It's a field name, get the field object first + return meta.get_field(field).column + else: + # Assume it's a field object + return field.column + + update_columns = [get_column_name(f) for f in self.query.update_fields] + unique_columns = [get_column_name(f) for f in self.query.unique_fields] on_conflict_suffix_sql = self.connection.ops.on_conflict_suffix_sql( fields, self.query.on_conflict, -self.query.update_fields, -self.query.unique_fields, + update_columns, + unique_columns, ) File 1 DatabaseOperations(BaseDatabaseOperations): + # Extract column names from field objects + def get_column_name(field): + return field.column if hasattr(field, 'column') else field + + update_columns = [get_column_name(f) for f in update_fields] File 2 DatabaseOperations(BaseDatabaseOperations): return "ON CONFLICT(%s) DO UPDATE SET %s" % ( -", ".join(map(self.quote_name, unique_fields)), + ", ".join(map(self.quote_name, unique_columns)), ", ".join( [ f"{field} = EXCLUDED.{field}" -for field in map(self.quote_name, update_fields) + for field in map(self.quote_name, update_columns) ]</p><p>File 3 DatabaseOperations(BaseDatabaseOperations): return "ON CONFLICT(%s) DO UPDATE SET %s" % ( -", ".join(map(self.quote_name, unique_fields)), + ", ".join(map(self.quote_name, unique_columns)), Patch Generated without Retrieval Retrieved Commit Patch Patch Generated with Retrieval</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Algorithmic Pipeline</head><p>Section B provides the pseudocode of the proposed pipeline as a concise algorithmic summary. The pseudocode formalizes the overall control flow and module interactions of our method, including memory construction, experience retrieval, iterative refinement, and experience internalization with human assistance. All components and design choices follow the pipeline described in the main text, and the pseudocode is intended solely to clarify execution order and interface dependencies, rather than to introduce additional mechanisms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 MemCoder Process</head><p>Require: Target Repo R, Issue 𝑃, Existing Memory M Ensure: Resolved Solution 𝑆 1: Definitions:</p><p>2: C: Context history (actions, observations, thoughts) 3: 𝑐: Candidate code patch generated by agent 4: Stage 1: Memory Synchronization 5: Identify new commits 𝐻 𝑛𝑒𝑤 in R that are not in M 6: for all ℎ 𝑖 ∈ 𝐻 𝑛𝑒𝑤 do 7: 𝑚 𝑖 ← LLMPolish(ℎ 𝑖 ) {Summarize commit logic} 8: 𝑣 𝑖 ← Embed(𝑚 𝑖 ) 9: M ← M ∪ {(𝑚 𝑖 , 𝑣 𝑖 )} {Update memory} 10: end for 11: Stage 2: Execution Loop 12: C ← {𝑃}, 𝑠𝑜𝑙𝑣𝑒𝑑 ← false 13: while not 𝑠𝑜𝑙𝑣𝑒𝑑 and steps &lt; MaxSteps do 14: 𝐴𝑐𝑡𝑖𝑜𝑛, 𝐴𝑟𝑔𝑠 ← PrimaryAgent(C) 15: if 𝐴𝑐𝑡𝑖𝑜𝑛 == "Retrieve" then 16: 𝐾 ← Retrieve(𝐴𝑟𝑔𝑠, M) 17: C ← C ∪ 𝐾 18: else if 𝐴𝑐𝑡𝑖𝑜𝑛 == "Refining Agent" then 19: 𝑐 ← 𝐴𝑟𝑔𝑠 20: 𝑇 𝑒𝑠𝑡 𝑅𝑒𝑠, 𝐶ℎ𝑒𝑐𝑘𝑙𝑖𝑠𝑡 ← Refining Agent(𝑐, 𝑃, M) 21: if 𝑇 𝑒𝑠𝑡 𝑅𝑒𝑠 is Pass then 22: 𝑆 ← 𝑐 23: 𝑠𝑜𝑙𝑣𝑒𝑑 ← true 24: break 25: else 26: C ← C ∪ {𝑇 𝑒𝑠𝑡 𝑅𝑒𝑠, 𝐶ℎ𝑒𝑐𝑘𝑙𝑖𝑠𝑡} 27: end if 28: else 29: Execute standard tool (𝐴𝑐𝑡𝑖𝑜𝑛, 𝐴𝑟𝑔𝑠) 30: Update C with observation 31: end if 32: end while 33: return 𝑆 34: Stage 3: Submission (Closed-Loop) 35: if 𝑠𝑜𝑙𝑣𝑒𝑑 then 36: Human Review: {The solution 𝑆 undergoes human review before the commit is finalized} 37: GitCommit(R, 𝑆) 38: {This new commit will be learned in Stage 1 next run} 39: end if</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Introducing claude 4</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-4" />
+		<imprint>
+			<date type="published" when="2025-05">May 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Introducing claude opus 4</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-opus-4-5" />
+		<imprint>
+			<date type="published" when="2025-11">November 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Introducing claude sonnet 4</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-sonnet-4-5" />
+		<imprint>
+			<date type="published" when="2025-09">September 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Claude code</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://github.com/anthropics/claude-code" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Swe-search: Enhancing software agents with monte carlo tree search and iterative refinement</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Antoniades</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Örwall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=G7sIFXugTX" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations, ICLR 2025</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">April 24-28, 2025</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net, 2025</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Ann-benchmarks: A benchmarking tool for approximate nearest neighbor algorithms</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aumüller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Bernhardsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Faithfull</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.is.2019.02.006</idno>
+		<ptr target="https://doi.org/10.1016/j.is.2019.02.006" />
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">87</biblScope>
+			<biblScope unit="page">2020</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Walking down the memory maze: Beyond context limit through interactive reading</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.05029</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2310.05029" />
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Deepseek-v3.2: Pushing the frontier of open large language models</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2512.02556</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2512.02556" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">A survey on code generation with llm-based agents</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2508.00083</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2508.00083" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guzhva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Szilvasy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-E</forename><surname>Mazaré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jégou</surname></persName>
+		</author>
+		<title level="m">The faiss library. IEEE Transactions on Big Data</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">A survey of self-evolving agents: On path to artificial super intelligence</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Juan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2507.21046</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2507.21046" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Trae agent: An llm-based agent for software engineering with test-time scaling</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2507.23370</idno>
+		<idno>CoRR, abs/2507.23370</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2507.23370" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">A survey of vibe coding with large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2510.12399</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2510.12399" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Best for complex tasks and bringing creative concepts to life</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gemini Team</surname></persName>
+		</author>
+		<ptr target="https://deepmind.google/models/gemini/pro/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Deepseek-coder: When the large language model meets programming -the rise of code intelligence</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2401.14196</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2401.14196" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Deepseekr1 incentivizes reasoning in llms through reinforcement learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">645</biblScope>
+			<biblScope unit="issue">8081</biblScope>
+			<biblScope unit="page" from="633" to="638" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Large language model based multi-agents: A survey of progress and challenges</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">V</forename><surname>Chawla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Wiest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence</title>
+		<meeting>the Thirty-Third International Joint Conference on Artificial Intelligence<address><addrLine>Jeju, South Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-09">August 3-9, 2024</date>
+			<biblScope unit="volume">2024</biblScope>
+			<biblScope unit="page" from="8048" to="8057" />
+		</imprint>
+	</monogr>
+	<note>ijcai.org, 2024b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Multi-agent-based code generation with iterative testing and optimisation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentcoder</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2312.13010</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2312.13010" />
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2409.12186</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2409.12186" />
+		<title level="m">Qwen2.5-coder technical report</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Multiagent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Parvez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mapcoder</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.269</idno>
+		<ptr target="https://doi.org/10.18653/v1/2024.acl-long.269" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">August 11-16, 2024. 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4912" to="4944" />
+		</imprint>
+	</monogr>
+	<note>Long Papers), ACL 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Long term memory: The foundation of AI self</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2410.15665</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2410.15665" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">SAGE: self-evolving agents with reflective and memory-augmented abilities</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.neucom.2025.130470</idno>
+		<ptr target="https://doi.org/10.1016/j.neucom.2025.130470" />
+	</analytic>
+	<monogr>
+		<title level="j">Neurocomputing</title>
+		<imprint>
+			<biblScope unit="volume">647</biblScope>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">SOEN-101: code generation by emulating software process models using large language model agents</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">47th IEEE/ACM International Conference on Software Engineering, ICSE 2025</title>
+		<meeting><address><addrLine>Ottawa, ON, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-05-06">April 26 -May 6, 2025</date>
+			<biblScope unit="page" from="1527" to="1539" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Ieee</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICSE55347.2025.00140</idno>
+		<ptr target="https://doi.org/10.1109/ICSE55347.2025.00140" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">P</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/91" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note>edff07232fb1b55a505a9e9f6 c0ff3-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Dynamic collaborative agents for software development based on agile methodology</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">P</forename><surname>Chau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">X</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">D Q</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agilecoder</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/Forge66646.2025.00026</idno>
+		<ptr target="https://doi.org/10.1109/Forge66646.2025.00026" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM Second International Conference on AI Foundation Models and Software Engineering, Forge@ICSE 2025</title>
+		<meeting><address><addrLine>ON, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">April 27-28, 2025</date>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Catcoder: Repositorylevel code generation with relevant code and type context</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Better context retrieval is all you need for repository-level code completion</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">N</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">D Q</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Repohyper</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2403.06095</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2403.06095" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Experiential co-learning of software-developing agents</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Che</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.305</idno>
+		<ptr target="https://doi.org/10.18653/v1/2024.acl-long.305" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">August 11-16, 2024. 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5628" to="5640" />
+		</imprint>
+	</monogr>
+	<note>ACL 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Large scale model for autonomous software development by using multi-agents</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Rasheed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Waseem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Saari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Systä</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abrahamsson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Codepori</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2402.01411</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2402.01411" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Meminsight: Autonomous memory augmentation for LLM agents</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Currey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sunkara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Benajiba</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2503.21</idno>
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<idno type="DOI">10.48550/arXiv.2503.21760</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2503.21760" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">RAPTOR: recursive abstractive processing for tree-organized retrieval</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sarthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Abdullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tuli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=GN921JHCRw" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Cognitive memory in large language models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.02441</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.02441" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Improving software quality through effective defect management process: A review</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Y</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Solanki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Software Engineering and Technology</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">A family of highly capable multimodal models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gemini</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2312.11805</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2312.11805" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11704-024-40231-1</idno>
+		<ptr target="https://doi.org/10.1007/s11704-024-40231-1" />
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Openhands: An open platform for AI software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">H</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=OJd3ayDDoF" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations, ICLR 2025</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">April 24-28, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Live-swe-agent: Can software engineering agents selfevolve on the fly?</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2511.13646</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2511.13646" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">A-MEM: agentic memory for LLM agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2502.12</idno>
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<idno type="DOI">10.48550/arXiv.2502.12110</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2502.12110" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Efficient and accurate prompt optimization: the benefit of memory in exemplarguided reflection</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kang</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2025.acl-long.37/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Pilehvar</surname></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-08-01">July 27 -August 1, 2025. 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="753" to="779" />
+		</imprint>
+	</monogr>
+	<note>ACL 2025</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiu</forename></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2505.09388</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2505.09388" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Large language models as optimizers</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Bb4VGOWELI" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">From code foundation models to agents and applications: A comprehensive survey and practical guide to code intelligence</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Loakman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2511.18538</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2511.18538" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=WE_vluYUL-X" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net, 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhai</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2508.06471</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2508.06471" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+	<note>M. GLM-4.5: agentic, reasoning, and coding (ARC) foundation models. CoRR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Repocoder: Repository-level code completion through iterative retrieval and generation</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.151</idno>
+		<ptr target="https://doi.org/10.18653/v1/2023.emnlp-main.151" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">December 6-10, 2023. 2023</date>
+			<biblScope unit="page" from="2471" to="2484" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Self-edit: Faultaware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/20</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">July 9-14, 2023. 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="769" to="787" />
+		</imprint>
+	</monogr>
+	<note>Long Papers), ACL 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Acl-Long</forename></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.45</idno>
+		<ptr target="https://doi.org/10.18653/v1/2023.acl-long.45" />
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">A high-quality corpus and full-stack suite to unlock advanced fully open mllms</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-H</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-M</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.13795</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Seed-coder: Let the code model curate data for itself</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2506.03524</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2506.03524" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Enhancing code retrieval-augmented generation with structural chunking via abstract syntax tree</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cast</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2506.15655</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2506.15655" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Codegeex: A pre-trained model for code generation with multilingual benchmarking on humanevalx</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="5673" to="5684" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Memorybank: Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v38i17.29946</idno>
+		<ptr target="https://doi.org/10.1609/aaai.v38i17.29946" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-Eighth AAAI Conference on Artificial Intelligence, AAAI 2024, Thirty-Sixth Conference on Innovative Applications of Artificial Intelligence, IAAI 2024, Fourteenth Symposium on Educational Advances in Artificial Intelligence</title>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Wooldridge</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">G</forename><surname>Dy</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Natarajan</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2014-02-20">2014. February 20-27, 2024</date>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Large language models are humanlevel prompt engineers</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Muresanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=92gvk82DE-" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">May 1-5, 2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

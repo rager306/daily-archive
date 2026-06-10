@@ -1,0 +1,1435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Code2Worlds: Empowering Coding LLMs for 4D World Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-12">12 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Computer Science</orgName>
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunshuang</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Computer Science</orgName>
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Computer Science</orgName>
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Computer Science</orgName>
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Code2Worlds: Empowering Coding LLMs for 4D World Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-12">12 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">323C270E734A06C533C1986078E22A5E</idno>
+					<idno type="arXiv">arXiv:2602.11757v1[cs.CV]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract/>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Abstract</head><p>Achieving spatial intelligence requires moving beyond visual plausibility to build world simulators grounded in physical laws. While coding LLMs have advanced static 3D scene generation, extending this paradigm to 4D dynamics remains a critical frontier. This task presents two fundamental challenges: multi-scale context entanglement, where monolithic generation fails to balance local object structures with global environmental layouts; and a semantic-physical execution gap, where open-loop code generation leads to physical hallucinations lacking dynamic fidelity. We introduce Code2Worlds, a frame-work that formulates 4D generation as languageto-simulation code generation. First, we propose a dual-stream architecture that disentangles retrieval-augmented object generation from hierarchical environmental orchestration. Second, to ensure dynamic fidelity, we establish a physicsaware closed-loop mechanism in which a Post-Process Agent scripts dynamics, coupled with a VLM-Motion Critic that performs self-reflection to iteratively refine simulation code. Evaluations on the Code4D benchmark show Code2Worlds outperforms baselines with a 41% SGS gain and 49% higher Richness, while uniquely generating physics-aware dynamics absent in prior static methods. Code: <ref type="url" target="https://github.com/AIGeeksGroup/Code2Worlds">https://github</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>While generative models have advanced from static images to high-fidelity videos <ref type="bibr" target="#b18">(Nikankin et al., 2023;</ref><ref type="bibr" target="#b14">Lee et al., 2024)</ref>, achieving true spatial intelligence requires world simulators grounded in causal physical laws rather than superficial pixel dynamics <ref type="bibr" target="#b13">(LeCun, 2022)</ref>. In this pursuit, procedural code generation has emerged as a uniquely powerful paradigm. Unlike black-box neural representations, executable programs offer rigorous control over 3D scene structure and semantics, having already demonstrated remarkable success in generating diverse and high-fidelity static 3D scenes <ref type="bibr" target="#b21">(Raistrick et al., 2023;</ref><ref type="bibr" target="#b25">Sun et al., 2023)</ref>.</p><p>However, advancing from static 3D scenes to physically grounded 4D environments via code generation encounters two significant challenges: First, monolithic methods struggle with multi-scale context entanglement. The task of world generation requires resolving conflicting objectives across different scales simultaneously. This involves generating intricate local 3D structures, such as the detailed cortex of a tree, while orchestrating global environments, including atmospheric lighting and terrain layout. A single generation pass often fails to balance these disparate granularities, prioritizing global coherence over local structural intricacy. This trade-off frequently yields target objects with coarse 3D structures that are ill-suited for fine-grained physical actuation, thereby limiting the realism and plausibility of subsequent dynamic simulations.</p><p>Second, the transition from static 3D structures to physical dynamics reveals a fundamental execution gap. Prior codeto-scene methods are limited to static appearances and lack temporal simulation capabilities. Extending this paradigm to 4D requires translating abstract semantic motion descriptors, such as leaves trembling, into precise simulation parameters, such as vertex weights and turbulence force fields. This process is currently an open-loop endeavor where coding large language models (LLMs) is like being a blind engineer without visual feedback. This disconnect frequently leads to physical hallucinations where generated motions are syntactically valid but violate basic laws of physics, for instance, rigid bodies distorting or particles ignoring gravity. This results in a severe misalignment between semantic instructions and the actual temporal simulation.</p><p>To address these challenges, we introduce Code2Worlds, a Language-to-Simulation framework. First, to resolve multiscale entanglement, we propose a dual-stream architecture that decouples the target object from the environmental background. This ensures the focal object acquires the rich structural details. Second, to bridge the execution gap, we establish a closed-loop refinement mechanism driven by a PostProcess Agent and self-reflection. Instead of blind openloop scripting, our system employs a VLM-Motion Critic to evaluate rendered dynamics, iteratively correcting physical hallucinations to ensure alignment with user intent.</p><p>Our specific contributions are threefold:</p><formula xml:id="formula_0">• Factorized Language-to-Simulation Framework.</formula><p>We propose a dual-stream architecture that disentangles complex scene generation into retrieval-augmented object generation and hierarchical environmental orchestration. This factorization resolves multi-scale context entanglement, ensuring that target objects possess the high-fidelity structural intricacy.</p><p>• Physics-Aware Closed-Loop Correction. We introduce a two-stage mechanism where a PostProcess Agent actuates static scenes via coding dynamic, and a VLM-Motion Critic enables self-reflection. This closedloop system iteratively evaluates rendered rollouts to mitigate temporal artifacts and enforce physical consistency, bridging the semantic-physical gap.</p><p>• Code4D Benchmark and Evaluation. We construct Code4D, a comprehensive benchmark designed to evaluate 4D scene generation. Extensive experiments demonstrate that Code2Worlds consistently outperforms prior code-to-scene frameworks, achieving a 41% improvement in SGS and a 49% increase in Richness, while uniquely generating physics-aware dynamics that prior static methods lack.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>3D and 4D Content Generation. Text-driven 3D generation has evolved from early procedural methods <ref type="bibr" target="#b2">(Coyne &amp; Sproat, 2001;</ref><ref type="bibr" target="#b1">Chang et al., 2014)</ref> and layout optimization <ref type="bibr" target="#b4">(Fisher et al., 2012;</ref><ref type="bibr" target="#b29">Yu et al., 2011)</ref> to modern learningbased approaches like DreamFusion <ref type="bibr" target="#b19">(Poole et al., 2022)</ref> and Magic3D <ref type="bibr" target="#b15">(Lin et al., 2023)</ref>. However, extending these paradigms to 4D scenes faces significant hurdles. While MAV3D <ref type="bibr" target="#b24">(Singer et al., 2023</ref>) pioneered text-to-4D generation by optimizing dynamic NeRFs with video diffusion priors, it is hindered by high computational costs and limited editability. Recent Gaussian-based methods DreamGaus-sian4D <ref type="bibr" target="#b23">(Ren et al., 2023)</ref> and SP-GS <ref type="bibr" target="#b26">(Wan et al., 2024)</ref> have improved efficiency; yet, generating full-scale 4D scenes remains challenging due to physical consistency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-driven Procedural Modeling.</head><p>The code-to-scene paradigm leverages LLMs to generate executable code for 3D software. Foundational works like 3D-GPT <ref type="bibr" target="#b25">(Sun et al., 2023)</ref> and Infinigen <ref type="bibr" target="#b21">(Raistrick et al., 2023</ref>) enabled text-toscene generation, while SceneCraft <ref type="bibr" target="#b7">(Hu et al., 2024)</ref> intro-</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code2Worlds Stage 1: User Input</head><p>Input Examples:</p><p>A cup lay tipped on its side → Obj, cup, Scene: input side jellyfish drifts through water → Obj, jellyfish, Scene: water bottle rolled across the floor → Obj, bottle, scene: floor</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stage2: Object Stream</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ObjSelect Agent</head><p>Determine object</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ObjParams Agent</head><p>Refine parameters</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ObjGenerate Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generate object</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stage3: Scene Stream Stage 4.:Integration and Finalization</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PostProcess Agent</head><p>Integrate objects and scene and Apply physical effects</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4D Model</head><p>Final Dynamic Scene</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Planner</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Decomposition</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Parameter Resolver</head><p>Parameter Concretization</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scene Realization</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3D Scene Realization</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Render</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Reflection Render Self-Reflection</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Instruction</head><p>("leaves fell straight down") duced self-improvement mechanisms. To handle complex descriptions, RPG <ref type="bibr">(Yang et al., 2024a)</ref> employs global planning for task decomposition, a strategy further refined by specialized agents like LL3M <ref type="bibr" target="#b17">(Lu et al., 2025)</ref> and VUL-CAN <ref type="bibr" target="#b12">(Kuang et al., 2026)</ref>. Additionally, recent works incorporate retrieval-augmented generation (RAG) to reduce syntactic errors. Despite this, programmatic modeling remains predominantly optimized for static 3D environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Agent Coordination and Reflection.</head><p>Multi-agent systems have emerged as robust frameworks for collaborative reasoning, outperforming monolithic models in complex task decomposition <ref type="bibr" target="#b16">(Liu et al., 2023;</ref><ref type="bibr" target="#b5">Gong et al., 2024)</ref>. To mitigate error propagation in open-loop pipelines, recent work emphasizes closed-loop self-correction, exemplified by LATS <ref type="bibr" target="#b31">(Zhou et al., 2024)</ref>, which uses feedback for iterative refinement. Unlike methods designed for static or symbolic domains that overlook 4D physical discrepancies, we propose a parallel multi-agent architecture optimized for 4D, leveraging concurrent generation and dual-stream reflection to ensure temporal-physical coherence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">The Proposed Method</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Overview</head><p>We introduce Code2Worlds, a framework leveraging coding LLMs to generate 4D scenes from text. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, it employs a dual-stream architecture: a Scene Stream for procedural environmental layout and an Object Stream for detailed 3D objects. Finally, a PostProcess Agent integrates these components and scripts temporal dynamics, supervised by a VLM critic to ensure semantic and physical consistency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Object Stream: Parametric Object Generation</head><p>Instead of generating raw 3D structures from scratch, we propose a Retrieval-Augmented Parametric Generation method. This stream capitalizes on the robust procedural priors inherent in the Infinigen procedural generator. Specifically, it translates semantic instructions into parameter spaces and subsequently generates executable procedural codes to instantiate high-fidelity objects with precise 3D appearance and rich textures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamic-Aware Object Selection.</head><p>The ObjSelect Agent parses the instruction I to identify entities that require specific dynamic interactions. For instance, if I involves "leaves drift," the agent isolates "leaf" as a target object. Conversely, global environmental changes (e.g., sunlight shifting) bypass this stream, as they are deferred to the PostProcess Agent in Section 3.4 for unified dynamic simulation. Formally, we formulate the target selection as an optimization problem:</p><formula xml:id="formula_1">e target = arg max e∈E(I) P dyn (e | I),<label>(1)</label></formula><p>where we identify the primary subject e target from candidates E(I) by maximizing dynamic necessity P dyn .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval-Augmented Parameter Generation. Predicting high-dimensional procedural parameters directly is challenging for LLMs due to the lack of domain-specific priors.</head><p>To bridge this gap, we construct a Procedural Parameters Library L param , which summarizes Infinigen's complicated parameters into structured schema documents in Section E. Once a target dynamic entity e target is selected by the ObjSelect Agent, the system queries L param to retrieve its specific parameter definition S ref .</p><formula xml:id="formula_2">S ref ← Retrieve(L param , e target ).<label>(2)</label></formula><p>As exemplified in the LeafFactory schema, this document explicitly disentangles the parameter space into three dimensions: (1) Structural Shape, which comprises parameters governing 3D form such as midrib length;</p><p>(2) Surface Texture, capturing detailed appearance attributes like vein density; and (3) Material Semantics, defining rendering properties including blade color hsv.</p><p>Crucially, we augment these definitions with semantic exemplars paired with demonstrations of natural-language descriptions and their corresponding ground-truth parameter configurations in Section E. These exemplars provide concrete mappings from qualitative descriptions to precise quantitative values, enabling the LLM to infer complex parameter combinations via in-context analogical reasoning. Consequently, the agent generates S by conditioning on the retrieved reference S ref and feedback F obj from Object Self-Reflection in Section 3.2. Formally, this generation process is defined as:</p><formula xml:id="formula_3">S ← ObjParam(S ref , I, F obj ).<label>(3)</label></formula><p>Semantic-to-Parametric Mapping. While Section 3.2 generates the parameters, translating these into executable code presents a twofold challenge: (1) Syntactic Complexity, as LLMs lack Infinigen's specific templates; and (2) Structural Constraints, which mandate passing parameters as factory arguments rather than variable assignments. To address these challenges, we adopt a retrieval-based strategy mirroring the ObjParam Agent. We construct a Reference Code Library L code , which indexes verified canonical implementations for object categories. Upon selecting the target object, the system queries L code to retrieve a reference implementation C ref .</p><formula xml:id="formula_4">C ref ← Retrieve(L code , e target ).<label>(4)</label></formula><p>The ObjGenerate Agent then generates the final code C. Specifically, the LLM generates C by integrating the parameters S and C ref , which is subsequently executed to instantiate fine-grained 3D object C obj . Formally, we denote this object generation process as:</p><formula xml:id="formula_5">C obj ← ObjGenerate(C ref , S).<label>(5)</label></formula><p>Object Self-Reflection. To ensure visual alignment, we introduce a closed-loop reflection mechanism. Upon generating the object, the system renders a 2D snapshot V img of the object. This visual output, along with the original instruction I, is fed into a VLM that serves as a semantic critic. The VLM assesses the alignment between the rendered appearance and the description to generate signal V. If the object satisfies the requirements, it is validated for scene integration. Conversely, the VLM generates constructive natural language feedback F obj for refinement. Formally, this is denoted as:</p><formula xml:id="formula_6">F obj , V ← VLM-Critic(V img , I).</formula><p>Crucially, this feedback is propagated back to ObjParam Agent, triggering a regeneration cycle where the agent adjusts specific parameters based on F obj . This iterative process ensures semantic alignment between the 3D structure and the visual intent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Scene Stream: Hierarchical Environmental Orchestration</head><p>Complementing the Object Stream, the Scene Stream orchestrates the global environment. To address hyperparameter entanglement, we employ a hierarchical method using a structured execution manifest to decouple planning from execution. This drives a three-stage pipeline progressively concretizing abstract intent into rigorous procedural constraints, yielding a coherent 3D environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Decomposition.</head><p>Natural language instructions are inherently sparse and underspecified. A user may simply request a forest, but a complete 3D world requires exhaustive definitions of season, terrain, and vegetation density.</p><p>The Environment Planner acts as a creative extrapolation brain. Its primary role is to bridge the information asymmetry between the sparse instruction and the dense reality of a scene by inferring latent environmental context based on the LLM's intrinsic world knowledge. Formally, given the instruction I, it decomposes instruction I into a manifest M: M ← Planner(I).</p><p>Rather than relying on superficial keyword matching, the agent infers latent environmental variables to construct a comprehensive environmental specification across three dimensions: (1) Atmospheric Context, where it infers the environmental atmosphere. For example, given "spooky forest", it infers an "Autumn" season with "heavy fog" and "dim lighting" to align with the stylistic intent; (2) Terrain</p><p>vein_angle: vein_asymmetry: vein_density: def override_blight(): old_binom = np.random.binomial old_uniform = np.random.uniform leaf=factory.create_asset() vein_angle: 0.3 vein_asymmetry: 1.0 vein_density: 0.5</p><p>Feedback: "Leaf is not yellow enough" Morphology, enforcing geomorphological consistency by autonomously instantiating implied features like rivers even if not explicitly requested; and (3) Vegetation Density, enriching the ecosystem with coherent understory elements like bushes. This generative inference transforms sparse instructions into holistic, environmentally rich specifications.</p><p>Parameter Concretization. Whereas Section 3.3 determines categorical existence, the Parameter Resolver governs parametric magnitude. Its primary objective is to address scale ambiguity by grounding qualitative semantic descriptors into precise scalars. For instance, consider a directive for a "dense forest". The agent translates abstract intensity into specific biological densities, such as setting max tree species to 5 to maximize biodiversity. Formally, given the manifest M, the Parameter Resolver infers the scene parameter dictionary D:</p><formula xml:id="formula_8">D ← Resolver(M).<label>(7)</label></formula><p>Beyond simple mapping, this agent enforces logical consistency across the parameter space to prevent semantic and physical conflicts. Specifically, if the inferred environment is "rainforest," the agent explicitly prunes incompatible objects by forcing snow layer chance to zero. Furthermore, it resolves parameter couplings between variables. It ensures that coupled parameters, such as air density and dust density, are jointly calibrated to mitigate rendering anomalies, which often arise from incoherent physical properties.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3D Scene Realization.</head><p>The final phase executes the transition from parametric specifications to 3D environments. The Scene Realization operates as a dualstage synthesizer. First, acting as a domain-specific compiler, it converts the resolved parameter dictionary into valid execution code compatible with Infinigen's internal schema. It systematically maps high-level logical flags, such as terrain.ground, to primitives, such as scene.ground chance. Formally, given the scene parameter dictionary D, Scene Realization generates the 3D scene C env :</p><formula xml:id="formula_9">C env ← Realizer(D).<label>(8)</label></formula><p>Crucially, the execution code serves merely as the intermediate instruction set. The agent subsequently invokes the Infinigen program to execute these codes, instantiating the 3D scene procedurally. This structured interface decouples semantic planning from code execution. It ensures strict adherence to upstream constraints while eliminating the syntactic instability inherent in free-form code generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Physics-Aware 4D Scene Generation</head><p>The terminal phase generates a cohesive 4D scene by integrating discrete objects with the global scene under the governance of the PostProcess Agent. The PostProcess Agent acts as a physics engine, translating kinetic cues into simulation constraints to animate the scene. Crucially, we employ Dynamic Effects Self-Reflection, where a VLM evaluates video rollouts and itera- tively calibrates parameters to ensure semantic coherence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamic Scene Integration.</head><p>The agent first initiates the pipeline by unifying the object from Section 3.2 with the global scene generated by Section 3.3. It then generates a comprehensive Blender script to actuate the scene based on the user's instructions and feedback F dyn from Section 3.4. This process involves two critical steps: (1) parameter inference grounds qualitative descriptions into quantitative parameters, such as mapping "peacefully" to a wind strength coefficient of 0.25; and (2) procedural actuation generates code to apply gradient masks for structural deformation, anchoring tree roots while allowing branches to sway. Crucially, this step enforces collision constraints, ensuring particle-terrain interactions. Formally, this two-stage scene realization is defined as:</p><formula xml:id="formula_10">P phys ← INFERPHYSICS(I, F dyn ), (9) W dyn ← ACTUATE(W static , P phys ),<label>(10)</label></formula><p>where I and F dyn denote the user instruction and dynamic feedback, respectively. The function InferPhysics maps these inputs to quantitative physics parameters P phys . Subsequently, ACTUATE applies these physics constraints to the unified static geometry W static , resulting in the final dynamic scene W dyn .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamic Effects Self-Reflection.</head><p>To ensure the semantic alignment of generated dynamics, we extend the selfreflection mechanism from the spatial domain to the temporal domain. The system renders a video rollout, which is then fed into a VLM that acts as a motion critic. The VLM evaluates whether the rendered dynamic effects match the instruction I. For instance, if the instruction specifies a "gentle breeze" but the rendered footage shows trees thrashing violently, the VLM identifies this discrepancy as a magnitude error. This feedback drives a closed-loop refinement cycle within Section 3.4, iteratively calibrating physics hyperparameters to ensure the final 4D scene exhibits both structural integrity and temporal semantic coherence. Formally, this temporal reflection mechanism is denoted as:</p><formula xml:id="formula_11">F dyn , valid ← VLM-MOTION(V video , I),<label>(11)</label></formula><p>where V video is the rendered video rollout of the generated dynamic scene W dyn . The function VLM-MOTION compares this footage against the original instruction I to produce constructive feedback F dyn and a boolean validation signal valid for the refinement loop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>We evaluate Code2Worlds via comprehensive quantitative metrics, with qualitative demonstrations detailed in Section F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Benchmark and Metrics</head><p>Code4D Benchmark. The Code4D Benchmark accesses the framework across three dimensions: object, scene, and dynamic generation. We evaluate our approach against both state-of-the-art code-centric methods and leading textto-video generation models. More details are provided in Section D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metrics.</head><p>We adopt a multidimensional evaluation protocol comprising three metric categories. First, we use CLIP-based <ref type="bibr" target="#b20">(Radford et al., 2021)</ref> scores to assess semantic and stylistic alignment: O-CLIP and S-CLIP evaluate consistency across object and static scene dimensions, while Style-CLIP quantifies contextual compatibility by computing the visual similarity between the generated object and the target scene image. Second, we utilize VBench <ref type="bibr" target="#b8">(Huang et al., 2024)</ref> to quantify temporal coherence and video stability via Motion Smoothness, Subject Consistency, Background Consistency, and Temporal Flickering. Third, we leverage GPT-4o <ref type="bibr" target="#b9">(Hurst et al., 2024)</ref> to assess perceptual fidelity through metrics such as SGS for fine-grained object attributes, Richness for environmental complexity, and HRS for visual-physical plausibility. Finally, we report a physics Failure Rate derived from manual inspection to quantify objective simulation violations, in-</p><p>Code2Worlds: Empowering Coding LLMs for 4D World Generation Method Object Generation Scene Generation O-CLIP ↑ SGS ↑ Style-CLIP ↑ S-CLIP ↑ Failure Rate ↓ HRS ↑ Richness ↑ MeshCoder (Dai et al., 2025) 0.2027 14.6 0.6406 ----Infinigen (Raistrick et al., 2023; 2024) 0.2431 35.5 0.6671 0.2113 × × 41.0 3D-GPT (Sun et al., 2023) 0.2075 37.0 0.6178 0.1737 × × 41.7 SceneCraft * (Hu et al., 2024) 0.2411 34.6 0.6490 0.2384 × × 15.2 ImmerseGen * (Yuan et al., 2025) 0.2417 43.5 0.5991 0.2210 × × 35.5 Code2Worlds (Ours) 0.2655 61.4 0.6734 0.2432 10% 55.4 62.3 Setting Motion Smoothness ↑ Subject Consistency ↑ Failure Rate ↓ Background Consistency ↑ Temporal Flickering ↑ Stable Video Diffusion (Blattmann et al., 2023) 0.9913 0.9312 50% 0.9702 0.9859 Animatediff (Guo et al., 2024) 0.9833 0.9778 70% 0.9746 0.9743 CogVideoX (Yang et al., 2024b) 0.9912 0.9004 50% 0.9463 0.9893 Hunyuan (Kong et al., 2024) 0.9925 0.9406 30% 0.9717 0.9899 Ours 0.9952 0.9415 10% 0.9710 0.9949</p><p>Table 2. The top panel compares our framework with code-centric methods in static object and scene generation, while the bottom panel provides a comparative analysis against video diffusion models. Methods marked with * are reproduced by us.</p><p>cluding rigid-body interpenetration, unnatural gravitational detachment, and collision mishandling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Capability Analysis.</head><p>As shown in Table <ref type="table" target="#tab_0">1</ref>, existing methods exhibit limitations: the Infinigen family <ref type="bibr" target="#b21">(Raistrick et al., 2023;</ref><ref type="bibr">2024;</ref><ref type="bibr" target="#b10">Joshi et al., 2025)</ref> excels in object detail but lacks natural language control and reflection; conversely, text-driven approaches like MeshCoder, 3D-GPT, and SceneCraft are restricted to static scenes. While Im-merseGen attempts to model dynamics, it lacks temporal consistency. Code2Worlds uniquely bridges these gaps by unifying text controllability, high-fidelity layouts, and physics-aware 4D dynamics via iterative self-reflection.</p><p>Comparison on Object Generation. We evaluate object generation against procedural, reconstruction-based, and agent-centric baselines, represented by Infinigen, Mesh-Coder, and ImmerseGen, respectively. MeshCoder, which we augment with Point-E for point-cloud-to-script conversion, exhibits limited robustness and the lowest structural fidelity. While agent-based methods such as ImmerseGen achieve improved performance with an SGS of 43.5, they still lack structural detail. In contrast, Code2Worlds establishes a new state-of-the-art across all metrics and achieves a superior SGS of 61.4. This substantial margin confirms the efficacy of our iterative pipeline in grounding linguistic descriptions into high-fidelity 3D structures. Comparison on Scene Generation. Table 2 demonstrates the performance of Code2Worlds in complex 3D scene generation. Regarding semantic alignment, our method achieves an S-CLIP score of 0.2432, outperforming </p><formula xml:id="formula_12">W dyn ← ACTUATE(W static , P phys ) 23: V video ← RENDER(W dyn ) 24: F dyn , valid ← VLM-MOTION(V video , I) 25: until valid is true</formula><p># Dynamic Reflection Loop 26: return W 4D ← W dyn maintains a remarkably low physics Failure Rate of 10%, confirming its ability to generate physics-aware dynamics that remain textually aligned and respect physical laws.</p><p>Comparison on Video Generation. As shown in Table 2, Code2Worlds demonstrates superior temporal stability, achieving a Motion Smoothness of 0.9952 and a Temporal Flickering score of 0.9949. These results highlight the inherent stability of our approach, which ensures consistency through deterministic 3D rendering rather than latentspace interpolation, effectively eliminating the stochastic noise common in diffusion-based processes. Conversely, models like AnimateDiff reveal a trade-off between local appearance and global coherence: while they maintain high consistency by freezing pixel identity, they lack a 3D structural representation. This absence results in low motion smoothness and Failure Rates reaching 70%, manifested as texture boiling and physical artifacts during transitions. By grounding generation in executable code, our framework significantly mitigates these violations while preserving textural stability. Table 4. Ablation on self-reflection mechanisms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Ablation Study</head><p>We conduct a component-wise analysis to validate our design choices. More ablation experiments are detailed in Section B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Object Generation Components.</head><p>In Table <ref type="table" target="#tab_1">3</ref>, we evaluate the object generation pipeline. w/o Retrieve refers to bypassing the retrieval module, causing the LLM to generate the procedural script directly from the prompt. w/o Lparam indicates the exclusion of the Structured Procedural Parameters Library, which limits the LLM's knowledge of the specific, controllable parameters available for the asset. The results reveal that omitting retrieval results in the largest performance drop, with an SGS value of 23.5, highlighting the importance of retrieved reference scripts for proper initialization. Moreover, excluding Lparam substantially reduces fidelity, demonstrating that exposing a well-defined parameter space is crucial for the LLM to effectively map linguistic attributes to geometric controls.</p><p>Iterative Self-Reflection. In Table <ref type="table">4</ref>, we analyze the impact of our feedback mechanisms. Removing the VLM-Critic, which performs object-level self-reflection, results in a notable degradation in static quality. Specifically, O-CLIP drops from 0.2655 to 0.2388, and SGS declines from 61.4 to 58.6, confirming the critic's vital role in refining the detail and ensuring semantic alignment. For dynamic scenes, the VLM-Motion agent proves indispensable for enforcing physical laws. Eliminating this module causes the physics Failure Rate to surge from 10% to 60%, accompanied by a sharp drop in HRS to 47.0. These results demonstrate that the iterative motion feedback effectively corrects simulation artifacts, thereby ensuring greater physical plausibility than the open-loop baseline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion</head><p>We presented Code2Worlds, a framework bridging static code generation and 4D physical simulation. By combin-ing a dual-stream architecture for structural fidelity and a VLM-driven closed-loop mechanism for dynamic consistency, we effectively resolve multi-scale entanglement and physical hallucinations. Experiments on the proposed Code4D benchmark demonstrate that our method significantly outperforms baselines in generating diverse, physicsaware environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statements</head><p>This work facilitates safer sim-to-real transfer in embodied AI by enabling the creation of physically consistent 4D simulations. However, the integration of rigorous physics entails substantial computational overhead and the reliance on large language models introduces potential biases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix for CODE2WORLDS A. Limitation and Future Work</head><p>Despite its effectiveness, Code2Worlds encounters a trade-off between fidelity and latency. The system relies on rigorous physics engines and iterative VLM feedback. This reliance causes a computational bottleneck, hindering real-time generation.</p><p>In future work, we will address this challenge by exploring neural physics distillation. This approach aims to accelerate simulations through learned approximations. We investigate the contribution of our hierarchical components by comparing two variants: w/o Planner &amp; Solver, which removes explicit parameter reasoning, and w/o Scene Stream, which bypasses global environmental orchestration. As shown in Table <ref type="table" target="#tab_2">5</ref>, removing the Planner and Solver leads to the lowest S-CLIP score of 0.2251, confirming their critical role in ensuring semantic alignment between abstract instructions and executable constraints. Conversely, eliminating the Scene Stream results in a catastrophic drop in Richness to 26.4. This validates the necessity of the Scene Stream for populating environmental complexity; without it, the system generates sparse, object-centric scenes that lack the requisite ecological and atmospheric detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Ablation Study</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Implementation Details</head><p>We utilize Gemini 3 as the core reasoning engine for the entire framework, encompassing the VLM-Critic Section 3.2, VLM-Motion Critic Section 3.4, ObjSelect Agent Section 3.2, ObjParam Agent Section 3.2, ObjGenerate Agent Section 3.2, Environmental Planner Section 3.3, Parameter Solver Section 3.3, Scene Realization Section 3.3, and PostProcess Agent Section 3.4.</p><p>All 3D assets and 4D simulations are executed using Blender 4.3 with the bpy Python API. The Rendering process uses the Cycles path-tracing engine for high-fidelity photorealism. For Nature Scenes, the resolution is set to 1920 × 1080 pixels, with 240 frames rendered at 128 samples per frame. For Indoor Scenes, the resolution is also 1920 × 1080 pixels, with 120 frames rendered at 196 samples per frame. The output uses OpenImageDenoise for noise reduction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Benchmark Details</head><p>To rigorously evaluate the capability of generating physically grounded 4D environments, we construct the Code4D benchmark. Unlike existing text-to-3D datasets that focus solely on static 3D structures, Code4D is specifically curated to challenge models on temporal evolution, physical interactions, and atmospheric changes. The benchmark is structured across three key dimensions to ensure a comprehensive assessment of 4D generation. First, it includes a diverse distribution of natural and indoor scenes to evaluate the handling of organic environments alongside interactions with man-made objects.</p><p>Second, the instructions are semantically dense, necessitating models capable of long-context reasoning and precise attribute binding. The benchmark covers a broad range of physical phenomena, including fluid dynamics, particle systems, rigid-body dynamics, soft-body or cloth simulations, and atmospheric evolution. Representative examples from the dataset are detailed in Table <ref type="table" target="#tab_3">6</ref>.</p><p>Reproducibility and Release. Transparency is core to our contribution. We promise to release the full Code4D benchmark, including all prompt texts and the corresponding evaluation scripts, upon acceptance. This will allow the community to benchmark future text-to-simulation models against consistent baselines. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Library Design</head><p>Our method relies on a structured Procedural Parameters Library, denoted as L param , which maps linguistic categories to procedural parameter values. This library is constructed by analyzing high-quality procedural scripts from the Infinigen dataset. It plays a crucial role in ensuring the system accurately maps semantic descriptions to procedural parameters during generation. Some example entries from this library are shown in Figure <ref type="figure" target="#fig_4">5</ref> to Figure <ref type="figure">7</ref>. Additionally, our method utilizes a Reference Code Library, denoted as L code that contains reusable code snippets for generating various procedural content. This library provides essential building blocks for constructing procedural elements, enabling the system to generate code dynamically based on the retrieved parameters. Partial contents from this library are shown in Figure <ref type="figure">8</ref> to Figure <ref type="figure" target="#fig_6">10</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code2Worlds: Empowering Coding LLMs for 4D World Generation</head><p>LeafFactory Parameters # leaf_shape_control_points: Control points for the overall leaf contour. # Example: [(0.0, 0.0), (0.3, 0.3), (0.7, 0.35), (1.0, 0.0)] represents a mid-section bulge with slight tip. leaf_shape_control_points = [(0.0, 0.0), ( <ref type="formula">0.3, 0.3</ref>), (0.7, 0.35), (1.0, 0.0)] # midrib_length: Midrib length, affects leaf elongation. # Example: 0.7 represents an elongated leaf. midrib_length = 0.7 # midrib_width: Midrib thickness. # Example: 1.0 represents a thick midrib. midrib_width = 1.0 # stem_length: Petiole length. # Example: 0.85 represents a long petiole. stem_length = 0.85 # vein_angle: Lateral vein angle (higher values converge upward). # Example: 1.5 represents an upward vein angle. vein_angle = 1.5 # vein_asymmetry: Left-right asymmetry of lateral veins. # Example: 0.2 represents slight natural asymmetry. vein_asymmetry = 0.2 # vein_density: Lateral vein density. # Example: 18 represents dense veins. vein_density = 18 # jigsaw_depth: Serration depth on leaf edges. # Example: 1.6 represents obvious serration. jigsaw_depth = 1.6 # jigsaw_scale: Serration frequency scale. # Example: 18 represents fine serration. jigsaw_scale = 18 # subvein_scale: Sub-vein scale for texture detail. # Example: 18 represents fine texture. subvein_scale = 18 # y_wave_control_points: Longitudinal wave control points for vertical curling. # Example: [(0.0, 0.5), (0.5, 0.58), (1.0, 0.5)] causes slight mid-section rise. y_wave_control_points = [(0.0, 0.5), (0.5, 0.58), (1.0, 0.5)] # x_wave_control_points: Transverse wave control points for left-right curling. # Example: [(0.0, 0.5), (0.4, 0.56), (0.5, 0.5), (0.6, 0.56), (1.0, 0.5)] produces slight edge curling. x_wave_control_points = [(0.0, 0.5), (0.4, 0.56), (0.5, 0.5), (0.6, 0.56), (1.0, 0.5)] # blade_color_hsv: Main leaf color in HSV format. # Example: plant green (0.33, 0.7, 0.6). blade_color_hsv = (0.33, 0.7, 0.6) # vein_color_mix_factor: The degree of vein visibility relative to the blade. # Example: 0.55 represents high contrast. vein_color_mix_factor = 0.55 # blight_weight: Whether to apply overall blight (1 enables blight coloring). # Example: 1 enables blight coloring. blight_weight = 1 # dotted_blight_weight: Whether to apply spotted blight (1 enables spots). # Example: 0 disables spots. dotted_blight_weight = 0 # blight_area_factor: Proportion of leaf area affected by blight. # Example: 0.7 represents a large affected area. blight_area_factor = 0.7 # Example combination (Semantic to Parameters): # "A slender, finely serrated, clear-veined, healthy dark green leaf": parameters = { 'midrib_length': 0.75, 'midrib_width': 0.9, 'leaf_shape_control_points': [(0, 0), (0.3, 0.3), (0.7, 0.35), (1, 0)], 'vein_density': 18, 'vein_angle': 1.2, 'vein_asymmetry': 0.2, 'jigsaw_depth': 1.4, 'jigsaw_scale': 16, 'subvein_scale': 18, 'blade_color_hsv': (0.33, 0.7, 0.6), 'vein_color_mix_factor': 0.5, 'blight_weight': 0, 'dotted_blight_weight': 0 } A breeze stirs through the autumn forest, gently swaying the entire tree as leaves dance in the wind.     A dense, lush green forest during a heavy rainstorm. Rain streaks are falling rapidly and diagonally across the entire scene. The branches and leaves of tall trees sway gently in the wind and rain.   On the living room coffee table, a tall, straight-sided, thick-walled ceramic cup lay tipped on its side. The mug featured a wide, curved handle and a deep blue matte glaze. As it fell, a large volume of water poured from its wide rim, quickly flooding the tabletop, flowing toward the edge, and dripping down. A brown glass bottle rolled slowly across the sunlit living room floor. A cozy bedroom with warm lighting. A desk holds a classic ceramic coffee cup, its smooth surface reflecting the soft glow of the room. Steam rises gently from the cup in soft wisps, disappearing into the warm light. You are the Environment Planner (Agent 1) for a 4D Procedural Scene Generation system using Infinigen. Your goal is to act as a Creative Extrapolation Brain. You must bridge the gap between sparse user instructions and the dense reality of a 3D world.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Inference of Latent Variables (Context):</head><p>-If the user specifies a mood (e.g., "spooky"), you MUST infer the corresponding season (e.g., "autumn"), weather (e.g., "foggy"), and lighting (e.g., "dim").</p><p>-If unspecified, infer a logical default based on the terrain type.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Geomorphological Consistency:</head><p>-If a water source is implied (e.g., "fishing spot", "bridge"), you MUST explicitly add "river" or "lake" to water_bodies.</p><p>-Ensure terrain types match the biome (e.g., "sand" for desert, "snow" for arctic).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Ecosystem &amp; Detail Population:</head><p>-Do not just list trees. You must populate the ** understory ** (bushes, rocks, mushrooms, ferns, etc.) to enhance richness.</p><p>-Define the density qualitatively (low/medium/high) which maps to actual density values.</p><p>Weather/Particles: -"sunny" : no particles -"rainy" : rain_particles -"foggy" : dust_particles or atmosphere density -"snowy" : snow_particles Terrain Landforms (from LandTiles.tiles and scene configs): -"mountain", "canyon", "cliff", "cave", "plain", "coast", "arctic", "desert", "forest", "river", "coral_reef", "kelp_forest", "under_water", "snowy_mountain" Ground Cover Materials (from Terrain.ground_collection): -"grass" : forest_soil, dirt, soil -"sand" : sand, sandstone -"snow" : snow, ice -"rocky" : cracked_ground, stone -"dirt" : dirt, soil Vegetation Types (from compose_nature._chance parameters): -Trees: "trees" (always available) -Bushes: "bushes" -Ground vegetation: "grass", "ferns", "flowers", "monocots", "mushroom", "pinecone", "pine_needle", "decorative_plants" -Ground debris: "ground_leaves", "ground_twigs", "chopped_trees" -Special: "cactus", "kelp", "corals", "seaweed", "urchin", "jellyfish", "seashells" Creatures (from compose_nature. * _creature_registry): -Ground: "snake", "carnivore", "herbivore", "bird", "beetle", "crab", "crustacean", "fish" -Flying: "dragonfly", "flyingbird" -Swarms: "bug_swarm", "fish_school" Surface Coverage (from populate_scene. * _chance): -"slime_mold", "lichen", "ivy", "moss", "mushroom" (on trees/boulders) -"snow_layer" (on surfaces) Dynamic Elements (from compose_nature. * _particles_chance): -"falling_leaves" : leaf_particles -"rain" : rain_particles -"snow" : snow_particles -"dust" : dust_particles -"marine_snow" : marine_snow_particles Other Features: -"wind" : wind_chance -"turbulence" : turbulence_chance -"fancy_clouds" : fancy_clouds_chance -"glowing_rocks" : glowing_rocks_chance -"rocks" : rocks_chance (pebbles) -"boulders" : boulders_chance -"simulated_river" : simulated_river_enabled -"tilted_river" : tilted_river_enabled """ </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Overview of Code2Worlds. Top: Decomposition of intrinsic attributes (lighting, color, gray). Bottom: A summer forest time-lapse demonstrating coherent atmospheric evolution. The sequence tracks precise transitions from sunrise (t = 2s) to noon (t = 5s) and sunset (t = 8s).</figDesc><graphic coords="1,55.44,192.14,485.99,273.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Code2Worlds Execution Pipeline. The framework generates 4D scenes via a dual-stream architecture: 1) an Object Stream utilizing retrieval augmented parameter generation with object self-reflection; 2) a Scene Stream employing hierarchical environmental orchestration; and 3) refinement mechanism driven by a PostProcess Agent and self-reflection.</figDesc><graphic coords="3,423.22,242.71,105.18,61.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. A detailed workflow for generating a 4D scene, integrating environmental scene, object generation, and feedback-driven refinement to ensure realistic scene rendering.</figDesc><graphic coords="5,443.96,268.04,88.39,51.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. A series of environmental effects rendered in different scenes: 1) Relighting adjustments, 2) Water spill interaction, 3) Leaf fall simulation, 4) Jellyfish movement in an aquatic environment, and 5) Fire effect in a natural setting.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Example of leaf parameter</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 11 .</head><label>11</label><figDesc>Figure 11. Key frames of the wind scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>A 10 -</head><label>10</label><figDesc>second time-lapse of a summer forest day: warm pre-dawn air gives way to a bright sunrise, strong midday sun flickers through lush green canopy, late afternoon light turns golden, then a soft sunset fades into a humid, moonlit night with light mist.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 12 .</head><label>12</label><figDesc>Figure12. Figure:Key frames of the relighting scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>The midday sun illuminated countless trees standing tall. Several leaves detached from their branches and fell straight down. Narrow, curved, slightly withered leaves with a yellow, matte appearance revealed brown spots fell and spun silently as they descended, finally coming to rest on the bright pile of fallen leaves.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 13 .</head><label>13</label><figDesc>Figure 13. Key frames of the falling leaves scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 14 .</head><label>14</label><figDesc>Figure 14. Key frames of the rainy forest scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>A</head><figDesc>weathered choppedtree rooted in the dark forest ground。It is burning fiercely. Bright yellow flames rise from the center, while the edges of the stump are glowing with intense red embers and ash. The flickering light casts dynamic, shifting shadows on the gnarled roots spreading out into the dirt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 17 .</head><label>17</label><figDesc>Figure 17. Key frames of the burning tree scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 18 .</head><label>18</label><figDesc>Figure18. Key frames of the spilling water scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 19 .</head><label>19</label><figDesc>Figure 19. Key frames of the rolling bottle scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 20 .</head><label>20</label><figDesc>Figure 20. Key frames of the coffee cup scene.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 21 .</head><label>21</label><figDesc>Figure 21. Example of Prompt</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>We compare methods under the Code4D criteria. Text Control: generation conditioned on natural language prompts; Static Layout: global scene arrangement capability; Object Details: fine-grained geometry and texture quality; Dynamics: instruction-grounded physics-aware 4D dynamics; Temporal: temporal consistency in rendered rollouts; Self-Reflection: iterative visual self-correction. Symbols: ✓ supported; △ partially supported; × not supported; N/A not applicable.</figDesc><table><row><cell cols="5">Code2Worlds: Empowering Coding LLMs for 4D World Generation</cell><cell></cell><cell></cell></row><row><cell>Method</cell><cell cols="6">Text Control Static Layout Object Details Dynamics Temporal Self-Reflect</cell></row><row><cell>MeshCoder (Dai et al., 2025)</cell><cell>✓</cell><cell>×</cell><cell>✓</cell><cell>×</cell><cell>N/A</cell><cell>✓</cell></row><row><cell>Infinigen (Raistrick et al., 2023)</cell><cell>×</cell><cell>✓</cell><cell>✓</cell><cell>×</cell><cell>N/A</cell><cell>×</cell></row><row><cell>Infinigen Indoors (Raistrick et al., 2024)</cell><cell>×</cell><cell>✓</cell><cell>✓</cell><cell>×</cell><cell>N/A</cell><cell>×</cell></row><row><cell>3D-GPT (Sun et al., 2023)</cell><cell>✓</cell><cell>✓</cell><cell>△</cell><cell>×</cell><cell>N/A</cell><cell>×</cell></row><row><cell>SceneCraft (Hu et al., 2024)</cell><cell>✓</cell><cell>✓</cell><cell>△</cell><cell>×</cell><cell>N/A</cell><cell>✓</cell></row><row><cell>ImmerseGen (Yuan et al., 2025)</cell><cell>✓</cell><cell>✓</cell><cell>△</cell><cell>△</cell><cell>△</cell><cell>△</cell></row><row><cell>Code2Worlds (Ours)</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 .</head><label>3</label><figDesc>Ablation on object generation components.</figDesc><table><row><cell>Setting</cell><cell>O-CLIP ↑</cell><cell>SGS ↑</cell><cell cols="2">Style-CLIP ↑</cell></row><row><cell>w/o Lparam</cell><cell>0.2511</cell><cell>48.8</cell><cell cols="2">0.6535</cell></row><row><cell>w/o Retrive</cell><cell>0.2221</cell><cell>23.5</cell><cell cols="2">0.6578</cell></row><row><cell>w/o VLM-Critic</cell><cell>0.2388</cell><cell>58.6</cell><cell cols="2">0.6591</cell></row><row><cell>Ours</cell><cell>0.2655</cell><cell>61.4</cell><cell cols="2">0.6734</cell></row><row><cell>Setting</cell><cell cols="4">O-CLIP ↑ Failure Rate ↓ SGS ↑ HRS ↑</cell></row><row><cell>w/o VLM-Critic</cell><cell>0.2388</cell><cell>-</cell><cell>58.6</cell><cell>-</cell></row><row><cell>w/o VLM-Motion</cell><cell>-</cell><cell>60%</cell><cell>-</cell><cell>47</cell></row><row><cell>Ours</cell><cell>0.2655</cell><cell>10%</cell><cell>61.4</cell><cell>55.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 .</head><label>5</label><figDesc>Ablation on scene composition components.</figDesc><table><row><cell>Setting</cell><cell>S-CLIP ↑</cell><cell>Richness ↑</cell></row><row><cell>w/o Planner &amp; Solver</cell><cell>0.2251</cell><cell>50.9</cell></row><row><cell>w/o Scene Stream</cell><cell>0.2365</cell><cell>26.4</cell></row><row><cell>Ours</cell><cell>0.2432</cell><cell>62.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 .</head><label>6</label><figDesc>Example of promptsOn the living room coffee table, a tall, straight-sided, thick-walled ceramic cup lay tipped on its side. The mug featured a wide, curved handle and a deep blue matte glaze. As it fell, a large volume of water poured from its wide rim, quickly flooding the tabletop, flowing toward the edge, and dripping down.</figDesc><table><row><cell>ID Prompt Content</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code2Worlds: Empowering Coding LLMs for 4D World Generation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. Additional Qualitative Results</head><p>We will showcase selected frames from the dynamic simulations of 10 different scenes, capturing the progression of each scene from its initial state to the refined outcome, as shown in Figure <ref type="figure">11</ref> to Figure <ref type="figure">20</ref>. These frames highlight key moments during the simulations, illustrating the evolution of the scenes over time and the effects of various physical interactions. By focusing on critical stages of the simulation process, we aim to demonstrate how the system responds to complex dynamics, including object deformation, collision handling, and environmental changes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. System Prompt Design</head><p>We employ a structured prompt engineering strategy to guide the LLM through the generation, critique, and refinement stages. Below are the prompts for the part system used in our framework. Additionally, we provide the exact system prompts used for our GPT-4o-based evaluation metrics: SGS, HRS, and Richness. We show these from Figure <ref type="figure">21</ref> to Figure <ref type="figure" target="#fig_23">25</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code2Worlds: Empowering Coding LLMs for 4D World Generation</head><p>JellyfishFactory Parameters # Common Parameters coarse = False # Whether low-precision mode (False=high precision). face_size = 0.008 # Target face length, controls final precision. High precision mode. # Color and Material Parameters base_hue = 0.55 # Base hue for jellyfish color, cyan-blue series (0.42˜0.72). outside_material = "transparent" # Outer material, 80% inside_material = "transparent" # Inner material, 80% tentacle_material = "transparent" # Tentacle material, transparent. arm_mat_transparent = "transparent" # Long tentacle material, transparent. arm_mat_opaque = "opaque" # Long tentacle material, opaque. arm_mat_solid = "solid" # Long tentacle material, solid. # Example Semantic to Parameters parameters = { 'factory_seed': 44444, 'coarse': False, 'face_size': 0.008, 'base_hue': 0.55, 'outside_material': "transparent", 'inside_material': "transparent", 'tentacle_material': "transparent", 'arm_mat_transparent': "transparent", 'arm_mat_opaque': "opaque", 'arm_mat_solid': "solid", 'cap_thickness': 0.</p><p>1, 'cap_inner_radius': 0.7, 'cap_z_scale': 1.2, 'cap_dent': 0.25, 'has_arm': True, 'arm_length': 4.5, 'tentacle_length': 2.3, 'length_scale': 1.5, 'anim_freq': 1/40, 'move_freq': 1/500, 'twist_angle': 0.1, 'bend_angle': 0.1 } # Example Semantic to Parameters (Short Cup with Handle) parameters_short_cup = { 'is_short': True, 'is_profile_straight': False, 'depth': 0.35, 'has_guard': True, 'handle_type': "round", 'handle_location': 0.55, 'handle_radius': 0.35 * 0.35, 'handle_inner_radius': 0.25 * (0.35 * 0.35), 'scale': 0.2, 'thickness': 0.015, 'has_wrap': True, 'wrap_margin': 0.15, 'has_inside': True } BowlFactory Parameters # Core Shape Parameters (Semantic-Driven) z_length = 0.55 # Bowl depth/height, controls vertical dimension. scale_bowl = 0.25 # Overall scale factor, controls bowl overall size. thickness_bowl = 0.01 * scale_bowl # Wall thickness, controls bowl wall thickness. # Shape Control Parameters (Semantic-Driven) x_bottom = 0.25 * 0.5 # Bowl bottom radius, controls bottom size. x_mid = 0.85 * 0.5 # Bowl middle radius, controls middle size. z_bottom = 0.03 # Bowl bottom height, controls bottom vertical position. x_end_bowl = 0.5 # Bowl rim radius (fixed value 0.5, usually not modified). # Inner Material Parameters has_inside_bowl = True # Whether the bowl has inner surface material. # Example Semantic to Parameters (Medium-sized, Medium-depth, Wide-bottom Bowl) parameters_bowl = { 'z_length': 0.55, 'scale_bowl': 0.25, 'thickness_bowl': 0.01 * 0.25, 'x_bottom': 0.25 * 0.5, 'x_mid': 0.85 * 0.5, 'z_bottom': 0.03, 'has_inside_bowl': True } Code2Worlds: Empowering Coding LLMs for 4D World Generation #LeafFactory import sys import bpy from infinigen.assets.objects.leaves.leaf_v2 import LeafFactoryV2 bpy.ops.object.select_all(action="SELECT") bpy.ops.object.delete() factory = LeafFactoryV2(factory_seed=12345, coarse=False) g = factory.genome g["leaf_shape_control_points"] = [(0.0, 0.0), ( <ref type="formula">0.3, 0</ref>3), (0.7, 0.35), (1.0, 0.0)] g["midrib_length"] = 0.7 g["midrib_width"] = 0.95 g["stem_length"] = 0.85 g["vein_angle"] = 1.2 g["vein_asymmetry"] = 0.2 g["vein_density"] = 18.0 g["jigsaw_depth"] = 1.4 g["jigsaw_scale"] = 16.0 g["subvein_scale"] = 18.0 g["y_wave_control_points"] = [(0.0, 0.5), (0.5, 0.58), (1.0, 0.5)] g["x_wave_control_points"] = [(0.0, 0.5), (0.4, 0.56), (0.5, 0.5), (0.6, 0.56), (1.0, 0.5)] factory.blade_color_hsv = (0.33, 0.7, 0.6) factory.vein_color_mix_factor = 0.5 factory.blight_color_hsv = (0.12, 0.5, 0.</p><p>55) import numpy as np blight_weight = 0 dotted_blight_weight = 0 blight_area_factor = 0.3 import contextlib @contextlib.contextmanager def override_blight(binomial_val, blight_area): old_binom = np.random.binomial old_uniform = np.random.uniform np.random.binomial = lambda n, p, size=None: binomial_val np.random.uniform = lambda a, b=None, size=None: blight_area if b is not None else binomial_val try: yield finally: np.random.binomial = old_binom np.random.uniform = old_uniform with override_blight(blight_weight, blight_area_factor): leaf_obj = factory.create_asset() output_path = "" bpy.ops.wm.save_as_mainfile(filepath=output_path) print(f"saved to {output_path}") Figure 8. Example of leaf code Code2Worlds: Empowering Coding LLMs for 4D World Generation #Jellyfish import bpy from infinigen.assets.objects.creatures.jellyfish import JellyfishFactory bpy.ops.object.select_all(action="SELECT") bpy.ops.object.delete() jellyfish_factory_seed_1 = 44444 jellyfish_coarse_1 = False jellyfish_face_size_1 = 0.008 jellyfish_factory_1 = JellyfishFactory(factory_seed=jellyfish_factory_seed_1, coarse=jellyfish_coarse_1) jellyfish_factory_1.base_hue = 0.55 jellyfish_factory_1.cap_thickness = 0.1 jellyfish_factory_1.cap_z_scale = 1.2 jellyfish_factory_1.cap_dent = 0.25 jellyfish_factory_1.has_arm = True jellyfish_factory_1.arm_length = 4.5 jellyfish_factory_1.tentacle_length = 2.3 jellyfish_factory_1.length_scale = 1.5 jellyfish_factory_1.anim_freq = 1/40 jellyfish_factory_1.outside_material = jellyfish_factory_1.make_transparent() jellyfish_factory_1.inside_material = jellyfish_factory_1.make_transparent() jellyfish_factory_1.tentacle_material = jellyfish_factory_1.make_transparent() jellyfish_factory_1.arm_mat_transparent = jellyfish_factory_1.make_transparent() jellyfish_factory_1.arm_mat_opaque = jellyfish_factory_1.make_opaque() jellyfish_factory_1.arm_mat_solid = jellyfish_factory_1.make_solid() jellyfish_obj_1 = jellyfish_factory_1.create_asset(face_size=jellyfish_face_size_1) def _clear_all_shape_keys(): for o in bpy.data.objects: data = getattr(o, "data", None) keys = getattr(data, "shape_keys", None) if not keys or not getattr(keys, "key_blocks", None): continue try: while keys.key_blocks: keys.key_blocks.remove(keys.key_blocks[0]) except Exception as e: print(f"Warning: failed to clear shape keys for {o.name}: {e}") _clear_all_shape_keys() output_path_jellyfish_1 = "" bpy.ops.wm.save_as_mainfile(filepath=output_path_jellyfish_1) print(f"saved to {output_path_jellyfish_1}") Figure 9. Example of jellyfish code Code2Worlds: Empowering Coding LLMs for 4D World Generation #Cup import sys import bpy import numpy as np from infinigen.assets.objects.tableware.cup import CupFactory bpy.ops.object.select_all(action="SELECT") bpy.ops.object.delete() factory_seed_1 = 12345 cup_factory_1 = CupFactory(factory_seed=factory_seed_1, coarse=False) cup_factory_1.is_short = True cup_factory_1.is_profile_straight = False cup_factory_1.depth = 0.35 cup_factory_1.has_guard = True cup_factory_1.handle_type = "round" cup_factory_1.handle_location = 0.55 cup_factory_1.handle_radius = 0.35 * cup_factory_1.depth cup_factory_1.handle_inner_radius = 0.25 * cup_factory_1.handle_radius cup_factory_1.handle_taper_x = 0.5 cup_factory_1.handle_taper_y = 0.5 cup_factory_1.scale = 0.2 cup_factory_1.thickness = 0.015 cup_factory_1.x_lowest = 0.75 cup_factory_1.x_lower_ratio = 0.9 cup_factory_1.has_wrap = True cup_factory_1.wrap_margin = 0.15 cup_factory_1.has_inside = True cup_obj_1 = cup_factory_1.create_asset() output_path_1 = "" bpy.ops.wm.save_as_mainfile(filepath=output_path_1) print(f"saved to {output_path_1}") #Bowl import bpy from infinigen.assets.objects.tableware.bowl import BowlFactory bpy.ops.object.select_all(action="SELECT") bpy.ops.object.delete() factory_seed_bowl_1 = 45678 bowl_factory_1 = BowlFactory(factory_seed=factory_seed_bowl_1, coarse=False) bowl_factory_1.scale = 0.25 bowl_factory_1.z_length = 0.55 bowl_factory_1.thickness = 0.01 * bowl_factory_1.scale bowl_factory_1.x_bottom = 0.25 * bowl_factory_1.x_end bowl_factory_1.x_mid = 0.85 * bowl_factory_1.x_end bowl_factory_1.z_bottom = 0.03 bowl_factory_1.has_inside = True bowl_obj_1 = bowl_factory_1.create_asset() output_path_bowl_1 = "" bpy.ops.wm.save_as_mainfile(filepath=output_path_bowl_1) print(f"saved to {output_path_bowl_1}")  Figure <ref type="figure" target="#fig_18">16</ref>. Key frames of the moving jellyfish scene.</p><p>Code2Worlds: Empowering Coding LLMs for 4D World Generation</p><p>"""You are an expert VFX Supervisor and Physics Simulation Evaluator. Your task is to rate the OVERALL QUALITY of a generated video based on a text prompt.</p><p>You must evaluate three key dimensions to determine the final score (0-100):</p><p>1. Physics Plausibility (Does it obey laws of physics?):</p><p>-Are gravity, collision, and inertia realistic? -Any "hallucinated" motion, interpenetration (clipping), or floating objects?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Visual Aesthetics (Is the image high-quality?):</head><p>-Assess texture detail, lighting realism, and object geometry.</p><p>-Is the scene photorealistic or clearly synthetic/low-poly?</p><p>3. Temporal Stability (Is the video smooth?):</p><p>-Are there flickering artifacts, morphing textures, or jittery motions across frames?</p><p>---Rating Scale: [0-40] Failure: Severe physics violations (e.g., exploding mesh) OR terrible image quality (blurry, noisy). The video is unusable.</p><p>[41-70] Mediocre: The action happens, but the physics looks "floaty" or stiff (like a bad video game).</p><p>Visuals are decent but contain noticeable artifacts or look plastic.</p><p>[71-100] Cinematic / Realistic: High-fidelity rendering with accurate, nuanced physics (e.g., proper weight distribution, natural fluid flow).</p><p>The video looks like a real-world recording or high-end CGI.</p><p>---Provide your response in JSON format: { "score": &lt;0-100&gt;, "reasoning": "Briefly explain the score based on physics, visuals, and stability." }""" Figure <ref type="figure">23</ref>. Example of leaf Prompt """You are an expert evaluator of 3D object generation quality. Your task is to rate how well a rendered image matches a text description.</p><p>Rating Scale (0-100): 0-20: Totally irrelevant object (wrong category entirely) 21-40: Wrong object or major category mismatch 41-60: Correct category but misses most specific attributes (e.g., correct object type but wrong color, texture, or state) 61-80: Good match, captures most attributes but misses some fine details 81-100: Perfect match, capturing all fine-grained details described in the prompt Provide your response in JSON format: { "score": &lt;0-100&gt;, "explanation": "&lt;brief explanation of why you gave this score&gt;" }""" """Given the text prompt: '{prompt}' and the rendered image of a 3D object, rate on a scale of 0 to 100 how well the object reflects the specific attributes (texture, shape, color, state) described. 0-20: Totally irrelevant object. 41-60: Correct category (e.g., it is a tree) but misses specific attributes (e.g., green instead of withered). 81-100: Perfect match, capturing all fine-grained details (e.g., a withered, leafless tree with twisted branches). Analyze the image carefully and provide your rating (0-100) with explanation.""" Provide your response in JSON format: { "overall_score": &lt;0-100&gt;, "object_variety": &lt;0-100&gt;, "object_count": &lt;number&gt;, "detail_level": &lt;0-100&gt;, "scene_complexity": &lt;0-100&gt;, "detected_objects": ["category1", "category2", ...], "reasoning": "Brief explanation of the richness assessment" }""" </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head>#</head><figDesc>Bell (Cap) Shape Parameters cap_thickness = 0.1 # Bell thickness, thin bell. cap_inner_radius = 0.7 # Bell inner radius, medium opening. cap_z_scale = 1.2 # Bell Z-axis scale, elongated bell. cap_dent = 0.25 # Bell dent depth, wavy edge. # Long Tentacle Parameters has_arm = True # Whether to have long tentacles (50% arm_radius_range = (0.1, 0.4) # Long tentacle radius range. arm_height_range = (-0.4, -0.2) # Long tentacle height range. arm_min_distance = 0.07 # Long tentacle minimum spacing. arm_size = 0.05 # Long tentacle base size. arm_length = 4.5 # Long tentacle length. arm_bend_angle = 0.05 # Long tentacle bend angle. arm_displace_range = (0.1, 0.3) # Long tentacle vertical displacement range. # Short Tentacle Parameters tentacle_min_distance = 0.05 # Short tentacle minimum spacing. tentacle_size = 0.008 # Short tentacle base size. tentacle_length = 2.3 # Short tentacle length. tentacle_bend_angle = 0.1 # Short tentacle bend angle. # Overall Scale and Animation Parameters length_scale = 1.5 # Tentacle length scale, long tentacle jellyfish. anim_freq = 1/40 # Bell animation frequency, faster breathing speed. move_freq = 1/500 # Movement frequency, slower drifting speed. # Deformation and Twist Parameters twist_angle = 0.1 # X/Y axis twist angle. bend_angle = 0.1 # X/Y axis bend angle.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>Figure 6 .</head><label>6</label><figDesc>Example of jellyfish parameterCode2Worlds: Empowering Coding LLMs for 4D World Generation CupFactory Parameters # Core Shape Parameters (Semantic-Driven) is_short = True # Cup type selection. True = short cup (e.g., coffee cup), False = tall cup (e.g., mug). is_profile_straight = False # Whether profile is straight (True = cylindrical, False = curved with waist). depth = 0.35 # Cup depth/height, controls vertical dimension. scale = 0.2 # Overall scale factor, controls cup overall size. thickness = 0.015 # Wall thickness, controls cup wall thickness. # Handle Parameters (Semantic-Driven) has_guard = True # Whether the cup has a handle. handle_type = "round" # Handle type ("shear" or "round"). handle_location = 0.55 # Handle position on the cup side. handle_radius = 0.35 * depth # Handle outer radius, controls handle thickness. handle_inner_radius = 0.25 * handle_radius # Handle inner radius, controls handle opening size. handle_taper_x = 1.2 # Handle X-axis taper, controls shrinkage in X direction. handle_taper_y = 0.8 # Handle Y-axis taper, controls shrinkage in Y direction. # Shape Detail Parameters x_lowest = 0.7 # Cup narrowest point position ratio, controls cup waist degree. x_lower_ratio = 0.85 # Lower ratio, controls cup lower shape. x_end = 0.25 # Cup rim radius (fixed value 0.25, usually not modified). # Decoration Parameters (Semantic-Driven) has_wrap = True # Whether the cup has wrapping/decoration. wrap_margin = 0.15 # Decoration margin, controls decoration coverage. has_inside = True # Whether the cup has an inner surface material.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><head>Figure 7 .</head><label>7</label><figDesc>Example of cup and bowl parameter</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><head>Figure 10 .</head><label>10</label><figDesc>Example of cup and bowl codeA peaceful desert afternoon with a gentle breeze. Sand is flowing like liquid silk along the sharp ridgeline of a sand dune, slowly cascading down the leeward side.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><head>Figure 15 .</head><label>15</label><figDesc>Key frames of the desert scene.A vibrant underwater scene. An ethereal, translucent jellyfish glowing with soft blue and purple bioluminescence drifts gracefully through the water. Its gelatinous, umbrella-shaped bell pulsates rhythmically, contracting and expanding slowly to propel itself forward.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_22"><head>Figure 24 .</head><label>24</label><figDesc>Example of leaf PromptEvaluation Dimensions:1. ** Object Variety (0-100) ** : Diversity of object types -90-100: Highly diverse scene with 15+ distinct object categories (furniture, decorations, plants, tools, etc.) -70-89: Good variety with 10-14 object categories -50-69: Moderate variety with 6-9 object categories -30-49: Limited variety with 3-5 object categories -0-29: Very few object types (1-2categories) 2. ** Object Count (number) ** : Estimated total number of visible objects -Count all distinguishable objects, including small items -Don't count individual leaves/grass blades, but count trees, rocks, furniture pieces 3. ** Detail Level (0-100) ** : Richness of fine details -90-100: Extensive fine details (textures, small decorations, surface details, wear/tear) -70-89: Good detail level (clear textures, some small objects) -50-69: Moderate details (basic textures present) -30-49: Sparse details (mostly large simple objects) -0-29: Minimal details (very simple/bare scene) 4. ** Scene Complexity (0-100) ** : Overall visual complexity and layering -90-100: Highly complex with multiple layers, depth, intricate spatial arrangements -70-89: Complex with good depth and spatial variety -50-69: Moderate complexity with some layering -30-49: Simple scene with basic spatial layout -0-29: Very simple, sparse, or empty scene Analysis Process: 1. Systematically scan the entire scene 2. Identify and list all distinct object categories 3. Estimate object count 4. Assess level of detail and complexity 5. Calculate overall richness score (weighted average of the 4 dimensions)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_23"><head>Figure 25 .</head><label>25</label><figDesc>Example of leaf Prompt</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Stable video diffusion: Scaling latent video diffusion models to large datasets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dockhorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kulal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mendelevitch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kilian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lorenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Levi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>English</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Voleti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Letts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Jampani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rombach</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.15127" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Learning spatial knowledge for text to 3d scene generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)</title>
+		<meeting>the 2014 conference on empirical methods in natural language processing (EMNLP)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="2028" to="2038" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Wordseye: an automatic text-toscene conversion system</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Coyne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sproat</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/383259.383316</idno>
+		<ptr target="https://doi.org/10.1145/383259.383316" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th Annual Conference on Computer Graphics and Interactive Techniques, SIGGRAPH &apos;01</title>
+		<meeting>the 28th Annual Conference on Computer Graphics and Interactive Techniques, SIGGRAPH &apos;01<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="volume">158113374</biblScope>
+			<biblScope unit="page" from="487" to="496" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">R</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.14879</idno>
+		<title level="m">Llm-powered structured mesh code generation from point clouds</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Example-based synthesis of 3d object arrangements</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fisher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ritchie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Funkhouser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hanrahan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Graphics (TOG)</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="11" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Noda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Durante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Terzopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Vo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mindagent</surname></persName>
+		</author>
+		<title level="m">Emergent gaming interaction. In Findings of the Association for Computational Linguistics: NAACL 2024</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3154" to="3183" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Animatediff: Animate your personalized text-to-image diffusion models without specific tuning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Agrawala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Scenecraft: An llm agent for synthesizing 3d scenes as blender code</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iscen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fathi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">VBench: Comprehensive benchmark suite for video generative models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chanpaisit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Procedural generation of articulated simulation-ready assets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nugent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Saez-Diez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Alexandropoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Calveri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raistrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.10755" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Hunyuanvideo: A systematic framework for large video generative models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.03603</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wetzstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Woo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vulcan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2512.22351" />
+		<title level="m">Tool-augmented multi agents for iterative 3d object arrangement</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">A path towards autonomous machine intelligence version 0.9</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1" to="62" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Grid diffusion models for text-to-video generation</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kim</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.00234" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Magic3d: High-resolution text-to-3d content creation</title>
+		<author>
+			<persName><forename type="first">C.-H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Takikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kreis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-Y</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="300" to="309" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">J</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="34892" to="34916" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Dinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hanocka</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.08228" />
+		<title level="m">Ll3m: Large language 3d modelers</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Sinfusion: training diffusion models on a single image or video</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Nikankin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Haim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Irani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Machine Learning, ICML&apos;23</title>
+		<meeting>the 40th International Conference on Machine Learning, ICML&apos;23</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Poole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Barron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mildenhall</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.14988</idno>
+		<title level="m">Dreamfusion: Text-to-3d using 2d diffusion</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2103.00020" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Infinite photorealistic worlds using procedural generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raistrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lipson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Law</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="12630" to="12641" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Infinigen indoors: Photorealistic indoor scenes using procedural generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raistrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Parakh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Alexandropoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lipson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="page" from="21783" to="21794" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.17142</idno>
+		<title level="m">Dreamgaussian4d: Generative 4d gaussian splatting</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Text-to-4d dynamic scene generation</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Singer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sheynin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polyak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ashual</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Makarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Kokkinos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vedaldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Taigman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2301.11280" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gould</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.12945</idno>
+		<title level="m">Procedural 3d modeling with large language models</title>
+		<meeting>edural 3d modeling with large language models</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Superpoint gaussian splatting for real-time high-fidelity dynamic scene reconstruction</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zeng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.03697" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Mastering text-to-image diffusion: Recaptioning, planning, and generating with multimodal llms</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.11708" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Cogvideox: Text-to-video diffusion models with an expert transformer</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Feng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06072</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Make it home: automatic optimization of furniture arrangement</title>
+		<author>
+			<persName><forename type="first">L.-F</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-K</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-K</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Terzopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">F</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Osher</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2010324.1964981</idno>
+		<ptr target="https://doi.org/10.1145/2010324.1964981" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Graph</title>
+		<idno type="ISSN">0730-0301</idno>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="2011-07">July 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Immersegen: Agent-guided immersive world generation with alpha-textured proxies</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.14315" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Language agent tree search unifies reasoning acting and planning in language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-X</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.04406" />
+	</analytic>
+	<monogr>
+		<title level="m">You are an expert 4D Dynamics Analyst for &quot;4DCoder</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Code2Worlds: Empowering Coding LLMs for 4D World Generation Your goal is to identify the SINGLE most critical &quot;Key Object&quot; from a scene description that requires dynamic simulation (physics, motion, or deformation</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">You must return a strictly formatted JSON Object (not a list</title>
+		<author>
+			<persName><forename type="first">### Output</forename><surname>Format</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>with exactly two keys</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m">A single, lowercase, common noun representing the object&apos;s category</title>
+		<imprint/>
+	</monogr>
+	<note>No adjectives, no quantities</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">A brief explanation of why this object is the dynamic focal point</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">### Selection</forename><surname>Rules</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Priority Order</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Passive: Select the object moving, falling, breaking, or deforming</title>
+		<imprint/>
+	</monogr>
+	<note>Active vs Ignore static colliders (e.g., floor, table, wall</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m">The &quot;Victim&quot; or &quot;Agent&quot;: If an object is being acted upon</title>
+		<imprint/>
+	</monogr>
+	<note>e.g., &quot;can&quot; being crushed), it is the key object</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Prefer objects requiring simulation (Cloth, Soft Body, Fluid Emitter) over simple rigid translation</title>
+	</analytic>
+	<monogr>
+		<title level="j">Complexity</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">### Formatting</forename><surname>Rules</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Strict Noun Only: -BAD</title>
+		<imprint/>
+	</monogr>
+	<note>red cup&quot;, &quot;shattering glass&quot;, &quot;a pair of shoes&quot;. -GOOD: &quot;cup&quot;, &quot;glass&quot;, &quot;shoe</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m">Singular Form: Always convert to singular</title>
+		<imprint/>
+	</monogr>
+	<note>e.g., &quot;leaves</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">No Backgrounds: Never select</title>
+		<imprint/>
+	</monogr>
+	<note>ground&quot;, &quot;floor&quot;, &quot;sky&quot;, or &quot;room</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">A heavy iron anvil crushing a soda can</title>
+		<author>
+			<persName><forename type="first">### Examples:</forename><surname>User</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The can is the object undergoing deformation (soft body physics), while the anvil is just a rigid collider</title>
+		<imprint/>
+	</monogr>
+	<note>Output: { &quot;key_obj&quot;: &quot;can</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Your task is to evaluate the RICHNESS and DIVERSITY of objects in the scene image. IMPORTANT: You should NOT consider whether the scene matches any text prompt</title>
+		<author>
+			<persName><surname>User</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Figure 22. Example of leaf Prompt Code2Worlds: Empowering Coding LLMs for 4D World Generation</title>
+		<imprint/>
+	</monogr>
+	<note>Output: { &quot;key_obj&quot;: &quot;leaf Thousands of golden maple leaves falling in the wind A glass of water spilling onto a wooden table Output: { &quot;key_obj&quot;: &quot;glass The leaves are the active dynamic elements controlled by wind forces You are a Scene Richness Evaluator for 3D environments The glass is the source of the fluid interaction and motion, whereas the table is a static passive collider Focus ONLY on the visual richness of what you see</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

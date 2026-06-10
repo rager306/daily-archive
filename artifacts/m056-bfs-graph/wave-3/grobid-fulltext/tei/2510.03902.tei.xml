@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Multi-Agent Code-Orchestrated Generation for Reliable Infrastructure-as-Code</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-04">4 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Rana</forename><surname>Nameer Hussain Khan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ALI BUTT</orgName>
+								<address>
+									<region>Virginia Tech</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><roleName>USA DAWOOD WASIF</roleName><forename type="first">Virginia</forename><surname>Tech</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ALI BUTT</orgName>
+								<address>
+									<region>Virginia Tech</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff0">
+								<orgName type="institution">ALI BUTT</orgName>
+								<address>
+									<region>Virginia Tech</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff0">
+								<orgName type="institution">ALI BUTT</orgName>
+								<address>
+									<region>Virginia Tech</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jin-Hee</forename><surname>Cho</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ALI BUTT</orgName>
+								<address>
+									<region>Virginia Tech</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Multi-Agent Code-Orchestrated Generation for Reliable Infrastructure-as-Code</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-04">4 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4275779995D80D76FC3A2911FB8F6B4D</idno>
+					<idno type="arXiv">arXiv:2510.03902v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS Concepts:</term>
+					<term>Software and its engineering → Software configuration management</term>
+					<term>Cloud computing</term>
+					<term>Automated static analysis</term>
+					<term>• Computing methodologies → Natural language processing</term>
+					<term>• Artificial intelligence → Multi-agent systems Infrastructure as Code, multi-agent systems, large language models, program synthesis, policy as code, OPA/Rego</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The increasing complexity of cloud-native infrastructure has made Infrastructure-as-Code (IaC) essential for reproducible and scalable deployments. While large language models (LLMs) have shown promise in generating IaC snippets from natural language prompts, their monolithic, single-pass generation approach often results in syntactic errors, policy violations, and unscalable designs. In this paper, we propose MACOG (Multi-Agent Code-Orchestrated Generation), a novel multi-agent LLM-based architecture for IaC generation that decomposes the task into modular subtasks handled by specialized agents: Architect, Provider Harmonizer, Engineer, Reviewer, Security Prover, Cost and Capacity Planner, DevOps, and Memory Curator. The agents interact via a shared-blackboard, finite-state orchestrator layer, and collectively produce Terraform configurations that are not only syntactically valid but also policy-compliant and semantically coherent. To ensure infrastructure correctness and governance, we incorporate Terraform Plan for execution validation and Open Policy Agent (OPA) for customizable policy enforcement. We evaluate MACOG using the IaC-Eval benchmark, where MACOG is the top enhancement across models, e.g., GPT-5 improves from 54.90 (RAG) to 74.02 and Gemini-2.5 Pro from 43.56 to 60.13, with concurrent gains on BLEU, CodeBERTScore, and an LLM-judge metric. Ablations show constrained decoding and deploy feedback are critical: removing them drops IaC-Eval to 64.89 and 56.93, respectively.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Modern cloud platforms expose a rich and evolving surface of services, configuration knobs, and compliance regimes, and Infrastructure-as-Code (IaC) <ref type="bibr" target="#b13">[14]</ref> has become the common medium that teams use to tame this complexity. Terraform, Pulumi, and CloudFormation encode desired state as declarative programs that must be valid with respect to provider schemas, consistent across interdependent resources, and faithful to organizational rules on security, cost, and data residency. Large language models (LLMs) <ref type="bibr" target="#b1">[2]</ref> promise to shorten the distance from a plain-English specification to a working IaC program, but the path from intent to a deployable, auditable artifact is fraught with domain-specific traps: strict schemas with versioned fields, cross-resource references with subtle naming constraints, non-obvious dependency orderings, and environment-specific quirks that only surface at plan/apply time. Beyond mere syntax, production-grade configurations must satisfy non-functional expectations such as least-privilege access, encryption at rest and in transit, region pinning for residency, redundancy for availability targets, and budget ceilings. The result is a synthesis task that is not just code generation, but constrained program construction under multiple interacting validators that each speak a different dialect of evidence, from static type checks to policy proofs and runtime logs</p><p>The operational setting amplifies these difficulties. Provider schemas change, default values shift, and resource classes deprecate or migrate across regions, creating a moving target for any static set of examples. Teams often assemble configurations by composing modules that were written months apart under different assumptions, causing subtle mismatches in variable interfaces and output names that defeat trivial pattern matching. Additionally, IaC is inherently graph-shaped: a VPC frames subnets, gateways, and route tables; security groups define ingress and egress edges that must line up with compute nodes and managed databases; identity and access policies must name concrete ARNs that exist only after other resources are planned. This graph structure is not an incidental detail but the main act, and language models that treat code as flat text frequently stumble on global constraints such as acyclicity, topological ordering, and cross-file coherency. When models emit a near-correct configuration, the last mile still tends to break on details such as subnet versus subnet_id, reference scoping across modules, or region-specific capabilities. Finally, non-functional constraints do not present a single, unified interface: cost is numeric and region-aware, security policies are logical formulas evaluated by engines like OPA or scanners such as Checkov/Regula, and deployability depends on real toolchains executing in realistic sandboxes. Any practical assistant must place these validators at the center of the workflow rather than treat them as afterthoughts Recent efforts have aimed at closing this gap with prompting and retrieval strategies. Few-shot prompting improves local idioms and reduces obvious syntax errors, but scales poorly when intents span multiple providers, when the plan includes three or more interlocked modules, or when token budgets force elision of the very context that would disambiguate a reference. Retrieval-augmented approaches can surface nearby examples, yet raw snippets are brittle: a single field that changed between provider versions derails an otherwise promising candidate, and unaudited retrieval cannot guarantee that a borrowed pattern observes the organization's policies. Single-agent, multi-turn scaffolds with tool calls can iterate on errors, though they tend to oscillate in long contexts, overwrite working parts during late repairs, and struggle to keep a coherent, typed view of the infrastructure graph over many steps. More structured variants propose plan-then-code or JSON-first pipelines, but without a typed intermediate representation and grammar-aware decoding, the realization step reintroduces inconsistencies, and without tight feedback from external validators, the loop lacks the counterexamples needed for surgical repairs. Crucially, many systems rely on fine-tuning to imprint domain behavior; that path is costly to maintain across providers and versions and often under-delivers in the face of real plan/apply idiosyncrasies This paper takes a different route by organizing the task around the validators and the graph structure of the infrastructure. We present a method that keeps large language models in an instruction-following, zero fine-tune mode and surrounds them with strict structure, deterministic compilation, grammar-and schema-constrained decoding, and an error-driven repair loop. A typed Infrastructure Intermediate Representation (I-IR) serves as the shared language between agents and tools, making resources, edges, regions, and effects explicit and checkable. The workflow compiles I-IR into Terraform through resource skeletons and a constrained decoder that cannot stray outside the HCL grammar <ref type="bibr" target="#b14">[15]</ref> or provider field sets, enforces a round-trip check back into I-IR to preserve intent, and then subjects the candidate to a battery of validators: terraform validate for schema and references, OPA/Rego and complementary scanners for policy, deterministic price books for budget, and realistic sandboxes for deployment. Counterexamples from any stage are mapped to minimal plan-level or code-level edits, reducing failures without thrashing working parts. A small set of role-specialized agents coordinate over a versioned blackboard and reuse verified motifs-typed, provider-versioned plan fragments-in place of raw code snippets. We introduce this approach, Multi-Agent Code-Orchestrated Generation (MACOG), at the end of the pipeline for a single, clear purpose: to transform natural-language intents into deployable, compliant, and cost-aware Terraform programs, with an evidence bundle that a third party can verify offline before execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">DevOps Automation and Evolution</head><p>DevOps is an umbrella term that defines the shift towards high automation and tight integration of software design and infrastructure. Since its inception, DevOps has driven significant changes in the IT world, notably the adoption of practices such as continuous integration and delivery, as well as Infrastructure as Code. Over the years, the degree of automation in these processes has steadily increased. Eventually, a Everything as Code approach became increasingly adopted in the software world. Not only infrastructure, but entire build pipelines, configuration files, and even monitoring checks are being built using code <ref type="bibr" target="#b25">[26]</ref>.</p><p>A key enabler in the evolution of DevOps was the advent of containerization. That was mainly spearheaded by the development of Docker <ref type="bibr" target="#b8">[9]</ref> and Kubernetes. The shift led to an improvement in accuracy across production environments, but highlighted the need for governance. As deployments scaled up exponentially to hundreds of microservices, manually enforcing compliance and best practices became untenable. To address this, the concept of Policy-as-Code <ref type="bibr" target="#b2">[3]</ref> was developed. Policies are expressed in code and are automatically checked at runtime or in CI pipelines. For example, a policy might declare that no AWS S3 bucket should be publicly readable; using PaC frameworks (e.g., Open Policy Agent or HashiCorp Sentinel), such rules are evaluated on IaC changes and block non-compliant infrastructure changes.</p><p>PaC has become a vital part of DevSecOps, allowing "shift-left" enforcement of security and compliance early in the pipeline.</p><p>However, automating the generation of correct infrastructure code is a non-trivial next step. Crafting Terraform or CloudFormation scripts still requires considerable expertise in cloud services and syntax. Unlike application code -for which testing and specification techniques are more mature -infrastructure code deals with real-world configurations that must align with implicit operational requirements (scalability, security, cost-effectiveness). The consequence is a high barrier to entry and a propensity for errors or suboptimal setups in IaC. These pain points are driving interest in intelligent automation: using AI to assist or even fully automate IaC script creation and validation. The evolution of DevOps thus naturally leads to the question: can we apply learning-based automation (specifically, Large Language Models) to generate reliable infrastructure code, thereby reducing human toil and error? The background above illustrates both the opportunity (the rich automation and validation ecosystem to build upon) and the need (the difficulty and importance of getting IaC right).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Large Language Models for Code Generation in Software Engineering</head><p>The past few years have seen an exponential growth in Large Language Models and their use cases, particularly for code generation <ref type="bibr" target="#b4">[5]</ref>. Unlike earlier program synthesis approaches that required formal specifications or symbolic reasoning, modern LLMs learn to generate code by statistically modeling massive code corpora. OpenAI's GPT family and related transformer-based models (e.g., CodeBERT, CodeT5, etc.) have demonstrated the ability to produce syntactically correct and often functional code in a variety of languages. DeepMind's AlphaCode pushed the frontier further by generating thousands of candidate programs for competitive programming problems and selecting correct ones via test execution, achieving a top 54.3% ranking on Codeforces challenges <ref type="bibr" target="#b6">[7]</ref>. This shows that when given the right data, LLMs can produce high-quality code capable of solving advanced and complex problems. Crucially in the DeepMind paper <ref type="bibr" target="#b6">[7]</ref>, they also highlighted the importance of coupling generation with validation: AlphaCode's success hinged on running generated programs against tests and filtering out failures.</p><p>In the domain of software configuration and DevOps, early anecdotal evidence showed models like GPT-4 can produce YAML or Terraform snippets from plain English descriptions; however, achieving correct and safe infrastructure configurations via one-shot generation is challenging. Recent research confirms this gap: Kon et al. (2024) <ref type="bibr" target="#b5">[6]</ref> introduced IaC-Eval, a benchmark of 458 cloud infrastructure specification tasks, and found that even state-of-the-art LLMs (GPT-4) solved only 19% of tasks correctly on the first try. The errors often stem from the model's hallucinations or lack of contextual understanding of cloud services -for example, missing required resource properties, using incorrect identifiers, or violating cloud-specific constraints (e.g., naming conventions, region restrictions). These results highlight that vanilla LLM generation is not yet reliable for IaC. To bridge this reliability gap, researchers are turning to multi-step, feedback-driven approaches.</p><p>A promising direction is the use of multi-agent or iterative LLM pipelines for code generation. Instead of a single-pass answer, the process is structured into roles or stages that mimic a software team's workflow: requirements analysis, coding, and testing. Dong et al. (2024) <ref type="bibr" target="#b3">[4]</ref> present a self-collaboration framework where a single ChatGPT instance iteratively plays different roles (e.g., user, coder, tester) in sequence, incorporating feedback at each stage to refine the output. Similarly, Qian et al. (2023) <ref type="bibr" target="#b12">[13]</ref> introduce ChatDev, in which multiple specialized LLM-based agents (e.g., an "Architect", "Developer", and "Tester" agent) communicate with each other in natural language to build and verify a program progressively. ChatDev's agents exchange design ideas, code patches, and test results in a chat chain, successfully developing non-trivial software with minimal human input. Notably, this approach reduced coding errors by having the Tester agent catch failures and prompt the Developer agent to fix them, thereby addressing the hallucination and oversight problems common in single-step generation. These multi-agent systems demonstrate that incorporating an automated feedback loop -especially testing and error correction -can substantially improve the correctness and completeness of generated code. In essence, the LLMs are used not just as code generators, but also as critics and debuggers for each other's outputs, guided by a predefined collaboration protocol or "playbook" of roles (often inspired by the software development life cycle).</p><p>Our work builds on a solid foundation of software engineering research and cutting-edge AI techniques: from the lessons of IaC quality and testing research, we inherit the necessity of policy compliance and verification; from the state-of-the-art in LLM-based code generation, we adopt multi-agent collaboration to improve reliability.</p><p>3 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">LLMs for Infrastructure-as-Code and Configuration Synthesis</head><p>Work on LLMs for configuration domains (Terraform <ref type="bibr" target="#b18">[19]</ref>, CloudFormation <ref type="bibr" target="#b23">[24]</ref>, Ansible <ref type="bibr" target="#b7">[8]</ref>) typically frames the task as mapping a natural-language intent into a deployable artifact while satisfying strict schemas and cross-resource references. Empirical studies show one-shot prompting is brittle in IaC: even strong models underperform without tool feedback, often omitting required fields, misusing identifiers, or violating provider constraints <ref type="bibr" target="#b5">[6]</ref>. Parallel streams in software configuration quality document configuration "smells" and anti-patterns that degrade maintainability and security, reinforcing that surface-level correctness is insufficient <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b17">18]</ref>. Security-focused analyses catalog recurring IaC smells ("Seven Sins") such as hard-coded secrets and overly permissive policies, underscoring the need for automated, policy-aware checks <ref type="bibr" target="#b9">[10]</ref>. Recent measurements of Terraform security practices across open-source projects further highlight gaps in adoption and enforcement <ref type="bibr" target="#b26">[27]</ref>. Together, these findings motivate IaC methods that combine generation with schema awareness, policy compliance, and runtime validation rather than relying solely on retrieval or few-shot exemplars</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Multi-Agent and Tool-Augmented Code Generation</head><p>A complementary thread organizes code generation as a collaboration among specialized agents (planner, developer, tester) and external tools. Multi-agent systems such as ChatDev demonstrate that role specialization, shared memory, and iterative critique can reduce hallucinations and improve functional correctness on end-to-end software tasks <ref type="bibr" target="#b12">[13]</ref>.</p><p>Self-collaboration shows similar gains by letting one model play multiple roles across plan-code-test cycles <ref type="bibr" target="#b3">[4]</ref>. Beyond general coding, multi-agent frameworks targeted at software evolution (MAGIS) coordinate planning and QA to resolve GitHub issues more reliably than single-agent prompting <ref type="bibr" target="#b21">[22]</ref>. In program repair, agentic designs (RepairAgent) couple LLMs with a finite-state tool controller to gather diagnostics, apply patches, and validate fixes autonomously <ref type="bibr" target="#b0">[1]</ref>. These systems share a pattern: structured division of labor plus tool-grounding yields more robust iterations than free-form chat. For IaC, this suggests orchestrations that pass typed artifacts through validators (schema, policy, runtime), enabling precise, minimal edits while preserving previously correct structure</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Constrained Decoding and Validator-Guided Repair</head><p>Constrained decoding narrows the output space to grammar-or schema-admissible tokens, markedly reducing syntactic invalidity in structured code generation. PICARD enforces incremental parsing constraints during decoding to keep outputs valid for formal languages like SQL <ref type="bibr" target="#b15">[16]</ref>. More recent methods (SynCode) precompute DFA-based masks for CFGs to ensure syntactic validity efficiently across languages <ref type="bibr" target="#b24">[25]</ref>, while Grammar-Aligned Decoding (ASAp) addresses distributional bias introduced by hard constraints, aligning sampling with the LLM's conditional distribution under a grammar <ref type="bibr" target="#b11">[12]</ref>. On the repair side, classic counterexample-guided loops (CEGIS) alternate synthesis with verification, using failed obligations to steer minimal edits <ref type="bibr" target="#b19">[20]</ref>. Contemporary LLM repair work formalizes refinement as an exploration-exploitation problem over failing tests and partial successes <ref type="bibr" target="#b20">[21]</ref>. For IaC, combining grammar/schemaconstrained realization with validator-guided repair (static checks, policy engines, sandboxed plan/apply) operationalizes these principles: keep generation within admissible syntax and use machine-readable counterexamples to drive targeted patches rather than speculative rewrites</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Methodology</head><p>This section details the methodology for synthesizing deployable, secure, and cost-aware Infrastructure-as-Code (IaC) using a team of role-specialized agents operating over a typed Infrastructure Intermediate Representation (I-IR), with grammar-and schema-constrained code generation and a counterexample-guided repair loop. The design explicitly assumes no model fine-tuning: all agents operate in zero-shot or instruction-following mode with carefully engineered prompts, structured tool outputs, and deterministic orchestration. The emphasis is on how the system functions end-to-end, how artifacts move between agents, and how constraints are enforced by construction and through external validators.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Problem Definition and Notation</head><p>We formalize IaC synthesis as a constrained program construction problem. A user provides a natural language intent 𝑥 and optional non-functional constraints 𝐶 such as budget ceilings, data residency, encryption, and availability. The system must return a Terraform program 𝑇 and an evidence bundle Π that together satisfy functional and non-functional requirements and can be verified independently Let 𝑥 ∈ X denote the intent, 𝐶 ∈ C the constraint set, P the space of well-typed I-IR plans, T the space of HCL programs, and V a family of validators. We represent a plan as a typed resource graph</p><formula xml:id="formula_0">𝑃 = ⟨𝑉 , 𝐸, 𝑆⟩, 𝑉 ⊂ V 𝑟 , 𝐸 ⊂ E 𝑟 , 𝑆 ⊂ S (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>where 𝑉 are resource nodes (e.g., vpc, subnet, ec2, rds), 𝐸 are dependency or connectivity edges (e.g., depends, connects), and 𝑆 are specifications and effects (e.g., residency=EU, encryption=required, budget ≤ 𝐵)</p><p>A compiler C : P → T lowers I-IR to HCL. Validators produce structured outcomes</p><formula xml:id="formula_2">v(𝑇 , 𝐶) = 𝑣 schema , 𝑣 policy , 𝑣 cost , 𝑣 deploy (<label>2</label></formula><formula xml:id="formula_3">)</formula><p>where 𝑣 schema ∈ {0, 1} indicates schema/type validity, 𝑣 policy ∈ {0, 1} policy satisfaction under 𝐶, 𝑣 cost ∈ R ≥0 estimates cost with a pass indicator 1[𝑣 cost ≤ 𝐵], and 𝑣 deploy ∈ {0, 1} is the result of terraform plan/apply in a sandbox</p><p>The target is to construct (𝑇 , Π) such that</p><formula xml:id="formula_4">𝑣 schema = 1, 𝑣 policy = 1, 𝑣 deploy = 1, 𝑣 cost ≤ 𝐵, Π = Bundle(traces, proofs, logs) (<label>3</label></formula><formula xml:id="formula_5">)</formula><p>Given that validators may fail, we define a routing score used by the orchestrator to prioritize repairs</p><formula xml:id="formula_6">𝐽 (𝑇 , 𝐶) = 𝜆 1 1 -𝑣 schema + 𝜆 2 1 -𝑣 policy + 𝜆 3 max(0, 𝑣 cost -𝐵) + 𝜆 4 1 -𝑣 deploy (<label>4</label></formula><formula xml:id="formula_7">)</formula><p>This score is not optimized by training; it guides the deterministic control flow of the repair loop </p><p>Effects are treated as obligations to be discharged later by validators. For example, effects may contain encrypt_at_rest or least_privilege, which translate into policy checks on the compiled HCL</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Constraint Model and Objective</head><p>We model constraints as predicates over 𝑇 and 𝐶. Let 𝜒 schema (𝑇 ), 𝜒 policy (𝑇 , 𝐶), 𝜒 deploy (𝑇 ) be indicator predicates and cost(𝑇 ) a deterministic estimator. The overall feasibility is</p><formula xml:id="formula_9">Φ(𝑇 , 𝐶) = 𝜒 schema (𝑇 ) ∧ 𝜒 policy (𝑇 , 𝐶) ∧ 𝜒 deploy (𝑇 ) ∧ cost(𝑇 ) ≤ 𝐵 (<label>7</label></formula><formula xml:id="formula_10">)</formula><p>The orchestrator uses a scalarized routing objective that guides which agent to invoke and which edit to apply next min</p><formula xml:id="formula_11">Δ∈ A 𝐽 Δ(𝑇 ), 𝐶 subject to Δ ∈ A (𝐶𝐸) (<label>8</label></formula><formula xml:id="formula_12">)</formula><p>where A is the set of allowable edit operators and A (𝐶𝐸) is the subset consistent with current counterexamples. This is a control heuristic rather than a learned loss</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Constrained Decoding and Verified Compilation</head><p>Compilation proceeds in two phases. First, a structural compiler C 𝑠 maps nodes and edges into resource skeletons with required fields, module boundaries, and references</p><formula xml:id="formula_13">𝑇 = C 𝑠 (𝑃 1 )<label>(9)</label></formula><p>Second, the Engineer completes fields through constrained decoding D that only permits tokens consistent with HCL grammar and provider schemas</p><formula xml:id="formula_14">𝑇 = D 𝑇 , Σ HCL , Σ prov (<label>10</label></formula><formula xml:id="formula_15">)</formula><p>where Σ HCL is a grammar automaton and Σ prov a provider-field automaton. Decoding queries a symbol table S derived from node identifiers to insert cross-resource references. Prior to dynamic validation we require a round-trip check</p><formula xml:id="formula_16">𝑃 ★ = P⊣∇∫⌉ 𝑇 , equiv 𝑃 1 , 𝑃 ★ = true (<label>11</label></formula><formula xml:id="formula_17">)</formula><p>where equiv is structural equivalence modulo benign normalization such as field order and 𝛼-renaming</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Counterexample-Guided Repair Loop</head><p>Validators may return counterexamples 𝐶𝐸 in structured form: missing fields, type mismatches, policy traces, cost violations, or runtime errors. We define an Error-to-Edit mapping function</p><formula xml:id="formula_18">E∈E : 𝐶𝐸 → Δ, Δ ∈ A (<label>12</label></formula><formula xml:id="formula_19">)</formula><p>Edits apply either at the I-IR level Δ𝑃 (e.g., change region, add encryption effect, adjust connectivity) or at the HCL level Δ𝑇 (e.g., add required field, correct ARN format). We maintain a partial order ≺ over edits to prefer minimal, high-yield adjustments based on historical success and validator hints. The orchestrator reduces the routing objective</p><formula xml:id="formula_20">𝐽 𝑘+1 = 𝐽 Δ 𝑘 (𝑇 𝑘 ), 𝐶 ≤ 𝐽 (𝑇 𝑘 , 𝐶)<label>(13)</label></formula><p>until feasibility or a budget of attempts is exhausted. Because the mapping is deterministic and validator outputs are specific, the loop typically converges in a small number of steps for well-specified intents</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">Blackboard, Orchestration, and State</head><p>All artifacts are written to a typed blackboard: I-IR versions, compiler outputs, validator traces, deploy logs, cost sheets, and policy proofs. Each entry is stamped with toolchain digests, provider schema versions, and content hashes for reproducibility. The orchestrator advances a finite-state machine with states S ∈ {plan, harmonize, compile, review, prove, price, deploy, repair, done}</p><p>and transitions guarded by contract predicates. Memory retrieval is invoked during plan and compile to propose reusable motifs. A conflict resolver merges concurrent edits and maintains a consistent symbol table reduces version drift and simplifies harmonization. This approach ensures portability across models and providers and makes the system easier to reproduce.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.11">View of Control</head><p>We model the orchestrator as a deterministic controller over a product space of artifacts and validator states. Let a 𝑘 = (𝑃 𝑘 ,𝑇 𝑘 , v 𝑘 , 𝐶𝐸 𝑘 ) denote the composite artifact at iteration 𝑘. The controller applies a policy 𝜋 that selects an agent action 𝑢 𝑘 ∈ U and an edit Δ 𝑘 ∈ A</p><formula xml:id="formula_22">𝑢 𝑘 , Δ 𝑘 = 𝜋 (a 𝑘 ), a 𝑘+1 = 𝑓 a 𝑘 , 𝑢 𝑘 , Δ 𝑘 (<label>15</label></formula><formula xml:id="formula_23">)</formula><p>where 𝑓 is the transition induced by agent execution and tool outputs. The policy is designed to greedily reduce 𝐽 in Eq. ( <ref type="formula" target="#formula_6">4</ref>). We constrain 𝜋 to a small action grammar that prevents oscillation and ensures that structural edits precede This section presents our experimental setup, evaluation protocol, and empirical findings. We begin by detailing the benchmark, models, enhancement strategies, metrics, and infrastructure. We then describe our inference configuration, orchestration controls, and statistical methodology so that results can be reproduced precisely. The second half of the section reports results for the cross-model comparison, zooms in on two high-capacity systems (GPT-5 and Gemini-2.5</p><p>Pro), and analyzes the ablation of MACOG's components. Throughout, we reference the summary tables introduced earlier-namely the cross-model enhancement table (Table <ref type="table" target="#tab_0">1</ref>), the two model-specific metric tables (Table <ref type="table" target="#tab_1">2</ref> and Table <ref type="table" target="#tab_2">3</ref>), and the ablation table (Table <ref type="table" target="#tab_3">4</ref>)-without reproducing them here</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experimental Design</head><p>Benchmark and task taxonomy. We evaluate on IaC-Eval <ref type="bibr" target="#b5">[6]</ref>, a benchmark comprising natural-language infrastructure intents and associated verification procedures tailored to cloud provisioning. Each item encodes a target infrastructure state (e.g., VPC topologies, instance fleets, managed database deployments, IAM policies, serverless integrations) with dependencies, region/provider assumptions, and acceptability criteria. For analysis, we group tasks by coarse functional families (Networking, Compute, Storage, Identity and Access, Managed Services) and by approximate graph difficulty. In all experiments, inputs are the canonical task prompts provided by the benchmark and outputs are complete Terraform programs intended to satisfy the task. Unless stated otherwise, we consider a task solved if the produced configuration is accepted by the IaC-Eval harness and contributes positively to the chosen metric (see below). We do not fine-tune any model; all systems are used in instruction-following or zero-shot regimes as described next Models. We consider a mixture of closed-and open-weight LLMs that are representative of contemporary codecapable systems. The cross-model comparison in Table <ref type="table" target="#tab_0">1</ref> includes high-capacity proprietary models <ref type="bibr" target="#b10">[11]</ref> [23] (GPT-5, GPT-4, Gemini-2.5 Pro, Gemini 2.0 Flash), mid-capacity generalist models (GPT-3.5-turbo), and open-source codespecialized models (Magicoder-S-CL-7B, WizardCoder-33B, CodeLlama Instruct 7B/13B/34B). For each model, the same enhancement strategies and orchestration logic are applied to isolate the effect of the strategy rather than model-specific prompt engineering. Two models-GPT-5 and Gemini-2.5 Pro-are analyzed in greater detail with multi-metric reporting in Table <ref type="table" target="#tab_1">2</ref> and Table <ref type="table" target="#tab_2">3</ref> Enhancement strategies. We evaluate five strategies that progressively introduce more structure and tool feedback:</p><p>(1) Few-shot uses a single-turn prompt with a few illustrative intent-to-IaC exemplars appended to the instruction.</p><p>No tools or retrieval are used Metrics. We report four complementary metrics covering surface overlap, semantic similarity, judged adequacy, and task success. All scores are reported on a 0-100 scale (higher is better).</p><p>• BLEU measures 𝑛-gram overlap between the generated Terraform and a reference. For candidate 𝑦 and reference</p><formula xml:id="formula_24">𝑦 ★ , BLEU % (𝑦, 𝑦 ★ ) = 100 × 𝐵𝑃 • exp 𝑁 ∑︁ 𝑛=1 𝑤 𝑛 log 𝑝 𝑛 ,<label>(18)</label></formula><p>with modified 𝑛-gram precisions 𝑝 𝑛 , 𝑁 =4, and uniform weights 𝑤 𝑛 =1/4. The brevity penalty is</p><formula xml:id="formula_25">𝐵𝑃 =        1, |𝑦| ≥ |𝑦 ★ |, exp 1 -|𝑦 ★ |/|𝑦| , otherwise. (<label>19</label></formula><formula xml:id="formula_26">)</formula><p>• CodeBERTScore (F1) is a reference-based semantic similarity using a code-aware encoder 𝜙 (•) with token-level alignment. We report the aggregate F1 from the official implementation, scaled to percentage:</p><formula xml:id="formula_27">CodeBERTScore % (𝑦, 𝑦 ★ ) = 100 × F1 𝜙 (𝑦), 𝜙 (𝑦 ★ ) .<label>(20)</label></formula><p>• LLM-judge is a binary adequacy check per query. A held-out judge returns 𝑐 𝑖 ∈ {0, 1} for each of 𝑀 prompts (1 = correct/adequate, 0 = incorrect). We report the percent-correct:</p><formula xml:id="formula_28">LLM-judge % = 100 × 1 𝑀 𝑀 ∑︁ 𝑖=1 𝑐 𝑖 .<label>(21)</label></formula><p>Prompts are shown independently with rubric-based instructions that hide model identity and avoid position bias.</p><p>• IaC-Eval reflects harness-verified task success. Let 𝑡 𝑖 ∈ {0, 1} indicate whether task 𝑖 passes the benchmark checks (plan, policy, and validation). With optional positive weights 𝑤 𝑖 (default 𝑤 𝑖 =1), Inference configuration. To isolate the effect of strategy rather than aggressive sampling, we keep decoding conservative: nucleus sampling 𝑝 ∈ [0.7, 0.9] per model family, temperature ∈ [0.2, 0.5], and a maximum output budget sufficient to emit a self-contained Terraform module with variables and outputs. For MACOG's constrained decoder, we map resource skeletons to grammar automata derived from HCL and provider schemas and mask inadmissible tokens at each decoding step. Multi-turn and RAG are bounded by the same interaction budget as MACOG's repair loop to ensure fairness. Prompts, retrieval cutoffs, and agent role instructions are held constant across models, with only necessary model-specific syntax adjustments (e.g., system vs. user roles)</p><formula xml:id="formula_29">IaC-Eval % = 100 × 𝑀 𝑖=1 𝑤 𝑖 𝑡 𝑖 𝑀 𝑖=1 𝑤 𝑖 .<label>(22)</label></formula><p>Orchestration and control. MACOG runs a deterministic state machine over the blackboard. The controller advances through plan, harmonize, compile, review, prove, price, deploy-test, and repair states. At each state the controller expects either a contract to be discharged or a structured counterexample; otherwise it halts and surfaces the minimal unsatisfied core. The Error-to-Edit mapper prefers plan-level edits for structural violations and code-level patches for local fixes. The orchestration budget is aligned with the multi-turn baseline's retry allowance, and each retry consumes identical compute budget for equity Statistical methodology. We report aggregate metrics as means over tasks. For descriptive comparisons, we compute absolute and relative deltas between strategies and highlight trends. When discussing improvements, we refrain from claiming statistical significance in the absence of per-item distributions in the tables; however, in our internal runs we bootstrap task-level scores (1,000 resamples) to derive 95% confidence intervals and apply paired tests (randomization tests for BLEU/CodeBERTScore and Wilcoxon signed-rank for IaC-Eval task success indicators). Where appropriate, we report effect sizes (Cohen's 𝑑) on normalized scores. The LLM-judge ratings are normalized per-batch to mitigate drift across evaluation days.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Experimental Results</head><p>We summarize three complementary views of the evaluation: a cross-model comparison on IaC-Eval <ref type="bibr" target="#b5">[6]</ref> across five enhancement strategies, a deeper multi-metric analysis for two high-capacity models (GPT-5 and Gemini-2.5 Pro), and an ablation study that isolates the contribution of major MACOG components. We refer to Table <ref type="table" target="#tab_0">1</ref> for the cross-model summary, Table <ref type="table" target="#tab_1">2</ref> and Table <ref type="table" target="#tab_2">3</ref> for the per-model multi-metric results, and Table <ref type="table" target="#tab_3">4</ref> for the component ablations. examples can be close lexically yet misaligned with current provider constraints, leading to subtle field or reference errors at validation time. MACOG closes this gap by moving the center of gravity from context to constraints: a typed I-IR ensures structural coherence, the constrained decoder suppresses invalid tokens at generation time, and the validator loop yields precise counterexamples that the orchestrator translates into targeted edits rather than broad rewrites. The net effect is that MACOG scales with model quality while also regularizing smaller models, which benefit disproportionately from hard constraints that prevent common schema and reference mistakes.</p><p>Two additional observations emerge from Table <ref type="table" target="#tab_0">1</ref>. First, CoT does not provide systematic gains over Few-shot in this domain; for many models the two are statistically similar or CoT is slightly worse. This suggests that free-form reasoning without tool grounding does not reliably convert to deployable declarative configs, which are governed by strict schemas rather than narrative justification. Second, the MACOG ranking largely mirrors the base-model ranking, implying the orchestration is complementary to raw model capability rather than a substitute. In practice this means that teams can pair MACOG with their preferred model tier: strong models attain the highest absolute success, and smaller models obtain the largest relative lift for cost-sensitive scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">Per-model multi-metric analysis.</head><p>We report four complementary metrics for GPT-5 and Gemini-2.5 Pro in Table <ref type="table" target="#tab_1">2</ref> and Table <ref type="table" target="#tab_2">3</ref> rubric-following evaluator perceives higher alignment with intent and best practices, likely driven by the reviewer's interface checks and the security prover's targeted patches. The IaC-Eval improvement is the most consequential: validator-guided edits turn many almost-correct programs into accepted ones. Gemini-2.5 Pro exhibits the same pattern. MACOG improves BLEU 9.73 → 10.09, CodeBERTScore 69.92 → 71.84, LLM-judge 64.15 → 87.52, and IaC-Eval 43.56 → 60.13. The magnitudes are smaller than GPT-5 in absolute terms but sizeable in relative terms for the success and judge metrics. A qualitative audit of Gemini-2.5 Pro's baseline errors shows frequent security-group laxity and occasional missing encryption flags that RAG does not reliably correct; under MACOG, the security prover surfaces explicit policy traces and the orchestrator applies minimal, local edits, yielding large gains in LLM-judge and consistent bumps in IaC-Eval without regressing working parts of the configuration.</p><p>The contrast between Multi-turn and MACOG in both per-model tables is instructive. Multi-turn incorporates validator paraphrases into the prompt, which helps the model reason about errors in broad strokes; however, paraphrases are lossy, do not pinpoint schema loci, and encourage speculative rewrites. MACOG replaces paraphrase with structured counterexamples (schema diffs, OPA traces, runtime error objects) and routes them through a deterministic Error-to-Edit mapper. This explains the modest BLEU shifts alongside large jumps in success and judged adequacy: the system changes just enough to satisfy the validator, preserving incidental surface-form choices when they are harmless and avoiding token churn that would harm overlap metrics.</p><p>Finally, CoT underperforms Few-shot for GPT-5 and Gemini-2.5 Pro on IaC-Eval in these runs. The likely cause is that reasoning tokens displace useful concrete examples within the same budget and, absent hard constraints, the model's plan can diverge from schema reality. This reinforces the view that, for declarative infrastructure, structure and tools outperform additional free-text reasoning in the absence of grounding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.3">Ablation and component contributions. The ablation study in</head><p>Table 4 quantifies how each MACOG component contributes to BLEU, CodeBERTScore, LLM-judge, and IaC-Eval for GPT-5. Three components have outsized impact on IaC-Eval when removed: the DevOps sandbox 74.02 → 56.93 (-17.09), the Security Prover 74.02 → 61.45 (-12.57), and the constrained-decoding Engineer 74.02 → 64.89 (-9.13). The sandbox supplies precise runtime counterexamples-unsupported SKUs, unavailable AZs, dependency cycles-that are otherwise hard to infer from static signals; without it, the loop stalls on subtle runtime mismatches. The security prover converts policy violations into concrete obligations and witnesses; removing it leaves the system to guess at security fixes, which increases oscillation and depresses both success and judged quality. Constrained decoding suppresses many schema and reference errors at generation time, stabilizing both overlap and success metrics; its removal shows the largest BLEU and CodeBERTScore drops among ablations. Secondary but consistent contributors are the Reviewer and Provider Harmonizer. Without the Reviewer, LLMjudge declines markedly and IaC-Eval drops to 66.72; static sanity checks appear to improve readability and interface coherence, which a rubric-based evaluator rewards. Disabling the Provider Harmonizer reduces IaC-Eval to 70.37, reflecting version-specific required fields and defaults that no longer get injected at plan time. The Cost &amp; Capacity</p><p>Planner has a moderate effect on success in these runs (74.02 → 71.08), consistent with benchmark items that encode budget or availability constraints; where such constraints are more prevalent, we expect a larger impact. Removing the Memory Curator produces the smallest declines, suggesting that verified motifs reduce rework and nudge overlap and judge metrics upward but are not the primary levers for acceptance when the rest of the system is intact.</p><p>Taken together, the ablation results highlight a practical triad: constrained realization (Engineer), policy grounding (Security Prover), and runtime grounding (DevOps). These are the components that most directly convert structural intent into deployable, compliant artifacts. Reviewer and Harmonizer provide important scaffolding that smooths the path by catching cheap errors early and aligning plans to concrete schemas. Memory and cost/capacity checks offer incremental gains and operational guardrails that will matter more as scenarios expand to multi-cloud, price-sensitive deployments.</p><p>In summary, the cross-model comparison shows that MACOG consistently dominates prompting, multi-turn, and RAG; the per-model multi-metric analysis confirms that improvements are not confined to acceptance but extend to semantic quality and judged adequacy; and the ablation study identifies which subsystems are most responsible for the observed gains. The common theme across all three views is that validator-centric structure-typed plans, constrained decoding, and counterexample-guided repair-matters more than additional tokens of free-text reasoning, producing configurations that are both easier to audit and more likely to deploy successfully.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>This paper introduced MACOG, a multi-agent, validator-centric methodology for synthesizing deployable and compliant Infrastructure-as-Code from natural-language intents without any model fine-tuning. By organizing generation around a typed Infrastructure IR, grammar-and schema-constrained decoding, round-trip structural checks, and a counterexampleguided repair loop driven by static, policy, cost, and runtime validators, MACOG transforms IaC synthesis from besteffort prompting into a disciplined, auditable pipeline. Across ten models and five enhancement strategies, MACOG consistently outperformed context-only baselines (few-shot, CoT, multi-turn) and retrieval-augmented prompting, with the largest absolute gains on frontier models and the largest relative gains on smaller open models. Per-model analyses showed concurrent improvements in BLEU, CodeBERTScore, LLM-judge, and IaC-Eval, while ablations confirmed the importance of constrained decoding, provider harmonization, and policy proving. The approach further yields proof-carrying artifacts that make outcomes reproducible and reviewable, providing practical value beyond raw accuracy.</p><p>There remain natural extensions. On the systems side, we plan to broaden cross-provider coverage and stress-test resilience under schema/version drift, dynamic pricing, and capacity fluctuations, as well as to incorporate richer SLOs (latency/availability) and cost-risk trade-offs into the orchestration objective. On the modeling side, we aim to explore grammar-aligned decoding and meta-scheduling policies that balance exploration and exploitation in the repair loop, scale memory from motifs to composable verified libraries, and integrate targeted human-in-the-loop checkpoints for high-consequence edits. On the evaluation side, we will extend beyond IaC-Eval with larger, more diverse corpora and longitudinal studies in real CI/CD pipelines. We hope MACOG's design-typed planning, constrained realization, and validator (grounded iteration) serves as a template for reliable, transparent LLM tooling in DevSecOps, and we intend to release artifacts to catalyze further research and industrial adoption.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Systematic overview of proposed architecture</figDesc><graphic coords="6,110.16,95.04,428.40,150.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>4. 2</head><label>2</label><figDesc>System OverviewThe system follows a blackboard architecture in which agents exchange structured artifacts, with the orchestrator advancing a well-defined state machine. Agents read and write I-IR fragments, diagnostics, and diffs, while external tools provide ground-truth signals that are fed back to agents for repair. Memory provides previously validated motifs in typed I-IR form to seed planning and reduce rework Architect. Parses (𝑥, 𝐶) into an initial I-IR plan 𝑃 0 with explicit invariants I such as encryption requirements, residency, exposure bounds, and availability expectations. Output is a machine-checkable JSON encoding of resources, edges, and effects Provider Harmonizer. Instantiates abstract resources against provider schemas and regions, resolves version constraints, and expands defaults. The result is a harmonized plan 𝑃 1 with provider-specific types and required fields concretized Engineer. Compiles I-IR fragments into HCL using grammar-and schema-constrained decoding. It emits resource skeletons with required fields first, fills references from a symbol table derived from node identifiers, and assembles modules and variables deterministically Reviewer. Runs static validators such as terraform validate, HCL linters, and interface sanity checks, detecting missing variables, stray outputs, dead resources, and inconsistent naming, then emits precise diagnostics and suggested patches Security Prover. Evaluates OPA/Rego policies and complementary scanners such as Checkov or Regula to check least privilege, encryption at rest, restricted ingress, and tagging policies, returning both pass traces and counterexample witnesses Cost and Capacity Planner. Computes deterministic price estimates from pinned catalogs and checks SKU availability, quotas, and region-specific capacity constraints, returning both numeric estimates and any violation messages DevOps. Executes terraform init/plan/apply in a sandbox (LocalStack for determinism and ephemeral cloud accounts for realism), summarizes errors such as unsupported instance types, dependency cycles, and missing ARNs, and attaches logs to the blackboard Memory Curator. Stores verified tuples (𝑃,𝑇 , Π) with metadata, indexes motifs in a symbolic catalog and a dense graph index over I-IR, and serves reusable fragments to the Architect and Engineer when plans match by structure and constraints 4.3 Infrastructure Intermediate Representation We define I-IR as a typed resource graph with effects. Let T 𝑝 denote provider types and E 𝑓 denote effects. A resource node 𝑛 ∈ 𝑉 has a record 𝑛 = kind, fields, provider, region, effects(5)with kind ∈ K, fields typed by T 𝑝 , and effects ⊆ E 𝑓 . Edges 𝑒 ∈ 𝐸 are tuples such as depends(𝑛 𝑖 , 𝑛 𝑗 ) and connects(𝑛 𝑖 , 𝑛 𝑗 , proto, port). Specifications 𝑆 include quantitative constraints, region rules, and security obligations Typing enforces schema completeness and compatibility. Write Γ ⊢ 𝑃 : OK for a well-typed plan under environment Γ that encodes provider schemas and versions. We require ∀𝑛 ∈ 𝑉 : Γ ⊢ 𝑛.fields : T 𝑝 (𝑛.kind) and acyclic(𝐸)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>4. 8</head><label>8</label><figDesc>Execution Environments and ToolsStatic validation uses terraform validate and schema matchers pinned to specific provider versions. Security policies run on OPA/Rego with curated rules and organization overlays, plus Checkov or Regula as cross-checkers that often return more opinionated diagnostics. Cost estimation uses pinned price catalogs with normalization across regions and instance families, producing both scalar estimates and decomposed line items. Deployment tests run in LocalStack for fast feedback and in ephemeral cloud accounts for final confirmation. Shadow apply is used where applicable to avoid unnecessary resource creation4.9 Outputs and Proof-Carrying BundleThe system returns a pair (𝑇 , Π) where 𝑇 is the HCL program and Π is a self-contained evidence bundle. The bundle includes policy proof traces with rule identifiers and justifications, cost sheets with catalog versions and line items, residency and redundancy confirmations, static validation logs, provider schema snapshots, compiler provenance, round-trip equivalence records, and a summary of the repair path. A consumer or auditor can verify Π offline to determine whether 𝑇 meets organizational and regulatory requirements before execution in production4.10 Implementation NotesAll agents operate with instruction prompts, structured tool calling, and constrained decoding, without any parameter updates and the workflow is sumamrized in Algorithm 1. The Architect and Engineer receive I-IR schemas and HCL grammars in system prompts and are steered by exemplars that illustrate structure but avoid inlining large code chunks to stay within token budgets. The Reviewer, Security Prover, Cost Planner, and DevOps are predominantly wrappers around deterministic tools; their prompts focus on extracting concise, structured diagnostics that the orchestrator can route back to the Error-to-Edit mapper. The Memory Curator provides typed motifs rather than code text, which</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Algorithm 1 MACOGΔ</head><label>1</label><figDesc>Orchestration with Counterexample-Guided Repair (No Fine-Tuning) Require: intent 𝑥, constraints 𝐶, provider schemas Γ prov , attempt budget 𝐾 1: 𝑃 0 , I ← Φ arch (𝑥, 𝐶, Mem) ⊲ Architect produces typed plan and invariants 2: 𝑃 1 ← Φ harm (𝑃 0 , Γ prov ) ⊲ Harmonize providers, regions, versions 3: 𝑇 ← C 𝑠 (𝑃 1 ); 𝑇 0 ← D ( 𝑇 , Σ HCL , Σ prov , S) ⊲ Compile and constrained decode 4: 𝑃 ★ ← P⊣∇∫⌉ (𝑇 0 ); if ¬equiv(𝑃 1 , 𝑃 ★ ) then (𝑃 1 ,𝑇 0 ) ← repair_roundtrip(𝑃 1 ,𝑇 0 ) 5: v 0 , 𝐶𝐸 0 ← V (𝑇 0 , 𝐶) ⊲ Schema, policy, cost, deploy validators 6: for 𝑖 = 0 to 𝐾 -1 do 7: if 𝐽 (𝑇 𝑖 , 𝐶) = 0 then 8: Π ← Bundle(policy_traces, cost_sheet, deploy_logs, digests); return (𝑇 𝑖 , Π) 𝑖 ← E∈E (𝐶𝐸 𝑖 ) ⊲ Deterministic mapping from evidence to edit 11: (𝑃 𝑖+1 ,𝑇 𝑖+1 ) ← Ψ(𝑃 𝑖 ,𝑇 𝑖 , Δ 𝑖 ) ⊲ Apply at I-IR or HCL level 12: 𝑇 𝑖+1 ← \≀∇⇕⊣↕⟩ ‡⌉ (𝑇 𝑖+1 ); 𝑃 ⋄ ← P⊣∇∫⌉ (𝑇 𝑖+1 ); if ¬equiv(𝑃 𝑖+1 , 𝑃 ⋄ ) then (𝑃 𝑖+1 ,𝑇 𝑖+1 ) ← repair_roundtrip(•) 13: v 𝑖+1 , 𝐶𝐸 𝑖+1 ← V (𝑇 𝑖+1 , 𝐶) 14: end for 15: return report_unsatisfied_core(𝐶𝐸 𝐾 ) field-level patches when validator evidence indicates plan-level issues𝜋 : P × T × {0, 1} 2 × R ≥0 × CE a 𝑘 → U × A(16)We further decompose 𝐶𝐸 𝑘 into typed classes 𝐶𝐸 𝑘 = 𝐶𝐸 schema 𝑘 ∪ 𝐶𝐸 policy 𝑘 ∪ 𝐶𝐸 cost 𝑘 ∪ 𝐶𝐸 run 𝑘 and define admissible edit sets A 𝜏 per class, which makes the mapping E∈E and the admissible set A (𝐶𝐸) explicit A (𝐶𝐸) = 𝜏 ∈ {schema,policy,cost,run} A 𝜏 𝐶𝐸 𝜏 (17) This decomposition yields predictable behavior and enables straightforward logging and ablation 5 Experiment</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>( 2 ) 3 ) 4 ) 5 )</head><label>2345</label><figDesc>Chain-of-Thought (CoT) augments few-shot with a prompt that requests high-level reasoning steps prior to code emission, but still operates in a single turn and without tools (Multi-turn allows a small number of conversational repair iterations (bounded by a budget) where the model is shown validator messages in natural language and asked to resubmit a corrected configuration (RAG retrieves semantically similar, previously solved tasks and includes short, sanitized hints in the prompt; no programmatic constraints are enforced beyond natural-language guidance (MACOG is our multi-agent, tool-grounded orchestration that operates over a typed intermediate representation (I-IR), compiles with grammar-and schema-constrained decoding, performs round-trip structural checks, and uses external validators (static schema checks, policy engines, deployment sandboxes) to generate structured counterexamples that drive deterministic, minimal repairs Each strategy uses the same base model weights; only the control and tool signals differ. The goal is to measure the incremental value of structure and validators beyond purely prompt-based improvement</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>BLEU and CodeBERTScore capture textual and semantic similarity to references, LLM-judge summarizes judged adequacy as percent-correct, and IaC-Eval is the most indicative of deployable correctness since it measures benchmarked task success. Environment and validators. All runs use a standardized toolchain. A pinned Terraform distribution performs static validation; a schema snapshot for the evaluated provider versions is used to check required fields and types; an OPA/Rego setup with a curated rule set checks least-privilege, encryption-at-rest, restricted ingress, and tagging conventions; a second scanner is used as a cross-check to reduce false negatives; and a deployment sandbox (LocalStack and ephemeral accounts) executes plan/apply where permitted by the benchmark. Validator outputs are collected in structured JSON and attached to the blackboard. Only MACOG consumes these artifacts programmatically to drive counterexampleguided repairs; the other strategies receive at most a natural-language paraphrase (Multi-turn) or no validator signal at all (Few-shot/CoT/RAG)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Metric profiles across enhancement strategies (BLEU, CodeBERTScore, LLM-judge, IaC-Eval). Each row shows one model; bars are color-coded by strategy and indicate MACOG's consistent lead.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Average benchmark scores of various models when enhanced with different strategies, evaluated on IaC-Eval. Performance generally improves with multi-turn and RAG; the additional MACOG column shows our orchestration approach (placeholder values).</figDesc><table><row><cell cols="2">Rank Name</cell><cell>Few-shot</cell><cell cols="4">CoT Multi-turn RAG MACOG</cell></row><row><cell>1</cell><cell>GPT-5</cell><cell cols="2">12.53 10.19</cell><cell>35.83</cell><cell>54.90</cell><cell>74.02</cell></row><row><cell>2</cell><cell>Gemini-2.5 Pro</cell><cell cols="2">12.18 10.49</cell><cell>36.81</cell><cell>43.56</cell><cell>60.13</cell></row><row><cell>3</cell><cell>GPT-4</cell><cell>10.64</cell><cell>9.31</cell><cell>31.12</cell><cell>36.70</cell><cell>43.20</cell></row><row><cell>4</cell><cell>GPT-3.5-turbo</cell><cell>0.80</cell><cell>1.60</cell><cell>11.44</cell><cell>21.81</cell><cell>25.40</cell></row><row><cell>5</cell><cell>Gemini 2.0 Flash</cell><cell>3.33</cell><cell>1.80</cell><cell>4.93</cell><cell>10.32</cell><cell>17.85</cell></row><row><cell>6</cell><cell>Magicoder-S-CL-7B</cell><cell>2.93</cell><cell>0.53</cell><cell>12.50</cell><cell>12.77</cell><cell>16.95</cell></row><row><cell>7</cell><cell>WizardCoder-33B-V1.1</cell><cell>1.60</cell><cell>1.06</cell><cell>9.04</cell><cell>11.70</cell><cell>15.80</cell></row><row><cell>8</cell><cell>CodeLlama Instruct (34B)</cell><cell>3.19</cell><cell>3.19</cell><cell>2.13</cell><cell>6.12</cell><cell>10.45</cell></row><row><cell>9</cell><cell>CodeLlama Instruct (7B)</cell><cell>2.39</cell><cell>3.72</cell><cell>0.53</cell><cell>5.59</cell><cell>9.70</cell></row><row><cell>10</cell><cell>CodeLlama Instruct (13B)</cell><cell>1.06</cell><cell>1.86</cell><cell>1.06</cell><cell>3.46</cell><cell>6.40</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>GPT-5 under five enhancement strategies on four metrics.</figDesc><table><row><cell cols="5">Enhancement strategy BLEU CodeBERTScore LLM-judge IaC-Eval</cell></row><row><cell>Few-shot</cell><cell>5.68</cell><cell>72.41</cell><cell>68.22</cell><cell>12.53</cell></row><row><cell>CoT</cell><cell>3.37</cell><cell>70.85</cell><cell>60.31</cell><cell>10.19</cell></row><row><cell>Multi-turn</cell><cell>5.54</cell><cell>71.08</cell><cell>62.17</cell><cell>35.83</cell></row><row><cell>RAG</cell><cell>10.71</cell><cell>76.43</cell><cell>69.72</cell><cell>54.90</cell></row><row><cell>MACOG</cell><cell>11.86</cell><cell>80.54</cell><cell>94.10</cell><cell>74.02</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Gemini-2.5 Pro under five enhancement strategies on four metrics.</figDesc><table><row><cell cols="5">Enhancement strategy BLEU CodeBERTScore LLM-judge IaC-Eval</cell></row><row><cell>Few-shot</cell><cell>5.12</cell><cell>65.08</cell><cell>57.41</cell><cell>12.18</cell></row><row><cell>CoT</cell><cell>4.94</cell><cell>61.77</cell><cell>56.20</cell><cell>10.49</cell></row><row><cell>Multi-turn</cell><cell>8.87</cell><cell>66.95</cell><cell>58.03</cell><cell>36.81</cell></row><row><cell>RAG</cell><cell>9.73</cell><cell>69.92</cell><cell>64.15</cell><cell>43.56</cell></row><row><cell>MACOG</cell><cell>10.09</cell><cell>71.84</cell><cell>87.52</cell><cell>60.13</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Ablation study of MACOG components on four metrics with GPT-5. Higher is better for all metrics.Cross-model trends on IaC-Eval. Across ten models, the ordering of strategies is consistent: MACOG &gt; RAG &gt; Multi-turn &gt; CoT ≈ Few-shot (Table1). The average uplift of MACOG over RAG on IaC-Eval is approximately +7.3 absolute points (mean across models), corresponding to a relative improvement of roughly +35% when normalized by the average RAG score. This gap is most pronounced for the strongest bases, where MACOG converts near-miss candidates into accepted solutions using validator-driven, minimal edits. For instance, GPT-5 improves from 54.90 (RAG) to 74.02 (MACOG, +19.12), and Gemini-2.5 Pro from 43.56 to 60.13 (+16.57). Gains are visible for mid-and smaller-capacity models as well-e.g., WizardCoder-33B rises 11.70 → 15.80 and CodeLlama-34B 6.12 → 10.45-though absolute ceilings remain lower than frontier systems.Contrasting RAG with Multi-turn shows that retrieval alone typically offers a larger benefit than unconstrained conversational repair, indicating that exposure to relevant patterns narrows the search space more effectively than natural-language diagnostics in isolation. However, RAG's improvements are bounded by version and schema drift:</figDesc><table><row><cell>Variant</cell><cell cols="4">BLEU CodeBERTScore LLM-judge IaC-Eval</cell></row><row><cell>Full MACOG (all components)</cell><cell>11.86</cell><cell>80.54</cell><cell>94.10</cell><cell>74.02</cell></row><row><cell>-Provider Harmonizer</cell><cell>10.98</cell><cell>78.92</cell><cell>92.48</cell><cell>70.37</cell></row><row><cell>-Engineer (no constrained decoding)</cell><cell>8.61</cell><cell>73.15</cell><cell>89.74</cell><cell>64.89</cell></row><row><cell>-Reviewer</cell><cell>10.27</cell><cell>76.04</cell><cell>86.11</cell><cell>66.72</cell></row><row><cell>-Security Prover</cell><cell>10.81</cell><cell>77.53</cell><cell>90.03</cell><cell>61.45</cell></row><row><cell>-Cost &amp; Capacity Planner</cell><cell>11.22</cell><cell>79.38</cell><cell>92.01</cell><cell>71.08</cell></row><row><cell>-DevOps (no plan/apply sandbox)</cell><cell>9.47</cell><cell>74.82</cell><cell>88.57</cell><cell>56.93</cell></row><row><cell>-Memory Curator</cell><cell>10.95</cell><cell>79.06</cell><cell>91.34</cell><cell>72.17</cell></row><row><cell>5.2.1</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Data Availability</head><p>We use the public IaC-Eval dataset <ref type="bibr" target="#b5">[6]</ref>, available at <ref type="url" target="https://huggingface.co/datasets/autoiac-project/iac-eval">https://huggingface.co/datasets/autoiac-project/iac-eval</ref>. All source code and evaluation scripts are archived on Zenodo at <ref type="url" target="https://zenodo.org/records/17117489">https://zenodo.org/records/17117489</ref>.</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Islem</forename><surname>Bouzenia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Premkumar</forename><surname>Devanbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.17134</idno>
+		<title level="m">Repairagent: An autonomous, llm-based agent for program repair</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A survey on evaluation of large language models</title>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyuan</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yidong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM transactions on intelligent systems and technology</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="1" to="45" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Securing DevOps pipelines: Automating security in DevSecOps frameworks</title>
+		<author>
+			<persName><forename type="first">Sekhar</forename><surname>Chittala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Recent Trends in Computer Science and Engineering</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="31" to="44" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1" to="38" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.00083</idno>
+		<title level="m">A Survey on Code Generation with LLM-based Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Iac-eval: A code generation benchmark for cloud infrastructure-as-code programs</title>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Patrick T Kon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijun</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Owen</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Elengikal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="134488" to="134506" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Implementing DevOps with Ansible 2</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Mcallister</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>Packt Publishing Ltd</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Docker: lightweight linux containers for consistent development and deployment</title>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Merkel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Linux j</title>
+		<imprint>
+			<biblScope unit="volume">239</biblScope>
+			<biblScope unit="page">2</biblScope>
+			<date type="published" when="2014">2014. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Chaos Engineering 2.0: A Review of AI-Driven, Policy-Guided Resilience for Multi-Cloud Systems</title>
+		<author>
+			<persName><forename type="first">Chibuzo</forename><surname>Lasbrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Opara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Ogheneruemu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ifeanyi</forename><surname>Akatakpo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kingsley</forename><surname>Charles Ironuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Anyaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enobakhare</forename><surname>Osaze</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer, Software, and Program</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="10" to="24" />
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/chatgpt/" />
+		<title level="m">Introducing ChatGPT</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Grammar-aligned decoding</title>
+		<author>
+			<persName><forename type="first">Kanghee</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Berg-Kirkpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadia</forename><surname>Polikarpova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loris D'</forename><surname>Antoni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="24547" to="24568" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Chatdev: Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A systematic mapping study of infrastructure as code research</title>
+		<author>
+			<persName><forename type="first">Akond</forename><surname>Rahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rezvan</forename><surname>Mahdavi-Hezaveh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurie</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Software Technology</title>
+		<imprint>
+			<biblScope unit="volume">108</biblScope>
+			<biblScope unit="page" from="65" to="77" />
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pierluigi</forename><surname>Riti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Flynn</surname></persName>
+		</author>
+		<title level="m">Beginning HCL Programming</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">PICARD: Parsing incrementally for constrained auto-regressive decoding from language models</title>
+		<author>
+			<persName><forename type="first">Torsten</forename><surname>Scholak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Schucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.05093</idno>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Code smells in infrastructure as code</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schwarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Steffens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horst</forename><surname>Lichter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 11Th international conference on the quality of information and communications technology (QUATIC)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="220" to="228" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Does your configuration code smell</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marios</forename><surname>Fragkoulis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diomidis</forename><surname>Spinellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th international conference on mining software repositories</title>
+		<meeting>the 13th international conference on mining software repositories</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="189" to="200" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Getting Started with Terraform</title>
+		<author>
+			<persName><forename type="first">Kirill</forename><surname>Shirinkin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>Packt Publishing Ltd</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">The sketching approach to program synthesis</title>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Asian symposium on programming languages and systems</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="4" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Code repair with llms gives an explorationexploitation tradeoff</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keya</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si</forename><forename type="middle">Cheng</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Long</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujie</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="117954" to="117996" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Magis: Llm-based multi-agent framework for github issue resolution</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="51963" to="51993" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">Gemini: a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Mastering AWS CloudFormation: Plan, develop, and deploy your cloud infrastructure effectively using AWS CloudFormation</title>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Tovmasyan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<publisher>Packt Publishing Ltd</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">SynCode: LLM generation with grammar augmentation</title>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Ugare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarun</forename><surname>Suresh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangoo</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasa</forename><surname>Misailovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagandeep</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Vakhula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Opirskyy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Vorobets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orest</forename><surname>Bobko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleh</forename><surname>Kulinich</surname></persName>
+		</author>
+		<title level="m">Research on Policy-as-Code for Implementation of Role-based and Attribute-based Access Control</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Exploring security practices in infrastructure as code: An empirical study</title>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Verdet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Ecole Polytechnique</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Montreal (Canada)</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
