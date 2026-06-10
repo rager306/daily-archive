@@ -129,7 +129,7 @@ The project has a **clean separation** between canonical (GSD, ADRs) and derived
 
 **Gaps:** no formal model registry or prompt versioning. MiniMax helper paths are tested (M014-M017) but not versioned in a registry.
 
-**Recommendation 6:** Add a small `models.yaml` registry at repo root that records the canonical model id per helper path (currently scattered in `D074`, README, and helper source files). **Priority: low.** **Anchor: D074, R045.**
+**Recommendation 6:** Add a small `models.yaml` registry at repo root that records the canonical model id per helper path (currently scattered in `D074`, README, and helper source files). **Priority: low.** **Anchor: D074, R045.** **Resolved in M049-ndk541:** `models.yaml` с 2 canonical MiniMax paths + 3 bindings, `scripts/validate_models_yaml.py` с 7 категориями проверок, `src/arxiv_archive/models_registry.py` с `load_models_registry` / `get_model` / `get_model_for_binding` / `compute_work_id` (deterministic sha256 per M048 patterns-review 01 SG-E), `minimax_structured.py` интегрирован via `_resolve_default_model()`, 28 tests, M044 pre-commit hook.
 
 ### 2.7 Architecture as Executable — STRONG
 

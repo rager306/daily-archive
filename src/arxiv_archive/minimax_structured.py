@@ -3,10 +3,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from arxiv_archive.models_registry import (
+    ModelsRegistry,
+    get_model,
+    get_model_for_binding,
+    load_models_registry,
+)
+
+# Module-level constants are kept as fallback for callers that explicitly
+# want to bypass the registry (e.g., synthetic test fixtures). Production
+# helpers should rely on the registry via _resolve_default_model().
 MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT = "https://api.minimax.io/anthropic/v1/messages"
 DEFAULT_MINIMAX_MODEL = "MiniMax-M3-512k"
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_TEMPERATURE = 0.2
+DEFAULT_MODEL_ID = "minimax-m3-512k-anthropic"
+DEFAULT_BINDING_ID = "article-artifact-classify"
 RAW_CORPUS_MARKERS: tuple[str, ...] = (
     "RAW PAPER TEXT",
     "RAW CHUNK TEXT",
@@ -14,6 +26,27 @@ RAW_CORPUS_MARKERS: tuple[str, ...] = (
     "BEGIN PDF",
     "BASE64",
 )
+
+
+def _resolve_default_model(registry: ModelsRegistry | None = None) -> tuple[str, str]:
+    """Resolve (model_name, endpoint) from registry. Falls back to module constants.
+
+    Returns:
+        (model_name, endpoint) tuple
+    """
+    if registry is None:
+        try:
+            registry = load_models_registry()
+        except (FileNotFoundError, KeyError):
+            return DEFAULT_MINIMAX_MODEL, MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT
+    try:
+        model = get_model_for_binding(registry, DEFAULT_BINDING_ID)
+    except KeyError:
+        try:
+            model = get_model(registry, DEFAULT_MODEL_ID)
+        except KeyError:
+            return DEFAULT_MINIMAX_MODEL, MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT
+    return model.model_name, model.endpoint
 
 
 def _looks_like_raw_corpus_payload(prompt: str) -> bool:
@@ -75,11 +108,18 @@ def build_minimax_structured_request(
     tool_description: str,
     input_schema: dict[str, Any],
     payload_class: str,
-    model: str = DEFAULT_MINIMAX_MODEL,
+    model: str | None = None,
+    endpoint: str | None = None,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     temperature: float = DEFAULT_TEMPERATURE,
+    registry: ModelsRegistry | None = None,
 ) -> MiniMaxStructuredRequest:
-    """Build a dev-only forced-tool request for MiniMax structured helper output."""
+    """Build a dev-only forced-tool request for MiniMax structured helper output.
+
+    If `model` is None, resolved from registry (DEFAULT_BINDING_ID = article-artifact-classify,
+    fallback DEFAULT_MODEL_ID = minimax-m3-512k-anthropic). Same for `endpoint`.
+    Pass explicit `model`/`endpoint` to bypass registry (e.g., synthetic tests).
+    """
 
     if payload_class not in {"synthetic", "redacted"}:
         raise ValueError("MiniMax structured helper only accepts synthetic or redacted payloads")
@@ -87,6 +127,14 @@ def build_minimax_structured_request(
         raise ValueError("MiniMax structured helper refuses raw corpus payload markers")
     if temperature <= 0 or temperature > 1:
         raise ValueError("MiniMax temperature must be in (0.0, 1.0]")
+
+    if model is None or endpoint is None:
+        default_model, default_endpoint = _resolve_default_model(registry)
+        if model is None:
+            model = default_model
+        if endpoint is None:
+            endpoint = default_endpoint
+
     body = {
         "model": model,
         "max_tokens": max_tokens,
@@ -102,7 +150,7 @@ def build_minimax_structured_request(
         "tool_choice": {"type": "tool", "name": tool_name},
     }
     return MiniMaxStructuredRequest(
-        endpoint=MINIMAX_ANTHROPIC_MESSAGES_ENDPOINT,
+        endpoint=endpoint,
         auth_header="X-Api-Key",
         body=body,
     )
