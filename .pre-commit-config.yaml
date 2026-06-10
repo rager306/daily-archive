@@ -58,3 +58,19 @@ repos:
         always_run: false
         # This is advisory: do not fail the commit, just print output.
         stages: [pre-commit]
+
+  # Local repository: M049 models.yaml validator.
+  # Mandatory on changes to models.yaml — enforces schema integrity
+  # (id uniqueness, provider/endpoint validity, version format).
+  - repo: local
+    hooks:
+      - id: m049-models-yaml-validator
+        name: M049 models.yaml validator
+        entry: uv run python scripts/validate_models_yaml.py
+        language: system
+        files: ^models\.yaml$
+        pass_filenames: false
+        always_run: false
+        fail_fast: false
+        verbose: true
+        timeout: 30

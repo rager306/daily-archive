@@ -1,0 +1,48 @@
+# Models Registry
+#
+# Canonical source of truth for MiniMax model paths and helper bindings.
+# Used by M049 (models registry), M050 (LLM helper v2 worker pool), and
+# downstream Track A milestones.
+#
+# Schema per entry (all fields required):
+#   id:              stable identifier used in code (snake_case, ends with provider)
+#   provider:        one of {anthropic, openai}
+#   endpoint:        full URL for the API call
+#   model_name:      exact model name as expected by the provider
+#   tool_version:    semver of the tool/api contract; bump on protocol changes
+#   policy_version:  semver of the calling-side policy; bump on behavior changes
+#
+# Validation: scripts/validate_models_yaml.py (runs in pre-commit hook, M044 mandatory).
+# Last updated: per D074 + M046 Recommendation 6 + M048 patterns-review 01.
+
+schema_version: "v0.1"
+
+models:
+  - id: minimax-m3-512k-anthropic
+    provider: anthropic
+    endpoint: https://api.minimax.io/anthropic/v1/messages
+    model_name: MiniMax-M3-512k
+    tool_version: 2026-05-15
+    policy_version: m049-v0.1
+
+  - id: minimax-m3-openai
+    provider: openai
+    endpoint: https://api.minimax.io/v1/chat/completions
+    model_name: MiniMax-M3
+    tool_version: 2026-05-15
+    policy_version: m049-v0.1
+
+bindings:
+  # bindings map a usage purpose to a model id
+  # used by M050 worker pool and downstream helper code
+  - binding_id: article-artifact-classify
+    model_id: minimax-m3-512k-anthropic
+    description: "Bounded structured classification of paper artifacts (R051 helper)"
+
+  - binding_id: article-evidence-summarize
+    model_id: minimax-m3-512k-anthropic
+    description: "Diagnostic-only evidence summarization, no promotion authority"
+
+  - binding_id: rlm-trajectory-capture
+    model_id: minimax-m3-512k-anthropic
+    description: "RLM trajectory capture with deterministic work_id (M052)"

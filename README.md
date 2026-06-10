@@ -189,6 +189,23 @@ artifacts/m044-grobid-architecture-guardrail/final-report.md
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
+M049 models registry (canonical MiniMax model paths):
+
+The `models.yaml` file at repo root is the single source of truth for MiniMax model paths and helper bindings. It is validated by `scripts/validate_models_yaml.py` (pre-commit mandatory on `models.yaml` changes).
+
+```bash
+# Validate models.yaml
+uv run python scripts/validate_models_yaml.py
+# Run registry tests
+uv run pytest tests/test_models_registry.py -q
+```
+
+Each model entry includes `id`, `provider` (anthropic or openai), `endpoint` (https only), `model_name`, `tool_version`, `policy_version` — all required. Bindings map usage purposes (e.g., `article-artifact-classify`) to model ids. Per D074, MiniMax-M3-512k is canonical for Anthropic-compatible path; MiniMax-M3 is canonical for OpenAI-compatible path.
+
+Schema versioning: bump `schema_version` in models.yaml on breaking changes; bump `policy_version` per model entry on calling-side behavior changes; bump `tool_version` on provider API contract changes.
+
+M046 07-2026-assessment Recommendation 6 marked done with M049 evidence.
+
 Pre-commit hooks (mandatory M044 architecture guardrail):
 
 ```bash
