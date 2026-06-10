@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ViReSkill: Vision-Grounded Replanning with Skill Memory for LLM-Based Planning in Lifelong Robot Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-29">29 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tomoyuki</forename><surname>Kagaya</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Subramanian</forename><surname>Lakshmi</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Anbang</forename><surname>Ye</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Thong</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Yuan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jayashree</forename><surname>Karlekar</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sugiri</forename><surname>Pranata</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Natsuki</forename><surname>Murakami</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Akira</forename><surname>Kinose</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yang</forename><surname>You</surname></persName>
+						</author>
+						<title level="a" type="main">ViReSkill: Vision-Grounded Replanning with Skill Memory for LLM-Based Planning in Lifelong Robot Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-29">29 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B339C5A8C2969FF2926C45BFD8B9B6A7</idno>
+					<idno type="arXiv">arXiv:2509.24219v1[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Robots trained via Reinforcement Learning (RL) or Imitation Learning (IL) often adapt slowly to new tasks, whereas recent Large Language Models (LLMs) and Vision-Language Models (VLMs) promise knowledge-rich planning from minimal data. Deploying LLMs/VLMs for motion planning, however, faces two key obstacles: (i) symbolic plans are rarely grounded in scene geometry and object physics, and (ii) model outputs can vary for identical prompts, undermining execution reliability. We propose ViReSkill, a framework that pairs vision-grounded replanning with a skill memory for accumulation and reuse. When a failure occurs, the replanner generates a new action sequence conditioned on the current scene, tailored to the observed state. On success, the executed plan is stored as a reusable skill and replayed in future encounters without additional calls to LLMs/VLMs. This feedback loop enables autonomous continual learning: each attempt immediately expands the skill set and stabilizes subsequent executions. We evaluate ViReSkill on simulators such as LIBERO and RLBench as well as on a physical robot. Across all settings, it consistently outperforms conventional baselines in task success rate, demonstrating robust sim-to-real generalization.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Robots are increasingly expected to master diverse tasks and adapt to dynamic, real-world environments. In such settings, it is essential that agents expand their capabilities throughout their operational lifetime-that is, perform lifelong learning. Traditional motion-generation approaches based on RL and IL typically require numerous demonstrations or extensive trial-and-error, hindering rapid adaptation to new tasks or unseen conditions. Recent advances in LLMs and VLMs suggest that robots can leverage large external knowledge bases to produce plans with minimal task data. Directly applying these models to motion planning, however, raises two critical challenges.</p><p>First, a grounding difficulty arises because LLMs and VLMs, while strong in symbolic reasoning, often fail to respect geometric and physical constraints, making it hard to produce action plans that are anchored in the actual environment and the physical properties of target objects. Second, LLMs' and VLMs' outputs can be unstable owing to hallucination and run-to-run variance, which compromises the reliability of motion plans, especially in physical robotic execution.</p><p>We address these issues with a two-pronged framework that couples vision-grounded replanning with skill accu-*Equal contribution 1 Panasonic Connect Co., Ltd., Japan, 2 Panasonic R&amp;D Center, Singapore, 3 National University of Singapore, Singapore. Correspondence to: Tomoyuki Kagaya &lt;kagaya.tomoyuki@jp.panasonic.com&gt; mulation and reuse. When a task fails, the robot replans from current observations to generate a physically plausible action sequence. When a task succeeds, the executed plan is stored as a reusable skill in a growing library, enabling subsequent executions without invoking LLMs or VLMs. Through this loop, the robot continually enlarges its skill repertoire and improves online plan quality, thereby adapting to an expanding set of tasks.</p><p>We validate the method on LIBERO <ref type="bibr" target="#b0">[1]</ref>, RLBench <ref type="bibr" target="#b1">[2]</ref>, and a real robotic platform. Our experiments show improved task success rates over conventional baselines, confirming both the effectiveness of the approach and its compatibility with lifelong learning across diverse environments.</p><p>This paper makes the following contributions:</p><p>• A vision-grounded replanning strategy that enables failure recovery by generating scene-anchored, feasible motion plans.</p><p>• A skill-memory execution framework that stores successful plans for zero-inference reuse, expanding the skill set over time and improving stability while reducing LLM/VLM calls.</p><p>• An empirical evaluation on LIBERO, RLBench, and a physical robot, showing substantial gains in task success rates over a baseline (LIBERO: 45% → 78%; RLBench: 47% → 82%; real robot: 30% → 75%).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORK A. LLM/VLM-based Planning and Manipulation</head><p>SayCan <ref type="bibr" target="#b2">[3]</ref> grounds language plans in executability by filtering LLM proposals with affordances from RL policies. VoxPoser <ref type="bibr" target="#b3">[4]</ref> converts language into 3D affordance/constraint maps to produce scene-consistent, zero-shot manipulation. ReKep <ref type="bibr" target="#b4">[5]</ref> encodes relations among task-relevant 3D keypoints as explicit costs and solves a vision-conditioned optimization for feasible trajectories. These approaches enable knowledge-driven planning but stop short of a closed loop that replans from live observations and systematically reuses successful executions. ViReSkill differs in that it closes this loop by combining vision-grounded replanning with direct reuse of successful plans via skill memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Replanning and Grounded Feasibility</head><p>Methods targeting the plan-execution gap include Reflexion (self-reflection memory for trial-over-trial improvement) <ref type="bibr" target="#b5">[6]</ref>, REFLECT (LLM-guided failure analysis and fixes) <ref type="bibr" target="#b6">[7]</ref>, DoReMi (LLM constraints with VLM violation detection) <ref type="bibr" target="#b7">[8]</ref>, LLM+A (prompted goal-conditioned affordances) <ref type="bibr" target="#b8">[9]</ref>, and Phoenix (self-reflection mapped to diffusion-policy corrections) <ref type="bibr" target="#b9">[10]</ref>. They improve diagnosis and online correction, yet typically do not unify vision-grounded replanning with immediate consolidation of successes into reusable skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Skill Libraries and Lifelong/Continual Learning</head><p>RoboCat <ref type="bibr" target="#b10">[11]</ref> leverages cross-embodiment experience and self-generated data for general manipulation; RoboMatrix <ref type="bibr" target="#b11">[12]</ref> composes meta-skills to solve unseen tasks; LRLL <ref type="bibr" target="#b12">[13]</ref> grows a library by distilling successful trajectories. ViReSkill builds on this line by coupling vision-grounded replanning (on failure) with skill memory for zero-inference replay (on success) in one loop, reducing model calls while stabilizing execution and expanding capabilities over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. PROPOSED METHOD</head><p>We introduce the ViReSkill framework to address the challenge of lifelong skill learning in LLM-based robot manipulation. In this section, we first provide the problem formulation ( §III-A), which outlines the setting and objectives of our lifelong learning approach. Based on this formulation, we describe how LLMs are leveraged for task planning ( §III-B), enabling flexible and generalizable behavior composition. We then show how lifelong learning can be achieved through our skill-based execution framework ( §III-C) and the visionconditioned replanning method ( §III-D) for recovering from failure and exploring novel policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Problem Setup and Overview</head><p>We study a lifelong learning problem in which a robot repeatedly solves manipulation tasks through trial-and-error and progressively improves its accumulated skills within the ViReSkill framework. The setup is as follows:</p><p>• Tasks: Let T i be the i-th manipulation task in the training set, described by a free-form language input D i . The full training set is {T i } M i=1 .</p><p>• Skill Repertoire: For each task T i , we define its associated skill as π i ≡ P(T i ), which consists of a high-level plan and low-level control code. The full repertoire is denoted by P = {π i } M i=1 .</p><p>• Rollout and Success Rate: The executor C (based on VoxPoser <ref type="bibr" target="#b3">[4]</ref>) takes as input a skill π i , task T i , and stochastic factors ξ (e.g., object pose variation, nondeterministic dynamics), and returns a motion trajectory τ . Each rollout is evaluated by a binary success function r(τ, T i ) ∈ {0, 1}. The success rate (SR) of skill π i on task T i over N independent rollouts is:</p><formula xml:id="formula_0">SR(π i , T i ) = 1 N N n=1 r(τ (ξ n ), T i ) ,<label>(1)</label></formula><formula xml:id="formula_1">τ (ξ) = C(π i , T i , ξ),<label>(2)</label></formula><p>where ξ n denotes the stochastic input for the n-th rollout.</p><p>Our objective is to update the skill repertoire over iterations so as to maximize the average success rate across all training tasks:</p><formula xml:id="formula_2">P * = arg max P 1 M M i=1 SR(π i , T i ).<label>(3)</label></formula><p>Algorithm 1 outlines the training process, while Algorithm Algorithm 1: Training Stage of The ViReSkill Framework Data: Training tasks {T } M i=1 , corresponding task description {D} M i=1 , LLM-based agent C Result: Skill memory {P k } 10 k=1 at each iteration. 1 P 1 = {P 1 (T i ) ← null} M i=1 2 c ← null // Initialize control code 3 for j ← 1 to 2 do // For each training round 4 for i ← 1 to M do // For each task 5 iter ← 1 + 5 × (j -1) 6 Initialize control code from skill memory if skill exists 7 P iter (T i ) ← P iter-1 (T i ) 8 if P iter (T i ) ̸ = null then 9 c ← P iter (T i ) // reuse skill 10 end 11 else 12 c ← C.planning(D i ) // use control code generated by agent 13 end 14 for k ← 1 to 5 do // For each training iteration 15 τ ← C.verif y(c, T i ) 16 r, O ← r(τ, T i ) // collect rollout success status and observations 17 if r ̸ = 1 then // replan if failed 18 c ← C.replanning(c, D i , O, P iter ) // replanning with skill 19 end 20 else 21 P iter ← c // Update skill memory 22 end 23 iter ← iter + 1 24 end 25 end 26 end 2 details the evaluation procedure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Planning by LLMs</head><p>We use LLMs to generate Python code that is executed by an interpreter to decompose the language instruction D i of task T i into subtasks, invoke perception APIs, and generate robot trajectories τ . Let d j denote the j-th subtask instruction derived from D i , such that the sequence of subtask instructions is (d 1 , d 2 , . . . , d n ). Our planning pipeline follows the design from VoxPoser <ref type="bibr" target="#b3">[4]</ref>, and consists of three steps involving LLM-based code generation:</p><p>Step 1: The Planner is responsible for decomposing the natural language instruction D i (e.g., "press the light switch") into a sequence of structured subtask instructions:</p><formula xml:id="formula_3">P lanner(D i ) = (d 1 , d 2 , . . . , d n )<label>(4)</label></formula><p>Algorithm 2: Evaluation Stage of The ViReSkill Framework Data: Training tasks {T } M i=1 , Skill memory {P k } 10  k=1 at each iteration, LLM-based agent C Result: Success rate for each task at each iteration {success rate ij } i=M,j=10 i=1,j=1</p><p>1 for i ← 1 to M do // For each task 2 for j ← 1 to 10 do // For each skill memory (2 rounds 5 iterations per round) to be evaluated Each d j corresponds to an interpretable subtask (e.g., "grasp the button", "move to the center of the button") for task T i .</p><p>Step 2: The Composer takes as input a subtask instruction d j and constructs a set of Language Model Programs (LMPs), each responsible for a distinct function such as object detection, affordance prediction, or motion planning:</p><formula xml:id="formula_4">Composer(d j ) = (LM P 1 (d j ), LM P 2 (d j ), . . . , LM P k (d j ))<label>(5)</label></formula><p>Step 3: The Low-Level LMPs returned by the Composer are executed via the executor C to produce a sub-trajectory τ j :</p><formula xml:id="formula_5">τ j = C(Composer(d j ), T i , ξ)<label>(6)</label></formula><p>We define the overall skill π i as the sequence of all LMP modules returned by the Composer for each subtask instruction d j :</p><formula xml:id="formula_6">π i = (Composer(d 1 ), Composer(d 2 ), . . . , Composer(d n ))</formula><p>(7) The full robot trajectory τ for task T i is formed by concatenating all sub-trajectories:</p><formula xml:id="formula_7">τ = (τ 1 , τ 2 , . . . , τ n )<label>(8)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Skill Memory for Lifelong Robot Learning</head><p>We implemented the ViReSkill to enable lifelong skill learning in LLM-based robotic manipulation. The system maintains a task-specific skill memory comprising both highlevel and low-level control code. This memory is updated iteratively through replanning upon failure. At the beginning of training, the skill memory is empty, meaning the robot has no prior successful experiences to reference. To address this cold start condition, the agent relies solely on LLM-based planning to generate an initial highlevel and low-level control code from the task description. Once a trial for task T i succeeds, the corresponding control code is used to update the task-specific memory P(T i ). Due to stochastic variations in rollouts, a skill that has succeeded once may fail in subsequent trials of the same task, resulting in a non-saturated success rate and leaving room for iterative refinement.</p><p>A key challenge in policy optimization for robotic manipulation-whether in trainable or agent-based approaches-is the exploration-exploitation dilemma. To balance exploitation and exploration, we design a training stage that consists of 10 iterations, organized into 2 rounds of 5 iterations each.</p><p>At the start of each round, if a skill exists in memory for the given task, the LLM-based agent initializes its control code with the stored version to maximize exploitation. Otherwise, the agent generates a new control code based on the task description. During the five iterations of a round, the agent collects success indicators and visual evidence (video recording of the scene collected by the front camera) from the environment. If an iteration succeeds, the control code remains unchanged. Upon failure, the agent explores new high-level plans through engaging in vision-based replanning-a reflection mechanism that revises the failed highlevel plan given visual evidence (detailed in Section III-D).</p><p>Since each round has five iterations, the agent can perform up to four replanning attempts per round. We observe that additional replanning beyond four attempts yields negligible improvement; thus, it is more effective to begin a new round, reinitializing the control code from the latest successful version stored in memory.</p><p>For evaluating lifelong learning performance, we saved the skill memory after each iteration and used the saved memory to compute the average success rate using (1). Specifically, for each skill iteration, we compute the mean success rate across five rollouts (N = 5).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Vision-Grounded Replanning with Skill Transfer</head><p>While LLMs have demonstrated strong planning capabilities, their outputs often overlook physical constraints and lack grounding in real-world dynamics. To address these limitations, we adopt a self-learning scheme that combines current observations with past successful experiences, leveraging methods that support retrieval-augmented planning <ref type="bibr" target="#b13">[14]</ref> and vision-based replanning <ref type="bibr" target="#b6">[7]</ref>. For replanning, we retrieve a mixed set of examples based on (9): half selected by task similarity and half selected by plan-code line-level similarity between the failed plan and the stored plans in the skill memory.</p><p>Specifically, let D denote the task description, and {d 1 , d 2 , . . . , d n } be the sequence of subtask instructions generated from D by the planner, as defined in Formula 4. Each d i corresponds to a high-level code line in the failed plan. For task similarity-based retrieval, we embed the entire task description D and select top examples based on cosine similarity with stored tasks D ′ . For code-level similarity, each subtask d i is embedded and matched to the most similar past subtask d ′ j , and examples are ranked by the average of these maximum similarities. To ensure relevance, we further filter the candidates retrieved by task similarity and discard candidates with task similarity scores below a threshold (e.g., 0.5). The remaining retrieved examples are then injected into the code generation or re-planning prompt to facilitate skill transfer and promote effective exploitation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R(D) = filter</head><p>&gt;0.5</p><formula xml:id="formula_8">Top-k 2 (D ′ )∈P cos emb(D), emb(D ′ ) ∪ Top-k 2 (D ′ )∈P 1 n n i=1 max j cos emb(d i ), emb(d ′ j ) ,<label>(9)</label></formula><p>Reflection with visual input presents several challenges, including the need to reason over long-horizon tasks, the visual language model's limited ability to understand complex plan code, and the constraint on the number of visual frames that can be provided as evidence. To address those challenges, we introduce a hierarchical video-based reflection mechanism that localizes and analyzes failures through chunked video-based reflection as illustrated in Fig. <ref type="figure" target="#fig_2">2</ref>.</p><p>First, we segment both the high-level plan and the execution video into logical chunks using a simple heuristic: splitting at each "open gripper" action. Each chunk is then summarized separately and concatenated to form a concise natural language description of the plan, which helps reduce confusion for the VLM. The VLM compares the summarized plan with the raw video to identify the first failure chunk. Once a failed chunk is identified, the VLM analyzes both the chunked plan code and the corresponding video chunk to provide a grounded explanation of the failure. To handle plan-level logical errors <ref type="bibr" target="#b6">[7]</ref>-cases where every individual step is executed correctly, but the overall task fails due to flawed logic (e.g., grasping a new object without first releasing the one already held)-the system can explicitly indicate that all actions were executed successfully, which triggers plan-level reflection on the high-level plan with a LLM for checking flawed logic.</p><p>Finally, the LLM generates a revised plan based on both the detected failure reason and the original plan code. Separate replanning prompts are used depending on whether the error is due to an execution failure or a logical error. Inspired by the DROC system <ref type="bibr" target="#b14">[15]</ref>, we ground the replanning process on properties of related objects, for instance, determining a proper offset and obstacle avoidance strategy based on the scale of related objects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. EXPERIMENTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Setup: Benchmarks, Real Robot, and Metrics</head><p>To evaluate the effectiveness of the proposed ViReSkill framework, we conduct extensive experiments across both simulation and real-world settings. We benchmark ViReSkill along with several baselines on two robot manipulation benchmarks that operate in simulation environments: LIBERO and RLBench. We also validate the framework under a real-world setting using a physical UR5 robotic platform, thereby demonstrating the transferability of learned skills from simulation to practice. We select simulation benchmarks based on three criteria: appropriate task difficulty, widespread adoption in robot manipulation research, and their representativeness of real-world manipulation scenarios.</p><p>For baseline setups, we compare ViReSkill with the other four baseline methods, including VoxPoser <ref type="bibr" target="#b3">[4]</ref>, and three replanning methods: Retry, Reflexion <ref type="bibr" target="#b5">[6]</ref>, and REFLECT <ref type="bibr" target="#b6">[7]</ref>. A summary of these baselines is provided below:</p><p>• VoxPoser: The base code generation pipeline without replanning. A single control plan is generated per task and executed to compute success rate.</p><p>• Retry: A naive baseline that regenerates a new control plan from scratch using the LLM after each failure, without referencing prior attempts or stored context.</p><p>• Reflexion: A vision-based reflection method that analyzes the final frame of a failed attempt together with the failed plan to infer the failure reason and propose a corrective plan. Unlike our ViReSkill framework, Reflexion does not incorporate hierarchical reflection or in-context learning from learned skill memory.</p><p>• REFLECT: A LLM-based replanning method that hierarchically summarizes multisensory observation, analyzes failure reasons hierarchically, and generates a new plan. We use all four baselines for the LIBERO experiments, while VoxPoser, Retry, and Reflexion are used for the RLBench experiments. For the real-robot experiments, we compare ViReSkill against the VoxPoser baseline.</p><p>We use the success rate, the percentage of successful trial during evaluation, given by (1), as the metric to measure the life-long learning performance of all baselines across different benchmarks. For the VoxPoser experiments, since it does not involve replanning, we calculate the success rate over 5 trials for each task. For ViReSkill, Retry, Reflexion, and REFLECT, we calculate the success rate for each training iterations using the saved memory snapshots. For each task, if a solution exists in the memory, we perform 5 trials using the memory to calculate the success rate, otherwise, the success rate of the task is zero.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. LIBERO Benchmark Results</head><p>LIBERO <ref type="bibr" target="#b0">[1]</ref> is a robot manipulation benchmark designed for evaluating the knowledge transfer in lifelong robot learning. It groups evaluation tasks into 5 subsets: LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, LIBERO-10, and LIBERO-90 with each subset containing tasks of comparable difficulty. For our experiments, we evaluate on the LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, and LIBERO-10 subsets, each comprising 10 distinct tasks.</p><p>For ViReSkill, Reflexion, and REFLECT, we use visual observations captured from the front camera of the LIBERO</p><p>TABLE I LAST ITERATION PERFORMANCE COMPARISON FOR LIBERO BENCHMARK. Benchmark VoxPoser Retry Reflexion REFLECT ViReSkill Object 0.42 0.46 0.94 0.68 0.94 Spatial 0.52 0.52 0.72 0.78 0.80 Goal 0.54 0.48 0.70 0.70 0.70 10 0.32 0.36 0.46 0.48 0.66 Average 0.45 0.46 0.71 0.66 0.78</p><p>TABLE II PERFORMANCE COMPARISON FOR RLBENCH. Task VoxPoser Retry Reflexion ViReSkill TakeLidOff 0.00 0.00 1.00 1.00 CloseDrawer 0.40 1.00 0.60 1.00 BasketballInHoop 0.20 0.20 0.40 0.60 BeatTheBuzz 0.60 0.60 0.60 0.60 PutRubbishInBin 0.60 0.80 0.80 0.80 LampOff 1.00 0.80 0.80 0.60 OpenWineBottle 0.60 1.00 0.80 0.80 PushButton 0.00 0.00 1.00 1.00 TakeUmbrellaOut 0.80 0.80 1.00 1.00 Average 0.47 0.58 0.78 0.82</p><p>simulation environment at a resolution of 256 × 256 pixels. In ViReSkill, input videos are uniformly downsampled to 30 frames. For REFLECT, RGB-D videos of the same resolution are collected to reconstruct dynamic 3D scenes, and additional "grasped object" states-computed using heuristics-are provided to the REFLECT system. Across all baselines, we employ GPT-4o-mini as the VLM for analyzing video or image-based failure cases, and GPT-4.1-mini as the language model (LLM) for code generation and replanning.</p><p>Table <ref type="table">I</ref> shows the mean success rate of all baselines at the last training iteration, averaged over all 10 tasks on each LIBERO subset. We visualize the change of success rate over iterations in Fig. <ref type="figure" target="#fig_3">3</ref>. Across all benchmarks, our ViReSkill framework consistently outperforms the baseline methods. Moreover, ViReSkill demonstrates stable and substantial performance gains over successive iterations, underscoring the effectiveness of the proposed visually grounded reflection mechanism. Notably, while the video-grounded replanning approach achieves performance comparable to the imagegrounded self-reflection method on relatively simple tasks (LIBERO-Object, LIBERO-Spatial, LIBERO-Goal), it significantly surpasses other methods on the more challenging LIBERO-10 subset. This subset involves composite tasks (e.g., placing both the mokapot and the cup on the stove), which demand reasoning over temporal dependencies. These results highlight the importance of leveraging temporal observations for effective replanning in robotic manipulation tasks, particularly in complex, multi-stage scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. RLBench Benchmark Results</head><p>Beyond the LIBERO benchmark, we further evaluate ViReSkill on RLBench, which consists of 100 hand-designed robotic manipulation tasks in a simulated tabletop environ- ment. For our experiments, we select 9 tasks that cover a range of difficulties and task types. Visual observations are obtained from the front camera at a resolution of 128 × 128 pixels, and the experimental setup closely follows the one used in the LIBERO experiments. Although RLBench offers multiple instructions for each task, this evaluation used a single, fixed instruction.</p><p>Table <ref type="table">II</ref> shows the comparison between the ViReSkill framework and baseline methods. ViReSkill achieved the highest success rate on RLBench (82%), highlighting the effectiveness of combining replanning with skill memory. Compared to static planning in VoxPoser, ViReSkill improves performance through memory-based execution. Unlike Retry's blind regeneration, it performs targeted replanning based on failure analysis. Although Reflexion also benefits from failure-aware replanning, ViReSkill slightly outperforms it by additionally reusing verified skills. These trends resemble those on simpler LIBERO subsets, suggesting structural similarities.</p><p>TABLE III A COMPARISON BETWEEN VOXPOSER AND VIRESKILL IN PLANNING THE PLACEMENT OF TWO CUPS ON A TRAY </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Real-robot Evaluation Results</head><p>We conducted our experiments on a UR5 robot equipped with a Robotiq 2F gripper and an Intel RealSense <ref type="bibr" target="#b15">[16]</ref> RGB-D camera. LangSAM <ref type="bibr" target="#b16">[17]</ref> was employed for object segmentation, while GPT-4.1-mini handled vision-language tasks such as video understanding and plan generation. Sentence Transformer <ref type="bibr" target="#b17">[18]</ref> model was used to retrieve relevant past experiences from the memory constructed from Libero experiments. We evaluated four representative tasks: (i) placing an object in a basket, (ii) placing a bowl on a plate, (iii) placing two cups on a tray, and (iv) placing a pen in a holder. Examples of these tasks executed on the UR5 robot are shown in Fig. <ref type="figure" target="#fig_4">4</ref>. Each task was executed five times using both VoxPoser and our proposed method for comparison. Table <ref type="table">IV</ref> shows our video-based replanning method significantly outperforms VoxPoser, achieving a 75% vs. 30% success rate. Our method detects failed steps-such as missed grasps or poor object handling-and dynamically adjusts the plan. For instance, in the task of picking and placing an object into a basket, failures sometimes arise during the grasping or placing stages. Our system detects when the grasp is unsuccessful and adjusts the plan to improve the grip, resulting in a more reliable manipulation. Similarly, when dealing with larger objects that cannot be effectively grasped at their center, the algorithm adapts by replanning to grasp the object by its edges as shown in Fig. <ref type="figure" target="#fig_5">5</ref>, ensuring the task can still be completed successfully. In placement tasks like putting cups on a tray, a straightforward plan might place all cups centrally. However, our approach</p><p>TABLE IV TASK SUCCESS RATES ON THE UR5 ROBOT COMPARING VOXPOSER AND OUR VIRESKILL METHOD (SUCCESSES OUT OF 5 TRIALS). Tasks VoxPoser ViReSkill Place juice in basket 2/5 4/5 Place bowl on plate 2/5 4/5 Place both cups on tray 0/5 3/5 Place pen in holder 3/5 4/5 Overall Success Rate 30% 75%</p><p>recognizes when such placement is unstable or incorrect, and modifies the plan to distribute the cups across different positions on the tray. See Table <ref type="table">III</ref> for the plans generated by both methods for this task. Likewise, when placing a pen in a holder, where orientation is critical but not explicitly indicated in the initial plan, our method adjusts the orientation to correctly position the pen in the holder. Through this experience-driven, feedback-informed replanning, our algorithm achieves a greater level of robustness and adaptability during real-world task execution, complementing the strong baseline plans generated by VoxPoser with enhanced flexibility and precision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Ablation Study</head><p>An important element of the ViReSkill framework is its ability to reuse skills from previously solved tasks to support new or related ones-enabling effective lifelong learning. To evaluate this, we compare the full ViReSkill against a variant that disables skill transfer during replanning. The results (Table <ref type="table">V</ref>) show that while both methods perform similarly on simpler LIBERO subsets, ViReSkill significantly outperforms the ViReSkill without skill transfer on LIBERO-10 (0.66 vs. 0.50). These results support that skill transfer is a key driver of lifelong learning in ViReSkill, enabling generalization and faster adaptation to complex, multi-stage tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. CONCLUSION AND LIMITATIONS</head><p>In this work, we proposed ViReSkill, a lifelong learning framework for robotic manipulation that combines visionbased replanning with skill accumulation and reuse. Our approach enables robust and efficient robot control by identifying and correcting failure cases using visual feedback, TABLE V PERFORMANCE COMPARISON WITH AND WITHOUT SKILL TRANSFER FOR LIBERO. ViReSkill w/o skill transfer ViReSkill LIBERO-Object 0.94 0.94 LIBERO-Spatial 0.78 0.80 LIBERO-Goal 0.70 0.70 LIBERO-10 0.50 0.66 Average 0.73 0.78 while storing successful plans as reusable skills to minimize reliance on model inference. Experiments on LIBERO, RLBench, and a physical UR5 robot demonstrated that ViReSkill outperforms existing baselines in both success rate and adaptability, confirming its practical potential in realworld environments.</p><p>Although ViReSkill supports replanning, its current execution remains open-loop with respect to perception: once a trajectory is generated, it is followed without real-time sensory feedback. While the system can replan between executions, it does not respond to observations during execution. We plan to extend the framework to closed-loop control by introducing Visual-Language Actions (VLA) as skills that generate actions dynamically based on image inputs at each timestep. Moreover, as the skill memory expands, retrieval cost and management efficiency may become bottlenecks. To address this, scalable skill management techniques such as skill merging, compression, and fast retrieval mechanisms will be essential.</p><p>By tackling these challenges, we aim to develop ViReSkill into a more general and sustainable learning framework that can adapt across diverse environments and robotic platforms.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig.1. Overview of ViReSkill framework. Given a language-specified manipulation task, an LLM proposes a step-level plan for control. If the task has been solved before, the stored skill is replayed in the Planning phase without additional LLM calls, and the robot executes it. On failure, a VLM diagnoses the execution by localizing the first failing step in the video and explaining the cause; the LLM then repairs the plan in the Replanning. On success, the verified plan/code are committed to a task-indexed Skill memory. Alternating between vision-grounded replanning on failure and zero-inference replay on success grows the skill library, reduces variance and model calls, and improves success rate over time.</figDesc><graphic coords="2,54.00,50.08,504.01,240.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>3 success count ← 0 4 for k ← 1 7 τ</head><label>3417</label><figDesc>to 5 do // For each evaluation trial 5 if P j (T i ) ̸ = null then 6 c ← P j (T i ) ← C.verif y(c, T i ) 8 r, O ← r(τ, T i ) // collect rollout success status and observations 9 success count ← success count + r</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 .</head><label>2</label><figDesc>Fig.2. Overview of the proposed hierarchical video-based reflection mechanism. The textual plan and execution video are segmented into logical chunks of actions (via "open gripper" as a heuristic). Each chunk is summarized into a high-level natural language description, aligned with the corresponding video segment, and evaluated by a VLM to localize failures. The VLM then provides explicit failure reasons, which are used together with the original plan to generate corrections with the LLM.</figDesc><graphic coords="4,54.00,50.08,504.02,273.72" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Success rate of methods on LIBERO benchmark across iterations. Top to bottom: LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, LIBERO-10. The horizontal axis is iterations, the vertical axis is success rate (ranging from 0 to 1).</figDesc><graphic coords="6,313.20,321.41,244.80,98.74" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Demonstration of UR5 executing diverse real-world tasks using ViReSkill</figDesc><graphic coords="7,54.00,212.37,244.80,124.48" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5. Demonstration of Task: Pick up bowl and place it on the plate using ViReSkill on UR5</figDesc><graphic coords="8,54.00,50.08,504.00,140.37" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Libero: Benchmarking knowledge transfer for lifelong robot learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Rlbench: The robot learning benchmark and learning environment</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">R</forename><surname>Arrojo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Davison</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Do as i can, not as i say: Grounding language in robotic affordances,&quot; 2022</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Voxposer: Composable 3d value maps for robotic manipulation with language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Rekep: Spatio-temporal reasoning of relational keypoint constraints for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Reflect: Summarizing robot experiences for failure explanation and correction</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bahety</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Doremi: Grounding language model by detecting and recovering from plan-execution misalignment</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Empowering large language models on robotic manipulation with affordance prompting</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bian</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Phoenix: A motion-based self-reflection framework for fine-grained robotic action correction</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Robocat: A self-improving generalist agent for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bousmalis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Vezzani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">X</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bauza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Davchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Laurens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fantacci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dalibard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zambelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pevceviciute</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blokzijl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Denil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Batchelor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lampe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Żołna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Scholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abdolmaleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Groth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Regli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Sushkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rothörl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Aytar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ortiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Nori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Robomatrix: A skill-centric hierarchical framework for scalable robot task planning and execution in open-world</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Yoshie</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Lifelong robot library learning: Bootstrapping composable and generalizable skills for embodied control with language models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tziafas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kasaei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Rap: Retrieval-augmented planning with contextual memory for multimodal llm agents</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kagaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Karlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pranata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kinose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Oguri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>You</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Distilling and retrieving generalizable knowledge for robot manipulation via language corrections</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="15172" to="15179" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Intel realsense depth camera d400 series (rgb-d sensors)</title>
+		<author>
+			<persName><forename type="first">Intel</forename><surname>Realsense</surname></persName>
+		</author>
+		<ptr target="https://www.intelrealsense.com/" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">lang-segment-anything: Language segment-anything (sam with text prompt)</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Medeiros</surname></persName>
+		</author>
+		<ptr target="https://github.com/luca-medeiros/lang-segment-anything" />
+	</analytic>
+	<monogr>
+		<title level="m">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2025-08">Aug. 2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gurevych</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>in arXiv</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

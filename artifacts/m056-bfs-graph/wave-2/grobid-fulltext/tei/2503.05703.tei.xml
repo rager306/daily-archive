@@ -1,0 +1,3283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">WHAT I CANNOT EXECUTE, I DO NOT UNDERSTAND: TRAINING AND EVALUATING LLMS ON PROGRAM EXECUTION TRACES</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-02-10">10 Feb 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Jordi</forename><surname>Armengol-Estapé</surname></persName>
+							<email>jordi.armengol.estape@ed.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aram</forename><forename type="middle">H</forename><surname>Markosyan</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Volker</forename><surname>Seeker</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chris</forename><surname>Cummins</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Melanie</forename><surname>Kambadur</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><forename type="middle">F P</forename><surname>O'boyle</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hugh</forename><surname>Leather</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">WHAT I CANNOT EXECUTE, I DO NOT UNDERSTAND: TRAINING AND EVALUATING LLMS ON PROGRAM EXECUTION TRACES</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-02-10">10 Feb 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">929EBC51A6D482382B1EF12D48AEA63F</idno>
+					<idno type="arXiv">arXiv:2503.05703v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code generation and understanding are critical capabilities for large language models (LLMs). Thus, most LLMs are pretrained and fine-tuned on code data. However, these datasets typically treat code as static strings and rarely exploit the dynamic information about their execution. Building upon previous work on trace modeling, we study Execution Tuning (E.T.), a training procedure in which we explicitly model real-world program execution traces without requiring manual test annotations. We train and evaluate models on different execution trace granularities (line and instruction-level) and strategies on the task of output prediction, obtaining ∼80% accuracy on CruxEval and MBPP, and showing the advantages of dynamic scratchpads (i.e., self-contained intermediate computations updated by the model rather than accumulated as a history of past computations) on long executions (up to 14k steps). Finally, we discuss E.T.'s practical applications.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Coding capabilities are one of the most important applications of large language models (LLMs) <ref type="bibr" target="#b5">(Brown et al., 2020)</ref>, for which LLMs specialized on coding have been trained on large-scale datasets of programming languages <ref type="bibr" target="#b6">(Chen et al., 2021;</ref><ref type="bibr">Rozière et al., 2024)</ref>. Current state-of-the-art generalpurpose LLMs are thought to contain considerable proportions of code in their pretraining data <ref type="bibr" target="#b19">(OpenAI et al., 2024)</ref>, which is known to improve reasoning capabilities even in tasks seemingly unrelated to code <ref type="bibr" target="#b0">(Aryabumi et al., 2024)</ref>.</p><p>However, datasets used to train code LLMs (such as <ref type="bibr" target="#b16">Lozhkov et al. (2024)</ref>) typically treat code as static strings and rarely exploit the dynamic information about their execution. Executability is one of the key differences between code and natural language, and most code datasets neglect dimensions of the code domain such as reasoning over code execution, which in turn could lead to better code understanding.</p><p>This fundamental limitation has sparked a renewed interest in modeling program executions, connecting with the pre-LLM neural program evaluation literature <ref type="bibr" target="#b21">(Zaremba &amp; Sutskever, 2014;</ref><ref type="bibr" target="#b14">Graves et al., 2014)</ref>, which studied whether neural networks could learn to execute programs. <ref type="bibr">Austin et al. (2021a)</ref> fine-tune LLMs to directly predict the output of Python functions from coding competitions and math problems, which are paired with unit tests. <ref type="bibr">Crucially, Nye et al. (2021)</ref> showed that asking (and training) the model to predict all the line-level states of a Python function execution up to the return value improved the results on function output prediction, compared to directly asking to predict the return value. They refer to these tokens emitted by the model to perform intermediate computations before the final answer as scratchpad. In this work, we build upon this approach.</p><p>Nevertheless, key questions remain unanswered: 1. How we increase the number of examples in trace datasets, given that the programs need to be executable? 2. How does trace granularity affect the models's performance? 3. How can we handle long execution traces? 4. What kind of scratchpad Preprint works best for storing intermediate outputs -can we skip "unnecessary" intermediate steps? 5. What are the effects of trace modeling on downstream code generation tasks?</p><p>1&gt; def collatz(n): 2&gt; steps = 0 3&gt; while n &gt; 1: 4&gt; steps += 1 5&gt; if n % 2 == 0: 6&gt; n = n // 2 7&gt; else: 8&gt; n = 3 * n + 1 9&gt; return steps collatz.py collatz(3038)? 1&gt; def collatz(n): # n=3038 2&gt; steps = 0 # n=3038; steps=0 3&gt; while n &gt; 1: # n=3038; steps=0 ... 3&gt; while n &gt; 1: # n=1; steps=22 9&gt; return steps # __return__=22 Scratchpad 111 Direct __line__=2, n=3038 __line__=3, n=3038; steps=0 ... __return__=154 Dynamic Scratchpad Predict state after {1} step(s) ✔ ✘ ✘</p><p>Figure <ref type="figure">1</ref>: Given a natural number, a function returns the number of iterations required to arrive at 1, when following the sequence in the Collatz conjecture. Can we predict the output of such a function for large inputs (3038 in our example) using LLMs? Asking an LLM to directly predict the output results in a plausible but incorrect answer. Training a model to predict the intermediate traces of the function as a scratchpad of intermediate computations <ref type="bibr">(Nye et al., 2021)</ref> generally yields more accurate output predictions, but can be impractical or even inaccurate with long executions. In this work, we introduce dynamic scratchpads, in which the model updates a single, self-contained scratchpad instance, yielding to more accurate predictions for long executions.</p><p>With the goal of answering these questions, we study Execution Tuning (E.T.), a training procedure in which we explicitly model real-world program execution traces without requiring manual test annotations (needed to execute the programs we want to trace). To scale trace modeling to large, real-world programs, we start from a collection of ∼300k Python functions, made executable with synthetic inputs generated by a combination of LLMs and fuzzing. We then build a custom Python tracer to track local variables, global variables, and additional information obtained from the stack. We statically represent traces in LLM-friendly formats, including iterators and functions. After trace collection, to ingest traces to LLMs we study three levels of granularity: program (i.e., direct output prediction), line, and bytecode instructions.</p><p>We compare three scratchpad strategies for storing the intermediate computations: a) regular scratchpad (Nye et al., 2021), i.e., a dictionary with all the variable values at each step, b) compact scratchpad containing the changed variables only <ref type="bibr" target="#b17">(Ni et al., 2024)</ref>, and c) dynamic scratchpad (depicted in Figure <ref type="figure">1</ref>), in which, rather than accumulating all the intermediate computation history, the LLM is asked to update a single, self-contained representation of the current state of the program.</p><p>As a proxy of code reasoning, we evaluate models on program output prediction (given an input), allowing them to generate intermediate execution states. We first evaluate on the standard output prediction benchmark, CruxEval <ref type="bibr" target="#b15">(Gu et al., 2024)</ref>, on which models trained on traces clearly outperform the direct output prediction ones. However, we also observe interesting failure modes involving indexing and basic string manipulation. Aiming at evaluating on longer and more diverse executions, we also run our models on a subset of a Python synthesis benchmark, MBPP <ref type="bibr">(Austin et al., 2021b)</ref>, selecting functions with nested loops, where we observe higher disparity between tracing strategies. To study even longer executions, we also study algorithmic tasks with arbitrarily long execution lengths, including the Collatz conjecture (also known as the Ulam conjecture), showing the advantages of dynamic scratchpads on long executions (success on up to 14k execution steps) and the potential of dynamically skipping steps (allowing to decrease the needed intermediate steps from e.g. 14k steps to 1.5k). Finally, we discuss applications by analyzing the effects of E.T. on code generation and reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">EXECUTION TUNING</head><p>In this section, we describe the two implementation challenges of E.T. The first one is about where and how to collect execution traces to construct a large and representative training dataset. The second challenge is how to represent these traces to ingest them to the model. Figure <ref type="figure">2</ref> shows an overview of the pipeline for these two challenges.</p><p>Expected output Dataset of Python files import ... def aux(x): … def f(a): b = aux(a) ... file.py Fuzzer Target function Required imports Required auxiliary functions Test quality Dataset of executable Python functions ✔ ✘ Unit test generation Custom tracer Structured dataset of traces Events -Function call events -Line events -Opcode events -Return events Traced state -Locals -Globals -Stack Prompt 🦙 🦙 Trace representation 1 Expected output Expected output Trace representation 2 Prompt Expected output Trace representation 3 🦙 🦙 … Execution Tuning on different trace representations Prompting Figure 2: Overview of the data pipeline in E.T. We start from Python functions made executable with synthetic yet representative inputs generated by a combination of LLMs and fuzzing, filtered by test quality. Our custom Python tracer generates a structured dataset of traces. From this dataset, we train models prompted with different trace representations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">TRACES COLLECTION</head><p>We start from a collection of unrestricted Python code from where functions are extracted, together with their corresponding module imports and auxiliary functions. We allow importing common Python libraries such as pandas or matplotlib. The inputs (function arguments) are generated with an LLM -more specifically, by prompting Llama 3 8B <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref> to generate unit tests for these functions. For increased coverage, inputs are also generated using fuzzing. In both cases, inputs yielding runtime errors are discarded, and inputs are filtered on test quality by measuring line coverage and similarity between tests.</p><p>In total, combining the LLM and fuzzing generated inputs, we gather about ∼300k executable functions, with an average of 6 inputs per function. Using automatically generated inputs allows us to scale the training dataset to &gt; 1.5M executions, without requiring manually written unit tests.</p><p>The execution of f("my text") in: f: # 1&gt; def f(text): (0) LOAD_FAST 0 (text) # 2&gt; return text.find(",") (2) LOAD_METHOD 0 (find) (4) LOAD_CONST 1 (',') (6) CALL_METHOD 1 (8) RETURN_VALUE None is currently at state: { '__opcode_offset__' : '0', '__function__' : 'f', '__locals__' : { 'text' : "'my text'" }, '__stack__' : [] } Predict the state after 1 instruction. We build a custom tracer leveraging Python's built-in sys.settrace. We capture all Python function call, return, line and opcode events, and step into user-defined auxiliary functions (but not into functions from imported modules). We deliberately ignore C events because without access to the source code emitting these events, the C traces would introduce noise to the data. We note that for correctly discarding the C traces, we need to explicitly deactivate tracing of Python code called from C (e.g. a C function calling a Python lambda). We step into auxiliary functions present in the context (i.e., defined in the same file) and but don't do so for functions out of the context. Unlike previous work <ref type="bibr">(Nye et al., 2021;</ref><ref type="bibr" target="#b17">Ni et al., 2024)</ref>, we also capture globals, the stack, and state changes at the instruction-level granularity (i.e. Python opcodes). After tracing, we have constructed a structured dataset of executions. The next step is to turn this structured dataset into concrete (prompt, expected output) pairs to ingest to the models. Scratchpads We consider the following scratchpad techniques for storing intermediate computations (i.e., the traces): 1. Scratchpad: Following the original scratchpad work <ref type="bibr">(Nye et al., 2021)</ref>, the model predicts the state after executing each line, defined as the line itself plus the dictionary of the local variables, followed by the predicted return value. 2. Compact scratchpad: Inspired by <ref type="bibr" target="#b17">Ni et al. (2024)</ref>'s trace representation, we also consider a diff-based scratchpad, in which the model only needs to predict the variables that change with respect to the previous state. This should help at long executions by decreasing the token count. Note, though, that in <ref type="bibr" target="#b17">Ni et al. (2024)</ref> this representation was not used as a scratchpad, but to annotate code. 3. Dynamic scratchpad: The two previous scratchpad strategies ask the model to predict the entire execution history of a program (paired with an input), up to the return value. This is problematic with long executions. With this motivation in mind, we introduce dynamic scratchpads, in which a single, self-contained state is updated by the model at every step. It also has the additional advantage that with the same strategy we can naturally train the model to skip steps that are potentially unnecessary to predict the final output, by asking the model to predict what the state will be after N steps. The caveat is that parts of the state that were implicitly encoded by having access to the execution history, now will need to be encoded explicitly. In particular, iterator states, not part of the locals dictionary in Python, can be ambiguous.<ref type="foot" target="#foot_0">foot_0</ref> For this reason, even for the models with line-level granularity, we access the stack to trace the iterators, and explicitly encode their iteration count.</p><p>Figure <ref type="figure">1</ref> depicts the differences between direct output prediction, scratchpad-based output prediction, and dynamic scratchpad. Compact scratchpad is omitted for brevity; it's similar to scratchpad but just predicting the variables that change. Figure <ref type="figure" target="#fig_0">3</ref> provides a prompt example.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">OUTPUT PREDICTION RESULTS</head><p>In this section, we evaluate models on function output prediction, a proxy for code reasoning, comparing different trace representation strategies. All evaluated models are fine-tuned using comparable hyperparameters from the instruct version of Llama 3.1-8B <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref>, unless stated otherwise.</p><p>We start by analyzing the results for individual step predictions. Then, we aggregate these step predictions to evaluate output prediction on CruxEval. Next, aiming at evaluating on longer and more diverse executions, we also run our models on a subset of MBPP (selecting functions with nested loops) and algorithmic tasks with arbitrarily long execution lengths.</p><p>We will refer to the dynamic scratchpad models by using {Line|Instruction}-{1|n}, where Line models have a granularity of lines and Instruction models have a granularity of bytecode instructions. "1" refers to models trained to predict the next step, while "n" refers to models trained to predict multiple steps into the future, with n = {1..10}. Additionally, note that in our results, we refer to our re-implementation of <ref type="bibr">Nye et al. (2021)</ref> as "Scratchpad", which benefits from the increased data Table <ref type="table">1</ref>: Results of individual state predictions on CruxEval, i.e. before aggregating steps into full executions for output prediction. The accuracy is broken down into control flow (does the model correctly predict the next line?), variables (does the model correctly predict the variable values in the next state?), iterators (does the model correctly predict the iteration count for the current iterators?) stack state, and full state accuracy (how many states are completely correct, i.e. control flow, variables, iterators, and stack are all correct, assuming the state had them). Note that scratchpad does not have iterator states because it does not require them, and line-level models do not have access to the stack. In this</p><p>Table, F.T. means that the models were fine-tuned on the task, while prompted results indicate no training on traces. REPR. MODEL C. FLOW VARS ITERATOR STACK FULL Scratchpad Llama3.1 8B + F.T. 91.9% 86.5% --86.4% Line-1 Llama3.1 8B (prompted) 53.8% 26.9% 39.6% -10.6% + F.T. 99.5% 97.7% 99.7% -96.3% Line-n (global) Llama3.1 8B (prompted) 16.8% 16.0% 12.3% -1.8% + F.T. 95.1% 66.8% 96.4% -79.0% Instruction-1 Llama3.1 8B (prompted) 74.1% 80.4% 77.9% 5.8% 2.8% +F.T. 99.9% 99.9% 99.9% 98.8% 98.8% size and context length. The original Scratchpad restricted context windows to 512 tokens; here, we allow up to 8192 tokens. 3.1 INDIVIDUAL STATE PREDICTIONS ON CRUXEVAL Table <ref type="table">1</ref> shows the evaluations of individual states (not aggregated into full executions) for prompted out-of-the-box Llama 3.1 8B <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref> and fine-tunings with traces on top of Llama 3.1 8B. In this section, for Line-n models, we report the average over n.</p><p>Prompted (untrained) models We find that general-purpose LLMs already exhibit nontrivial capabilities to predict execution steps out of the box. For example, Llama 3.1 8B prompted (i.e., not fine-tuned) to predict the state after executing the next line (Line-1 in Table <ref type="table">1</ref>) correctly guesses the answer 53.8% of the times, implying a decent understanding of control flow. Control flow is considerably easier when prompted to predict the next bytecode state (Instruction-1 in Table <ref type="table">1</ref>), with a 74.1%, since non-jump (and non-function calling) bytecode instructions have a linear flow. These control flow capabilities drop to 16.8% when evaluated on {1..10} (averaged) lines into the future (Line-n in Table <ref type="table">1</ref>, i.e. asking the model to predict the state after N lines). Similar results, albeit slightly worse, are obtained for the iterator states. When looking at variable value predictions (Vars column), however, performance drops substantially for the line-level scratchpad. This struggle compared to other mainstream coding benchmarks hints at a lack of execution traces data in general-purpose LLMs. Notably, variable prediction for prompted Llama greatly improves for the Instruction-level variant (80.4%). However, this is due to the heavy lifting being carried out on the stack, as variable states typically just consist of reading values from the stack into the variables. The stack-level accuracy is indeed low (5.8%).</p><p>Execution-tuned Models Unsurprisingly, models trained on execution traces excel at control flow prediction. In particular, dynamic scratchpad models obtain almost perfect accuracy on control flow prediction, both for line (99.5%) and instruction levels (99.9%). The control flow accuracy only drops to 95.1% for Line-n models, suggesting that the model is indeed capable of internally modeling the flow of future states. In comparison, scratchpad obtains a similarly high 91.0%. Looking at iterator state prediction, both line and instruction-level dynamic scratchpads obtain almost perfect accuracy as well. Remarkably, the instruction-level model obtains an also near-perfect accuracy for the stack (98.8%), in contrast to the prompted model.</p><p>Skipping steps Figure <ref type="figure" target="#fig_2">4</ref> shows the state prediction accuracy when increasing the number of states into the future and the corresponding negative log-likelihood (NLL) as a measure of the confidence of the prediction, for the Line-N dynamic scratchpad. Unsuprisingly, accuracy lowers as N increases. Interestingly, the corresponding NLL increases, showing calibration of the model confidence. Remarkably, however, we do not observe sharp drops in performance when looking at N steps into the future. Actually, our model can effectively learn to predict multiple steps into the future. Control flow and iterator states are relatively feasible to predict when jumping multiple steps, but variables and return values get increasingly complicated. In the Appendix, we provide similar results for Instruction-N.</p><p>In summary, while the out-of-the-box, prompted Llama shows non-trivial trace modeling capabilities (10.6% full state accuracy with the Line-1 approach), models trained on traces greatly improve upon it. Interestingly, we observe that the line-based dynamic scratchpad outperforms (96.3% full accuracy) its scratchpad counterpart (86.4% full state accuracy), and that the instruction-level obtains the highest full state accuracy, 98.8%. We also observe that the task of learning the state of N steps into the future is feasible to learn effectively, and that NLL has potential as a measure of model confidence in this setting. However, it remains to be seen how these individual trace results will aggregate into function output predictions, which we study in the following sections. We have seen the accuracy of the models when evaluated on individual state predictions. Here, we aggregate the results to evaluate output prediction on CruxEval in Table <ref type="table" target="#tab_0">2</ref>. For dynamic scratchpad models with more than one possible path (e.g., Line-n), we evaluate taking the argmin(NLL) one. Interestingly, the most confident prediction is not always the next immediate step, which is why predicting multiple steps ahead can lead to fewer overall steps. We also show results with global search using Dijkstra (1959)'s algorithm to obtain the shortest path using model predictions from the input of the function to the output, which is not directly comparable to the other results due to having access to the ground truth for checking the correctness of paths. However, we provide it as an upper bound of what could be achieved with the predictions of the model. As a reference, we also provide the top results in the CruxEval leaderboard, prompted GPT-4 with 82% accuracy. <ref type="foot" target="#foot_1">2</ref>Direct prediction Out of the box, Llama 3.1 8B obtains an output prediction accuracy of 37.8%. This accuracy can be improved to 49.3% by fine tuning on direct output prediction. However, even with the relatively short executions found in CruxEval, more than half of the functions are out of the reach of the direct output prediction model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">CRUXEVAL OUTPUT PREDICTION</head><p>Results when using traces Consistently with <ref type="bibr">(Nye et al., 2021)</ref>, all models trained on execution traces outperform by a great margin the direct output prediction fine-tuning. While we generally obtain high accuracies (up to almost 80%), note that the accuracy here, in Table <ref type="table" target="#tab_0">2</ref>, is substantially lower than in Table <ref type="table">1</ref>. The reason why this happens is that when aggregating individual trace predictions, a single step error (out of, e.g., 20 steps) can lead to a wrong result.</p><p>Comparison between models using traces The compact scratchpad strategy slightly outperforms the full scratchpad one, and in turn these two outperform the dynamic scratchpad approaches. The executions in CruxEval are not long enough to show the advantages of dynamic scratchpads.</p><p>Indexing and string manipulation failure modes In CruxEval, arithmetic operations (a classic failure mode of LLMs) were intentionally left out of the benchmark, to focus on program understanding itself. However, we noticed two interesting failure modes. After a qualitative error analysis, we found that the majority of the errors of the models on CruxEval belong to either one of two categories. The first one is string indexing. Indexing arbitrary strings is hard due to tokenization artifacts, since literals are tokenized inconsistently, and unlike arrays their elements aren't separated by punctuation. However, it can be particularly hard for the dynamic scratchpad models (and this mainly explains the ∼ 5% gap in output prediction accuracy between the line-level scratchpad and its dynamic scratchpad counterpart), because for each iteration the model needs to count from scratch to which characters the code is referring. Instead, the scratchpad model relies on the previous iteration as a hint to guess what character will come next. The second failure mode we saw consists of basic string manipulation. For example, models sometimes fail to predict the return value of Python's built-in <ref type="bibr">[string]</ref>.istitle() method, an issue that we also observed in the base model. CruxEval's string values might be out-of-distribution for the model.</p><p>Skipping steps Looking at the results of Line-n and Instruction-n, we observe that just by selecting the n where the model is the most confident (based on NLL), we are able to obtain reasonable accuracies (significantly better than direct prediction, albeit worse than Line-1 and Instruction-1) and considerably lesser number of steps needed. For example, Line-n on average needs only a 35% of the steps of Line-1 to correctly predict a function. This has the remarkable implication that the ordering of model confidence for n={1..10} does not always correspond to the number of steps into the future. That is, with significant frequency, n = 1 is not always the prediction in which the model is the most confident.</p><p>3.3 MBPP Next, we evaluate on the Python synthesis dataset MBPP <ref type="bibr">(Austin et al., 2021b)</ref> with the goal of observing results in longer executions and different domain as CruxEval.</p><p>Particularly, we select functions in the MBPP test set with nested loops (as a proxy of computational complexity and execution length), leaving us with slightly fewer than 100 functions. <ref type="foot" target="#foot_2">3</ref>Similarly to the case of CruxEval, Table <ref type="table" target="#tab_1">3</ref> shows the results on output prediction for this MBPP subset. The big picture of the results is similar to the case of CruxEval, but with some crucial differences. First, if we look at the average steps needed for correct predictions, we see that here the functions are indeed considerably longer than in CruxEval (in the order of 7x more executed lines). However, the lengths are still not astronomical. Relatively to the CruxEval results, here the instruction-based models perform considerably better, which we attribute to the fact that in MBPP there are computations that can be broken down into multiple instructions. Instead, in CruxEval, since most errors consist of indexing or guessing the outputs of string built-in methods, further zooming in doesn't help, as the (indexing or calling a string built-in written in C) can't be further divided. Since in this benchmark some functions present auxiliary functions, we introduce a variant of the compact scratchpad in this the model is able to step in other called functions, yielding an improvement of 3 points with respect to compact scratchpad (80.6% vs. 77.4%).</p><p>Preprint We observe that existing benchmarks for output prediction don't feature long executions. This is especially true for the standard one, CruxEval, but even when targeting functions with nested loops on MBPP, we rarely get to executions with more than 100 executed lines. In this section, we study well-known algorithmic tasks where we can obtain arbitrarily long executions: 1. Collatz conjecture: a function returning the number of iterations required to reach 1 following the Collatz conjecture sequence, given a starting natural number. 2. Binary counter: A 4-bit binary counter. 3. Iterative Fibonacci: An iterative implementation of Fibonacci.</p><p>For selecting the inputs, we generate 4 random numbers (as the small inputs) between 1 and 20, and 5 between 20 and 4000 (as the larger inputs), and evaluate on all of them across the 3 functions. For Fibonacci, we restrict the evaluation on the smaller 5 numbers. For all functions in this section, we replace the function name by f, to give less hints to the model based on potential memorizations of well-known functions during pretraining. Table <ref type="table" target="#tab_2">4</ref> shows the summarized results on these tasks (see Appendix A for the fine-grained results).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Collatz</head><p>The direct output prediction model is able to correctly predict the number of Collatz iterations for the 4 smaller numbers (up to n = 18), and breaks for larger inputs. Curiously, the scratchpad model is not able to improve on the results of the direct output prediction model, and gets the same accuracy for a considerably increased number of intermediate steps (35 on average, corresponding to the number of executed lines). The compact scratchpad unlocks a larger input, n = 103, for which is able to do 353 correct intermediate predictions, up to the (correct return value). The dynamic scratchpad models shine in this setting. Line-1 is able to correctly predict all studied inputs but 2620 (the next to largest one). For the largest input, n = 3038, Line-1 needs to chain 619 correct predictions in a row. Notably, Line-n is able to achieve the same accuracy but with only 39% of the steps required by Line-1. Optimally, if we had access to an oracle that told us which of the paths was correct, Dijsktra would have yielded a perfect accuracy with only 32.3 steps required on average (compared to the average of 271 for Line-1). Binary counter In the case of the 4-bit binary counter, curiously, the direct output prediction model is only able to correctly predict the output for the third smallest input (n = 8). In this case, scratchpad does significantly improve results with respect to the direct output prediction model, correctly guessing the outputs for the 4 smaller inputs (up to n = 18). However, the compact scratchpad is still better, unlocking the correct prediction for a bigger input, n = 103. Curiously, Line-1 gets the same accuracy as with Collatz (all correct but the next to largest input), but with one crucial difference. Here, the executions are even longer. For correctly predicting the output for n = 3038, Line-1 has to chain as many as 14,055 correct predictions in a row. Here, Line-n is not able to reliably select across paths based on its con-Preprint fidence (NLL). With Dijkstra on Line-n predictions, it would have obtained perfect accuracy with only 17% of the number of steps needed by Line-1 on average.</p><p>Fibonacci Again, scratchpad obtains the exact same accuracy as direct prediction. The rest of the models are able to predict all inputs up to n = 103. While both Compact scratchpad and Line-1 require 414 steps for n = 103, Line-n is able to decrease this number to only 160 steps. Optimally, Dijkstra would have obtained 42.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">DOWNSTREAM EFFECTS</head><p>So far we have shown that E.T. leads to improved output prediction capabilities. Here, we study its effects in a code supervised fine-tuning (SFT) setting. We take the base Llama 3.1 8B <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref>, and evaluate the downstream performance with and without different versions of E.T. in the data mix. The base mix is a small code-only SFT dataset of samples similar to the ones in <ref type="bibr">Rozière et al. (2024)</ref>. We train for 7.5k steps with a global batch size of 1024 sequences of up to 8192 tokens. We evaluate code generation on HumanEval <ref type="bibr" target="#b6">(Chen et al., 2021)</ref> and MBPP <ref type="bibr">(Austin et al., 2021b)</ref>, without including the traces in inference time. We also evaluate a step-by-step reasoning task, GSM8k <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref>, to study potential improved multi-step reasoning in other domains.</p><p>Table 5 shows downstream evaluation results with and without E.T. in the SFT mix. Fine-tuning on direct I/O prediction improves Crux-I and Crux-O but not coding benchmarks. The best-performing trace variant, with 10% Compact Scratchpad, brings slight gains on HumanEval, MBPP, and 1.2 points on GSM8K. Curiously, forward execution fine-tuning worsens Crux-I, and vice versa, suggesting weaker-than-expected ties between forward and backward prediction. These results indicate that merging E.T. with SFT data offers little coding improvement. We hypothesize increased gains in evaluations related to program state, such as test generation or debugger-assisted tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">RELATED WORK</head><p>Learning to execute programs as a benchmarking task for code reasoning capabilities has been long studied in the machine learning community <ref type="bibr" target="#b21">(Zaremba &amp; Sutskever, 2014)</ref>, sometimes with niche architectures <ref type="bibr" target="#b14">(Graves et al., 2014;</ref><ref type="bibr" target="#b12">Gaunt et al., 2016;</ref><ref type="bibr" target="#b3">Bieber et al., 2020)</ref>, typically on toy or restricted programs. <ref type="formula">Bieber et al. (2022</ref>  <ref type="formula">2024</ref>) propose natural language explanations based on executions, leading to further improvements. Finally, recent work uses execution feedback, rather than traces, in SFT or reinforcement learning settings <ref type="bibr" target="#b10">(Dong et al., 2024;</ref><ref type="bibr" target="#b13">Gehring et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>In this work, we conducted a large-scale study on traces modeling building upon <ref type="bibr">Nye et al. (2021)</ref> and <ref type="bibr" target="#b17">Ni et al. (2024)</ref>. Reflecting back on our questions, (1) we can scale trace modeling up with E.T., by tracing executions on automatically generated inputs and thus generating large training datasets, which generalizes to output prediction benchmarks. (2) A more fine-grained granularity can't help when the core issue can't be further broken down (indexing on CruxEval) but shows promise otherwise. Regarding scratchpad strategies (3) and execution lengths (4), our newly introduced dynamic scratchpad excels at very long executions, while compact scratchpad generally outperforms the original scratchpad. We saw no conclusive improvements on downstream coding benchmarks (5), where program state understanding might not be critical. As future work, we suggest extending our work to other languages such as C, pointer ids to understand phenomena such as aliasing, and closures. We are also keen on more challenging datasets with exceptions and dynamic trace granularities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A LONG EXECUTION FINE-GRAINED RESULTS</head><p>Table <ref type="table" target="#tab_4">6</ref> provides the fine-grained results for the long executions. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B ADDITIONAL INFORMATION ON LONG EXECUTIONS</head><p>Here we provide the implementations of the algorithmic tasks used for the long executions section. Note that to encourage models to attend rather than memorized, in this case we replace function names with f when ingesting these functions to the models.</p><p>B.1 COLLATZ collatz returns the number of iterations needed to arrive to 1 in the Collazt sequence. def collatz(n): steps = 0 while n &gt; 1: steps += 1 if n % 2 == 0: n = n // 2 else: n = 3 * n + 1 return steps B.2 BINARY COUNTER binary counter implements a 4-bit binary counter by hand. def binary_counter(n): a = False b = False c = False d = False</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Prompt for Instruction-1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>al. (2024), we rely on Python's repr to have an LLM-friendly representation of each object. Unlike in<ref type="bibr" target="#b17">Ni et al. (2024)</ref>, where authors summarized loops with the first two and the last iterations, here we want to represent complete program executions, for which we consider different strategies.Granularities We study the following trace granularities: 1. Direct predictions: FollowingAustin et al. (2021a); Gu et al. (2024), we fine-tune the models to directly predict the output (return value) from the input of the function. 2. Line-level (source code): Following Nye et al. (2021), we represent the states at each executed line. 3. Instruction-level (bytecode): Source code lines can map to multiple instructions at the assembly or bytecode level. With this motivation in mind, we also consider a representation in which we explicitly show instructions and instruction-level state to the model. Crucially, this implies the introduction of the stack. Aside from the bytecode, the model has access to the source code, shown as inline comments at the first opcode of the corresponding line.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Plot showing individual state prediction accuracy (e.g., for Return, specifically for this plot and unlike in the rest of the article, we mean return statement accuracy, not full execution accuracy) when increasing N lines into the future, compared to the predictions Negative Log-Likelihood. Accuracy (bars) gets lower as the number of steps into the future increases, and confidence decreases as well (i.e., NLL increases).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>) proposed learning to predict runtime errors as a practical application of neural program evaluation. More recently, Gu et al. (2024) introduced a program output (and input) benchmark for LLMs to measure code understanding capabilities, which we used for evaluation in this work. Most closely to ours, Nye et al. (2021) propose the use of scratchpads to let LLMs write down the results of intermediate computations rather than directly aiming at predicting the final output. With Python output prediction being one of their use cases, they represent traces of intermediate states as JSON dictionaries. Ni et al. (2024) introduce Naturalized EXecution Tuning (NExT) and propose the compact representation of Python traces that we followed. Unlike Nye et al. (2021) and this work, NeXT simplifies loops and uses traces in the input, improving program repair. Ding et al. (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>CruxEval output prediction results, allowing for multi-step predictions for the variants trained with execution traces. *Global search using Dijkstra (1959) the algorithm. Not directly comparable due to having access to the ground truth for checking correctness of paths.</figDesc><table><row><cell>REPRESENTATION</cell><cell cols="3">OUTCOME ACCURACY PROCESS ACCURACY AVG STEPS NEEDED</cell></row><row><cell>Output FT</cell><cell>49.3%</cell><cell>-</cell><cell>1 (direct)</cell></row><row><cell>Scratchpad F.T.</cell><cell>78.7%</cell><cell>75.5%</cell><cell>10.8 lines</cell></row><row><cell>Compact Scratchpad F.T.</cell><cell>79.7%</cell><cell>76.6%</cell><cell>11.8 lines</cell></row><row><cell>Line-1 FT</cell><cell>73.3%</cell><cell>73.3%</cell><cell>8.3 lines</cell></row><row><cell>Line-n FT</cell><cell>60.8%</cell><cell>60.8%</cell><cell>2.9 lines</cell></row><row><cell>+ search*</cell><cell>70.3%</cell><cell>70.3%</cell><cell>1.8 lines</cell></row><row><cell cols="2">Llama 3.1 8B + Instruction-1 F.T 73.5%</cell><cell>73.5%</cell><cell>38.8 instructions</cell></row><row><cell>+ search*</cell><cell>74.1%</cell><cell>74.1%</cell><cell>38.6 instructions</cell></row><row><cell cols="2">Llama 3.1 8B + Instruction-n F.T. 62.5%</cell><cell>62.5%</cell><cell>22.4 instructions</cell></row><row><cell>+ search*</cell><cell>73.5%</cell><cell>73.5%</cell><cell>4.8 instructions</cell></row><row><cell>Prompted Llama 3.1 8B**</cell><cell>37.8%</cell><cell>-</cell><cell>-</cell></row><row><cell>Prompted GPT-4</cell><cell>82%</cell><cell>-</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Evaluation on MBPP test set on functions with nested loops</figDesc><table><row><cell>REPRESENTATION</cell><cell cols="3">OUTCOME ACCURACY PROCESS ACCURACY AVG STEPS NEEDED</cell></row><row><cell>Output F.T.</cell><cell>47.3%</cell><cell>-</cell><cell>1 (direct)</cell></row><row><cell>Scratchpad F.T.</cell><cell>64.5%</cell><cell>64.5%</cell><cell>58.2 lines</cell></row><row><cell>Compact Scratchpad F.T.</cell><cell>77.4%</cell><cell>76.3%</cell><cell>73.9 lines</cell></row><row><cell cols="2">Compact Scratchpad +step-in F.T. 80.6%</cell><cell>74.2%</cell><cell>73.9 lines</cell></row><row><cell>Line-1 F.T.</cell><cell>73.1%</cell><cell>73.1%</cell><cell>73.8 lines</cell></row><row><cell>Line-n F.T.</cell><cell>43%</cell><cell>43%</cell><cell>15.4 lines</cell></row><row><cell>+ search*</cell><cell>59.1%</cell><cell>59.1%</cell><cell>7.8 lines</cell></row><row><cell>Instruction-1 F.T.</cell><cell>78.5%</cell><cell>78.5%</cell><cell>351.3 instructions</cell></row><row><cell>+ search*</cell><cell>80.6%</cell><cell>80.6%</cell><cell>354.6 instructions</cell></row><row><cell>Instruction-n F.T.</cell><cell>65.6%</cell><cell>65.6%</cell><cell>139.8 instructions</cell></row><row><cell>+ search*</cell><cell>88.2%</cell><cell>88.2%</cell><cell>35 instructions</cell></row><row><cell>3.4 LONG EXECUTIONS</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Long execution results: accuracy (avg. steps needed).</figDesc><table><row><cell>REPRESENTATION</cell><cell cols="3">COLLATZ BINARY COUNTER FIBONACCI</cell></row><row><cell>Output</cell><cell>4/9 (1)</cell><cell>1/9 (1)</cell><cell>4/5 (1)</cell></row><row><cell>Scratchpad</cell><cell>4/9 (35)</cell><cell>4/9 (45.5)</cell><cell>4/5 (37)</cell></row><row><cell cols="2">Compact Scratchpad 5/9 (98.6)</cell><cell>5/9 (116.2)</cell><cell>5/5 (140.5)</cell></row><row><cell>Line-1</cell><cell>8/9 (271)</cell><cell>8/9 (2441)</cell><cell>5/5 (140.5)</cell></row><row><cell>Line-n</cell><cell>8/9 (106.1)</cell><cell>1/9 (6)</cell><cell>5/5 (46.8)</cell></row><row><cell>Line-n + Dijkstra</cell><cell>9/9 (32.3)</cell><cell>9/9 (410.7)</cell><cell>5/5 (11.8)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Downstream evaluations on HumanEval, MBPP and GSM8K.</figDesc><table><row><cell>Model</cell><cell cols="2">Crux-I</cell><cell cols="2">Crux-O</cell><cell></cell><cell>HumanEval</cell><cell></cell><cell></cell><cell>MBPP</cell><cell></cell><cell>GSM8K</cell></row><row><cell></cell><cell cols="11">pass@1 pass@5 pass@1 pass@5 pass@1 pass@10 pass@100 pass@1 pass@10 pass@100 0-shot</cell></row><row><cell>SFT mix</cell><cell>42.9</cell><cell>56.5</cell><cell>36.4</cell><cell>52</cell><cell>56.7</cell><cell>79.1</cell><cell>91.2</cell><cell>52.2</cell><cell>69.4</cell><cell>80.7</cell><cell>66.3</cell></row><row><cell>+ input FT (10%)</cell><cell>43.8</cell><cell>57.9</cell><cell>34.8</cell><cell>46.8</cell><cell>51.8</cell><cell>77.6</cell><cell>90.7</cell><cell>52.3</cell><cell>68.2</cell><cell>79.4</cell><cell>66</cell></row><row><cell>+ output FT (10%)</cell><cell>41.1</cell><cell>56.2</cell><cell>41.8</cell><cell>52.5</cell><cell>56.7</cell><cell>79.2</cell><cell>91</cell><cell>23.8</cell><cell>65.2</cell><cell>79.1</cell><cell>65.1</cell></row><row><cell cols="2">+ C. Scratch (10%) 41.8</cell><cell>56</cell><cell>38.8</cell><cell>49.8</cell><cell>58.5</cell><cell>79.9</cell><cell>89.9</cell><cell>53</cell><cell>69.6</cell><cell>82.5</cell><cell>67.5</cell></row><row><cell>+ C. Scratch (5%)</cell><cell>42.9</cell><cell>58.3</cell><cell>38</cell><cell>50.5</cell><cell>57.9</cell><cell>78.9</cell><cell>89.3</cell><cell>52.6</cell><cell>69.3</cell><cell>81</cell><cell>66.3</cell></row><row><cell>+ Line-1 (10%)</cell><cell>39.8</cell><cell>56.5</cell><cell>38</cell><cell>50.5</cell><cell>53.7</cell><cell>78.7</cell><cell>89.2</cell><cell>53</cell><cell>69.2</cell><cell>80.2</cell><cell>65</cell></row><row><cell>+ Line-n (10%)</cell><cell>39.4</cell><cell>56.3</cell><cell>38.8</cell><cell>49.1</cell><cell>56.1</cell><cell>78.3</cell><cell>88.7</cell><cell>51.4</cell><cell>68.5</cell><cell>80.8</cell><cell>66.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>Collatz, Fibonacci, and binary counter results. Reported accuracy of each execution final result and number of steps needed between parentheses.</figDesc><table><row><cell>REPRESENTATION</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">COLLATZ</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>n=4</cell><cell>n=5</cell><cell>n=8</cell><cell>n=18</cell><cell>n=103</cell><cell>n=457</cell><cell>n=1127</cell><cell>n=2620</cell><cell>n=3038</cell><cell>Acc. (avg steps)</cell></row><row><cell>Output</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>4/9 (1)</cell></row><row><cell>Scratchpad</cell><cell cols="4">✓(13) ✓(25) ✓(17) ✓(85)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>4/9 (35)</cell></row><row><cell cols="6">Compact scratchpad ✓(13) ✓(25) ✓(17) ✓(85) ✓(353)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>5/9 (98.6)</cell></row><row><cell>Line-1</cell><cell cols="6">✓(11) ✓(23) ✓(15) ✓(83) ✓(351) ✓(515)</cell><cell>✓(551)</cell><cell>×</cell><cell>✓(619)</cell><cell>8/9 (271)</cell></row><row><cell>Line-n</cell><cell>✓(2)</cell><cell>✓(9)</cell><cell cols="4">✓(5) ✓(41) ✓(133) ✓(199)</cell><cell>✓(213)</cell><cell>✓(247)</cell><cell>×</cell><cell>8/9 (106.1)</cell></row><row><cell>Line-n + Dijsktra</cell><cell>✓(2)</cell><cell>✓(3)</cell><cell>✓(2)</cell><cell>✓(9)</cell><cell>✓(36)</cell><cell>✓(53)</cell><cell>✓(57)</cell><cell>✓(62)</cell><cell>✓(67)</cell><cell>9/9 (32.3)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">BINARY COUNTER</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>n=4</cell><cell>n=5</cell><cell>n=8</cell><cell>n=18</cell><cell>n=103</cell><cell>n=457</cell><cell>n=1127</cell><cell>n=2620</cell><cell>n=3038</cell><cell>Agg.</cell></row><row><cell>Output</cell><cell>×</cell><cell>×</cell><cell>✓(1)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>1/9 (1)</cell></row><row><cell>Scratchpad</cell><cell cols="4">✓(24) ✓(27) ✓(43) ✓(88)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>4/9 (45.5)</cell></row><row><cell cols="6">Compact scratchpad ✓(26) ✓(27) ✓(43) ✓(88) ✓(479)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>5/9 (116.2)</cell></row><row><cell>Line-1</cell><cell cols="7">✓(24) ✓(27) ✓(43) ✓(88) ✓(479) ✓(2118) ✓(5215)</cell><cell>×</cell><cell>✓(14055)</cell><cell>8/9 (2441)</cell></row><row><cell>Line-n</cell><cell>✓(6)</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>×</cell><cell>1/9 (6)</cell></row><row><cell>Line-n + Dijsktra</cell><cell>✓(3)</cell><cell>✓(3)</cell><cell cols="3">✓(5) ✓(10) ✓(52)</cell><cell>✓(229)</cell><cell cols="3">✓(564) ✓(1310) ✓(1520)</cell><cell>9/9 (410.7)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">FIBONACCI</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>n=4</cell><cell>n=5</cell><cell>n=8</cell><cell>n=18</cell><cell>n=103</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Agg.</cell></row><row><cell>Output</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>✓(1)</cell><cell>×</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>4/5 (1)</cell></row><row><cell>Scratchpad</cell><cell cols="4">✓(18) ✓(22) ✓(34) ✓(74)</cell><cell>×</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>4/5 (37)</cell></row><row><cell cols="6">Compact scratchpad ✓(18) ✓(22) ✓(34) ✓(74) ✓(414)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>5/5 (140.5)</cell></row><row><cell>Line-1</cell><cell cols="5">✓(18) ✓(22) ✓(34) ✓(74) ✓(414)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>5/5 (140.5)</cell></row><row><cell>Line-n</cell><cell cols="5">✓(11) ✓(11) ✓(15) ✓(37) ✓(160)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>5/5 (46.8)</cell></row><row><cell>Line-n + Dijsktra</cell><cell>✓(2)</cell><cell>✓(3)</cell><cell>✓(4)</cell><cell>✓(8)</cell><cell>✓(42)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>5/5 (11.8)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>For example, in for c in('a','b','a'), if we only have access to the current state, we need a way of distinguishing between the first 'a' and the last one. We explicitly encode it with e.g., for iterator 1 =2 lets us know the iteration count on a given iterator.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Pass-at-1, gpt-4-turbo-2024-04-09+cot (n=3)as of October 2024</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Unfortunately, for MBPP we discovered an issue with traced iterators in nested for loops. Thus, specifically for MBPP we applied an AST transformation to rewrite nested for loops to while loops. This issue had virtually no effect in CruxEval, due to the lack of executed nested for loops.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>def fibonacci(n):</p><p>if n == 0: return 0 elif n == 1: return 1 prev_prev = 0 prev = 1 for i in range(2, n + 1): curr = prev_prev + prev prev_prev = prev prev = curr return prev</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C INPUT PREDICTION RESULTS</head><p>Table <ref type="table" target="#tab_5">7</ref> and Figure <ref type="figure" target="#fig_5">5</ref> show the results for Crux-I (i.e., input prediction given output prediction on CruxEval). We note that the reported results are strict lower bounds on the accuracy, given that multiple inputs are possible given the same output and we evaluated on exact match.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>fibonacci is an iterative implementation of Fibonacci.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Plot showing individual state prediction performance when increasing N instructions into the future, compared to the predictions NLL. NLL stdev omitted for clarity.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Individual trace evaluations on reversed CruxEval (i.e., predicting previous steps from future ones).</figDesc><table><row><cell cols="2">REPRESENTATION MODEL</cell><cell cols="4">CONTROL FLOW VARS ITERATOR FULL</cell></row><row><cell>line-1-rev</cell><cell cols="2">Llama3.1 8B (Prompted) 51.6%</cell><cell cols="2">38.9% 48%</cell><cell>11%</cell></row><row><cell></cell><cell>+ E.T.</cell><cell>98.8%</cell><cell cols="2">88.4% 99.6%</cell><cell>87.9%</cell></row><row><cell>line-n-rev (global)</cell><cell cols="2">Llama3.1 8B (Prompted) 22.5%</cell><cell cols="2">13.6% 11.1%</cell><cell>1.6%</cell></row><row><cell></cell><cell>+ E.T.</cell><cell>94.1%</cell><cell>74%</cell><cell>93.3%</cell><cell>72.5%</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">To code, or not to code? exploring impact of code in pre-training</title>
+		<author>
+			<persName><forename type="first">Viraat</forename><surname>Aryabumi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Morisot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Acyr</forename><surname>Locatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marzieh</forename><surname>Fadaee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmet</forename><surname>Üstün</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Hooker</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.10914" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><forename type="middle">I</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno>CoRR, abs/2108.07732</idno>
+		<ptr target="https://arxiv.org/abs/2108.07732" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><forename type="middle">I</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno>CoRR, abs/2108.07732</idno>
+		<ptr target="https://arxiv.org/abs/2108.07732" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Learning to execute programs with instruction pointer attention graph neural networks</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno>CoRR, abs/2010.12621</idno>
+		<ptr target="https://arxiv.org/abs/2010.12621" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Static prediction of runtime errors by learning to execute programs with external resource descriptions</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishab</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.03771" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2020/file/1457" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+	<note>c0d6bfcb4967418bfb8ac142f64a-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<editor>Katie Mayer, Peter Welinder, Bob Mc-Grew, Dario Amodei, Sam McCandlish, Ilya Sutskever</editor>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<pubPlace>Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Wojciech Zaremba. Evaluating large language models trained on code</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A note on two problems in connexion with graphs</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Edsger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dijkstra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Numerische mathematik</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="269" to="271" />
+			<date type="published" when="1959">1959</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Semcoder: Training code language models with comprehensive semantics</title>
+		<author>
+			<persName><forename type="first">Yangruibo</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcus</forename><forename type="middle">J</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gail</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junfeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baishakhi</forename><surname>Ray</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.01006" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Self-play with execution feedback: Improving instruction-following capabilities of large language models</title>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingyu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.13542" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aobo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archi</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archie</forename><surname>Sravankumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Hinsvark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austen</forename><surname>Gregerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ava</forename><surname>Spataru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bethany</forename><surname>Biron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binh</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bobbie</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlotte</forename><surname>Caucheteux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaya</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chloe</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Marra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mcconnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christophe</forename><surname>Touret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corinne</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian Canton</forename><surname>Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyrus</forename><surname>Nikolaidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Allonsius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Pintz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Choudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Garcia-Olano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Perino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieuwke</forename><surname>Hupkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Egor</forename><surname>Lakomkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehab</forename><surname>Albadawy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elina</forename><surname>Lobanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Dinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">Michael</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Radenovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabrielle</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgia</forename><surname>Lewis Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graeme</forename><surname>Nail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guan</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Korevaar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iliyan</forename><surname>Zarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arrieta</forename><surname>Imanol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Ibarra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishan</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Evtimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaewon</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jana</forename><surname>Geffert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Vranes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeet</forename><surname>Mahadeokar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jelmer</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Van Der Linde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Billock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenya</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyu</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiecao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongsoo</forename><surname>Spisak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Rocca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Johnstun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurens</forename><surname>Yeary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Van Der Maaten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liz</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Jenkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lovish</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lubo</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Malo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Landzaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madeline</forename><surname>De Oliveira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahesh</forename><surname>Muzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mannat</forename><surname>Pasupuleti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manohar</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Paluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathew</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathieu</forename><surname>Oldham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maya</forename><surname>Rita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Pavlova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Kambadur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitesh</forename><forename type="middle">Kumar</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mona</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Hassan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Narjes</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Torabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niladri</forename><surname>Bogoychev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Chatterji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Duchenne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Onur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>¸elebi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengchuan</forename><surname>Alrassy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petar</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Vasic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pratik</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Praveen</forename><surname>Dubal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Puxin</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingxiao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ragavan</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raj</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramon</forename><surname>Ganapathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricardo</forename><forename type="middle">Silveira</forename><surname>Calderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Cabral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Stojnic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronnie</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roshan</forename><surname>Polidoro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Sumbaly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saghar</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahana</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Chennabasappa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sonia</forename><surname>Seohyun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoliang</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharath</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Raparthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengye</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shun</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Vandenhende</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Whitman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchin</forename><surname>Collot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sydney</forename><surname>Gururangan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamar</forename><surname>Borodinsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tara</forename><surname>Herman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarek</forename><surname>Fowler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Sheasha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Georgiou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Speckbacher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ujjwal</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedanuj</forename><surname>Karn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vibhor</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vignesh</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Virginie</forename><surname>Gonguet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vish</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladan</forename><surname>Vogeti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Petrovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyin</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Whitney</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Meers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinfeng</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuewei</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaelle</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yashesh</forename><surname>Goldschlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Gaur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zacharie</forename><forename type="middle">Delpierre</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Coudert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxing</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zoe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaditya</forename><surname>Papakipos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abha</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kelsey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adithya</forename><surname>Shajnfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adolfo</forename><surname>Gangidi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahuva</forename><surname>Victoria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Goldstand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Boesenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexei</forename><surname>Vaughan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allie</forename><surname>Baevski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Feinstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Kallet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anam</forename><surname>Sangani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><surname>Yunus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Lupu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Alvarado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Caples</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Annie</forename><surname>Ramchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aparajita</forename><surname>Franco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arkabandhu</forename><surname>Saraf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Assaf</forename><surname>Bharambe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azadeh</forename><surname>Eisenman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beau</forename><surname>Yazdan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Maurer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernie</forename><surname>Leonhardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beth</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beto</forename><surname>Loyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>De Paola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Braden</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bram</forename><surname>Hancock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Wasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brani</forename><surname>Spence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Stojkovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Britt</forename><surname>Gamido</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Montalvo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carly</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catalina</forename><surname>Burton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changhan</forename><surname>Mejia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changkyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chester</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ching-Hsiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph</forename><surname>Tindal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damon</forename><surname>Feichtenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dana</forename><surname>Civin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Beaty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Kreymer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Wyatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Adkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Delia</forename><surname>Testuggine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Didem</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingkang</forename><surname>Foss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duc</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Holland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eissa</forename><surname>Dowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elaine</forename><surname>Jamil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eleonora</forename><surname>Montgomery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Presani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Hahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Wood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esteban</forename><surname>Brinkman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Arcaute</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Dunbar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Smothers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Kreuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Firat</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Ozgenel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><surname>Caggioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Guzmán</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Kanayet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriela</forename><forename type="middle">Medina</forename><surname>Seide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriella</forename><surname>Florez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gada</forename><surname>Schwarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgia</forename><surname>Badeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gil</forename><surname>Swee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Govind</forename><surname>Halpern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grant</forename><surname>Thattai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigory</forename><surname>Herman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sizov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Guangyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Lakshminarayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Shojanazeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haroun</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Habeeb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>Rudolph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Suk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hunter</forename><surname>Aspegren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><surname>Goldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Damlaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina-Elena</forename><surname>Tufanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Veliche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Weissman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Geboski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Japhet</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Asher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Gaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Marcus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessica</forename><surname>Teboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Carvill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Shepard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Mcphie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Torres</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ginsburg ; Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Norman</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Chernoguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omkar</forename><surname>Hart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ozlem</forename><surname>Salpekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Kalinli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wes</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Bouaziz ; Yanjun Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yenda</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngjin</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yundi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zach</forename><surname>Rait</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Devito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zef</forename><surname>Rosnbrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoduo</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.21783" />
+	</analytic>
+	<monogr>
+		<title level="j">Nikolay Pavlovich Laptev</title>
+		<editor>
+			<persName><forename type="first">Ruty</forename><surname>Rinott</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jayesh</forename><surname>Sai</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Samyak</forename><surname>Bondu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sara</forename><surname>Datta</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sara</forename><surname>Chugh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sargun</forename><surname>Hunt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sasha</forename><surname>Dhillon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Satadru</forename><surname>Sidorov</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Saurabh</forename><surname>Pan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Seiji</forename><surname>Verma</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sharadh</forename><surname>Yamamoto</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shaun</forename><surname>Ramaswamy</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shaun</forename><surname>Lindsay</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sheng</forename><surname>Lindsay</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shenghao</forename><surname>Feng</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Lin</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Cindy</forename><surname>Shengxin</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shiva</forename><surname>Zha</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shuqiang</forename><surname>Shankar</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shuqiang</forename><surname>Zhang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sinong</forename><surname>Zhang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sneha</forename><surname>Wang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Soji</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Soumith</forename><surname>Sajuyigbe</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Stephanie</forename><surname>Chintala</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Stephen</forename><surname>Max</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steve</forename><surname>Chen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steve</forename><surname>Kehoe</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sudarshan</forename><surname>Satterfield</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sumit</forename><surname>Govindaprasad</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sungmin</forename><surname>Gupta</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sunny</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Suraj</forename><surname>Virk</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sy</forename><surname>Subramanian</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sydney</forename><surname>Choudhury</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tal</forename><surname>Goldman</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tamar</forename><surname>Remez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tamara</forename><surname>Glaser</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Thilo</forename><surname>Best</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Thomas</forename><surname>Kohler</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tianhe</forename><surname>Robinson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tianjun</forename><surname>Li</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tim</forename><surname>Zhang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Timothy</forename><surname>Matthews</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tzook</forename><surname>Chou</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Varun</forename><surname>Shaked</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Victoria</forename><surname>Vontimitta</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Victoria</forename><surname>Ajayi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vijai</forename><surname>Montanez</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Mohan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Satish</forename><surname>Vinay</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vishal</forename><surname>Kumar</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Mangla</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Natascha Parks, Natasha White, Navyata Bawa, Nayan Singhal, Nick Egebo, Nicolas Usunier; Parkin Kent, Parth Parekh, Paul Saab, Pavan Balaji, Pedro Rittner, Philip Bontrager, Pierre Roux, Piotr Dollar, Polina Zvyagina, Prashant Ratanchandani, Pritish Yuvraj, Qian Liang, Rachad Alao, Rachel Rodriguez, Rafi Ayub, Raghotham Murthy, Raghu Nayani, Rahul Mitra, Raymond Li, Rebekkah Hogan, Robin Battey, Rocky Wang, Rohan Maheswari, Russ Howes</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Vítor Albiero, Vlad Ionescu, Vlad Poenaru, Vlad Tiberiu Mihailescu, Vladimir Ivanov, Will Constable, Xiaocheng Tang, Xiaofang Wang, Xiaojian Wu, Xiaolan Wang, Xide Xia, Xilun Wu, Xinbo Gao, The llama 3 herd of models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Lifelong perceptual programming by example</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno>CoRR, abs/1611.02109</idno>
+		<ptr target="http://arxiv.org/abs/1611.02109" />
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Rlef: Grounding code llms in execution feedback with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunhao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vegard</forename><surname>Mella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taco</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.02089" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Neural turing machines</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Danihelka</surname></persName>
+		</author>
+		<idno>CoRR, abs/1410.5401</idno>
+		<ptr target="http://arxiv.org/abs/1410.5401" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Cruxeval: A benchmark for code reasoning, understanding and execution</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugh</forename><surname>Leather</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.03065</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Lozhkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouamane</forename><surname>Tazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmytro</forename><surname>Pykhtar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Younes</forename><surname>Belkada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Abulkhanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Indraneil</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Risdal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgenii</forename><surname>Zheltonozhskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nii</forename><surname>Osae Osae Dade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Krauß</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanli</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edoardo</forename><surname>Abati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yekun</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhtasham</forename><surname>Oblokulov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mayank</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armel</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Dehaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Patry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torsten</forename><surname>Scholak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastien</forename><surname>Paquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolyn</forename><forename type="middle">Jane</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Chapados</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nima</forename><surname>Tajbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Muñoz Ferrandis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.19173" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Arjun Guha, Leandro von Werra, and Harm de Vries</publisher>
+		</imprint>
+	</monogr>
+	<note>Starcoder 2 and the stack v2: The next generation</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Next: Teaching large language models to reason about code execution</title>
+		<author>
+			<persName><forename type="first">Ansong</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miltiadis</forename><surname>Allamanis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.14662" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Maxwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Odena</surname></persName>
+		</author>
+		<idno>CoRR, abs/2112.00114</idno>
+		<ptr target="https://arxiv.org/abs/2112.00114" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shyamal</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Red</forename><surname>Anadkat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Avila</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valerie</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Balcom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiming</forename><surname>Baltescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irwan</forename><surname>Belgum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Berdine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Bernadett-Shapiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lenny</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Bogdonoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madelaine</forename><surname>Boiko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna-Luisa</forename><surname>Boyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brakman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brooks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brittany</forename><surname>Cann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Carey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rory</forename><surname>Carlson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Carmichael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotis</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sully</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruby</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chester</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Casey</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremiah</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Currier ; Tarun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Gogineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rapha</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Gontijo-Lopes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Grafstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Greene</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Heaton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Heidecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wade</forename><surname>Hickey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hickey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Hoeschele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenny</forename><surname>Houghton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengli</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Huizinga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shawn</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanne</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roger</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhun</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shino</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Billie</forename><surname>Jomoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jonn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaftan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ingmar</forename><surname>Kamali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitish</forename><surname>Kanitscheider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tabarak</forename><surname>Shirish Keskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><forename type="middle">Wook</forename><surname>Kilpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongjik</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><forename type="middle">Hendrik</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Kirchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Kiros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kokotajlo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Kondraciuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aris</forename><surname>Kondrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Konstantinidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Kosic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishal</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ikai</forename><surname>Lampe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Leung</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Chak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Molly</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theresa</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lopez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patricia</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Lue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kim</forename><surname>Makanju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Malfacini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaniv</forename><surname>Markov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bianca</forename><surname>Markovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><forename type="middle">Mayer</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christine</forename><surname>Mckinney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Mcleavey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Mcmillan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Mcneil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aalok</forename><surname>Medina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Mehta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Metz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinnie</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Monaco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Mossing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Murk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashvin</forename><surname>Mély</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajeev</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeonwoo</forename><surname>Ngo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Noh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Cullen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Keefe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Pachocki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Palermo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giambattista</forename><surname>Pantuliano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Parascandolo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emy</forename><surname>Parish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Parparita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Cj Weinmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Wiethoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Willner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Wolrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lauren</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherwin</forename><surname>Workman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Yoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengjia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zhuk</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zoph</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.08774" />
+	</analytic>
+	<monogr>
+		<title level="s">Felipe Petroski Such</title>
+		<editor>
+			<persName><forename type="first">Michelle</forename><surname>Pokorny</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Pokrass</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Vitchyr</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tolly</forename><surname>Pong</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alethea</forename><surname>Powell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Boris</forename><surname>Power</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Elizabeth</forename><surname>Power</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Raul</forename><surname>Proehl</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alec</forename><surname>Puri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jack</forename><surname>Radford</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Aditya</forename><surname>Rae</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Cameron</forename><surname>Ramesh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Francis</forename><surname>Raymond</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kendra</forename><surname>Real</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Carl</forename><surname>Rimbach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Bob</forename><surname>Ross</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Henri</forename><surname>Rotsted</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nick</forename><surname>Roussez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mario</forename><surname>Ryder</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ted</forename><surname>Saltarelli</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shibani</forename><surname>Sanders</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Girish</forename><surname>Santurkar</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Heather</forename><surname>Sastry</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Schmidt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">John</forename><surname>Schnurr</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Daniel</forename><surname>Schulman</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kyla</forename><surname>Selsam</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Toki</forename><surname>Sheppard</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jessica</forename><surname>Sherbakov</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sarah</forename><surname>Shieh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Pranav</forename><surname>Shoker</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Szymon</forename><surname>Shyam</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Eric</forename><surname>Sidor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Maddie</forename><surname>Sigler</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Simens</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Katarina</forename><surname>Sitkin</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ian</forename><surname>Slama</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Benjamin</forename><surname>Sohl</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yang</forename><surname>Sokolowsky</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Natalie</forename><surname>Song</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Staudacher</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Juan Felipe Cerón Uribe</publisher>
+			<pubPlace>Michael Petrov, Henrique Ponde de Oliveira Pinto, Michael; Natalie Summers, Ilya Sutskever, Jie Tang, Nikolas Tezak, Madeleine B. Thompson, Phil Tillet, Amin Tootoonchian, Elizabeth Tseng, Preston Tuggle, Nick Turley, Jerry Tworek; Chelsea Voss, Carroll Wainwright, Justin Jay Wang, Alvin Wang, Ben Wang, Jonathan Ward</pubPlace>
+		</imprint>
+		<respStmt>
+			<orgName>Filipe de Avila Belbute Peres ; Andrea Vallone, Arun Vijayvergiya</orgName>
+		</respStmt>
+	</monogr>
+	<note>Gpt-4 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artyom</forename><surname>Rapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Kozhevnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Ev-Timov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian Canton</forename><surname>Bhatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Défossez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.12950" />
+		<title level="m">Nicolas Usunier, Thomas Scialom, and Gabriel Synnaeve. Code llama: Open foundation models for code</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Learning to execute</title>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno>CoRR, abs/1410.4615</idno>
+		<ptr target="http://arxiv.org/abs/1410.4615" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1854 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Goedel-Code-Prover: Hierarchical Proof Search for Open State-of-the-Art Code Verification</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-27">27 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zenan</forename><surname>Li</surname></persName>
+							<email>zenan.li@inf.ethz.ch</email>
+							<affiliation key="aff1">
+								<orgName type="department">Equal contribution</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ziran</forename><surname>Yang</surname></persName>
+							<email>zirany@princeton.edu</email>
+							<affiliation key="aff1">
+								<orgName type="department">Equal contribution</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Deyuan</forename><surname>He</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+								<address>
+									<addrLine>4 MiroMind</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haoyu</forename><surname>Zhao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+								<address>
+									<addrLine>4 MiroMind</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shange</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+								<address>
+									<addrLine>4 MiroMind</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kaiyu</forename><surname>Yang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Aarti</forename><surname>Gupta</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+								<address>
+									<addrLine>4 MiroMind</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhendong</forename><surname>Su</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chi</forename><surname>Jin</surname></persName>
+							<email>chij@princeton.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Eth</forename><forename type="middle">Z</forename><surname>Ürich</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Princeton</forename><surname>Language</surname></persName>
+						</author>
+						<title level="a" type="main">Goedel-Code-Prover: Hierarchical Proof Search for Open State-of-the-Art Code Verification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-27">27 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">41F9A80129DBE2D63C27A3E4EEFDB8F1</idno>
+					<idno type="arXiv">arXiv:2603.19329v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) can generate plausible code but offer limited guarantees of correctness. Formally verifying that implementations satisfy specifications requires constructing machine-checkable proofs, a task that remains beyond current automation. We propose a hierarchical proof search framework for automated code verification in Lean 4 that decomposes complex verification goals into structurally simpler subgoals before attempting tactic-level proving. Central to our approach is a principled decomposition score that combines constructive justification with structural effectiveness. Crucially, this score serves as both the training reward and the inference-time ranking criterion, ensuring strict alignment between optimization and deployment. We train Göedel-Code-Prover-8B, a single unified policy for both decomposition and completion, via supervised initialization followed by hybrid reinforcement learning, where a continuous decomposition reward drives planning exploration while supervised replay stabilizes proof generation. On three Lean-based code verification benchmarks comprising 427 tasks, our 8B-parameter model achieves a 62.0% prove success rate, a 2.6× improvement over the strongest baseline, surpassing neural provers up to 84× larger. We further observe consistent inference-time scaling: success rates improve monotonically with search iterations and sampling budget, with our trained model achieving greater efficiency than frontier off-the-shelf models of comparable scale.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have rapidly advanced code generation, achieving strong performance on programming benchmarks and increasingly serving as real-world coding assistants <ref type="bibr" target="#b8">(Chen et al., 2021;</ref><ref type="bibr" target="#b24">Li et al., 2022;</ref><ref type="bibr" target="#b3">Alharbi &amp; Alshayeb, 2026;</ref><ref type="bibr" target="#b23">Li et al., 2026)</ref>. Yet while LLM-based coding agents routinely generate unit tests and reproduction scripts to validate their outputs, empirical studies show that such testing cannot certify the absence of subtle logical errors, boundary-case violations, or specification mismatches <ref type="bibr" target="#b15">(Jesse et al., 2023;</ref><ref type="bibr" target="#b28">Liu et al., 2023;</ref><ref type="bibr" target="#b2">Al-Kaswan et al., 2026)</ref>. As LLMs are deployed in safety-critical environments, bridging the gap between "code that appears to work" and "code that is provably correct" becomes increasingly urgent.</p><p>Formal verification offers a principled solution by expressing specifications (see Figure <ref type="figure" target="#fig_0">1</ref> for an example) in a formal language and constructing machine-checked proofs of correctness. Lean 4 (Moura &amp; Ullrich, 2021), a modern interactive theorem prover, provides a powerful platform for such verification tasks, with a growing ecosystem of libraries (e.g., Mathlib (mathlib Community, 2020) and CSLib <ref type="bibr" target="#b6">(Barrett et al., 2026)</ref>). Figure <ref type="figure" target="#fig_0">1</ref> illustrates a typical verification task: given a function FindSingleNumber that returns the unique element from a list, the specification encodes a precondition and a postcondition as Lean predicates, and the top-level theorem asserts that the implementation satisfies this specification. The --Precondition: every element appears 1 or 2 times; exactly one is unique def FindSingleNumber_precond (nums : List Int) : Prop := let numsCount := nums.map (fun x =&gt; nums.count x) numsCount.all (fun c =&gt; c = 1 ∨ c = 2) ∧ numsCount.count 1 = 1 --Implementation: find the unique element that appears exactly once def filterlist (x : Int) (nums : List Int) : List Int := nums.filter (fun y =&gt; y == x)</p><p>def FindSingleNumber (nums : List Int) (h : FindSingleNumber_precond nums) : Int := match nums.filter (fun x =&gt; (filterlist x nums).length == 1) with | x :: _ =&gt; x | [] =&gt; 0 --Postcondition: result is the unique element; others appear twice def FindSingleNumber_postcond (nums : List Int) (result : Int) (h : FindSingleNumber_precond nums) : Prop := nums.length &gt; 0 ∧ (filterlist result nums).length = 1 ∧ ∀ (x : Int), x ∈ nums → x = result ∨ (filterlist x nums).length = 2 --Verification goal (proof to be synthesized automatically) theorem FindSingleNumber_spec (nums : List Int) (h : FindSingleNumber_precond nums) : FindSingleNumber_postcond nums (FindSingleNumber nums h) h := by sorry The green block contains the implementation. The red block states the top-level verification goal, where sorry marks the proof obligation to be synthesized automatically. The complete proof synthesized by our framework is shown in Appendix A.</p><p>sorry placeholder marks the proof obligation to be discharged. Even for this seemingly simple problem, constructing a complete proof requires discovering auxiliary lemmas about list filtering, membership, and inductive reasoning over the input structure, none of which are suggested by the specification itself. Writing such proofs by hand remains labor-intensive and demands substantial expertise, limiting widespread adoption of formal verification.</p><p>Recent work has explored leveraging LLMs to automate proof synthesis in interactive theorem provers (ITPs) such as Lean 4 and Isabelle <ref type="bibr" target="#b25">(Li et al., 2024;</ref><ref type="bibr">Yang et al., 2024a)</ref>. State-of-the-art systems have achieved remarkable success in formal mathematics, reaching competition and olympiad level performance <ref type="bibr" target="#b35">(Ren et al., 2025;</ref><ref type="bibr" target="#b27">Lin et al., 2025;</ref><ref type="bibr">Xin et al., 2025b;</ref><ref type="bibr" target="#b14">Hubert et al., 2025;</ref><ref type="bibr" target="#b40">Wang et al., 2025)</ref>. These methods typically operate in a decompose-and-prove paradigm: the model first decomposes a complex theorem into simpler intermediate lemmas (or subgoals), then proves each lemma individually using tactic generation.</p><p>Despite this progress, these methods do not transfer directly to code verification due to two fundamental mismatches. The first problem is ungrounded decomposition. In mathematics, correctness is central to the discipline: mathematicians routinely write proofs by hand, and the resulting reasoning pervades textbooks, papers, and online discussions. LLMs absorb this rich corpus during pretraining, acquiring the intuition needed to propose meaningful proof decompositions even before formal verification. No comparable corpus exists for program correctness. Most software developers treat testing as a sufficient proxy for correctness <ref type="bibr" target="#b32">(Myers et al., 2004;</ref><ref type="bibr" target="#b4">Ammann &amp; Offutt, 2017)</ref> and never articulate formal reasoning about their code. In the few domains where formal guarantees are required, practitioners rely on automated tools such as SMT solvers <ref type="bibr" target="#b11">(De Moura &amp; Bjørner, 2008;</ref><ref type="bibr" target="#b5">Barbosa et al., 2022)</ref> and model checkers <ref type="bibr" target="#b10">(Clarke, 1997;</ref><ref type="bibr" target="#b16">Jhala &amp; Majumdar, 2009)</ref> rather than hand-written proofs, producing little natural-language proof reasoning in the process.</p><p>Theorem G: FindSingleNumber satisfies specification 18 operator footprint d(•) LLM π L1: result is the unique element 7 L2: other elements appear exactly twice 8 ✓ proof reconstruction ✓ quickcheck filter ✓ operator footprint ↓ LLM π L1.1: filterlist length equals List.count 4 L1.2: some element has count 1 4 L1.3: scanner finds the unique element 5 LLM π L2.1: count-1 element is unique 4 S = validity • d-reduction = 1.0 × 0.54 S = v • r = 1.0 × 0.33 Stage 1: Recursive Lemma Decomposition L1.1 L1.2 L1.3 L2.1 LLM π Lean Kernel Verified ✓ leaf lemmas tactics pass error feedback Stage 2: Lemma Completion Decomposition Score: S = v({Li}; G) • r({Li}; G) -→ training reward &amp; inference-time ranking Consequently, LLMs lack the informal-to-formal bridge that enables effective decomposition in mathematics: when applied to code verification, their proposed subgoals are frequently imprecise, semantically invalid, or no simpler than the original goal.</p><p>The second issue is compound domain shift: even when a decomposition is valid, proving the resulting subgoals faces a dual challenge. On one hand, program verification introduces a fresh conceptual universe with every program (concept proliferation): each function definition brings new computational behavior, control flow patterns, and data-structure invariants whose properties must be discovered without prior library support, unlike mathematics where shared libraries such as Mathlib provide a closed vocabulary of reusable lemmas. On the other hand, discharging these subgoals requires program-specific automation (tactic distribution shift): tactics such as grind, SMT-backed lemmas, and computational reflection (native_decide) that differ substantially from the algebraic tactics prevalent in mathematics; models trained on mathematical corpora routinely fail to invoke these tools correctly.</p><p>In this work, we propose a hierarchical proof search framework for automated code verification in Lean 4, in which the verification goal is recursively decomposed into a series of lemmas, followed by iteratively proving each lemma (Figure <ref type="figure" target="#fig_1">2</ref>). To achieve this, we train Göedel-Code-Prover-8B, a single unified policy that performs both decomposition and completion. Since the quality of decomposition is the primary determinant of success, we introduce a principled decomposition score as both the training reward and inference-time search criterion. This score evaluates candidates along two axes: constructive justification (whether proposed subgoals provably entail the parent theorem and survive automated counterexample search via quickcheck <ref type="bibr" target="#b9">(Claessen &amp; Hughes, 2000</ref>; Lean Prover Community, 2024)), and structural simplicity (measured by a goal complexity metric). An additional challenge arises from reward mismatch: decomposition benefits from this dense, continuous score, whereas completion yields only sparse binary signals (proof accepted or rejected), causing decomposition gradients to dominate and completion proficiency to stagnate. We resolve this through hybrid reinforcement learning after supervised initialization, optimizing decomposition with the continuous score while stabilizing completion through supervised replay of high-quality proof trajectories. We evaluate our framework on three Lean 4 code verification benchmarks: Verina <ref type="bibr" target="#b48">(Ye et al., 2025)</ref>, Clever <ref type="bibr" target="#b38">(Thakur et al., 2025)</ref>, and AlgoVeri <ref type="bibr" target="#b49">(Zhao et al., 2026)</ref>, comprising 427 tasks in total. Our 8B-parameter model achieves success rates of 68.8%, 54.0%, and 62.3% respectively, a 2.6× improvement over the strongest baseline while surpassing neural provers up to 84× larger. Verified proofs average 8-17 decomposed lemmas and over 130 lines of proof code, with the most complex exceeding 680 lines, demonstrating that our framework can sustain deep structured reasoning over non-trivial verification tasks. We further observe consistent inference-time scaling: success rates improve monotonically with search iterations and sampling budget, indicating unsaturated scaling potential.</p><p>In summary, this paper makes the following contributions:</p><p>• A hierarchical proof search framework for code verification in Lean 4 that decomposes complex verification goals into structurally simpler subgoals before tactic-level proving; • A principled decomposition score combining constructive justification with structural simplicity, used consistently as both training reward and inference-time search criterion; • A hybrid reinforcement learning pipeline that jointly trains decomposition and completion within a unified policy, balancing structural exploration with stable proof generation; • Extensive evaluation on three benchmarks, showing that a purpose-trained 8B-parameter model substantially outperforms frontier models and neural provers up to 84× larger.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Lean-based Code Verification</head><p>We formalize the automated code verification task in Lean 4 and analyze the core difficulties that motivate our hierarchical proof search approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Problem Formulation</head><p>We model automated code verification in Lean 4 using a Hoare-style specification framework. Concretely, we are given:</p><p>• a program C (a Lean definition or function),</p><p>• a precondition P and a postcondition Q, both expressed as Lean predicates.</p><p>The verification objective is to establish a Hoare-style triple {P} C {Q}, which asserts that for any input x satisfying P(x), the evaluation of C(x) yields a result v such that Q(x, v) holds. In the functional setting of Lean, C is typically a pure function, and the triple is encoded as a Lean proposition relating inputs and outputs of C. In our running example (Figure <ref type="figure" target="#fig_0">1</ref>), C = FindSingleNumber, P requires every element appears once or twice with exactly one unique element, and Q asserts the output is that unique element.</p><p>Formally, the input to the verification task is a tuple (C, P, Q) expressed in Lean, and the goal is to construct a machine-checkable proof term τ such that the Lean kernel accepts τ as a valid derivation of the verification goal G<ref type="foot" target="#foot_0">foot_0</ref> : G : ∀x, P(x) → Q(x, C(x)).</p><p>We assume that the program C and its associated predicates P and Q are already formalized in Lean; translating informal specifications into Lean is out of scope. The core challenge is therefore the synthesis of the proof term τ, which often involves quantifier elimination, complex induction, invariant generation, and the formulation of auxiliary assertions.</p><p>When we employ an LLM to automate this synthesis, the task reduces to a conditioned generation problem via the interactive proving protocol of Lean 4. In Lean's interactive proving model, proof construction proceeds step by step: at each step, the prover observes a goal state-comprising a set of local hypotheses (previously established facts) and a target proposition to be proved-and issues a tactic command. The Lean kernel checks the tactic, updates the proof state, and generates new subgoals if necessary; this loop continues until all goals are discharged or the attempt is abandoned. The LLM thus acts as a tactic generator: it receives the current goal state and produces a tactic sequence intended to close the goal.</p><p>A generation is deemed successful if and only if the Lean kernel accepts the resulting proof and all subgoals are discharged.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Verification Paradigms and Why Lean</head><p>Modern program verification predominantly relies on SMT-based "auto-active" verifiers such as Dafny <ref type="bibr" target="#b22">(Leino, 2010)</ref> and Verus <ref type="bibr" target="#b20">(Lattuada et al., 2023)</ref>. These tools translate high-level code and annotations into verification conditions (VCs) discharged by automated solvers such as CVC5 <ref type="bibr" target="#b5">(Barbosa et al., 2022)</ref> or Z3 <ref type="bibr" target="#b11">(De Moura &amp; Bjørner, 2008)</ref>. While highly effective for systems engineering, the reasoning process is largely mediated by external SMT solvers, which act as black boxes from the LLM's perspective. When a VC fails, the solver typically returns a generic counterexample or timeout rather than a structured diagnostic, making it difficult for an LLM agent to identify the root cause and iteratively refine its annotations.</p><p>We adopt Lean 4 (Moura &amp; Ullrich, 2021) as our verification platform for LLM-driven proof automation. From a foundational standpoint, Lean offers two structural advantages wellsuited to LLM-driven workflows: (i) Small trusted kernel. Lean relies on a minimal logical kernel as its sole verification authority, so even when an LLM produces unpredictable or creative proof attempts, correctness is guaranteed by a small, well-audited checker rather than a complex solver stack. (ii) Rich library ecosystem. Lean's dependent type theory supports higher-order and richly structured specifications, and libraries such as Mathlib (mathlib Community, 2020) and CSLib <ref type="bibr" target="#b6">(Barrett et al., 2026)</ref> provide an extensive knowledge base of verified lemmas and tactics that an LLM can directly invoke, facilitating the encoding of properties that extend beyond first-order SMT reasoning.</p><p>More importantly, Lean exposes the entire proof construction process to the LLM agent. Unlike opaque VC failures in SMT-based systems, Lean provides explicit goal states, local hypotheses, and fine-grained compiler diagnostics at each proof step. This transparency enables the LLM to plan proof strategies by inspecting open goals, execute tactics with immediate feedback, and debug failed attempts using structured error messages. Such an interactive loop is particularly suitable for iterative, model-driven verification.</p><p>Additionally, recent cross-system evaluations corroborate this choice. The AlgoVeri benchmark <ref type="bibr" target="#b49">(Zhao et al., 2026)</ref> translates the same set of algorithmic problems into Dafny, Verus, and Lean under aligned functional contracts, enabling a controlled comparison across verification paradigms. Proving performance turns out to be comparable across all three systems, and the primary bottleneck is shared: the absence of auxiliary lemmas and annotations needed to guide the automated proving. This suggests that the LLM-plus-Lean paradigm, while forgoing the raw automation of SMT solvers, can achieve competitive verification performance by leveraging the richer proof interaction that Lean affords.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Key Challenges</head><p>Despite recent advances in LLM-based theorem proving, automated code verification remains fundamentally harder than its mathematical counterpart. State-of-the-art planningour setting, C is a pure function, so the assignment rule reduces wp to direct substitution, yielding the simplified form shown here.</p><p>and-proving methods have achieved remarkable success in formal mathematics, reaching competition and IMO level performance <ref type="bibr" target="#b14">(Hubert et al., 2025</ref>), yet their efficacy does not transfer to code verification. We identify three key challenges that explain this gap.</p><p>Ungrounded decomposition. Complex verification goals are seldom provable in a single pass; the prover must carefully plan its proof strategy and decompose the goal into auxiliary lemmas whose proofs collectively entail the top-level statement. In formal mathematics, LLMs acquire strong planning ability from extensive pretraining over textbooks, competition solutions, and online discussions, enabling them to propose meaningful decompositions even for challenging problems <ref type="bibr" target="#b14">(Hubert et al., 2025;</ref><ref type="bibr" target="#b7">Chen et al., 2025)</ref>. However, virtually no natural-language corpus describes how a program's specification is proved; reasoning about program correctness has no comparable textual footprint in LLM pretraining data. Without this grounding, frontier models frequently produce subgoals that are semantically invalid or no simpler than the original objective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Concept proliferation.</head><p>Even given a correct decomposition, proving each subgoal remains difficult because each program introduces a fresh conceptual universe. In formal mathematics, the relevant objects (real numbers, groups, combinatorial structures) form a relatively closed vocabulary supported by shared libraries such as Mathlib, and proofs can reuse a rich collection of existing lemmas. In contrast, every function definition in a program brings new computational behavior, control flow patterns, and data-structure invariants whose properties must be established from scratch without prior library support <ref type="bibr" target="#b33">(Pei et al., 2023;</ref><ref type="bibr" target="#b18">Kamath et al., 2023)</ref>. For example, the postcondition in Figure <ref type="figure" target="#fig_0">1</ref> relies on filterlist, a helper function defined within the program itself; no existing library contains lemmas about its behavior, so all necessary properties must be proved from scratch during verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tactic distribution shift.</head><p>Beyond the conceptual gap, the tactics needed to discharge code verification subgoals differ markedly from those prevalent in formal mathematics. Mathematical proofs rely heavily on algebraic normalization tactics such as linarith, polyrith, and gcongr over continuous domains. Code verification, by contrast, operates over discrete and recursive domains (e.g., machine integers, bit-vectors, lists, and graphs), requiring specialized automation such as grind, SMT-backed tactics, and computational reflection (native_decide). For instance, proving properties about filterlist in our running example requires reasoning about list induction and element membership, which is best handled by grind or native_decide rather than the algebraic tactics that dominate mathematical proofs. Models trained primarily on mathematical corpora often fail to invoke these program-specific tools correctly, struggling to close even well-formulated subgoals.</p><p>The compound search challenge. Together, these three challenges create a compound search problem with an exceptionally fragile search space: a well-crafted set of subgoals can collapse a complex verification condition into tractable obligations, while a slightly misspecified lemma renders the entire proof intractable. This sensitivity motivates our approach, which trains a domain-specific decomposer guided by a principled scoring mechanism to identify decompositions that are both semantically valid and tactically provable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Hierarchical Verification Framework</head><p>Our method is organized around a single LLM that interacts with Lean in a planning-andproving loop. At each interaction step, the policy either proposes a decomposition of the current goal (planning) or emits proof code/tactics to close a subgoal (proving). To make this loop trainable and searchable, we center the framework on a decomposition score that quantifies candidate lemma decompositions and serves consistently as both the training reward and the inference-time ranking criterion. We first define the score (section 3.1) and then describe the unified training and inference pipeline (section 3.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Score for Lemma Decomposition</head><p>Lemma decomposition is a critical bottleneck in Lean-based code verification: a good decomposition turns a global correctness theorem into a set of provable subgoals, whereas a poor one produces invalid, redundant, or equally intractable obligations. We therefore seek a computable score that correlates with downstream provability and can serve both as a training reward and as an inference-time ranking criterion. From the perspective of policy optimization, this score should be cheap to evaluate online, informative under partial progress, and consistent between training-time supervision and test-time search control. To this end, we define the score along two complementary axes: (i) constructive justification and (ii) decomposition effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Constructive justification.</head><p>A lemma decomposition is only meaningful if the proposed lemmas (L 1 , . . . , L k ) logically entail the parent theorem (G). Specifically, a candidate decomposition must provide a proof reconstruction: a proof term π parent , produced by the LLM as part of its decomposition output, such that Lean can verify the implication (</p><formula xml:id="formula_0">L 1 ∧ • • • ∧ L k ) ⇒ G.</formula><p>We require that π parent explicitly invokes each proposed lemma, ensuring the decomposition is not merely a syntactic list but a constructively justified reduction of the original goal.</p><p>However, constructive justification alone does not guarantee the validity of the subgoals. A decomposition could be useless if a decomposed lemma is vacuous. For instance, an unprovable or false lemma (e.g., l = [] ∧ l.length &gt; 0) can technically prove the parent theorem, but it shifts the burden to an impossible sub-task. To prevent the search from pursuing such unprovable branches, we integrate quickcheck as a semantic filter.</p><p>Quickcheck performs automated counterexample search: it randomly samples concrete inputs and checks whether each proposed lemma holds, discarding any lemma that fails. This validation serves as a binary gate: if a counterexample is found for any L i , the entire decomposition is discarded before expensive proof search is attempted, ensuring that the framework only allocates search budget to subgoals that are both logically sufficient and empirically consistent.</p><p>Decomposition effectiveness. A decomposition is effective if it reduces the difficulty of the original verification task. In Hoare-triple terms, consider splitting {P} C {Q} into {P} C 1 {R} and {R} C 2 {Q}, where C 1 ; C 2 is a partition of the program C and R is an intermediate assertion characterizing the state between the two fragments. Such a decomposition is productive when each resulting sub-goal is strictly simpler than the original, either by simplifying the logical assertions (i.e., R simpler than P and Q) or the programs (i.e., C 1 , C 2 simpler than C).</p><p>To quantify this notion of simplicity, we observe that in Lean's abstract syntax tree (AST), both assertions and programs are uniformly expressed through operators: logical operators (connectives and quantifiers) and program operators (arithmetic, bitwise, or data-structure constructors). We define the structural difficulty d(G) of a verification goal G as its operator footprint: the total number of logical and domain-specific operator occurrences in its AST. This metric captures reasoning cost because each operator corresponds to a specific class of proof obligations: reducing logical operators simplifies propositional reasoning, and reducing computational operators simplifies reasoning about program behavior.</p><p>We illustrate this with the running example (Figure <ref type="figure" target="#fig_0">1</ref>). The goal FindSingleNumber_spec combines specification operators (∀, →, ∧, ∨, ∈, =) with program operators (filterlist, List.count, List.map, List.length), yielding d(G) = 18. A decomposition splits G into L 1 : "filterlist on the unique element returns a singleton list" (d(L 1 ) = 7) and L 2 : "every other element appears in filterlist exactly twice" (d(L 2 ) = 8). Each sub-lemma isolates a single property of filterlist with a smaller footprint, confirming a positive structural reduction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Unified Policy Learning and Inference</head><p>The quality of a decomposition is quantified by a scalar score S that integrates both constructive justification and decomposition effectiveness. Crucially, the same score is used as the training reward and the inference-time ranking criterion, ensuring strict alignment between optimization and deployment. We implement two custom Lean tactics to compute it: operatorcount, computing the operator footprint of a goal, and quickcheck, performing automated counterexample search. Both tactics can be invoked at any proof state.</p><p>The score combines a binary validity gate with a continuous structural reduction ratio. A candidate decomposition is valid only if (i) the proposed lemmas collectively discharge G via proof reconstruction, and (ii) every lemma survives quickcheck without counterexamples. We encode this jointly as</p><formula xml:id="formula_1">v(L 1 , . . . , L k ; G) = 1 proof (L 1 , . . . , L k ; G) • k ∏ i=1 1 qc (L i ),</formula><p>where 1 proof (L 1 , . . . , L k ; G) = 1 if proof reconstruction succeeds and 0 otherwise, and 1 qc (L i ) = 1 if no counterexample is found for L i and 0 otherwise.</p><p>Next, we quantify how much simpler the sub-goals are relative to the original. Let d(G) denote the operator footprint of the original theorem and d(L i ) the footprint of each decomposed lemma. A natural aggregate is max i d(L i ), since the hardest subgoal governs overall difficulty. However, max(•) is insensitive to partial progress: reducing one of two equally hard subgoals leaves the max(•) unchanged, assigning no credit to a strictly improved decomposition. We instead adopt LogSumExp, which approximates the maximum while remaining sensitive to reductions in any individual subgoal:</p><formula xml:id="formula_2">d(L 1 , . . . , L k ) = T • log k ∑ i=1 exp (d(L i )/T) ,</formula><p>where T controls the smoothness. The structural reduction ratio is then</p><formula xml:id="formula_3">r(L 1 , . . . , L k ; G) = max 1 - d(L 1 , . . . , L k ) d(G) , 0 . The final decomposition score is S = r(L 1 , . . . , L k ; G) • v(L 1 , . . . , L k ; G).</formula><p>Because this score is used identically during training (as the reward) and inference (as the ranking criterion), policy learning and tree-search control are optimized against exactly the same objective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Training Pipeline</head><p>We train the same autoregressive policy for both planning and proving in two stages:</p><p>(1) supervised initialization with scaffolded data; (2) hybrid reinforcement learning that optimizes decomposition while stabilizing completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supervised fine-tuning (SFT).</head><p>Using frontier models (GPT-5.2 and Gemini-3-Flash), we generate scaffolded trajectories for both lemma decomposition and lemma completion. This process yields 281K decomposition input-output pairs and 151K completion pairs. We merge the two types of trajectories and fine-tune a Qwen-3-8B backbone to obtain an initial policy π 0 . At this stage, the model already supports both decomposition and completion behaviors under the same prompting scaffolding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hybrid reinforcement learning (RL).</head><p>A central challenge in jointly optimizing decomposition and completion is reward mismatch: decomposition receives a dense, continuous score in [0, 1], while completion yields only a sparse binary signal (proof accepted or rejected). Naively merging these objectives causes decomposition gradients to dominate and completion proficiency to stagnate.</p><p>We resolve this by decoupling the learning objectives while maintaining a shared parameter space. Decomposition is optimized via group relative policy optimization (GRPO), utilizing the structural score S to drive exploration and curriculum expansion. Completion is stabilized through supervised replay of high-quality proof trajectories (generated by either the policy itself or frontier models), avoiding reliance on brittle binary signals.</p><p>Algorithm 1 summarizes the full loop. For completion, we adopt a policy-first strategy: π attempts each lemma first, and a frontier model is invoked only when π fails within m attempts, ensuring that π is exposed to its own successful completions for replay. Additionally, successfully decomposed lemmas are fed back into the problem set, providing an ever-expanding curriculum of progressively simpler subgoals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Hybrid RL with Online Lemma Collection</head><p>Require: Initial problem set P 0 , policy π, loss coefficient λ 1: for iterations t = 1, 2, . . . do 2:</p><p>Sample problem G ∼ P t-1 .</p><p>3:</p><p>Roll out π to produce decomposed lemmas L t := {L 1 , . . . , L k }.</p><p>4:</p><formula xml:id="formula_4">Compute reward S = r(L 1 , . . . , L k ; G) • v(L 1 , . . . , L k ; G)</formula><p>and GRPO objective J GRPO .</p><p>5:</p><p>Attempt completion of L t : first roll out π; if π fails within m attempts, fall back to an off-the-shelf model to produce T t := {τ 1 , . . . , τ k }.</p><p>6:</p><p>Compute SFT objective J SFT on completion trajectories (L t , T t ).</p><p>7:</p><p>Update π with hybrid objective J = J GRPO + λ • J SFT .</p><p>8: Augment problem set: P t ← P t-1 ∪ L t . 9: end for Algorithm 2 Hierarchical Inference (Single Run) Require: Theorem G, policy π 1: // Stage 1: Lemma Decomposition 2: Initialize open goal set O ← {G}. 3: for decomposition iterations i = 1, 2, . . . do 4:</p><p>Select the highest-scoring goal g ∈ O as the decomposition target.</p><p>5:</p><p>Roll out π to decompose g into sub-lemmas {L 1 , . . . , L k }.</p><p>6:</p><p>Verify proof reconstruction and quickcheck for each L i ; if failed, discard and retry. Roll out π to generate candidate proofs for each unclosed L i ∈ L.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>13:</head><p>Refine proofs based on Lean compiler feedback.</p><p>14: if all lemmas closed then return success. 15: end for</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Inference Pipeline</head><p>Inference proceeds in two sequential stages: the decomposition stage runs first, iteratively breaking down the original goal until a budget is exhausted, after which the completion stage takes over and attempts to prove each remaining leaf lemma. We use the term iteration to refer to a single decomposition or completion step within its respective stage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Lemma Decomposition.</head><p>At each decomposition iteration, the policy selects the open goal with the highest operator footprint as the decomposition target, concentrating search effort on the most complex remaining obligation. The policy then rolls out a decomposition for the selected goal; the result is verified via proof reconstruction and quickcheck, and discarded if either check fails. Upon acceptance, the original goal is replaced by its sub-lemmas in the goal set, and scores are computed for the new goals. This process repeats until all goals are discharged or a computational budget is exhausted.</p><p>Lemma Completion. After the decomposition stage concludes, the remaining open lemmas are passed to the completion stage. At each completion iteration, the policy generates a candidate proof for each unclosed lemma and submits it to the Lean compiler. If compilation fails, the error diagnostics are fed back to the policy, which revises the proof accordingly. This generate-and-refine loop repeats until all proofs are accepted or the budget is exhausted.</p><p>Algorithm 2 summarizes the full inference pipeline. Beyond increasing the per-run budget, performance can be further improved by launching k independent runs in parallel and accepting the first successful proof (pass@k).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We evaluate our framework through four research questions:</p><p>• RQ1 (Overall Effectiveness): How does our framework compare to frontier reasoning models and advanced neural provers on code verification benchmarks?</p><p>• RQ2 (Inference-Time Scaling): How does proving performance scale with increased inference-time compute (number of parallel runs k and per-run search budget)?</p><p>• RQ3 (Decomposition Analysis): How do the two decomposition criteria, constructive justification and decomposition effectiveness, contribute to downstream proving success?</p><p>• RQ4 (Ablation Study): How much do the trained decomposition and completion modules each contribute, and does joint training yield synergistic gains?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Benchmarks. We evaluate on three Lean 4 code verification benchmarks. Verina <ref type="bibr" target="#b48">(Ye et al., 2025</ref>) contains 189 tasks from introductory programming exercises, covering code generation, specification synthesis, and proof generation. Clever <ref type="bibr" target="#b38">(Thakur et al., 2025)</ref> provides 161 problems with formal specifications designed to avoid test-case leakage and trivial solutions. AlgoVeri <ref type="bibr" target="#b49">(Zhao et al., 2026)</ref> comprises 77 classical algorithms with identical functional contracts across Dafny, Verus, and Lean; we adopt its Lean subset. Among these, Verina ships complete programs with preconditions, implementations, and postconditions, forming a self-contained evaluation suite. Clever and AlgoVeri only release specifications without reference implementations; we therefore prompt GPT-5.2 to generate the code and manually verify the results. Together, the three benchmarks yield 427 verification tasks spanning straightforward functional correctness to deep algorithmic reasoning.</p><p>Baselines. We compare against two categories of baselines. ( <ref type="formula">1</ref> Implementation details. We fine-tune a Qwen-3-8B backbone <ref type="bibr" target="#b45">(Yang et al., 2025)</ref> following our training pipeline; we refer to the resulting policy as Göedel-Code-Prover-8B. SFT uses 281K decomposition and 151K completion trajectories, followed by hybrid RL. At inference, the decomposition stage runs up to 128 iterations or until the number of open lemmas exceeds 32; the completion stage refines each lemma for up to 128 iterations. Additional training hyperparameters, prompt templates, as well as inference configuration are provided in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics.</head><p>We report the prove success rate: the fraction of problems for which a complete, Lean-verified proof is produced within the inference budget. To ensure soundness, we only admit the standard axioms propext, Classical.choice, and Quot.sound; proofs invoking Lean.ofReduceBool or Lean.trustCompiler are rejected, as these bypass the kernel's deductive checking and could mask unsound reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">RQ1: Overall Effectiveness</head><p>As shown in Figure <ref type="figure" target="#fig_5">3</ref>, our framework achieves prove success rates of 68.8%, 54.0%, and 62.3% on Verina, Clever, and AlgoVeri, respectively, yielding an overall rate of 62.0% across all 427 tasks. In addition, quickcheck disproves 23, 10, and 14 problems on Verina, Clever, and AlgoVeri by producing concrete counterexamples.<ref type="foot" target="#foot_1">foot_1</ref> Among frontier reasoning models,  Response to RQ1: our framework achieves a 2.6× improvement over the strongest baseline across all benchmarks. Notably, this is achieved with an 8B model, far smaller than the 32B-671B neural provers it surpasses, demonstrating that hierarchical decomposition enables a small, purpose-trained policy to tackle complex verification tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">RQ2: Inference-Time Scaling</head><p>Our framework exposes two orthogonal scaling axes: the per-run search budget (number of iterations within each decomposition or completion stage) and the parallel sampling budget (pass@k, where k independent runs are launched and the first successful proof is accepted). We examine how performance varies along each axis.</p><p>As shown in Figure <ref type="figure">4</ref>, the decomposition reduction rate decreases steadily as iterations progress, indicating that the framework progressively identifies more effective goal simplifications with additional compute. Increasing the pass@k budget further lowers the reduction rate across all three benchmarks, confirming that broader parallel search at the decomposition stage produces structurally simpler sub-goals.</p><p>Figure <ref type="figure" target="#fig_6">5</ref> shows that the prove success rate grows steadily with both more completion iterations and larger pass@k, demonstrating clear inference-time scaling across all benchmarks. The persistent gap between pass@1 and pass@32 suggests that the framework benefits</p><p>0 32 64 96 128 Iteration 0.6 0.7 0.8 0.9 1.0 Reduction Rate Verina pass@1 pass@4 pass@32 0 32 64 96 128 Iteration 0.5 0.6 0.7 0.8 0.9 1.0 Reduction Rate Clever pass@1 pass@4 pass@32 0 32 64 96 128 Iteration 0.5 0.6 0.7 0.8 0.9 1.0 Reduction Rate AlgoVeri pass@1 pass@4 pass@32 Figure 4: Decomposition reduction rate vs. iterations across three benchmarks. Lower values indicate more aggressive goal simplification. 0 32 64 96 128 Iteration 0.3 0.4 0.5 0.6 0.7 Prove Success Rate Verina pass@1 pass@4 pass@16 pass@32 0 32 64 96 128 Iteration 0.2 0.3 0.4 0.5 0.6 Prove Success Rate Clever pass@1 pass@4 pass@16 pass@32 0 32 64 96 128 Iteration 0.2 0.3 0.4 0.5 0.6 0.7 Prove Success Rate AlgoVeri pass@1 pass@4 pass@16 pass@32 substantially from parallel search and has not yet saturated its scaling potential within the evaluated budget. By contrast, the pass@k curves of baseline verifiers plateau rapidly (see Appendix C.1), indicating that brute-force sampling without hierarchical decomposition yields diminishing returns.</p><p>Response to RQ2: performance scales consistently along both axes: more iterations improve decomposition quality, and larger k broadens search coverage, with no sign of saturation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">RQ3: Decomposition Analysis</head><p>Table <ref type="table" target="#tab_1">2</ref> quantifies how each criterion filters out unproductive decompositions. Among 32 parallel runs per problem, 31.8%-46.4% are discarded entirely because at least one proposed lemma fails quickcheck (QC Failed). Within the surviving runs, proof reconstruction still rejects 44.9%-59.4% of individual decomposition iterations (Proof Failed), confirming that constructing a logically sound reduction remains the dominant bottleneck. The two criteria thus act as successive filters: quickcheck eliminates semantically invalid runs early, and proof reconstruction catches logically unsound iterations within the remaining runs.</p><p>Figure <ref type="figure" target="#fig_7">6</ref> further confirms that the combined decomposition score is a strong predictor of downstream provability: on Verina, higher scores correlate with higher prove rates, achieving an AUROC of 0.903. This means that ranking candidate decompositions by S at inference time steers search toward decompositions that are more likely to yield complete proofs, validating its use as both a training reward and an inference-time selection. We also verify this correlation on our training data (see Appendix C.2): the same positive trend holds, confirming that the score captures a robust, transferable signal of proof tractability.</p><p>Response to RQ3: both decomposition criteria are effective at filtering unproductive decompositions, and the combined score S is highly predictive of proving success (AUROC = 0.903), enabling it to steer inference-time search toward provable decompositions.</p><p>0-50 51-100 101-150 151-200 201-250 251-300 301-400 401-500 500+ Score 0 20 40 60 80 100 Prove Rate (%) 99% (n=74) 85% (n=13) 68% (n=25) 50% (n=38) 29% (n=14) 33% (n=6) 14% (n=7) 0% (n=8) 0% (n=4) 0.0 0.2 0.4 0.6 0.8 1.0 False Positive Rate 0.0 0.2 0.4 0.6 0.8 1.0 True Positive Rate AUROC = 0.903  Table 3 isolates the contributions of our trained decomposition and completion modules by swapping each with baseline alternatives on Verina. Without decomposition, directly prompting Gemini-3-Flash for whole-proof generation achieves only 26.4%, confirming that hierarchical decomposition is essential. Adding GPT-5.2-Pro decomposition raises the rate to 54.4%; replacing it with our trained decomposer yields a further gain to 58.2%, showing that our policy learns strategies beyond what frontier models achieve via prompting. Similarly, replacing Gemini-3-Flash completion with our trained completer (GPT-5.2-Pro + Ours:</p><p>59.2%) shows that domain-specific completion training is at least as valuable as improved decomposition. Combining both trained components achieves 68.7%, surpassing every mixed configuration and confirming synergistic gains from joint training: the decomposer and completer co-adapt to each other's strengths.</p><p>We also visualize how training shifts the decomposition score distribution in Appendix C.3: after training, scores shift markedly toward higher values across all benchmarks, confirming that our pipeline teaches the model to produce more sound and effective decompositions.</p><p>Response to RQ4: both modules contribute substantially, and their combination yields gains that exceed the sum of individual improvements. Hierarchical decomposition is the single most impactful design choice.</p><p>5 Related work LLM-based theorem proving and the math-code gap. Language models have achieved remarkable progress in formal theorem proving, predominantly in mathematics. Starting from tactic-level generation <ref type="bibr" target="#b34">(Polu &amp; Sutskever, 2020)</ref> and retrieval-augmented proving <ref type="bibr">(Yang et al., 2024b)</ref>, the field has advanced through tree-search methods such as HyperTree Proof Search <ref type="bibr" target="#b19">(Lample et al., 2022)</ref> and, more recently, large-scale neural provers including</p><p>DeepSeek-Prover <ref type="bibr" target="#b42">(Xin et al., 2024)</ref>, Kimina-Prover <ref type="bibr" target="#b40">(Wang et al., 2025)</ref>, BFS-Prover <ref type="bibr">(Xin et al., 2025a)</ref>, and Goedel-Prover <ref type="bibr" target="#b27">(Lin et al., 2025)</ref>. Among these, Goedel-Prover is particularly noteworthy for its curriculum-driven synthetic data pipeline, which iteratively generates and verifies proof data to bootstrap prover capability.</p><p>However, the success of these systems does not directly transfer to code verification. In mathematics, a well-curated library such as Mathlib (mathlib Community, 2020) provides a dense, reusable inventory of lemmas, and the space of core concepts is comparatively concentrated. Code verification, by contrast, lacks a comparable lemma ecosystem: each program introduces its own function definitions, data-type invariants, and control-flow structures, effectively defining a fresh set of domain-specific concepts per task. This concept proliferation renders the proof distribution far more heterogeneous and precludes reliance on a fixed library of reusable lemmas, creating a substantial generalization gap for methods trained primarily on mathematical corpora.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Automated code verification with LLMs.</head><p>Traditional program verification relies on SMTbased auto-active tools such as Dafny (Leino, 2010) and Verus <ref type="bibr" target="#b20">(Lattuada et al., 2023)</ref>, where correctness is established by discharging verification conditions through automated solvers.</p><p>Recent efforts have explored using LLMs to assist these workflows, for example by generating loop invariants or annotations <ref type="bibr" target="#b18">(Kamath et al., 2023;</ref><ref type="bibr" target="#b33">Pei et al., 2023)</ref>. In the Lean ecosystem, Baldur <ref type="bibr" target="#b13">(First et al., 2023)</ref> demonstrated whole-proof generation for software verification, and Rango <ref type="bibr" target="#b39">(Thompson et al., 2024)</ref> introduced adaptive retrieval-augmented proving. However, these approaches either operate in a flat, single-pass generation mode or rely on tactic-level tree search without explicit goal decomposition. Our framework differs by introducing a planning layer that decomposes verification goals into structurally simpler sub-lemmas before invoking tactic-level proving, enabling the system to tackle problems whose complexity exceeds what flat generation can handle.</p><p>Hierarchical proof search and reinforcement learning. Decomposing complex goals into simpler sub-problems has a long history in automated reasoning <ref type="bibr" target="#b25">(Li et al., 2024)</ref>. In neural theorem proving, Draft-Sketch-Prove (Jiang et al., 2022) generates informal proof sketches before formalizing them, and subgoal-based approaches <ref type="bibr" target="#b0">(Achim et al., 2025;</ref><ref type="bibr" target="#b35">Ren et al., 2025)</ref> have explored decomposition for mathematical theorems. AlphaProof <ref type="bibr" target="#b14">(Hubert et al., 2025)</ref> achieved IMO-gold-level performance by combining reinforcement learning with a planning-and-proving paradigm. Our work adapts this paradigm to code verification, where useful decompositions differ fundamentally: intermediate assertions must capture semantic program properties (such as inductive invariants and termination measures) rather than syntactic refinements of the goal statement. On the reinforcement learning side, prior work has applied expert iteration <ref type="bibr" target="#b34">(Polu &amp; Sutskever, 2020)</ref>, off-policy RL with tree search <ref type="bibr">(Xin et al., 2025b)</ref>, and process reward models <ref type="bibr" target="#b26">(Lightman et al., 2024)</ref> to improve proof search. A persistent challenge is reward sparsity: binary proof success/failure signals provide limited gradient information. Our hybrid RL approach addresses this by introducing a continuous decomposition score as a dense reward for the planning stage, while stabilizing the proving stage through supervised replay.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We presented a hierarchical proof search framework for automated code verification in Lean 4 that decomposes complex verification goals into structurally simpler sub-lemmas before applying tactic-level proving. At its core is a decomposition score combining constructive justification with structural effectiveness, serving as both the training reward and the inference-time selection criterion. We train a single unified policy for both decomposition and completion via supervised initialization followed by hybrid reinforcement learning.</p><p>Experiments on three code verification benchmarks (Verina, Clever, and AlgoVeri) demonstrate that our framework achieves a 62.0% overall prove success rate, a 2.6× improvement over the strongest baseline, using an 8B-parameter model that outperforms neural provers up to 84× larger. Ablation studies confirm that both trained decomposition and comple-tion contribute synergistically, and that the decomposition score is highly predictive of downstream provability.</p><p>Limitations and future work. Our framework currently assumes that programs and specifications are already formalized in Lean; extending the pipeline to handle informal specifications or automatic translation from other languages remains an important direction. The decomposition score relies on syntactic operator counting as a proxy for proof difficulty; incorporating semantic complexity measures or learned difficulty predictors could yield more informative signals. Finally, scaling to larger codebases with inter-procedural dependencies and richer data structures presents both an engineering and a research challenge that we leave to future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Complete Proof for the Running Example</head><p>Below is the complete machine-checked proof for FindSingleNumber spec (the running example from Figure <ref type="figure" target="#fig_0">1</ref>), as synthesized by our framework. The implementation shown here is the full version used in the actual proof; Figure <ref type="figure" target="#fig_0">1</ref> presents an equivalent but abbreviated form for readability. The proof decomposes the top-level theorem into six auxiliary lemmas covering list filtering, element counting, uniqueness, and the recursive scanner, totaling over 130 lines of proof code. Each block below corresponds to one lemma or the final theorem.</p><p>--Precondition and postcondition (specification) def FindSingleNumber_precond (nums : List Int) : Prop := let numsCount := nums.map (fun x =&gt; nums.count x) numsCount.all (fun c =&gt; c = 1 ∨ c = 2) ∧ numsCount.count 1 = 1 def FindSingleNumber_postcond (nums : List Int) (result : Int) (h : FindSingleNumber_precond nums) : Prop := nums.length &gt; 0 ∧ (filterlist result nums).length = 1 ∧ ∀ (x : Int), x ∈ nums → x = result ∨ (filterlist x nums).length = 2 --Helper function used in the specification def filterlist (x : Int) (nums : List Int) : List Int := let rec aux (lst : List Int) : List Int := match lst with | [] =&gt; [] | y :: ys =&gt; if y = x then y :: aux ys else aux ys aux nums --Implementation: find the unique element that appears exactly once def FindSingleNumber (nums : List Int) (h_precond : FindSingleNumber_precond nums) : Int := let rec findUnique (remaining : List Int) : Int := match remaining with | [] =&gt; 0 | x :: xs =&gt; if (filterlist x nums).length = 1 then x else findUnique xs findUnique nums --Lemma 1: filterlist length equals List.count lemma length_filterlist_eq_count (x : Int) (nums : List Int) : (filterlist x nums).length = nums.count x := by classical have aux_eq : ∀ lst : List Int, filterlist.aux x lst = lst.filter (fun y =&gt; y = x) := by intro lst; induction lst with | nil =&gt; simp [filterlist.aux] | cons y ys ih =&gt; by_cases h : y = x &lt;;&gt; simp [filterlist.aux, ih, h] have eq_filter : filterlist x nums = nums.filter (fun y =&gt; y = x) := by simp [filterlist, aux_eq] simpa [eq_filter] using (List.count_eq_length_filter (l := nums) (a := x)).symm --Lemma 2: the precondition guarantees a unique element exists lemma exists_count_eq_one (nums : List Int) (h_precond : FindSingleNumber_precond nums) : ∃ x ∈ nums, nums.count x = 1 := by classical unfold FindSingleNumber_precond at h_precond rcases h_precond with ⟨_hall, huniq⟩ have hmem : 1 ∈ (nums.map (fun x =&gt; nums.count x)) := by by_contra hnot have : (nums.map (fun x =&gt; nums.count x)).count 1 = 0 := by simp [List.count_eq_zero, hnot] exact Nat.one_ne_zero (by simpa [this] using huniq) rcases List.mem_map.mp hmem with ⟨x, hx, hxcount⟩ exact ⟨x, hx, by simpa using hxcount⟩ --Lemma 3: the recursive scanner returns a unique element lemma findUnique_returns_length_one (nums : List Int) : ∀ remaining : List Int, (∃ u ∈ remaining, (filterlist u nums).length = 1) → (filterlist (FindSingleNumber.findUnique (nums := nums) remaining) nums).length = 1 := by classical intro remaining; induction remaining with | nil =&gt; intro hex; rcases hex with ⟨u, hu, _⟩; cases hu | cons x xs ih =&gt; intro hex; simp [FindSingleNumber.findUnique] by_cases hx1 : (filterlist x nums).length = 1 • simp [hx1] • have hex' : ∃ u ∈ xs, (filterlist u nums).length = 1 := by rcases hex with ⟨u, hu_mem, hu_len⟩; simp at hu_mem cases hu_mem with | inl hu_eq =&gt; subst hu_eq; exact False.elim (hx1 hu_len) | inr hu_mem_xs =&gt; exact ⟨u, hu_mem_xs, hu_len⟩ simpa [hx1] using ih hex' --Lemma 4: the algorithm returns a value with count = 1 lemma FindSingleNumber_result_characterization (nums : List Int) (h_precond : FindSingleNumber_precond nums) : nums.count (FindSingleNumber nums h_precond) = 1 := by classical rcases exists_count_eq_one nums h_precond with ⟨u, hu_mem, hu_count⟩ have hu_len : (filterlist u nums).length = 1 := by simp [length_filterlist_eq_count, hu_count] have hlen := by simpa [FindSingleNumber] using findUnique_returns_length_one nums nums ⟨u, hu_mem, hu_len⟩ simpa [length_filterlist_eq_count] using hlen --Lemma 5: uniqueness of the element with count = 1 lemma precond_unique_count_one (nums : List Int) (h_precond : FindSingleNumber_precond nums) {a b : Int} (ha : a ∈ nums) (hb : b ∈ nums) (hca : nums.count a = 1) (hcb : nums.count b = 1) : a = b := by classical unfold FindSingleNumber_precond at h_precond rcases h_precond with ⟨_hall, huniq⟩ by_contra hne let p : Int → Prop := fun x =&gt; nums.count x = 1 have haF : a ∈ nums.filter p := List.mem_filter.2 ⟨ha, by simp [p, hca]⟩ have hbF : b ∈ nums.filter p := List.mem_filter.2 ⟨hb, by simp [p, hcb]⟩ have two_le {ff : Type} {l : List ff} {a b : ff} (ha : a ∈ l) (hb : b ∈ l) (hne : a ̸ = b) : 2 ≤ l.length := by induction l with | nil =&gt; cases ha | cons c tl ih =&gt; have ha' : a = c ∨ a ∈ tl := by simpa using ha have hb' : b = c ∨ b ∈ tl := by simpa using hb cases ha' with | inl hac =&gt; cases hb' with | inl hbc =&gt; exact (hne (by simpa [hac] using hbc.symm)).elim | inr hb_tl =&gt; exact Nat.succ_le_succ (Nat.succ_le_of_lt (List.length_pos_of_mem hb_tl)) | inr ha_tl =&gt; cases hb' with | inl hbc =&gt; exact Nat.succ_le_succ (Nat.succ_le_of_lt (List.length_pos_of_mem ha_tl)) | inr hb_tl =&gt; exact le_trans (ih ha_tl hb_tl) (Nat.le_succ tl.length) have hlen_ge : 2 ≤ (nums.filter p).length := two_le haF hbF hne have count_map_eq_aux : ∀ l : List Int, (l.map (fun x =&gt; nums.count x)).count 1 = (l.filter (fun a =&gt; nums.count a = 1)).length := by intro l; induction l with | nil =&gt; simp | cons a l ih =&gt; by_cases h : nums.count a = 1 &lt;;&gt; simp [p, h, ih] have hlen_eq_one : (nums.filter p).length = 1 := by simp only [p] exact (count_map_eq_aux nums).symm.trans huniq exact Nat.not_succ_le_self 1 (by simpa [hlen_eq_one] using hlen_ge) --Lemma 6: non-unique elements have count = 2 lemma count_eq_two_of_ne_of_count_eq_one (nums : List Int) (h_precond : FindSingleNumber_precond nums) (r x : Int) (hx : x ∈ nums) (hcr : nums.count r = 1) (hxr : x ̸ = r) : nums.count x = 2 := by classical unfold FindSingleNumber_precond at h_precond rcases h_precond with ⟨hall, huniq⟩ have precond_counts (x' : Int) (hx' : x' ∈ nums) : nums.count x' = 1 ∨ nums.count x' = 2 := by have hall' : ∀ n ∈ (nums.map fun y =&gt; nums.count y), (n = 1 ∨ n = 2) := by simpa [List.all_eq_true] using hall exact hall' (nums.count x') (List.mem_map.mpr ⟨x', hx', rfl⟩) have h_precond' : FindSingleNumber_precond nums := by unfold FindSingleNumber_precond; exact ⟨hall, huniq⟩ have mem_of_one (a : Int) (h : nums.count a = 1) : a ∈ nums := by by_contra hmem have : nums.count a = 0 := by simp [List.count_eq_zero, hmem] exact Nat.zero_ne_one (by simpa [this] using h) cases precond_counts x hx with | inl h1 =&gt; exact (hxr (precond_unique_count_one nums h_precond' hx (mem_of_one r hcr) h1 hcr)).elim | inr h2 =&gt; exact h2 --Main theorem: combining all lemmas theorem FindSingleNumber_spec_satisfied (nums : List Int) (h_precond : FindSingleNumber_precond nums) : FindSingleNumber_postcond nums (FindSingleNumber nums h_precond) h_precond := by classical constructor • by_contra h0 have hnil : nums = [] := by simpa using List.length_eq_zero_iff.mp (Nat.eq_zero_of_not_pos h0) subst hnil simp [FindSingleNumber_precond] at h_precond constructor • simpa [length_filterlist_eq_count] using FindSingleNumber_result_characterization nums h_precond • intro x hx by_cases h : x = FindSingleNumber nums h_precond • exact Or.inl h • have hcount := count_eq_two_of_ne_of_count_eq_one nums h_precond (FindSingleNumber nums h_precond) x hx (FindSingleNumber_result_characterization nums h_precond) h exact Or.inr (by simp [length_filterlist_eq_count, hcount])</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Implementation Details</head><p>Custom Lean Tactics. We implement two custom Lean tactics used by the decomposition scoring mechanism. operatorcount traverses the goal's abstract syntax tree and returns the total number of logical operators (connectives, quantifiers) and domain-specific program operators (arithmetic, bitwise, data-structure constructors), excluding variable references and type annotations. quickcheck extends Lean's built-in Plausible library (Lean Prover Community, 2024): given a universally quantified lemma, it randomly samples concrete inputs (up to 1000 trials) and evaluates the lemma via native execution, reporting a counterexample if one is found. Both tactics are registered as Lean meta-programs and can be invoked at any proof state during decomposition verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Curation.</head><p>We collect 5K unique problems from LeetCode <ref type="bibr" target="#b41">(Xia et al., 2025)</ref> and <ref type="bibr">OpenCodeInstruct (Ahmad et al., 2025)</ref>. Each problem is automatically formalized into Lean using GPT-5.2. The formalizations undergo iterative refinement until they pass both syntactic validation and quickcheck filtering, ensuring empirical consistency. To prevent data contamination, we remove all problems whose title or description has an exact match with any problem in the Verina, Clever, or AlgoVeri evaluation benchmarks.</p><p>Trajectory Filtering. We apply different filtering criteria for the two trajectory types. For decomposition trajectories, we retain only those that are constructively justified (the proposed lemmas provably entail the parent theorem) and achieve a positive structural reduction (the decomposition score strictly decreases). For completion trajectories, we retain only those whose final proof is accepted by the Lean kernel.</p><p>Decomposition Prompt Template System: You are an expert in Lean 4 theorem proving. Your task is to decompose a theorem into smaller, provable lemmas. Think step by step. Before writing code, first analyze the theorem structure and explain your decomposition strategy in a &lt;reasoning&gt; block. Decomposition Strategies: • Structural Decomposition -Match goal structure: split P ∧ Q into separate lemmas; prove one side of P ∨ Q; find witness for ∃x, P(x).</p><p>• Induction Decomposition -For recursive structures: base case + inductive step as separate lemmas.</p><p>• Rewrite Chain -For equational goals A = D: break into A = B, B = C, C = D.</p><p>• Case Analysis -Split by Decidable, match, or if-then-else; each branch becomes a separate lemma. Output Requirements: (1) Wrap analysis in &lt;reasoning&gt;...&lt;/reasoning&gt; tags before any code;</p><p>(2) Helper lemmas use lemma keyword with sorry body; (3) Main theorem uses theorem keyword and proves using the lemmas (no sorry).</p><p>User: Decompose the theorem {theorem name}. {formal problem} Figure <ref type="figure">7</ref>: Prompt template for the decomposition stage. The model receives the target theorem name and the full Lean formalization, and produces a reasoning trace followed by helper lemmas and a proof of the main theorem.</p><p>Supervised Fine-Tuning. We fine-tune Qwen3-8B <ref type="bibr" target="#b45">(Yang et al., 2025)</ref> using LLaMA-Factory <ref type="bibr" target="#b50">(Zheng et al., 2024)</ref> for three epochs on a mixture of decomposition and proof completion trajectories. Training uses a learning rate of 1 × 10 -5 with a cosine schedule and a warmup ratio of 0.1. The maximum context length is 10,240 tokens with sequence packing enabled. We use a batch size of 128 with sequence packing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reinforcement Learning.</head><p>We apply GRPO <ref type="bibr" target="#b36">(Shao et al., 2024)</ref> using the verl framework <ref type="bibr" target="#b37">(Sheng et al., 2024)</ref> for 100 training steps across 4 × 4 GPUs. The learning rate is 5 × 10 -6 with cosine decay, with a clip ratio of [0.2, 0.28] and a sampling temperature of 0.9. We use a batch size of 64 prompts with n=8 parallel generations per prompt, with and a mini-batch size of 256 for policy update. Rewards are computed by verifying proof attempts and decomposition quality as described. To ensure informative gradient signals, we filter out rollout groups whose mean reward is 0 or 1. As described, We additionally apply an auxiliary supervised fine-tuning loss on proof completion trajectories with coefficient λ=0.08, and refresh the online proof state buffer at a sampling ratio of 1 4 per step.</p><p>Prompting Format. For decomposition, the prompt presents the current Lean file with the target theorem highlighted, and instructs the model to produce a &lt;reasoning&gt; block followed by helper lemmas (each with sorry placeholders) and a main theorem whose proof invokes these lemmas without sorry. For completion, the prompt shows the current goal state and compilation status, and the model responds with a SEARCH/REPLACE diff that modifies only the proof body while preserving theorem signatures and imports. We use the same prompting format for both training and inference. The full prompt templates are shown in Figure <ref type="figure">7</ref> and Figure <ref type="figure">8</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inference Configuration.</head><p>Each problem is allocated a wall-clock budget of 30 minutes. The decomposition stage runs up to 128 iterations with a maximum of 32 lemmas per problem. The completion stage runs up to 128 epochs per lemma, with a two-phase strategy:</p><p>(1) attempt tactic-based proving when the code compiles, (2) fix compilation errors if present. We deploy a distributed Lean verification service built on Ray <ref type="bibr" target="#b30">(Moritz et al., 2018)</ref>, which manages a pool of Lean worker processes across multiple nodes and supports up to 512 concurrent verification requests with a 300-second timeout per check.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A code verification task in Lean 4. The blue blocks define the specification: a precondition constraining valid inputs and a postcondition characterizing correct outputs.The green block contains the implementation. The red block states the top-level verification goal, where sorry marks the proof obligation to be synthesized automatically. The complete proof synthesized by our framework is shown in Appendix A.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of the hierarchical proof search framework. Stage 1 (Recursive Lemma Decomposition): The verification goal is recursively decomposed into structurally simpler sub-lemmas. At each step, the LLM policy π proposes candidates verified via proof reconstruction and quickcheck; the decomposition score S ranks candidates by combining validity with structural reduction in operator footprint d(•). Stage 2 (Iterative Lemma Completion): Leaf lemmas are proved by the same policy through iterative tactic generation with Lean 4 compiler feedback. The same score serves as both the training reward and the inference-time ranking criterion.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>At inference time, the trained model operates in a planning-and-proving loop. (1) Lemma decomposition transforms a top-level verification theorem into a set of intermediate subgoals that collectively entail the original statement. (2) Lemma completion then discharges each subgoal individually through iterative tactic generation and refinement. The same decomposition score guides the inference-time search, selecting among candidate decompositions and ensuring strict alignment between the training objective and the deployment criterion.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>remove g, add {L 1 , . . . , L k }; compute scores for new goals. 8: end for 9: // Stage 2: Lemma Completion 10: Collect remaining leaf lemmas L = {L 1 , . . . , L m } from O. 11: for completion iterations j = 1, 2, . . . do 12:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>)</head><figDesc>Frontier reasoning models: Claude-Opus-4.6, Gemini-3-Flash, GPT-5.2-Pro, GPT-5.3-Codex, and Deepseek-V3.2-Speciale, each prompted to produce a complete proof in a single pass. (2) Neural provers: Kimina-Prover-72B (Wang et al., 2025), DeepSeek-Prover-V2-671B (Ren et al., 2025), Goedel-Prover-V2-32B (Lin et al., 2025), and BFS-Prover-V2-32B (Xin et al., 2025b), which are trained on large-scale formal proof corpora; among them, BFS-Prover employs best-first tree search over tactic sequences, while the others generate whole proofs. All baselines use default inference configurations and report pass@128.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Number of solved problems by baselines and our framework across three benchmarks. Baselines are evaluated with parallel generation under a Pass@128 budget; our method operates under a search-based inference setting using G öedel-Code-Prover-8B. Our framework outperforms all baselines by a substantial margin across every benchmark.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Prove success rate vs. completion iterations under different pass@k budgets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Decomposition score vs. prove rate on Verina. The score reliably separates provable from unprovable instances (AUROC = 0.903).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Statistics of proved problems: mean and standard deviation of lemma count and proof length (lines of code).</figDesc><table><row><cell>Statistics</cell><cell>Verina</cell><cell>Clever</cell><cell>AlgoVeri</cell><cell>Total</cell></row><row><cell>Lemma count (mean)</cell><cell>17.02</cell><cell>12.13</cell><cell>8.48</cell><cell>14.38</cell></row><row><cell>Lemma count (std)</cell><cell>11.79</cell><cell>10.57</cell><cell>10.97</cell><cell>11.97</cell></row><row><cell>Proof length (mean)</cell><cell>167.11</cell><cell>137.78</cell><cell>129.87</cell><cell>154.28</cell></row><row><cell>Proof length (std)</cell><cell>108.50</cell><cell>97.79</cell><cell>83.03</cell><cell>103.11</cell></row><row><cell cols="5">the strongest (GPT-5.3-Codex) reaches only 23.6% on Clever and below 20% on Verina</cell></row><row><cell cols="5">and AlgoVeri, confirming that single-pass proof generation is insufficient for non-trivial</cell></row><row><cell cols="5">verification. Among neural provers, BFS-Prover-V2-32B achieves the best overall score of</cell></row><row><cell cols="4">23.8%, yet our framework surpasses it by 38.2 percentage points.</cell><cell></cell></row><row><cell cols="5">Table 1 further characterizes the proofs our framework produces. On average, each verified</cell></row><row><cell cols="5">problem requires 8 to 17 auxiliary lemmas and over 130 lines of proof code, with the longest</cell></row><row><cell cols="5">proofs reaching 680, 559, and 534 lines on Verina, Clever, and AlgoVeri, reflecting the depth</cell></row><row><cell cols="2">of reasoning our framework can sustain.</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Decomposition failure rates.</figDesc><table><row><cell cols="3">Proof Failed: % of iterations where</cell></row><row><cell cols="3">proof reconstruction rejects the decom-</cell></row><row><cell cols="3">position. QC Failed: % of runs where</cell></row><row><cell cols="3">at least one lemma fails quickcheck.</cell></row><row><cell>Dataset</cell><cell cols="2">Proof Failed QC Failed</cell></row><row><cell>Verina</cell><cell>59.4</cell><cell>46.4</cell></row><row><cell>Clever</cell><cell>44.9</cell><cell>31.8</cell></row><row><cell>AlgoVeri</cell><cell>52.8</cell><cell>32.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Ablation study on each component. We progressively replace each component with our trained model to isolate its contribution.</figDesc><table><row><cell>Decomposition</cell><cell>Completion</cell><cell>Verina</cell></row><row><cell>-</cell><cell>Gemini-3-Flash</cell><cell>26.4</cell></row><row><cell>GPT-5.2-Pro</cell><cell>Gemini-3-Flash</cell><cell>54.4</cell></row><row><cell>Ours</cell><cell>Gemini-3-Flash</cell><cell>58.2</cell></row><row><cell>GPT-5.2-Pro</cell><cell>Ours</cell><cell>59.2</cell></row><row><cell>Ours</cell><cell>Ours</cell><cell>68.7</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>In general, the verification goal for a Hoare triple {P} C {Q} involves showing ∀x. P(x) → wp(C, Q)(x), where wp denotes the weakest precondition of Q with respect to C<ref type="bibr" target="#b12">(Dijkstra, 1975)</ref>. In</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Quickcheck is also applied directly to the top-level goal. When a counterexample is found, it is provided to the LLM, which then uses it as evidence to disprove the problem.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Completion Prompt Template</head><p>System: Lean 4 proof assistant. Complete the proof by filling in the sorry placeholder with valid tactics. Important: Output reasoning in a reasoning block before any diff blocks. Recommended tactics (try in order): grind (powerful automation), aesop (general automation), simp all (aggressive simplification), omega (linear arithmetic), by cases (case split), induction (induction with auto finish).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output format: SEARCH/REPLACE diff blocks.</head><p>User: Complete the current proof goal. {code} Goal (Line {line}): {goal} Output diff blocks only.  To contextualize the inference-time scaling behavior of our framework, we examine the pass@k curves of the two strongest baseline verifiers. As shown in Figure <ref type="figure" target="#fig_9">9</ref>, both BFS-Prover-V2 and G öedel-Code-Prover-8Bexhibit diminishing returns as k increases: performance plateaus well before k=1024 on all three benchmarks, suggesting that simply scaling the number of independent proof attempts provides limited gains for whole-proof generation approaches. In contrast, our hierarchical framework continues to improve with additional compute (Section 4.3), highlighting the advantage of structured search over brute-force sampling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Decomposition Score Correlation on Training Data</head><p>In Section 4.4, we demonstrate that the decomposition score S is a strong predictor of downstream provability on the Verina benchmark (AUROC = 0.903). To verify that this correlation is not an artifact of a single evaluation set, we repeat the analysis on our training data. As shown in Figure <ref type="figure">10</ref>, the positive correlation between decomposition score and prove rate persists on the training distribution: problems whose best decomposition achieves a higher score are consistently more likely to be proved. This confirms that the decomposition score captures a generalizable signal of proof tractability, rather than overfitting to benchmark-specific patterns, and validates its use as a reward signal during reinforcement learning. To understand how training affects decomposition quality, we compare the distribution of decomposition scores before and after training across all three benchmarks. As shown in Figure <ref type="figure">11</ref>, the pre-training distribution is heavily concentrated at low scores, indicating that the base model frequently produces decompositions that fail constructive justification or yield minimal structural reduction. After training (Figure <ref type="figure">12</ref>), the distribution shifts markedly toward higher scores across all benchmarks, with a substantially larger fraction of decompositions achieving scores above 0.5. This shift confirms that our training pipeline, combining supervised fine-tuning with reinforcement learning, teaches the model to produce decompositions that are both logically sound and structurally effective.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Prompt template for the completion stage. The model receives the current code, the target goal state, and responds with SEARCH/REPLACE diffs that fill in proof bodies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Inference scaling curves (pass@k) of two baseline verifiers, BFS-Prover-V2 and G öedel-Code-Prover-8B, on the three evaluation benchmarks. The x-axis denotes the number of sampled proof attempts k, and the y-axis shows the percentage of problems solved.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 10 :Figure 11 :Figure 12 :</head><label>101112</label><figDesc>Decomposition score vs. prove rate on training data, showing that the positive correlation between score and provability generalizes beyond the Verina benchmark.Decomposition score distribution before training across benchmarks.Decomposition score distribution after training across benchmarks.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tudor</forename><surname>Achim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Best</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Bietti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Der</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathïs</forename><surname>Fédérico</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergei</forename><surname>Gukov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Halpern-Leistner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kirsten</forename><surname>Henningsgard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yury</forename><surname>Kudryashov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Meiburg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.01346</idno>
+		<title level="m">Imo-level automated theorem proving</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Wasi Uddin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Ficek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehrzad</forename><surname>Samadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jocelyn</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vahid</forename><surname>Noroozi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somshubra</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Ginsburg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.04030</idno>
+		<title level="m">Opencodeinstruct: A large-scale instruction tuning dataset for code llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Model see, model do? exposure-aware evaluation of bug-vs-fix preference in code llms</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Al-Kaswan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><surname>Spiess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prem</forename><surname>Devanbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arie</forename><surname>Van Deursen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maliheh</forename><surname>Izadi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.10496</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Automatic code generation techniques: A systematic literature review</title>
+		<author>
+			<persName><forename type="first">Maha</forename><surname>Alharbi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Alshayeb</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Automated Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">4</biblScope>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Introduction to software testing</title>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Ammann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Offutt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">cvc5: A versatile and industrial-strength smt solver</title>
+		<author>
+			<persName><forename type="first">Haniel</forename><surname>Barbosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clark</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Brain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gereon</forename><surname>Kremer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Lachnitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Makai</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdalrhman</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mudathir</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aina</forename><surname>Niemetz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Andres N Ötzli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Tools and Algorithms for the Construction and Analysis of Systems</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="415" to="442" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Clark</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabrizio</forename><surname>Montesi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jim</forename><surname>Grundy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonardo</forename><surname>De Moura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Rademaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sorrachai</forename><surname>Yingchareonthawornchai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cslib</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.04846</idno>
+		<title level="m">The lean computer science library</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Seed-prover 1.5: Mastering undergraduate-level theorem proving via learning from experience</title>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allan</forename><surname>Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlei</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.17260</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">QuickCheck: A lightweight tool for random testing of Haskell programs</title>
+		<author>
+			<persName><forename type="first">Koen</forename><surname>Claessen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hughes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fifth ACM SIGPLAN International Conference on Functional Programming</title>
+		<meeting>the Fifth ACM SIGPLAN International Conference on Functional Programming</meeting>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="268" to="279" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Model checking</title>
+		<author>
+			<persName><forename type="first">Edmund</forename><forename type="middle">M</forename><surname>Clarke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on foundations of software technology and theoretical computer science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1997">1997</date>
+			<biblScope unit="page" from="54" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Z3: An efficient smt solver</title>
+		<author>
+			<persName><forename type="first">Leonardo</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moura</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaj</forename><surname>Bjørner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on Tools and Algorithms for the Construction and Analysis of Systems</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="337" to="340" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Guarded commands, nondeterminacy and formal derivation of programs</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Edsger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dijkstra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="453" to="457" />
+			<date type="published" when="1975">1975</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Baldur: Whole-proof generation and repair with large language models</title>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>First</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><forename type="middle">N</forename><surname>Rabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Talia</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuriy</forename><surname>Brun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 31st ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1229" to="1241" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Olympiadlevel formal mathematical reasoning with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Mehta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sartran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Goran</forename><surname>Mikl Ós Z Horváth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Žužić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Wieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannick</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hussain</forename><surname>Schroecker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Masoom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="3" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Jesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toufique</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Premkumar</forename><forename type="middle">T</forename><surname>Devanbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Morgan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11455</idno>
+		<title level="m">Large language models and simple, stupid bugs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Software model checking</title>
+		<author>
+			<persName><forename type="first">Ranjit</forename><surname>Jhala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rupak</forename><surname>Majumdar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys (CSUR)</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="54" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Draft, sketch, and prove: Guiding formal theorem provers with informal proofs</title>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Albert Q Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><forename type="middle">Peng</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateja</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Jamnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lample</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.12283</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Adharsh</forename><surname>Kamath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Senthilnathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saikat</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pantazis</forename><surname>Deligiannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuvendu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aseem</forename><surname>Lal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rastogi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07948</idno>
+		<title level="m">Subhajit Roy, and Rahul Sharma. Finding inductive loop invariants using large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">HyperTree proof search for neural theorem proving</title>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Verus: Verifying rust programs using linear ghost types</title>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Lattuada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Hance</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chanhee</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Brun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isitha</forename><surname>Subasinghe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Howell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Parno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hawblitzel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Programming Languages</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="286" to="315" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<ptr target="https://github.com/leanprover-community/plausible" />
+		<title level="m">Lean Prover Community</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>GitHub repository</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Dafny: An automatic program verifier for functional correctness</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rustan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leino</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on logic for programming artificial intelligence and reasoning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="348" to="370" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Advances and frontiers of llm-based issue resolution in software engineering: A comprehensive survey</title>
+		<author>
+			<persName><forename type="first">Caihua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.11655</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">A survey on deep learning for theorem proving</title>
+		<author>
+			<persName><forename type="first">Zhaoyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qidong</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujie</forename><surname>Si</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.09939</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Goedel-prover-v2: Scaling formal theorem proving with scaffolded data synthesis and self-correction</title>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shange</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziran</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jui-Hui</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lai</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingruo</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.03613</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Is your code generated by ChatGPT really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The lean mathematical library</title>
+		<idno type="DOI">10.1145/3372885.3373824</idno>
+		<ptr target="https://doi.org/10.1145/3372885.3373824" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs</title>
+		<meeting>the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">2020</biblScope>
+			<biblScope unit="page" from="367" to="381" />
+		</imprint>
+	</monogr>
+	<note>The mathlib Community</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Ray: A distributed framework for emerging {AI} applications</title>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Nishihara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Tumanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Liaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melih</forename><surname>Elibol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Michael I Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">13th USENIX symposium on operating systems design and implementation</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="page" from="561" to="577" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">The Lean 4 theorem prover and programming language</title>
+		<author>
+			<persName><forename type="first">Leonardo</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moura</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Ullrich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Automated Deduction</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="625" to="635" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Glenford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><forename type="middle">M</forename><surname>Badgett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sandler</surname></persName>
+		</author>
+		<title level="m">The art of software testing</title>
+		<imprint>
+			<publisher>Wiley Online Library</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Can large language models reason about program invariants</title>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="27496" to="27520" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Generative language modeling for automated theorem proving</title>
+		<author>
+			<persName><forename type="first">Stanislas</forename><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03393</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Deepseek-prover-v2: Advancing formal mathematical reasoning via reinforcement learning for subgoal decomposition</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Zz Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.21801</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">Hybridflow: A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Clever: A curated benchmark for formally verified code generation</title>
+		<author>
+			<persName><forename type="first">Amitayush</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasper</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tsoukalas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meghana</forename><surname>Sistla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Zetzsche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.13938</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuno</forename><surname>Saavedra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Carrott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Fisher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Sanchez-Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuriy</forename><surname>Brun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>João</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sorin</forename><surname>Ferreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Lerner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>First</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14063</idno>
+		<title level="m">Rango: Adaptive retrieval-augmented proving for automated software verification</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Kimina-prover preview: Towards large formal reasoning models with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Haiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Unsal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Baksys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><forename type="middle">Dos</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Flood</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marina</forename><surname>Vinyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhe</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekai</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.11354</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Leetcodedataset: A temporal dataset for robust evaluation and efficient training of code llms</title>
+		<author>
+			<persName><forename type="first">Yunhui</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">Klein</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.14655</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhizhou</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodan</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.14333</idno>
+		<title level="m">DeepSeek-Prover: Advancing theorem proving in LLMs through large-scale synthetic data</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Bfs-prover: Scalable best-first tree search for llm-based automatic theorem proving</title>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="32588" to="32599" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Scaling up multi-turn offpolicy rl and multi-agent tree search for llm step-provers</title>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanchen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Xiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.06493</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kaiyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristin</forename><surname>Lauter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16075</idno>
+		<title level="m">Formal mathematical reasoning: A new frontier in ai</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">LeanDojo: Theorem proving with retrievalaugmented language models</title>
+		<author>
+			<persName><forename type="first">Kaiyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">M</forename><surname>Swope</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Chalapathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixing</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maruan</forename><surname>Al-Shedivat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxu</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothe</forename><surname>Kasriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Verina</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.23135</idno>
+		<title level="m">Benchmarking verifiable code generation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Algoveri: An aligned benchmark for verified code generation on classical algorithms</title>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziran</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deyuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Venugopal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aarti</forename><surname>Veeravalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjeev</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Arora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.09464</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Unified efficient fine-tuning of 100+ language models</title>
+		<author>
+			<persName><forename type="first">Yaowei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyan</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangchi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Llamafactory</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2403.13372" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note>System Demonstrations)</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

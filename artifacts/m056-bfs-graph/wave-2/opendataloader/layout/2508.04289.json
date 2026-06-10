@@ -1,0 +1,4205 @@
+{
+  "layout": {
+    "author": "Hong Su",
+    "creation date": null,
+    "file name": "2508.04289.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          79.654,
+          652.826,
+          532.348,
+          737.429
+        ],
+        "content": "Method-Based Reasoning for Large Language Models: Extraction, Reuse, and Continuous Improvement",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 23.91,
+        "heading level": 1,
+        "id": 29,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          286.121,
+          633.153,
+          325.88,
+          646.358
+        ],
+        "content": "Hong Su",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.959,
+        "id": 30,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          14.04,
+          227.69,
+          36.36,
+          564.31
+        ],
+        "content": "arXiv:2508.04289v2[cs.AI]7Aug2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 2,
+        "id": 42,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          48.964,
+          421.639,
+          300.023,
+          592.744
+        ],
+        "content": "Abstract—Large language models (LLMs) have shown impressive capabilities across a wide range of language tasks. However, their reasoning process is primarily guided by statistical patterns in training data, which limits their ability to handle novel problems and perform consistent logical reasoning. In this paper, we propose a method-based model that enhances LLMs with explicit, reusable procedures extracted from training content, generated responses, and user interactions. Each method is represented as a pair consisting of a problem and its corresponding solution, stored externally and ranked based on feedback. When a new query is received, the system retrieves and applies the most relevant methods to guide the LLM’s response. Our model enables continual learning, method reuse, and logical consistency beyond next-token prediction. Experimental results demonstrate that the system improves factual verification and generalization in complex prompts, and that newly learned methods can outperform earlier ones through user-driven refinement.",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 31,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          396.39,
+          300.022,
+          418.055
+        ],
+        "content": "Index Terms—Large Language Models (LLMs), scope expansion, vertical expansion, horizontal expansion",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 32,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.62,
+          371.917,
+          213.372,
+          383.921
+        ],
+        "content": "I. INTRODUCTION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 33,
+        "level": "1",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          261.397,
+          300.022,
+          369.043
+        ],
+        "content": "Large language models (LLMs) have achieved remarkable success in a wide range of natural language processing tasks, including text generation [1], question answering [2], and dialogue systems [3]. These models are typically built on Transformer architectures [4] [5], which learn statistical relationships between words by training on massive corpora of text data. During inference, the model predicts the most likely next token given a sequence of known tokens, leveraging patterns learned from its training data [6].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 34,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          106.195,
+          300.022,
+          261.661
+        ],
+        "content": "Despite their success, LLMs face two fundamental limitations. First, their behavior is primarily driven by common statistical patterns in language, which makes it difficult to handle novel problems that deviate from previously seen distributions. When the input falls outside the scope of pretrained patterns, the model may struggle to produce correct or coherent outputs. Second, the generation process in LLMs lacks explicit logical reasoning [7]. Although logical structure may sometimes emerge implicitly through statistical learning, LLMs often fail to verify the validity of their outputs from a reasoning standpoint. As a result, logical errors—such as hallucinating unsupported facts or making inconsistent assumptions—can go undetected.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 35,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          70.776,
+          300.022,
+          98.313
+        ],
+        "content": "H. Su is with the School of Computer Science, Chengdu University of Information Technology, Chengdu, China. E-mail: suguest@126.com.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 36,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          473.704,
+          563.036,
+          593.304
+        ],
+        "content": "To address these limitations, we propose a method-oriented approach that introduces an explicit layer of procedural reasoning on top of LLMs. In this model, a method is defined as a pair consisting of a problem and its corresponding solution procedure. By extracting and applying such methods, the system can reason more consistently and adapt known procedures to solve structurally similar but previously unseen problems. This mirrors how humans apply learned strategies to new situations—for instance, a student applying a familiar technique to solve a new type of math problem.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 37,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          366.107,
+          563.036,
+          473.753
+        ],
+        "content": "While existing techniques such as Chain-of-Thought (CoT) prompting [8] aim to improve LLM reasoning by encouraging step-by-step thinking, they rely on manually designed prompt templates and are not content-adaptive. CoT is effective in some domains but not universally applicable across all types of user inputs. In contrast, our method-based approach learns directly from LLM training content, outputs, and user interactions, enabling dynamic and context-sensitive method acquisition.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 38,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          234.6,
+          563.036,
+          366.156
+        ],
+        "content": "In this paper, we propose a model for automatic method extraction and reuse within LLM systems. Methods are automatically extracted from training materials, generated responses, or user inputs. Each method is represented as a problemsolution pair and stored in a method management module. When a new user query is received, the system compares it to stored problems to retrieve candidate methods. These candidates are passed to the LLM for execution, and the resulting outputs are ranked by the user or system. Over time, higher-ranked methods are favored, enabling continual improvement of reasoning quality.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 39,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          103.093,
+          563.036,
+          234.649
+        ],
+        "content": "The key contributions of this work are summarized as follows. First, we introduce a method-based reasoning model that enhances LLM output by extracting reusable procedures from interactions. Second, we propose a structure for representing and storing methods as problem-solution pairs, enabling semantic matching and generalization. Third, we develop an automatic method extraction and ranking mechanism that requires no user intervention and adapts dynamically over time. Lastly, we demonstrate through experimental evaluation that our approach improves the logical reliability and adaptability of LLM-generated outputs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 40,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.036,
+          103.142
+        ],
+        "content": "The remainder of this paper is organized as follows. Section II reviews related work. Section III introduces the proposed method-based reasoning model. Section IV presents our experimental verification and analysis. Finally, Section V concludes the paper with a summary and future directions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 41,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.545,
+          724.763,
+          217.444,
+          736.767
+        ],
+        "content": "II. RELATED WORK",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 44,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          647.976,
+          300.022,
+          719.755
+        ],
+        "content": "Recent research has increasingly explored the enhancement of large language models (LLMs) through structured reasoning, prompt engineering, and interaction-driven adaptation. Our work contributes to this growing body of research by introducing a method-based model that emphasizes reusable problem-solving logic extracted from LLM interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 45,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          516.149,
+          300.022,
+          648.064
+        ],
+        "content": "Prompt Engineering and Chain-of-Thought Reasoning. Prompt-based methods such as Chain-of-Thought (CoT) [8] and ReAct [9] have demonstrated that explicitly guiding LLMs through intermediate reasoning steps improves accuracy in complex question answering, mathematical problem-solving, and planning tasks. CoT operates by prompting the model to “think aloud” before providing a final answer, which often improves reasoning transparency and interpretability. Similarly, ReAct combines reasoning with action, encouraging LLMs to interleave environment interaction (e.g., tool use) with internal reasoning.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 46,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          396.278,
+          300.022,
+          515.878
+        ],
+        "content": "Despite their effectiveness, both CoT and ReAct rely heavily on carefully crafted prompt templates that are tailored to specific domains or task types. This limits scalability and reuse, particularly when the domain or logic evolves over time. Our work complements and extends these approaches by introducing a mechanism that automatically extracts generalized reasoning patterns (methods) from LLM outputs. These methods are stored structurally and reused across sessions, reducing dependence on human-crafted prompts and supporting continual improvement through interaction.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 47,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          324.227,
+          300.022,
+          396.007
+        ],
+        "content": "Moreover, while CoT typically focuses on decomposing a single task into steps, our model extracts reusable methods that capture the entire solution strategy for a class of problems. This allows for method transfer and modular composition, enabling the system to build a repertoire of reusable, abstract procedures.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 48,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          211.33,
+          300.023,
+          319.334
+        ],
+        "content": "Reinforcement Learning from Human Feedback. Reinforcement Learning from Human Feedback (RLHF) [10] has become a standard mechanism for aligning LLM outputs with human preferences. In systems such as InstructGPT and ChatGPT, RLHF is used to reward helpful, harmless, and honest responses through ranked comparisons and preference modeling. However, the focus is typically on tuning the language model’s output distribution rather than structuring or storing the reasoning behind preferred outputs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 49,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          115.369,
+          300.022,
+          211.059
+        ],
+        "content": "Our model integrates RLHF-like feedback mechanisms not just to adjust output selection, but to refine and update a library of reusable methods. When users evaluate multiple candidate solutions, their rankings are incorporated as external scores that inform method selection, replacement, and retention. This approach blends symbolic reasoning with preference modeling, enabling the system to prioritize logic patterns that are repeatedly validated by human users.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 50,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.022,
+          115.098
+        ],
+        "content": "In contrast to model-level alignment, our method-based feedback loop operates at the reasoning structure level, enabling explainable and auditable improvements over time. This is especially valuable in domains where logic, rules, or verification steps must be made explicit, such as legal analysis, software configuration, or scientific inquiry.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 51,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          629.121,
+          563.036,
+          737.125
+        ],
+        "content": "Retrieval-Augmented Generation (RAG). RetrievalAugmented Generation (RAG) [11] [12] augments LLMs with access to an external document store or knowledge base. At inference time, relevant documents are retrieved and incorporated into the prompt context to help the LLM generate grounded, factually accurate answers [13]. This hybrid approach improves factuality and allows the model to operate with smaller parameter sizes while maintaining strong performance.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          520.528,
+          563.036,
+          628.174
+        ],
+        "content": "While RAG systems retrieve and cite external factual content, our model retrieves abstract methods—structured problem-solving procedures extracted from previous interactions. These methods are not mere references, but logicaware programs or stepwise strategies that can be applied dynamically to new problems. This distinction is critical: instead of enhancing the factual grounding of a single output, we enhance the logical reliability and reusability of entire solution paths.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          447.801,
+          563.036,
+          519.581
+        ],
+        "content": "Additionally, unlike typical RAG pipelines that use dense vector similarity to retrieve documents, our system incorporates both feature-based similarity and user feedback ranking to retrieve and apply methods. This adds an extra layer of interpretability and control, making it suitable for domains that require repeatable and verifiable decision-making processes.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 54,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          327.253,
+          563.036,
+          447.212
+        ],
+        "content": "External Memory and Tool-Augmented LLMs. Recent work has explored enhancing LLMs by equipping them with the ability to interact with external tools or memory systems. Toolformer [14], for example, fine-tunes models to decide when and how to call APIs, allowing the LLM to autonomously use external tools such as calculators, search engines, or weather services. Similarly, models like LlamaIndex [15] and LangChain [16] provide structured access to external databases or memory indices, allowing LLMs to retrieve longterm context or document-level knowledge.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 55,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          242.57,
+          563.036,
+          326.305
+        ],
+        "content": "These systems focus on augmenting LLMs with access to external factual or functional resources. In contrast, our method management module acts as an external procedural memory—a repository of reasoning strategies rather than data or facts. Instead of remembering specific facts, it remembers how to solve problems, which includes preconditions, steps, and conditional actions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 56,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          145.933,
+          563.036,
+          241.623
+        ],
+        "content": "This procedural memory enables logic-level consistency across sessions and tasks. It supports ranking, replacing, and reusing methods based on user feedback, thereby offering a bridge between symbolic planning (e.g., classical AI-style procedural knowledge) and neural language generation. While existing tool-augmented systems aim to fill content gaps, our model aims to close reasoning gaps by supplying verified procedural knowledge learned from prior LLM interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 57,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          68.224,
+          563.036,
+          140.363
+        ],
+        "content": "Self-Improving and Continual Learning Systems. Several studies have proposed architectures for self-improving LLMs, where the model iteratively learns from its own outputs [17]. Notable examples include models for self-refinement [18], bootstrapping, or on-the-fly code repair, where outputs are recycled as new training data or refined via meta-prompting.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.036,
+          67.277
+        ],
+        "content": "However, most of these approaches treat improvement as an implicit fine-tuning or output filtering step, rather than as",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          688.897,
+          300.022,
+          736.767
+        ],
+        "content": "structured method acquisition. They typically lack a persistent, interpretable memory of the procedures behind those improvements, making it difficult to reuse or transfer logic to new domains.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 61,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          605.404,
+          300.022,
+          689.139
+        ],
+        "content": "Our model complements these efforts by formalizing the notion of method as a reusable unit of reasoning. Methods are extracted from LLM interactions, stored explicitly, associated with problem features, and refined through user ranking. This introduces an interpretable and auditable mechanism for continual logical improvement—analogous to building a method library that grows with each session.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 62,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          533.866,
+          300.022,
+          605.646
+        ],
+        "content": "Moreover, unlike pure self-training systems which may drift without human oversight, our architecture remains grounded through user feedback (via ranking) and method filtering (via structure checks). This hybrid approach balances autonomy with control, allowing both safe refinement and transferability to unseen problems with similar logical form.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 63,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          462.328,
+          300.022,
+          534.108
+        ],
+        "content": "In summary, our work is positioned at the intersection of retrieval-based reasoning, logic-aware prompting, and memory-augmented interaction. It contributes a novel mechanism for dynamically growing and refining a repository of executable methods that improves LLM performance across time and users.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 64,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          50.027,
+          428.056,
+          298.965,
+          452.016
+        ],
+        "content": "III. METHOD-BASED REASONING FOR LARGE LANGUAGE MODELS",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 65,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          341.425,
+          300.022,
+          425.16
+        ],
+        "content": "In conventional LLM usage, training and inference are primarily regarded as processes for generating conversational or textual content. In contrast, this work reinterprets the training material as a repository of methods—structured procedures that can be extracted and reused to solve new tasks—rather than merely viewing it as a collection of words, sentences, or paragraphs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 66,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          257.932,
+          300.022,
+          341.667
+        ],
+        "content": "A method refers to a procedure composed of one or more actions aimed at solving a specific problem. Unlike static text generation, method extraction operates at a semantic level, focusing on the underlying logic rather than on surface-level word predictions. This abstraction allows extracted methods to be transferred and adapted to similar problems, even when the textual representations differ.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 67,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          198.349,
+          300.022,
+          258.174
+        ],
+        "content": "Method selection and optimization are guided by logical reasoning or preference mechanisms, such as reinforcement learning from human feedback (RLHF), rather than by conventional token-level prediction. Further details on method ranking are discussed in Section III-C.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          114.856,
+          300.022,
+          198.591
+        ],
+        "content": "In the proposed LLM-based method extraction model, the LLM is utilized to identify and extract actionable procedures from input content, as illustrated in Figure 1. These extracted methods may take the form of textual descriptions—serving as prompts or hints to guide subsequent LLM behavior—or executable external processes such as Python scripts or API calls, as detailed in Section III-F.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 69,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.027,
+          115.098
+        ],
+        "content": "A method is characterized by a logical pairing of a problem and its corresponding solution. The problem describes the objective or issue to be resolved, while the solution consists of one or more actions taken to address it. This is formally represented in Equation (1), where a method is defined as a tuple of logical components:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 70,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          594.182,
+          563.978,
+          735.932
+        ],
+        "id": 71,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "2508.04289_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          311.978,
+          574.009,
+          526.828,
+          583.613
+        ],
+        "content": "Fig. 1. The high-level diagram of the method-based LLM model",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 72,
+        "linked content id": 71,
+        "page number": 3,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          377.138,
+          525.15,
+          563.036,
+          543.76
+        ],
+        "content": "Method = {problem, solution} (1)",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 73,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          478.24,
+          563.036,
+          526.11
+        ],
+        "content": ", where problem and solution denote the abstract representations of the problem and solution, respectively. For brevity, they may be referred to simply as p and s when no ambiguity arises.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          382.831,
+          563.036,
+          478.521
+        ],
+        "content": "This method-centric approach differs fundamentally from storing all content or internal relationships (e.g., query-keyvalue matrices in Transformer models). Simply preserving all training materials may result in a bloated memory space, making it difficult for the LLM to discern which parts are relevant to a new problem. In contrast, explicitly extracting and storing logical methods provides a more structured and reusable mechanism for generalization.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 75,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          275.466,
+          563.036,
+          383.111
+        ],
+        "content": "To determine whether a piece of material constitutes a method, the LLM is prompted to assess its suitability. If deemed a method, the LLM is then required to identify both the underlying problem and the corresponding solution. The problem can be derived by asking the LLM to formally describe the task, summarize the issue, or classify the type of question. In some cases, the original text from which the method was extracted may also be used directly as the problem description.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 76,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          180.056,
+          563.036,
+          275.746
+        ],
+        "content": "The problem component can take various forms—not limited to a single word—but potentially spanning a sentence, a paragraph, or multiple paragraphs. Importantly, the problem need not be an exact identifier (e.g., an exact name); rather, it may represent a semantically vague or generalized formulation. This enables the LLM to recognize and associate similar but non-identical problems through high-level feature alignment.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 77,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          125.861,
+          563.036,
+          180.337
+        ],
+        "content": "By decoupling problems and solutions, this model enables the construction of a flexible mapping between abstract problem representations and corresponding solutions. Formally, we define a many-to-many mapping function M:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 78,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.039,
+          122.099
+        ],
+        "content": "M : P → 2S, M(𝑝𝑖) = {𝑠𝑗 | 𝑠𝑗 solves 𝑝𝑖} (2) , where P is the set of all problems and S is the set of all solutions. Each problem 𝑝𝑖 ∈ P may have multiple associated solutions 𝑠𝑗 ∈ S, and vice versa. This many-tomany relationship forms the basis for method composition and reuse.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 79,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          676.942,
+          300.026,
+          736.767
+        ],
+        "content": "To support scalable retrieval, we organize problems hierarchically using a tree structure T = (𝑉, 𝐸), where each node 𝑣 ∈ 𝑉 represents a problem (or a problem cluster), and each edge (𝑣𝑖, 𝑣𝑗) ∈ 𝐸 represents a semantic relationship (e.g., generalization or specialization):",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 81,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          66.295,
+          638.479,
+          300.022,
+          658.395
+        ],
+        "content": "T : Root → Children(𝑝) → Leaves, with 𝑝 ∈ P (3)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 82,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          589.317,
+          300.022,
+          637.187
+        ],
+        "content": "Each node 𝑣 stores a tuple (𝑝, M(𝑝)), linking a problem to its set of solutions. Traversal of this tree allows for efficient discovery of relevant methods even in large and diverse knowledge bases.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 83,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          541.272,
+          300.022,
+          589.141
+        ],
+        "content": "This hierarchical representation supports logical reasoning, method reuse, and efficient similarity-based retrieval, especially when combined with LLM-generated embeddings or semantic clustering.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 84,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          511.826,
+          142.204,
+          523.721
+        ],
+        "id": 85,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              48.964,
+              511.826,
+              142.204,
+              523.721
+            ],
+            "content": "A. Storage of Methods",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 116,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          48.964,
+          471.928,
+          300.026,
+          507.842
+        ],
+        "content": "1) Method Storage Tree: The tree used to store methods are called method storage tree, in which methods are organized according to their associated problems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "level": "3",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          364.107,
+          300.022,
+          471.752
+        ],
+        "content": "The tree structure is built primarily based on the problem descriptions, allowing similar problems to be grouped together. Although solutions may also be used for organization, they are discussed separately under section of III-A2 and III-A3. The process begins with an initially empty tree. When a new method is introduced, the LLM is prompted to determine the appropriate location in the existing tree for insertion. Or if there are some methods, the LLM is then used to group existing methods into a tree based on problem similarity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 87,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          316.062,
+          300.022,
+          363.931
+        ],
+        "content": "Each node in the tree consists of a problem and its associated solutions. Since a problem may have multiple valid solutions, each node can store a list of method variants, as illustrated in Equation (4).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 88,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          125.428,
+          284.323,
+          300.022,
+          302.933
+        ],
+        "content": "question → {s𝑎, s𝑏, · · · } (4)",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 89,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          211.251,
+          300.022,
+          283.031
+        ],
+        "content": "If the root node of the tree contains a method, it may serve as a general-purpose method applicable across a wide range of scenarios. In cases where method ranking is unavailable, all methods along the path from the root to a specific leaf node can be provided to the LLM, which then selects the most suitable one.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 90,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          115.385,
+          300.022,
+          211.435
+        ],
+        "content": "Another important consideration is the scope of method storage. Storage may be maintained either at the user level or the LLM level. User-level storage retains methods and associated problems for individual users, allowing personalized learning and reuse. In contrast, LLM-level storage aggregates methods extracted from all users, including those derived from training data and user interactions. New methods, once extracted, can be ranked later to determine their utility.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 91,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.027,
+          115.098
+        ],
+        "content": "2) Methods for Improving Other Methods: In our model, a method (or solution) is typically associated with solving a specific user problem. However, there are scenarios where a method itself may become the subject of another method—especially when the original method fails, produces suboptimal results, or requires refinement.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 92,
+        "level": "3",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          641.076,
+          563.036,
+          736.766
+        ],
+        "content": "For instance, if a method produces an incorrect or incomplete solution, another method can be invoked to validate, revise, or enhance it. One common example is the use of Chain-of-Thought (CoT) prompting to transform a shallow method into a more structured, step-by-step reasoning process. This type of meta-method can be seen as a higher-level strategy that operates on other methods rather than on raw input problems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 93,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          581.027,
+          563.038,
+          640.852
+        ],
+        "content": "We formalize this idea as follows. Let M denote the set of all methods, and let Apply(𝑚, 𝑞) denote the application of method 𝑚 to a query 𝑞 or a method 𝑚 to produce an output. Then, for a method 𝑚1 ∈ M and an input 𝑞, we define its output as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 94,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          399.892,
+          549.026,
+          563.036,
+          567.636
+        ],
+        "content": "𝑜1 = Apply(𝑚1, 𝑞) (5)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 95,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          511.557,
+          563.036,
+          547.471
+        ],
+        "content": "If the output 𝑜1 is deemed unreliable, a secondary method 𝑚2 can be applied to the original method 𝑚1 (with knowledge of 𝑞) to improve its behavior:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 96,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          391.864,
+          479.556,
+          563.036,
+          498.166
+        ],
+        "content": "𝑜2 = Apply(𝑚2, 𝑚1, 𝑞) (6)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 97,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          429.392,
+          563.041,
+          478.001
+        ],
+        "content": "Here, 𝑚2 is acting on 𝑚1 as its input context—serving as a higher-level reasoning strategy. It may, for instance, prompt the system to re-express 𝑚1 using CoT or add a validation step before accepting 𝑚1’s result.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 98,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          417.904,
+          510.711,
+          429.908
+        ],
+        "content": "Thus, a hierarchical structure emerges, where:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 99,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          357.31,
+          563.035,
+          417.68
+        ],
+        "id": 100,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              311.978,
+              393.721,
+              563.035,
+              417.68
+            ],
+            "content": "- Leaf nodes represent base-level methods that address userlevel queries.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              357.31,
+              563.035,
+              393.497
+            ],
+            "content": "- Internal nodes represent higher-level methods that operate on other methods, refining or validating their behavior. We define a meta-method relationship as follows:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          346.755,
+          325.309,
+          563.038,
+          343.919
+        ],
+        "content": "𝑚2 ⇒ 𝑚1 (i.e., 𝑚2 refines or validates 𝑚1) (7)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 101,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          263.929,
+          563.036,
+          323.754
+        ],
+        "content": "Thus, a hierarchical structure enables the system to evolve complex strategies by composing and improving methods over time. The architecture supports recursive reasoning, layered validation, and the ability to adapt existing procedures for improved performance and reliability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 102,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          179.834,
+          563.036,
+          263.569
+        ],
+        "content": "3) Solution Division and Part-Wise Storage: In addition to storing complete solutions, we enable fine-grained storage and manipulation of individual solution components, referred to as solution parts. A solution typically consists of multiple procedural steps, each corresponding to a distinct subtask. By decomposing solutions into parts, we support modular reuse and targeted refinement.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 103,
+        "level": "3",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          155.651,
+          563.035,
+          179.61
+        ],
+        "content": "Formally, a solution is represented as an ordered sequence of parts:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 104,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          336.087,
+          116.925,
+          563.036,
+          135.535
+        ],
+        "content": "solution = ⟨solution𝑝1, solution𝑝2, . . . , solution𝑝𝑛⟩ (8)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 105,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          67.501,
+          563.036,
+          115.37
+        ],
+        "content": "Each part solution𝑝𝑖 is associated with a specific functional role within the overall solution. The entire solution is indexed by its logical characteristics, while each part can be stored, retrieved, and updated independently.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 106,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.036,
+          67.277
+        ],
+        "content": "To support refinement, we define a ranking function Rank(·) that scores candidate solution parts based on their quality or",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 107,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          712.807,
+          300.021,
+          736.767
+        ],
+        "content": "effectiveness. For a given position 𝑖, let C𝑖 denote the set of candidate parts. The updated part at position 𝑖 is selected by:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 109,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          84.818,
+          686.775,
+          183.731,
+          701.963
+        ],
+        "content": "solutionnew𝑝𝑖 = arg max",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 110,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.926,
+          665.446,
+          300.022,
+          700.333
+        ],
+        "content": "Rank(candidate) (9) The updated solution sequence then becomes:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 112,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          155.025,
+          677.559,
+          194.55,
+          691.144
+        ],
+        "content": "candidate∈C𝑖",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.273,
+        "id": 111,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          56.459,
+          627.637,
+          292.128,
+          647.877
+        ],
+        "content": "solutionnew = ⟨solution𝑝1, . . . , solutionnew𝑝𝑖 , . . . , solution𝑝𝑛⟩",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 113,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          283.425,
+          622.288,
+          300.023,
+          634.292
+        ],
+        "content": "(10)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 114,
+        "level": "4",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          562.408,
+          300.022,
+          622.233
+        ],
+        "content": "This part-wise update mechanism allows incremental improvements to solutions by replacing only underperforming components while retaining effective ones. It also facilitates generalization, as common solution parts can be reused across different tasks when subtasks overlap.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 115,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          533.984,
+          265.949,
+          545.879
+        ],
+        "id": 116,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              48.964,
+              533.984,
+              265.949,
+              545.879
+            ],
+            "content": "B. Always-On Extraction: Automatic Method Mining",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 199,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "previous list id": 85,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          48.964,
+          458.64,
+          300.026,
+          530.42
+        ],
+        "content": "To support continuous and automated method extraction, we adopt an always-on extraction strategy. This approach attempts to identify methods from all available content sources, including: (1) the LLM’s training or fine-tuning data, (2) the realtime outputs generated by the LLM, and (3) external inputs such as user prompts or third-party API queries.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 117,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          374.85,
+          300.022,
+          458.585
+        ],
+        "content": "This strategy enables the system to capture new methods that may not be explicitly present in the original training set. For example, users may propose corrections or novel procedures during interaction with the LLM, and such content can be automatically mined to extract reusable methods. These user-derived methods are typically stored at the user level to personalize future interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 118,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          279.104,
+          300.022,
+          374.794
+        ],
+        "content": "Automatic extraction can be implemented either within the LLM or via an external software module. In this work, we adopt the latter: a third-party software component continuously monitors input-output interactions and extracts candidate methods. This differs from preconfigured reasoning strategies such as Chain-of-Thought (CoT), which are static and predefined. In contrast, our method extraction system is dynamic and context-aware, adapting to diverse application scenarios.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 119,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          159.448,
+          300.022,
+          279.048
+        ],
+        "content": "Method extraction can be triggered either during model training (by analyzing mini-batches) or during user requirement time (by monitoring interactions). In the latter case, the system identifies methods in real time and stores them for future use. When a user interacts with the LLM, the thirdparty module retrieves potentially relevant stored methods and filters them using a ranking mechanism. Only highconfidence candidates are forwarded to the LLM. This twostage process—external filtering followed by internal selection—is detailed further in Section III-C.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 120,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          123.478,
+          300.022,
+          159.392
+        ],
+        "content": "Formally, let Dinput denote the collection of all input materials, which may include training data, LLM outputs, and user prompts:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 121,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.926,
+          73.145,
+          300.023,
+          111.003
+        ],
+        "content": "Dinput = Dtrain ∪ Doutput ∪ Duser (11) The method extractor E is a function that scans Dinput and",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 122,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          67.796,
+          200.864,
+          79.8
+        ],
+        "content": "produces a set of candidate methods:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 123,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          129.463,
+          36.712,
+          300.023,
+          55.322
+        ],
+        "content": "Mcandidate = E(Dinput) (12)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 124,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          712.807,
+          563.038,
+          736.766
+        ],
+        "content": "Each extracted method method𝑖 ∈ Mcandidate is structured as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          661.5,
+          563.036,
+          699.845
+        ],
+        "content": "method𝑖 = {p𝑖, s𝑖} (13) The candidates are then scored by a ranking function R,",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          656.15,
+          549.127,
+          668.154
+        ],
+        "content": "which may reflect logical validity, relevance, or feedback:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          604.724,
+          563.039,
+          636.464
+        ],
+        "content": "Mfiltered = {method𝑖 ∈ Mcandidate | R(method𝑖) ≥ 𝜏} (14) Here, 𝜏 denotes a tunable threshold that is used to filter",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 128,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          568.859,
+          563.038,
+          604.773
+        ],
+        "content": "out lower-quality methods based on their ranking scores. The resulting filtered set, denoted as Mfiltered, is then provided to the LLM for application to the user’s query.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 129,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          496.934,
+          563.035,
+          568.714
+        ],
+        "content": "This filtering mechanism enables continuous refinement of the method set: newly discovered, higher-quality methods can progressively replace older, less effective ones. As a result, the system possesses the potential to evolve by learning and updating methods directly from ongoing user interactions and contextual content.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 130,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          467.748,
+          428.988,
+          479.643
+        ],
+        "content": "C. Measurement of Methods",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          416.002,
+          563.035,
+          463.871
+        ],
+        "content": "Since multiple methods may be applicable to a given problem, it is necessary to define a mechanism for evaluating and selecting the most appropriate one. We adopt a dualranking strategy comprising two complementary components:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 132,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          270.138,
+          563.041,
+          414.008
+        ],
+        "id": 133,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              321.94,
+              329.914,
+              563.033,
+              414.008
+            ],
+            "content": "• External Ranking (User-Guided): Based on reinforcement learning from human feedback (RLHF), users are presented with multiple candidate solutions and are asked to evaluate or rank them. Given that methods operate at a logical and semantic level, human judgment is particularly well-suited for assessing their quality and effectiveness.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              321.94,
+              270.138,
+              563.041,
+              330.322
+            ],
+            "content": "• Internal Ranking (LLM-Guided): The LLM itself evaluates the candidate methods and selects the one it deems most appropriate. It also has the ability to output alternative methods or solutions, enabling the user to make a final selection if needed.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          311.977,
+          243.826,
+          563.035,
+          267.785
+        ],
+        "content": "We formalize the ranking operation as follows. Given a set of candidate solutions:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 134,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          204.548,
+          563.036,
+          236.288
+        ],
+        "content": "{s𝑎, s𝑏, · · · } (15) These are mapped to a ranked list:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 135,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          378.384,
+          178.401,
+          563.036,
+          197.011
+        ],
+        "content": "{(s𝑎, rank𝑎), (s𝑏, rank𝑏), · · · } (16)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 136,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.977,
+          152.718,
+          563.041,
+          177.634
+        ],
+        "content": "In practice, we employ a two-step filtering and selection process during user interaction with the LLM:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          43.318,
+          563.039,
+          151.322
+        ],
+        "id": 138,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              321.94,
+              67.228,
+              563.035,
+              151.322
+            ],
+            "content": "1) External Filtering: The third-party software first applies external ranking to remove low-ranked or irrelevant methods. This stage retains a diverse subset of highpotential candidates while discarding clearly inferior ones. Notably, newly extracted methods (i.e., those without a rank) bypass this filter to allow exploration and learning.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              321.94,
+              43.318,
+              563.039,
+              67.636
+            ],
+            "content": "2) Internal Selection: The LLM then selects the most suitable method from the filtered candidates. It may also",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          73.203,
+          712.807,
+          300.022,
+          736.767
+        ],
+        "content": "present additional alternatives for the user to compare, ensuring transparency and adaptability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 140,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          663.46,
+          300.022,
+          711.329
+        ],
+        "content": "This dual-ranking mechanism ensures both adaptability (via human feedback) and efficiency (via LLM inference), while maintaining a curated, high-quality method repository over time.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 141,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          626.461,
+          300.022,
+          663.653
+        ],
+        "content": "To formalize method selection at the logical level, we define a logical utility function U that evaluates a method method𝑖 with respect to a problem p𝑗:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 142,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          55.465,
+          591.285,
+          300.023,
+          609.895
+        ],
+        "content": "U(method𝑖, p𝑗) = Relevance(p𝑖, p𝑗) · Effectiveness(s𝑖) (17)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 143,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          568.043,
+          300.019,
+          592.002
+        ],
+        "content": "Here, p𝑖 and s𝑖 are the components (question and solution) of method 𝑖, and:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 144,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          494.785,
+          300.022,
+          566.565
+        ],
+        "id": 145,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              58.927,
+              530.65,
+              300.022,
+              566.565
+            ],
+            "content": "• Relevance(·, ·) measures the semantic or logical similarity between the problem addressed by the method and the current user problem.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              58.927,
+              494.785,
+              300.02,
+              530.699
+            ],
+            "content": "• Effectiveness(·) estimates the success likelihood of the method’s solution, potentially derived from prior usage or RLHF scores.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          48.964,
+          469.347,
+          300.022,
+          493.307
+        ],
+        "content": "The optimal method is selected by maximizing this logical utility:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 146,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          83.09,
+          445.582,
+          169.165,
+          458.892
+        ],
+        "content": "method= arg max",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 147,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          189.166,
+          438.976,
+          300.023,
+          457.586
+        ],
+        "content": "U(method𝑖, ptarget) (18)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 149,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          133.675,
+          434.597,
+          187.007,
+          448.182
+        ],
+        "content": "method𝑖∈Mfiltered",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.273,
+        "id": 148,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          375.95,
+          300.022,
+          435.774
+        ],
+        "content": "In this model, the comparison and selection are made over the meanings and problem-solving intents of methods rather than surface-level lexical forms. This facilitates generalization, transfer, and reuse across tasks with structurally similar problems but varying textual expressions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 150,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          350.725,
+          292.161,
+          362.62
+        ],
+        "content": "D. Brief Proof: Why Methods Generalize to New Problems",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 151,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          311.757,
+          300.022,
+          347.671
+        ],
+        "content": "To justify the applicability of extracted methods to new problems, we consider both the structural nature of methods and their semantic decoupling from surface-level content.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 152,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          275.302,
+          300.023,
+          311.95
+        ],
+        "content": "A method is defined as a logical pair: method𝑖 = {p𝑖, s𝑖} (19)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 153,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          251.916,
+          300.018,
+          275.875
+        ],
+        "content": "where s𝑖 represents a set of actions or procedures, and p𝑖 is a high-level abstraction of the issue being addressed.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 154,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          180.329,
+          300.022,
+          252.109
+        ],
+        "content": "While the solution component of a method often remains stable across similar problems, the problem component can vary significantly in phrasing or context. This decoupling enables a known method to be reused in scenarios where the surface expression of the problem differs, but the underlying logical structure remains consistent.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 155,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          156.312,
+          300.02,
+          180.522
+        ],
+        "content": "Formally, let pnew be a new problem presented to the system. If there exists a method method𝑖 such that:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 156,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          126.328,
+          126.191,
+          300.023,
+          144.801
+        ],
+        "content": "Relevance(pnew, p𝑖) ≥ 𝜃 (20)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 157,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          89.229,
+          300.024,
+          126.908
+        ],
+        "content": "where 𝜃 is a predefined relevance threshold (e.g., based on semantic similarity or logical structure), then method𝑖 can be considered a viable candidate for solving pnew.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 158,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.022,
+          91.187
+        ],
+        "content": "This generalization property mirrors human reasoning: once a method for solving a class of problems is learned (e.g., solving quadratic equations), it can be reused in varied situations with similar structure but different contextual phrasing.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 159,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          653.031,
+          563.036,
+          736.766
+        ],
+        "content": "Moreover, because methods are dynamically extracted from LLM-generated content or training materials, they inherently capture reusable structures from practical examples. For instance, strategies such as Chain-of-Thought (CoT) reasoning illustrate how a single method can generalize across a wide array of domains—ranging from mathematical proofs to planning tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 160,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          628.534,
+          563.035,
+          652.493
+        ],
+        "content": "In summary, the core advantage of the method-based model lies in its abstraction:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 161,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          553.57,
+          563.034,
+          625.35
+        ],
+        "id": 162,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              321.94,
+              601.391,
+              563.034,
+              625.35
+            ],
+            "content": "• Methods are not tied to specific content but to the logical structure of problem-solving.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              321.94,
+              577.481,
+              563.034,
+              601.44
+            ],
+            "content": "• The problem component serves as a flexible matcher for identifying reuse opportunities.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              321.94,
+              553.57,
+              563.034,
+              577.529
+            ],
+            "content": "• The solution component encodes reusable procedures that can be invoked across multiple scenarios.",
+            "font": "txsys",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          311.978,
+          514.472,
+          563.036,
+          550.387
+        ],
+        "content": "This model allows for dynamic reuse, adaptation, and substitution—supporting a scalable approach to generalization beyond static training corpora.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 163,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          481.943,
+          529.621,
+          493.838
+        ],
+        "content": "E. Procedure for Method Extraction and Application",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 164,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          404.909,
+          563.039,
+          476.689
+        ],
+        "content": "This section describes the end-to-end process of extracting and applying methods using large language models (LLMs), supported by an auxiliary component called the method extraction module. This module facilitates the interaction between users and the LLM, maintains the method repository, and determines which method to apply in response to a given input.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 165,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          296.725,
+          563.036,
+          404.371
+        ],
+        "content": "When a user submits an input to the system, the method extraction module first prompts the LLM to analyze the input and extract its semantic or structural features. These features are then compared against those in the existing method storage tree, which is organized by problem descriptions. The system queries the LLM to assess whether any previously stored methods are applicable to the current input. If so, the corresponding methods are retrieved and ranked based on criteria such as relevance, similarity, or historical effectiveness.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 166,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          200.497,
+          563.036,
+          296.187
+        ],
+        "content": "If matching methods are found, the top-ranked candidates are passed back to the LLM. The LLM then generates distinct responses using each candidate method. These responses are optionally presented to the user, who may rank or select the best one. Once a suitable method has been applied successfully, the method extraction module stores the association between the input features and the applied solution, thus enriching the method repository.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 167,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          128.178,
+          563.036,
+          199.958
+        ],
+        "content": "In the event that no matching method is found, the system defaults to using generic or approximately similar methods. When multiple methods are equally applicable, the selection process may rely on configurable heuristics such as choosing the most recent method, randomly sampling, or generating and comparing multiple outputs for evaluation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 168,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.036,
+          127.64
+        ],
+        "content": "The entire procedure is summarized in Algorithm 1. The procedure formalized in Algorithm 1 emphasizes reusability, adaptability, and user-in-the-loop feedback. The feature-based matching step ensures that method retrieval is guided by abstract problem representations rather than surface text similarity. The ranking and user evaluation mechanisms help maintain the quality of stored methods, while fallback",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 169,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          53.945,
+          712.12,
+          275.12,
+          736.438
+        ],
+        "content": "Algorithm 1: Method Extraction and Application Procedure",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 172,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          687.637,
+          234.711,
+          712.553
+        ],
+        "content": "Input: User input 𝑥, method repository M Output: Selected method and final output",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 174,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          47.37,
+          552.743,
+          285.079,
+          688.284
+        ],
+        "id": 175,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              50.458,
+              657.718,
+              191.935,
+              688.284
+            ],
+            "content": "1 Extract feature representation 𝑓𝑥 ← LLM.extract_features(𝑥);",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.458,
+              645.763,
+              266.366,
+              664.373
+            ],
+            "content": "2 Retrieve candidate methods M𝑐 ← match( 𝑓𝑥, M);",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.458,
+              633.808,
+              123.648,
+              652.777
+            ],
+            "content": "3 if M𝑐 ≠ ∅ then",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.857,
+              621.853,
+              222.28,
+              640.463
+            ],
+            "content": "4 Rank candidates: M𝑟 ← rank(M𝑐);",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.857,
+              609.898,
+              232.855,
+              628.508
+            ],
+            "content": "5 Send M𝑟 to LLM to generate outputs;",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.857,
+              604.549,
+              226.896,
+              616.553
+            ],
+            "content": "6 User selects or ranks the best output;",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.857,
+              585.987,
+              285.079,
+              604.597
+            ],
+            "content": "7 Update repository: M ← M ∪ {( 𝑓𝑥, best_method)};",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.458,
+              576.055,
+              74.419,
+              589.016
+            ],
+            "content": "8 else",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              50.857,
+              564.698,
+              275.314,
+              576.702
+            ],
+            "content": "9 Apply fallback method (generic or approximate);",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              47.37,
+              552.743,
+              275.105,
+              564.747
+            ],
+            "content": "10 Optionally store the new association if validated;",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          48.964,
+          472.41,
+          300.022,
+          520.28
+        ],
+        "content": "strategies ensure robustness when no suitable method is available. By continuously enriching the method repository through user interaction, the system evolves over time and improves its ability to solve future problems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 177,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          442.861,
+          127.818,
+          454.756
+        ],
+        "content": "F. Method Formats",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 178,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          343.144,
+          300.022,
+          438.834
+        ],
+        "content": "Extracted methods can take various forms, depending on the nature of the action being performed and the system’s execution capabilities. These methods may consist of step-bystep procedures, conditional workflows, or validations—such as verifying a result using external tools (e.g., consulting a thermometer for confirmation). Each method is structured to be executable either internally by the LLM or externally via supporting systems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 179,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          318.997,
+          300.022,
+          342.956
+        ],
+        "content": "We broadly categorize methods into two types: external executable methods and internal LLM-driven methods.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 180,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          187.253,
+          300.025,
+          319.168
+        ],
+        "content": "External Methods: These are implemented using external programming languages or systems, such as Python modules. Each step of the method corresponds to a callable function or API. For example, a Python-based method might contain logic for data processing, external retrieval, or visualization. If a particular step cannot be performed by the LLM alone (e.g., retrieving live data or performing system-level I/O), the method may delegate the task to an external interface or script. When applied, the external method can be sent to the LLM either as an inline description or through a reference link pointing to its implementation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 181,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          79.42,
+          300.022,
+          187.425
+        ],
+        "content": "Internal Methods (LLM-Intrinsic): These methods consist of structured prompts or step-wise reasoning paths processed entirely within the LLM. Each step may involve the LLM generating intermediate results, verifying constraints, or invoking reasoning chains. The GPT model, for instance, can simulate logical flows by executing one prompt at a time, with each stage building upon the last. Where external action is not possible, the LLM may still simulate decision-making or planning based on encoded knowledge.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 182,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.022,
+          79.232
+        ],
+        "content": "When invoking an external method from within the LLM interaction, metadata such as method descriptors, execution links, or API references can be included to ensure proper",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 183,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          700.852,
+          563.036,
+          736.766
+        ],
+        "content": "coordination. This hybrid architecture enables the system to combine symbolic reasoning, procedural control, and natural language understanding within a unified model.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 184,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          640.631,
+          563.036,
+          700.456
+        ],
+        "content": "In summary, method formats are designed to be modular and extensible. Whether implemented as code or as structured language prompts, they serve as reusable, interpretable building blocks that allow the system to perform meaningful tasks beyond token-level prediction.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 185,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          397.786,
+          611.44,
+          477.236,
+          623.444
+        ],
+        "content": "IV. VERIFICATION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 186,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          521.943,
+          563.036,
+          605.678
+        ],
+        "content": "In this section, we evaluate the effectiveness of the proposed method-oriented learning model, with particular emphasis on the benefits of learning methods directly from content and refining them continuously over time. Our goal is to demonstrate that method extraction and reuse improve logical consistency in LLM responses, especially in scenarios where factual checking is required before continuing.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 187,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          142.32,
+          413.138,
+          502.515
+        ],
+        "id": 188,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              311.978,
+              490.62,
+              376.157,
+              502.515
+            ],
+            "content": "A. Environment",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  311.978,
+                  414.083,
+                  563.036,
+                  485.863
+                ],
+                "content": "The verification system consists of two main components: the large language model (LLM) and an external method management module, referred to as MethodManager. The MethodManager acts as an intermediary between the user and the LLM. It stores extracted methods, filters inputs, and provides candidate methods to the LLM during interaction.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 21,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  311.978,
+                  365.817,
+                  563.039,
+                  414.818
+                ],
+                "content": "We use GPT-4o1 as the LLM in our experiments. Our verification focuses primarily on the method management logic, and the design is model-agnostic, meaning the same results can be replicated using other modern LLMs.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 22,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  311.978,
+                  233.864,
+                  563.036,
+                  365.42
+                ],
+                "content": "The MethodManager is implemented as a standalone Python program. It provides a command-line interface through which users submit inputs or prompts. Upon receiving a user request, the MethodManager queries its stored method repository, selects relevant candidate methods, and appends them to the user’s prompt before sending the combined input to the LLM. After the LLM generates responses based on different methods, the MethodManager asks the user to rank the outputs. If the response includes a new problem-solution pair, the MethodManager prompts the LLM to generate a formal method representation, which is then stored.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 23,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  311.978,
+                  173.643,
+                  563.036,
+                  233.468
+                ],
+                "content": "Methods are stored globally within the MethodManager, enabling sharing across users and chat sessions. This intermediate storage scope lies between user-local scope and global LLM scope. All stored content is first filtered by querying the LLM to determine whether a passage qualifies as a method.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 24,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              142.32,
+              413.138,
+              154.215
+            ],
+            "content": "B. Verification Objective",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          311.978,
+          65.783,
+          563.036,
+          137.563
+        ],
+        "content": "The primary verification objective is to improve the LLM’s reliability in checking whether a software system exists before proceeding with subsequent outputs. This is critical in scenarios where downstream actions (e.g., providing setup steps or configurations) are highly dependent on the presence of specific software tools.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 189,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          319.948,
+          43.877,
+          436.343,
+          54.717
+        ],
+        "content": "1https://chatgpt.com/?model=gpt-4o",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 190,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          688.897,
+          300.024,
+          736.767
+        ],
+        "content": "To test this behavior, we simulate two non-existent software systems: SuHongKey and HongHanKey. In their default behavior, LLMs may correctly identify that these tools do not exist when given a simple prompt such as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 192,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          663.632,
+          280.096,
+          687.483
+        ],
+        "content": "\"Please tell how to create a project in SuHongKey software.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 193,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          624.84,
+          280.096,
+          662.109
+        ],
+        "content": "In this case, GPT-4o typically replies with: \"I couldn’t find any documentation or official support resources for software named SuHongKey.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 194,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          611.313,
+          297.183,
+          623.317
+        ],
+        "content": "However, when the input is made more complex, such as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 195,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          574.093,
+          280.096,
+          609.899
+        ],
+        "content": "\"When we create a project, then we try to create another project. Please tell how to re-create a project in SuHongKey software.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 196,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          512.745,
+          300.022,
+          572.57
+        ],
+        "content": "the LLM tends to assume the software exists and produces a detailed, yet fabricated, step-by-step guide. This illustrates the LLM’s tendency to hallucinate when the prompt context appears procedurally rich—even if the underlying premise is false.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 197,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          429.223,
+          300.022,
+          512.958
+        ],
+        "content": "Our method-based model aims to address this by ensuring that factual checks, such as software existence, are enforced as reusable preconditions embedded in extracted methods. By leveraging previously extracted rules (e.g., “Check if the software exists before giving usage instructions”), the LLM can be guided toward logically sound responses, even under more complex or misleading prompts.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 198,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          404.314,
+          194.308,
+          416.209
+        ],
+        "id": 199,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              48.964,
+              404.314,
+              194.308,
+              416.209
+            ],
+            "content": "C. Learning Methods from Content",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "previous list id": 116,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          48.964,
+          341.455,
+          300.023,
+          401.28
+        ],
+        "content": "In this experiment, we evaluate the ability of the system to extract and reuse a method directly from LLM content. Specifically, we use three chat sessions—denoted as cs1, cs2, and cs3—to observe how a learned method influences the LLM’s ability to perform a software existence check.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 200,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          329.664,
+          285.865,
+          341.668
+        ],
+        "content": "In the first session (cs1), the user prompt is as follows:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 201,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          292.444,
+          280.096,
+          328.25
+        ],
+        "content": "\"When we create a project, then we try to create another project. Please tell how to re-create a project in SuHongKey software.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 202,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          254.409,
+          300.022,
+          290.921
+        ],
+        "content": "At this stage, the MethodManager has not stored any prior methods. Therefore, cs1 serves as the baseline and is labeled as the NoMethod case.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 203,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          243.216,
+          300.022,
+          255.22
+        ],
+        "content": "Next, session cs2 introduces the method explicitly. The user",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 204,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          205.996,
+          280.096,
+          243.265
+        ],
+        "content": "provides the input: \"For this kind of question, you should first check whether the SuHongKey software exists or not.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 205,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          180.513,
+          300.022,
+          204.473
+        ],
+        "content": "The MethodManager queries the LLM to determine whether this statement qualifies as a method. It issues the prompt:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 206,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          155.249,
+          280.096,
+          179.099
+        ],
+        "content": "\"Is this a method? If yes, what kind of problem does it solve, and how does it solve it?\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 207,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          129.168,
+          300.022,
+          153.725
+        ],
+        "content": "If confirmed, the LLM returns a structured problem-solution pair, which is stored as a reusable method named method1.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 208,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          117.975,
+          233.332,
+          129.979
+        ],
+        "content": "In session cs3, a new prompt is presented:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 209,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          80.756,
+          280.096,
+          116.561
+        ],
+        "content": "\"When we create a project, then we try to create another project. Please tell how to re-create a project in HongHanKey software.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 210,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.022,
+          79.232
+        ],
+        "content": "The MethodManager retrieves the stored method1, evaluates its similarity to the new problem, and—if sufficiently similar—supplies its solution to the LLM along with the cs3",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 211,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          712.807,
+          563.036,
+          736.766
+        ],
+        "content": "prompt. This allows the LLM to reason using the previously learned method.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 212,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          665.02,
+          563.036,
+          712.89
+        ],
+        "content": "We repeat this three-step process (cs1, cs2, cs3) for 20 independent runs. At the beginning of each test cycle, the MethodManager’s storage is cleared to ensure that method learning occurs anew in each trial.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 213,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          653.099,
+          563.035,
+          665.103
+        ],
+        "content": "To evaluate the impact of the learned method, we compare",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 214,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          615.458,
+          553.641,
+          653.147
+        ],
+        "content": "the similarity of the LLM’s output to a reference sentence: \"Verify whether SuHongKey is a real and identifiable piece of software.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 215,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          565.644,
+          563.037,
+          613.872
+        ],
+        "content": "This sentence, denoted as compareResult, captures the intended semantic behavior of checking software existence. We compute cosine similarity between compareResult and the LLM’s response in both the NoMethod and method1 cases.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 216,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          541.767,
+          563.035,
+          565.726
+        ],
+        "content": "Figure 2 presents the average cosine similarities across 20 trials.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 217,
+        "linked content id": 218,
+        "page number": 8,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          311.978,
+          379.702,
+          563.971,
+          530.898
+        ],
+        "id": 218,
+        "page number": 8,
+        "pdfua_tag": "Figure",
+        "source": "2508.04289_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          311.978,
+          350.085,
+          563.036,
+          369.133
+        ],
+        "content": "Fig. 2. Cosine similarity of LLM responses to a reference sentence, comparing method1 (learned method) and NoMethod (no prior method)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 219,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          230.799,
+          563.036,
+          338.444
+        ],
+        "content": "As shown in Figure 2, the responses generated using method1 yield a higher average cosine similarity (0.7791) to the reference sentence compared to the baseline NoMethod case (0.4693). This indicates that the MethodManager successfully learned a reusable method from cs2, which was then effectively applied to cs3. The improvement demonstrates that method extraction from content can enhance the LLM’s logical consistency and problem-handling capabilities in similar contexts.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 220,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          203.799,
+          554.508,
+          215.694
+        ],
+        "content": "D. Improvement of Methods Through Continuous Learning",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 221,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          116.302,
+          563.036,
+          200.635
+        ],
+        "content": "In this section, we verify that the system can learn improved methods over time through continued interaction. Specifically, we demonstrate that newly acquired methods can outperform earlier ones in both generality and performance. This is achieved using three additional chat sessions—denoted as ics1, ics2, and ics3—executed sequentially after the method method1 is introduced in Section IV-C.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 222,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.94,
+          104.978,
+          548.729,
+          116.982
+        ],
+        "content": "In ics1, we submit the following prompt to the system:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 223,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          331.903,
+          43.427,
+          543.11,
+          103.143
+        ],
+        "content": "\"When working with the software, you may need to duplicate an existing project for modification or testing purposes. This approach is particularly useful for scenarios such as adjusting project parameters to verify their impact, or testing whether trainees",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 224,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          641.185,
+          280.096,
+          736.767
+        ],
+        "content": "can correctly identify incorrect configurations. The process involves first creating the initial project, then generating a duplicate copy to work with. This method allows for controlled experimentation while preserving the original project settings. Our target is the HongHanKey software. We want to verify on it. Please tell how to use this software for verifying the parameter impact.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 226,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          579.054,
+          300.022,
+          638.879
+        ],
+        "content": "Although method1 has already been stored from previous sessions (which instructs checking for SuHongKey specifically), this more complex prompt is designed to neutralize the specific impact of method1. The LLM processes this prompt using only method1 at this stage, serving as the baseline.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 227,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.927,
+          566.978,
+          294.054,
+          578.982
+        ],
+        "content": "In ics2, we provide the following generalized instruction:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 228,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          528.975,
+          280.096,
+          564.781
+        ],
+        "content": "\"Please check whether the target software exists or not. If it does not exist, do not proceed with further output—just inform the user.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 229,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          454.291,
+          300.022,
+          526.668
+        ],
+        "content": "This input is intended to teach the system a more general method for verifying the existence of any software, not just a specific instance like SuHongKey. The MethodManager then queries the LLM to determine whether this qualifies as a method, and if so, extracts and stores it as a new method, denoted as method2.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 230,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          359.127,
+          300.022,
+          454.817
+        ],
+        "content": "In ics3, we reuse the same complex prompt from ics1. At this point, the system has access to both method1 and method2. Since the ranking scores of the two methods are similar (e.g., either both unrated or with negligible difference), the MethodManager delegates the decision to the LLM, asking it to choose the more appropriate method for the given input. The chosen method is then passed along with the user prompt for LLM processing.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 231,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          311.186,
+          300.022,
+          359.055
+        ],
+        "content": "This entire process (ics1, ics2, ics3) is repeated for 20 independent trials. At the start of each trial, the MethodManager’s memory is reset to ensure that learning is session-specific and cumulative.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 232,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          275.2,
+          300.022,
+          311.114
+        ],
+        "content": "To evaluate the performance of method1 and method2, we compare the LLM’s output in each case against a reference sentence:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 233,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.889,
+          249.152,
+          280.096,
+          273.002
+        ],
+        "content": "\"No official or widely recognized software named HongHanKey could be found.\"",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 234,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          187.021,
+          300.022,
+          247.204
+        ],
+        "content": "This sentence, denoted as compareResult2, captures the correct behavior—checking for software existence before providing further instructions. Cosine similarity between compareResult2 and each generated response is computed to measure alignment with the intended outcome.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 235,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          103.214,
+          300.022,
+          186.949
+        ],
+        "content": "As shown in Figure 3, the average similarity score achieved using method2 is 0.8426, significantly higher than the 0.4587 achieved using method1. This result demonstrates that method2, which was learned from a more general and abstract instruction, aligns better with the intended behavior. It confirms that the system is capable of refining and improving its stored methods through iterative learning.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 236,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.022,
+          103.142
+        ],
+        "content": "These results highlight a key strength of the proposed model: the ability to evolve method knowledge dynamically. As users interact with the system and introduce better or more general problem-solving strategies, the MethodManager can store, compare, and prefer those strategies over time.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 237,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          584.735,
+          563.971,
+          735.931
+        ],
+        "id": 238,
+        "page number": 9,
+        "pdfua_tag": "Figure",
+        "source": "2508.04289_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          311.978,
+          555.117,
+          563.034,
+          574.453
+        ],
+        "content": "Fig. 3. Cosine similarity comparison between method1 (old method) and method2 (newly learned general method)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 239,
+        "linked content id": 238,
+        "page number": 9,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          311.978,
+          461.909,
+          563.036,
+          533.689
+        ],
+        "content": "This continual refinement not only enhances correctness but also promotes generalization—moving from narrow, contextspecific procedures to abstract, widely applicable methods. Such capabilities are particularly valuable in high-stakes or domain-specific applications, where error-prone LLM behavior must be corrected through learned reasoning patterns.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 240,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          401.761,
+          432.87,
+          473.261,
+          444.874
+        ],
+        "content": "V. CONCLUSION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 241,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          307.614,
+          563.036,
+          427.215
+        ],
+        "content": "This paper presents a method-oriented model designed to enhance the reasoning capabilities of large language models (LLMs) by extracting, storing, and reusing structured problemsolving procedures. Unlike traditional approaches that depend heavily on prompt engineering or implicit learning from training data, our model explicitly identifies logical methods from user inputs, model outputs, or training content. These methods are stored externally in a dedicated module that serves as a procedural memory, allowing the system to recall and apply them across different sessions and user queries.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 242,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          223.501,
+          563.036,
+          307.236
+        ],
+        "content": "Our model introduces a mechanism for aligning logic, not just output preferences. It integrates reinforcement-style feedback from users to rank and refine the extracted methods over time. By associating each method with an abstract representation of its corresponding problem and solution, the system supports generalization to new tasks that share similar logical structures, even if their surface forms differ significantly.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 243,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          127.432,
+          563.036,
+          223.122
+        ],
+        "content": "Experimental results confirm that this method-based architecture improves LLM behavior in scenarios where logical validation is required before generation—such as determining whether software exists before giving procedural instructions. Moreover, we demonstrated that the system can improve over time: newly learned methods can generalize better and yield higher output alignment than previously stored ones, validating the effectiveness of our continual learning strategy.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 244,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.978,
+          43.318,
+          563.036,
+          127.053
+        ],
+        "content": "Future work will explore more advanced method composition strategies, including hierarchical decomposition and multi-method aggregation. We also aim to integrate this model into retrieval-augmented generation and tool-augmented systems, further expanding its applicability to real-world domains such as software configuration, legal reasoning, and intelligent tutoring systems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 245,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          146.598,
+          724.763,
+          202.398,
+          736.767
+        ],
+        "content": "REFERENCES",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 247,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          48.964,
+          43.318,
+          300.025,
+          712.856
+        ],
+        "id": 248,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              53.945,
+              641.076,
+              300.025,
+              712.856
+            ],
+            "content": "[1] G. Kumichev, P. Blinov, Y. Kuzkina, V. Goncharov, G. Zubkova, N. Zenovkin, A. Goncharov, and A. Savchenko, “Medsyn: Llm-based synthetic medical text generation framework,” in Joint European Conference on Machine Learning and Knowledge Discovery in Databases. Springer, 2024, pp. 215–230.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              593.256,
+              300.022,
+              641.125
+            ],
+            "content": "[2] Y. Zhuang, Y. Yu, K. Wang, H. Sun, and C. Zhang, “Toolqa: A dataset for llm question answering with external tools,” Advances in Neural Information Processing Systems, vol. 36, pp. 50117–50143, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              533.48,
+              300.022,
+              593.305
+            ],
+            "content": "[3] Y. Chen, X. Zhang, J. Wang, X. Xie, N. Yan, H. Chen, and L. Wang, “Structured dialogue system for mental health: An llm chatbot leveraging the pm+ guidelines,” in International Conference on Social Robotics. Springer, 2024, pp. 262–271.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              485.659,
+              300.022,
+              533.529
+            ],
+            "content": "[4] Y. Mo, H. Qin, Y. Dong, Z. Zhu, and Z. Li, “Large language model (llm) ai text generation detection based on transformer deep learning algorithm,” arXiv preprint arXiv:2405.06652, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              449.794,
+              300.021,
+              485.708
+            ],
+            "content": "[5] Y. Liu, “Attention is all large language model need,” in ITM Web of Conferences, vol. 73. EDP Sciences, 2025, p. 02025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              401.973,
+              300.024,
+              449.842
+            ],
+            "content": "[6] H. Shen, H. Chang, B. Dong, Y. Luo, and H. Meng, “Efficient llm inference on cpus,” in Enhancing LLM Performance: Efficacy, Fine-Tuning, and Inference Techniques. Springer, 2025, pp. 33–46.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              354.152,
+              300.022,
+              402.022
+            ],
+            "content": "[7] F. Cheng, H. Li, F. Liu, R. van Rooij, K. Zhang, and Z. Lin, “Empowering llms with logical reasoning: A comprehensive survey,” arXiv preprint arXiv:2502.15652, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              294.376,
+              300.023,
+              354.201
+            ],
+            "content": "[8] J. Wei, X. Wang, D. Schuurmans, M. Bosma, F. Xia, E. Chi, Q. V. Le, D. Zhou et al., “Chain-of-thought prompting elicits reasoning in large language models,” Advances in neural information processing systems, vol. 35, pp. 24824–24837, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.945,
+              246.556,
+              300.022,
+              294.425
+            ],
+            "content": "[9] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, “React: Synergizing reasoning and acting in language models,” in International Conference on Learning Representations (ICLR), 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              48.964,
+              186.78,
+              300.022,
+              246.605
+            ],
+            "content": "[10] L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray et al., “Training language models to follow instructions with human feedback,” Advances in neural information processing systems, vol. 35, pp. 27730–27744, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              48.964,
+              127.004,
+              300.022,
+              186.829
+            ],
+            "content": "[11] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Küttler, M. Lewis, W.-t. Yih, T. Rocktäschel et al., “Retrieval-augmented generation for knowledgeintensive nlp tasks,” Advances in neural information processing systems, vol. 33, pp. 9459–9474, 2020.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              48.964,
+              67.228,
+              300.022,
+              127.053
+            ],
+            "content": "[12] S. Zhao, Y. Yang, Z. Wang, Z. He, L. K. Qiu, and L. Qiu, “Retrieval augmented generation (rag) and beyond: A comprehensive survey on how to make your llms use external data more wisely,” arXiv preprint arXiv:2409.14924, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              48.964,
+              43.318,
+              300.022,
+              67.277
+            ],
+            "content": "[13] W. Fan, Y. Ding, L. Ning, S. Wang, H. Li, D. Yin, T.S. Chua, and Q. Li, “A survey on rag meeting llms:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 250,
+        "number of list items": 13,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          311.978,
+          437.838,
+          563.041,
+          736.766
+        ],
+        "id": 250,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              333.557,
+              688.897,
+              563.036,
+              736.766
+            ],
+            "content": "Towards retrieval-augmented large language models,” in Proceedings of the 30th ACM SIGKDD conference on knowledge discovery and data mining, 2024, pp. 6491– 6501.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "id": 249,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              629.121,
+              563.036,
+              688.946
+            ],
+            "content": "[14] T. Schick, J. Dwivedi-Yu, R. Dessì, R. Raileanu, M. Lomeli, E. Hambro, L. Zettlemoyer, N. Cancedda, and T. Scialom, “Toolformer: Language models can teach themselves to use tools,” Advances in Neural Information Processing Systems, vol. 36, pp. 68539–68551, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              593.255,
+              563.036,
+              629.17
+            ],
+            "content": "[15] B. Zirnstein, “Extended context for instructgpt with llamaindex,” Technical Report. Hochschule für Wirtschaft und Recht Berlin, Tech. Rep., 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              533.48,
+              563.041,
+              593.304
+            ],
+            "content": "[16] O. Topsakal and T. C. Akinci, “Creating large language model applications utilizing langchain: A primer on developing llm apps fast,” in International conference on applied engineering and natural sciences, vol. 1, no. 1, 2023, pp. 1050–1056.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              473.704,
+              563.037,
+              533.528
+            ],
+            "content": "[17] K. Ji, J. Chen, A. Gao, W. Xie, X. Wan, and B. Wang, “Unlocking llms’ self-improvement capacity with autonomous learning for domain adaptation,” in Findings of the Association for Computational Linguistics: ACL 2025, 2025, pp. 21051–21067.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.978,
+              437.838,
+              563.036,
+              473.752
+            ],
+            "content": "[18] J. Huang, S. S. Gu, L. Hou, Y. Wu, X. Wang, H. Yu, and J. Han, “Large language models can self-improve,” arXiv preprint arXiv:2210.11610, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 6,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "previous list id": 248,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          311.978,
+          176.676,
+          384.775,
+          267.473
+        ],
+        "id": 251,
+        "kids": [
+          {
+            "bounding box": [
+              335.325,
+              208.166,
+              361.427,
+              235.703
+            ],
+            "content": "PLACE PHOTO HERE",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "id": 1,
+            "page number": 10,
+            "pdfua_tag": "P",
+            "text color": "[0.0]",
+            "type": "paragraph"
+          }
+        ],
+        "page number": 10,
+        "type": "text block"
+      },
+      {
+        "bounding box": [
+          394.058,
+          214.814,
+          563.04,
+          269.537
+        ],
+        "content": "Hong Su received the MS and PhD degrees, in 2006 and 2022, respectively, from Sichuan University, Chengdu, China. He is currently a researcher of Chengdu University of Information Technology Chengdu, China. His research interests include blockchain, cross-chain and smart contract.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 252,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 10,
+    "title": "Method-Based Reasoning for Large Language Models: Extraction, Reuse, and Continuous Improvement"
+  }
+}

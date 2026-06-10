@@ -1,0 +1,3833 @@
+{
+  "layout": {
+    "author": "Stefan Szeider",
+    "creation date": null,
+    "file name": "2508.07468.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          229.91,
+          36.36,
+          562.09
+        ],
+        "content": "arXiv:2508.07468v3[cs.AI]3Feb2026",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 241,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          150.757,
+          668.156,
+          467.095,
+          689.97
+        ],
+        "content": "CP-Agent: Agentic Constraint Programming∗",
+        "font": "CMR17",
+        "font size": 17.215,
+        "heading level": 2,
+        "id": 228,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          269.744,
+          640.568,
+          342.255,
+          652.535
+        ],
+        "content": "Stefan Szeider",
+        "font": "CMR12",
+        "font size": 11.955,
+        "heading level": 5,
+        "id": 229,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          231.208,
+          601.476,
+          380.796,
+          632.361
+        ],
+        "content": "Algorithms and Complexity Group TU Wien, Vienna, Austria www.ac.tuwien.ac.at/people/szeider/",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 230,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          285.706,
+          555.876,
+          326.294,
+          564.843
+        ],
+        "content": "Abstract",
+        "font": "CMBX9",
+        "font size": 8.966,
+        "heading level": 8,
+        "id": 231,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          121.691,
+          486.142,
+          490.312,
+          549.904
+        ],
+        "content": "The translation of natural language to formal constraint models requires expertise in the problem domain and modeling frameworks. To explore the effectiveness of agentic workflows, we propose CP-Agent, a Python coding agent that uses the ReAct framework with a persistent IPython kernel. We provide the relevant domain knowledge as a project prompt of under 50 lines. The algorithm works by iteratively executing code, observing the solver’s feedback, and refining constraint models based on execution results.",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 232,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          121.691,
+          420.389,
+          490.313,
+          484.15
+        ],
+        "content": "We evaluate CP-Agent on 101 constraint programming problems from CP-Bench. We made minor changes to the benchmark to address systematic ambiguities in the problem specifications and errors in the ground-truth models. On the clarified benchmark, CP-Agent achieves perfect accuracy on all 101 problems. Our experiments show that minimal guidance outperforms detailed procedural scaffolding. Our experiments also show that explicit task management tools can have both positive and negative effects on focused modeling tasks.",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 233,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          386.2,
+          209.812,
+          400.561
+        ],
+        "content": "1 Introduction",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 234,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          305.714,
+          515.219,
+          375.452
+        ],
+        "content": "Constraint Programming is a declarative paradigm for solving combinatorial problems in which users specify the constraints a solution must satisfy, rather than prescribing how to find it [26]. The main obstacle preventing wider adoption of CP remains the modeling bottleneck. Converting natural language problem descriptions into formal constraint models requires deep expertise in both the problem domain and the modeling framework [5]. This challenge is referred to as the “holy grail” of constraint programming [24].",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 235,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          210.072,
+          515.218,
+          303.721
+        ],
+        "content": "In recent years, Large Language Models (LLMs) have been successfully applied to automate this translation process. We considered CP-Bench [14], a benchmark introduced to evaluate LLM-driven constraint modeling capabilities, which contains 101 diverse combinatorial problems sourced from various established CP community resources. These problems are used as benchmarks for optimization and satisfaction tasks, and include a variety of distinct constraint types. This benchmark addresses the limitations of existing datasets, such as NL4Opt [17] and Logic Grid Puzzles [25], which lack the diversity and complexity needed to evaluate constraint modeling capabilities.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 236,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          150.296,
+          515.216,
+          208.08
+        ],
+        "content": "Michailidis et al. [14] evaluated several LLM-based workflows on CP-Bench. With direct prompting, Python-based frameworks (CPMpy, OR-Tools) achieve overall good accuracy up to 65%. Indeed, MiniZinc (a popular constraint modeling language) peaked at around 50%. Repeated sampling can be combined with self-verification to improve accuracy for Python-based frameworks to approximately 70%.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 237,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          126.386,
+          515.218,
+          148.304
+        ],
+        "content": "The relationship between fixed and agentic workflows is now well understood. Chain-ofthought prompting [29] and subsequent work [19, 32] have been widely used in the literature.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 238,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          99.608,
+          515.215,
+          119.521
+        ],
+        "content": "∗To appear in the proceedings of the International Workshop on Agentic Engineering (AGENT@ICSE 2026). Supported by the Austrian Science Fund (FWF) projects 10.55776/P36420 and 10.55776/COE12.",
+        "font": "CMR8",
+        "font size": 7.97,
+        "id": 240,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          663.992,
+          515.216,
+          721.775
+        ],
+        "content": "One distinguishes between fixed workflows that use well-scoped, short-horizon tasks and agentic workflows where the LLM runs in a loop and uses tools. We hypothesize that constraint modeling from natural language falls into the category of tasks that require an agentic workflow with iterative refinement, hypothesis testing, and dynamic adaptation based on solver feedback. Our experiments show that this is indeed the case.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 242,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          604.216,
+          515.219,
+          661.999
+        ],
+        "content": "To test this hypothesis, we introduce CP-Agent, a constraint modeling agent that utilizes our general-purpose agentic-python-coder system. CP-Agent maintains a persistent IPython kernel [16], enabling stateful and iterative development. Instead of domain-specific logic embedded in its architecture, we use a concise project prompt as the guide. The agent can execute code, receive runtime feedback from the constraint solver, and adjust its constraint model accordingly.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 243,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          556.395,
+          515.215,
+          602.224
+        ],
+        "content": "The underlying coding agent is available as an MCP server [1]. The Model Context Protocol (MCP), now governed by the Linux Foundation, is widely used for connecting language models with external tools [8]. With this integration, the CP agent can be used from any MCP-compatible client, including coding assistants like Cursor or AI chatbots like Claude Desktop.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 244,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          484.664,
+          515.22,
+          554.403
+        ],
+        "content": "On the CP-Bench dataset of 101 problems (with added clarifications for some ambiguous problems and output format requirements), CP-Agent solves all problems correctly. We use Claude Sonnet 4.5 as the primary reference language model, though we also tested this with other models from different providers. Just by changing the prompt while keeping the agent architecture, we can adapt the system to different domains. This is exemplified by follow-up work [23] on modeling tasks for logic programming.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 245,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          436.843,
+          515.214,
+          482.672
+        ],
+        "content": "In addition, we provide an empirical evaluation of using a task management tool within our agentic coding workflow. The results are mixed: task management is helpful for some but counterproductive for others; the net effect was adverse, with significantly increased token usage, suggesting that the overhead can distract as often as it organizes.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 246,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          402.787,
+          219.213,
+          417.148
+        ],
+        "content": "2 Related Work",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 247,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          358.166,
+          515.215,
+          392.04
+        ],
+        "content": "Our approach follows the neurosymbolic paradigm, combining neural AI with symbolic constraint satisfaction [18]. The LLM-based agent converts natural language into formal constraints. The CP solver guarantees formal correctness of the computation.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 248,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          202.749,
+          515.219,
+          356.174
+        ],
+        "content": "LLM agents have been explored for software engineering tasks. SWE-agent [31] introduced the Agent-Computer Interface, a file-system-based approach for resolving GitHub issues that allowed navigating and editing repository files. Our approach is based on single-script generation using a stateful IPython kernel, which eliminates file I/O overhead for this class of problems. CodeAct [28] promotes executable Python code as a unified action space, and finds that this approach still outperforms more restrictive formats. We apply this general approach to constraint modeling, where a general action space can solve specialized tasks using focused prompts. The iterative refinement that we use in CP-Agent is related to automated program repair. ChatRepair [30] proposed conversational repair, where one iteratively refines patches based on test failures. RepairAgent [3] considers repair as an autonomous task with tools for code search, patching, and testing. Our approach is similar in spirit to iterative code repair, where refinement is used to correct errors. Still, we apply it to generative tasks, translating natural language into constraint programs rather than repairing existing code.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 249,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          131.018,
+          515.219,
+          200.757
+        ],
+        "content": "The validity of an evaluation depends on benchmark quality. EvalPlus [13] showed that popular benchmarks have insufficient tests, while augmented test suites reveal previously undetected errors. Only recently, ClassEval [4] proposed a new benchmark for structural complexity through manual curation. We address problem ambiguity in the original CP-Bench problems and propose a fixed version of the benchmark that allows more rigorous testing of constraint modeling capabilities.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 250,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          710.702,
+          280.743,
+          725.063
+        ],
+        "content": "3 Agentic Python Coder",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 252,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          618.26,
+          515.218,
+          699.954
+        ],
+        "content": "Our CP-Agent is based on a generic Python coding agent, equipped with a special prompt for constraint modeling. Our coding agent implements the basic idea of ReAct [32] (Reason and Act) in a way that is both minimal and capable. The architecture can be adapted to new problem domains through prompt engineering rather than code modification. By this separation, domain-agnostic agent capabilities remain distinct from task-specific knowledge. Our implementation is publicly available on GitHub and via PyPI for installation via “pip install agentic-python-coder” [20].",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 253,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          589.862,
+          201.562,
+          601.829
+        ],
+        "content": "3.1 Architecture",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 254,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          476.341,
+          515.22,
+          581.946
+        ],
+        "content": "Virtual execution space Unlike software engineering agents, which navigate complex file trees, we do not maintain multiple files; instead, development is focused on a single file. We process development, refinement, and execution in a virtual space provided by the IPython kernel [16], which runs as a subprocess. The kernel provides a persistent state across multiple code executions. This guarantees that variables, functions, and imports remain accessible throughout a session and enables rapid hypothesis testing without file I/O overhead. The agent proceeds in rounds, and each round consists of code manipulation followed by immediate feedback via the Read–Eval–Print Loop (REPL). This design is well-suited for developing constraint programming models and similar focused generation tasks.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 255,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          416.565,
+          515.219,
+          474.349
+        ],
+        "content": "The ReAct agent is implemented using LangGraph modules. LangGraph provides an important link between workflow management and durable execution, enabling the development of stateful agents. This even prevails when we consider the ReAct pattern [32] as interleaved reasoning and acting, which allows the agent to interact with the execution environment and adjust solutions through iterative cycles.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 256,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          356.789,
+          515.219,
+          414.573
+        ],
+        "content": "We will now explain the details of each component: the ReAct loop controller, which implements the reasoning-action cycle (using LangGraph [12]); three tools the agent can call; and a project prompt that provides domain-specific guidance. In each iteration of the ReAct loop, the agent reasons about the task, selects and executes tools, and observes results until a final solution is obtained and saved to a file (Figure 1).",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 257,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          294.862,
+          329.097,
+          315.399,
+          339.06
+        ],
+        "content": "Task",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 259,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          289.535,
+          300.806,
+          320.723,
+          310.769
+        ],
+        "content": "Reason",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 261,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          219.247,
+          293.46,
+          249.016,
+          302.427
+        ],
+        "content": "observe",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 270,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.3]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          341.844,
+          287.528,
+          377.69,
+          296.495
+        ],
+        "content": "complete",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 268,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.3]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          290.926,
+          280.358,
+          320.887,
+          289.325
+        ],
+        "content": "execute",
+        "font": "CMR9",
+        "font size": 8.966,
+        "id": 266,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.3]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          217.493,
+          266.532,
+          385.683,
+          277.464
+        ],
+        "content": "Act (Tools) Solution",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 263,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.0,
+          238.286,
+          469.001,
+          248.249
+        ],
+        "content": "Figure 1: The ReAct (Reason and Act) framework employed by the agent.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 271,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.784,
+          104.794,
+          515.217,
+          210.398
+        ],
+        "content": "Tools The main tool is python exec(code: str), which runs Python code in the persistent kernel environment and returns stdout/stderr for solver feedback. Each call to this tool builds incrementally upon the previous calls. The function save code transforms the solution into a file on disk, signaling completion. One could omit the save code tool since file access is also possible via python exec(code: str). However, having a dedicated tool for code saving has the advantage of easier file-path handling and makes it clear to the agent that calling this tool marks the end of its session. Optionally, we give the agent access to a task management tool to keep track of tasks in the form of a “to-do list.” The tool call has the format todo write(todos: List[Dict[str, Any]]), where todos is the task list, and each entry specifies task attributes. By construction,",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 272,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          699.857,
+          515.211,
+          721.775
+        ],
+        "content": "each task must contain id, content, status, and priority fields, and only one task can be marked as “in progress” at any time.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 279,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          614.185,
+          515.22,
+          683.924
+        ],
+        "content": "Dynamic dependency injection We implement a custom kernel manager, which wraps the standard IPython kernel launch. Instead of having the agent run pip install commands or rely on prebuilt container images, we inject packages at startup. Using the uv package manager [2], we split package installation into an ephemeral environment that runs at kernel startup. The kernel resolves dependencies based on session configuration; each session runs in a clean environment with only the specified packages.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 281,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          552.424,
+          515.218,
+          598.253
+        ],
+        "content": "LLM integration The LLM that drives the agent is provided via the OpenRouter API. This allows us to use models from different model-makers through a uniform API and configuration, and with a single API key. We record all the agent’s steps and tool calls in log files. These logs provide valuable insight into the agent’s problem-solving process and resource consumption.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 282,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          442.842,
+          515.218,
+          536.491
+        ],
+        "content": "Prompt architecture The agent operates with the following three-fold prompt hierarchy: the system prompt (approximately 100 lines) specifies how the agent can be used to reason about code and execute iterative development cycles, defining general coding behavior and tool usage patterns without task-specific specialization. The project prompt combines domain-specific knowledge (such as constraint modeling) with examples and best practices relevant to this particular problem class. The concrete task to solve is in the task prompt, typically read from a task.md file in the working directory or provided directly via a command line parameter. The same agent infrastructure can tackle diverse problem domains by simply replacing the project prompt.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 283,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          408.786,
+          191.474,
+          423.147
+        ],
+        "content": "4 CP-Agent",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 284,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          304.389,
+          515.219,
+          398.038
+        ],
+        "content": "For constraint programming, the generic coding agent is equipped with a domain-specific project prompt that instructs it to use CPMpy as the modeling framework. No specialized constraint programming logic is embedded in the architecture. The agent can create and test simplified problem instances and verify the constraint model on example data. The agent can even implement custom validation logic by refining models based on solver feedback. This flexible workflow, together with the persistent execution environment, provides an excellent environment for discovering and correcting modeling errors that would escape detection in single-pass generation approaches.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 285,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          275.99,
+          173.278,
+          287.957
+        ],
+        "content": "4.1 CPMpy",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 286,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          174.425,
+          515.22,
+          268.074
+        ],
+        "content": "We use CPMpy [7] as the constraint programming foundation primarily due to its Python integration. This library is based on NumPy for efficient handling of decision variables as arrays, making it well-suited for integration with the broader Python ecosystem. Its solver-agnostic design allows a more refined selection of backends and hence enables modeling problems once and solving them using various solvers, including CP, MIP, SMT, and SAT. This design is in line with findings from Michailidis et al. [14] that LLMs perform better with Python-based frameworks than with domain-specific languages, likely due to the billions of lines of Python code in their training data.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 287,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          146.026,
+          220.832,
+          157.993
+        ],
+        "content": "4.2 Project Prompt",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 288,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          116.192,
+          515.218,
+          138.11
+        ],
+        "content": "The project prompt (cpmpy.md), under 50 lines, provides succinct guidance for constraint modeling. The complete prompt is available online at the GitHub repository [20]. The prompt contains",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 289,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          652.036,
+          515.22,
+          721.775
+        ],
+        "content": "the following core rules: use CPMpy’s declarative modeling rather than implementing search algorithms, output only valid JSON using json.dumps(), always import the json Python module when outputting JSON, check the exact required output format, and manually test solutions to ensure they satisfy the problem requirements. A basic code template demonstrates the standard structure, and brief sections cover three essential CPMpy constraints (AllDifferent, sum, Circuit) and optimization via model.minimize() and model.maximize().",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 291,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          580.305,
+          515.219,
+          650.044
+        ],
+        "content": "This minimal prompt is based on an ablation study. We initially experimented with a substantially longer prompt of approximately 800 lines, containing detailed modeling procedures, extensive problem-type catalogs, and debugging guidance. The shorter version performs on par with, or better than, the longer version across all performance metrics. This indicates that for modern LLMs with constraint-programming knowledge in their training data, concise guidance is sufficient; excessive detail may distract and consume input tokens without providing benefit.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 292,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          546.25,
+          272.595,
+          560.611
+        ],
+        "content": "5 Benchmark Problems",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 293,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          453.808,
+          515.219,
+          535.502
+        ],
+        "content": "The CP-Bench collection [14] provides an excellent benchmark for testing automated constraint modeling capabilities. This collection comprises 101 constraint programming problems from four established sources: CSPLib [6], CPMpy examples [7], models by Kjellerstrand [11], and problems from the APLAI course at KU Leuven. The collection covers diverse combinatorial problem types, including scheduling, assignment, sequencing, graph problems, and combinatorial design. With 30 optimization and 71 decision problems, the collection provides a balanced coverage of constraint programming challenges.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 294,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          382.077,
+          515.219,
+          451.815
+        ],
+        "content": "Each problem in CP-Bench consists of a natural-language description in Markdown format, input data, required output variables, and a ground-truth model for verification. Solutions must output results in JSON format using the specified variable names. The ground-truth models enable semantic validation through constraint satisfaction checking rather than syntactic correctness or execution success. The ground-truth models are withheld from the agent and used solely for post-hoc validation.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 295,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          353.678,
+          268.126,
+          365.645
+        ],
+        "content": "5.1 Fixed Workflow Results",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 296,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          276.023,
+          515.219,
+          345.762
+        ],
+        "content": "Michailidis et al. [14] evaluated fixed workflow approaches on CP-Bench, testing progressively detailed prompts including basic instructions, modeling guidelines, and API documentation, as well as retrieval-augmented in-context learning. Their results indicate that combining repeated sampling with self-verification using GPT-4-turbo achieves the highest accuracy of 70%. A general limit of these fixed workflow approaches is that they do not support testing hypotheses, debugging errors, or verifying partial solutions.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 297,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          247.625,
+          374.621,
+          259.592
+        ],
+        "content": "5.2 Benchmark Corrections and Clarifications",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 298,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          169.969,
+          515.218,
+          239.708
+        ],
+        "content": "During testing, we encountered issues with some CP-Bench problems. The CP-Bench authors acknowledged these issues independently1, including ground-truth models with symmetry-breaking constraints that reject valid solutions, unclear output format requirements, and ambiguities in problem statements. Without a clear problem specification, the modeling ability cannot be evaluated separately from format guessing. We therefore updated the CP-Bench problems to address these issues.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 299,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          122.149,
+          515.218,
+          167.977
+        ],
+        "content": "Our benchmark updates fall into three categories. First, we clarified 31 ambiguous problem statements. For instance, Problem 080 (TSP) required specifying whether Euclidean distances should be rounded or truncated, which can lead to different distance matrices and thus different optimal solutions. For Problem 013 (magic square),",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 300,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.877,
+          104.525,
+          253.492,
+          113.814
+        ],
+        "content": "1personal communication, August 2025",
+        "font": "CMR8",
+        "font size": 7.97,
+        "id": 302,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          675.947,
+          515.218,
+          721.775
+        ],
+        "content": "we corrected a misleading description that stated the goal is to find a “magic square” when the problem actually requires a “magic sequence.” Problem 060 (crossword) provided a visual grid and word list, but required explicit specification of slot lengths and intersection constraints to be solvable.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 304,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          628.126,
+          515.215,
+          673.955
+        ],
+        "content": "Second, we added structured JSON schemas to all problems to clarify the required output format. We recommend this practice for any future extensions of the benchmark collection, as it eliminates trivial but annoying discrepancies, such as whether array indices are supposed to start with 0 or 1.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 305,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          604.216,
+          515.212,
+          626.134
+        ],
+        "content": "Third, we corrected errors in 19 ground-truth models: we removed symmetry-breaking constraints from 10 and fixed logic errors in 9 others.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 306,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          532.485,
+          515.215,
+          602.224
+        ],
+        "content": "While these updates do not make the problems easier, they remove confounding factors that obscure actual modeling capability. The underlying combinatorial structure and search space complexity remain the same; no changes hint at constraint formulations or modeling strategies. The success rates reported in the original CP-Bench paper were obtained without using our clarifications. A direct comparison between our results and theirs is not possible, as the fixed workflow can also benefit from the clarifications. The clarified benchmark is available online [22].",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 307,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          498.429,
+          209.933,
+          512.79
+        ],
+        "content": "6 Experiments",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 308,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          475.215,
+          244.771,
+          487.182
+        ],
+        "content": "6.1 Experimental Setup",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 309,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          325.829,
+          515.218,
+          467.299
+        ],
+        "content": "We ran all our experiments on all 101 CP-Bench problems three times, with CP-Agent implemented as agentic-python-coder (version 2.2.1) using Claude Sonnet 4.5 (version 20250929) as the language model for our main experiment. The models used in the model generalization and the task management experiments are described below. For each problem, the agent produced a solution file containing the generated CPMpy model, and we recorded a conversation log with the complete agent interaction. We tested all solutions against the ground-truth CPMpy models. For each satisfaction problem, we tested whether the solution satisfies all ground-truth constraints. For optimization problems, we compared the objective value of the generated solution with an optimal pre-computed ground-truth value to confirm optimality. Note that a problem may have several correct and optimal solutions, hence the ground-truth model must not contain symmetry-breaking constraints. We always report results averaged across three runs to account for randomness.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 310,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          289.964,
+          515.218,
+          323.837
+        ],
+        "content": "The agentic-python-coder, the problem specifications and ground-truth models to reproduce our experiments, and the generated solutions and execution logs, are available online [22]. The data is encrypted (password Ckc1ADsKXRfmzD2) to avoid training data contamination.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 311,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          261.565,
+          170.638,
+          273.532
+        ],
+        "content": "6.2 Results",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 312,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          219.776,
+          515.219,
+          253.649
+        ],
+        "content": "Our experimental results show that CP-Agent achieves 100% accuracy, successfully solving all 101 CP-Bench problems across all three independent runs. We validated all generated solutions against the ground-truth models and confirmed that all solutions were correct and optimal.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 313,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          171.955,
+          515.215,
+          217.783
+        ],
+        "content": "Our results are summarized in the table on the next page: tool usage, token consumption, and execution time for all 101 CP-Bench problems (averaged over three independent runs). Column ex shows the number of python exec calls (iterative refinement cycles). Columns in/out show input/output tokens in thousands. Column time shows execution time in seconds (rounded).",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 314,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          112.179,
+          515.22,
+          169.963
+        ],
+        "content": "The number of python exec calls varies and depends on the structure of the problem, ranging from 1 to 28, with simpler problems requiring fewer iterations and complex scheduling or optimization problems requiring more exploration. Problem 014 (crossfig) stands out with an unusually large number of Python executions (28 average), followed by 009 (basketball) with 24 executions, reflecting their combinatorial complexity.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 316,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          114.132,
+          706.832,
+          497.867,
+          716.795
+        ],
+        "content": "Problem ex in out time Problem ex in out time",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "heading level": 6,
+        "id": 320,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H6",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          114.132,
+          92.316,
+          497.873,
+          700.038
+        ],
+        "id": 322,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              114.132,
+              690.075,
+              497.869,
+              700.038
+            ],
+            "content": "001 car seq 2.7 24 2 43 052 circular t 3.7 29 2 47",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              678.119,
+              497.864,
+              688.082
+            ],
+            "content": "002 template 2 21 2 52 053 clock trip 1 14 1 26",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              666.164,
+              497.867,
+              676.127
+            ],
+            "content": "003 autocorr 3.3 26 2 44 054 cmo 2012 3 25 3 49",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              654.209,
+              497.867,
+              664.172
+            ],
+            "content": "004 golomb 2.3 22 2 42 055 coin3 appl 2 18 2 34",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              642.254,
+              497.87,
+              652.217
+            ],
+            "content": "005 all inter 1.7 19 2 32 056 coins grid 4.3 38 2 47",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              630.299,
+              497.872,
+              640.262
+            ],
+            "content": "006 vessel 2.3 26 3 51 057 contractin 1 14 1 25",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              618.344,
+              497.871,
+              628.307
+            ],
+            "content": "007 perfect sq 4 30 2 44 058 covering o 2 24 2 42",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              606.388,
+              497.864,
+              616.351
+            ],
+            "content": "008 social gol 7.7 54 3 61 059 crew 2.3 36 4 62",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              594.433,
+              497.863,
+              604.396
+            ],
+            "content": "009 basketball 23.7 256 12 245 060 crossword 4 40 3 55",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              582.478,
+              497.871,
+              592.441
+            ],
+            "content": "010 nonogram 8 90 6 110 061 crypta 4.7 67 4 74",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              570.523,
+              497.869,
+              580.486
+            ],
+            "content": "011 progressive 8 79 5 93 062 eighteen h 1 12 1 21",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              558.568,
+              497.87,
+              568.531
+            ],
+            "content": "012 schurs 2.7 23 2 36 063 facility l 3 29 3 57",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              546.613,
+              497.867,
+              556.576
+            ],
+            "content": "013 magic sq 1 15 1 22 064 fifty puzz 1.3 15 1 23",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              534.657,
+              497.867,
+              544.62
+            ],
+            "content": "014 crossfig 28.3 737 33 542 065 three coin 1 15 1 27",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              522.702,
+              497.872,
+              532.665
+            ],
+            "content": "015 langford 1.7 19 2 36 066 three sum 1 13 1 20",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              510.747,
+              497.869,
+              520.71
+            ],
+            "content": "016 sports 8.3 75 5 99 067 twelve pac 1.3 14 1 25",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              498.792,
+              497.865,
+              508.755
+            ],
+            "content": "017 bibd 2.7 24 2 37 068 bus schedu 1 14 1 27",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              486.837,
+              497.865,
+              496.8
+            ],
+            "content": "018 word des 6.3 47 3 80 069 jobshop 3.3 29 3 52",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              474.882,
+              497.865,
+              484.845
+            ],
+            "content": "019 steiner 3.7 29 2 41 070 knapsack 1 13 1 22",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              462.926,
+              497.865,
+              472.889
+            ],
+            "content": "020 num part 2.7 21 2 60 071 mario 7.3 86 6 110",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              450.971,
+              497.864,
+              460.934
+            ],
+            "content": "021 diamond 4.3 41 4 77 072 minesweepe 5 37 3 57",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              439.016,
+              497.864,
+              448.979
+            ],
+            "content": "022 graceful 1 16 1 26 073 n puzzle 10.7 106 6 119",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              427.061,
+              497.871,
+              437.024
+            ],
+            "content": "023 n queens 2 20 2 42 074 packing re 8.3 75 5 83",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              415.106,
+              497.868,
+              425.069
+            ],
+            "content": "024 costas 2 20 1 30 075 resource c 5.7 68 4 78",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              403.151,
+              497.873,
+              413.114
+            ],
+            "content": "025 hadamard 4.3 31 2 46 076 room assig 2 21 2 38",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              391.195,
+              497.872,
+              401.158
+            ],
+            "content": "026 abbots puz 1 13 1 23 077 send more 1 14 1 25",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              379.24,
+              497.871,
+              389.203
+            ],
+            "content": "027 added corn 2 20 2 37 078 set game 3.3 34 3 60",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              367.285,
+              497.869,
+              377.248
+            ],
+            "content": "028 ages of th 4 27 2 53 079 sudoku 2 23 2 39",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              355.33,
+              497.866,
+              365.293
+            ],
+            "content": "029 age changi 4.7 38 3 57 080 tsp 3.3 24 2 40",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              343.375,
+              497.869,
+              353.338
+            ],
+            "content": "030 allergy 2 21 2 44 081 who killed 2 21 2 42",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              331.42,
+              497.864,
+              341.383
+            ],
+            "content": "031 among 2 17 1 42 082 wolf goat 3.3 28 3 58",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              319.464,
+              497.868,
+              329.427
+            ],
+            "content": "032 appointmen 1 14 1 36 083 zebra 3.7 38 4 59",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              307.509,
+              497.865,
+              317.472
+            ],
+            "content": "033 archery pu 2.3 18 1 49 084 bank card 1 13 1 23",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              295.554,
+              497.866,
+              305.517
+            ],
+            "content": "034 arch frien 2 24 3 56 085 climbing s 1.3 16 1 31",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              283.599,
+              497.869,
+              293.562
+            ],
+            "content": "035 assignment 2.7 22 2 49 086 color simp 2 18 1 30",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              271.644,
+              497.867,
+              281.607
+            ],
+            "content": "036 autoref 4.3 31 2 46 087 exodus 5 45 4 71",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              259.689,
+              497.866,
+              269.652
+            ],
+            "content": "037 bales of h 4 33 3 66 088 farmer and 2.3 19 2 34",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              247.733,
+              497.872,
+              257.696
+            ],
+            "content": "038 bananas 1.7 18 2 39 089 five floor 1 14 1 24",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              235.778,
+              497.867,
+              245.741
+            ],
+            "content": "039 best host 1.7 18 2 33 090 grocery 4.3 31 2 51",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              223.823,
+              497.873,
+              233.786
+            ],
+            "content": "040 big bang2 1.7 21 2 39 091 guards and 2 20 2 37",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              211.868,
+              497.872,
+              221.831
+            ],
+            "content": "041 bin packin 1 13 1 23 092 hardy 1729 1.7 15 1 28",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              199.913,
+              497.872,
+              209.876
+            ],
+            "content": "042 birthday c 1 14 1 26 093 kidney exc 3.3 27 2 44",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              187.958,
+              497.864,
+              197.921
+            ],
+            "content": "043 bowls and 1.7 16 1 30 094 magic sq 1.3 15 1 28",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              176.002,
+              497.871,
+              185.965
+            ],
+            "content": "044 broken wei 2 19 2 40 095 maximal in 1.7 19 2 36",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              164.047,
+              497.867,
+              174.01
+            ],
+            "content": "045 building b 2.3 20 2 34 096 money chan 1 13 1 24",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              152.092,
+              497.87,
+              162.055
+            ],
+            "content": "046 cabling 1.3 17 2 36 097 movie sche 2.7 23 2 41",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              140.137,
+              497.868,
+              150.1
+            ],
+            "content": "047 calvin puz 2.7 24 2 49 098 people in 1 15 2 36",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              128.182,
+              497.867,
+              138.145
+            ],
+            "content": "048 candies 1.3 16 2 28 099 subsets 10 1 14 1 27",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              116.227,
+              497.864,
+              126.19
+            ],
+            "content": "049 capital bu 1 14 1 25 100 subset sum 2.7 21 1 37",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              104.271,
+              497.867,
+              114.234
+            ],
+            "content": "050 chess set 6.3 79 3 59 101 thick as t 2.7 26 3 54",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              114.132,
+              92.316,
+              287.657,
+              102.279
+            ],
+            "content": "051 circling s 2.3 25 3 47",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 51,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          96.785,
+          687.902,
+          515.217,
+          721.775
+        ],
+        "content": "The table also shows the token consumption. On average we have 37k input and 3k output tokens per problem. As expected, Problem 014 (crossfig), the problem with the largest number of exec calls has also the largest token consumption (737k input tokens).",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 327,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          628.126,
+          515.218,
+          685.91
+        ],
+        "content": "The specifics of execution times differ from problem to problem, ranging from 20 seconds to 542 seconds, with an average of 52 seconds across the three runs. The average run time per problem in each of the three runs is 48, 57, and 52 seconds, respectively, which demonstrates the stochastic nature of LLM-based systems, but can also reflect variety in API response time and network speed.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 328,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          592.261,
+          515.212,
+          614.179
+        ],
+        "content": "We present representative runs on two problems to illustrate how the agent approaches constraint modeling, with different problem-solving patterns.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 329,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          563.862,
+          350.486,
+          575.829
+        ],
+        "content": "6.3 Problem 061: Cryptarithmetic Puzzle",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 330,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          534.028,
+          515.22,
+          555.946
+        ],
+        "content": "The problem is to assign letters with unique digits (0–9) such that the given 20-digit addition equation holds. The log reveals how the agent adapts when an initial approach proves unworkable.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 331,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          498.162,
+          515.219,
+          532.035
+        ],
+        "content": "In the first four executions, the agent introduces integer variables (one per letter), an AllDifferent constraint, mappings from variables to their positions in the three numbers, and constraints forcing leading digits to be non-zero. This completes the description of the problem structure.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 332,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          438.386,
+          515.214,
+          496.17
+        ],
+        "content": "The fifth execution attempts to treat each 20-digit number as a single large integer variable. The agent constructs expressions like num1 = letter[0]*10**19 + letter[1]*10**18 + ... for all three numbers and adds the constraint num1 + num2 == result. This approach fails because variable domains of size 1020 exceed the solver’s integer representation capacity, causing a TypeError: init (): incompatible constructor arguments.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 333,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          414.476,
+          515.215,
+          436.394
+        ],
+        "content": "With this feedback, the agent redesigns the model, introducing binary carry variables and models addition column by column, thereby mimicking manual arithmetic:",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 336,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          384.758,
+          264.157,
+          405.968
+        ],
+        "content": "carries = intvar(0, 1, shape=21) for pos in range(20):",
+        "font": "CMTT10",
+        "font size": 9.963,
+        "id": 337,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.245,
+          313.027,
+          368.763,
+          382.058
+        ],
+        "id": 338,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              107.245,
+              372.803,
+              326.92,
+              382.058
+            ],
+            "content": "digit1 = letter_to_var[num1_chars[19-pos]]",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              107.245,
+              313.027,
+              368.763,
+              370.103
+            ],
+            "content": "digit2 = letter_to_var[num2_chars[19-pos]] result_digit = letter_to_var[result_chars[19-pos]] carry_in = carries[pos] carry_out = carries[pos+1] model += (digit1 + digit2 + carry_in",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          133.397,
+          301.072,
+          305.999,
+          310.327
+        ],
+        "content": "== result_digit + 10 * carry_out)",
+        "font": "CMTT10",
+        "font size": 9.963,
+        "id": 339,
+        "level": "3",
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          271.014,
+          515.213,
+          292.932
+        ],
+        "content": "This way, all intermediate values are kept within standard integer bounds, enabling the solver to determine the correct digit assignment.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 340,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          242.616,
+          361.153,
+          254.583
+        ],
+        "content": "6.4 Problem 082: Wolf, Goat, and Cabbage",
+        "font": "CMBX12",
+        "font size": 11.955,
+        "heading level": 4,
+        "id": 341,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          212.781,
+          515.213,
+          234.699
+        ],
+        "content": "The above example demonstrated error recovery; this well-known river-crossing puzzle illustrates the agent’s behavior when proceeding without failures.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 342,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          141.05,
+          515.219,
+          210.789
+        ],
+        "content": "The first step is to establish state variables: wolf pos[t], goat pos[t], cabbage pos[t], and boat pos[t], which track locations (shore 0 or 1) across an 8-step timeline. The second step of the construction fixes boundary conditions—all entities start at shore 0 and end at shore 1. The third step encodes the movement mechanics: the boat crosses at each step, the farmer transports at most one item per trip, and item movements coincide with boat movements. The fourth step adds safety constraints:",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 343,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          99.377,
+          326.92,
+          132.542
+        ],
+        "content": "for i in range(steps): model += ~((goat_pos[i] == cabbage_pos[i]) & (goat_pos[i] != boat_pos[i]))",
+        "font": "CMTT10",
+        "font size": 9.963,
+        "id": 348,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.245,
+          700.027,
+          311.229,
+          721.237
+        ],
+        "content": "model += ~((wolf_pos[i] == goat_pos[i]) & (wolf_pos[i] != boat_pos[i]))",
+        "font": "CMTT10",
+        "font size": 9.963,
+        "id": 350,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          646.059,
+          515.211,
+          691.887
+        ],
+        "content": "These constraints ensure that the goat and cabbage (or wolf and goat) do not share a shore without the farmer present. The systematic layering—state, boundaries, movement, and safetynaturally reflects the construction process. Each phase is traversed in order to verify correctness before proceeding to the next. The execution completes successfully on the first attempt.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 351,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          610.193,
+          515.217,
+          644.067
+        ],
+        "content": "These two behaviors of the agent can be observed in different phases of problem solving: complete redesigns when facing fundamental obstacles and methodical incremental construction when the path is clear. The agent uses adaptive approaches rather than fixed workflows.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 352,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          576.138,
+          273.611,
+          590.499
+        ],
+        "content": "7 Model Generalization",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 353,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          495.651,
+          515.217,
+          565.39
+        ],
+        "content": "To study whether the approach generalizes beyond Claude Sonnet 4.5, we evaluated six frontier models on ten representative problems, with three runs per model. The models come from four model makers: Anthropic (Sonnet 4.5, Opus 4.5, Haiku 4.5), OpenAI (GPT-5.1-codex-mini), xAI (Grok-code-fast-1), and DeepSeek (v3.2). Due to infrastructure issues during the experimental period, we did not test with Google’s Gemini models. We ran each problem with a 20-minute timeout, using a temperature of 0.0 for each model.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 354,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          423.92,
+          515.219,
+          493.659
+        ],
+        "content": "We give the results in Table 1. The tested models achieved a success rate of 80–100%. Sonnet 4.5 maintained perfect accuracy. Opus 4.5 and GPT-5.1 both reached 97%. Haiku 4.5, Grok, and DeepSeek achieved 80–87% accuracy; most failures occurred on Problem 009 (basketball), though sporadic failures also affected other problems. Basketball requires coordinating nine constraint categories, including mirroring schemes, home/away patterns, rival pairings, and date-specific requirements—the highest constraint density in this subset.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 355,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          388.054,
+          515.214,
+          421.928
+        ],
+        "content": "For some runs, the solver timed out after 20 minutes. Looking at execution logs, we see that these agents were not converging toward correct solutions, suggesting the timeout did not cut short otherwise successful attempts.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 356,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          316.323,
+          515.22,
+          386.062
+        ],
+        "content": "Our results show that the architecture generalizes across model families. This indicates that our agentic workflow generalizes from our default model, Sonnet. Opus, considered superior to Sonnet, showed slightly weaker performance, possibly because the prompt was optimized for Sonnet. Prompt optimization frameworks such as DSPy [10] could be used to automatically tune the project prompt for specific models, potentially narrowing the performance gap observed with other models.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 357,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          282.267,
+          286.316,
+          296.628
+        ],
+        "content": "8 Task Management Tool",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 358,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          189.826,
+          515.22,
+          271.519
+        ],
+        "content": "Explicit task tracking for LLM agents—maintaining a mutable list of pending, in-progress, and completed tasks—was introduced by BabyAGI [15] and formalized in plan-and-solve prompting [27]. Our implementation provides a tool that realizes this pattern. Our architecture requires only todo write, not a corresponding todo read: without history compaction, all previous tool calls remain in the conversation context, so the agent can always see its earlier task updates. To evaluate whether explicit task management benefits constraint modeling, we compare our method with and without this tool.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 359,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          130.05,
+          515.217,
+          187.833
+        ],
+        "content": "For this experiment, we use a smaller model (Claude Haiku 4.5) than our default (Claude Sonnet 4.5) to reveal potential differences. We consider the following 40 problems, stratified by difficulty: 20 easy problems (solved in 27 seconds or less by Sonnet 4.5) and 20 hard problems (requiring 58 seconds or more). We run each problem three times with todo write disabled and three times with it enabled. The results are summarized in Table 2.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 362,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          106.139,
+          515.215,
+          128.058
+        ],
+        "content": "On easy problems, compared with the baseline, todo write results in a significant increase in token consumption (191%, from 15K to 44K average) and execution time (111%, from 18s to 38s),",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 364,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          692.385,
+          515.218,
+          714.303
+        ],
+        "id": 367,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              96.785,
+              692.385,
+              515.218,
+              714.303
+            ],
+            "content": "Table 1: Multi-model evaluation (3 runs each). Numbers indicate successful runs out of 3. Model success rates: Sonnet 100%, Opus/GPT-5 97%, Haiku 87%, DeepSeek 83%, Grok 80%.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 407,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          298.764,
+          638.876,
+          308.727,
+          684.813
+        ],
+        "content": "Sonnet4.5",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 370,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          334.353,
+          638.876,
+          344.316,
+          680.938
+        ],
+        "content": "Haiku4.5",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 372,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          384.886,
+          638.876,
+          394.849,
+          680.525
+        ],
+        "content": "DeepSeek",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 375,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.534,
+          638.876,
+          325.497,
+          677.672
+        ],
+        "content": "Opus4.5",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 371,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          351.123,
+          638.876,
+          361.086,
+          676.72
+        ],
+        "content": "GPT-5.1",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 373,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          368.004,
+          638.876,
+          377.967,
+          660.836
+        ],
+        "content": "Grok",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 374,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          217.705,
+          636.385,
+          260.329,
+          646.348
+        ],
+        "content": "Problem",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "id": 369,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          217.705,
+          583.563,
+          392.359,
+          629.391
+        ],
+        "id": 377,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              217.705,
+              619.428,
+              392.359,
+              629.391
+            ],
+            "content": "001 car seq 3 3 3 3 3 3",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              217.705,
+              583.563,
+              392.359,
+              617.436
+            ],
+            "content": "002 template 3 2 3 3 3 2 004 golomb 3 3 3 3 2 3 007 perfect sq 3 3 3 3 3 3",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          217.705,
+          511.832,
+          392.36,
+          581.571
+        ],
+        "id": 382,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              217.705,
+              571.608,
+              392.359,
+              581.571
+            ],
+            "content": "009 basketball 3 3 1 2 0 0",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              217.705,
+              511.832,
+              392.36,
+              569.615
+            ],
+            "content": "010 nonogram 3 3 3 3 3 2 013 magic sq 3 3 3 3 3 3 015 langford 3 3 1 3 2 3 020 num part 3 3 3 3 3 3 037 bales of h 3 3 3 3 2 3",
+            "font": "CMTT10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          96.785,
+          451.934,
+          515.219,
+          485.807
+        ],
+        "content": "while improving success by just one run. On hard problems, todo write even reduced success from 52/60 to 45/60 while still adding overhead in terms of token usage and longer execution time.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 393,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          392.158,
+          515.22,
+          449.942
+        ],
+        "content": "A closer look at individual problems reveals a pattern. The task management tool provides structure for extended problem-solving, which helps three previously failing hard problemscrossfig, sports, and progressive. In contrast, it causes failures on three problems that worked without it. The task-tracking overhead appears to distract the agent from finding solutions in some cases.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 395,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          358.102,
+          209.315,
+          372.463
+        ],
+        "content": "9 MCP Server",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 396,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          289.571,
+          515.215,
+          347.354
+        ],
+        "content": "The Model Context Protocol (MCP) is a standardized interface for connecting language models with external tools and data sources [8]. MCP was initially introduced by Anthropic in late 2024 [1] as a tool for agent-tool interaction, and has since been adopted by major AI platforms and integrated into development environments. In December 2025, MCP governance transferred to the Linux Foundation.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 397,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          170.019,
+          515.22,
+          287.579
+        ],
+        "content": "To make our framework accessible from other agentic systems, beyond our own ReAct agent, we define the same persistent IPython kernel system as an MCP server (ipython mcp). This allows it to be integrated with any MCP-compatible client. The MCP server is equipped with python exec for code execution, the same tool central to our standalone agent. It also comprises three tools for controlling the coding infrastructure: python reset to clear state and install packages, python status to query session information, and python interrupt to halt long-running computations. This interactive mode also serves an educational purpose: users can observe how natural language constraints are formalized into CPMpy models, request explanations, and refine models based on solver feedback. Once developed, the generated code can be deployed to other contexts.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 398,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          122.198,
+          515.219,
+          168.027
+        ],
+        "content": "This approach complements the MCP-Solver [21], which provides specialized tools for constraint modeling (MiniZinc, PySAT, Z3, ASP). In contrast to the MCP-Solver, our new ipython mcp server provides general-purpose Python execution, with domain adaptation driven by prompts rather than tool specialization.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 404,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          680.43,
+          515.219,
+          714.303
+        ],
+        "id": 407,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              96.785,
+              680.43,
+              515.219,
+              714.303
+            ],
+            "content": "Table 2: Task management ablation on 40 problems (Claude Haiku 4.5, 3 runs per condition). Columns: p = success (out of 3), tok = tokens (K, averaged), t = time (s, averaged). Bold highlights problems where success changed.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "previous list id": 367,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          185.282,
+          662.554,
+          492.541,
+          672.517
+        ],
+        "content": "no todo todo no todo todo",
+        "font": "CMBX10",
+        "font size": 9.963,
+        "heading level": 6,
+        "id": 409,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H6",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          100.867,
+          604.929,
+          511.137,
+          655.759
+        ],
+        "content": "Easy Problem p tok t p tok t Hard Problem p tok t p tok t 013 magic sq 3 15 26 3 39 35 008 social gol 3 36 36 3 122 74 022 graceful 3 38 32 3 49 42 009 basketball 3 752 303 0 181 119 026 abbots puz 3 35 29 3 57 40 010 nonogram 3 47 48 3 112 67",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 411,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          100.867,
+          533.198,
+          511.137,
+          602.937
+        ],
+        "id": 422,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              100.867,
+              592.974,
+              511.131,
+              602.937
+            ],
+            "content": "041 bin packin 3 10 13 3 52 48 011 progressive 1 201 111 2 730 197",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              100.867,
+              533.198,
+              511.137,
+              590.981
+            ],
+            "content": "042 birthday c 3 19 20 3 52 40 014 crossfig 0 1986 617 2 1592 492 049 capital bu 3 10 18 3 37 41 016 sports 0 112 70 1 712 228 053 clock trip 2 17 18 3 87 54 018 word des 3 41 40 3 160 90 057 contractin 3 16 18 3 38 35 021 diamond 3 69 63 3 130 77 062 eighteen h 3 15 16 3 57 49 037 bales of h 3 40 40 3 149 81",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          100.867,
+          384.734,
+          511.138,
+          531.205
+        ],
+        "id": 440,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              100.867,
+              521.242,
+              511.136,
+              531.205
+            ],
+            "content": "064 fifty puzz 3 10 12 3 35 29 050 chess set 3 10 16 3 38 31",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              100.867,
+              509.287,
+              511.137,
+              519.25
+            ],
+            "content": "065 three coin 3 15 16 3 70 60 059 crew 3 80 55 0 137 75",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              100.867,
+              497.332,
+              511.13,
+              507.295
+            ],
+            "content": "066 three sum 3 9 13 3 31 26 061 crypta 3 43 31 2 297 127",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              100.867,
+              485.377,
+              511.136,
+              495.34
+            ],
+            "content": "067 twelve pac 3 9 12 3 39 33 071 mario 3 243 145 2 291 135",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              100.867,
+              384.734,
+              511.138,
+              483.385
+            ],
+            "content": "068 bus schedu 3 18 20 3 50 39 073 n puzzle 3 203 95 3 273 122 070 knapsack 3 9 11 3 37 32 074 packing re 3 22 25 3 134 81 077 send more 3 11 13 3 41 37 075 resource c 3 55 51 3 86 61 084 bank card 3 10 16 3 26 24 078 set game 3 24 24 3 105 70 089 five floor 3 11 14 3 33 30 082 wolf goat 3 62 60 0 286 156 096 money chan 3 13 22 3 32 34 083 zebra 3 30 32 3 150 91 099 subsets 10 3 16 19 3 28 26 087 exodus 3 123 88 3 223 106 Easy (60 runs) 59 60 Hard (60 runs) 52 45",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 5,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          96.785,
+          347.636,
+          206.265,
+          361.997
+        ],
+        "content": "10 Conclusion",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 468,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          314.97,
+          515.214,
+          336.888
+        ],
+        "content": "Our experiments provide several insights into the design and evaluation of agentic systems for constraint modeling.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 469,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          291.06,
+          515.218,
+          312.978
+        ],
+        "content": "Our results show that agentic workflows with execution feedback can reliably automate constraint modeling from natural language.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 470,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          207.374,
+          515.215,
+          289.068
+        ],
+        "content": "Our main experiment demonstrates that a short prompt performs very well (even outperforms an 800-line earlier version). This suggests that, for foundation models with constraintprogramming knowledge, the role of the prompt is to set high-level strategy and the output format rather than to provide exhaustive procedural instructions. This is in line with recent results on prompt compression showing that shorter, denser prompts can match or exceed verbose prompts [9]. In terms of procedural detail, excessive instruction might reduce the agent’s ability to solve problems effectively.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 471,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          171.508,
+          515.218,
+          205.381
+        ],
+        "content": "Our model generalization experiments show that our agentic architecture is robust: six models from four providers achieved success rates of 80–100%, with performance correlating with model capability.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 472,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          123.687,
+          515.215,
+          169.516
+        ],
+        "content": "Our experiment with the task management tool gives a mixed picture. While the tool reduces the overall success rate and significantly increases time and token usage, it was helpful for a few problems. Based on this outcome, we turn off the tool by default but keep it in the codebase for further testing, as there might be problem families where it shows a positive overall performance.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 473,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          99.777,
+          515.211,
+          121.695
+        ],
+        "content": "Finally, we reported on further integration possibilities of our system via the Model Context Protocol.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 474,
+        "page number": 11,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          675.947,
+          515.217,
+          721.775
+        ],
+        "content": "We believe that separating domain expertise from execution infrastructure, as realized in our system, can be beneficial in other scientific computing domains. In follow-up work, we used our system to transform natural language descriptions into logic programs [23], using the same architecture with only a domain-specific project prompt.",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 476,
+        "page number": 12,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          642.383,
+          172.308,
+          656.744
+        ],
+        "content": "References",
+        "font": "CMBX12",
+        "font size": 14.346,
+        "heading level": 3,
+        "id": 477,
+        "level": "Subtitle",
+        "page number": 12,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          96.785,
+          99.11,
+          515.219,
+          631.635
+        ],
+        "id": 478,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              101.766,
+              609.717,
+              515.214,
+              631.635
+            ],
+            "content": "[1] Anthropic. Model Context Protocol, 2024. Protocol specification for connecting language models to external systems. URL: https://modelcontextprotocol.io.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              567.025,
+              515.218,
+              600.898
+            ],
+            "content": "[2] Astral Software Inc. uv: An extremely fast Python package and project manager, 2025. Documentation: https://docs.astral.sh/uv/. URL: https://github.com/astral-sh/ uv.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              524.333,
+              515.219,
+              558.206
+            ],
+            "content": "[3] Islem Bouzenia, Premkumar T. Devanbu, and Michael Pradel. Repairagent: An autonomous, llm-based agent for program repair. In 47th IEEE/ACM International Conference on Software Engineering, ICSE 2025, Ottawa, ON, Canada, April 26 - May 6, 2025, pages 2188–",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  117.263,
+                  512.378,
+                  370.553,
+                  522.341
+                ],
+                "content": "2200. IEEE, 2025. doi:10.1109/ICSE55347.2025.00157.",
+                "font": "CMTT10",
+                "font size": 9.963,
+                "id": 27,
+                "level": "7",
+                "page number": 12,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              445.775,
+              515.219,
+              503.559
+            ],
+            "content": "[4] Xueying Du, Mingwei Liu, Kaixin Wang, Hanlin Wang, Junwei Liu, Yixuan Chen, Jiayi Feng, Chaofeng Sha, Xin Peng, and Yiling Lou. Evaluating large language models in classlevel code generation. In Proceedings of the IEEE/ACM 46th International Conference on Software Engineering, ICSE ’24, New York, NY, USA, 2024. Association for Computing Machinery. doi:10.1145/3597503.3639219.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              415.038,
+              515.213,
+              436.957
+            ],
+            "content": "[5] Eugene C. Freuder and Barry O’Sullivan. Grand challenges for constraint programming. Constraints An Int. J., 19(2):150–162, 2014. doi:10.1007/S10601-013-9155-1.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              348.436,
+              515.218,
+              406.22
+            ],
+            "content": "[6] Ian P. Gent and Toby Walsh. Csplib: A benchmark library for constraints. In Joxan Jaffar, editor, Principles and Practice of Constraint Programming - CP’99, 5th International Conference, Alexandria, Virginia, USA, October 11-14, 1999, Proceedings, volume 1713 of Lecture Notes in Computer Science, pages 480–481. Springer, 1999. doi: 10.1007/978-3-540-48085-3\\_36.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              317.699,
+              515.217,
+              339.617
+            ],
+            "content": "[7] Tias Guns. Modeling and solving with CPMpy, 2025. CPMpy documentation. URL: https://cpmpy.readthedocs.io/.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              275.007,
+              515.215,
+              308.88
+            ],
+            "content": "[8] Xinyi Hou, Yanjie Zhao, Shenao Wang, and Haoyu Wang. Model context protocol (MCP): Landscape, security threats, and future research directions. CoRR, abs/2503.23278, 2025. arXiv:2503.23278, doi:10.48550/arXiv.2503.23278.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              101.766,
+              208.404,
+              515.219,
+              266.188
+            ],
+            "content": "[9] Huiqiang Jiang, Qianhui Wu, Xufang Luo, Dongsheng Li, Chin-Yew Lin, Yuqing Yang, and Lili Qiu. LongLLMLingua: Accelerating and enhancing LLMs in long context scenarios via prompt compression. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024), pages 1658–1677, 2024. URL: https: //aclanthology.org/2024.acl-long.91/.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              141.802,
+              515.218,
+              199.586
+            ],
+            "content": "[10] Omar Khattab, Arnav Singhvi, Paridhi Maheshwari, Zhiyuan Zhang, Keshav Santhanam, Sri Vardhamanan, Saiful Haq, Ashutosh Sharma, Thomas T. Joshi, Hanna Moazam, Heather Miller, Matei Zaharia, and Christopher Potts. DSPy: Compiling declarative language model calls into state-of-the-art pipelines. In International Conference on Learning Representations (ICLR), 2024.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              99.11,
+              515.219,
+              132.983
+            ],
+            "content": "[11] Ha˚kan Kjellerstrand. Constraint programming models collection, 2024. Collection of constraint programming models in various languages. URL: https://github.com/hakank/ hakank.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 480,
+        "number of list items": 11,
+        "numbering style": "arabic numbers",
+        "page number": 12,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          96.785,
+          111.065,
+          515.22,
+          721.775
+        ],
+        "id": 480,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              96.785,
+              687.902,
+              515.22,
+              721.775
+            ],
+            "content": "[12] LangChain. LangGraph: Build resilient language agents as graphs, 2024. Python library for building stateful, multi-actor applications with LLMs. URL: https://python.langchain. com/docs/langgraph.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              596.744,
+              515.218,
+              678.438
+            ],
+            "content": "[13] Jiawei Liu, Chunqiu Steven Xia, Yuyao Wang, and Lingming Zhang. Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation. In Alice Oh, Tristan Naumann, Amir Globerson, Kate Saenko, Moritz Hardt, and Sergey Levine, editors, Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023, 2023. URL: http://papers.nips.cc/paper_files/paper/2023/ hash/43e9d647ccd3e4b7b5baab53f0368686-Abstract-Conference.html.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              553.406,
+              515.216,
+              587.28
+            ],
+            "content": "[14] Kostis Michailidis, Dimos Tsouros, and Tias Guns. CP-Bench: Evaluating large language models for constraint modelling. CoRR, abs/2506.06052, 2025. arXiv:2506.06052, doi: 10.48550/ARXIV.2506.06052.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              533.979,
+              515.22,
+              543.942
+            ],
+            "content": "[15] Yohei Nakajima. BabyAGI: Task-driven autonomous agent, 2023. GitHub repository, March",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  117.263,
+                  522.024,
+                  383.479,
+                  531.987
+                ],
+                "content": "2023. URL: https://github.com/yoheinakajima/babyagi.",
+                "font": "CMTT10",
+                "font size": 9.963,
+                "id": 28,
+                "level": "7",
+                "page number": 13,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              490.642,
+              515.211,
+              512.56
+            ],
+            "content": "[16] Fernando P´erez and Brian E. Granger. IPython: A system for interactive scientific computing. Comput. Sci. Eng., 9(3):21–29, 2007. doi:10.1109/MCSE.2007.53.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              399.484,
+              515.22,
+              481.178
+            ],
+            "content": "[17] Rindranirina Ramamonjison, Timothy T. L. Yu, Raymond Li, Haley Li, Giuseppe Carenini, Bissan Ghaddar, Shiqi He, Mahdi Mostajabdaveh, Amin Banitalebi-Dehkordi, Zirui Zhou, and Yong Zhang. NL4Opt competition: Formulating optimization problems based on their natural language descriptions. In Marco Ciccone, Gustavo Stolovitzky, and Jacob Albrecht, editors, NeurIPS 2022 Competition Track, November 28 - December 9, 2022, Online, volume 220 of Proceedings of Machine Learning Research, pages 189–203. PMLR, 2022. URL: https: //proceedings.mlr.press/v220/ramamonjison22a.html.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              344.191,
+              515.219,
+              390.019
+            ],
+            "content": "[18] Florian R´egin, Elisabetta De Maria, and Alexandre Bonlarron. Combining constraint programming reasoning with large language model predictions. In 30th International Conference on Principles and Practice of Constraint Programming (CP 2024), volume 307 of LIPIcs, pages 25:1–25:21, 2024. doi:10.4230/LIPIcs.CP.2024.25.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              241.077,
+              515.218,
+              334.727
+            ],
+            "content": "[19] Timo Schick, Jane Dwivedi-Yu, Roberto Dessı`, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. In Alice Oh, Tristan Naumann, Amir Globerson, Kate Saenko, Moritz Hardt, and Sergey Levine, editors, Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023, 2023. URL: http://papers.nips.cc/paper_files/paper/2023/hash/ d842425e4bf79ba039352da0f658a906-Abstract-Conference.html.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              209.695,
+              515.217,
+              231.613
+            ],
+            "content": "[20] Stefan Szeider. Agentic Python coder, 2025. GitHub repository. URL: https://github. com/szeider/agentic-python-coder.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              154.402,
+              515.22,
+              200.231
+            ],
+            "content": "[21] Stefan Szeider. Bridging Language Models and Symbolic Solvers via the Model Context Protocol. In Jeremias Berg and Jakob Nordstr¨m, editors, 28th International Conference on Theory and Applications of Satisfiability Testing (SAT 2025), volume 341 of Leibniz International Proceedings in Informatics (LIPIcs), pages 30:1–30:12, Dagstuhl, Germany,",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  117.263,
+                  130.492,
+                  515.22,
+                  152.41
+                ],
+                "content": "2025. Schloss Dagstuhl – Leibniz-Zentrum fu¨r Informatik. URL: https://drops.dagstuhl. de/entities/document/10.4230/LIPIcs.SAT.2025.30.",
+                "font": "CMTT10",
+                "font size": 9.963,
+                "id": 29,
+                "level": "7",
+                "page number": 13,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              111.065,
+              515.213,
+              121.028
+            ],
+            "content": "[22] Stefan Szeider. Supplementary material for CP-Agent: Agentic constraint programming,",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 483,
+        "number of list items": 11,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "previous list id": 478,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          117.263,
+          99.11,
+          327.365,
+          109.073
+        ],
+        "content": "2025. Zenodo. doi:10.5281/zenodo.18034815.",
+        "font": "CMTT10",
+        "font size": 9.963,
+        "id": 481,
+        "level": "7",
+        "page number": 13,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.785,
+          101.324,
+          515.22,
+          721.775
+        ],
+        "id": 483,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              96.785,
+              687.902,
+              515.22,
+              721.775
+            ],
+            "content": "[23] Stefan Szeider. ASP-Bench: From natural language to logic programs. In 2nd International Workshop on Neuro-Symbolic Software Engineering (NSE), 2026. To appear at ICSE 2026. Preprint at https://arxiv.org/abs/2602.01171.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              645.309,
+              515.22,
+              679.182
+            ],
+            "content": "[24] Dimos Tsouros, H´el`ene Verhaeghe, Serdar Kadıo˘lu, and Tias Guns. Holy grail 2.0: From natural language to constraint models. CoRR, abs/2308.01589, 2023. URL: https://arxiv. org/abs/2308.01589, arXiv:2308.01589.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              566.85,
+              515.219,
+              636.589
+            ],
+            "content": "[25] Nemika Tyagi, Mihir Parmar, Mohith Kulkarni, Aswin RRV, Nisarg Patel, Mutsumi Nakamura, Arindam Mitra, and Chitta Baral. Step-by-step reasoning to solve grid puzzles: Where do LLMs falter? In Yaser Al-Onaizan, Mohit Bansal, and Yun-Nung Chen, editors, Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing, EMNLP 2024, Miami, FL, USA, November 12-16, 2024, pages 19898–19915. Association for Computational Linguistics, 2024. doi:10.18653/V1/2024.EMNLP-MAIN.1111.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              536.212,
+              515.219,
+              558.13
+            ],
+            "content": "[26] Mark Wallace. Practical applications of constraint programming. Constraints An Int. J., 1(1/2):139–168, 1996. doi:10.1007/BF00143881.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              469.708,
+              515.216,
+              527.492
+            ],
+            "content": "[27] Lei Wang, Wanyu Xu, Yihuai Lan, Zhiqiang Hu, Yunshi Lan, Roy Ka-Wei Lee, and EePeng Lim. Plan-and-solve prompting: Improving zero-shot chain-of-thought reasoning by large language models. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (ACL 2023), pages 2609–2634. Association for Computational Linguistics, 2023. doi:10.18653/V1/2023.ACL-LONG.147.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              415.159,
+              515.22,
+              460.988
+            ],
+            "content": "[28] Xingyao Wang, Yangyi Chen, Lifan Yuan, Yizhe Zhang, Yunzhu Li, Hao Peng, and Heng Ji. Executable code actions elicit better LLM agents. In Forty-first International Conference on Machine Learning, ICML 2024, Vienna, Austria, July 21-27, 2024. OpenReview.net, 2024. URL: https://openreview.net/forum?id=jJ9BoXAfFa.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              324.745,
+              515.22,
+              406.439
+            ],
+            "content": "[29] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed H. Chi, Quoc V. Le, and Denny Zhou. Chain-of-thought prompting elicits reasoning in large language models. In Sanmi Koyejo, S. Mohamed, A. Agarwal, Danielle Belgrave, K. Cho, and A. Oh, editors, Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans, LA, USA, November 28 - December 9, 2022, 2022. URL: http://papers.nips.cc/paper_files/ paper/2022/hash/9d5609613524ecf4f15af0f7b31abca4-Abstract-Conference.html.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              258.241,
+              515.219,
+              316.025
+            ],
+            "content": "[30] Chunqiu Steven Xia and Lingming Zhang. Automated program repair via conversation: Fixing 162 out of 337 bugs for $0.42 each using chatgpt. In Maria Christakis and Michael Pradel, editors, Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis, ISSTA 2024, Vienna, Austria, September 16-20, 2024, pages 819–831. ACM, 2024. doi:10.1145/3650212.3680323.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              155.872,
+              515.218,
+              249.521
+            ],
+            "content": "[31] John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. Swe-agent: Agent-computer interfaces enable automated software engineering. In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang, editors, Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024, 2024. URL: http://papers.nips.cc/paper_files/paper/2024/hash/ 5a7c947568c1b1328ccc5230172e1e7c-Abstract-Conference.html.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              96.785,
+              101.324,
+              515.22,
+              147.152
+            ],
+            "content": "[32] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R. Narasimhan, and Yuan Cao. ReAct: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 15, 2023. OpenReview.net, 2023. URL: https://openreview.net/forum?id=WE_vluYUL-X.",
+            "font": "CMR10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 14,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 14,
+        "pdfua_tag": "L",
+        "previous list id": 480,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 14,
+    "title": "CP-Agent: Agentic Constraint Programming"
+  }
+}

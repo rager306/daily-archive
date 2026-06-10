@@ -261,7 +261,14 @@ def _alternative_candidates(wave_order: list[str], requested_ids: list[str], fai
     return [item for item in candidates if ARXIV_ID_RE.match(item)]
 
 
-def _manifest_from_entries(entries: list[dict[str, Any]], output_dir: Path) -> dict[str, Any]:
+def _manifest_from_entries(
+    entries: list[dict[str, Any]],
+    output_dir: Path,
+    *,
+    source_milestone: str,
+    schema_version: str,
+    source_label: str,
+) -> dict[str, Any]:
     pdfs = []
     for entry in entries:
         if entry.get("status") != "acquired":
@@ -275,13 +282,13 @@ def _manifest_from_entries(entries: list[dict[str, Any]], output_dir: Path) -> d
                 "sha256": entry.get("sha256"),
                 "size_bytes": entry.get("bytes", 0),
                 "pages_estimate": entry.get("pages_estimate", 0),
-                "source_milestone": "M056-lchpnp/S01",
+                "source_milestone": source_milestone,
             }
         )
     return {
-        "schema_version": "m056-bfs-wave-1-corpus-manifest.v1",
+        "schema_version": schema_version,
         "generated_at": _utc_now(),
-        "source": "M056-lchpnp S01 Wave 1 acquisition",
+        "source": source_label,
         "pdf_count": len(pdfs),
         "minimum_expected_pdfs": DEFAULT_MINIMUM_ACQUIRED,
         "expected_total_pdfs": DEFAULT_TARGET_COUNT,
@@ -299,6 +306,9 @@ def acquire_wave(
     max_retries: int,
     timeout: int,
     use_task_wave_ids: bool,
+    source_milestone: str,
+    manifest_schema_version: str,
+    manifest_source_label: str,
 ) -> dict[str, Any]:
     wave_order = _load_wave_order(wave_order_path)
     requested_ids = WAVE_1_ARXIV_IDS if use_task_wave_ids else [item for item in wave_order if item != ANCHOR_ARXIV_ID][:DEFAULT_TARGET_COUNT]
@@ -403,7 +413,16 @@ def acquire_wave(
         "entries": entries,
     }
     _atomic_write_json(output_dir / "acquisition-log.json", log)
-    _atomic_write_json(output_dir / "corpus-manifest.json", _manifest_from_entries(entries, output_dir))
+    _atomic_write_json(
+        output_dir / "corpus-manifest.json",
+        _manifest_from_entries(
+            entries,
+            output_dir,
+            source_milestone=source_milestone,
+            schema_version=manifest_schema_version,
+            source_label=manifest_source_label,
+        ),
+    )
     return log
 
 
@@ -415,6 +434,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--wave-order-source", action="store_true", help="Use /tmp/wave-order.json after self-skip instead of task explicit Wave 1 IDs.")
+    parser.add_argument("--source-milestone", default="M056-lchpnp/S01")
+    parser.add_argument("--manifest-schema-version", default="m056-bfs-wave-1-corpus-manifest.v1")
+    parser.add_argument("--manifest-source-label", default="M056-lchpnp S01 Wave 1 acquisition")
     return parser.parse_args(argv)
 
 
@@ -427,6 +449,9 @@ def main(argv: list[str] | None = None) -> int:
         max_retries=args.max_retries,
         timeout=args.timeout,
         use_task_wave_ids=not args.wave_order_source,
+        source_milestone=args.source_milestone,
+        manifest_schema_version=args.manifest_schema_version,
+        manifest_source_label=args.manifest_source_label,
     )
     print(json.dumps(log, indent=2, sort_keys=True))
     return 0 if int(log.get("success_count") or 0) >= DEFAULT_MINIMUM_ACQUIRED else 2

@@ -1,0 +1,2416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">PoE-World: Compositional World Modeling with Products of Programmatic Experts</title>
+				<funder ref="#_ArNuftx">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-19">19 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Wasu</forename><forename type="middle">Top</forename><surname>Piriyakulkij</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Cornell University</orgName>
+								<orgName type="institution" key="instit2">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yichao</forename><surname>Liang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">The Alan Turing Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Cornell University</orgName>
+								<orgName type="institution" key="instit2">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">The Alan Turing Institute</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Dalhousie University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Cornell University</orgName>
+								<orgName type="institution" key="instit2">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">PoE-World: Compositional World Modeling with Products of Programmatic Experts</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-19">19 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">63271BE9BD7CD975C0D177F6C7BA3931</idno>
+					<idno type="arXiv">arXiv:2505.10819v4[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Learning how the world works is central to building AI agents that can adapt to complex environments. Traditional world models based on deep learning demand vast amounts of training data, and do not flexibly update their knowledge from sparse observations. Recent advances in program synthesis using Large Language Models (LLMs) give an alternate approach which learns world models represented as source code, supporting strong generalization from little data. To date, application of program-structured world models remains limited to natural language and grid-world domains. We introduce a novel program synthesis method for effectively modeling complex, non-gridworld domains by representing a world model as an exponentially-weighted product of programmatic experts (PoE-World) synthesized by LLMs. We show that this approach can learn complex, stochastic world models from just a few observations. We evaluate the learned world models by embedding them in a model-based planning agent, demonstrating efficient performance and generalization to unseen levels on Atari's Pong and Montezuma's Revenge. We release our code and display the learned world models and videos of the agent's gameplay at <ref type="url" target="https://topwasu.github.io/poe-world">https://topwasu.github.io/poe-world</ref>.</p><p>We take inspiration from a longstanding view in philosophy and cognitive science of the mind as a community of interacting experts <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7]</ref>. This modular organization is evident across multiple scales in natural intelligence, from functional specialization of brain systems <ref type="bibr" target="#b7">[8]</ref> to the distinct learning trajectories of specific skills <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref>. We integrate this modular perspective with the computational paradigm of learning as Program Synthesis, which models learned concepts as symbolic programs <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b15">16]</ref>. We extend this line of work by proposing a new computational account of learning world models: as the acquisition of context-specific expert programs, which are refined through practice and reused compositionally to support flexible, goal-directed behavior.</p><p>Algorithmically, our key idea is to decompose the problem of learning a world program into learning hundreds of small programs. Each of these learned programs encodes a different causal law, which we probabilistically aggregate to predict future observations (Figure <ref type="figure">1a</ref>). This makes our world 39th Conference on Neural Information Processing Systems (NeurIPS 2025).</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>How should an intelligent agent represent the dynamics of the natural world? We want a representation that is efficiently learnable, yet flexible enough to handle stochasticity and partial observability, and which supports planning and decision-making. Neural network world models such as Dreamer <ref type="bibr" target="#b0">[1]</ref> are radically flexible, but demand enormous training data (compared to humans <ref type="bibr" target="#b1">[2]</ref>). Symbolic world models such as WorldCoder <ref type="bibr" target="#b2">[3]</ref> instead generate a Python program to represent how the world works. These programmatic world models are data-efficient, because program synthesis requires less data than neural network training-but struggle to scale beyond simple gridworlds, as they do a discrete combinatorial search to find a single large program describing everything about how the world works. knowledge more modular, and also more learnable, because we no longer search for a single monolithic program handling everything at once. The resulting system, which we call PoE-World (Product of programmatic Experts), can build elaborate world models that accurately support planning and reinforcement learning (RL) from even a brief demonstration in complex Atari games, such as Montezuma's Revenge. PoE-World handles stochasticity because the product of programs is probabilistic, and, as we show, further handles partial observability. To the best of our knowledge, this is the first time a symbolic world model has been learned for environments of this complexity.</p><p>Importantly, although PoE-World models fine-grained pixel-level movement, it does not model pixellevel visual appearance, instead assuming symbolic observations from an object detector. Unlike model-based reinforcement learning, PoE-World does not attempt efficient exploration, but focuses on faithfully learning from a demonstrated trajectory (Figure <ref type="figure" target="#fig_0">1b</ref>). Lastly, while the world models are ultimately used for planning (Figure <ref type="figure" target="#fig_0">1c</ref>), PoE-World fundamentally focuses on world modeling, and not on solving the challenging computational problem of planning itself.</p><p>Despite these limitations, we view PoE-World as addressing a central learning problem: Given limited demonstrations of a new environment, quickly assemble a working world model that compositionally generalizes to new situations (Figure <ref type="figure" target="#fig_0">1d</ref>). We highlight the following contributions:</p><p>1. The PoE-World representation and learning algorithm for symbolic world models.</p><p>2. An empirical study of PoE-World on two representative Atari games, Pong and Montezuma's Revenge, demonstrating its superior learning efficiency compared to deep RL, and improved scalability compared to state-of-the-art symbolic model-based RL: PoE-World can synthesize 4000+ line programs that generalize zero-shot to novel game levels and game variations. 3. Demonstration of how to use PoE-World's world models for planning-based decision making, and as a simulated pretraining environment for deep RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background: World Model Learning</head><p>A sequential decision-making problem can be described as (O, A, P, R) where O is an observation space, A is an action space, P is an environment dynamics P = p env (o t+1 |o 1:t , a 1:t ) where o ∈ O and a ∈ A, and R is a reward function. This full-history environment formulation is mathematically equivalent to a Partially Observable Markov Decision Process (POMDP) formulation <ref type="bibr" target="#b16">[17]</ref>. In the setting where P is unknown to an agent, the agent learns by interacting with the environment and observing transitions (o t , a t , o t+1 , r t ) at timestep t.</p><p>We focus on learning the world model P = p model (o t+1 |o 1:t , a 1:t ) which approximates the true, unknown environment dynamics P = p env (o t+1 |o 1:t , a 1:t ) given observed trajectories</p><formula xml:id="formula_0">D = {τ i } n i=1</formula><p>where each trajectory is a sequence of observations and actions τ = (o 1:T +1 , a 1:T ) for some T (r 1:T is also a part of a trajectory, but we drop it for simplicity). The learned world model will later be used by a model-based agent, either through lookahead planning or RL training, to act in the environment.</p><p>We treat the world modeling problem as an optimization problem, specifically empirical risk minimization:</p><formula xml:id="formula_1">p * model = arg min p model (o 1:T +1 ,a 1:T )∈D T t=1 ℓ(p model ; o 1:t+1 , a 1:t )<label>(1)</label></formula><p>where ℓ is a loss function, such as the negative log likelihood function ℓ(p model ; o 1:t+1 , a 1:t ) = -log p model (o t+1 |o 1:t , a 1:t ).</p><p>Previous works in the model-based reinforcement learning literature <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b22">23]</ref> have used various deep neural network architectures, including convolutional and recurrent neural networks, transformers, and diffusion models, to define p model as a parametric model p model = p θ . Then, θ is optimized via gradient descent. A weakness of such approaches is poor sample efficiency and generalization. For example, Diamond <ref type="bibr" target="#b21">[22]</ref> has failure modes such as imagining that the player can walk through a wall or teleport, even after training on almost 100 hours of observations.</p><p>Other works leverage Large Language Models (LLMs) to synthesize a code world model <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b24">25]</ref>, which can be seen as searching for programmatic p model . These LLM-based code generation algorithms are more sample efficient and extrapolate more systematically than deep learning approaches. However, they have yet to succeed beyond simple text-based and gridworld games.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Modeling the World as a Product of Programmatic Experts (PoE-World)</head><p>To address the limitations of existing world model learning methods, we propose representing world models as exponentially-weighted Products of programmatic Experts (PoE-World), enabling sampleefficient and scalable learning of probabilistic world models that leverages LLM code generation. Figure <ref type="figure" target="#fig_0">1</ref> visualizes both the representation and learning algorithm discussed in this section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">World Model Representation: Product of Programmatic Experts (PoE-World)</head><p>World models represented as exponentially weighted Products of programmatic Experts (PoE-World) can be described mathematically as follows:</p><formula xml:id="formula_2">p θ (o t+1 |o 1:t , a 1:t ) ∝ i p expert i (o t+1 |o 1:t , a 1:t ) θi<label>(2)</label></formula><p>where p expert i are programs and θ i are their associated scalar weights.</p><p>This representation enables modularity and compositionality. It allows composing many small programs into a full world model to capture complicated environmental dynamics (see Figure <ref type="figure">2</ref>). We can think of each program as an expert which expresses opinions about particular aspects of the world. For example, in the context of modeling a video game environment, one expert might encode "if a player touches a skull, then the player dies," while another encodes "if an action is LEFT when the player is on a platform, the player's x-axis velocity is -2." The former expert does not express opinions on the player's movement, while the latter does not mention conditions for player's death. A factored state representation yields tractable inference. We assume an object-centric state where each object has a bounding box and velocities, each stored as a separate slot, attribute, or feature.</p><p>We treat each such feature as conditionally independent, given the history so far. This independence assumption makes Equation ( <ref type="formula" target="#formula_2">2</ref>) tractable, because we can compute a separate normalizing constant for each feature. Concretely, let f index the different object features of the next observation o t+1 , and let o f be the indexing of o with feature f . Then,</p><formula xml:id="formula_3">p θ (o t+1 |o 1:t , a 1:t ) = f 1 Z f i p expert i (o f t+1 |o 1:t , a 1:t ) θi Z f = o f i p expert i (o f |o 1:t , a 1:t ) θi</formula><p>Benefits of the full-history formulation over POMDP formulation. The full-history environment formulation is formally equivalent to a POMDP which instead compresses the history into a Markov latent state. We use the history formulation because it makes our world models more modular. Learning global latent variables would entangle all the experts, because every expert would condition on the latent state. Therefore, learning a new latent variable (e.g. "how long the player has been falling") changes the input/output space of every expert, necessitating global joint updates to the structure of every program (e.g. an expert for "is the player dead" would need to be updated). The history formulation allows independent learning of independent mechanisms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hard constraints.</head><p>Atari (and the real world) is too complex to perfectly simulate with any effectively learnable program. Therefore, our probabilistic model tends to over-approximate the set of possible futures, giving fuzzy approximate predictions. For example, in Montezuma's Revenge, instead of perfectly modeling the physics of falling downward and landing on the ground, we predict a generic downward trajectory. Ideally that trajectory would perfectly enforce the constraint that the player lands flat on the ground, and never sinks into the ground, but a fuzzy stochastic expert for falling downward could violate that constraint. Therefore, to sharpen the model's outputs, we further learn a collection of hard constraints, {c j }, where c j : O → {0, 1}:</p><formula xml:id="formula_4">p θ (o t+1 |o 1:t , a 1:t ) ∝ i p expert i (o t+1 |o 1:t , a 1:t ) θi • 1   j c j (o t+1 )   (<label>3</label></formula><formula xml:id="formula_5">)</formula><p>We further discuss hard constraints and provide concrete examples in Section A.1.</p><p>Multi-timestep predictions. We represent the programmatic experts and the world as distributions over the next-timestep observations in eq. ( <ref type="formula" target="#formula_2">2</ref>).</p><p>It is likewise possible to reformulate a multi-timestep expert p expert (o t+1:t+H |o 1:t , a 1:t ) as a product of next-timestep experts by assuming that the predictions of the multi-step expert at different timestep are independent: p expert (o t+1:t+H |o 1:t , a 1:t ) = H k=1 p expert (o t+k |o 1:t , a 1:t )</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">World Model Learning: Program Synthesis and Weight Optimization</head><p>We begin with a demonstration trajectory, learn a world model, and then begin to act in the world according to that model. As the agent acts, it collects more trajectory data, which it uses to update or "debug" its model. Concretely, learning proceeds as follows:</p><p>Step 1: Synthesize programmatic experts {p expert i } m i=1 given observed trajectories D = {τ i } n i=1 Step 2: Fit the weights θ of the experts according to eq. (5) with a gradient-based optimizer Step 3: Remove the experts with weights below threshold δ Step 4: Repeat Step 1-3 every time the observed trajectories get updated Generating program experts. Following previous works [3, 24, 25], we adopt Large Language Models (LLMs) as our Python program generator. We input a small batch of transitions (o t:t+H+1 , a t:t+H ) to the LLM prompt to produce the programmatic experts {p expert i }.</p><p>Figure <ref type="figure">2</ref> shows how we interpret small Python programs as distributions over the observations. While we could ask LLMs to synthesize probabilistic programs to specify the distributions, we find it much more effective to have LLMs synthesize simple, deterministic Python programs, presumably because generic Python code is far more prevalent in LLM training data. We assume that an observation is represented as a list of objects, where each object has the following attributes: x/y velocity and visibility. Then, a distribution over observations is a distribution over each object's attributes. To interpret a Python program as a distribution, we assume that all object attributes are conditionally independent given full history, as mentioned in Section 3.1, and convert all object attributes set by the program to distributions with single peaks at the given values. We then add noise to the distributions to ensure non-zero probabilities over alternative values. Any object attributes whose values are not set by the program follow uniform distributions over all possible values: consequently, experts with a single if-condition (fig. <ref type="figure">2</ref>) yield a uniform distribution when the if-condition is not satisfied.</p><p>Gradient-based Weights Optimization. Once we have {p expert i } m i=1 , we can perform maximum likelihood estimation to obtain θ:</p><formula xml:id="formula_7">θ * = arg max θ (o 1:T +1 ,a 1:T )∈D T t=1 log p θ (o t+1 |o 1:t , a 1:t )<label>(5)</label></formula><p>This equation instantiates eq. ( <ref type="formula" target="#formula_1">1</ref>) by letting p model have a parametric form p model = p θ and choosing negative log likelihood as the loss function. We can use any gradient-based optimizer to optimize the weights. We use L-BFGS <ref type="bibr" target="#b25">[26]</ref>, which worked better than Adam <ref type="bibr" target="#b26">[27]</ref> and SGD, because we have small data and few parameters.</p><p>Finally, the experts whose weights are below a threshold δ are removed from the world model. We repeat this loop every time there are new observations. Section A.1 contains full algorithm details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">World Model Usage: RL in Simulation and Planning with World Model</head><p>An important goal of world modeling is to aid decision-making. We consider two such ways of using world models. First, a world model can serve a simulator for reinforcement learning. This makes RL policy learning more sample efficient, because we can quickly learn a world model from real environment interactions, which then substitutes the actual environment. Subsequent policy learning can take place in the world model, obviating the need for further interaction with the real environment.</p><p>In practice, we also continue reinforcement learning after pretraining in the world model. Formally, we learn a policy π : O * → A that inputs an observation history and outputs an action.</p><p>Alternatively, world models can be used for lookahead planning. Given a reward function R, we plan for a horizon of H timesteps by searching for an optimal action sequence, given our previous observations o 1:t and actions a 1:t-1 :</p><formula xml:id="formula_8">a * t:t+H = arg max a t:t+H E p θ (o t+1:t+H |o1:t,a 1:t+H ) H-1 k=0 R(o t+k+1 ; o 1:t+k , a 1:t+k )</formula><p>where p θ (o t+1:t+H |o 1:t , a 1:t+H ) = H-1 k=0 p θ (o t+k+1 |o 1:t+k , a 1:t+k ).</p><p>To get to the key (goal), the agent needs to perform a very long action sequence (length &gt; 100) with no intermediate reward</p><p>Thus, we build an abstract graph. The nodes are defined by object contact, and the edges connect pairs of nodes that a low-level planner can find a plan to traverse between.</p><p>The task is much easier if it is broken down into a sequence of sub-tasks (high-level plan).</p><p>Thus, we can search in this graph for possible high-level plans. An agent can now choose a high-level plan to follow.</p><p>Some high-level plans might not work. When an agent acts in the environment and discovers that the plan does not work, we remove the false edge from the graph and update the world model.</p><p>Eventually, we find a high-level plan that works 1. 2. 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">5. 6.</head><p>Figure <ref type="figure">3</ref>: A sequence of illustrations that demonstrates how our hierarchical planner works.</p><p>To help our world models guide long-horizon decision-making, we implement a hierarchical planner inspired by task and motion planning (TAMP). It first plans in a high-level abstract state space defined by object contact, then lowers those plans into actual Atari button presses using the learned world model (Figure <ref type="figure">3</ref>, Section A.2). The resulting agent we denote PoE-World + Planner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Domains and Evaluation.</head><p>We evaluate our agent, PoE-World + Planner, against other methods on Atari's Pong and Montezuma's Revenge (MR), using the Arcade Learning Environment <ref type="bibr" target="#b27">[28]</ref>. We use OCAtari <ref type="bibr" target="#b28">[29]</ref> to parse each image frame as a list of objects, each with an object category, a bounding box, and velocities. <ref type="foot" target="#foot_0">1</ref> Both games are partially observed: the current state and action cannot uniquely determine the next state. A demonstration of fewer than 1000 frames is created for each game, but these demonstrations are not successful gameplays: they serve only to illustrate the core causal mechanics. In Montezuma's Revenge, our demonstration never achieves positive reward.</p><p>To test compositional extrapolation , we created alternative versions of both games, called Pong-Alt and Montezuma's Revenge-Alt (Figure <ref type="figure" target="#fig_2">4</ref>), both of which recombine and rearrange the types of objects seen in the training demonstration. Pong-Alt increases the number of objects (3 balls and 3 enemies). Montezuma's Revenge-Alt adds more enemies (which the player has to jump over) and ladders, while changing the map to resemble the game Kangaroo (see Section A.3 for details). We do not provide demonstrations for these alternative versions of the games.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Score</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pong Pong-Alt MR MR-Alt</head><p>Random Agent -20.67 ± 0.33 -20.00 ± 0.58 0.00 ± 0.00 0.00 ± 0.00 PPO @ 100k env steps <ref type="bibr" target="#b30">[31]</ref> -21.00 ± 0.00 -18.66 ± 0.88 0.00 ± 0.00 0.00 ± 0.00 LLM as Agent (ReAct) <ref type="bibr" target="#b31">[32]</ref> -20.00 ± 0.00 -20.67 ± 0.33 0.00 ± 0.00 0.00 ± 0.00 WorldCoder + Planner <ref type="bibr" target="#b2">[3]</ref> -17.00 ± 3.00 -19.00 ± 1.00 0.00 ± 0.00 0.00 ± 0.00 PoE-World + Planner (Ours) -12.33 ± 0.88 -13.67 ± 0.67 100 ± 0.00 100 ± 0.00 PPO @ 20m env steps <ref type="bibr" target="#b30">[31]</ref> 17.00 ± 0.58 1.33 ± 2.03 0.00 ± 0.00 0.00 ± 0.00</p><p>Table 1: Scores on Pong and Montezuma's Revenge (MR) and their alternate versions. For PoE-World and WorldCoder, brief demonstrations on Pong and MR are given to initialize the world models.</p><p>Their agents then train for at most 3k steps before evaluation.</p><p>Baselines. PPO <ref type="bibr" target="#b30">[31]</ref> is a go-to, widely-used model-free RL algorithm. It optimizes a lower bound of the policy's performance using gradient descent. LLM as Agent (ReAct) <ref type="bibr" target="#b31">[32]</ref> directly uses an LLM as a policy. ReAct prompts LLMs to use extra chain-of-thought <ref type="bibr" target="#b32">[33]</ref> "thinking" actions before selecting an action. WorldCoder [3] is an LLM agent that models the world as a single Python program. It uses an LLM code generation and repair algorithm called REx <ref type="bibr" target="#b33">[34]</ref> to refine its world model to achieve high predictive accuracy on observed trajectories. More details in Section A.4.</p><p>Agent Results. Figure <ref type="figure" target="#fig_3">5</ref> and Table <ref type="table">1</ref> show the scores of different agents on Pong, Pong-Alt, Montezuma's Revenge, and Montezuma's Revenge-Alt. The scores on Pong and Pong-Alt indicates the difference in points achieved by the player and the enemies when the game ends at 21 points. The scores on Montezuma's Revenge and Montezuma's Revenge-Alt become positive if and only if the agent succeeds in collecting the key. As shown in Table <ref type="table">1</ref>, our agent, PoE-World + Planner, performs best across all environments in the low-data regime, particularly when PPO baseline is allowed to have 100, 000 training environment interactions, the standard budget for sample-efficient agents on Atari 2600 <ref type="bibr" target="#b19">[20]</ref>. In Figure <ref type="figure" target="#fig_3">5</ref>, we keep training PPO for more steps, finding that it takes over a million steps for PPO to surpass PoE-World + Planner. Moreover, PPO with 20M training steps never achieves positive score on Montezuma's Revenge. PoE-World + Planner is the only method that manages to obtain positive reward on Montezuma's Revenge in both base and alternative versions.  5M 10M 15M 20M Training Step 20 0 20 40 Max Score Max Score of PPO w/ and w/o Pre-training (Pong) PPO w/o Pre-training PPO w/ Pre-training on PoE-World's world model Instead of planning, can we use PoE-World to learn a policy? Training a policy avoids the test-time compute cost of planning. In Figure <ref type="figure" target="#fig_4">6</ref>, we show that pre-training a policy inside PoE-World's world model accelerates policy learning: we first run PPO "in simulation" (in our world model), and then fine-tune in the actual Atari environment. The fine-tuned PPO achieves significantly higher score than vanilla PPO at most training steps, and while the vanilla PPO takes 1M training steps to do better than a random agent, the fine-tuned PPO takes only 200k training steps. Asymptotically the pretrained and randomly-initialized policies converge to the same value: World-model pretraining is effectively a way of warm-starting policy training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Montezuma's Revenge-Alt Pong-Alt</head><p>Next Observation Prediction Results. Table <ref type="table" target="#tab_0">2</ref> and Table <ref type="table" target="#tab_1">3</ref> show next observation and next observation's object attributes prediction accuracies under the symbolic world modeling approaches, respectively. PoE-World outperforms the baselines on most settings, except for the test observation (random frames) for Pong where all methods perform similarly because a random agent rarely succeeds in hitting the ball, and so knowledge of game mechanics is not comprehensively tested.</p><p>The role of hard constraints. We investigate the role of hard constraints in our world model representation in Table <ref type="table">4</ref>. In practice, hard constraints act to rule out "physically impossible" scenes. PoE-World ended up enforcing constraints just for MR, since most possible scenes in Pong are already physically possible. As shown in Table <ref type="table">4</ref>, removing hard constraints causes the agent's performance  Table 4: Planning successes (out of 9 tries), where the goal is for the player to grab the key, and next observation prediction accuracies on 1000 random test frames of our agent with and without hard constraints on Montezuma's Revenge (MR) and its alternate version (MR-Alt).</p><p>to drop on both the base and alternative versions of Montezuma's Revenge. Interestingly, we found no significant changes in next observation prediction accuracies. We hypothesize that hard constraints do not necessarily turn bad predictions into good ones. Instead, they perform damage control-they refine poor predictions just enough to make them usable for long-horizon planning.</p><p>Qualitative difference between WorldCoder's and PoE-World's world models. World models produced by PoE-World consists of 4000+ lines of code for Montezuma's Revenge compared to WorldCoder's less than 100 lines. This difference is reflected in their ability to capture the underlying causal laws: PoE-World models accurately represent important causal laws like character movement constraints with respect to platforms and ladders, while WorldCoder fails to model these mechanics, predicting that the player can "fly" around the map without any constraints. Moreover, WorldCoder models tend to hallucinate, e.g., imagining nonexistent bullet firing abilities in Montezuma's Revenge, potentially because there is no granular way to downweigh buggy parts of a world model. PoE-World, in contrast, prunes irrelevant experts with low weights, yielding more precise world models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>World models as programs has been explored in several recent works that motivate PoE-World. Similar to our work, WorldCoder <ref type="bibr" target="#b2">[3]</ref> and CodeWorldModels <ref type="bibr" target="#b23">[24]</ref> use LLMs to write a Python transition function. Unlike our work, they learn a single monolithic program, which severely limits scalability: our world models have an order of magnitude more code needed to model complex environments, as well as handle partial observability and non-determinism. Recent works have also explored synthesizing high-level abstract world models as programs <ref type="bibr" target="#b34">[35,</ref><ref type="bibr" target="#b35">36]</ref> to support robotic planning by integrating visual perception with symbolic reasoning. They could synergize with our work, as we have focused on learning low-level world models describing the motion of objects.</p><p>Earlier works <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38]</ref> learn world models in restricted (non-Turing complete) domain specific programming languages, performing well on benchmarks co-designed with their Domain Specific Language. Even earlier, Schema Networks learn a conceptually related factor-graph world model <ref type="bibr" target="#b38">[39]</ref>. AIXI <ref type="bibr" target="#b39">[40]</ref> is a theoretical model of reinforcement learning which considers all possible Turing machines, mathematically related to all these works. Interestingly, AIXI also works with a history space as a conceptually elegant way of modeling partial observability. Other studies generate programs for world models primarily from natural language instructions, rather than from example interactions with the environment <ref type="bibr" target="#b40">[41,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b43">44]</ref>.</p><p>Hierarchical Planning. Our approach to segmenting complex continuous tasks into symbolic states is inspired by hierarchical <ref type="bibr" target="#b44">[45]</ref> and task-and motion <ref type="bibr" target="#b45">[46,</ref><ref type="bibr" target="#b46">47]</ref> planning. Hierarchical representations in Reinforcement Learning (RL) are often expressed as options-temporal abstractions that allow agents to reason at multiple time scales by grouping sequences of primitive actions <ref type="bibr" target="#b47">[48]</ref>. Options can be manually specified by design or learned from experience <ref type="bibr" target="#b48">[49]</ref>. Task and Motion Planning (TAMP) automatically discover symbolic states and action abstractions that enable generalizable symbolic plans grounded in continuous motion, however the applications of TAMP to Atari-style domains are still lacking due to complex dynamics. Similar to recent work <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b49">50]</ref>, we define a high-level state space in terms of object contact relations-which is key to supporting symbolic abstraction.</p><p>Alignment with human cognition. Our system, composed of simpler, specialized programmatic experts that give rise to complex behavior, is inspired by a view of mind as a community of interacting agents --a recurring theme in philosophy and cognitive science <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b6">7]</ref>. Our modeling approach to modeling objects and actions aligns with empirical studies of event segmentation <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b53">54]</ref> and hierarchical planning <ref type="bibr" target="#b54">[55,</ref><ref type="bibr" target="#b55">56]</ref>. Hierarchical state-spaces based on motion cues, such as ours, predict how people draw <ref type="bibr" target="#b12">[13]</ref> and interpret social interactions <ref type="bibr" target="#b56">[57]</ref>, attesting to the cognitive alignment of our approach. Likewise, our programmatic representations of actions align with studies that demonstrate human concept learning to be akin to mental programs <ref type="bibr" target="#b57">[58,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b11">12]</ref>, which recent work models by LLM-based program synthesis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion and Limitations</head><p>Compositionality. Recombining pieces of knowledge to generalize and extrapolate is a core feature of symbolic systems and, arguably, also of human cognition, ranging from natural language to abstract reasoning to everyday thought <ref type="bibr" target="#b59">[60,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b60">61,</ref><ref type="bibr" target="#b61">62]</ref>. Our approach is in this spirit. It factors its knowledge into small experts whose predictions can combine to extrapolate to scenes with more objects recomposed into new arrangements. More formally, our approach generalizes to novel "entity compositions" and "relational compositions," terms used by <ref type="bibr" target="#b62">[63]</ref>. It should be noted, however, that our compositional factoring is orthogonal to our use of symbolic code: Programs can be monolithic <ref type="bibr" target="#b2">[3]</ref>, and neural nets can be factored <ref type="bibr" target="#b63">[64]</ref>. Nonetheless, compositionality proved critical to scalably learning the underlying symbolic program. Synthesizing a single monolithic program is, in our view, intractable not just for the real world, but even for Atari.</p><p>Limitations. We make important assumptions, and only address part of the full model-based reinforcement learning problem. Symbolic programs expect symbolic inputs: We do not learn straight from pixels. RL involves exploration, decision-making, and reward function learning, but we do not address those problems here. However, we speculate our approach could unlock better methods for exploration: A program-structured world model exposes an interpretable interface for describing beliefs about how the world works, and efficiently exploring the world is analogous to testing the program that encodes the world model. Therefore ideas from software testing and program analysis could, in theory, be brought to bear, enabling new approaches to model-based exploration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 PoE-World algorithm details</head><p>As mentioned in Section 3.2, our learning algorithm PoE-World alternates between two main steps: programmatic expert synthesis and gradient-based weight optimization. Given a trajectory, we do batch processing of size 10-we first learn p θ (o 11 |o 1:10 , a 1:10 ), then p θ (o 21 |o 1:20 , a 1:20 ), and so on.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Programmatic expert synthesis.</head><p>To synthesize programmatic experts, we first need to turn the observations into natural language observations that can be input into LLMs. A sequence of consecutive observation transitions (o t:t+H+1 , a t:t+H ) can be transformed into a text showing the first input object list, the list of actions, and the changes to the input object list for the following timesteps, all in natural language. Table <ref type="table">5</ref> shows an example text representation.</p><p>We note that in the text representation, only changes to a single object type (which is 'player' in Table <ref type="table">5</ref>) is displayed at a time. This choice is to enforce modularity between the object types: each experts put non-uniform distribution only on a single attribute of objects with a specific object type. This means Equation ( <ref type="formula" target="#formula_2">2</ref>) can be further rewritten as:</p><formula xml:id="formula_9">p θ (o t+1 |o 1:t , a 1:t ) ∝ obj-type i p obj-type_expert i (o t+1 |o 1:t , a 1:t ) θi<label>(6)</label></formula><p>where {p obj-type_expert i } are the experts associated with each object type.</p><p>We then implement multiple (10 in total) LLM-based synthesis modules. For each object type, these modules take as input a sequence of consecutive observation transitions and output a set of programmatic experts. The output programmatic experts are pooled into a single set once all modules finish running. Having multiple synthesis modules allows each module to focus on different aspects of the environment, e.g., how objects move passively, how object moves when interacts with objects, how objects get created and deleted, etc. We describe one of our modules, ActionSynthesizer, below.</p><p>ActionSynthesizer focuses on synthesizing experts that explain how each action affects objects when the objects are interacting (touching) other objects (see example experts of this kind in Figure <ref type="figure">2</ref>). It takes in just a single transition (o t:t+1 , a t ). It turns this transition into a text representation as discussed above (Table <ref type="table">5</ref>). Then, it prompts a LLM to output causal explanations for the object changes (see the prompt Table <ref type="table" target="#tab_2">6</ref>). An example causal explanation is "the player objects that touch an ladder object set their y-axis velocity to -4". With a set of causal explanations, we prompt a LLM to turn each of them into a program (see the prompt Table <ref type="table">7</ref> and Table <ref type="table">8</ref>).</p><p>Other modules follow this template of first prompting a LLM for natural language causal explanations and then prompting a LLM to turn the explanations into programs. We refer the reader to our code at <ref type="url" target="https://github.com/topwasu/poe-world">https://github.com/topwasu/poe-world</ref> for the implementations of other LLM-based module.</p><p>The programs synthesized by LLMs use our manually-written helper classes: Obj, ObjList, RandomValues, and SeqValues. Their docstrings are passed to the prompt. Obj provides a method Obj.touches which is the function we manually build in to help determine object contact. Obj contains object attributes: object category, x/y position, x/y velocities. It also contains properties</p><p>Example input list of objects: player object (id = 0) with x-axis velocity = +4, Interaction --player object (id = 0) is touching ladder object (id = 2), Interaction --player object (id = 0) is touching unknown object (id = 4), Example list of actions: NOOP, NOOP, RIGHT Example output list of object changes: -The player object (id = 0) sets x-axis velocity to [+0, +0, +2]</p><p>Table <ref type="table">5</ref>: Example text representation of a sequence of consecutive transitions.</p><p>including center_x, center_y, left_side, right_side, which are calculated based on the position and velocities, and their setter methods actually modify the velocities under the hood. ObjList is a class that represents an object list. It has a method ObjList.get_objs_by_obj_type and ObjList.create_object. Lastly, RandomValues and SeqValues are the classes used to mark values set by a LLM. The purpose of these two classes is further discussed below.</p><p>After the programmatic experts are synthesized (see examples in Table <ref type="table">9</ref>), we interpret them as distributions as discussed in Section 3.2. We tell LLMs in the prompt to set attribute values as instances of RandomValues, as opposed to integers. This marks the attributes whose values changed by a LLM so that we can write an program-to-distribution interpreter that puts a single-peak distribution on the attribute whose value is set and uniform distributions on all other attributes. SeqValues is similar to RandomValues, but is used in multi-timestep predictions scenario, as discussed in Section 3.1.</p><p>The LLM used in the steps above is gpt-4o-2024-08-06. We implemented a disk cache for the LLM responses to avoid paying multiple times for the same prompts and seeds.</p><p>Hard constraints. The hard constraints (Section 3.1) are also synthesized similar to how we synthesize the programmatic experts. Table <ref type="table">10</ref> shows the constraints learned for Montezuma's Revenge. In Equation ( <ref type="formula" target="#formula_4">3</ref>), we choose to use a disjunction rather than a conjunction because the physics in video games can be peculiar and unrealistic-a player might have their body overlap with a platform when climbing down a ladder attached to that platform. In the real world, we believe a conjunction would be a better choice.</p><p>Gradient-based weight optimization. Once we have the expert distributions {p expert i }, we can optimize their weights {w i } according to Equation <ref type="bibr" target="#b4">(5)</ref>. We use the L-BFGS optimizer <ref type="bibr" target="#b25">[26]</ref> implemented in PyTorch <ref type="bibr" target="#b76">[77]</ref> with strong Wolfe line search, learning rate = 1, number of epochs = 4, and without mini-batching. We also include a L1 regularization loss with weight = 1 so that the weights do not get too big.</p><p>We note that the weight optimization is done without taking into account the hard constraints since we would like to use gradient-based approaches.</p><p>We prune programs with weights lower than δ = 0.01 after the weight optimization is done, and we prune constraints that contradict with the observations or explain less than 1% of the observations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Planner</head><p>In a game like Montezuma's Revenge, planning in the actual, low-level action space is hard because the number of actions required to get to the first positive reward is very high-at least 100. This means the size of search space is 8 100 as there are 8 possible actions: NOOP, UP, DOWN, LEFT, RIGHT, FIRE, LEFTFIRE, RIGHTFIRE.</p><p>Thus, inspired by task and motion planning (TAMP), our hierarchical planner interleaves planning in the low-level motion action space with planning in a high-level abstract action space. It learns an abstract graph where the nodes are abstract states defined by object contact, and the edges represent whether the world model believes the player can traverse between the two nodes. Then, we search for a path in the abstract graph that takes the player to the goal. In Atari, a goal is usually for a player to touch a goal object (key, ball, platforms, etc.). The discovered path in the abstract graph is a high-level plan-a sequence of subgoals-for a low-level planning agent. A low-level planning agent performs online planning to choose an action and then execute it in the environment.</p><p>The planning algorithm can be described step-by-step as follows:</p><p>Step 1: Learn an abstract graph by running a low-level motion planner in simulation on all pairs of nodes. A (ordered) pair of nodes has an edge between them if we can find at least one low-level plan to traverse between them.</p><p>Step 2: Search for a path in the abstract graph. We use breadth-first search (BFS) here to find a path to the goal with the shortest length. The path is our high-level plan. If there is no path to the goal, go back to step 1.</p><p>Step 3: Attempt to follow the high-level plan, completing each subgoal in order, with a low-level planning agent.</p><p>Step 4: If there is a "false" edge, update the world model, remove that edge from the graph, then go back to step 2. Otherwise, the algorithm stops, and the agent has achieved the goal.</p><p>Figure <ref type="figure">3</ref> shows simplified illustrations of how our hierarchical planner works.</p><p>We now discuss the implementation of our low-level motion planner:</p><p>Low-level motion planner. We implemented two low-level motion planners. The first is a variant of Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b77">[78,</ref><ref type="bibr" target="#b78">79]</ref>. It follows the same set of procedures as vanilla MCTS with two differences: first, similar to the MCTS algorithm used in <ref type="bibr" target="#b2">[3]</ref>, it approximates the value of a node using a heuristic function instead of doing a random rollout in the simulate step. The heuristic function is the Manhattan distance between the current position of the player object and the position of a goal object. We find that this function is a good estimate of how good an observation is when trying to achieve a goal. Second, the value of a node is updated as the maximum value of its children nodes, instead of the expected value, in the backpropagation step. Intuitively, using the maximum value encourages the planner to be more optimistic. The exploration parameter for MCTS is initially equal to 1 for Montezuma's Revenge and Montezuma's Revenge-Alt and 10 for Pong and Pong-Alt, and it increases by 10 times every 1000 iterations of MCTS.</p><p>We also implement "sticky actions" by extending the action space that MCTS searches on so that it includes repeated sequences of primitive actions with lengths 1, 4, and 8. Thus, the extended action space has 3n actions where n is the number of primitive actions. We include these repeated action chunks in our action space to make planning easier. Playing Atari games rarely requires players to change actions at every timestep, so repeated action chunks can be helpful.</p><p>The second low-level motion planner is a greedy search with the same heuristic function used in MCTS. At each iteration, it greedily finds the best repeated action chunk of length 8 and includes it in the plan. It backtracks if the current state leads to death no matter which action chunk of length 8 the planner chooses. It returns a plan when the player achieves the goal (touches the goal object).</p><p>Pong, Pong-Alt, and Montezuma's Revenge-Alt agents only use the greedy planner, while Montezuma's Revenge uses both: it first tries to find a plan with MCTS for 4000 iterations and falls back to the greedy planner if MCTS fails.</p><p>As discussed earlier, the low-level motion planner is used in two steps: to build the abstract graph by finding a plan to traverse between two abstract nodes in the world model, and to help inform a low-level planning agent that is trying to complete a subgoal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Low-level planning agent.</head><p>The agent performs online planning: it uses the low-level planner to find a plan to the goal, and then it takes a sequence of actions and replans. The agent replans when the ccurent plan no longer takes the agent to the goal, so the agent may take several actions before replanning. We further optimize the agent by letting it replan only 40% of the times when the current plan no longer works in Montezuma's Revenge.</p><p>Because of this introduced stochasticity, however, we find that our whole planning pipeline can give different scores in different runs even with the same initial world model, so we treat running the hierarchical planner multiple times with the same initial world model as part of training, and we run the planning algorithm 3 times on the same initial world model to get results on Montezuma's Revenge and Montezuma's Revenge-Alt. Our work focuses on world modeling, and we leave it to future work to increase the efficiency and performance of the hierarchical planner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Domain details</head><p>We evaluate our methods on Atari's Pong and Montezuma's Revenge using the Arcade Learning Environment (ALE). The frameskip parameter is set to 3 for both games. We use OCAtari to parse each image frame as a list of objects, each with an object category, a bounding box, and velocities. OCAtari reverses-engineers the RAM values of Atari games to get the bounding boxes of each object.</p><p>We modify OCAtari to fix a number of issues in its handling of Pong and Montezuma's Revenge. This includes fixing bugs in object detection so that it fully detects every object in play, correcting bugs in the the bounding boxes so that object interactions correctly correspond to when object bounding boxes touch/overlap, etc. We refer the reader to our code implementation <ref type="url" target="https://github.com/topwasu/poe-world">https://github.com/  topwasu/poe-world</ref> for full details.</p><p>Details on how we create Pong-Alt and Montezuma's Revenge-Alt are below:</p><p>Pong-Alt is created by layering three Pong environments. We sync the player's location in all three environments, so that it appears as if we have only one paddle. The enemies and balls, on the other hand, are all at different locations. We end up with one player, three enemies, and three balls.</p><p>Montezuma's Revenge-Alt is created by stacking the lower section of the first room in the original Montezuma's Revenge to make three platforms of different heights, connected by stairs. We stack up three lower sections of three different Montezuma's Revenge environments. The first and the third section in the stack are flipped horizontally so that the stairs are on different sides of the room, requiring the player to jump over the skulls to reach the stairs.</p><p>ALE code uses GPL-2.0 license, and OCAtari code uses MIT license.</p><p>A.4 Baseline details PPO. PPO uses frame stacking = 4. We use the same hyperparameters as the PPO paper <ref type="bibr" target="#b30">[31]</ref> and OCAtari <ref type="bibr" target="#b28">[29]</ref>. We use the stable-baselines3 implementation of PPO with MLP backbone ('MlpPolicy') <ref type="bibr" target="#b79">[80]</ref>. For the Alt environments, we take the PPO model pretrained 20M steps on the base environments and finetune it on the Alt environments. This pretraining process is done for fiar comparison with our method, since our method assumes demonstrations from the base environments when evaluating on the corresponding Alt environments.</p><p>ReAct. We write prompts that would alternate between thinking and taking actions, one for Pong and Pong-Alt and another for Montezuma's Revenge and Montezuma's Revenge-Alt. The frame observation is transformed into text where we provide each object's x and y position and a list of all pairwise object interactions. This text observation is input as part of the prompt. In the prompt, we only include the 4 most recent observations (along with the 4 most recent thinking actions and 4 most recent taken actions) as each observation is quite long in text.</p><p>WorldCoder. We use the official WorldCoder implementation <ref type="bibr" target="#b2">[3]</ref> but replace the existing prompts with new ones that are tailored towards our text representation of object-centric Atari frames. The prompts can be found in our codebase <ref type="url" target="https://github.com/topwasu/poe-world">https://github.com/topwasu/poe-world</ref>. The instantiation of WorldCoder in <ref type="bibr" target="#b2">[3]</ref> actually has its own planner implemented, but for fair comparison with our method, we use only the world modeling part of that system and combine it with our own planner so that the planner is the same for both WorldCoder and our method. We choose to use our own planner instead of theirs since ours is hierarchical.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>WorldCoder code uses MIT license.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Compute resources and execution time</head><p>Compute Resources. For the world modeling part, our experiments are run on 4 CPUs (Cascade-Lake, IceLake, or SaphireRapids) with 64 GB memory. PoE-World and WorldCoder uses a budget of $20 worth of OpenAI credit per run. For the planner, we also run it mostly on 4 CPUs, but for the part where we need to build an abstract graph by running many low-level planners, we parallelize it on multuple compute jobs on a job scheduling cluster, so we might be using 100 CPUs at a time.</p><p>Execution time. PoE-World alone without the planner tends to take around 8 hours to run (this includes the time we need to wait for OpenAI LLM requests). The planner running time varies, but most runs finish under 24 hours.</p><p>I'll give you an input list of objects and an output list of object changes, and I want you to list 4 possible reasons for the effects Here's an example with player objects: Example input list of objects: player object (id = 0) with x-axis velocity = +0 and y-axis velocity +2, Interaction --player object (id = 0) is touching ladder object (id = 2), Interaction --player object (id = 0) is touching unknown object (id = 4), Example output list of object changes:</p><p>-The player object (id = 0) sets x-axis velocity to +0 -The player object (id = 0) sets y-axis velocity to -4</p><p>Example reasons:</p><p>1. The player objects that touch an unknown object set their x-axis velocity to +0 2. The player objects that touch an unknown object set their y-axis velocity to -4 3. The player objects that touch an ladder object set their x-axis velocity to +0 4. The player objects that touch an ladder object set their y-axis velocity to -4</p><p>Please output a list of 4 reasons of the {obj_type} objects for the following input and output list of objects.</p><p>Input list of objects: {input} Output list of object changes: {effects} Please follow these rules for your output: 1. make sure each reason only talks about one object change 2. do not talk about IDs Table 7: First half of a prompt in ActionSynthesizer used to turn the natural language causal explanations into programs.</p><p>Please output {n} different alter_{obj_type}_objects functions that explains each of the {n} possible effects of action '{action}' following these rules: 1. Each function should make changes to one attribute --this could be the x-axis position, y-axis position, creation of object, or deletion of object. 2. Always use RandomValues to set attribute values. If there are conflicting changes to an attribute, instantiate RandomValues with a list of all possible values for that attribute. 3. Use Obj.touches to check for interactions. 4. Avoid setting each attribute value for each {obj_type} object more than once. For example, use 'break' inside a nested loop. 5. You can assume the velocities of input objects are integers. 6. Please use if-condition to indicate that the effects only happen because of action '{action}' Format the output as a numbered list.</p><p>Table 8: Second half of a prompt in ActionSynthesizer used to turn the natural language causal explanations into programs. Montezuma's Revenge-Alt Pong Pong-Alt Montezuma's Revenge # Constraint 1: Player's body must align with the center of the rope def c1(obj_list: ObjList, _, touch_side=2, touch_percent=0.3) -&gt; tuple: touch_ids, satisfied_ids = [], [] player_objs = obj_list.get_objs_by_obj_type('player') # get all Obj of type 'player' rope_objs = obj_list.get_objs_by_obj_type('rope') # get all Obj of type 'rope' for player_obj in player_objs: # player_obj is of type Obj for rope_obj in rope_objs: # rope_obj is of type Obj if player_obj.touches(rope_obj, touch_side, touch_percent): touch_ids.append(player_obj.id) if player_obj.center_x == rope_obj.center_x: satisfied_ids.append(player_obj.id) return touch_ids, satisfied_ids # Constraint 2: Player's feet must align with the top of the conveyer belt def c2(obj_list: ObjList, _, touch_side=3, touch_percent=0.1) -&gt; ObjList: touch_ids, satisfied_ids = [], [] player_objs = obj_list.get_objs_by_obj_type('player') # get all Obj of type 'player' conveyer_belt_objs = obj_list.get_objs_by_obj_type('conveyer_belt') # get all Obj of type 'conveyer_belt' for player_obj in player_objs: # player_obj is of type Obj for conveyer_belt_obj in conveyer_belt_objs: # conveyer_belt_obj is of type Obj if player_obj.touches(conveyer_belt_obj, touch_side, touch_percent): touch_ids.append(conveyer_belt_obj.id) if player_obj.bottom_side == conveyer_belt_obj.top_side: satisfied_ids.append(conveyer_belt_obj.id) return touch_ids, satisfied_ids # Constraint 3: Player's feet must align with the top of the platform def c3(obj_list: ObjList, _, touch_side=3, touch_percent=0.5) -&gt; ObjList: touch_ids, satisfied_ids = [], [] player_objs = obj_list.get_objs_by_obj_type('player') # get all Obj of type 'player' platform_objs = obj_list.get_objs_by_obj_type('platform') # get all Obj of type 'platform' for player_obj in player_objs: # player_obj is of type Obj for platform_obj in platform_objs: # platform_obj is of type Obj if player_obj.touches(platform_obj, touch_side, touch_percent): touch_ids.append(platform_obj.id) if player_obj.bottom_side == platform_obj.top_side: satisfied_ids.append(platform_obj.id) return touch_ids, satisfied_ids # Constraint 4: Player's body must align with the center of the ladder def c4(obj_list: ObjList, _, touch_side=3, touch_percent=1.0) -&gt; ObjList: touch_ids, satisfied_ids = [], [] player_objs = obj_list.get_objs_by_obj_type('player') # get all Obj of type 'player' ladder_objs = obj_list.get_objs_by_obj_type('ladder') # get all Obj of type 'ladder' for player_obj in player_objs: # player_obj is of type Obj for ladder_obj in ladder_objs: # ladder_obj is of type Obj if player_obj.touches(ladder_obj, touch_side, touch_percent): touch_ids.append(ladder_obj.id) if player_obj.center_x == ladder_obj.center_x: satisfied_ids.append(ladder_obj.id) return touch_ids, satisfied_ids</p><p>Table 10: The collection of constraints synthesized for Montezuma's Revenge. Function names have been shortened to save space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>NeurIPS Paper Checklist</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Claims</head><p>Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope? Answer: [Yes] Justification: The claims made in the abstract and introduction accurately reflect the paper's contributions and scope.</p><p>Guidelines:</p><p>• The answer NA means that the abstract and introduction do not include the claims made in the paper.</p><p>• The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers.</p><p>• The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings.</p><p>• It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Limitations</head><p>Question: Does the paper discuss the limitations of the work performed by the authors? Answer: [Yes] Justification: The paper discusses the limitations of the work performed by the authors. Guidelines:</p><p>• The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper.</p><p>• The authors are encouraged to create a separate "Limitations" section in their paper.</p><p>• The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.</p><p>• The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.</p><p>• The authors should reflect on the factors that influence the performance of the approach.</p><p>For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.</p><p>• The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.</p><p>• If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.</p><p>• While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Theory assumptions and proofs</head><p>Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof? Answer: <ref type="bibr">[NA]</ref> </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: (a) World models predict the next state given a state-action history. We do this with a product of experts of many small programs. (b) The learner is given a short (&lt;1 min) demonstration of gameplay as input, and uses it to synthesize initial world-model programs. These programs are refined online in later environment interactions. (c) World models support planning by imagining future states. (d) Symbolic programs encode abstract knowledge that generalizes to new game levels.</figDesc><graphic coords="2,410.82,248.77,68.37,80.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>3 Figure 2 :</head><label>32</label><figDesc>Figure 2: A "heat map" illustration of how simple Python programs are interpreted as distributions, and how they are combined into a single distribution over next-timestep object locations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Screenshots of the alternative environments. Pong-Alt's objective is to hit three balls past three enemies to score points, while Montezuma's Revenge-Alt requires players to avoid moving skulls by jumping over them and climbing up ladders to reach and collect the key.</figDesc><graphic coords="7,330.83,528.58,132.50,148.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Maximum score differences over random baseline achieved at different number of training steps (in log scale). The text "(demonstration)" annotates the length of demonstration used to initialize WorldCoder and PoE-World, which is not displayed for the Alt games since we use the world models initialized by the demonstrations of the corresponding base games.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: PPO with and without pre-training within our world model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>± 0.01 0.36 ± 0.02 0.06 ± 0.01 0.01 ± 0.01 0.10 ± 0.01 0.12 ± 0.03 PoE-World (ours) 0.51 ± 0.01 0.75 ± 0.00 0.06 ± 0.01 0.03 ± 0.00 0.31 ± 0.00 0.43 ± 0.00</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Screenshots of both base and alternative environments for Pong and Montezuma's Revenge.</figDesc><graphic coords="21,330.83,526.84,132.50,148.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Next observation prediction accuracy on the training demonstration and 1000 random frames.± 0.00 0.75 ± 0.01 0.66 ± 0.01 0.67 ± 0.02 0.58 ± 0.00 0.65 ± 0.02 PoE-World (ours) 0.88 ± 0.00 0.93 ± 0.00 0.66 ± 0.00 0.76 ± 0.00 0.76 ± 0.00 0.83 ± 0.00</figDesc><table><row><cell>Method</cell><cell cols="5">Next Observation's Object Attributes Prediction Accuracy</cell></row><row><cell></cell><cell>Train</cell><cell></cell><cell></cell><cell cols="2">Test (1000 Random Frames)</cell></row><row><cell></cell><cell>Pong</cell><cell>MR</cell><cell>Pong</cell><cell>Pong-Alt</cell><cell>MR</cell><cell>MR-Alt</cell></row><row><cell>WorldCoder</cell><cell>0.82</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Next observation's object attributes prediction accuracies on the training demonstration and 1000 random frames. Non-moving objects, such as walls, platform, etc. are excluded.</figDesc><table><row><cell>Method</cell><cell cols="4">Planning successes Next Observation Prediction Accuracy (Test)</cell></row><row><cell></cell><cell>MR</cell><cell>MR-Alt</cell><cell>MR</cell><cell>MR-Alt</cell></row><row><cell cols="2">PoE-World + Planner w/o Hard Constraints 2/9</cell><cell>2/9</cell><cell>0.30 ± 0.01</cell><cell>0.43 ± 0.00</cell></row><row><cell>PoE-World + Planner</cell><cell>5/9</cell><cell>4/9</cell><cell>0.31 ± 0.00</cell><cell>0.43 ± 0.00</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>A prompt in ActionSynthesizer used to get LLM to provide causal explanations of the object changes.</figDesc><table><row><cell>We observe that the possible effects of {action} on {obj_type} objects include</cell></row><row><cell>{obs_lst_txt}</cell></row><row><cell>We want to synthesize python functions that implements these effects. The format of</cell></row><row><cell>the functions should be</cell></row><row><cell>def alter_{obj_type}_objects(obj_list: ObjList, action: str) -&gt; ObjList:</cell></row><row><cell>{obj_type}_objs = obj_list.get_objs_by_obj_type('{obj_type}') # get all Obj of</cell></row><row><cell>obj_type '{obj_type}'</cell></row><row><cell>for {obj_type}_obj in {obj_type}_objs: # {obj_type}_obj is of type Obj</cell></row><row><cell># You can assume {obj_type}_obj.velocity_x and {obj_type}_obj.velocity_y are</cell></row><row><cell>integers.</cell></row><row><cell>pass</cell></row><row><cell>return obj_list</cell></row><row><cell>And here are the docstrings for relevant classes:</cell></row><row><cell>class RandomValues:</cell></row><row><cell>Use this class to express the possibility of random values. Example x =</cell></row><row><cell>RandomValues([x + 2, x -2])</cell></row><row><cell>Attributes:</cell></row><row><cell>values (list[ints]): list of possible values</cell></row><row><cell>Methods:</cell></row><row><cell>__init__(values):</cell></row><row><cell>Initialize an instance</cell></row><row><cell>class Obj:</cell></row><row><cell>Attributes:</cell></row><row><cell>id (int): id of the object</cell></row><row><cell>obj_type (string): type of the object</cell></row><row><cell>velocity_x (int | RandomValues): x-axis velocity of the object</cell></row><row><cell>velocity_y (int | RandomValues): y-axis velocity of the object</cell></row><row><cell>deleted (int | RandomValues): whether this object gets deleted (1 if it does</cell></row><row><cell>and 0 if it does not)</cell></row><row><cell>Methods:</cell></row><row><cell>touches(obj: Obj) -&gt; bool:</cell></row><row><cell>Returns whether this Obj is touching the input obj (True/False)</cell></row><row><cell>class ObjList:</cell></row><row><cell>Attributes:</cell></row><row><cell>objs (list of Obj)</cell></row><row><cell>Methods:</cell></row><row><cell>get_objs_by_obj_type(obj_type: str) -&gt; list[Obj]:</cell></row><row><cell>Returns list of objects with the input obj_type</cell></row><row><cell>create_object(obj_type: str, x: int, y: int) -&gt; ObjList:</cell></row><row><cell>Returns a new instance of ObjList with the new object (with obj_type, x,</cell></row><row><cell>y) added</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>OCAtari does not reliably extract objects so we have to make custom changes to OCAtari for every single Atari game we apply our method to, which makes it infeasible to run on the full Atari suite. We choose Pong and Montezuma's Revenge (arguably one of the hardest games in Atari-<ref type="bibr" target="#b29">[30]</ref> calls it a "grand challenge") as representative games for which we manually patch OCAtari to reliably detect objects.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>We thank <rs type="person">Edward Gu</rs> and <rs type="person">Taha Jafry</rs> for their contributions to earlier versions of this project. We are also grateful to <rs type="person">Atharv Sonwane</rs>, <rs type="person">Yilun Du</rs>, and <rs type="person">Tom Silver</rs> for their valuable discussions and feedback on the paper, and we appreciate the OCAtari team's assistance and support with the OCAtari package. This work was supported by an <rs type="funder">NSF</rs> <rs type="grantName">CAREER grant</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_ArNuftx">
+					<orgName type="grant-name">CAREER grant</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p># Example program 1 def alter_player_objects(obj_list: ObjList, action: str, touch_side=3, touch_percent=0.6) -&gt; ObjList:</p><p>if action == 'NOOP': player_objs = obj_list.get_objs_by_obj_type('player') conveyer_belts = obj_list.get_objs_by_obj_type('conveyer_belt') for player_obj in player_objs: for conveyer_belt in conveyer_belts: if player_obj.touches(conveyer_belt, touch_side, touch_percent): player_obj.velocity_x = RandomValues([-1]) break return obj_list # Example program 2 def alter_player_objects(obj_list: ObjList, action: str, touch_side=3, touch_percent=1.0) -&gt; ObjList:</p><p>if action == 'FIRE': player_objs = obj_list.get_objs_by_obj_type('player') platform_objs = obj_list.get_objs_by_obj_type('platform') for player_obj in player_objs: for platform_obj in platform_objs: if player_obj.touches(platform_obj, touch_side, touch_percent): player_obj.velocity_y = RandomValues([-6]) break return obj_list # Example program 3 def alter_player_objects(obj_list: ObjList, action: str, touch_side=3, touch_percent=0.3) -&gt; ObjList:</p><p>if action == 'RIGHTFIRE': player_objs = obj_list.get_objs_by_obj_type('player') platform_objs = obj_list.get_objs_by_obj_type('platform') for player_obj in player_objs: for platform_obj in platform_objs: if player_obj.touches(platform_obj, touch_side, touch_percent): player_obj.velocity_y = SeqValues([-6, -7, -4, 0, 2, 6, 9]) break return obj_list Table <ref type="table">9</ref>: Example synthesized programmatic experts.</p><p>Justification: The paper does not include theoretical results. Guidelines:</p><p>• The answer NA means that the paper does not include theoretical results.</p><p>• All the theorems, formulas, and proofs in the paper should be numbered and crossreferenced.</p><p>• All assumptions should be clearly stated or referenced in the statement of any theorems.</p><p>• The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition.</p><p>• Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material. • Theorems and Lemmas that the proof relies upon should be properly referenced.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental result reproducibility</head><p>Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)? Answer: [Yes] Justification: We have fully described the algorithms used in the paper, with details included in the appendix.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.</p><p>• If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable.</p><p>• Depending on the contribution, reproducibility can be accomplished in various ways.</p><p>For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.</p><p>• While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example (a) If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm. (b) If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully. (c) If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset). (d) We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility.</p><p>In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results. 5. Open access to data and code Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material? Answer: [Yes]</p><p>Justification: The code is available at <ref type="url" target="https://anonymous.4open.science/r/poe-world-neurips-628F/">https://anonymous.4open.science/r/  poe-world-neurips-628F/</ref> Guidelines:</p><p>• The answer NA means that paper does not include experiments requiring code.</p><p>• Please see the NeurIPS code and data submission guidelines (<ref type="url" target="https://nips.cc/public/guides/CodeSubmissionPolicy">https://nips.cc/  public/guides/CodeSubmissionPolicy</ref>) for more details.</p><p>• While we encourage the release of code and data, we understand that this might not be possible, so "No" is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).</p><p>• The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (<ref type="url" target="https://nips.cc/public/guides/CodeSubmissionPolicy">https:  //nips.cc/public/guides/CodeSubmissionPolicy</ref>) for more details.</p><p>• The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.</p><p>• The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.</p><p>• At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).</p><p>• Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Experimental setting/details</head><p>Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?</p><p>Answer: [Yes] Justification: Algorithm details are described in the appendix.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.</p><p>• The full details can be provided either with the code, in appendix, or as supplemental material.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Experiment statistical significance</head><p>Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?</p><p>Answer: [Yes] Justification: The paper reports error bars computed over 5 seeds.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.</p><p>• The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).</p><p>• The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.) • The assumptions made should be given (e.g., Normally distributed errors).</p><p>• It should be clear whether the error bar is the standard deviation or the standard error of the mean.</p><p>• It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96% CI, if the hypothesis of Normality of errors is not verified.</p><p>• For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).</p><p>• If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text. 8.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experiments compute resources</head><p>Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments? Answer: [Yes] Justification: We have provided OpenAI API cost for our experiments and compute resources used for our experiments.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.</p><p>• The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute.</p><p>• The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper). 9.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code of ethics</head><p>Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics <ref type="url" target="https://neurips.cc/public/EthicsGuidelines">https://neurips.cc/public/EthicsGuidelines</ref>? Answer: [Yes] Justification: The research conducted in the paper conforms, in every aspect, with the NeurIPS Code of Ethics.</p><p>Guidelines:</p><p>• The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.</p><p>• If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.</p><p>• The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction). 10.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Broader impacts</head><p>Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed? Answer: [NA] Justification: Our work is foundational research and has no direct societal impact.</p><p>Guidelines:</p><p>• The answer NA means that there is no societal impact of the work performed.</p><p>• If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.</p><p>• Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.</p><p>• The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.</p><p>• The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.</p><p>• If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="11.">Safeguards</head><p>Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?</p><p>Answer: [NA] Justification: The paper poses no such risks.</p><p>Guidelines:</p><p>• The answer NA means that the paper poses no such risks.</p><p>• Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters.</p><p>• Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.</p><p>• We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.">Licenses for existing assets</head><p>Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?</p><p>Answer: [Yes]</p><p>Justification: The creators of original data are all properly credited, and the license and terms of use of the data are explicitly mentioned and properly respected.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not use existing assets.</p><p>• The authors should cite the original paper that produced the code package or dataset.</p><p>• The authors should state which version of the asset is used and, if possible, include a URL.</p><p>• The name of the license (e.g., CC-BY 4.0) should be included for each asset.</p><p>• For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.</p><p>• If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, <ref type="url" target="file://localhost/opt/grobid/grobid-home/tmp/paperswithcode.com/datasets">paperswithcode.com/datasets</ref> has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.</p><p>• For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.</p><p>• If this information is not available online, the authors are encouraged to reach out to the asset's creators. 13. New assets Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets? Answer: [NA] Justification: The paper currently does not release new assets.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not release new assets.</p><p>• Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc.</p><p>• The paper should discuss whether and how consent was obtained from people whose asset is used.</p><p>• At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.</p><p>14. Crowdsourcing and research with human subjects Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? Answer: [NA] Justification: The paper does not involve crowdsourcing nor research with human subjects. Guidelines: • The answer NA means that the paper does not involve crowdsourcing nor research with human subjects. • Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper. • According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector. 15. Institutional review board (IRB) approvals or equivalent for research with human subjects Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained? Answer: [NA] Justification: The paper does not involve crowdsourcing nor research with human subjects. Guidelines: • The answer NA means that the paper does not involve crowdsourcing nor research with human subjects. • Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper.</p><p>• We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution.</p><p>• For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review. 16. Declaration of LLM usage Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does not impact the core methodology, scientific rigorousness, or originality of the research, declaration is not required. Answer: [Yes] Justification: This paper describes the usage of LLMs in our method.</p><p>• The answer NA means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.</p><p>• Please refer to our LLM policy (<ref type="url" target="https://neurips.cc/Conferences/2025/LLM">https://neurips.cc/Conferences/2025/LLM</ref>) for what should or should not be described.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jurgis</forename><surname>Pasukonis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.04104</idno>
+		<title level="m">Mastering diverse domains through world models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Human learning in atari</title>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Tsividis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Pouncy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaqueline</forename><forename type="middle">L</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">J</forename><surname>Gershman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Spring Symposia</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Worldcoder, a model-based LLM agent: Building world models by writing code and interacting with the environment</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darren</forename><forename type="middle">Yan</forename><surname>Key</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">The modularity of mind</title>
+		<author>
+			<persName><forename type="first">Jerry</forename><forename type="middle">A</forename><surname>Fodor</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1983">1983</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Minsky</surname></persName>
+		</author>
+		<title level="m">Society of mind. Simon and Schuster</title>
+		<imprint>
+			<date type="published" when="1986">1986</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dennett</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">C</forename><surname>Dennett</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Consciousness explained. Penguin uk</title>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">The algebraic mind: Integrating connectionism and cognitive science</title>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Gary</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Cognitive neuroscience. the biology of the mind</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">B</forename><surname>Michael S Gazzaniga</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ivry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mangun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>sixth edition</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Acquisition of cognitive skill</title>
+		<author>
+			<persName><surname>John R Anderson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological review</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">369</biblScope>
+			<date type="published" when="1982">1982</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Automated discovery of symbolic laws governing skill acquisition from naturally occurring data</title>
+		<author>
+			<persName><forename type="first">Sannyuya</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxuan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongkai</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Computational Science</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="334" to="345" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Human-level concept learning through probabilistic program induction</title>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Brenden M Lake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">350</biblScope>
+			<biblScope unit="issue">6266</biblScope>
+			<biblScope unit="page" from="1332" to="1338" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">People infer recursive visual concepts from just a few examples</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brenden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">T</forename><surname>Lake</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Piantadosi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational Brain &amp; Behavior</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="54" to="65" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Learning abstract structure for drawing by efficient motor program induction</title>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="2686" to="2697" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Learning evolved combinatorial symbols with a neuro-symbolic generative model</title>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Hofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Tuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roger</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08274</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Symbolic metaprogram search improves learning efficiency and explains rule learning in humans</title>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">T</forename><surname>Joshua S Rule</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Piantadosi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Cropper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Communications</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">6847</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Drawing out of distribution with neuro-symbolic generative models</title>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tuan</forename><surname>Anh Le</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="15244" to="15254" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Optimal control of markov processes with incomplete state information i</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Johan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Åström</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of mathematical analysis and applications</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="174" to="205" />
+			<date type="published" when="1965">1965</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.10122</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">World models. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Mastering atari, go, chess and shogi by planning with a learned model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Lockhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">588</biblScope>
+			<biblScope unit="issue">7839</biblScope>
+			<biblScope unit="page" from="604" to="609" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Model based reinforcement learning for atari</title>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Babaeizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Miłos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Błażej</forename><surname>Osiński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><forename type="middle">H</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konrad</forename><surname>Czechowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dumitru</forename><surname>Erhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Kozakowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Afroz</forename><surname>Mohiuddin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Sepassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Transformers are sample-efficient world models</title>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eloi</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Fleuret</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Diffusion for world modeling: Visual details matter in atari</title>
+		<author>
+			<persName><forename type="first">Eloi</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Jelley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anssi</forename><surname>Kanervisto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amos</forename><surname>Storkey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Fleuret</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-eighth Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangyao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sivaramakrishnan</forename><surname>Swaminathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajkumar</forename><surname>Vasudeva Raju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Swaroop Guntupalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfgang</forename><surname>Lehrach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Ortiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Dedieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Lázaro-Gredilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Murphy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.05364</idno>
+		<title level="m">Diffusion model predictive control</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Generating code world models with large language models guided by monte carlo tree search</title>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Dainese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Merler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minttu</forename><surname>Alakuijala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pekka</forename><surname>Marttinen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zergham</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">J</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">J</forename><surname>Gershman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.20124</idno>
+		<title level="m">Synthesizing world models for bilevel planning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">On the limited memory bfgs method for large scale optimization</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nocedal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematical programming</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="503" to="528" />
+			<date type="published" when="1989">1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1412.6980</idno>
+		<title level="m">Adam: A method for stochastic optimization</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">The arcade learning environment: An evaluation platform for general agents</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Naddaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bowling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="253" to="279" />
+			<date type="published" when="2013-06">jun 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Ocatari: Object-centric atari 2600 reinforcement learning environments</title>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Delfosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jannis</forename><surname>Blüml</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bjarne</forename><surname>Gregori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Sztwiertnia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristian</forename><surname>Kersting</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.08649</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">First return, then explore</title>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Ecoffet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Huizinga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><forename type="middle">O</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">590</biblScope>
+			<biblScope unit="issue">7847</biblScope>
+			<biblScope unit="page" from="580" to="586" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Code repair with llms gives an exploration-exploitation tradeoff</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keya</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si</forename><forename type="middle">Cheng</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Long</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujie</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="117954" to="117996" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Visualpredicator: Learning abstract world models with neuro-symbolic predicates for robot planning</title>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nishanth</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">João</forename><forename type="middle">F</forename><surname>Henriques</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.23156</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Learning symbolic operators for task and motion planning</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Chitnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="3182" to="3189" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Human-level reinforcement learning through theory-based modeling, exploration, and planning</title>
+		<author>
+			<persName><forename type="first">Pedro</forename><forename type="middle">A</forename><surname>Tsividis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joao</forename><surname>Loula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Burga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Foss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Campero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Pouncy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">J</forename><surname>Gershman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Combining functional and automata synthesis to discover causal reactive programs</title>
+		<author>
+			<persName><forename type="first">Ria</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenna</forename><surname>Tavares</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<date type="published" when="2023-01">January 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Schema networks: Zero-shot transfer with a generative causal model of intuitive physics</title>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Kansky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">A</forename><surname>Mély</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Eldawy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Lázaro-Gredilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nimrod</forename><surname>Dorfman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Szymon</forename><surname>Sidor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Phoenix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dileep</forename><surname>George</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1809" to="1818" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Universal artificial intelligence: Sequential decisions based on algorithmic probability</title>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Hutter</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Factorsim: Generative simulation via factorized representation</title>
+		<author>
+			<persName><forename type="first">Fan-Yun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Harini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Zook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Cross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Haber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Bootstrapping cognitive agents with a large language model</title>
+		<author>
+			<persName><forename type="first">Feiyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Simmons</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="655" to="663" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lionel</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pratyusha</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><forename type="middle">S</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahai</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noa</forename><surname>Korneev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08566</idno>
+		<title level="m">Learning adaptive planning representations with natural language guidance</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Leveraging pre-trained large language models to construct and utilize world models for model-based task planning</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirtyseventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Hierarchical task and motion planning in the now</title>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaelbling</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2011 IEEE International Conference on Robotics and Automation</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1470" to="1477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Matheos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nishad</forename><surname>Gothoskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Mansinghka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaelbling</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.10454</idno>
+		<title level="m">Partially observable task and motion planning with uncertainty and risk awareness</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Discovering state and action abstractions for generalized task and motion planning</title>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Kaelbling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI conference on artificial intelligence</title>
+		<meeting>the AAAI conference on artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="5377" to="5384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Between mdps and semi-mdps: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Richard S Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="181" to="211" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">The option-critic architecture</title>
+		<author>
+			<persName><forename type="first">Pierre-Luc</forename><surname>Bacon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Harb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI conference on artificial intelligence</title>
+		<meeting>the AAAI conference on artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Deep reinforcement learning via object-centric attention</title>
+		<author>
+			<persName><forename type="first">Jannis</forename><surname>Blüml</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cedric</forename><surname>Derstroff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bjarne</forename><surname>Gregori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisabeth</forename><surname>Dillies</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Delfosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristian</forename><surname>Kersting</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.03024</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Rudary</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1207.4167</idno>
+		<title level="m">Predictive state representations: A new theory for modeling dynamical systems</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Building machines that learn and think like people</title>
+		<author>
+			<persName><surname>Brenden M Lake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tomer D Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gershman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Behavioral and brain sciences</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="page">253</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Modeling human activity comprehension at human scale: prediction, segmentation, and categorization</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">A</forename><surname>Tan T Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bezdek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><forename type="middle">F</forename><surname>Samuel J Gershman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><forename type="middle">S</forename><surname>Bobick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">M</forename><surname>Braver</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zacks</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PNAS nexus</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page">e459</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Event perception and memory</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zacks</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annual review of psychology</title>
+		<imprint>
+			<biblScope unit="volume">71</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="165" to="191" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Approximate planning in spatial search</title>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suhyoun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kleiman-Weiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PLOS Computational Biology</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page">1012582</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Neural mechanisms of hierarchical planning in a virtual subway network</title>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Balaguer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Spiers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Summerfield</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neuron</title>
+		<imprint>
+			<biblScope unit="volume">90</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="893" to="903" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Adventures in flatland: Perceiving social interactions under physical dynamics</title>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tomer D Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">42d Proceedings of the Annual Meeting of the Cognitive Science Society</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Cognitive maps are generative programs</title>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cole</forename><surname>Wyeth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Cognitive Sciences Society</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Map induction: Compositional spatial submap learning for efficient exploration in novel environments</title>
+		<author>
+			<persName><forename type="first">Sugandha</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marta</forename><surname>Kryven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ila</forename><surname>Fiete</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference of Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Faith and fate: Limits of transformers on compositionality</title>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Sclar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorraine</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jena</forename><forename type="middle">D</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Sanyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allyson</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaid</forename><surname>Ettinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Harchaoui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Human-like systematic generalization through a meta-learning neural network</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brenden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Lake</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Baroni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">623</biblScope>
+			<biblScope unit="issue">7985</biblScope>
+			<biblScope unit="page" from="115" to="121" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Elizabeth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><forename type="middle">D</forename><surname>Spelke</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kinzler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Core knowledge. Developmental science</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="89" to="96" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Neurosymbolic grounding for compositional world models</title>
+		<author>
+			<persName><forename type="first">Atharva</forename><surname>Sehgal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arya</forename><surname>Grayeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><forename type="middle">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Lamb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernhard</forename><surname>Schölkopf</surname></persName>
+		</author>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>Recurrent independent mechanisms</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Revisiting the arcade learning environment: Evaluation protocols and open problems for general agents</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Marlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Machado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Talvitie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bowling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="page" from="523" to="562" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Hypothesis search: Inductive reasoning with language models</title>
+		<author>
+			<persName><forename type="first">Ruocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yewen</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Haber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">Linlu</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Sclar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valentina</forename><surname>Pyatkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08559</idno>
+		<title level="m">Phenomenal yet puzzling: Testing inductive reasoning capabilities of language models with hypothesis refinement</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Doing experiments and revising rules with natural language and probabilistic reasoning</title>
+		<author>
+			<persName><forename type="first">Top</forename><surname>Piriyakulkij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cassidy</forename><surname>Langenfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tuan</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="53102" to="53137" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Overcoming the expressivity-efficiency tradeoff in program induction</title>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Acquaviva</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>Massachusetts Institute of Technology</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Master&apos;s thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Genie: Generative interactive environments</title>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuge</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richie</forename><surname>Mavalankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Steigerwald</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Apps</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Training products of experts by minimizing contrastive divergence</title>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1771" to="1800" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Integrated task and motion planning</title>
+		<author>
+			<persName><forename type="first">Caelan Reed</forename><surname>Garrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Chitnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Holladay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beomjoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">robotics, and autonomous systems</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="265" to="293" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>Annual review of control</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">RoboDreamer: Learning compositional world models for robot imagination</title>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaben</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yandong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dit-Yan</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zico</forename><surname>Kolter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Katherine</forename><surname>Heller</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nuria</forename><surname>Oliver</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jonathan</forename><surname>Scarlett</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Felix</forename><surname>Berkenkamp</surname></persName>
+		</editor>
+		<meeting>the 41st International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2024-07">Jul 2024</date>
+			<biblScope unit="volume">235</biblScope>
+			<biblScope unit="page" from="21" to="27" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Compositional visual generation with energy based models</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Compositional Diffusion-Based Continuous Constraint Solvers</title>
+		<author>
+			<persName><forename type="first">Zhutian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaelbling</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<analytic>
+		<title level="a" type="main">LMAct: A benchmark for in-context imitation learning with long multimodal demonstrations</title>
+		<author>
+			<persName><forename type="first">Anian</forename><surname>Ruoss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bonnie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Genewein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Pytorch: An imperative style, high-performance deep learning library</title>
+		<author>
+			<persName><surname>Paszke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1912.01703</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on computers and games</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<analytic>
+		<title level="a" type="main">A survey of monte carlo tree search methods</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Cameron B Browne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Powley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Whitehouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">I</forename><surname>Lucas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Cowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Rohlfshagen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Tavener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spyridon</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Samothrakis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Colton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computational Intelligence and AI in games</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Stable-baselines3: Reliable reinforcement learning implementations</title>
+		<author>
+			<persName><forename type="first">Antonin</forename><surname>Raffin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Gleave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anssi</forename><surname>Kanervisto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maximilian</forename><surname>Ernestus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Dormann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of machine learning research</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">268</biblScope>
+			<biblScope unit="page" from="1" to="8" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

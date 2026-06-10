@@ -1,0 +1,2141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SSR: Socratic Self-Refine for LLM Reasoning SSR: SOCRATIC SELF-REFINE FOR LARGE LAN-GUAGE MODEL REASONING</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-13">13 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Haizhou</forename><surname>Shi</surname></persName>
+							<email>&lt;haizhou.shi@rutgers.edu&gt;</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ye</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zeyu</forename><forename type="middle">Leo</forename><surname>Liu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Semih</forename><surname>Yavuz</surname></persName>
+							<email>&lt;syavuz@salesforce.com&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SSR: Socratic Self-Refine for LLM Reasoning SSR: SOCRATIC SELF-REFINE FOR LARGE LAN-GUAGE MODEL REASONING</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-13">13 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">174798C93576CE6A67D2C8E03020A9DB</idno>
+					<idno type="arXiv">arXiv:2511.10621v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have demonstrated remarkable reasoning abilities, yet existing test-time frameworks often rely on coarse self-verification and selfcorrection, limiting their effectiveness on complex tasks. In this paper, we propose Socratic Self-Refine (SSR), a novel framework for fine-grained evaluation and precise refinement of LLM reasoning. Our proposed SSR decomposes model responses into verifiable (sub-question, sub-answer) pairs, enabling step-level confidence estimation through controlled re-solving and self-consistency checks. By pinpointing unreliable steps and iteratively refining them, SSR produces more accurate and interpretable reasoning chains. Empirical results across five reasoning benchmarks and three LLMs show that SSR consistently outperforms state-of-theart iterative self-refinement baselines. Beyond performance gains, SSR provides a principled black-box approach for evaluating and understanding the internal reasoning processes of LLMs. Code is available at <ref type="url" target="https://github.com/SalesforceAIResearch/socratic-self-refine-reasoning">https://github.com/  SalesforceAIResearch/socratic-self-refine-reasoning</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>…</head><p>Let's not rush and break it down and re-solve them for 𝑀 times:</p><p>The factorization doesn't look correct. Let's refine it. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large Language Models (LLMs) have rapidly advanced the frontier of machine reasoning, demonstrating impressive performance across domains ranging from mathematical problem solving to complex logical inference <ref type="bibr">(Wei et al., 2022a;</ref><ref type="bibr" target="#b40">Wang et al., 2022;</ref><ref type="bibr" target="#b6">Chung et al., 2024;</ref><ref type="bibr" target="#b14">Guo et al., 2025;</ref><ref type="bibr" target="#b22">Ke et al., 2025)</ref>. Central to these capabilities is the paradigm of reasoning with explicit intermediate steps, often instantiated through chain-of-thought (CoT) prompting <ref type="bibr">(Wei et al., 2022b)</ref>. By externalizing reasoning traces, CoT enables models to articulate their latent decision-making process, offering both interpretability and opportunities for iterative improvement <ref type="bibr" target="#b27">(Madaan et al., 2023)</ref>. Despite these strengths, the reasoning traces generated by LLMs remain prone to cascading errors: a single flawed step can propagate downstream, leading to incorrect or incoherent final answers <ref type="bibr" target="#b44">(Wu et al., 2025;</ref><ref type="bibr" target="#b47">You et al., 2025)</ref>. This vulnerability raises pressing questions about how to reliably evaluate, refine, and searching for better multi-step reasoning at test time.</p><p>Existing frameworks have sought to address these challenges largely fall into two paradigms: sample selection with self-verification and self-refinement. Sample selection with self-verification, aims to assess response reliability by assigning confidence scores to completed reasoning traces either by LLM-as-a-Judge <ref type="bibr" target="#b13">(Gu et al., 2024)</ref>, or a specific ranking model <ref type="bibr" target="#b35">(Snell et al., 2024)</ref>, and then through multiple sampling and selection improves the final answer reliability <ref type="bibr">(Zheng et al., 2023b;</ref><ref type="bibr" target="#b5">Chen et al., 2025)</ref>. While these approaches can identify low-quality outputs, they often operate at a coarse granularity, overlooking subtle step-level errors embedded within long derivations <ref type="bibr" target="#b10">(Fang et al., 2025)</ref>. Self-refinement methods, by contrast, encourage LLMs to iteratively critique and revise their own responses <ref type="bibr" target="#b27">(Madaan et al., 2023;</ref><ref type="bibr" target="#b48">Zhang et al., 2024;</ref><ref type="bibr" target="#b2">Bi et al., 2024)</ref>. Although such frameworks have yielded measurable gains, their reliance on holistic self-feedback frequently limits their ability to pinpoint and correct specific erroneous steps. As a result, both paradigms struggle to provide robust and interpretable error correction in complex reasoning tasks.</p><p>In this paper, we propose Socratic Self-Refine (SSR), a novel framework designed to overcome these limitations by introducing fine-grained, step-level evaluation and targeted refinement of LLM reasoning. SSR reformulates the reasoning process into a sequence of verifiable (sub-question, sub-answer) pairs, which we refer to as Socratic steps. This decomposition enables precise confidence estimation through controlled re-solving and self-consistency checks at the step level. Unreliable steps are selectively refined, allowing the model to fix errors without depending on vague feedback. By iteratively applying this process, SSR improves both the accuracy and interpretability of LLM reasoning, offering a principled black-box approach to evaluating and refining model behavior.</p><p>responses or selecting among candidates <ref type="bibr">(Zheng et al., 2023b;</ref><ref type="bibr" target="#b13">Gu et al., 2024;</ref><ref type="bibr">Zhou et al., 2025b;</ref><ref type="bibr" target="#b33">Ren et al., 2023;</ref><ref type="bibr" target="#b5">Chen et al., 2025;</ref><ref type="bibr" target="#b19">Huang et al., 2025;</ref><ref type="bibr" target="#b54">Zhong et al., 2025;</ref><ref type="bibr">Zhou et al., 2025a)</ref>. While limitations such as positional bias <ref type="bibr">(Zheng et al., 2023a;</ref><ref type="bibr" target="#b34">Shi et al., 2024)</ref> and a preference for longer responses <ref type="bibr" target="#b18">(Hu et al., 2024)</ref> do exist, both uncertainty-based and judge-based methods remain effective and have proven valuable for evaluating LLM outputs. Building on these evaluation techniques, a growing body of work extends beyond verification to self-refinement, where LLMs not only diagnose weaknesses in their outputs but also iteratively improve them <ref type="bibr" target="#b27">(Madaan et al., 2023)</ref>. Early efforts explored direct self-correction based on feedback, while subsequent methods introduced structured search <ref type="bibr" target="#b48">(Zhang et al., 2024)</ref>, parallel sampling to enrich candidate diversity <ref type="bibr" target="#b2">(Bi et al., 2024;</ref><ref type="bibr" target="#b5">Chen et al., 2025)</ref>, and reformulation strategies that generate improved sub-questions by incorporating contextual preconditions <ref type="bibr" target="#b37">(Teng et al., 2025)</ref>. More recent work trains generative verifiers to guide the refinement process <ref type="bibr" target="#b54">(Zhong et al., 2025)</ref>. Collectively, these approaches demonstrate that refinement transforms passive evaluation into an active mechanism for improving reliability, making it a key step toward controllable and trustworthy reasoning in LLMs.</p><p>Process Evaluation of LLMs. Verifying only the final outcome of an LLM is insufficient; ensuring reliability requires mechanisms that also evaluate the reasoning process itself. Beyond using human annotations to train process reward models <ref type="bibr" target="#b24">(Lightman et al., 2023;</ref><ref type="bibr" target="#b16">He et al., 2024;</ref><ref type="bibr">Zhang et al., 2025b)</ref>, the rapid advancement of model capabilities has motivated a growing set of test-time methods for step-level verification. These approaches typically decompose the reasoning trace and assess the correctness of each step to localize errors more accurately <ref type="bibr" target="#b26">(Ling et al., 2023;</ref><ref type="bibr" target="#b51">Zhao et al., 2025;</ref><ref type="bibr" target="#b29">Mukherjee et al., 2025;</ref><ref type="bibr" target="#b10">Fang et al., 2025)</ref>. Compared to existing work of process evaluation, our SSR framework adopts a Socratic formulation of reasoning, representing the process as a sequence of question-answer pairs (details in Sec. 3). This structure makes the steps straightforward to re-execute and enables reliable confidence estimation. Crucially, SSR goes beyond verification by producing informative signals that directly support subsequent refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">SOCRATIC SELF-REFINE (SSR)</head><p>This section introduces our Socratic Self-Refine (SSR). Sec. 3.1 introduces the fundamental assumption that natural-language reasoning can be described as a Socratic process. Sec. 3.2 presents the core of SSR, including the decomposition into Socratic steps, their verification, and reasoning refinement guided by Socratic confidence scores. Finally, Sec. 3.3 discusses two techniques for practical deployment of SSR: plan refinement and adaptive iteration refinement. For details of the prompt templates introduced in this section, please refer to Appendix C.3.</p><p>Notation. In this paper, scalars are denoted by lowercase letters (x), vectors (or token/word sequences) by bold lowercase letters (x), random vectors by boldface lowercase letters (x), and matrices (or sets of tokens, words, or phrases) by bold uppercase letters (X). We denote by [m] = 1, 2, . . . , m the set of consecutive integers from 1 to m. For consistency, K denotes the total number of refinement iterations, while (k) indicates the current iteration; when unambiguous, we omit (k) to reduce clutter. Finally, N is the number of parallel runs used for test-time scaling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">LLM REASONING AS SOCRATIC PROCESS</head><p>Preliminary of LLM Reasoning. For problems with short-form ground-truth answers, LLM reasoning can be modeled as marginalization over intermediate natural language reasoning traces z (a sequence of tokens/words) to produce the final answer y <ref type="bibr" target="#b4">(Chen et al., 2024)</ref>:</p><formula xml:id="formula_0">π θ (y | x) = π θ (y | z, x)π θ (z | x)dz<label>(1)</label></formula><p>Chain-of-Thought (CoT) reasoning <ref type="bibr">(Wei et al., 2022b)</ref> approximates this integral with a single sample: the model first generates a reasoning trace z ∼ π θ (• | x) and then derives the final answer y ∼ π θ (• | z, x). Empirically, allocating more computation to approximate Eqn. 1 improves performance. A common strategy is Majority Voting (Maj@N), which averages over multiple sampled reasoning traces <ref type="bibr" target="#b40">(Wang et al., 2022)</ref>:</p><formula xml:id="formula_1">π θ (y | x) ≈ 1 N N n=1 π θ (y | z n , x), z n ∼ π θ (z | x).<label>(2)</label></formula><p>Reasoning as Socratic Process. In this paper, we posit that the reasoning process is implicitly modeled as a sequence of goal-setting and problem-solving steps; that is, the natural-language</p><p>SSR (Confidence Estimation): Let's re-consider each question 𝒒 𝑡 based on the prior context… SSR (Decompose): Let's decompose 𝒛 (𝟎) into Socratic steps… Sub-Question 𝒒 1 Sub-Answer 𝒂 1 CoT: Let's solve step by step… If 𝒄 (𝒌) &lt; 𝒄 𝐦𝐚𝐱 Plan-Score 𝒉 (𝟎) Plan-Refine: Let's refine the plan and provide a new reasoning trace 𝒛 (𝟎) … If 𝒉 (𝟎) &lt; 𝒉 𝐦𝐚𝐱 Sub-Question 𝒒 2 Sub-Answer 𝒂 2 Sub-Question 𝒒 𝑇 Sub-Answer 𝒂 𝑇 … 𝒒 𝑡 Else ෝ 𝒂 𝑡1 … Reference Set 𝑨 𝒕 Sub-Question 𝒒 𝒕 ′ 𝒄 𝒕 ′ 𝒕 ′ = arg 𝐦𝐢𝐧 𝒕 𝒄 𝒕 𝒂 𝒕 ′ * 𝒂 𝒕 ′ 𝒄 𝑡 Maj@M Reasoning 𝒛 (𝒌+𝟏) Answer 𝒚 (𝒌+𝟏) ① ③ ② ④ ⑤ ⑥ Socratic Steps 𝑺 𝑇 Sub-Answer 𝒂 𝑡 ෝ 𝒂 𝑡2 ෝ 𝒂 𝑡𝑀 SSR (Refine): After a second thought, a better solution to 𝒒 𝒕 ′ appears to be 𝒂 𝒕 ′ * . Let's refine… Refined Response Plan-Eval: Let's evaluate the high-level plan represented by 𝒛 (𝟎) …</p><p>Reasoning 𝒛 (𝟎)  Answer 𝒚 (𝟎) Reasoning 𝒛 (𝒌+𝟏)  Answer 𝒚 (𝒌+𝟏)   Self-Refine (Verify): Let's verify… Self-Refine (Refine): Let's refine 𝒛 (𝒌) and 𝒚 (𝒌)  based on 𝒇 (𝒌) …</p><p>Feedback 𝒇 (𝒌)  Score 𝒄 (𝒌)   Reasoning 𝒛 (𝟎)  Answer 𝒚 (𝟎)   Query 𝒙: Given 𝑥 + 𝑦 = 13 and 𝑥𝑦 = 24, find the distance from the point (𝑥, 𝑦) to the origin.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Verification</head><p>Self-Refine: ① → 𝑲 ×②</p><p>SSR-Lin: ① → 𝑲 × (④⑤⑥) SSR-Ada: ① → 𝑲 × (②④⑤⑥) SSR-Plan: ①③ → 𝑲 × (②④⑤⑥) reasoning trace z can be viewed as semantically equivalent to a sequence of question-answer pairs. Formally, given a query x, we assume that for any reasoning-answer pair (z, y), there exists a ground-truth decomposition S T ≡ (z, y) such that<ref type="foot" target="#foot_0">foot_0</ref> </p><formula xml:id="formula_2">S T = {s t ≜ (q t , a t )} t∈[T ] ,<label>(3)</label></formula><p>where each s t is a Socratic step, a T = y denotes the final answer, and the equivalence S T ≡ (z, y) implies that the oracle probability model p satisfies</p><formula xml:id="formula_3">p(z, y | x) = p({(q t , a t )} t∈[T ] | x).<label>(4)</label></formula><p>Compared with the purely natural-language reasoning process z, the explicit sequence of Socratic steps offers clear advantages, most notably, finer-grained modeling and potential control of the reasoning process, enabling verification and intervention. This explicit modeling lies at the heart of our proposed method, Socratic Self-Refine (SSR), which we detail in Sec. 3.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">SOCRATIC SELF-REFINE (SSR): DECOMPOSITION, VERIFICATION, AND REFINEMENT</head><p>From Entangled Reasoning to Explicit Socratic Process. Under the assumption of Eqn. 4, our goal is to recover the full Socratic process S T from the natural-language reasoning trace z. Since no prior work explicitly models this process, and the oracle posterior p(S T | x, y, z) is unavailable, we adopt a zero-shot prompting approach with LLMs to decompose z into the Socratic process S T :</p><formula xml:id="formula_4">S T ∼ π θ (• | x, y, z, x dec ) ≈ p(• | x, y, z),<label>(5)</label></formula><p>where x dec denotes a decomposition query that prompts the LLM to extract a sequence of subquestions and their corresponding sub-answers. Leveraging prior work on LLM-based summarization and information extraction <ref type="bibr" target="#b39">(Van Veen et al., 2024)</ref>, this decomposition can be performed reliably with relatively little overhead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Self-Verification on Socratic Steps.</head><p>We now leverage the reformulation of the original reasoning trace z into the Socratic process S T to enable LLM self-verification. The joint probability distribution of S T can be factorized into a product of conditional probabilities:</p><formula xml:id="formula_5">π θ (S T | x) = π θ ({(q t , a t )} t∈[T ] | x) = T t=1 π θ (q t | {s i } i&lt;t , x) t-th step planning • π θ (a t | q t , {s i } i&lt;t , x) t-th step execution ,<label>(6)</label></formula><p>where {s i } i&lt;1 ≜ ∅. This factorization captures our core perspective on LLM reasoning: at each step, the model first plans by formulating the next sub-question, and then executes by generating the corresponding sub-answer. Such a sequential formulation naturally lends itself to Monte Carlo search over possible reasoning trajectories, where the two types of actions are sub-question generation (q) and sub-answer generation (a) <ref type="bibr" target="#b32">(Qi et al., 2024;</ref><ref type="bibr" target="#b0">Acuna et al., 2025)</ref>. However, as the modern LLMs typically do not undergo the training of explicitly proposing and answering the next probable sub-questions, this approach might be less effective.</p><p>SSR evaluates the confidence of each sub-answer a t given the current sub-question q t , the original query x, and the context of the previous Socratic steps (q i , a i ) i&lt;t . Specifically, we encode all relevant information into the context and ask the LLM to solve each sub-question independently M times. The resulting answers form a reference set</p><formula xml:id="formula_6">A t = { a ti } i∈[M ] , a ti ∼ π θ (• | q t , {s i } i&lt;t , x).<label>(7)</label></formula><p>We then compare the original t-th step sub-answer a t with A t and estimate the confidence score as</p><formula xml:id="formula_7">c t = 1 M M i=1 1 at= ati , ∀t ∈ [T ].<label>(8)</label></formula><p>For mathematical problems, intermediate sub-answers can be restricted to mathematical expressions through simple prompting, allowing for deterministic equivalence checking. In practice, however, we find that this restriction does not consistently constrain LLM outputs We therefore resort to LLM self-evaluation, producing confidence scores directly with a context-free confidence estimation prompt x conf :</p><formula xml:id="formula_8">C T = {c t ∼ π θ (• | a t , A t , x conf )} t∈[T ] .</formula><p>(9) These confidence scores are then used to guide refinement of the current-round reasoning and can also be aggregated to reflect overall response quality, which supports sample selection in our test-time scaling experiments (Sec. 4.5). It is worth noting that we enforce strict context management during confidence estimation: the prompt includes only the candidate sub-answer and the reference answer set, with no additional information. This design has two motivations. First, we assume that judging equivalence between expressions can be done in a context-free manner, i.e., with only the expressions. Second, isolating the context helps control the computation budget.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Self-Refinement with Socratic Steps.</head><p>Once the confidence scores of all Socratic steps are estimated, we use them to guide reasoning refinement. In SSR, we first identify the step t ′ = arg min t {c t } t∈[T ] with the lowest confidence score c t ′ . We then apply majority voting over its reference answer set to obtain a refined sub-answer:</p><formula xml:id="formula_9">a * t ′ = arg max a π θ (a | q t ′ , {s i } i&lt;t ′ , x) ≈ maj_vote(A t ′ ).<label>(10)</label></formula><p>This refined sub-answer is injected into the iteration-k refinement of (z (k) , y (k) ), producing the next iteration:</p><formula xml:id="formula_10">(z (k+1) , y (k+1) ) ∼ π θ (• | x, y (k) , z (k) , q (k) t ′ , a (k) t ′ , a * (k) t ′ Socratic Feedback , x ref ),<label>(11)</label></formula><p>where the triplet (q</p><formula xml:id="formula_11">(k) t ′ , a (k) t ′ , a * (k)</formula><p>t ′ ) is called Socratic Feedback, the template of which can be found in Appendix C.3, and x ref is the refinement query that prompts the LLM to revise for a new reasoning trace z (k+1) that leads to a * (k) t ′ . Because most modern LLMs are trained with instruction tuning <ref type="bibr" target="#b41">(Wei et al., 2021)</ref> and preference tuning <ref type="bibr" target="#b30">(Ouyang et al., 2022)</ref>, both relying on chain-of-thought-like structures, the direct injection of the Socratic process in unnatural formats (e.g., JSON) might disrupt reasoning. Our design principle in SSR is therefore to minimize format disruption and to inject only the necessary information into the refinement context. For a detailed analysis of this issue, please refer to Sec. 4.4. We refer to the variant that directly combines the three steps described above as Linear SSR (SSR-Lin).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">SSR DEPLOYMENT: BETTER EFFICIENCY AND BEYOND STEP-LEVEL REFINEMENT</head><p>Improving the Efficiency of SSR with Gating Self-Refine. Applying fine-grained, step-level SSR at every refinement step can be costly compared to other iterative refinement frameworks <ref type="bibr" target="#b27">(Madaan et al., 2023;</ref><ref type="bibr" target="#b37">Teng et al., 2025)</ref>. To balance efficiency and accuracy, we adopt a gating mechanism that combines Self-Refine <ref type="bibr" target="#b27">(Madaan et al., 2023)</ref> with SSR. In deployment, Self-Refine serves as the default refinement method, while SSR is invoked only when Self-Refine fails to identify mistakes in the reasoning trace or when the response is already correct. Because these two situations cannot be distinguished in advance, applying SSR in the latter case incurs only a minor additional cost, while in the former case it provides an extra layer of safety. Compared to SSR only, this approach reduces overhead while preserving the advantages of SSR's ability of fine-grained step-level verification. We denote SSR with this adaptive gating mechanism as Adaptive SSR (SSR-Ada). SSR Planning Refinement. Our current SSR relies on two implicit assumptions about reasoning planning: (i) response quality evaluation is independent of high-level planning, and (ii) refinement focuses only on execution accuracy. These restrictions may limit the performance of SSR. By assuming probabilistic independence between each sub-question q t and the preceding answers {a i } i&lt;t , the factorization<ref type="foot" target="#foot_2">foot_2</ref> in Eqn. 6 can be simplified as</p><formula xml:id="formula_12">π θ (S T | x) = π θ ({q t } t∈[T ] | x) high-level planning • T t=1 π θ (a t | q t , {s i } i&lt;t , x). sequential execution (<label>12</label></formula><formula xml:id="formula_13">)</formula><p>To ensure the reliability of high-level planning before applying step-level SSR, while keeping the overhead modest compared to other baselines, we perform only one round of plan refinement. Unlike our main SSR procedure, we do not repeatedly sample rollouts or evaluate their quality. Instead, we directly prompt the LLM to judge whether the high-level plan (a sequence of sub-questions or their natural-language description) is sufficiently sound for the subsequent execution. We denote SSR-Ada plus this plan refinement as SSR-Plan. For the detailed algorithmic description of our SSR, please refer to Algorithm 1 in the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS</head><p>We evaluate our SSR's effectiveness through comprehensive experiments, covering experimental setup (Sec. 4.1), main results on the mathematical and logical reasoning benchmarks (Sec. 4.2), ablation studies on the choice of incorporating Socratic content into refinement (Sec. 4.4), test-time scaling effect of our SSR (Sec. 4.5). and granularity of the Socratic step decomposition (Sec. 4.6). For additional results, please refer to Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">SETTINGS</head><p>Models, Datasets, and Evaluation. We use the latest GPT-4.1-nano (general-purpose) and GPT-5-mini (reasoning) models from OpenAI as our LLM backbones, chosen for their balanced capabilities in instruction following and reasoning. We additionally include the results from another model family including Gemini-2.5-Flash and Gemini-2.5-Flash-Lite (Comanici et al., 2025) in Appendix D.1.</p><p>We benchmark the reasoning frameworks on two categories of datasets: mathematical reasoning and logical reasoning. For mathematical reasoning, we adopt the challenging Level-5 subset of the MATH dataset (MATH-Level-5) with numerical answers <ref type="bibr" target="#b17">(Hendrycks et al., 2021)</ref>, American Invitational Mathematics Examination (AIME) from 2024 and 2025 (AIME-Team, 2025), and the math subset of Humanity's Last Exam (HLE) <ref type="bibr" target="#b31">(Phan et al., 2025)</ref>. We adopt the library of Math-Verify (Hugging Face, 2024) for matching the candidate and ground-truth answer (except for the non-numerical subset of HLE). For logical reasoning, we use the synthetic reasoning-gym environment <ref type="bibr" target="#b36">(Stojanovski et al., 2025)</ref> to generate sub-tasks including the Zebra Puzzle and Mini-Sudoku, where we use exact string matching and rule-based verifier as the evaluation, respectively.</p><p>Baselines. We compare our SSR against several iterative refinement-based test-time LLM reasoning frameworks. Self-Refine <ref type="bibr" target="#b27">(Madaan et al., 2023)</ref> iteratively generates feedback for a given response Table <ref type="table">1</ref>: Last-Round Performance of Iterative Refinement-Based Reasoning Methods. LR-Acc: Last-round refinement's accuracy, yielded by 10 repeated experiments; LR-Maj@5: Lastround refinement's accuracy of majority voting with 5 samples in parallel, yielded by 50 repeated experiments. Boldface and underlining denote the best and the second-best performance, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method MATH-Level-5 AIME24 AIME25 Zebra-Puzzle Mini-Sudoku</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LR-Acc LR-Maj@5 LR-Acc LR-Maj@5 LR-Acc LR-Maj@5 LR-Acc LR-Maj@5 LR-Acc LR-Maj@5</head><p>GPT-4.1-nano</p><p>CoT 74.88±1.35 82.32±1.11 27.00±4.58 32.80±2.15 23.00±3.48 26.93±2.97 55.20±3.28 56.56±2.44 47.40±3.35 66.04±2.69 Self-Refine 68.69±1.15 79.81±0.75 28.00±4.99 34.33±3.00 22.67±2.91 28.33±3.42 53.50±1.96 56.08±1.93 53.60±4.59 73.04±3.21 Debate 79.28±0.86 84.08±0.76 27.00±4.82 32.40±3.13 26.67±2.58 27.60±2.75 54.70±3.29 57.16±2.66 60.80±4.81 78.38±2.75 MCTSr 74.02±1.12 83.01±0.81 23.67±4.33 30.47±3.13 20.00±4.94 25.73±4.22 54.90±2.47 54.88±2.45 53.33±1.63 73.84±2.43 AoT 75.15±1.00 82.83±0.83 21.11±4.97 25.67±3.61 21.33±3.06 25.53±3.75 29.33±3.16 43.60±2.65 42.80±2.96 65.08±2.26 SSR-Lin (Ours) 77.06±0.93 83.64±0.69 32.67±3.59 39.93±3.23 24.00±4.67 27.33±4.06 54.60±2.20 54.10±2.09 53.10±2.47 72.76±2.55 SSR-Ada (Ours) 75.70±1.31 82.71±0.90 29.67±6.74 37.47±4.25 24.67±3.06 28.80±3.38 54.30±1.90 55.14±1.71 51.50±4.41 73.22±3.37 SSR-Plan (Ours) 76.01±0.57 83.75±0.74 27.33±5.73 35.80±3.39 22.33±3.67 27.53±4.46 56.90±3.11 57.30±2.39 47.70±4.22 66.46±4.61 GPT-5-mini CoT 82.95±1.02 90.05±0.54 50.67±4.67 60.87±3.93 37.00±6.57 49.80±4.19 82.80±2.71 91.00±1.30 42.40±2.42 61.96±3.19 Self-Refine 87.02±1.40 94.11±0.47 63.33±4.94 74.40±3.74 53.67±6.23 68.33±3.48 82.00±2.61 92.64±1.61 63.60±3.35 93.82±1.35 Debate 90.62±0.94 93.47±0.46 63.67±3.79 74.13±3.44 53.33±3.33 61.87±3.21 91.20±1.72 93.74±1.07 90.40±3.95 98.54±1.31 MCTSr 87.42±0.89 92.91±0.71 57.00±5.67 68.87±4.35 46.97±6.11 55.40±4.76 83.00±1.90 89.82±1.49 61.40±6.17 89.68±2.56 AoT 80.56±0.63 88.84±0.60 46.67±5.16 57.00±3.21 33.00±6.05 43.60±3.82 65.30±3.07 74.78±2.07 61.70±3.72 82.72±2.75 SSR-Lin (Ours) 88.36±1.06 93.01±0.63 64.00±5.12 74.60±4.10 55.67±4.48 65.47±3.76 87.70±2.97 93.70±1.76 93.60±1.69 99.70±0.54 SSR-Ada (Ours) 91.57±0.51 95.62±0.35 68.67±4.52 75.93±3.08 60.33±4.58 70.13±3.46 87.30±2.53 93.00±1.69 96.10±2.07 99.98±0.14 SSR-Plan (Ours) 92.16±0.67 95.93±0.30 69.67±4.82 79.00±3.48 62.00±6.18 71.53±5.26 88.00±1.55 93.20±1.08 94.80±2.48 100.00±0.00</p><p>and updates the response based on this self-feedback. Debate <ref type="bibr" target="#b8">(Du et al., 2023)</ref> employs a multi-agent framework in which each agent iteratively refines or defends its response by engaging with the responses of peer agents. Monte Carlo Tree Self-Refine (MCTSr) <ref type="bibr" target="#b48">(Zhang et al., 2024)</ref> treats the full generation as a node and the self-refine step as an edge, applying Monte Carlo Tree Search (MCTS) to search for the best response. Atom of Thoughts (AoT) <ref type="bibr" target="#b37">(Teng et al., 2025)</ref> incrementally constructs a Directed Acyclic Graph (DAG) of reasoning, contracts intermediate results into improved subquestions, and solves them step by step. We do not include parallel sampling-based baselines such as Forest of Thoughts (FoT) <ref type="bibr" target="#b2">(Bi et al., 2024)</ref>, since these approaches are complementary to iterative refinement methods. Their benefits are instead reflected through the Maj@5 metric in Table <ref type="table">1</ref>.</p><p>Implementation of SSR. We implement and evaluate three variants of SSR in Sec. 3.3. Linear SSR (SSR-Lin) applies Socratic self-refine at every iteration, making it the most costly but also the most thorough approach to step-level fine-grained refinement. Adaptive SSR (SSR-Ada) first applies the basic Self-Refine; if the feedback reveals clear and critical errors, the feedback is directly adopted, while if no errors are detected, the method falls back to Socratic self-refine. SSR with plan refinement (SSR-Plan) adds an initial round of plan refinement before the step-level Socratic self-refine, thereby equipping SSR with high-level refinement capabilities. For more details, please refer to Appendix C.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">SSR'S STEP-LEVEL VERIFICATION LEADS TO CONSISTENT PERFORMANCE GAINS</head><p>Table <ref type="table">1</ref> and Table <ref type="table">2</ref> show results on comprehensive metrics for various methods.</p><p>Overall, the proposed SSR variants bring substantial improvements when powered by the strong GPT-5-mini. Across all tasks, SSR consistently surpasses competitive baselines, yielding clear gains in both LR-Acc and LR-Maj@5. Notably, SSR-Plan achieves the best or second-best results in nearly every setting, with particularly large margins on challenging mathematical reasoning benchmarks like AIME. This highlights that structured preliminary planning amplifies the benefits of iterative refinement, even when starting from already strong GPT-5-mini reasoning capabilities. Our framework also demonstrates effectiveness on the weaker GPT-4.1-nano backbone. Despite its limited reasoning capacity, all three SSR variants in general improve performance over baselines, underscoring that our refinement strategies generalize across model scales. This implies a viable path of adopting our SSR to boost smaller, resource-efficient models.</p><p>Second, the results in Table <ref type="table">2</ref> show that SSR maintains superiority under upper-bound evaluation metrics. Both BoK-Acc and Pass@K demonstrate that SSR variants yield higher-quality and diverse refinement trajectories compared to baselines. Again, SSR-Plan often achieves the best results, while Table <ref type="table">2</ref>: Upper-Bound Performance of Iterative Refinement-Based Reasoning Methods. BoK-Acc: Best-of-K refinements' accuracy, yielded by prompting LLM-as-a-Judge <ref type="bibr" target="#b13">(Gu et al., 2024)</ref> for selecting the best answer out of K iterations of refinement; Pass@K: Pass-at-K refinements' accuracy (at lease one of K iterations gets the answer correct). Both experiments are repeated for 10 times. Boldface and underlining denote the best and the second-best performance, respectively. CoT 74.88±1.35 -27.00±4.58 -23.00±3.48 -55.20±3.28 -47.40±3.35 -Self-Refine 76.48±0.95 81.60±0.82 30.67±5.54 31.67±5.00 23.67±4.07 26.00±4.90 55.60±3.77 59.60±2.37 56.90±5.84 65.70±3.55 Debate 79.62±0.79 84.51±1.01 29.00±3.00 35.33±3.40 26.00±3.89 31.00±3.67 56.80±2.79 68.50±4.06 63.50±3.96 70.70±3.44 AoT 79.37±1.54 87.28±0.64 23.33±5.21 33.70±3.99 24.33±4.48 29.33±5.33 37.33±3.20 63.22±3.64 50.20±5.08 76.00±3.26 SSR-Lin (Ours) 78.03±1.00 82.97±0.98 33.33±4.22 38.33±5.63 26.67±3.94 32.00±4.00 55.90±2.74 65.40±1.96 58.20±3.71 75.40±3.38 SSR-Ada (Ours) 78.05±1.37 85.14±0.56 31.67±5.82 36.33±5.67 25.67±4.48 32.00±3.40 55.30±1.19 62.80±2.04 56.70±3.44 74.20±4.94 SSR-Plan (Ours) 78.40±1.10 85.27±0.47 31.33±5.42 35.67±4.23 24.33±3.67 34.33±5.17 56.60±3.58 64.60±3.01 56.40±4.05 73.70±2.37 GPT-5-mini CoT 82.95±1.02 -50.67±4.67 -37.00±6.57 -82.80±2.71 -42.40±2.42 -Self-Refine 89.40±1.00 91.59±0.83 61.33±4.00 68.00±3.71 51.67±6.87 56.67±6.67 90.90±2.21 91.30±1.79 85.70±3.23 83.30±2.19 Debate 90.43±0.88 91.70±0.79 64.00±4.16 64.67±4.27 53.00±2.77 55.00±2.69 91.70±1.62 93.70±1.35 90.20±3.54 91.80±3.57 AoT 85.87±0.49 91.38±0.80 56.67±6.15 61.67±5.82 39.33±3.27 49.00±5.39 88.80±1.94 93.50±1.43 93.70±1.73 90.70±2.15 SSR-Lin (Ours) 88.16±1.31 89.54±1.25 65.33±5.42 67.00±3.79 55.33±7.02 59.00±5.17 92.20±2.23 93.20±2.60 95.30±1.19 95.50±1.57 SSR-Ada (Ours) 93.14±0.52 94.63±0.36 71.67±4.28 74.00±4.90 61.00±4.73 66.00±3.89 91.80±1.89 93.00±1.84 98.20±1.25 98.10±1.45 SSR-Plan (Ours) 93.48±0.52 95.05±0.34 71.00±4.48 73.67±4.07 65.67±6.16 69.67±5.26 92.30±1.62 93.30±1.79 98.70±1.00 98.30±1.19 SSR-Ada provides a favorable trade-off between efficiency and accuracy, confirming the value of adaptively combining Self-Refine with Socratic refinement.</p><p>Finally, the comparison across reasoning categories highlights complementary strengths. In mathematical reasoning, SSR gains from explicit verification and refinement of sub-answers, which reduces cascading errors in long derivations. In logical reasoning tasks such as Zebra-Puzzle and Mini-Sudoku, where execution accuracy dominates, step-level Socratic verification also proves highly effective, often yielding substantial improvements over baselines.</p><p>Overall, the experiments confirm that the explicit modeling and verification of Socratic steps in SSR provides more reliable and controllable refinement than existing iterative approaches, with SSR-Plan standing out as the most robust variant.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">WHEN SELF-REFINE BREAKS, SSR THRIVES: EXTENDING SSR TO CHALLENGING TASKS</head><p>In this section, we evaluate the effectiveness of SSR using more recent and stronger models, which require more challenging tasks to avoid performance saturation. Specifically, we employ the full GPT-5 model in medium reasoning and medium verbosity modes, without tool calling or web searching, and conduct experiments on Humanity's Last Exam (HLE) <ref type="bibr" target="#b31">(Phan et al., 2025)</ref>. Due to budget constraints, we restrict our evaluation to the 915-question text-only math subset of HLE, where all questions are purely textual. We further divide this subset into two partitions based on whether the ground-truth answers are numerical. For the 478-example numerical partition, we follow the Math-Verify (Hugging Face, 2024) evaluation protocol described above, while for the 437-example non-numerical partition, we adopt the official LLM-as-a-Judge evaluation protocol with GPT-5. The remaining settings are kept identical to those described earlier. See Appendix D.3 for details.</p><p>The results are reported in Table <ref type="table" target="#tab_0">3</ref>. our SSR framework consistently outperforms both Chain-of-Thought (CoT) and Self-Refine baselines across model scales. With GPT-5-mini, SSR achieves 21.53% accuracy, surpassing CoT by 5.35 points and Self-Refine by 2.95 points, indicating that our two-level refinement reasoning framework is particularly beneficial for smaller models with limited reasoning capability. When scaled to the full GPT-5, SSR still yields a gain of 3.04 points over Self-Refine and 1.63 over CoT, suggesting that our approach complements intrinsic reasoning abilities rather than relying on model size alone. Notably, it remains effective even for GPT-5 where vanilla Self-Refine fails to generalize. These results confirm that SSR effectively enhances iterative reasoning robustness for stronger frontier models like GPT-5 even in challenging tasks such as HLE.</p><p>4.4 ANALYSIS: SSR CONTEXT MANAGEMENT As discussed in Sec. 3.2, representing a natural language reasoning trace z as a Socratic process S T requires careful consideration, since it introduces a distributional shift between the model's training data and our artificially structured context. In this subsection, we explore alternative ways of integrating the Socratic process S T into reasoning refinement. Specifically, we focus on two key aspects:</p><p>• Context Format (Natural / Socratic): Iterative refinement can be performed using only the Socratic steps S T (Socratic), discarding the original natural language reasoning trace z; or conversely, using only z without the Socratic decomposition (Natural).</p><p>• Context Completeness (Reflection / Intervention): Since LLM chain-of-thought reasoning assumes linear dependencies, once the first problematic step s t ′ is identified, later steps can be discarded. Refinement may then intervene directly at the error location (Intervention), avoiding unnecessary tokens, unlike SSR which refines after the full reasoning is completed (Reflection).</p><p>The results are reported in Table <ref type="table" target="#tab_1">4</ref>. From the table, we observe that our implementation adopted in the main experiments (reflection + natural context) yields the strongest results (69.67 on AIME24 and 62.00 on AIME25), outperforming both Self-Refine and other variants of SSR. This suggests that preserving the original reasoning trace while applying reflection-based precise step-level refinement provides the model with richer contextual cues for error correction.</p><p>Under reflection, replacing the natural context with the Socratic context yields slightly weaker but still competitive results, suggesting that while Socratic decomposition supports step-level analysis, it may miss some nuances of natural language reasoning. In contrast, intervention-based refinement consistently underperforms, as prematurely truncating the reasoning trace discards useful contextual information and leads to weaker refinements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">ANALYSIS: TEST-TIME SCALING OF SSR</head><p>In this subsection, we investigate whether the performance gains of SSR can be sustained under increased test-time compute. Test-time scaling for iterative refinement generally follows two orthogonal approaches: (i) sequential scaling, which increases the number of refinement iterations, and (ii) parallel scaling, which runs multiple refinements in parallel and aggregates the outputs. In our study, sequential scaling extends the number of iterations by 3×, with performance reported as Last-Round Accuracy (LR-Acc). Parallel scaling increases the number of parallel samples to 64, also reporting aggregated LR-Acc.</p><p>Experiments are conducted on AIME25 with the GPT-5-mini backbone (lowreasoning, low-verbosity). As baselines, we include basic CoT and Self-Refine. For Self-Refine and SSR, we perform an addi-tional self-evaluation on the final reasoning trace and use the resulting 0-5 score for weighted best-of-N (WBoN). For CoT, we apply majority voting (Maj@N ).</p><p>The results are shown in Fig. <ref type="figure" target="#fig_3">3</ref>. On the sequential scaling side (left), SSR consistently outperforms Self-Refine across all iteration counts. Accuracy improves steadily as the number of refinement iterations increases, with SSR showing stronger gains and greater stability than Self-Refine. In contrast, Self-Refine benefits from additional iterations but plateaus at a lower accuracy, confirming that iterative refinement is essential for improvement. On the parallel scaling side (right), all methods improve as the number of parallel samples increases, but SSR maintains a clear margin over Self-Refine and CoT. Notably, SSR reaches higher accuracy levels more quickly, suggesting that its Socratic step-level verification yields more consistent refinements, which aggregate effectively under parallel sampling. Self-Refine shows moderate improvements with larger sample sizes, while CoT lags behind, highlighting the importance of structured refinement. In this section, we investigate the effect of explicitly controlling decomposition granularity by varying the maximum number of Socratic steps. This is implemented by modifying the decomposition prompt: instead of instructing "Break down the reasoning process into a series of sub-questions," we use "Identify the most important milestones of the reasoning process and break it down into a series of subquestions, with the number of sub-questions less than or equal to {max_steps}." We then report iteration accuracy as a function of the actual number of Socratic steps produced by decomposition. To isolate the effect of SSR, our main analysis is conducted with the Linear variant (SSR-Lin), without adaptive gating or plan refinement, while also including SSR-Plan for reference (retaining steps that undergo Socratic decomposition). Note that setting the maximum number of steps to 1 reduces SSR to a final-answer evaluation via majority voting. Accordingly, we focus on the range of 3-10 steps in our experiments.</p><p>The results are reported in Fig. <ref type="figure" target="#fig_4">4</ref>. For SSR-Lin, performance is relatively low and fluctuates with the number of Socratic steps, though a slight upward trend can be observed at higher step counts (e.g., 9-10 on AIME24). This suggests that finer-grained decomposition can sometimes help, but the effect is weak and unstable when refinement is applied without planning. In contrast, the Plan-refinement variant (SSR-Plan) consistently achieves higher accuracy across all settings (possibly due to the gating mechanism of Self-Refine) and remains stable under varying levels of granularity. On AIME24, performance remains strong regardless of step count, while on AIME25, accuracy peaks around 6-7 steps and only drops when the decomposition becomes overly fine (10 steps). These results highlight that high-level plan refinement not only boosts overall accuracy but also makes SSR less sensitive to the specific choice of granularity, ensuring more reliable gains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION</head><p>In this paper, we introduced Socratic Self-Refine (SSR), a novel iterative refinement framework that leverages step-level Socratic decomposition to evaluate and improve LLM reasoning. By explicitly modeling reasoning as a sequence of sub-questions and sub-answers, SSR provides fine-grained confidence estimation and enables targeted refinements where errors are most likely to occur. Across both mathematical and logical reasoning benchmarks, SSR consistently outperforms existing iterative refinement baselines, with the plan-refinement variant achieving the most robust gains. Beyond empirical performance, SSR highlights the importance of moving from outcome-level to process-level evaluation. By treating reasoning as a verifiable sequence of interpretable steps, our framework makes LLM outputs more transparent and opens the door to interventions that are more systematic than ad hoc self-correction. We believe our SSR offers a valuable mechanism for controlling the reasoning trajectory, mitigating biases, and aligning model behavior more closely with human expectations.</p><p>Limitations. Despite its advantages, SSR has several limitations. First, the step-level Socratic decomposition relies on LLM prompting, which can introduce noise and inconsistencies, particularly for problems with ambiguous or ill-posed sub-questions. Second, the computational cost of fine-grained verification is substantially higher than that of standard iterative refinement, limiting scalability to large datasets or long reasoning chains. Finally, our evaluation focuses primarily on mathematical and logical reasoning tasks; the generalizability of SSR to open-ended domains such as commonsense or multi-modal reasoning remains to be validated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Future Work.</head><p>In future work, we aim to extend SSR to more diverse reasoning domains, including scientific and multimodal tasks, and explore tighter integration with training-time objectives. Another promising direction is developing more efficient confidence estimation to further reduce cost, as well as investigating human-in-the-loop settings where SSR can enhance interpretability and reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX</head><p>In Appendix A, we describe the role of LLMs in our work. In Appendix B, we present the full algorithmic description of our proposed SSR. In Appendix C, we provide our implementation details of the experiments, including:</p><p>• dataset details (Appendix C.1),</p><p>• baseline details (Appendix C.2),</p><p>• prompt templates used in LLM reasoning (Appendix C.3), Finally, in Appendix D, we present additional experimental results, including:</p><p>• additional results on Gemini-2.5-Flash (Appendix D.1),</p><p>• additional results on sequential and parallel test-time scaling (Appendix D.2),</p><p>• a breakdown detailed result of SSR on Humanity's Last Exam (HLE) (Appendix D.3),</p><p>• additional results on SSR-as-a-Judge (Appendix D.4),</p><p>• and a qualitative analysis on our SSR refinement (Appendix D.5).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A LLM USAGE DISCLOSURE</head><p>Large language models (LLMs) were used exclusively to help polish the writing of this paper by improving grammar, clarity, and readability.</p><p>They did not contribute to research ideation, experimental design, data analysis, or the generation of scientific content. All technical contributions, claims, and conclusions are solely those of the authors. B ALGORITHM Algorithm 1 Socratic Self-Refine (SSR) input {x, x dec , x conf , x ref }: prompt for original query, reasoning decomposition, confidence estimation, and refinement; π θ : LLM policy; (z (0) , y (0) ): initial CoT reasoning and answer; K: maximum refinement rounds; M : number of parallel solves per sub-question for confidence; C max : maximum value of the confidence. 1:</p><formula xml:id="formula_14">(Optional) {q t } t∈[T ] ∼ π θ (• | x, y (0) , z (0) , x dec ). Prompt π θ to judge plan adequacy. If inadequate, refine once and update (z (0) , y (0) ). ▷ Optional plan check (Eqn. 12). 2: for k = 1, . . . , K do 3: (z (k+1) , y (k+1) , C (k) ) ← Self-Refine(z (k) , y (k) ).</formula><p>▷ Self-Refine Gating.</p><p>4:</p><p>if C (k) = C max then 5:</p><formula xml:id="formula_15">S T = {(q t , a t )} t∈[T ] ∼ π θ (• | x, y (k) , z (k) , x dec ).</formula><p>▷ SSR Decomposition (Eqn. 4).</p><p>6:</p><p>for t = 1 to T in parallel do 7:</p><formula xml:id="formula_16">A t = { a ti } i∈[M ] , a ti ∼ π θ (• | q t , {s i } i&lt;t , x).</formula><p>▷ Reference Set Sampling.</p><p>8:</p><formula xml:id="formula_17">c t ∼ π θ (• | a t , A t , x conf ).</formula><p>▷ Confidence Estimation (Eqn. 8).</p><p>9: end for 10: t ′ ← arg min t∈[T ] c t . ▷ Pick weakest step 11: a * t ′ ← maj_vote( A t ′ ). ▷ Majority vote sub-answer 12:</p><formula xml:id="formula_18">(z (k+1) , y (k+1) ) ∼ π θ (• | x, y (k) , z (k) , q (k) t ′ , a (k) t ′ , a * (k) t ′ , x ref ). ▷ Round-k SSR.</formula><p>13:</p><p>end if 14: end for output (z (K) , y (K) ): refined reasoning and answer.</p><p>• SSR with Plan Refinement (SSR-Plan, Ours): Extends SSR-Ada by adding a preliminary plan refinement stage before iterative refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Shared LLM Configuration.</head><p>For GPT-4.1-nano, we set the maximum token length to 16,384 and temperature to 0.6. For GPT-5-mini, we set the maximum completion length to 16,384 and temperature to 1.0. For Gemini-2.5-Flash and Gemini-2.5-Flash-Lite, we set the maximum completion length to 32,768 and temperature to 0.6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 PROMPT TEMPLATES</head><p>This subsection presents the prompt templates used for the baselines and our SSR. The templates are identical for both mathematical and logical reasoning, except for a role specification: "you are a precise math problem solver" versus "you are a precise logical reasoning problem solver."</p><p>• CoT: uses Chain-of-Thought;</p><p>• Self-Refine: uses Verification and Refine (Normal);</p><p>• MCTSr: uses Verification and Refine (Normal);</p><p>• AoT: uses Decompose (AoT), Contract (AoT), and Ensemble;</p><p>• SSR: uses Decompose (SSR, Ours), Solve Sub-Question (SSR, Ours), Confidence Estimate (SSR, Ours), Reflection (SSR, Ours), and Refine (SSR, Ours).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Chain-of-Thought</head><p>You are a precise math problem solver. Solve the given math problem step by step:</p><p>QUESTION: {question} Please extend your chain of thought as much as possible; the longer the chain of thought, the better.</p><p>You can freely reason in your response, but please enclose the final answer within &lt;an-swer&gt;&lt;/answer&gt; tags (pure number without units and explanations).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Verification</head><p>Please act as an impartial judge and evaluate the correctness of the response provided by an AI assistant to the user prompt displayed below. You will be given the assistant's response.</p><p>When evaluating the assistant's response, identify any mistakes or inaccurate information. Be as objective as possible. Avoid any biases, such as order of responses, length, or stylistic elements like formatting.</p><p>Before providing an your final verdict, think through the judging process and output your thoughts as an explanation.</p><p>After providing your explanation, you must output a score of scale 0 to 5, where 0 represents you are completely certain that the response is incorrect and 5 represents you are completelycertain that the response is correct. Please enclose your score in &lt;answer&gt; and &lt;/answer&gt; tags. &lt;|User Prompt|&gt; {question} &lt;|The Start of Assistant's Answer|&gt; {response} &lt;|The End of Assistant's Answer|&gt; Refine (Normal) You are a precise math problem solver. Refine the provided solution to the given math problem, step-by-step, by meticulously addressing the judge's feedback (whose score is enclosed within &lt;answer&gt;&lt;/answer&gt; tags). QUESTION: {question} ORIGINAL SOLUTION: {original_cot_response} JUDGE RESPONSE: {judge_response} Your task is to re-evaluate the original reasoning, identify where it went wrong based on the judge's comments, which should be enclosed within &lt;evaluation&gt;&lt;/evaluation&gt; tags; after that, construct a new, corrected chain of thought. Explain each step thoroughly. The more detailed and explicit your reasoning, the better.</p><p>You can freely reason in your response, but please enclose the final, numerical answer within &lt;answer&gt;&lt;/answer&gt; tags (pure number only, without units or explanations).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Decompose (AoT)</head><p>You are tasked with breaking down a math problem's reasoning process into a series of sub-questions.</p><p>Original Question: {question} Complete Reasoning Process: {trajectory} Instructions:</p><p>• Break down the reasoning process into a series of sub-questions.</p><p>• Each sub-question should:</p><p>-Be written in a clear, interrogative form.</p><p>-Be precise, unambiguous, and directly answerable from the provided reasoning or prior sub-question answers. -Have a clear, **exact expression** as its answer (e.g., use fractions like '1/3', symbolic representations like 'pi', or precise numerical values such as '1.0'). **Crucially, avoid approximations or rounding** unless the original question explicitly requires it.</p><p>-List the 0-based indexes of other sub-questions it depends on. This list can be empty if no prior sub-question answers are needed.</p><p>• Dependencies are defined as information necessary to answer the current sub-question that:</p><p>-Does NOT come directly from the original question.</p><p>-MUST come from the answers of previous sub-questions.</p><p>• **Stop generating sub-questions once the final answer to the Original Question has been fully derived from the reasoning process.** Do not include any subsequent or irrelevant steps that do not directly contribute to reaching the final answer. Format your response as the following JSON object: {{ "sub-questions": [ {{ "description": "&lt;clear, precise interrogative question&gt;", "answer": &lt;exact expression of the answer&gt;, "depend": [&lt;indices of prerequisite sub-questions&gt;] }}, ... ], "answer": {answer} }}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Contract (AoT)</head><p>You are a math problem solver specializing in optimizing step-by-step reasoning processes. Your task is to optimize the existing reasoning trajectory into a more efficient, single self-contained question.</p><p>For the original question: {question} Here are step-by-step reasoning process: {response} {sub_questions} Here are explanations of key concepts:</p><p>• self-contained: The optimized question must be solvable independently, without relying on any external information • efficient: The optimized question must be simpler than the original, requiring fewer reasoning steps (these steps are reduced because some solved independent sub-problems become known conditions in the optimized question or are excluded as incorrect explorations)</p><p>You can freely reason in your response, but please enclose the your optimized question within &lt;question&gt;&lt;/question&gt; tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Decompose (SSR, Ours)</head><p>You are tasked with breaking down a math problem's reasoning process into a series of **atomic** sub-questions.</p><p>Original Question: {question} Complete Reasoning Process: {trajectory} Instructions:</p><p>• Break down the reasoning process into a series of sub-questions.</p><p>• Each sub-question should:</p><p>-Be written in a clear, interrogative form.</p><p>-Be precise, unambiguous, and directly answerable from the provided reasoning or prior sub-question answers. -Have a clear, **exact expression** as its answer (e.g., use fractions like '1/3', symbolic representations like 'pi', or precise numerical values such as '1.0'). **Crucially, avoid approximations or rounding** unless the original question explicitly requires it.</p><p>-List the 0-based indexes of other sub-questions it depends on. This list can be empty if no prior sub-question answers are needed.</p><p>• **Stop generating sub-questions once the final answer to the Original Question has been fully derived from the reasoning process.** Do not include any subsequent or irrelevant steps that do not directly contribute to reaching the final answer.</p><p>• The sub-question, sub-answer pairs should perfectly represent the reasoning process of the solution. Format your response as the following JSON object: {{ "sub-questions": [ {{ "description": "&lt;clear, precise interrogative question&gt;", "answer": &lt;exact expression of the answer&gt;, }}, ... ], "answer": {answer} }} Solve Sub-Question (SSR, Ours)</p><p>You are a precise math problem solver. Given the original question and the series of sub-questions and their answers which perfectly represent the reasoning process of the solution, think step by step and answer the next sub-question. Do not extend the reasoning process beyond this sub-question and enclose the answer within &lt;answer&gt;&lt;/answer&gt; tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Original question: {question}</head><p>The series of sub-questions and their answers: {socratic_reasoning_trajectory}</p><p>The next sub-question to be answered: {next_sub_question}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Confidence Estimate (SSR, Ours)</head><p>You are a math expert. Given the a math expression as the prediction and a list of reference answers, determine the confidence of the prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The prediction is: {prediction}</head><p>The reference answers are: {answers} Please answer with a number of scale 0 to 5 that represents the confidence of the prediction. 0 means the prediction does not match any of the reference answers. 5 means the prediction matches the reference answers perfectly. If you cannot determine the confidence, please answer with -1. Enclose the answer within &lt;answer&gt;&lt;/answer&gt; tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reflection (SSR, Ours)</head><p>Wait, in the sub-step of "{wrong_question}", the answer is "{wrong_answer}", but after careful re-evaluating the process, I think that the actual answer to this sub-question should be "{revised_answer}".</p><p>Refine (SSR, Ours) {cot_instruction} {cot_reasoning_trace} {reflection} Let's re-evaluate the reasoning process based on your reflection. Enclose it within &lt;evalua-tion&gt;&lt;/evaluation&gt; tags. After that, let's reasoning step by step again to solve the original question. This time, you should address the specific issue identified in your own re-evaluation. Finally,enclose the final answer within &lt;answer&gt;&lt;/answer&gt; tags." Table <ref type="table">6</ref>: Performance of Iterative Refinement-Based Reasoning Methods. LR-Acc: Last-round refinement's accuracy, yielded by 10 repeated experiments; Pass@K: Pass-at-K refinements' accuracy (at lease one of K iterations gets the answer correct). LR-Maj@5: Last-round refinement's accuracy of majority voting with 5 samples in parallel, yielded by 50 repeated experiments. Boldface and underlining denote the best and the second-best performance, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method AIME24 AIME25</head><p>Zebra-Puzzle LR-Acc Pass@K LR-Maj@5 LR-Acc Pass@K LR-Maj@5 LR-Acc Pass@K LR-Maj@5</p><p>Gemini-2.5-Flash-Lite</p><p>CoT 59.00±4.48 -68.53±3.14 44.85±5.92 -52.47±4.51 74.00±2.72 -84.18±1.77 Self-Refine 60.67±6.29 66.33±3.14 71.07±2.44 50.00±4.22 55.33±3.40 61.20±5.11 76.20±3.46 82.00±1.95 87.30±1.50 MCTSr 63.00±6.40 -69.33±3.27 49.00±6.51 -57.07±5.11 78.50±2.84 -86.62±1.38 AoT 64.67±4.27 71.33±4.27 72.13±2.38 46.67±4.47 51.00±2.13 49.27±3.35 62.40±3.83 82.50±1.96 79.18±2.70 SSR-Lin (Ours) 70.00±4.47 72.00±4.52 73.20±2.00 55.33±2.67 57.33±4.16 60.93±3.77 82.60±2.24 85.70±2.24 87.92±1.65 SSR-Ada (Ours) 68.00±5.21 70.67±4.67 72.07±1.87 54.00±4.16 57.33±5.93 59.07±3.47 82.40±2.15 86.30±2.10 89.16±1.71 SSR-Plan (Ours) 70.33±4.07 73.33±3.33 73.87±2.34 56.67±5.16 61.00±5.17 65.47±3.45 81.10±2.95 86.50±2.33 87.48±2.23 Gemini-2.5-Flash CoT 81.85±2.77 -85.60±1.55 68.00±4.52 -72.47±3.99 67.44±1.89 -76.12±1.92 Self-Refine 82.96±3.67 87.41±3.05 88.87±2.46 76.33±7.06 81.00±4.23 84.60±2.48 75.25±2.95 77.00±3.32 88.98±1.49 MCTSr 83.00±4.07 -86.67±2.31 70.95±7.50 -77.73±2.78 75.60±2.94 -85.68±1.91 AoT 81.67±1.67 85.33±2.21 86.13±2.86 70.74±5.62 75.19±6.50 78.40±2.60 54.71±3.49 86.14±1.88 65.74±2.39 SSR-Lin (Ours) 86.30±3.99 90.37±4.29 90.93±2.98 79.26±4.66 83.33±4.16 88.47±3.14 87.62±2.18 89.75±2.54 92.30±1.36 SSR-Ada (Ours) 82.50±4.00 87.50±3.23 88.33±1.67 76.30±6.37 84.44±4.71 87.27±2.72 87.14±1.96 89.00±1.69 91.86±1.30 SSR-Plan (Ours) 84.17±4.00 89.17±3.63 89.67±1.00 78.00±6.00 84.00±4.42 86.73±3.16 86.50±2.69 89.00±2.50 92.06±1.39</p><p>When applied to the stronger Gemini-2.5-Flash model, our SSR variants continue to demonstrate consistent improvements over baseline iterative refinement methods. On AIME24 and AIME25, SSR-Lin achieves the highest LR-Acc and LR-Maj@5, while SSR-Ada and SSR-Plan deliver highly competitive results, particularly in terms of Pass@K, reflecting their ability to exploit refinement opportunities even when the base model is already very strong. The gains are especially notable on AIME25, where SSR-Ada substantially outperforms all baselines in both LR-Acc and Pass@K, indicating the effectiveness of adaptively switching between efficient self-refinement and more costly Socratic refinement. On Zebra-Puzzle, all three variants of SSR surpass or match the best-performing baselines, with SSR-Lin again delivering the strongest overall results. These findings confirm that even for a state-of-the-art reasoning model like Gemini-2.5-Flash, our refinement strategies provide additional benefits, reinforcing their generality and scalability across model families and task types.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 ADDITIONAL RESULTS OF TEST-TIME SCALING AT LARGER SCALE</head><p>Applying iterative refinement, even for a single round, inevitably increases computation and latency at test time. Thus, comparisons restricted to a fixed number of iterations, as in Sec. 4.5, may be unfair or incomplete. To more fairly assess efficiency, we examine the test-time scaling behavior of our SSR relative to baselines under comparable computational cost. The results are presented in Fig. <ref type="figure">5</ref> (parallel scaling) and Fig. <ref type="figure">6</ref> (sequential scaling).</p><p>In the parallel scaling setting (Fig. <ref type="figure">5</ref>), both Self-Refine and our SSR substantially outperform vanilla CoT across all compute budgets, confirming that iterative refinement provides clear gains when additional samples are available. Importantly, our SSR consistently yields higher accuracy than Self-Refine under the same budget, demonstrating that confidence-aware step selection and plan refinement lead to more efficient use of compute. In the sequential scaling setting (Fig. <ref type="figure">6</ref>), a similar trend emerges: while performance plateaus quickly for Self-Refine, SSR continues to improve steadily with additional iterations, particularly in the early-to mid-cost regime. This suggests that SSR better leverages iterative opportunities, correcting errors that Self-Refine either overlooks or misjudges. Taken together, these results demonstrate that SSR not only provides stronger singleiteration performance but also scales more effectively under increased compute, striking a favorable balance between accuracy and cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3 DETAILED RESULTS OF HUMANITY'S LAST EXAM (HLE)</head><p>Table <ref type="table">7</ref> and Table <ref type="table" target="#tab_2">8</ref> present a detailed breakdown of SSR performance on the numerical and non-numerical subsets of Humanity's Last Exam (HLE) <ref type="bibr" target="#b31">(Phan et al., 2025)</ref>. On the numerical 0 5 10 15 20 25 30 #Iterations 30 40 50 60 70 Accuracy (%) 0 1 2 3 4 5 6 Cost ($) Self-Refine SSR-Plan (Ours) Figure 6: Performance of Iterative Test-Time Scaling, evaluated on AIME25 with GPT-5-mini low-reasoning low-verbosity mode.</p><p>subset, SSR achieves substantial gains over both CoT and Self-Refine, improving accuracy by up to 8.89% with GPT-5-mini and 5.23% with the full GPT-5. In contrast, on the non-numerical subset, improvements are smaller or even negative, particularly for GPT-5, where Self-Refine and SSR both slightly underperform CoT. This disparity suggests that non-numerical problems, often involving abstract or conceptual reasoning, may benefit less from explicit step-level self-verification and refinement, as it can introduce semantic drift or over-justification. Overall, these results demonstrate that SSR is especially effective for precise, calculation-heavy reasoning but may require further adaptation for more open-ended or qualitative tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.4 ADDITIONAL RESULTS OF SSR-AS-A-JUDGE</head><p>To better understand the strengths of SSR, we further assess its self-evaluation quality and compare it with the LLM-as-a-Judge framework <ref type="bibr" target="#b13">(Gu et al., 2024)</ref>. We evaluate the self-evaluation ability on the four datasets we use in the main body, and we further include the results on ProcessBench <ref type="bibr">(Zhang et al., 2025b)</ref>. For self-evaluation, due to the smaller dataset sizes of AIME24 and AIME25, we sample 100 parallel reasoning traces per question, yielding datasets of 3,000 examples each. For logical reasoning, we sample 10 traces per question, resulting in datasets of 1,000 examples each. In the LLM-as-a-Judge setting, the model is prompted to provide both feedback and a confidence score on a 0-5 scale. For SSR, we perform a single iteration of Socratic step decomposition and confidence estimation of each step. All experiments run with GPT-5-mini low-reasoning lowverbosity mode. Since SSR produces step-level confidence scores C T = {c t } t∈[T ] for the Socratic steps S T = {s t } t∈[T ] , these must be aggregated into a single score to represent overall response quality. We show the result of (i) Min (min{c t } t∈[T ] ), the weakest step confidence; (ii) Mean-Table <ref type="table">7</ref>: Accuracies (%) of iterative refinement-based reasoning methods on the 478-question challenging math subset (w/ numerical ground-truth answer) of Humanity's Last Exam (HLE) <ref type="bibr" target="#b31">(Phan et al., 2025)</ref>, with GPT-5-mini and GPT-5 (medium reasoning, medium verbosity).</p><p>Model CoT Self-Refine SSR-Plan (Ours) GPT-5-mini 17.78 23.85 (+6.07) 26.57 (+8.89) GPT-5 30.33 33.89 (+3.56) 35.56 (+5.23) Log ( 1 T T t=1 log c t ), a length-normalized version inspired by confidence and uncertainty estimation in sequence modeling <ref type="bibr">(Zhang et al., 2025a)</ref>; and (iii) SSR-Ada with Mean.</p><p>We formulate the evaluation of a judge's ability as a problem of incorrect reasoning trace detection, where incorrect responses are labeled as positives. We report three correlation-based metrics: Area Under the Receiver Operating Characteristic Curve (AUROC), Precision * and Recall * at the optimal classification threshold <ref type="bibr" target="#b15">(Hanley &amp; McNeil, 1982;</ref><ref type="bibr" target="#b3">Boyd et al., 2013;</ref><ref type="bibr" target="#b11">Farquhar et al., 2024;</ref><ref type="bibr" target="#b46">Ye et al., 2025;</ref><ref type="bibr">Zhang et al., 2025a)</ref>, which together measure how well confidence scores distinguish between correct and incorrect responses.</p><p>The results are shown in Fig. <ref type="figure">7</ref> and Fig. <ref type="figure">8</ref>. Somewhat unexpectedly, across most evaluation metrics, the judging ability of SSR does not surpass the basic LLM-as-a-Judge. This is evident in consistently lower AUROC, suggesting that the confidence scores produced by SSR contain more noise and thus yield less balanced evaluations. Why, then, does SSR still outperform baselines as an iterative refinement framework? As illustrated in Fig. <ref type="figure">7</ref>, the key lies in its complementary role to Self-Refine. While SSR lags behind LLM-as-a-Judge in AUROC" it consistently achieves much higher recall of incorrect reasoning traces, particularly on logical reasoning benchmarks such as Zebra Puzzle and Mini-Sudoku. This broader coverage allows SSR to catch errors that Self-Refine often misses, even if it introduces additional noise. The mechanism behind SSR-Ada can thus be understood as three cascading factors:</p><p>• High precision of LLM-as-a-Judge: when used in Self-Refine, it reliably identifies problematic reasoning traces, but often misses a large portion of incorrect ones.</p><p>• High coverage of SSR: it captures and provides useful signals for truly problematic steps in reasoning, though at the cost of introducing some unreliable feedback for feedback.</p><p>• Inherent robustness of LLMs: during refinement, LLMs can withstand noisy refinement feedback, serving as a safeguard that enables recovery and improvement despite occasional errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.5 QUALITATIVE ANALYSIS</head><p>In this section, we present a concrete example to illustrate how SSR performs step-level verification and refinement. The example is taken from a MATH-Level-5 question, with GPT-4.1-nano serving as the backbone LLM. The results are shown in Fig. <ref type="figure" target="#fig_6">9</ref>-15.</p><p>The qualitative example illustrates how SSR intervenes within the reasoning process rather than only at the final output. By decomposing reasoning into Socratic steps, estimating step-level confidence, and selectively refining weak points, SSR prevents local errors from propagating through the reasoning trace. Compared to standard Self-Refine, which often produces brittle trajectories, SSR provides interpretable and controllable corrections that lead to more reliable outcomes. These case studies complement our quantitative results and highlight the practical value of SSR as a step-level refinement framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Chain-of-Thought] (1/3)</head><p>Let's carefully analyze the problem step by step:</p><p>1. **Understanding the problem:** -The highway has exits numbered from 1 to 50.</p><p>-The distance between exit 41 and exit 50 is 100 km.</p><p>-Each exit is at least 6 km from the next exit.</p><p>-We are asked to find the maximum possible distance between exit 47 and exit 48.</p><p>2. **Implications of the distance between exit 41 and exit 50:** -Since the exits are numbered consecutively, and the distance from exit 41 to exit 50 is 100 km, this involves 9 segments:</p><p>-From exit 41 to 42 -42 to 43 -43 to 44 -44 to 45 -45 to 46 -46 to 47 -47 to 48 -48 to 49 -49 to 50 -The total of these 9 segments is 100 km.</p><p>3. **Constraints on each segment:** -Each segment (distance between consecutive exits) is at least 6 km.</p><p>-This means the minimal total distance from exit 41 to exit 50, if all segments are at their minimum, is: \[ 9 \times 6 = 54 \text{ km} \] -But the actual total is 100 km, which is greater than 54 km, so there is some "extra" distance to distribute among these segments. 4. **Distributing the extra distance:** -The total "extra" beyond the minimum is: \[ 100 -54 = 46 \text{ km} \] -To maximize the distance between exit 47 and exit 48, we want to maximize the length of that specific segment.</p><p>-To do that, we should minimize the distances of all other segments, since the total sum is fixed at 100 km.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p><p>[GROUND TRUTH] [Chain-of-Thought] (2/3) 5. **Minimizing other segments:** -For segments other than 47-48, assign the minimum of 6 km each. -The segments before exit 47 are: -41-42 -42-43 -43-44 -44-45 -45-46 -There are 5 such segments, each at 6 km: \[ 5 \times 6 = 30 \text{ km} \] -The remaining segments are: -47-48 -48-49 -49-50</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p><p>[GROUND TRUTH]</p><p>52 Step-level mistake: not counting the segment 46-47. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[GROUND TRUTH]</head><p>52 [Chain-of-Thought] (3/3) 6. **Calculating the maximum for segment 47-48:** -The total distance from exit 41 to 50 is 100 km.</p><p>-The distances of the first 5 segments (41-42 to 45-46) sum to 30 km.</p><p>-The remaining distance for the last 4 segments (including 47-48) is: \[ 100 -30 = 70 \text{ km} \] -Since 48-49 and 49-50 are also at least 6 km each, we need to consider their minimal contributions:</p><p>-48-49: at least 6 km -49-50: at least 6 km -So, the minimal total for these two segments is: \[ 2 \times 6 = 12 \text{ km} \] -Therefore, the maximum possible length for 47-48 is when the other two segments (48-49 and 49-50) are at their minimums: \[ \text{Distance of 47-48} = 70 -12 = 58 \text{ km} \] -This is because the total for the last 4 segments is 70 km, allocated as:</p><p>-47-48: as large as possible -48-49: 6 km (minimum) -49-50: 6 km (minimum) -The remaining 70 -6 -6 = 58 km can be assigned to 47-48. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[GROUND TRUTH]</head><p>52</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Self-Refine]</head><p>&lt;evaluation&gt;In the original solution, the key mistake was in the calculation of the maximum possible distance between exit 47 and exit 48. The initial approach correctly identified that to maximize this gap, the distances from exit 41 to 47 should be minimized (each at 6 km), and the distances from exit 48 to 50 should also be minimized (each at 6 km). The remaining segment, from exit 47 to 48, would then be as large as possible, given the total constraint of 100 km from exit 41 to 50.</p><p>However, the original calculation failed to account for the scaling necessary to ensure the total distance from exit 41 to exit 50 is exactly 100 km. It also overlooked the fact that the positions were initially considered in an unscaled coordinate system, leading to an overestimation of the maximum gap.</p><p>The key correction is to recognize that the maximum unscaled gap between exits 47 and 48 is 52 km, obtained by assigning minimal distances (6 km) to the other segments. Then, since the total from exit 41 to 50 is 100 km, the actual maximum gap is scaled proportionally: \[ \text{Maximum unscaled gap} = 52 \text{ km} \] \[ \text{Scaling factor} = \frac{100}{106} \]</p><p>Multiplying these gives the true maximum: \[ 52 \times \frac{100}{106} = \frac{5200}{106} = \frac{2600}{53} \]</p><p>Thus, the corrected maximum possible distance between exit 47 and exit 48 is \(\frac{2600}{53}\) km, approximately 49.06 km.</p><p>The initial answer of 58 km was overestimated because it did not properly incorporate the scaling factor to match the total distance constraint.&lt;/evaluation&gt; &lt;answer&gt;2600/53&lt;/answer&gt; </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problematic Reflection in Self-Refine</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[GROUND TRUTH]</head><p>52 [Socratic Self-Refine (Ours)] (2/3) "question": "How many segments are there between exit 41 and exit 50, and which segments are they?", "answer": "Between exits 41-42, 42-43, 43-44, 44-45, 45-46, 46-47, 47-48, 48-49, 49-50", "reference set": [ "There are 9 segments between exit 41 and exit 50, corresponding to the intervals between each pair of consecutive exits: from exit 41 to 42, 42 to 43, 43 to 44, 44 to 45, 45 to 46, 46 to 47, 47 to 48, 48 to 49, and 49 to 50.", "There are 9 segments between exit 41 and exit 50, corresponding to the intervals between each pair of consecutive exits from 41 to 50. These segments are:\n1. Between exit 41 and exit 42\n2. Between exit 42 and exit 43\n3. Between exit 43 and exit 44\n4. Between exit 44 and exit 45\n5. Between exit 45 and exit 46\n6. Between exit 46 and exit 47\n7. Between exit 47 and exit 48\n8. Between exit 48 and exit 49\n9. Between exit 49 and exit 50", "There are 9 segments between exit 41 and exit 50, corresponding to the intervals between each consecutive pair of exits from 41 to 50. Specifically, these segments are: \n1. between exit 41 and exit 42 \n2. between exit 42 and exit 43 \n3. between exit 43 and exit 44 \n4. between exit 44 and exit 45 \n5. between exit 45 and exit 46 \n6. between exit 46 and exit 47 \n7. between exit 47 and exit 48 \n8. between exit 48 and exit 49 \n9. between exit 49 and exit 50", "There are 9 segments between exit 41 and exit 50, corresponding to the intervals between each pair of consecutive exits: from exit 41 to 42, 42 to 43, 43 to 44, 44 to 45, 45 to 46, 46 to 47, 47 to 48, 48 to 49, and 49 to 50.", "There are 9 segments between exit 41 and exit 50, corresponding to the intervals between each pair of consecutive exits: from exit 41 to 42, 42 to 43, 43 to 44, 44 to 45, 45 to 46, 46 to 47, 47 to 48, 48 to 49, and 49 to 50." ], "confidence": 4</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 4</head><p>"question": "If all segments except the one between exits 47 and 48 are set to their minimal length of 6 km, what is the total length of these other segments?", "answer": 8, "reference set": [ "48 km", "48 km", "48 km", "48 km", "48 km" ], "confidence": 0 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 5 SSR's Socratic Step Identifies the Inconsistency!!!</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Test-Time Parallel Scaling Performance (Left) and Conceptual Overview (Right) of our proposed Socratic Self-Refine (SSR). By decomposing responses into Socratic steps, reevaluating intermediate results through self-consistency, and refining specific step-level errors, SSR achieves substantially higher initial accuracy (∼67.57% relative improvement) and continues to scale effectively even when standard Chain-of-Thought (CoT) begins to saturate. Notably, this performance advantage holds under comparable computational cost. Experiments are conducted with GPT-5-mini in low-reasoning, low-verbosity mode.</figDesc><graphic coords="1,108.11,400.68,144.74,148.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of Socratic Self-Refine (SSR). Block ①: Chain-of-Thought (CoT) reasoning, serves as the starting point for the iterative refinement methods; Block ②: Simple Self-Refine, generates feedback and then refines the original response based on the feedback; Block ③: Plan refinement, summarizes the high-level plan of a reasoning trace, and refines the plan and the trace if necessary; Block ④-⑥: Three building blocks of our SSR, includes Socratic decomposition, Socratic verification, and Socratic refinement. SSR-Lin: Linear SSR, faithfully applies three blocks (④-⑥) for K iterations; SSR-Ada: Adaptive SSR, only carries out Socratic blocks (④-⑥) when the normal Self-Refine cannot identify any mistakes (c = c max ); SSR-Plan: Adaptive SSR with Plan Refinement, adds an additional plan refinement round (③) before the full iterative refinement algorithm (④-⑥).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Pass@K BoK-Acc Pass@K BoK-Acc Pass@K BoK-Acc Pass@K BoK-Acc Pass@K GPT-4.1-nano</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Performance of Sequential (Left) and Parallel (Right) Test-Time Scaling, evaluated on AIME25 (AIME-Team, 2025) with GPT-5-mini low-reasoning low-verbosity mode.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Performance of our SSR, with explicit control of granularity, evaluated on AIME24 and AIME25 (AIME-Team, 2025) with GPT-5-mini low-reasoning low-verbosity mode. The marker size of each data point is proportional to the support size.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :Figure 6 :</head><label>56</label><figDesc>Figure5: Performance of Parallel Test-Time Scaling, evaluated on AIME25 with GPT-5-mini low-reasoning low-verbosity mode. Iterative refinement (both Self-Refine<ref type="bibr" target="#b27">(Madaan et al., 2023)</ref> and our SSR) holds non-trivial advantage against CoT(Wei et al., 2022b)  in terms of absolute performance and budget control. Our SSR outperforms the baselines under the same budget, with SSR's confidence estimation playing a crucial role.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>52Figure 9 :</head><label>9</label><figDesc>Figure 9: Qualitative Result, Concrete Example (1/7): Chain-of-Thought Response (1/3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Qualitative Result, Concrete Example (2/7): Chain-of-Thought Response (2/3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Qualitative Result, Concrete Example (3/7): Chain-of-Thought Response (3/3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Qualitative Result, Concrete Example (4/7): Self-Refine.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Qualitative Result, Concrete Example (6/7): Socratic Self-Refine (SSR, Ours) (2/3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Accuracies (%) of iterative refinement-based reasoning methods on the 915-question textonly math subset of Humanity's Last Exam (HLE)<ref type="bibr" target="#b31">(Phan et al., 2025)</ref>, with GPT-5-mini and GPT-5 (medium reasoning, medium verbosity).</figDesc><table><row><cell>Model</cell><cell>CoT</cell><cell>Self-Refine</cell><cell>SSR-Plan (Ours)</cell></row><row><cell>GPT-5-mini</cell><cell>16.18</cell><cell>18.58 (+2.40)</cell><cell>21.53 (+5.35)</cell></row><row><cell>GPT-5</cell><cell>27.98</cell><cell>26.57 (-1.41)</cell><cell>29.61 (+1.63)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Ablation Study on SSR Context Management, evaluated on GPT-5-mini.</figDesc><table><row><cell>Method</cell><cell>Refinement</cell><cell>Context</cell><cell>Dataset AIME24 AIME25</cell></row><row><cell>CoT</cell><cell>-</cell><cell>-</cell><cell>50.67±4.67 37.00±6.57</cell></row><row><cell>Self-Refine</cell><cell>Reflection</cell><cell>Natural</cell><cell>63.33±4.94 53.67±6.23</cell></row><row><cell></cell><cell>Reflection</cell><cell>Natural</cell><cell>69.67±4.82 62.00±6.18</cell></row><row><cell>SSR-Plan</cell><cell>Reflection</cell><cell cols="2">Socratic 67.67±4.48 60.33±4.82</cell></row><row><cell>(Ours)</cell><cell>Intervention</cell><cell>Natural</cell><cell>54.67±4.76 42.67±7.12</cell></row><row><cell></cell><cell>Intervention</cell><cell cols="2">Socratic 57.00±8.09 52.00±5.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 8 :</head><label>8</label><figDesc>Accuracies (%) of iterative refinement-based reasoning methods on the 437-question challenging math subset (w/ non-numerical ground-truth answer) of Humanity's Last Exam (HLE)<ref type="bibr" target="#b31">(Phan et al., 2025)</ref>, with GPT-5-mini and GPT-5 (medium reasoning, medium verbosity).</figDesc><table><row><cell>Model</cell><cell>CoT</cell><cell>Self-Refine</cell><cell>SSR-Plan (Ours)</cell></row><row><cell>GPT-5-mini</cell><cell>14.42</cell><cell>12.81 (-1.61)</cell><cell>16.02 (+1.60)</cell></row><row><cell>GPT-5</cell><cell>25.40</cell><cell>18.08 (-7.32)</cell><cell>23.11 (-2.29)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Note that (i) the ground-truth decomposition may not be unique. E.g., {st} T t=1 and {st} T t=2 are both valid decompositions, with the latter representing a coarser process; and (ii) the true structure of the decomposition can be non-linear(Teng et al.,  </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>2025), though it can be mapped to a linear form in CoT reasoning.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>Under this assumption, we posit that the LLM establishes an overall plan before generating the actual response<ref type="bibr" target="#b45">(Ye et al., 2024;</ref><ref type="bibr" target="#b25">Lindsey et al., 2025)</ref>.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C IMPLEMENTATION DETAILS</head><p>Appendix C.1 introduces the basic charactaristics of the adopted datasets; Appendix C.2 introduces the implementation details of the state-of-the-art iterative refinement baselines and our SSR. Appendix C.3 lists the prompt template we use for different methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 DATASETS</head><p>Table <ref type="table">5</ref> shows the statistics of datasets in our experiments. These datasets span two different types of reasoning tasks and different difficulty levels, from moderate to highly challenging, covering both grade-school-level numerical reasoning and advanced symbolic mathematical tasks. This diversity in problem domains and difficulty ensures a comprehensive and representative assessment of the model's capabilities across varied reasoning scenarios.</p><p>Table <ref type="table">5</ref>: Dataset Statistics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset #Examples Split</head><p>Task Type Language Level MATH-Level-5 <ref type="bibr" target="#b17">(Hendrycks et al., 2021)</ref> 681 Numerical-Answer Test Subset Mathematical English Moderate AIME24 <ref type="bibr" target="#b1">(AIME-Team, 2025)</ref> 30 Full Set Mathematical English Highly Challenging AIME25 <ref type="bibr" target="#b1">(AIME-Team, 2025)</ref> 30 Full Set Mathematical English Highly Challenging HLE <ref type="bibr" target="#b31">(Phan et al., 2025)</ref> 915 Text-Only Math Subset Mathematical English Extremely Challenging Zebra-Puzzle <ref type="bibr" target="#b36">(Stojanovski et al., 2025)</ref> 100 Randomly Synthesized Logical English Moderate Mini-Sudoku <ref type="bibr" target="#b36">(Stojanovski et al., 2025)</ref> 100 Randomly Synthesized Logical English Moderate</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 BASELINES AND OUR SSR</head><p>We compare our proposed Socratic Self-Refine (SSR) against several state-of-the-art iterative refinement reasoning frameworks. The detailed prompt templates are provided in the next section.</p><p>• Self-Refine <ref type="bibr" target="#b27">(Madaan et al., 2023)</ref>: We follow the prompt template defined in LLM-as-a-Judge <ref type="bibr">(Zhou et al., 2025a)</ref>, which produces feedback and scores for the model's own response; the feedback is then used for refinement. We perform three refinement iterations, with each iteration independent of previous ones for conciseness.</p><p>• Debate <ref type="bibr" target="#b8">(Du et al., 2023)</ref>: We adopt the official LLM-Debate code with two modifications: (i) using the unified CoT prompt for initial thought generation, as in this paper, and (ii) explicitly instructing each agent to refine its response based on the peer agent's response. We run two agents for three iterations of debate, and for fair comparison, randomly select one of the final-round answers as the output.</p><p>• Monte Carlo Tree Self-Refine (MCTSr) <ref type="bibr" target="#b48">(Zhang et al., 2024)</ref>: We adopt the released code for reproducibility. Since the original prompt was designed for smaller open-source LLMs <ref type="bibr" target="#b38">(Touvron et al., 2023;</ref><ref type="bibr" target="#b9">Dubey et al., 2024)</ref> with format mismatches to our setting, we adapt the template while retaining the same verification prompt (as Self-Refine) and faithfully preserving the Monte Carlo Tree construction and exploration. The maximum number of iterations is set to four, following the original paper.</p><p>• Atom-of-Thoughts (AoT) <ref type="bibr" target="#b37">(Teng et al., 2025)</ref>: We mainly follow the released implementation.</p><p>However, as the original decomposition restricts intermediate answers to purely numerical forms, which is limiting for challenging mathematical and logical reasoning, we slightly relax this constraint. For fair comparison, we set the maximum number of atoms to three, omit the final "Ensemble" step, and report only the last-iteration performance in Table <ref type="table">1</ref>. Results with the ensemble step are reported separately in Column "BoK-Acc" of Table <ref type="table">2</ref>.</p><p>• Forest-of-Thought (FoT) <ref type="bibr" target="#b2">(Bi et al., 2024)</ref>: As a parallel scaling variant of MCTSr (ignoring early stopping), FoT is not directly evaluated. Nevertheless, MCTSr's results in the "LR-Maj@5" column can be treated as an approximate proxy for FoT performance with tree size 5 and majority voting aggregation.</p><p>• Linear SSR (SSR-Lin, Ours): Each iteration proceeds as follows: (i) decompose the given CoT into Socratic steps; (ii) re-answer each sub-question multiple times, assuming prior steps are correct; (iii) identify the step with the lowest confidence score and refine based on the majority-voted sub-answer. We set the number of iterations to three for fairness.</p><p>• Adaptive SSR (SSR-Ada, Ours): At the beginning of each round, SSR-Ada first applies Self-Refine. If unreliable steps are identified with non-perfect scores, refinement proceeds via this efficient route. Otherwise (if Self-Refine fails or is overconfident), the method falls back to the full Socratic refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ensemble</head><p>You are a precise math problem solver. Compare then synthesize the best answer from multiple solutions to solve the following question.</p><p>QUESTION: {question}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SOLUTIONS: {solutions}</head><p>Please extend your chain of thought as much as possible; the longer the chain of thought, the better.</p><p>You can freely reason in your response, but please enclose the final answer within &lt;an-swer&gt;&lt;/answer&gt; tags (pure number without units and explanations).</p><p>LLM-as-a-Judge for Humanity's Last Exam (HLE) Evaluation Judge whether the following [candidate_answer] to [question] is correct or not based on the precise and unambiguous [correct_answer] below. [question]: {question} [correct_answer]: {correct_answer} [candidate_answer]: {candidate_answer} Your judgement must be in the format and criteria specified below: reasoning: Explain why the [candidate_answer] is correct or incorrect based on [cor-rect_answer], focusing only on if there are meaningful differences between [correct_answer] and the [candidate_answer]. Do not comment on any background to the problem, do not attempt to solve the problem, do not argue for any answer different than [correct_answer], focus only on whether the answers match.</p><p>correct: Answer '1' if [candidate_answer] matches the [correct_answer] given above, or is within a small margin of error for numerical problems. Answer '0' otherwise, i.e. if there if there is any inconsistency, ambiguity, non-equivalency, or if the extracted answer is incorrect.</p><p>Please enclose your reasoning within &lt;reasoning&gt;&lt;/reasoning&gt; tags, and your correct answer within &lt;correct&gt;&lt;/correct&gt; tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D ADDITIONAL EXPERIMENTAL RESULTS</head><p>Appendix D.1 reports additional results on a strong model, Gemini-2.5-Flash. Appendix D.2 provides further experiments on both sequential and parallel test-time scaling. Appendix D.4 presents results using SSR as an LLM judge, offering deeper insights into its underlying mechanism. Finally, Appendix D.5 includes qualitative examples that illustrate the behavior of SSR in practice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 ADDITIONAL RESULTS OF GE M I N I-2.5-FL A S H</head><p>We further report results of applying SSR to a different model family, including a smaller and faster model, Gemini-2.5-Flash-Lite, and a stronger model, Gemini-2.5-Flash <ref type="bibr" target="#b7">(Comanici et al., 2025)</ref>. Owing to its exceptionally strong mathematical and logical reasoning ability, two benchmarks used in the main body (MATH-Level-5 and Mini-Sudoku) are no longer suitable for differentiating framework performance, as naive CoT already solves nearly all questions correctly. Therefore, we report results only on the remaining three datasets, following the same evaluation protocols described in Sec. 4. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[GROUND TRUTH]</head><p>52 [Socratic Self-Refine (Ours)] (1/3) "question": "How many segments are there between exit 41 and exit 50?" "answer": 9, "reference set": [ "There are 9 segments between exit 41 and exit 50.", "There are 9 segments between exit 41 and exit 50.", "9", "NA", "NA" ], "confidence": 4</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 1</head><p>"question": "What is the minimal total distance if each of these 9 segments is exactly 6 km?", "answer": 54, " reference set": [ "54 km", "54 km", "54 km", "54 km", "54 km" ], "confidence": 5</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 2 "question":</head><p>"What is the total extra distance beyond the minimal total distance of 54 km, given that the actual distance from exit 41 to exit 50 is 100 km?", "answer": 46, "reference set": [ "100 km -54 km = 46 km", "100 km -54 km = 46 km", "100 km -54 km = 46 km", "100 km -54 km = 46 km", "100 km -54 km = 46 km" ], "confidence": 5 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 3</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[QUESTION]</head><p>Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[GROUND TRUTH]</head><p>52 [Socratic Self-Refine (Ours)] (3/3) &lt;evaluation&gt;\nUpon re-examination, I realize that I miscounted the number of segments between exits 41 and 50. There are 9 segments connecting these 10 exits, not 8. Specifically, the segments are:\n\n41-42, 42-43, 43-44, 44-45, 45-46, 46-47, 47-48, 48-49, 49-50.\n\nIn the previous reasoning, I mistakenly considered only 8 segments when fixing distances at 6 km, excluding the segment between 47 and 48. To maximize the distance between exits 47 and 48, I should set all other segments to their minimal length of 6 km, which is 8 segments (excluding the one between 47 and 48). But actually, there are 9 segments total, and only one of them is between 47 and 48.\n\nTherefore, the correct approach is:\n\n-Fix all other segments (except 47-48) at 6 km.\n-Sum these fixed segments:\n \n There are 8 other segments besides 47-48 (from 41-42 up to 46-47, and from 48-49 up to 49-50), totaling 8 segments.\n\n-Sum of these fixed segments: \\(8 \\times 6 = 48\\) km.\n\n-Total distance from 41 to 50 is 100 km; thus, the length of the segment between 47 and 48 can be:\n\n \\[\n 100 -48 = 52 \\text{ km}\n \\]\n\nThis confirms that the maximum distance between exit 47 and exit 48 is **52 km**.\n\nThe initial miscount was in the number of segments fixed at minimal length, but after correction, the reasoning aligns with the previous conclusion.\n\n&lt;/evaluation&gt;\n\nNow, let's proceed with the step-by-step reasoning again, explicitly addressing the count of segments:\n\n---\n\n### Step 1: Count the total segments between exits 41 and 50\n\n-The exits are numbered 41, 42, 43, 44, 45, 46, 47, 48, 49, 50.\n-The segments are:\n\n <ref type="bibr">41-42, 42-43, 43-44, 44-45, 45-46, 46-47, 47-48, 48-49, 49-50</ref>.\n\n-Total of **9 segments**.\n\n---\n\n### Step 2: Understand the goal\n\n-The total distance from exit 41 to exit 50 is 100 km.\n-Each segment is at least 6 km.\n-To maximize the distance between exit 47 and exit 48, set all other segments to their minimum length (6 km), except the segment between 47 and 48, which we want to maximize.\n\n---\n\n### Step 3: Fix other segments at minimal length\n\n-The segments fixed at minimum length (6 km):\n\n 41-42, 42-43, 43-44, 44-45, 45-46, 48-49, 49-50.\n\n-Count how many segments are fixed at 6 km:\n\n From 41-42 to 46-47: 6 segments <ref type="bibr">(41-42, 42-43, 43-44, 44-45, 45-46, 46-47)</ref>.\n\n From 48-49 to 49-50: 2 segments.\n\n-Total fixed segments: **8**.\n\n-Sum of fixed segments: \\(8 \\times 6 = 48\\) km.\n\n---\n\n### Step 4: Calculate the maximum possible distance for the segment 47-48\n\n-Total distance from 41 to 50: 100 km.\n-Sum of fixed segments: 48 km.\n-Remaining distance for the segment between 47 and 48:\n\n \\[\n 100 -48 = 52 \\text{ km}\n \\]\n\n-This is feasible because the segment length is at least 6 km and can be extended up to 52 km.\n\n---\n\n### **Final conclusion:**\n\nThe maximum possible distance between exit 47 and exit 48 is **52 km**.\n\n---\n\n### Final answer:\n\n&lt;answer&gt;52&lt;/answer&gt;" "question": "What is the maximum possible length of the segment between exits 47 and 48, given the total distance of 100 km and the minimal lengths of other segments?", "answer": 52, "reference set": [ "38", "46 km", "52 km", "52 km", "52" ], "confidence": 4 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Socratic Step 6</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 7 :Figure 8 :</head><label>78</label><figDesc>-a-Judge SSR-as-a-Judge (Min) SSR-as-a-Judge (Mean-Log) SSR-as-a-Judge (Adaptive)Self-Evaluation Performance of SSR-as-a-Judge and LLM-as-a-Judge, evaluated with GPT-5-mini.Performance of SSR-as-a-Judge and LLM-as-a-Judge, evaluated on Process-Bench(Zhang et al., 2025b), with GPT-4.1-nano.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 13 :</head><label>13</label><figDesc>Qualitative Result, Concrete Example (5/7): Socratic Self-Refine (SSR, Ours) (1/3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 15 :</head><label>15</label><figDesc>Qualitative Result, Concrete Example (7/7): Socratic Self-Refine (SSR, Ours) (3/3).</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">David</forename><surname>Acuna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehun</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amlan</forename><surname>Kar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.08927</idno>
+		<title level="m">Socratic-mcts: Test-time visual reasoning by asking the right questions</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">American invitational mathematics examination</title>
+		<author>
+			<persName><forename type="first">Aime-Team</forename></persName>
+		</author>
+		<ptr target="https://maa.org/maa-invitational-competitions/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Mathematical Association of America</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Forest-of-thought: Scaling test-time compute for enhancing llm reasoning</title>
+		<author>
+			<persName><forename type="first">Zhenni</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanjian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yehui</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhe</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.09078</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Area under the precision-recall curve: point estimates and confidence intervals</title>
+		<author>
+			<persName><forename type="first">Kendrick</forename><surname>Boyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">H</forename><surname>Eng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Page</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning and Knowledge Discovery in Databases: European Conference, ECML PKDD 2013</title>
+		<meeting><address><addrLine>Prague, Czech Republic</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">September 23-27, 2013. 2013</date>
+			<biblScope unit="page" from="451" to="466" />
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part III 13</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Language models are hidden reasoners: Unlocking latent reasoning capabilities via self-rewarding</title>
+		<author>
+			<persName><forename type="first">Haolin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshara</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shelby</forename><surname>Heinecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricky</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Mui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.04282</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Sets: Leveraging self-verification and self-correction for improved test-time scaling</title>
+		<author>
+			<persName><forename type="first">Jiefeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengrun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">Ö</forename><surname>Arık</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.19306</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Scaling instruction-finetuned language models</title>
+		<author>
+			<persName><forename type="first">Chung</forename><surname>Hyung Won</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">70</biblScope>
+			<biblScope unit="page" from="1" to="53" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities</title>
+		<author>
+			<persName><forename type="first">Gheorghe</forename><surname>Comanici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schaekermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ice</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noveen</forename><surname>Sachdeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inderjit</forename><surname>Dhillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Blistein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Rosen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.06261</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Graph of verification: Structured verification of llm reasoning with directed acyclic graphs</title>
+		<author>
+			<persName><forename type="first">Jiwei</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.12509</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Detecting hallucinations in large language models using semantic entropy</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jannik</forename><surname>Kossen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorenz</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yarin</forename><surname>Gal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">630</biblScope>
+			<biblScope unit="issue">8017</biblScope>
+			<biblScope unit="page" from="625" to="630" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuewei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.15260</idno>
+		<title level="m">Deep think with confidence</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehao</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengjin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengjie</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghao</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15594</idno>
+		<title level="m">A survey on llm-as-a-judge</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The meaning and use of the area under a receiver operating characteristic (roc) curve</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barbara</forename><forename type="middle">J</forename><surname>Hanley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mcneil</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Radiology</title>
+		<imprint>
+			<biblScope unit="volume">143</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="29" to="36" />
+			<date type="published" when="1982">1982</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Skywork-o1 open series</title>
+		<author>
+			<persName><forename type="first">Jujie</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianwen</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yimeng</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwen</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">Yuhao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongcong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahui</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.16998085</idno>
+		<ptr target="https://doi.org/10.5281/zenodo.16998085" />
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Explaining length bias in llm-based preference evaluations</title>
+		<author>
+			<persName><forename type="first">Zhengyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyuan</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianfu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxun</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaize</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01085</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Efficient test-time scaling via self-calibration</title>
+		<author>
+			<persName><forename type="first">Chengsong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Langlin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Leng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.00031</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugging</forename><surname>Face</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/Math-Verify" />
+		<title level="m">Math-Verify: A repository for mathematical verification</title>
+		<imprint>
+			<date type="published" when="2024-11-09">2024. 9 November 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Scalable best-of-n selection for large language models via self-certainty</title>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuandong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18581</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">A survey of frontiers in llm reasoning: Inference scaling, learning to reason, and agentic systems</title>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Ming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan-Phi</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minzhi</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peifeng</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Savarese</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.09037</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Semantic uncertainty: Linguistic invariances for uncertainty estimation in natural language generation</title>
+		<author>
+			<persName><forename type="first">Lorenz</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yarin</forename><surname>Gal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Farquhar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Lindsey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wes</forename><surname>Gurnee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emmanuel</forename><surname>Ameisen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><forename type="middle">L</forename><surname>Turner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Citro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Abrahams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Carter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Basil</forename><surname>Hosmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Marcus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Sklar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adly</forename><surname>Templeton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trenton</forename><surname>Bricken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Callum</forename><surname>Mcdougall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hoagy</forename><surname>Cunningham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Jermyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Persic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyi</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Ben</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Zimmerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelley</forename><surname>Rivoire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Batson</surname></persName>
+		</author>
+		<ptr target="https://transformer-circuits.pub/2025/attribution-graphs/biology.html" />
+		<title level="m">On the biology of a large language model. Transformer Circuits Thread</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Deductive verification of chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Zhan</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhao</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanlin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Memisevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="36407" to="36433" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46534" to="46594" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Selfcheckgpt: Zero-resource black-box hallucination detection for generative large language models</title>
+		<author>
+			<persName><forename type="first">Potsawee</forename><surname>Manakul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adian</forename><surname>Liusie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark Jf</forename><surname>Gales</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08896</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sagnik</forename><surname>Mukherjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Chinta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Takyoung</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarun Anoop</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.02362</idno>
+		<title level="m">Premise-augmented reasoning chains improve error identification in math reasoning with llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Humanity&apos;s last exam</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Gatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josephina</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugh</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Calvin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Shaaban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.14249</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Mutual reasoning makes smaller llms stronger problem-solvers</title>
+		<author>
+			<persName><forename type="first">Zhenting</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06195</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Self-evaluation improves selective generation in large language models</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tu</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Balaji</forename><surname>Lakshminarayanan</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings on</title>
+		<meeting>on</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="49" to="64" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Judging the judges: A systematic study of position bias in llm-as-a-judge</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chiyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhua</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingjian</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weicheng</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07791</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Scaling llm test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03314</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zafir</forename><surname>Stojanovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Sharratt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdulhakeem</forename><surname>Adefioye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Kaddour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Köpf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.24760</idno>
+		<title level="m">Reasoning gym: Reasoning environments for reinforcement learning with verifiable rewards</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Atom of thoughts for markov llm test-time scaling</title>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12018</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Adapted large language models can outperform medical experts in clinical text summarization</title>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Van Veen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cara</forename><surname>Van Uden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Blankemeier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Benoit</forename><surname>Delbrouck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asad</forename><surname>Aali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bluethgen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anuj</forename><surname>Pareek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malgorzata</forename><surname>Polacin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduardo</forename><forename type="middle">Pontes</forename><surname>Reis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Seehofnerová</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature medicine</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1134" to="1142" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc V</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.01652</idno>
+		<title level="m">Finetuned language models are zero-shot learners</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Metzler</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.07682</idno>
+		<title level="m">Emergent abilities of large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">When more is less: Understanding chain-of-thought length in llms</title>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefanie</forename><surname>Jegelka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisen</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.07266</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Physics of language models: Part 2.1, grade-school math and the hidden reasoning process</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.20311</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Uncertainty-aware step-wise verification with generative reward models</title>
+		<author>
+			<persName><forename type="first">Zihuiwen</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luckeciano</forename><surname>Carvalho Melo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Younesse</forename><surname>Kaddar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Staton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yarin</forename><surname>Gal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.11250</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Probabilistic soundness guarantees in llm reasoning chains</title>
+		<author>
+			<persName><forename type="first">Weiqiu</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreya</forename><surname>Havaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Delip</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Accessing gpt-4 level mathematical olympiad solutions via monte carlo tree self-refine with llama-3 8b</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoshui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongzhan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07394</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tunyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haizhou</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ligong</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.11737</idno>
+		<title level="m">Token-level uncertainty estimation for large language model reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangzhen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07301</idno>
+		<title level="m">The lessons of developing process reward models in mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Genprm: Scaling test-time compute of process reward models via generative reasoning</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runze</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhimu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiafei</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhouyi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Biqing</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.00891</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Large language models are not robust multiple choice selectors</title>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fandong</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.03882" />
+		<imprint>
+			<date type="published" when="2023">2024. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Solve-detect-verify: Inference-time scaling with flexible generative verifier</title>
+		<author>
+			<persName><forename type="first">Jianyuan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeju</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kezhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.11966</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yefan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janvijay</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.17995</idno>
+		<title level="m">Variation in verification: Understanding verification dynamics in large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Evaluating judges as evaluators: The jetts benchmark of llm-as-judges as test-time scaling evaluators</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peifeng</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.15253</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Caiming Xiong, and Shafiq Joty</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

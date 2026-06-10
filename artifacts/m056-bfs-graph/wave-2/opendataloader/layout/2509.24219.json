@@ -1,0 +1,3887 @@
+{
+  "layout": {
+    "author": "Tomoyuki Kagaya; Subramanian Lakshmi; Anbang Ye; Thong Jing Yuan; Jayashree Karlekar; Sugiri Pranata; Natsuki Murakami; Akira Kinose; Yang You",
+    "creation date": null,
+    "file name": "2509.24219.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          84.856,
+          681.596,
+          527.149,
+          722.26
+        ],
+        "content": "ViReSkill: Vision-Grounded Replanning with Skill Memory for LLM-Based Planning in Lifelong Robot Learning",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 15.94,
+        "heading level": 2,
+        "id": 24,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          79.359,
+          639.256,
+          528.308,
+          665.776
+        ],
+        "content": "Tomoyuki Kagaya*1 Subramanian Lakshmi*2 Anbang Ye*3 Thong Jing Yuan2 Jayashree Karlekar2 Sugiri Pranata2 Natsuki Murakami1 Akira Kinose1 Yang You3",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.959,
+        "id": 25,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          14.04,
+          221.57,
+          36.36,
+          570.43
+        ],
+        "content": "arXiv:2509.24219v1[cs.RO]29Sep2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 39,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          398.138,
+          298.802,
+          619.055
+        ],
+        "content": "Abstract—Robots trained via Reinforcement Learning (RL) or Imitation Learning (IL) often adapt slowly to new tasks, whereas recent Large Language Models (LLMs) and VisionLanguage Models (VLMs) promise knowledge-rich planning from minimal data. Deploying LLMs/VLMs for motion planning, however, faces two key obstacles: (i) symbolic plans are rarely grounded in scene geometry and object physics, and (ii) model outputs can vary for identical prompts, undermining execution reliability. We propose ViReSkill, a framework that pairs vision-grounded replanning with a skill memory for accumulation and reuse. When a failure occurs, the replanner generates a new action sequence conditioned on the current scene, tailored to the observed state. On success, the executed plan is stored as a reusable skill and replayed in future encounters without additional calls to LLMs/VLMs. This feedback loop enables autonomous continual learning: each attempt immediately expands the skill set and stabilizes subsequent executions. We evaluate ViReSkill on simulators such as LIBERO and RLBench as well as on a physical robot. Across all settings, it consistently outperforms conventional baselines in task success rate, demonstrating robust sim-to-real generalization.",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 26,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          137.526,
+          380.782,
+          215.282,
+          392.786
+        ],
+        "content": "I. INTRODUCTION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 27,
+        "level": "1",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          234.359,
+          298.801,
+          377.87
+        ],
+        "content": "Robots are increasingly expected to master diverse tasks and adapt to dynamic, real-world environments. In such settings, it is essential that agents expand their capabilities throughout their operational lifetime—that is, perform lifelong learning. Traditional motion-generation approaches based on RL and IL typically require numerous demonstrations or extensive trial-and-error, hindering rapid adaptation to new tasks or unseen conditions. Recent advances in LLMs and VLMs suggest that robots can leverage large external knowledge bases to produce plans with minimal task data. Directly applying these models to motion planning, however, raises two critical challenges.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 28,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          126.94,
+          298.801,
+          234.586
+        ],
+        "content": "First, a grounding difficulty arises because LLMs and VLMs, while strong in symbolic reasoning, often fail to respect geometric and physical constraints, making it hard to produce action plans that are anchored in the actual environment and the physical properties of target objects. Second, LLMs’ and VLMs’ outputs can be unstable owing to hallucination and run-to-run variance, which compromises the reliability of motion plans, especially in physical robotic execution.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 29,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          103.208,
+          298.801,
+          127.167
+        ],
+        "content": "We address these issues with a two-pronged framework that couples vision-grounded replanning with skill accu-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 30,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          62.468,
+          76.166,
+          298.804,
+          95.125
+        ],
+        "content": "*Equal contribution 1Panasonic Connect Co., Ltd., Japan, 2Panasonic R&D Center, Singa-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 31,
+        "level": "2",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          58.233,
+          298.798,
+          76.804
+        ],
+        "content": "pore, 3National University of Singapore, Singapore. Correspondence to: Tomoyuki Kagaya <kagaya.tomoyuki@jp.panasonic.com>",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 32,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          523.926,
+          558.001,
+          619.616
+        ],
+        "content": "mulation and reuse. When a task fails, the robot replans from current observations to generate a physically plausible action sequence. When a task succeeds, the executed plan is stored as a reusable skill in a growing library, enabling subsequent executions without invoking LLMs or VLMs. Through this loop, the robot continually enlarges its skill repertoire and improves online plan quality, thereby adapting to an expanding set of tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 33,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          452.457,
+          558.001,
+          524.105
+        ],
+        "content": "We validate the method on LIBERO [1], RLBench [2], and a real robotic platform. Our experiments show improved task success rates over conventional baselines, confirming both the effectiveness of the approach and its compatibility with lifelong learning across diverse environments. This paper makes the following contributions:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 34,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          318.98,
+          557.999,
+          450.935
+        ],
+        "id": 35,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              323.163,
+              415.02,
+              557.999,
+              450.935
+            ],
+            "content": "• A vision-grounded replanning strategy that enables failure recovery by generating scene-anchored, feasible motion plans.",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              367.2,
+              557.999,
+              415.069
+            ],
+            "content": "• A skill-memory execution framework that stores successful plans for zero-inference reuse, expanding the skill set over time and improving stability while reducing LLM/VLM calls.",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              318.98,
+              557.999,
+              367.249
+            ],
+            "content": "• An empirical evaluation on LIBERO, RLBench, and a physical robot, showing substantial gains in task success rates over a baseline (LIBERO: 45% → 78%; RLBench: 47% → 82%; real robot: 30% → 75%).",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 1,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          392.652,
+          299.783,
+          478.554,
+          311.787
+        ],
+        "content": "II. RELATED WORK",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 36,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          120.566,
+          511.575,
+          296.825
+        ],
+        "id": 37,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              313.2,
+              284.93,
+              511.575,
+              296.825
+            ],
+            "content": "A. LLM/VLM-based Planning and Manipulation",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  313.2,
+                  138.351,
+                  558.001,
+                  281.862
+                ],
+                "content": "SayCan [3] grounds language plans in executability by filtering LLM proposals with affordances from RL policies. VoxPoser [4] converts language into 3D affordance/constraint maps to produce scene-consistent, zero-shot manipulation. ReKep [5] encodes relations among task-relevant 3D keypoints as explicit costs and solves a vision-conditioned optimization for feasible trajectories. These approaches enable knowledge-driven planning but stop short of a closed loop that replans from live observations and systematically reuses successful executions. ViReSkill differs in that it closes this loop by combining vision-grounded replanning with direct reuse of successful plans via skill memory.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 23,
+                "page number": 1,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              120.566,
+              479.924,
+              132.461
+            ],
+            "content": "B. Replanning and Grounded Feasibility",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 1,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          117.499
+        ],
+        "content": "Methods targeting the plan–execution gap include Reflexion (self-reflection memory for trial-over-trial improvement) [6], REFLECT (LLM-guided failure analysis and fixes) [7], DoReMi (LLM constraints with VLM violation detection) [8], LLM+A (prompted goal-conditioned affordances) [9],",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 38,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          501.462,
+          558.009,
+          741.921
+        ],
+        "id": 40,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          445.424,
+          557.997,
+          490.894
+        ],
+        "id": 41,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              445.424,
+              557.997,
+              490.894
+            ],
+            "content": "Fig. 1. Overview of ViReSkill framework. Given a language-specified manipulation task, an LLM proposes a step-level plan for control. If the task has been solved before, the stored skill is replayed in the Planning phase without additional LLM calls, and the robot executes it. On failure, a VLM diagnoses the execution by localizing the first failing step in the video and explaining the cause; the LLM then repairs the plan in the Replanning. On success, the verified plan/code are committed to a task-indexed Skill memory. Alternating between vision-grounded replanning on failure and zero-inference replay on success grows the skill library, reduces variance and model calls, and improves success rate over time.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 102,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          374.995,
+          298.801,
+          422.865
+        ],
+        "content": "and Phoenix (self-reflection mapped to diffusion-policy corrections) [10]. They improve diagnosis and online correction, yet typically do not unify vision-grounded replanning with immediate consolidation of successes into reusable skills.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 42,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          356.246,
+          264.041,
+          368.141
+        ],
+        "content": "C. Skill Libraries and Lifelong/Continual Learning",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 43,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          257.284,
+          298.801,
+          352.974
+        ],
+        "content": "RoboCat [11] leverages cross-embodiment experience and self-generated data for general manipulation; RoboMatrix [12] composes meta-skills to solve unseen tasks; LRLL [13] grows a library by distilling successful trajectories. ViReSkill builds on this line by coupling vision-grounded replanning (on failure) with skill memory for zero-inference replay (on success) in one loop, reducing model calls while stabilizing execution and expanding capabilities over time.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 44,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.554,
+          238.426,
+          229.249,
+          250.43
+        ],
+        "content": "III. PROPOSED METHOD",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 45,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          103.654,
+          298.801,
+          235.21
+        ],
+        "content": "We introduce the ViReSkill framework to address the challenge of lifelong skill learning in LLM-based robot manipulation. In this section, we first provide the problem formulation (§III-A), which outlines the setting and objectives of our lifelong learning approach. Based on this formulation, we describe how LLMs are leveraged for task planning (§IIIB), enabling flexible and generalizable behavior composition. We then show how lifelong learning can be achieved through our skill-based execution framework (§III-C) and the visionconditioned replanning method (§III-D) for recovering from failure and exploring novel policies.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 46,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          84.905,
+          186.991,
+          96.8
+        ],
+        "id": 47,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              84.905,
+              186.991,
+              96.8
+            ],
+            "content": "A. Problem Setup and Overview",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 78,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          81.633
+        ],
+        "content": "We study a lifelong learning problem in which a robot repeatedly solves manipulation tasks through trial-and-error",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 48,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          398.906,
+          558.001,
+          422.865
+        ],
+        "content": "and progressively improves its accumulated skills within the ViReSkill framework. The setup is as follows:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 49,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.162,
+          294.918,
+          558.004,
+          397.732
+        ],
+        "id": 50,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              323.163,
+              354.694,
+              558.0,
+              397.732
+            ],
+            "content": "• Tasks: Let Ti be the i-th manipulation task in the training set, described by a free-form language input Di. The full training set is {Ti}Mi=1.",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              306.873,
+              558.004,
+              361.867
+            ],
+            "content": "• Skill Repertoire: For each task Ti, we define its associated skill as πi ≡ P(Ti), which consists of a high-level plan and low-level control code. The full repertoire is denoted by P = {πi}Mi=1.",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.162,
+              294.918,
+              558.002,
+              314.046
+            ],
+            "content": "• Rollout and Success Rate: The executor C (based on",
+            "font": "CMSY7",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          333.222,
+          235.142,
+          558.003,
+          301.732
+        ],
+        "content": "VoxPoser [4]) takes as input a skill πi, task Ti, and stochastic factors ξ (e.g., object pose variation, nondeterministic dynamics), and returns a motion trajectory τ. Each rollout is evaluated by a binary success function r(τ,Ti) ∈ {0,1}.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 51,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          216.415,
+          556.918,
+          240.375
+        ],
+        "content": "The success rate (SR) of skill πi on task Ti over N independent rollouts is:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          439.279,
+          202.828,
+          445.59,
+          209.801
+        ],
+        "content": "N",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 56,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          423.356,
+          182.793,
+          431.361,
+          206.329
+        ],
+        "content": "1 N",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 54,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          390.828,
+          158.566,
+          558.002,
+          201.323
+        ],
+        "content": "r(τ(ξn),Ti), (1) τ(ξ) = C(πi,Ti,ξ), (2)",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          366.093,
+          182.554,
+          419.395,
+          199.839
+        ],
+        "content": "SR(πi,Ti) =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          435.302,
+          178.741,
+          450.314,
+          185.714
+        ],
+        "content": "n=1",
+        "font": "CMR7",
+        "font size": 6.974,
+        "id": 57,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          146.213,
+          550.988,
+          158.655
+        ],
+        "content": "where ξn denotes the stochastic input for the n-th rollout.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          110.913,
+          558.001,
+          146.828
+        ],
+        "content": "Our objective is to update the skill repertoire over iterations so as to maximize the average success rate across all training tasks:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 60,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          447.346,
+          97.326,
+          454.943,
+          104.299
+        ],
+        "content": "M",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 65,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          430.716,
+          77.291,
+          440.381,
+          100.827
+        ],
+        "content": "1 M",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 63,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          365.275,
+          77.052,
+          425.089,
+          96.183
+        ],
+        "content": "P∗ = arg max",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 61,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          460.374,
+          77.052,
+          558.0,
+          95.821
+        ],
+        "content": "SR(πi,Ti). (3)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 67,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          412.708,
+          73.558,
+          418.351,
+          85.644
+        ],
+        "content": "P",
+        "font": "CMSY7",
+        "font size": 6.974,
+        "id": 62,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          445.065,
+          73.118,
+          457.971,
+          80.091
+        ],
+        "content": "i=1",
+        "font": "CMR7",
+        "font size": 6.974,
+        "id": 66,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          57.674,
+          558.001,
+          69.678
+        ],
+        "content": "Algorithm 1 outlines the training process, while Algorithm",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          58.981,
+          714.521,
+          273.894,
+          738.839
+        ],
+        "content": "Algorithm 1: Training Stage of The ViReSkill Framework",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 70,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          63.963,
+          694.454,
+          265.936,
+          713.582
+        ],
+        "content": "Data: Training tasks {T }Mi=1, corresponding task",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 72,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          91.24,
+          682.499,
+          257.138,
+          701.268
+        ],
+        "content": "description {D}Mi=1, LLM-based agent C",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 73,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          63.963,
+          670.543,
+          265.277,
+          689.671
+        ],
+        "content": "Result: Skill memory {Pk}10k=1 at each iteration.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          52.007,
+          270.235,
+          283.861,
+          676.998
+        ],
+        "id": 75,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              55.494,
+              658.588,
+              175.823,
+              676.998
+            ],
+            "content": "1 P1 = {P1(Ti) ← null}Mi=1",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.494,
+              646.633,
+              283.855,
+              664.277
+            ],
+            "content": "2 c ← null // Initialize control code",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.494,
+              629.926,
+              283.855,
+              653.806
+            ],
+            "content": "3 for j ← 1 to 2 do // For each training round",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.893,
+              610.768,
+              283.853,
+              629.896
+            ],
+            "content": "4 for i ← 1 to M do // For each task",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              56.291,
+              598.812,
+              190.481,
+              616.097
+            ],
+            "content": "5 iter ← 1 + 5 × (j − 1)",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              56.291,
+              581.776,
+              270.746,
+              605.626
+            ],
+            "content": "6 Initialize control code from skill memory if skill exists",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              56.291,
+              562.947,
+              195.225,
+              580.232
+            ],
+            "content": "7 Piter(Ti) ← Piter−1(Ti)",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              56.291,
+              550.992,
+              198.178,
+              570.12
+            ],
+            "content": "8 if Piter(Ti) ̸= null then",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              56.69,
+              539.037,
+              283.853,
+              556.681
+            ],
+            "content": "9 c ← Piter(Ti) // reuse skill",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.804,
+              533.248,
+              110.149,
+              546.209
+            ],
+            "content": "10 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.804,
+              521.293,
+              110.139,
+              534.254
+            ],
+            "content": "11 else",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              498.419,
+              283.857,
+              520.815
+            ],
+            "content": "12 c ← C.planning(Di) // use control code generated by agent",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.804,
+              485.428,
+              110.149,
+              498.389
+            ],
+            "content": "13 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.804,
+              462.553,
+              283.853,
+              486.434
+            ],
+            "content": "14 for k ← 1 to 5 do // For each training iteration",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              443.395,
+              194.016,
+              460.68
+            ],
+            "content": "15 τ ← C.verify(c,Ti)",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              414.733,
+              283.855,
+              449.084
+            ],
+            "content": "16 r,O ← r(τ,Ti) // collect rollout success status and observations",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              395.575,
+              283.857,
+              414.703
+            ],
+            "content": "17 if r ̸= 1 then // replan if failed",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.601,
+              378.867,
+              273.775,
+              400.904
+            ],
+            "content": "18 c ← C.replanning(c,Di,O,Piter) // replanning with skill",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              365.876,
+              125.492,
+              378.837
+            ],
+            "content": "19 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              353.921,
+              125.482,
+              366.882
+            ],
+            "content": "20 else",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.601,
+              331.047,
+              283.861,
+              353.443
+            ],
+            "content": "21 Piter ← c // Update skill memory",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              318.055,
+              125.492,
+              331.016
+            ],
+            "content": "22 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              53.203,
+              299.933,
+              175.53,
+              317.218
+            ],
+            "content": "23 iter ← iter + 1",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.804,
+              294.145,
+              110.149,
+              307.106
+            ],
+            "content": "24 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.406,
+              282.19,
+              94.807,
+              295.151
+            ],
+            "content": "25 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              52.007,
+              270.235,
+              79.464,
+              283.196
+            ],
+            "content": "26 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 26,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          229.469,
+          194.443,
+          241.473
+        ],
+        "content": "2 details the evaluation procedure.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 77,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          195.88,
+          298.801,
+          222.951
+        ],
+        "id": 78,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              195.88,
+              298.801,
+              222.951
+            ],
+            "content": "B. Planning by LLMs We use LLMs to generate Python code that is executed by",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 159,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "previous list id": 47,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          112.193,
+          298.805,
+          195.928
+        ],
+        "content": "an interpreter to decompose the language instruction Di of task Ti into subtasks, invoke perception APIs, and generate robot trajectories τ. Let dj denote the j-th subtask instruction derived from Di, such that the sequence of subtask instructions is (d1,d2,...,dn). Our planning pipeline follows the design from VoxPoser [4], and consists of three steps involving LLM-based code generation:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 79,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          76.354,
+          298.801,
+          112.268
+        ],
+        "content": "Step 1: The Planner is responsible for decomposing the natural language instruction Di (e.g., “press the light switch”) into a sequence of structured subtask instructions:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 80,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          109.474,
+          50.909,
+          298.798,
+          69.678
+        ],
+        "content": "Planner(Di) = (d1,d2,...,dn) (4)",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 81,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          318.181,
+          714.521,
+          533.094,
+          738.839
+        ],
+        "content": "Algorithm 2: Evaluation Stage of The ViReSkill Framework",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 83,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          694.454,
+          504.125,
+          713.582
+        ],
+        "content": "Data: Training tasks {T }Mi=1, Skill memory",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 85,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          676.71,
+          542.474,
+          701.268
+        ],
+        "content": "{Pk}10k=1 at each iteration, LLM-based agent C Result: Success rate for each task at each iteration",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          357.085,
+          658.588,
+          465.872,
+          678.17
+        ],
+        "content": "{success rateij}ii==1M,j,j=1=10",
+        "font": "CMMI10",
+        "font size": 6.974,
+        "id": 87,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          311.207,
+          437.061,
+          543.056,
+          665.215
+        ],
+        "id": 89,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              314.694,
+              646.087,
+              543.053,
+              665.215
+            ],
+            "content": "1 for i ← 1 to M do // For each task",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.093,
+              617.424,
+              543.055,
+              653.26
+            ],
+            "content": "2 for j ← 1 to 10 do // For each skill memory (2 rounds 5 iterations per round) to be evaluated",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.491,
+              598.266,
+              435.313,
+              615.551
+            ],
+            "content": "3 success count ← 0",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.491,
+              581.559,
+              543.053,
+              605.439
+            ],
+            "content": "4 for k ← 1 to 5 do // For each evaluation trial",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.89,
+              562.401,
+              462.889,
+              581.529
+            ],
+            "content": "5 if Pj(Ti) ̸= null then",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              316.288,
+              550.445,
+              431.96,
+              567.73
+            ],
+            "content": "6 c ← Pj(Ti)",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              316.288,
+              538.49,
+              468.558,
+              555.775
+            ],
+            "content": "7 τ ← C.verify(c,Ti)",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              316.288,
+              509.828,
+              543.056,
+              544.179
+            ],
+            "content": "8 r,O ← r(τ,Ti) // collect rollout success status and observations",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              316.288,
+              490.67,
+              538.663,
+              507.955
+            ],
+            "content": "9 success count ← success count + r",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              312.403,
+              484.881,
+              384.692,
+              497.842
+            ],
+            "content": "10 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              312.004,
+              472.926,
+              369.349,
+              485.887
+            ],
+            "content": "11 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              312.004,
+              454.804,
+              502.142,
+              472.089
+            ],
+            "content": "12 success rateij ← success count/5",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.606,
+              449.016,
+              354.007,
+              461.977
+            ],
+            "content": "13 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              311.207,
+              437.061,
+              338.664,
+              450.022
+            ],
+            "content": "14 end",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 14,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          379.276,
+          558.004,
+          410.0
+        ],
+        "content": "Each dj corresponds to an interpretable subtask (e.g., “grasp the button”, “move to the center of the button”) for task Ti.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 91,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          296.002,
+          558.001,
+          386.276
+        ],
+        "id": 92,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              323.163,
+              374.272,
+              558.001,
+              386.276
+            ],
+            "content": "Step 2: The Composer takes as input a subtask instruc-",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  313.2,
+                  338.406,
+                  558.004,
+                  374.321
+                ],
+                "content": "tion dj and constructs a set of Language Model Programs (LMPs), each responsible for a distinct function such as object detection, affordance prediction, or motion planning:",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 4,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  313.2,
+                  319.288,
+                  560.282,
+                  329.997
+                ],
+                "content": "Composer(dj) = (LMP1(dj),LMP2(dj),...,LMPk(dj))",
+                "font": "CMMI10",
+                "font size": 9.963,
+                "id": 5,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  546.384,
+                  307.771,
+                  558.0,
+                  319.775
+                ],
+                "content": "(5)",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 6,
+                "level": "6",
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              296.002,
+              558.001,
+              308.006
+            ],
+            "content": "Step 3: The Low-Level LMPs returned by the Composer",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          271.653,
+          557.996,
+          296.051
+        ],
+        "content": "are executed via the executor C to produce a sub-trajectory τj:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 93,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          375.455,
+          253.371,
+          558.005,
+          272.14
+        ],
+        "content": "τj = C(Composer(dj),Ti,ξ) (6)",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 94,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          313.2,
+          217.293,
+          558.003,
+          253.646
+        ],
+        "content": "We define the overall skill πi as the sequence of all LMP modules returned by the Composer for each subtask instruction dj:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 95,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          198.614,
+          558.954,
+          209.323
+        ],
+        "content": "πi = (Composer(d1),Composer(d2),...,Composer(dn))",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 96,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          323.163,
+          168.562,
+          558.0,
+          199.101
+        ],
+        "content": "(7) The full robot trajectory τ for task Ti is formed by",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 97,
+        "level": "6",
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          163.372,
+          449.658,
+          175.376
+        ],
+        "content": "concatenating all sub-trajectories:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 98,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          120.511,
+          557.996,
+          156.696
+        ],
+        "content": "τ = (τ1,τ2,...,τn) (8) C. Skill Memory for Lifelong Robot Learning",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 99,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          117.499
+        ],
+        "content": "We implemented the ViReSkill to enable lifelong skill learning in LLM-based robotic manipulation. The system maintains a task-specific skill memory comprising both highlevel and low-level control code. This memory is updated iteratively through replanning upon failure.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 100,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          468.199,
+          558.02,
+          741.92
+        ],
+        "id": 101,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          421.127,
+          557.997,
+          457.631
+        ],
+        "id": 102,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              421.127,
+              557.997,
+              457.631
+            ],
+            "content": "Fig. 2. Overview of the proposed hierarchical video-based reflection mechanism. The textual plan and execution video are segmented into logical chunks of actions (via “open gripper” as a heuristic). Each chunk is summarized into a high-level natural language description, aligned with the corresponding video segment, and evaluated by a VLM to localize failures. The VLM then provides explicit failure reasons, which are used together with the original plan to generate corrections with the LLM.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "previous list id": 41,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          267.012,
+          298.801,
+          398.568
+        ],
+        "content": "At the beginning of training, the skill memory is empty, meaning the robot has no prior successful experiences to reference. To address this cold start condition, the agent relies solely on LLM-based planning to generate an initial highlevel and low-level control code from the task description. Once a trial for task Ti succeeds, the corresponding control code is used to update the task-specific memory P(Ti). Due to stochastic variations in rollouts, a skill that has succeeded once may fail in subsequent trials of the same task, resulting in a non-saturated success rate and leaving room for iterative refinement.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 103,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          204.186,
+          298.801,
+          264.011
+        ],
+        "content": "A key challenge in policy optimization for robotic manipulation—whether in trainable or agent-based approaches—is the exploration-exploitation dilemma. To balance exploitation and exploration, we design a training stage that consists of 10 iterations, organized into 2 rounds of 5 iterations each.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 104,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          201.185
+        ],
+        "content": "At the start of each round, if a skill exists in memory for the given task, the LLM-based agent initializes its control code with the stored version to maximize exploitation. Otherwise, the agent generates a new control code based on the task description. During the five iterations of a round, the agent collects success indicators and visual evidence (video recording of the scene collected by the front camera) from the environment. If an iteration succeeds, the control code remains unchanged. Upon failure, the agent explores new high-level plans through engaging in vision-based replanning—a reflection mechanism that revises the failed highlevel plan given visual evidence (detailed in Section III-D).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 105,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          326.788,
+          558.001,
+          398.568
+        ],
+        "content": "Since each round has five iterations, the agent can perform up to four replanning attempts per round. We observe that additional replanning beyond four attempts yields negligible improvement; thus, it is more effective to begin a new round, reinitializing the control code from the latest successful version stored in memory.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 106,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          266.427,
+          558.001,
+          326.252
+        ],
+        "content": "For evaluating lifelong learning performance, we saved the skill memory after each iteration and used the saved memory to compute the average success rate using (1). Specifically, for each skill iteration, we compute the mean success rate across five rollouts (N = 5).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 107,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          242.882,
+          524.248,
+          254.777
+        ],
+        "content": "D. Vision-Grounded Replanning with Skill Transfer",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 108,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          106.08,
+          558.001,
+          237.636
+        ],
+        "content": "While LLMs have demonstrated strong planning capabilities, their outputs often overlook physical constraints and lack grounding in real-world dynamics. To address these limitations, we adopt a self-learning scheme that combines current observations with past successful experiences, leveraging methods that support retrieval-augmented planning [14] and vision-based replanning [7]. For replanning, we retrieve a mixed set of examples based on (9): half selected by task similarity and half selected by plan-code line-level similarity between the failed plan and the stored plans in the skill memory.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 109,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.236,
+          557.998,
+          105.543
+        ],
+        "content": "Specifically, let D denote the task description, and {d1,d2,...,dn} be the sequence of subtask instructions generated from D by the planner, as defined in Formula 4. Each di corresponds to a high-level code line in the failed",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 110,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          607.612,
+          298.805,
+          739.168
+        ],
+        "content": "plan. For task similarity-based retrieval, we embed the entire task description D and select top examples based on cosine similarity with stored tasks D′. For code-level similarity, each subtask di is embedded and matched to the most similar past subtask d′j, and examples are ranked by the average of these maximum similarities. To ensure relevance, we further filter the candidates retrieved by task similarity and discard candidates with task similarity scores below a threshold (e.g., 0.5). The remaining retrieved examples are then injected into the code generation or re-planning prompt to facilitate skill transfer and promote effective exploitation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 111,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          153.288,
+          573.035,
+          268.783,
+          592.167
+        ],
+        "content": "cos emb(D), emb(D′) ∪",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 116,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          124.634,
+          565.641,
+          151.014,
+          591.804
+        ],
+        "content": "Top-k2 (D′)∈P",
+        "font": "CMSY7",
+        "font size": 6.974,
+        "id": 114,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          62.124,
+          573.035,
+          120.065,
+          590.32
+        ],
+        "content": "R(D) = filter",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 112,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          101.547,
+          574.701,
+          118.083,
+          581.674
+        ],
+        "content": ">0.5",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 113,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          287.184,
+          558.906,
+          298.8,
+          570.91
+        ],
+        "content": "(9)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "level": "6",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          144.086,
+          560.802,
+          149.011,
+          567.775
+        ],
+        "content": "n",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 121,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          130.518,
+          540.767,
+          136.498,
+          564.304
+        ],
+        "content": "1 n",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 119,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          178.374,
+          545.886,
+          279.06,
+          559.66
+        ],
+        "content": "cos emb(di),emb(d′j) ,",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          99.561,
+          533.134,
+          125.941,
+          559.297
+        ],
+        "content": "Top-k2 (D′)∈P",
+        "font": "CMSY7",
+        "font size": 6.974,
+        "id": 117,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          155.404,
+          547.601,
+          173.945,
+          557.564
+        ],
+        "content": "max",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 123,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          162.825,
+          542.074,
+          166.122,
+          549.047
+        ],
+        "content": "j",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 124,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          140.096,
+          536.595,
+          153.002,
+          543.568
+        ],
+        "content": "i=1",
+        "font": "CMR7",
+        "font size": 6.974,
+        "id": 122,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          436.655,
+          298.801,
+          532.346
+        ],
+        "content": "Reflection with visual input presents several challenges, including the need to reason over long-horizon tasks, the visual language model’s limited ability to understand complex plan code, and the constraint on the number of visual frames that can be provided as evidence. To address those challenges, we introduce a hierarchical video-based reflection mechanism that localizes and analyzes failures through chunked video-based reflection as illustrated in Fig. 2.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          233.051,
+          298.801,
+          436.338
+        ],
+        "content": "First, we segment both the high-level plan and the execution video into logical chunks using a simple heuristic: splitting at each “open gripper” action. Each chunk is then summarized separately and concatenated to form a concise natural language description of the plan, which helps reduce confusion for the VLM. The VLM compares the summarized plan with the raw video to identify the first failure chunk. Once a failed chunk is identified, the VLM analyzes both the chunked plan code and the corresponding video chunk to provide a grounded explanation of the failure. To handle plan-level logical errors [7]—cases where every individual step is executed correctly, but the overall task fails due to flawed logic (e.g., grasping a new object without first releasing the one already held)—the system can explicitly indicate that all actions were executed successfully, which triggers plan-level reflection on the high-level plan with a LLM for checking flawed logic.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 128,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          137.044,
+          298.801,
+          232.734
+        ],
+        "content": "Finally, the LLM generates a revised plan based on both the detected failure reason and the original plan code. Separate replanning prompts are used depending on whether the error is due to an execution failure or a logical error. Inspired by the DROC system [15], we ground the replanning process on properties of related objects, for instance, determining a proper offset and obstacle avoidance strategy based on the scale of related objects.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 129,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          98.069,
+          251.967,
+          127.255
+        ],
+        "content": "IV. EXPERIMENTS A. Setup: Benchmarks, Real Robot, and Metrics",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 130,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          93.588
+        ],
+        "content": "To evaluate the effectiveness of the proposed ViReSkill framework, we conduct extensive experiments across both simulation and real-world settings. We benchmark ViReSkill",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          619.567,
+          558.001,
+          739.167
+        ],
+        "content": "along with several baselines on two robot manipulation benchmarks that operate in simulation environments: LIBERO and RLBench. We also validate the framework under a real-world setting using a physical UR5 robotic platform, thereby demonstrating the transferability of learned skills from simulation to practice. We select simulation benchmarks based on three criteria: appropriate task difficulty, widespread adoption in robot manipulation research, and their representativeness of real-world manipulation scenarios.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 132,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          583.816,
+          558.001,
+          619.731
+        ],
+        "content": "For baseline setups, we compare ViReSkill with the other four baseline methods, including VoxPoser [4], and three replanning methods: Retry, Reflexion [6], and REFLECT [7].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 133,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          180.242,
+          515.959,
+          583.865
+        ],
+        "id": 134,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              313.2,
+              571.861,
+              515.959,
+              583.865
+            ],
+            "content": "A summary of these baselines is provided below:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  323.163,
+                  378.957,
+                  557.999,
+                  570.647
+                ],
+                "id": 1,
+                "level": "3",
+                "list items": [
+                  {
+                    "bounding box": [
+                      323.163,
+                      534.374,
+                      557.999,
+                      570.647
+                    ],
+                    "content": "• VoxPoser: The base code generation pipeline without replanning. A single control plan is generated per task and executed to compute success rate.",
+                    "font": "CMSY7",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      323.163,
+                      498.509,
+                      557.999,
+                      534.782
+                    ],
+                    "content": "• Retry: A naive baseline that regenerates a new control plan from scratch using the LLM after each failure, without referencing prior attempts or stored context.",
+                    "font": "CMSY7",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      323.163,
+                      426.778,
+                      557.999,
+                      498.916
+                    ],
+                    "content": "• Reflexion: A vision-based reflection method that analyzes the final frame of a failed attempt together with the failed plan to infer the failure reason and propose a corrective plan. Unlike our ViReSkill framework, Reflexion does not incorporate hierarchical reflection or in-context learning from learned skill memory.",
+                    "font": "CMSY7",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      323.163,
+                      378.957,
+                      557.999,
+                      427.185
+                    ],
+                    "content": "• REFLECT: A LLM-based replanning method that hierarchically summarizes multisensory observation, analyzes failure reasons hierarchically, and generates a new plan.",
+                    "font": "CMSY7",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 5,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 4,
+                "numbering style": "unordered",
+                "page number": 5,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  313.2,
+                  329.515,
+                  558.001,
+                  377.384
+                ],
+                "content": "We use all four baselines for the LIBERO experiments, while VoxPoser, Retry, and Reflexion are used for the RLBench experiments. For the real-robot experiments, we compare ViReSkill against the VoxPoser baseline.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 2,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  313.2,
+                  198.123,
+                  558.001,
+                  329.678
+                ],
+                "content": "We use the success rate, the percentage of successful trial during evaluation, given by (1), as the metric to measure the life-long learning performance of all baselines across different benchmarks. For the VoxPoser experiments, since it does not involve replanning, we calculate the success rate over 5 trials for each task. For ViReSkill, Retry, Reflexion, and REFLECT, we calculate the success rate for each training iterations using the saved memory snapshots. For each task, if a solution exists in the memory, we perform 5 trials using the memory to calculate the success rate, otherwise, the success rate of the task is zero.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 3,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              180.242,
+              441.648,
+              192.137
+            ],
+            "content": "B. LIBERO Benchmark Results",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          81.469,
+          558.001,
+          177.159
+        ],
+        "content": "LIBERO [1] is a robot manipulation benchmark designed for evaluating the knowledge transfer in lifelong robot learning. It groups evaluation tasks into 5 subsets: LIBEROObject, LIBERO-Spatial, LIBERO-Goal, LIBERO-10, and LIBERO-90 with each subset containing tasks of comparable difficulty. For our experiments, we evaluate on the LIBEROObject, LIBERO-Spatial, LIBERO-Goal, and LIBERO-10 subsets, each comprising 10 distinct tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 135,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          81.633
+        ],
+        "content": "For ViReSkill, Reflexion, and REFLECT, we use visual observations captured from the front camera of the LIBERO",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 136,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          73.439,
+          710.443,
+          279.36,
+          743.958
+        ],
+        "content": "TABLE I LAST ITERATION PERFORMANCE COMPARISON FOR LIBERO BENCHMARK.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.376,
+        "id": 137,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          57.985,
+          690.736,
+          302.23,
+          701.541
+        ],
+        "content": "Benchmark VoxPoser Retry Reflexion REFLECT ViReSkill",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 139,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          74.412,
+          669.875,
+          292.412,
+          691.503
+        ],
+        "content": "Object 0.42 0.46 0.94 0.68 0.94 Spatial 0.52 0.52 0.72 0.78 0.80",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 141,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          69.749,
+          639.588,
+          292.412,
+          671.578
+        ],
+        "content": "Goal 0.54 0.48 0.70 0.70 0.70 10 0.32 0.36 0.46 0.48 0.66 Average 0.45 0.46 0.71 0.66 0.78",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 142,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          99.063,
+          607.563,
+          253.734,
+          629.122
+        ],
+        "content": "TABLE II PERFORMANCE COMPARISON FOR RLBENCH.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.376,
+        "id": 145,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          87.577,
+          576.957,
+          285.447,
+          598.661
+        ],
+        "content": "Task VoxPoser Retry Reflexion ViReSkill TakeLidOff 0.00 0.00 1.00 1.00",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 147,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          64.211,
+          557.031,
+          275.63,
+          578.66
+        ],
+        "content": "CloseDrawer 0.40 1.00 0.60 1.00 BasketballInHoop 0.20 0.20 0.40 0.60",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 149,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          67.089,
+          537.106,
+          275.63,
+          558.735
+        ],
+        "content": "BeatTheBuzz 0.60 0.60 0.60 0.60 PutRubbishInBin 0.60 0.80 0.80 0.80",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 150,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.963,
+          517.181,
+          275.63,
+          538.81
+        ],
+        "content": "LampOff 1.00 0.80 0.80 0.60 OpenWineBottle 0.60 1.00 0.80 0.80",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 151,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          64.937,
+          497.256,
+          275.63,
+          518.884
+        ],
+        "content": "PushButton 0.00 0.00 1.00 1.00 TakeUmbrellaOut 0.80 0.80 1.00 1.00",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 152,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          99.798,
+          486.894,
+          275.629,
+          498.56
+        ],
+        "content": "Average 0.47 0.58 0.78 0.82",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 154,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          391.49,
+          298.801,
+          463.27
+        ],
+        "content": "simulation environment at a resolution of 256 × 256 pixels. In ViReSkill, input videos are uniformly downsampled to 30 frames. For REFLECT, RGB-D videos of the same resolution are collected to reconstruct dynamic 3D scenes, and additional “grasped object” states—computed using heuristics—are provided to the REFLECT system.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 156,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          343.586,
+          298.801,
+          391.456
+        ],
+        "content": "Across all baselines, we employ GPT-4o-mini as the VLM for analyzing video or image-based failure cases, and GPT4.1-mini as the language model (LLM) for code generation and replanning.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 157,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          116.355,
+          298.801,
+          343.552
+        ],
+        "content": "Table I shows the mean success rate of all baselines at the last training iteration, averaged over all 10 tasks on each LIBERO subset. We visualize the change of success rate over iterations in Fig. 3. Across all benchmarks, our ViReSkill framework consistently outperforms the baseline methods. Moreover, ViReSkill demonstrates stable and substantial performance gains over successive iterations, underscoring the effectiveness of the proposed visually grounded reflection mechanism. Notably, while the video-grounded replanning approach achieves performance comparable to the imagegrounded self-reflection method on relatively simple tasks (LIBERO-Object, LIBERO-Spatial, LIBERO-Goal), it significantly surpasses other methods on the more challenging LIBERO-10 subset. This subset involves composite tasks (e.g., placing both the mokapot and the cup on the stove), which demand reasoning over temporal dependencies. These results highlight the importance of leveraging temporal observations for effective replanning in robotic manipulation tasks, particularly in complex, multi-stage scenarios.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 158,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          97.078,
+          185.466,
+          108.973
+        ],
+        "id": 159,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              97.078,
+              185.466,
+              108.973
+            ],
+            "content": "C. RLBench Benchmark Results",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 177,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "previous list id": 78,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          93.588
+        ],
+        "content": "Beyond the LIBERO benchmark, we further evaluate ViReSkill on RLBench, which consists of 100 hand-designed robotic manipulation tasks in a simulated tabletop environ-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 160,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          661.541,
+          558.0,
+          741.917
+        ],
+        "id": 161,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          313.2,
+          560.356,
+          558.0,
+          661.54
+        ],
+        "id": 162,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          313.2,
+          470.595,
+          558.0,
+          560.355
+        ],
+        "id": 163,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          313.2,
+          371.858,
+          558.0,
+          470.594
+        ],
+        "id": 164,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          313.2,
+          324.787,
+          558.002,
+          361.29
+        ],
+        "content": "Fig. 3. Success rate of methods on LIBERO benchmark across iterations. Top to bottom: LIBERO-Object, LIBERO-Spatial, LIBERO-Goal, LIBERO10. The horizontal axis is iterations, the vertical axis is success rate (ranging from 0 to 1).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 165,
+        "linked content id": 164,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          313.2,
+          205.954,
+          558.001,
+          289.689
+        ],
+        "content": "ment. For our experiments, we select 9 tasks that cover a range of difficulties and task types. Visual observations are obtained from the front camera at a resolution of 128 × 128 pixels, and the experimental setup closely follows the one used in the LIBERO experiments. Although RLBench offers multiple instructions for each task, this evaluation used a single, fixed instruction.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 166,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          201.185
+        ],
+        "content": "Table II shows the comparison between the ViReSkill framework and baseline methods. ViReSkill achieved the highest success rate on RLBench (82%), highlighting the effectiveness of combining replanning with skill memory. Compared to static planning in VoxPoser, ViReSkill improves performance through memory-based execution. Unlike Retry’s blind regeneration, it performs targeted replanning based on failure analysis. Although Reflexion also benefits from failure-aware replanning, ViReSkill slightly outperforms it by additionally reusing verified skills. These trends resemble those on simpler LIBERO subsets, suggesting structural similarities.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 167,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          115.7,
+          722.399,
+          496.307,
+          743.958
+        ],
+        "content": "TABLE III A COMPARISON BETWEEN VOXPOSER AND VIRESKILL IN PLANNING THE PLACEMENT OF TWO CUPS ON A TRAY",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.376,
+        "id": 168,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          71.638,
+          697.107,
+          349.116,
+          710.068
+        ],
+        "content": "VoxPoser ViReSkill",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 3,
+        "id": 170,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          71.638,
+          617.93,
+          272.483,
+          689.0
+        ],
+        "content": "composer(\"grasp the blue cup\") composer(\"back to default pose\") composer(\"move to 5cm on top of the black tray\") composer(\"open gripper\") composer(\"back to default pose\") composer(\"grasp the white cup\") composer(\"back to default pose\") composer(\"move to 5cm on top of the black tray\") composer(\"open gripper\")",
+        "font": "NimbusMonL-Regu",
+        "font size": 6.974,
+        "id": 172,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          308.519,
+          601.99,
+          534.47,
+          689.0
+        ],
+        "content": "composer(\"back to default pose\") composer(\"grasp the blue cup\") composer(\"move to 5cm on top of the front-left part of the black tray\") composer(\"open gripper\") composer(\"back to default pose\") composer(\"grasp the white cup\") composer(\"move to 5cm on top of the back-right part of the black tray\") composer(\"open gripper\") composer(\"back to default pose\")",
+        "font": "NimbusMonL-Regu",
+        "font size": 6.974,
+        "id": 173,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          455.157,
+          298.8,
+          579.634
+        ],
+        "id": 175,
+        "page number": 7,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          433.219,
+          298.802,
+          451.789
+        ],
+        "content": "Fig. 4. Demonstration of UR5 executing diverse real-world tasks using ViReSkill",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 176,
+        "linked content id": 175,
+        "page number": 7,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          54.0,
+          398.341,
+          190.866,
+          410.236
+        ],
+        "id": 177,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              398.341,
+              190.866,
+              410.236
+            ],
+            "content": "D. Real-robot Evaluation Results",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "previous list id": 159,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          392.468
+        ],
+        "content": "We conducted our experiments on a UR5 robot equipped with a Robotiq 2F gripper and an Intel RealSense [16] RGB-D camera. LangSAM [17] was employed for object segmentation, while GPT-4.1-mini handled vision-language tasks such as video understanding and plan generation. Sentence Transformer [18] model was used to retrieve relevant past experiences from the memory constructed from Libero experiments. We evaluated four representative tasks: (i) placing an object in a basket, (ii) placing a bowl on a plate, (iii) placing two cups on a tray, and (iv) placing a pen in a holder. Examples of these tasks executed on the UR5 robot are shown in Fig. 4. Each task was executed five times using both VoxPoser and our proposed method for comparison. Table IV shows our video-based replanning method significantly outperforms VoxPoser, achieving a 75% vs. 30% success rate. Our method detects failed steps—such as missed grasps or poor object handling—and dynamically adjusts the plan. For instance, in the task of picking and placing an object into a basket, failures sometimes arise during the grasping or placing stages. Our system detects when the grasp is unsuccessful and adjusts the plan to improve the grip, resulting in a more reliable manipulation. Similarly, when dealing with larger objects that cannot be effectively grasped at their center, the algorithm adapts by replanning to grasp the object by its edges as shown in Fig. 5, ensuring the task can still be completed successfully. In placement tasks like putting cups on a tray, a straightforward plan might place all cups centrally. However, our approach",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 178,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          321.437,
+          548.159,
+          549.768,
+          581.673
+        ],
+        "content": "TABLE IV TASK SUCCESS RATES ON THE UR5 ROBOT COMPARING VOXPOSER AND OUR VIRESKILL METHOD (SUCCESSES OUT OF 5 TRIALS).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.376,
+        "id": 179,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          347.659,
+          476.527,
+          520.406,
+          537.942
+        ],
+        "content": "Tasks VoxPoser ViReSkill Place juice in basket 2/5 4/5 Place bowl on plate 2/5 4/5 Place both cups on tray 0/5 3/5 Place pen in holder 3/5 4/5 Overall Success Rate 30% 75%",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 181,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          308.661,
+          558.001,
+          452.172
+        ],
+        "content": "recognizes when such placement is unstable or incorrect, and modifies the plan to distribute the cups across different positions on the tray. See Table III for the plans generated by both methods for this task. Likewise, when placing a pen in a holder, where orientation is critical but not explicitly indicated in the initial plan, our method adjusts the orientation to correctly position the pen in the holder. Through this experience-driven, feedback-informed replanning, our algorithm achieves a greater level of robustness and adaptability during real-world task execution, complementing the strong baseline plans generated by VoxPoser with enhanced flexibility and precision.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 185,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          288.771,
+          386.704,
+          300.666
+        ],
+        "content": "E. Ablation Study",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 186,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          141.518,
+          558.001,
+          285.029
+        ],
+        "content": "An important element of the ViReSkill framework is its ability to reuse skills from previously solved tasks to support new or related ones—enabling effective lifelong learning. To evaluate this, we compare the full ViReSkill against a variant that disables skill transfer during replanning. The results (Table V) show that while both methods perform similarly on simpler LIBERO subsets, ViReSkill significantly outperforms the ViReSkill without skill transfer on LIBERO-10 (0.66 vs. 0.50). These results support that skill transfer is a key driver of lifelong learning in ViReSkill, enabling generalization and faster adaptation to complex, multi-stage tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 187,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          359.81,
+          121.519,
+          511.401,
+          133.523
+        ],
+        "content": "V. CONCLUSION AND LIMITATIONS",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 188,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          117.499
+        ],
+        "content": "In this work, we proposed ViReSkill, a lifelong learning framework for robotic manipulation that combines visionbased replanning with skill accumulation and reuse. Our approach enables robust and efficient robot control by identifying and correcting failure cases using visual feedback,",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 189,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          601.544,
+          558.001,
+          741.918
+        ],
+        "id": 190,
+        "page number": 8,
+        "pdfua_tag": "Figure",
+        "source": "2509.24219_images/imageFile8.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          146.882,
+          588.572,
+          465.12,
+          598.176
+        ],
+        "content": "Fig. 5. Demonstration of Task: Pick up bowl and place it on the plate using ViReSkill on UR5",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 191,
+        "linked content id": 190,
+        "page number": 8,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          61.134,
+          537.288,
+          291.668,
+          570.803
+        ],
+        "content": "TABLE V PERFORMANCE COMPARISON WITH AND WITHOUT SKILL TRANSFER FOR LIBERO.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.376,
+        "id": 192,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          138.173,
+          517.581,
+          282.514,
+          528.386
+        ],
+        "content": "ViReSkill w/o skill transfer ViReSkill",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 194,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          70.29,
+          466.433,
+          272.689,
+          518.348
+        ],
+        "content": "LIBERO-Object 0.94 0.94 LIBERO-Spatial 0.78 0.80 LIBERO-Goal 0.70 0.70 LIBERO-10 0.50 0.66 Average 0.73 0.78",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 196,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          371.686,
+          298.801,
+          443.466
+        ],
+        "content": "while storing successful plans as reusable skills to minimize reliance on model inference. Experiments on LIBERO, RLBench, and a physical UR5 robot demonstrated that ViReSkill outperforms existing baselines in both success rate and adaptability, confirming its practical potential in realworld environments.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 199,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          216.31,
+          298.801,
+          371.776
+        ],
+        "content": "Although ViReSkill supports replanning, its current execution remains open-loop with respect to perception: once a trajectory is generated, it is followed without real-time sensory feedback. While the system can replan between executions, it does not respond to observations during execution. We plan to extend the framework to closed-loop control by introducing Visual-Language Actions (VLA) as skills that generate actions dynamically based on image inputs at each timestep. Moreover, as the skill memory expands, retrieval cost and management efficiency may become bottlenecks. To address this, scalable skill management techniques such as skill merging, compression, and fast retrieval mechanisms will be essential.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 200,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          180.485,
+          298.801,
+          216.4
+        ],
+        "content": "By tackling these challenges, we aim to develop ViReSkill into a more general and sustainable learning framework that can adapt across diverse environments and robotic platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 201,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          148.505,
+          162.051,
+          204.302,
+          174.055
+        ],
+        "content": "REFERENCES",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 202,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          57.985,
+          103.065,
+          298.802,
+          157.501
+        ],
+        "id": 203,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              57.985,
+              138.931,
+              298.802,
+              157.501
+            ],
+            "content": "[1] B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone, “Libero: Benchmarking knowledge transfer for lifelong robot learning,” 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              57.985,
+              120.998,
+              298.802,
+              139.568
+            ],
+            "content": "[2] S. James, Z. Ma, D. R. Arrojo, and A. J. Davison, “Rlbench: The robot learning benchmark and learning environment,” 2019.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              57.985,
+              103.065,
+              298.802,
+              121.635
+            ],
+            "content": "[3] M. Ahn, A. Brohan, N. Brown, Y. Chebotar, O. Cortes, B. David, C. Finn, C. Fu, K. Gopalakrishnan, K. Hausman, A. Herzog, D. Ho,",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          72.259,
+          58.233,
+          298.801,
+          103.703
+        ],
+        "id": 204,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              72.259,
+              76.166,
+              298.801,
+              103.703
+            ],
+            "content": "J. Hsu, J. Ibarz, B. Ichter, A. Irpan, E. Jang, R. J. Ruano, K. Jeffrey, S. Jesmonth, N. J. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, K.-H. Lee, S. Levine, Y. Lu, L. Luu, C. Parada, P. Pastor, J. Quiambao,",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              72.259,
+              58.233,
+              298.801,
+              76.804
+            ],
+            "content": "K. Rao, J. Rettinghouse, D. Reyes, P. Sermanet, N. Sievers, C. Tan, A. Toshev, V. Vanhoucke, F. Xia, T. Xiao, P. Xu, S. Xu, M. Yan, and",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          331.459,
+          545.601,
+          558.001,
+          564.171
+        ],
+        "content": "A. Zeng, “Do as i can, not as i say: Grounding language in robotic affordances,” 2022.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 205,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          70.383,
+          558.002,
+          546.239
+        ],
+        "id": 206,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              317.185,
+              518.702,
+              558.002,
+              546.239
+            ],
+            "content": "[4] W. Huang, C. Wang, R. Zhang, Y. Li, J. Wu, and L. Fei-Fei, “Voxposer: Composable 3d value maps for robotic manipulation with language models,” 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              491.803,
+              558.002,
+              519.34
+            ],
+            "content": "[5] W. Huang, C. Wang, Y. Li, R. Zhang, and L. Fei-Fei, “Rekep: Spatio-temporal reasoning of relational keypoint constraints for robotic manipulation,” 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              464.904,
+              558.002,
+              492.44
+            ],
+            "content": "[6] N. Shinn, F. Cassano, E. Berman, A. Gopinath, K. Narasimhan, and S. Yao, “Reflexion: Language agents with verbal reinforcement learning,” 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              446.971,
+              558.002,
+              465.541
+            ],
+            "content": "[7] Z. Liu, A. Bahety, and S. Song, “Reflect: Summarizing robot experiences for failure explanation and correction,” 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              420.072,
+              558.002,
+              447.609
+            ],
+            "content": "[8] Y. Guo, Y.-J. Wang, L. Zha, and J. Chen, “Doremi: Grounding language model by detecting and recovering from plan-execution misalignment,” 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              393.173,
+              558.002,
+              420.709
+            ],
+            "content": "[9] G. Cheng, C. Zhang, W. Cai, L. Zhao, C. Sun, and J. Bian, “Empowering large language models on robotic manipulation with affordance prompting,” 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              366.274,
+              558.002,
+              393.81
+            ],
+            "content": "[10] W. Xia, R. Feng, D. Wang, and D. Hu, “Phoenix: A motion-based self-reflection framework for fine-grained robotic action correction,” 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              285.576,
+              558.002,
+              366.911
+            ],
+            "content": "[11] K. Bousmalis, G. Vezzani, D. Rao, C. Devin, A. X. Lee, M. Bauza, T. Davchev, Y. Zhou, A. Gupta, A. Raju, A. Laurens, C. Fantacci, V. Dalibard, M. Zambelli, M. Martins, R. Pevceviciute, M. Blokzijl, M. Denil, N. Batchelor, T. Lampe, E. Parisotto, K. Zołna,˙ S. Reed, S. G. Colmenarejo, J. Scholz, A. Abdolmaleki, O. Groth, J.-B. Regli, O. Sushkov, T. Roth¨orl, J. E. Chen, Y. Aytar, D. Barker, J. Ortiz, M. Riedmiller, J. T. Springenberg, R. Hadsell, F. Nori, and N. Heess, “Robocat: A self-improving generalist agent for robotic manipulation,” 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              249.711,
+              558.002,
+              286.214
+            ],
+            "content": "[12] W. Mao, W. Zhong, Z. Jiang, D. Fang, Z. Zhang, Z. Lan, H. Li, F. Jia, T. Wang, H. Fan, and O. Yoshie, “Robomatrix: A skill-centric hierarchical framework for scalable robot task planning and execution in open-world,” 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              222.812,
+              558.002,
+              250.348
+            ],
+            "content": "[13] G. Tziafas and H. Kasaei, “Lifelong robot library learning: Bootstrapping composable and generalizable skills for embodied control with language models,” 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              195.913,
+              558.002,
+              223.449
+            ],
+            "content": "[14] T. Kagaya, T. J. Yuan, Y. Lou, J. Karlekar, S. Pranata, A. Kinose, K. Oguri, F. Wick, and Y. You, “Rap: Retrieval-augmented planning with contextual memory for multimodal llm agents,” 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              151.081,
+              558.002,
+              196.55
+            ],
+            "content": "[15] L. Zha, Y. Cui, L.-H. Lin, M. Kwon, M. G. Arenas, A. Zeng, F. Xia, and D. Sadigh, “Distilling and retrieving generalizable knowledge for robot manipulation via language corrections,” in 2024 IEEE International Conference on Robotics and Automation (ICRA), pp. 15172– 15179, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              124.182,
+              558.002,
+              151.718
+            ],
+            "content": "[16] Intel RealSense, “Intel realsense depth camera d400 series (rgb-d sensors).” https://www.intelrealsense.com/, 2020. Accessed: 2025-09-10.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              88.316,
+              558.002,
+              124.819
+            ],
+            "content": "[17] L. Medeiros, “lang-segment-anything: Language segment-anything (sam with text prompt).” https://github.com/ luca-medeiros/lang-segment-anything, Aug. 2025. GitHub repository, accessed 2025-09-10.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              70.383,
+              558.002,
+              88.954
+            ],
+            "content": "[18] N. Reimers and I. Gurevych, “Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,” in arXiv, 2019.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 15,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 8,
+    "title": "ViReSkill: Vision-Grounded Replanning with Skill Memory for LLM-Based Planning in Lifelong Robot Learning"
+  }
+}
