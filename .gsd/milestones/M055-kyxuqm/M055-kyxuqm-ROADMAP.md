@@ -16,7 +16,7 @@
 - [x] **S04: GROBID fulltext plus OpenDataLoader benchmark on 20 PDFs** `risk:medium` `depends:[S01,S02,S03]`
   > After this: 20-PDF GROBID fulltext plus OpenDataLoader metrics with per-PDF comparison.
 
-- [ ] **S05: Hybrid routing on 20 PDFs with GROBID fulltext comparison** `risk:medium` `depends:[S04]`
+- [x] **S05: Hybrid routing on 20 PDFs with GROBID fulltext comparison** `risk:medium` `depends:[S04]`
   > After this: 20-PDF hybrid routing packets with per-dimension winners and fulltext-vs-header delta.
 
 - [ ] **S06: Comprehensive REPORT plus ADR-008 amendment or ADR-009** `risk:low` `depends:[S05]`

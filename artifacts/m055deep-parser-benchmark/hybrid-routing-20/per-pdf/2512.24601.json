@@ -1,0 +1,157 @@
+{
+  "article_key": "2512.24601",
+  "arxiv_id": "2512.24601",
+  "category": "cs-ai",
+  "comparison_table": {
+    "body_content": {
+      "grobid": {
+        "body_element_count": 731,
+        "equation_count": 2,
+        "figure_count": 31,
+        "section_count": 51
+      },
+      "opendataloader": {
+        "image_count": 30,
+        "low_quality_source": false,
+        "markdown_size_bytes": 139621,
+        "section_count": 64,
+        "status": "success",
+        "table_count": 0
+      },
+      "reason": "OpenDataLoader exposes successful non-low-quality markdown body evidence above the routing threshold, with table/image/section adjuncts.",
+      "winner": "opendataloader"
+    },
+    "citations": {
+      "grobid": {
+        "bibl_count": 50,
+        "ref_count": 139
+      },
+      "opendataloader": {
+        "bibl_count": null,
+        "native_citation_extraction": false,
+        "ref_count": null
+      },
+      "reason": "GROBID fulltext exposes native reference and bibliography counts; OpenDataLoader has no native citation extraction.",
+      "winner": "grobid"
+    },
+    "layout": {
+      "grobid": {
+        "equation_count": 2,
+        "figure_count": 31,
+        "native_fulltext_structure": true,
+        "section_count": 51
+      },
+      "opendataloader": {
+        "bounding_box_count": 700,
+        "image_count": 30,
+        "native_bounding_boxes": false,
+        "section_count": 64,
+        "table_count": 0
+      },
+      "reason": "GROBID fulltext exposes semantic TEI layout cues; OpenDataLoader bounding boxes remain residual geometry rather than the primary fulltext routing target.",
+      "winner": "grobid"
+    },
+    "metadata": {
+      "grobid": {
+        "abstract_present": true,
+        "author_count": 951,
+        "title_present": true
+      },
+      "opendataloader": {
+        "abstract_present": false,
+        "author_count": 0,
+        "native_metadata_extraction": false,
+        "title_present": false
+      },
+      "reason": "GROBID fulltext preserves native header metadata; OpenDataLoader packets do not expose native metadata fields.",
+      "winner": "grobid"
+    },
+    "processing_time": {
+      "grobid": {
+        "duration_ms": 3952
+      },
+      "opendataloader": {
+        "duration_ms": 8618
+      },
+      "reason": "GROBID fulltext completed faster for this PDF.",
+      "winner": "grobid"
+    },
+    "quality": {
+      "grobid": {
+        "low_quality_source": false,
+        "parse_error": null,
+        "sha256_matches_manifest": true,
+        "status": "success"
+      },
+      "opendataloader": {
+        "error": null,
+        "low_quality_source": false,
+        "status": "success"
+      },
+      "reason": "Both parsers succeeded, but GROBID fulltext additionally preserved TEI parse and manifest-integrity quality evidence.",
+      "winner": "grobid"
+    }
+  },
+  "generated_at": "2026-06-10T12:18:09.066689+00:00",
+  "grobid_metrics": {
+    "bibl_count": 50,
+    "body_element_count": 731,
+    "duration_ms": 3952,
+    "equation_count": 2,
+    "figure_count": 31,
+    "low_quality_source": false,
+    "ref_count": 139,
+    "section_count": 51,
+    "status": "success"
+  },
+  "length_bucket": "long",
+  "opendataloader_metrics": {
+    "duration_ms": 8618,
+    "image_count": 30,
+    "low_quality_source": false,
+    "markdown_size_bytes": 139621,
+    "section_count": 64,
+    "status": "success",
+    "table_count": 0
+  },
+  "pages_estimate": 43,
+  "recommended_route": {
+    "confidence": "high",
+    "diagnostic_winners": {
+      "processing_time": "grobid",
+      "quality": "grobid"
+    },
+    "rationale": "Measured winners split across parsers, so route each dimension to the parser that won it.",
+    "recommended_route": "grobid_fulltext + opendataloader_body",
+    "route_type": "hybrid",
+    "ties": [],
+    "use_grobid_for": [
+      "metadata",
+      "citations",
+      "layout"
+    ],
+    "use_opendataloader_for": [
+      "body_content"
+    ]
+  },
+  "residual_gaps": [
+    {
+      "gap": "citation_to_body_alignment",
+      "reason": "GROBID citations and OpenDataLoader markdown body remain separate outputs without aligned citation spans.",
+      "severity": "medium"
+    },
+    {
+      "gap": "table_figure_semantic_linking",
+      "reason": "OpenDataLoader tables/images are useful body adjuncts, but native geometric layout remains unavailable in the packet.",
+      "severity": "medium"
+    }
+  ],
+  "safety_defaults": {
+    "graph_import_allowed": false,
+    "graphdb_written": false,
+    "import_eligible": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false
+  },
+  "schema_version": "m055deep-parser-benchmark.hybrid-routing-20.v1"
+}
