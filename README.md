@@ -204,6 +204,16 @@ A GitHub Action (`.github/workflows/architecture-guardrail.yml`) runs the same c
 
 Bypass only in emergency: `git commit --no-verify`.
 
+M048 trajectory severity tuning per phase (QW-3 of M046 roadmap):
+
+```bash
+uv run python scripts/check_project_trajectory.py --output-dir artifacts/m046-synthesis/current --phase preflight   # default
+uv run python scripts/check_project_trajectory.py --output-dir artifacts/m046-synthesis/current --phase active     # promotes uncommitted to medium
+uv run python scripts/check_project_trajectory.py --output-dir artifacts/m046-synthesis/current --phase closeout   # demotes uncommitted to info
+```
+
+`PHASE_SEVERITY_OVERRIDES` dict in `scripts/check_project_trajectory.py` makes severity per phase explicit. `report['phase']` field added; render_markdown shows `Phase: \`{phase}\``. 5 new tests cover all phases + unknown + render. M046 07-2026-assessment Recommendation 5 marked done.
+
 M047 architecture guardrail enforcement and reverse ADR audit (QW-2 of M046 roadmap):
 
 - `.pre-commit-config.yaml` enforces M044 architecture guardrail (mandatory) and M045 trajectory check (advisory) on relevant file changes.
