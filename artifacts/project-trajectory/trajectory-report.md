@@ -14,7 +14,7 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=7 |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=12 |
 | evidence | tracked | none | .gsd/milestones/M049-ndk541/M049-ndk541-SUMMARY.md, .gsd/milestones/M050-l8os7p/M050-l8os7p-SUMMARY.md, .gsd/milestones/M051-aaw9j7/M051-aaw9j7-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
@@ -25,7 +25,7 @@
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| info | uncommitted_changes_present | 7 files |
+| info | uncommitted_changes_present | 12 files |
 
 ## Recent milestones
 
