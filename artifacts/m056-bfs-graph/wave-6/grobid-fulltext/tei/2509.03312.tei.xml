@@ -1,0 +1,3630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AGENTRACER: WHO IS INDUCING FAILURE IN THE LLM AGENTIC SYSTEMS?</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-04">4 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+							<email>guibinz@outlook.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Junhao</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Junjie</forename><surname>Chen</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+						</author>
+						<title level="a" type="main">AGENTRACER: WHO IS INDUCING FAILURE IN THE LLM AGENTIC SYSTEMS?</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-04">4 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9000722D6A56E65EF31321424B7207C1</idno>
+					<idno type="arXiv">arXiv:2509.03312v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:41+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Model (LLM)-based agentic systems, often comprising multiple models, complex tool invocations, and orchestration protocols, substantially outperform monolithic agents. Yet this very sophistication amplifies their fragility, making them more prone to system failure. Pinpointing the specific agent or step responsible for an error within long execution traces defines the task of agentic system failure attribution. Current state-of-the-art reasoning LLMs, however, remain strikingly inadequate for this challenge, with accuracy generally below 10%. To address this gap, we propose AgenTracer, the first automated framework for annotating failed multi-agent trajectories via counterfactual replay and programmed fault injection, producing the curated dataset TracerTraj. Leveraging this resource, we develop AgenTracer-8B, a lightweight failure tracer trained with multi-granular reinforcement learning, capable of efficiently diagnosing errors in verbose multi-agent interactions. On Who&amp;When benchmark, AgenTracer-8B outperforms giant proprietary LLMs like Gemini-2.5-Pro and Claude-4-Sonnet by up 18.18%, setting a new standard in LLM agentic failure attribution. More importantly, AgenTracer-8B delivers actionable feedback to off-the-shelf multi-agent systems like MetaGPT and MaAS with 4.8 ∼ 14.2% performance gains, empowering self-correcting and self-evolving agentic AI. Our project page is at <ref type="url" target="https://bingreeky.github.io/atracer/">https://bingreeky.github.io/atracer/</ref>. Who&amp;When (handcraft; agent-level) Who&amp;When (handcraft; step-level) TracerTraj-Code (agent-level) TracerTraj-Math (step-level)</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large Language Model (LLM)-powered agents have exhibited exceptional proficiency across a wide array of cognitive faculties, encompassing perception <ref type="bibr" target="#b9">(Driess et al., 2023;</ref><ref type="bibr" target="#b54">Wang et al., 2024;</ref><ref type="bibr" target="#b75">Zheng et al., 2023;</ref><ref type="bibr" target="#b57">Wei et al., 2024)</ref>, planning <ref type="bibr" target="#b76">(Zhu et al., 2024;</ref><ref type="bibr">Erdogan et al., 2025;</ref><ref type="bibr" target="#b25">Huang et al., 2024)</ref>, reasoning <ref type="bibr" target="#b47">(Putta et al., 2024;</ref><ref type="bibr" target="#b39">Masterman et al., 2024)</ref>, and action <ref type="bibr" target="#b32">(Li et al., 2024;</ref><ref type="bibr" target="#b63">Yang et al., 2024)</ref>. As endeavors to address increasingly intricate challenges, such as iterative tool calling, complex document analysis, and multi-step web navigation, continue to surge, the inherent limitations of relying on a single monolithic model have become increasingly conspicuous.</p><p>Consequently, numerous multi-agent frameworks, motivated by collective intelligence <ref type="bibr">(Wang et al., 2025a;</ref><ref type="bibr">Zhang et al., 2024a;</ref><ref type="bibr" target="#b10">b)</ref> and the society of mind theory <ref type="bibr" target="#b42">(Minsky, 1988;</ref><ref type="bibr" target="#b31">Li et al., 2023)</ref>, have emerged, ensembling multiple LLM agents to achieve refined subtask orchestration <ref type="bibr">(Zhang et al., 2025d;</ref><ref type="bibr" target="#b22">Hu et al., 2025)</ref>, ultra-long context handling <ref type="bibr">(Zhang et al., 2024d)</ref>, and broader environmental perception <ref type="bibr" target="#b27">(Jiang et al., 2024)</ref>. These systems have demonstrated superior performance over single-agent counterparts across a range of complex real-world domains, including data science engineering <ref type="bibr" target="#b21">(Hong et al., 2024)</ref>, scientific discovery <ref type="bibr" target="#b14">(Ghareeb et al., 2025;</ref><ref type="bibr" target="#b13">Ghafarollahi &amp; Buehler, 2024)</ref>, and software engineering <ref type="bibr" target="#b58">(Wei et al., 2025)</ref>. However, the integration of multiple autonomous agents alongside diverse auxiliary modules (e.g., external databases, tools, and memory modules) inevitably exacerbates system fragility. As evidence, a recent empirical study by UC Berkeley <ref type="bibr" target="#b2">(Cemri et al., 2025)</ref> reveals alarmingly high failure rates (reaching up to 86.7%) in popular multi-agent frameworks such as OpenHands <ref type="bibr">(Wang et al., 2025b)</ref> and MetaGPT <ref type="bibr" target="#b20">(Hong et al., 2023)</ref>, with failure modes ranging from improper task decomposition to role disobedience. Such a high incidence of failure casts a long shadow over the real-world reliability of multi-agent systems.</p><p>A natural response to this challenge is failure attribution, i.e., the precise identification of faulty components within the system upon task failure. Accurate failure attribution plays a critical role across multiple dimensions: (I) system debugging, by enabling agentic systems to perform more effective self-debugging across iterative attempts, thereby enhancing performance; (II) data efficiency, by leveraging failed agent trajectories to construct more informative training data; (III) grounded self-improvement, by facilitating grounded self-correction through precise agent credit assignment. Despite its importance, this process is predominantly left as a manual endeavor, requiring considerable human effort to analyze verbose trajectory logs.</p><p>While preliminary attempts have been made toward automation, their efficacy remains limited. For instance, <ref type="bibr">Zhang et al. (2025c)</ref> employed state-of-the-art models such as <ref type="bibr">OpenAI-o1 and DeepSeek-R1 (DeepSeek-AI et al., 2024)</ref> to perform failure attribution over trajectories from GAIA <ref type="bibr" target="#b40">(Mialon et al., 2023)</ref>, yet achieved accuracy below 10%. More critically, existing benchmarks for agentic failure attribution remain notably constrained. To the best of our knowledge, MAST <ref type="bibr" target="#b2">(Cemri et al., 2025)</ref> and Who&amp;When <ref type="bibr">(Zhang et al., 2025c)</ref> contain only 200 and 127 manually annotated multiagent failure trajectories, respectively, offering limited scale for systematic evaluation. Accordingly, substantial research gaps remain along two critical axes: ❶ training resources, concerning the automated construction of large-scale annotated multi-agent trajectories; and ❷ methodology, on developing swift and accurate multi-agent failure localizer, which we also refer to as a tracer.</p><p>Present Framework. To address the aforementioned research gap, we present (1) AgenTracer, a fully automated pipeline for constructing well-annotated multi-agent failure trajectories, and (2) AgenTracer-8B, a lightweight failure attributor for multi-agent systems. Methodologically, AgenTracer leverages ♣ counterfactual replay, systematically replacing agent actions with oracle guidance to identify the decisive error step responsible for system failure. To enhance data diversity and ensure annotation precision, it further adopts ♠ programmatic fault injection, synthetically generating failure instances by perturbing successful trajectories through targeted corruption.</p><p>Further, we fine-tune QWEN3-8B on the curated dataset to obtain AgenTracer-8B via reinforcement learning (RL), enabling it to analyze long-horizon multi-agent collaboration traces. AgenTracer-8B takes as input the trajectory log and associated environmental feedback, and outputs the identified decisive error step. A multi-granular reward is designed to supervise RL training, emphasizing both step-level and agent-level attribution accuracy. During inference, AgenTracer-8B enables any malfunctioning agentic system to rapidly identify the critical failure step along with explanations, thereby facilitating automated multi-agent debugging.</p><p>Our contributions are as follows:</p><p>❶ Automated Pipeline. We propose AgenTracer, the first automated pipeline for annotating multi-agent system failures, curating over 2,000 high-fidelity failure trajectories across six datasets through counterfactual replay and programmatic fault injection. ❷ Failure Tracer. We develop AgenTracer-8B, a lightweight failure tracer dedicated for LLM agentic systems, trained via a multi-granular reinforcement learning to ensure accurate attribution at both the step and agent levels, facilitating automatic agentic system debugging. ❸ Empirical Evaluation. Experiments show that AgenTracer-8B facilitates (I) accurate attribution, outperforming giant LLMs like DEEPSEEK-R1 by ∼ 12.21% and GEMINI-2.5-PRO by ∼ 18.18% on Who&amp;When benchmark; and (II) self-evolution, enabling off-the-shelf agentic systems to improve performance by 4.8 ∼ 14.2%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORKS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-based Multi-Agent System.</head><p>Contemporary multi-agent systems can be broadly categorized by their level of automation into three classes: ■ Handcrafted, where the entire system configuration (e.g., LLM backbone, prompting strategies, and communication protocols) is manually specified represented by AutoGen <ref type="bibr" target="#b59">(Wu et al., 2023)</ref>, <ref type="bibr">AutoGPT (Richards &amp; et al., 2023)</ref>, Camel <ref type="bibr" target="#b31">(Li et al., 2023)</ref>, and ChatDev <ref type="bibr" target="#b48">(Qian et al., 2023)</ref>; ■ Partially Automated, which automate specific system components: for example, AutoAgent <ref type="bibr">(Chen et al., 2023a)</ref>, LLMSelector <ref type="bibr" target="#b4">(Chen et al., 2025)</ref>, and MasRouter <ref type="bibr" target="#b34">(Yue et al., 2025</ref>) automate agent role assignment; DsPy <ref type="bibr" target="#b28">(Khattab et al., 2023)</ref> and TextGrad <ref type="bibr" target="#b66">(Yuksekgonul et al., 2024)</ref> optimize prompt design; GPTSwarm <ref type="bibr" target="#b77">(Zhuge et al., 2024)</ref> and G-Designer <ref type="bibr">(Zhang et al., 2024b)</ref> adaptively construct inter-agent topologies; ■ Fully Automated, where all modules within the system are autonomously designed and evolved <ref type="bibr">(Hu et al., 2024a;</ref><ref type="bibr">Zhang et al., 2024c;</ref><ref type="bibr">2025b;</ref><ref type="bibr" target="#b60">Wu et al., 2025;</ref><ref type="bibr" target="#b43">Nie et al., 2025;</ref><ref type="bibr" target="#b12">Gao et al., 2025;</ref><ref type="bibr">Zhang et al., 2025a)</ref>.</p><p>Our method is designed to provide precise error tracing across this entire spectrum of agentic systems. Accordingly, we curate trajectories sampled from frameworks spanning all three categories.</p><p>Failure Attribution for Agents. As multi-agent systems become increasingly intricate, incorporating multiple intelligent agents <ref type="bibr" target="#b56">Wang et al. (2023)</ref>; <ref type="bibr">Chen et al. (2023b)</ref>, tool integrations <ref type="bibr" target="#b51">Shen et al. (2024)</ref>, and communication protocols <ref type="bibr" target="#b38">Marro et al. (2024)</ref>, the resulting high error rates and structural fragility have emerged as critical concerns. MAST <ref type="bibr" target="#b2">(Cemri et al., 2025)</ref> was the first to alarmingly characterize this issue, identifying fourteen prevalent failure patterns ranging from task disobedience to reasoning-action mismatches. Building upon this, Who&amp;When <ref type="bibr">(Zhang et al., 2025c)</ref> explored the feasibility of automating failure attribution, only to reveal that even top-performing reasoning models like DeepSeek-R1 fail catastrophically in this setting. AgenTracer advances the field by introducing both a scalable data synthesis pipeline and a lightweight, high-accuracy failure attributor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-as-a-Judge &amp; Credit Assignment.</head><p>Two other research topics closely related to this work are: (I) LLM-as-a-Judge (LaaJ), which leverages LLMs/agents as evaluators based on pre-defined criteria for tasks such as data annotation <ref type="bibr" target="#b30">(Latif et al., 2025;</ref><ref type="bibr" target="#b44">OpenAI, 2022)</ref>, value alignment <ref type="bibr" target="#b26">(Ji et al., 2025)</ref>, reward modeling <ref type="bibr" target="#b37">(Mahan et al., 2024;</ref><ref type="bibr" target="#b29">Lambert et al., 2024)</ref>, and synthetic data generation <ref type="bibr" target="#b50">(Sengupta et al., 2025;</ref><ref type="bibr" target="#b22">Hu et al., 2025)</ref>. However, when applied to multi-LLM systems, LaaJ has shown limited effectiveness, as demonstrated in <ref type="bibr">Zhang et al. (2025c)</ref>; (II) Credit Assignment is a longstanding topic in multi-agent reinforcement learning (MARL), aiming to associate individual agent actions with their long-term outcomes <ref type="bibr" target="#b46">(Pignatelli et al., 2023)</ref>. Common approaches include heuristics based on temporal contiguity <ref type="bibr" target="#b52">(Sutton, 1988)</ref>, value decomposition <ref type="bibr" target="#b1">(Arjona-Medina et al., 2019)</ref>, and meta-learning <ref type="bibr" target="#b64">(Yin et al., 2023)</ref>. However, this problem remains largely unexplored in the context of LLM-based multi-agent systems. The most relevant prior effort, CollabUIAgents <ref type="bibr" target="#b18">(He et al., 2025)</ref>, relies on LLMs to generate binary scalar (0/1) rewards after each agent interaction, whose reliability is inherently questionable. In contrast, AgenTracer implicitly achieves grounded credit assignment for LLM agents through principled failure attribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PRELIMINARY</head><p>In this section, we provide a general definition of LLM-based multi-agent systems and their operational workflow, and then formally define the objective of the multi-agent failure attribution.</p><p>Notations Consider a LLM-based multi-agent system M, tasked with collaboratively resolving a user-issued query Q. The system consists of N agents, indexed by I = {1, 2, . . . , N }, operating in discrete time under a turn-based protocol, i.e., only one agent is active at each time step. Formally:</p><formula xml:id="formula_0">M = I, S, A, Ψ, µ ,<label>(1)</label></formula><p>where S denotes the set of system states; A is the overall action space, with each agent i ∈ I having a local space A i ⊆ A; µ(t) ∈ I specifies the agent scheduled to act at time t; Ψ(s t+1 | s t , a t , µ(t)) models the state transition dynamics given the current state s t , action a t ∈ A µ(t) , and the acting agent. At each step t, the active agent µ(t) selects an action a t ∈ A µ(t) according to its policy π µ(t) , conditioned on the current state s t , the query Q, and a subset of the prior interaction history H t :</p><formula xml:id="formula_1">a t = π µ(t) (s t , H t , Q), H t ⊆ {a 0 , a 1 , . . . , a t-1 }.<label>(2)</label></formula><p>AutoGen Multi-agent Systems Diverse Benchmarks MetaGPT AgentPrune AFlow SmolAgents OWL-Workforce Coding &amp; Software development MBPP+ Kodcode Blackjack General Agent Tasks GAIA HotpotQA Mathematical reasoning MATH GSM8K Framework Establish Trajectory Collection Successful Trajectory Failed Trajectory Goal: locate the first fix of Scikit-Learn July 2017 Planner Agent Coordinate Agent Web Agent Code Agent Reasoner Agent Search and locate sklearn july 2017 git log Analyze the log and extract all bug fix Analyze the materials: BaseLabel Propagation Goal: When was the first year the Apple stock went above $50? Planner Agent Coordinate Agent Web Agent w/ Google finance w/ Yahoo finance w/ Kayfin DB 2018 2018 2015 Reason Agent I am not sure. Let another web agent verify this. After interacting with kayfin DB, I think it is 2015 Automatic Construction Training AgenTracer [Trajectory Representation] : action, : acting agent : ♠fault injection : ♣counterfactual replay Inject errors : Oracle-aided correction : AgenTracer-3k if if turn : error agent; : (decisive) error step Failure Attribution Reasoner .. Given a failed traj. judging Try 1 Multiple rollouts (reasoning + judge) Judgment: error step: error agent: Multigranular reward Agent-level: = Step-level: Rule-based reinforcement learning The structure of H t is implementation-dependent. In LLM Debate-style frameworks <ref type="bibr" target="#b10">(Du et al., 2023)</ref>, it comprises the prior-round outputs from all agents; whereas in software development systems <ref type="bibr" target="#b48">(Qian et al., 2023;</ref><ref type="bibr">Hu et al., 2024b)</ref>, a tester agent may condition only on the latest code snippet submitted by a programmer agent. The full execution trajectory of the system is denoted by:</p><formula xml:id="formula_2">τ = (s 0 , a 0 , s 1 , a 1 , . . . , s T ),<label>(3)</label></formula><p>where T indicates the terminal step or stopping condition. The final response to the query Q is determined by the complete trajectory τ , encapsulating the collaborative behavior of all agents.</p><p>Objective Formulation A trajectory may contain multiple suboptimal actions or minor deviations, but for effective, targeted debugging, it is crucial to distinguish these from the pivotal error that renders the final outcome incorrect. Following <ref type="bibr">(Zhang et al., 2025c)</ref>, we formalize this pivotal error as the decisive error, i.e., the earliest action in the trajectory whose correction is sufficient to steer the system from failure to success. Formally, let Ω(τ ) ∈ {0, 1} be a binary evaluation function indicating failure (Ω(τ ) = 0) or success (Ω(τ ) = 1), and R(τ, t, a ′ t ) be an oracle rectification operator, which represents an idealized process where the original action a t is replaced by a theoretically perfect, oracle-provided action a ′ t , and all subsequent steps are re-simulated. Naturally, the set of all decisive agent-step pairs C(τ ) can be expressed as:</p><formula xml:id="formula_3">C(τ ) = {(i, t) | i = µ(t) and Ω(τ ) = 1 ∧ Ω (R(τ, t, a ′ t )) = 0} ,<label>(4)</label></formula><p>from which we select the root cause by targeting the earliest error in time. The definitive failureresponsible agent i * and decisive error step t * are therefore given by:</p><formula xml:id="formula_4">(i * , t * ) = arg min (i,t)∈C(τ ) t.<label>(5)</label></formula><p>Consequently, the goal of our failure tracer, AgenTracer, is to take a failed trajectory τ as input and output the failure-responsible agent i * and the decisive error step t * .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">METHODOLOGY</head><p>Figure <ref type="figure" target="#fig_1">2</ref> illustrates the pipeline of AgenTracer and the training process of AgenTracer-8B. Specifically, AgenTracer aggregates trajectories from six mainstream multi-agent frameworks and six datasets, which then applies programmatic fault injection (for successful trajectories) and counterfactual corrections (for failed ones) to identify the decisive error step, yielding 2,000+ trajectory-error step pairs, collectively referred to as TracerTraj-2.5K. We then train a dedicated failure attributor, AgenTracer-8B, using RL guided by multi-grained rewards to accurately locate errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">AgenTracer: AUTOMATIC TRAJECTORY ANNOTATION</head><p>Collection. AgenTracer begin by considering a collection of M (= 6) distinct multi-agent systems, {M m } M m=1 , and a corresponding set of queries for each system, D m = {Q (m) j } nm j=1 , drawn from various task domains. For each query Q (m) j , M m executes and generates a raw trajectory τ (m) j</p><p>. For the specific frameworks and datasets used, please refer to Section 5.1. The trajectories from each system can be split into two sets, namely the successful (T (m) succ ) and failure (T (m) fail ) corpus:</p><formula xml:id="formula_5">T (m) succ = {τ (m) j | Ω(τ (m) j ) = 1},<label>and</label></formula><formula xml:id="formula_6">T (m) fail = {τ (m) j | Ω(τ (m) j ) = 0}.<label>(6)</label></formula><p>The overall successful and failure set can be expressed as</p><formula xml:id="formula_7">T succ = M m=1 T (m) succ and T fail = M m=1 T (m)</formula><p>fail , respectively, which serve as the raw input for the subsequent annotation stages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Locating Decisive Errors.</head><p>To empirically identify the decisive error pair (i * , t * ) for each failed trajectory τ ∈ T fail , we now detail our practical implementation of the rectification operator R introduced in Equation ( <ref type="formula" target="#formula_3">4</ref>), which is is orchestrated by an analyzer agent π analyzer to conduct counterfactual intervention. π analyzer is provided with the full context of a failure: the trajectory τ , environmental feedback F (e.g., code execution errors, tool errors), and the ground-truth solution G for Q. For each step t in the trajectory, the analyzer proposes a minimally invasive, corrected action a ′ t designed to rectify the local error without revealing the complete solution: a ′ t ← π analyzer (s t , a t , H t , F, G).</p><p>(7) By sequentially applying this analyzer-driven intervention for t ∈ {0, 1, . . . , T } and evaluating the outcome Ω(R(τ, t, a ′ t )), we can systematically search for the earliest step t * that satisfies the condition in Equation ( <ref type="formula" target="#formula_4">5</ref>). The agent active at this step, i * = µ(t * ), is labeled as the problematic agent, yielding a precise annotation (τ, ⟨i * , t * ⟩) for our dataset. This process (as presented in Lines 1 to 8 of Algorithm 1), applied across the entire T fail , forms</p><formula xml:id="formula_8">D -= {(τ, ⟨i * , t * ⟩) | τ ∈ T fail }.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Utilizing Successful Trajectories.</head><p>To further augment our dataset with high-precision annotations, we also leverage the corpus T succ through programmatic fault injection. Its core principle is to take a known-good trajectory and programmatically introduce a fault, thereby creating a synthetic failure instance where the decisive error is known by construction. Specifically, for each successful trajectory τ ∈ T succ , we select a step t to serve as the injection point, at which a perturbation operator Π is utilized to the original action a t to generate a corrupted action ãt = Π(a t ). A new, synthetically-generated trajectory τ is created by substituting this corrupted action: τ = R(τ, t, ãt ). (8) If this injection process successfully induces a failure (i.e., Ω(τ ) = 0), the pair ⟨µ(t), t⟩ is, by definition, the decisive error for τ . This allows us to generate a set of positive-sample datasets D + :</p><formula xml:id="formula_9">D + = {(τ , ⟨i * , t * ⟩) | τ ∈ T succ , τ = R(τ, t, Π(a t )), Ω(τ ) = 0, ⟨i * , t * ⟩ = ⟨µ(t), t⟩} . (9)</formula><p>The overall process is also elaborated in Lines 8 to 17 of Algorithm 1.</p><p>Curated Dataset. By uniting the annotations derived from both failed trajectories and synthetically generated ones, we construct our final, comprehensive dataset, denoted as D tracer = D -∪ D + , which we also refer to as TracerTraj-2.5K, comprising over 2,000 high-fidelity annotated trajectory-error pairs. Detailed statistics on the dataset's composition are placed in ??.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">AgenTracer-8B: TRAINING AGENTIC FAILURE TRACERS</head><p>Having curated the D tracer dataset, we proceed to train our failure tracer, AgenTracer-8B, whose base model is set as QWEN3-8B. This phase aims to incentivize the model's ability to accurately pinpoint decisive errors within complex, long-horizon trajectories. Since our approach is orthogonal to the RL algorithm, we conduct the experiments based on a widely used online RL method, Group Relative Policy Optimization (GRPO) <ref type="bibr">(Guo et al., 2025)</ref>.</p><p>Online Reinforcement Learning. For each trajectory τ sampled from D tracer , the current policy π old generates a group of G candidate decisive error pairs, {⟨ îk , tk ⟩} G k=1 , each of which is evaluated against the ground-truth annotation ⟨i * , t * ⟩ using a multi-granular reward function R k , which will be detailed below. Unlike the standard GRPO, we omit the KL divergence term and introduce a dynamic clipping parameter B s , which has been demonstrated to better balance exploration and exploitation throughout training <ref type="bibr" target="#b34">(Liu et al., 2025)</ref>. The RL objective is thus formulated as:</p><formula xml:id="formula_10">L RL = -E τ,{ pk } G k=1 1 G G k=1 min(ρ k A k , clip(ρ k , 1 -B s , 1 + B s )A k ) ,<label>(10)</label></formula><p>Algorithm 1: Automated Trajectory Annotation Pipeline of AgenTracer Input: Corpus of failed trajectories Tfail; Corpus of successful trajectories Tsucc; Analyzer agent πanalyzer; perturbation operator Π; Rectification operator R Output: The curated dataset Dtracer 1 Initialize dataset: D -← ∅, D + ← ∅ /* Part 1: Locate Decisive Errors via Counterfactual Intervention */ 2 for each trajectory τ ∈ Tfail do 3 for t ← 0 to T do 4 a ′ t ← πanalyzer(st, at, Ht, F, G)// Analyzer agent proposes a corrected action 5 τ ′ ← R(τ, t, a ′ t )// Apply intervention to generate a new trajectory 6 if Ω(τ ′ ) = 1 then 7 i * ← µ(t), t * ← t, D -← D -∪ {(τ, ⟨i * , t * ⟩)} 8 break // Found the earliest decisive error /* Part 2: Generate Errors via Programmatic Fault Injection */ 9 for each trajectory τ ∈ Tsucc do 10 Let J ← {0, 1, . . . , T } be the set of possible injection points 11 Let Jsample ← RandomSample(J , K) // Randomly select K steps 12 for t ∈ J sample do 13 ãt ← Π(at) // Perturb original action to create a fault 14 τ ← R(τ, t, ãt) // Apply injection to generate a new trajectory 15 if Ω(τ ) = 0 then 16</p><formula xml:id="formula_11">i * ← µ(t), t * ← t, D + ← D + ∪ {(τ , ⟨i * , t * ⟩)} 17 break // Stop after first successful injection for this trajectory 18 return curated dataset Dtracer := D -∪ D + where pk = ⟨ îk , tk ⟩, the policy ratio is ρ k = πtracer( pk |τ ) πold( pk |τ ) , the estimated advantage is A k = (R k - mean({R j }))/(std({R j }) + ϵ) with ϵ = 1 × 10 -6 being a small constant. The dynamic clipping parameter B s is defined as B s = max(0.2•B 0 , B 0 (1-s</formula><p>Stotal )), with s as the current training step and S total the total number of steps. This dynamic schedule intuitively encourages broader exploration in the initial stages of training and gradually shifts to more stable exploitation as the policy converges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Granular Reward Design.</head><p>Regarding the implementation of advantage estimation in Equation ( <ref type="formula" target="#formula_10">10</ref>), we introduce a multi-granular reward designed to evaluate both the correctness of the attribution and the structural integrity of the output. The total reward R k for a candidate prediction pk is a gated combination of content accuracy and format compliance:</p><formula xml:id="formula_12">R(p k ) = I format • λ • r step ( tk ) + (1 -λ) • r agent ( îk ) ,<label>(11)</label></formula><p>whose components are further defined as follows:</p><p>▶ Format Reward I format is a strict binary reward that equals 1 if and only if the model's output adheres to the required structure: reasoning must be enclosed within ⟨think⟩ • • • ⟨/think⟩ tags, followed by a final answer within ⟨answer⟩ • • • ⟨/answer⟩ tags. Furthermore, the answer itself must be formatted as ⟨agentID⟩ | ⟨stepID⟩ for accurate extraction. ▶ Agent-Level Reward r agent is a coarse-grained, binary reward that measures whether the tracer correctly identifies the failure-responsible agent i * , defined as r agent ( îk ) = I( îk = i * ), where I(c) is a binary indicator for the accuracy of located problematic agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>▶ Step-Level Reward r step incentivizes temporal proximity to the true decisive error t * . We use a</head><p>Gaussian kernel where the reward decays smoothly as the predicted step tk moves away from t * :</p><formula xml:id="formula_13">r step ( tk ) = exp - ( tk -t * ) 2 2σ 2 , (<label>12</label></formula><formula xml:id="formula_14">)</formula><p>where σ controls how sharply the reward penalizes distance from the correct step.</p><p>This multi-granular design creates a smoother reward landscape for failure localization, as the partial credit from r step stabilizes training. Simultaneously, the hard gating from r format ensures the model produces reliably parsable outputs. Through online RL with these designs, we obtain a reasoningbased multi-agent failure attributor AgenTracer-8B. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">EXPERIMENTAL SETUP</head><p>Dataset Curation. For collecting TracerTraj-2.5K, we opt for six widely-used multi-agent systems, comprehensively incorporating all automation levels: ■ manually configured, including MetaGPT <ref type="bibr" target="#b20">(Hong et al., 2023)</ref>, AutoGen <ref type="bibr" target="#b59">(Wu et al., 2023)</ref> and Smolagents<ref type="foot" target="#foot_0">foot_0</ref> ; ■ partially automated, including AgentPrune <ref type="bibr">(Zhang et al., 2024a)</ref>; ■ fully automated, including AFlow <ref type="bibr">(Zhang et al., 2024c)</ref> and OWL-Workforce <ref type="bibr" target="#b22">(Hu et al., 2025)</ref>. Six benchmarks from three domains include ■ coding, MBPP+ <ref type="bibr" target="#b33">(Liu et al., 2023)</ref>, KodCode <ref type="bibr" target="#b61">(Xu et al., 2025)</ref> and Blackjack <ref type="bibr" target="#b20">(Hong et al., 2023)</ref>; ■ general agentic tasks, GAIA <ref type="bibr" target="#b40">(Mialon et al., 2023)</ref>; ■ mathematical reasoning, MATH <ref type="bibr" target="#b19">(Hendrycks et al., 2021)</ref> and GSM8K <ref type="bibr" target="#b6">(Cobbe et al., 2021)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment.</head><p>All experimental results are obtained on one server with 8 NVIDIA H100 (80 GB) GPUs. For RL training in Section 4.2, we use the verl<ref type="foot" target="#foot_1">foot_1</ref> training platform.</p><p>Model &amp; Parameter Configuration. The analyzer agent π analyzer in Equation ( <ref type="formula">7</ref>) and perturbation operator Π in Equation ( <ref type="formula">9</ref>) are both based on DEEPSEEK-R1 (Guo et al., 2025) (see prompts in Appendix B). The coefficient λ in Equation ( <ref type="formula" target="#formula_12">11</ref>) is consistently set as 0.5, and the parameter σ in Equation ( <ref type="formula" target="#formula_13">12</ref>) equals 1. The LLM backbone used for training AgenTracer-8B is QWEN3-8B. For RL traning in Section 4.2, we set batch size to 32, rollout number 8, and learning rate 1 × 10 -6 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarks &amp; Evaluation.</head><p>To evaluate the failure attribution capability of AgenTracer-8B, we adopt the Who&amp;When benchmark <ref type="bibr">(Zhang et al., 2025c)</ref>, which comprises two subsets: a handcrafted set derived from Magnetic-One <ref type="bibr" target="#b11">(Fourney et al., 2024)</ref>, and an automated set constructed from AG2 <ref type="bibr">(Microsoft, 2024)</ref>. Both subsets provide unseen trajectories with respect to AgenTracer-8B.</p><p>In addition, we sample a held-out test split from TracerTraj-2.5K using a 9:1 ratio, yielding three evaluation subsets (devided by domains): TracerTraj-code, TracerTraj-math, and TracerTrajagentic. Detailed statistics are reported in Appendix A. For evaluation, following <ref type="bibr">(Zhang et al., 2025c)</ref>, we adopt two primary metrics: agent-level accuracy and step-level accuracy. The former measures whether the attributor correctly identifies the faulty agent i * within a trajectory, while the latter assesses whether the specific erroneous step t * is localized. We consider two evaluation settings: (i) w/ G, where the attributor has access to the ground truth G during failure attribution, and (i) w/o G without such access. The latter setting is harder and particularly valuable. We follow the "all-at-once" setting introduced in MAST, where the entire trajectory is provided to the LLM in a single pass, as <ref type="bibr">Zhang et al. (2025c)</ref> has demonstrated this to be the most stable and effective.</p><p>Baselines. We compare AgenTracer agaist LLM baselines of varying scales, encompassing small-size models such as QWEN3-8B <ref type="bibr" target="#b62">(Yang et al., 2025)</ref> and LLAMA-3.2-3B <ref type="bibr" target="#b16">(Grattafiori et al., 2024)</ref>; medium-size models, including QWEN3-32B and QWEN3-CODER-480B-A35B-INSTRUCT (QWEN3-CODER) <ref type="bibr" target="#b62">(Yang et al., 2025)</ref>; and large-size models, which primarily consist of state-of-the-art LLMs, such as GPT-4.1 (OpenAI, 2025), GEMINI-2.5-PRO <ref type="bibr" target="#b7">(Comanici et al., 2025)</ref>, CLAUDE-4-SONNET (Anthropic, 2025) and also DEEPSEEK-R1 <ref type="bibr">(Guo et al., 2025)</ref>. (Validation) MetaGPT + HumanEval-Plus MaAS + MATH-500 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">MAIN RESULTS</head><p>This section provides empirical evidence that AgenTracer-8B outperforms substantially larger models in failure attribution within complex agentic systems. Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table" target="#tab_1">2</ref> report results on Who&amp;When and TracerTraj subsets, respectively, presenting both agent-level and step-level attribution accuracy. Each table entry is divided into w/ ground truth G and w/o G during attribution.</p><p>Observation ❶: prevailing models are inadequate as failure attributors. As shown in Table <ref type="table" target="#tab_0">1</ref>, smaller models such as QWEN3-8B and LLAMA-3.2-3B fail to deliver meaningful judgments, with step-level accuracy on Who&amp;When (handcrafted) remaining below 10%. Even substantially larger models like DEEPSEEK-R1 and GPT-4.1 perform unsatisfactorily, achieving only 31.32% and 29.52% step-level accuracy on Who&amp;When (automated) despite access to ground-truth G. Notably, providing G does not consistently improve attribution accuracy; for example, on TracerTraj-math, CLAUDE-4-SONNET attains 46.03% (w/ G) versus 50.79% (w/o G), and on Who&amp;When (handcrafted), QWEN3-CODER achieves 51.72% versus 60.35%. This suggests that ground-truth supervision may sometimes mislead the attribution process, an observation consistent with prior findings in MAST <ref type="bibr">(Zhang et al., 2025c)</ref>.</p><p>Observation ❶: AgenTracer consistently surpasses giant proprietary LLMs such as CLAUDE-4-SONNET in both agent-and step-level attribution. Under the w/ G setting, as shown in Table 1, AgenTracer-8B outperforms GPT-4.1 and CLAUDE-4-SONNET on Who&amp;When (handcrafted) by 26.0% and 12.2% in agent-level accuracy, respectively. A similar trend is observed on TracerTraj (Table 2), where AgenTracer-8B improves step-level accuracy on TracerTraj-agentic by 22.68% over its backbone QWEN3-8B, while also surpassing DEEPSEEK-R1 (+9.04%) and GEMENI-2.5-PRO (+17.57%). More importantly, in the w/o G setting (arguably the more realistic scenario where ground truth is unavailable), AgenTracer-8B remains robust: on TracerTraj-math, DEEPSEEK-evidence at Step 11. This highlights the intrinsic difficulty of failure attribution in agentic systems: errors are often subtle, originate early, and remain hidden behind seemingly correct outputs. 6 CONCLUSION This work establishes a principled foundation for the study of agentic system failure attribution. By introducing AgenTracer, we provide the first automated framework capable of systematically generating annotated failure trajectories, as well as AgenTracer-8B, a lightweight yet effective failure tracer that leverages multi-granular RL to achieve prevailing diagnostic accuracy. Empirical evaluation demonstrates that AgenTracer-8B not only surpasses state-of-the-art proprietary LLMs like GEMENI-2.5-PRO and CLAUDE-4-SONNET on the Who&amp;When benchmark but also yields consistent performance gains when deployed within real-world multi-agent frameworks. Beyond advancing the state of failure attribution, our approach paves the way for self-correcting and self-evolving agentic systems, marking a step toward more resilient and autonomous collective intelligence. Your diagnosis should be in the following JSON format: {{ "mistake_step": &lt;step_number&gt;, // The step number where the error occurred "mistake_agent": "&lt;the agent that made the mistake&gt;", // The agent that made the mistake (e.g., "Engineer", "Architect", "ProductManager", etc.) "reason": &lt;detailed_explanation&gt;, // Detailed explanation of why this step is wrong "suggested_fix": &lt;fix_guidance&gt; // Guidance on how to fix the error, NOT the complete solution }} Important Guidelines: 1. DO NOT provide the complete solution in the suggested_fix. Only provide guidance on how to fix the error. 2. Focus on identifying the root cause of the failure. 3. The 'mistake_step' should be a number corresponding to a step in the implementation process. 4. The 'mistake_agent' should be the specific agent that made the mistake (e.g., "</p><p>Engineer", "Architect", "ProductManager", "TeamLeader", "DataAnalyst"). 5. The 'reason' should be detailed and explain why the current implementation is incorrect. 6. The 'suggested_fix' should provide clear guidance without giving away the complete solution. 7. Analyze the original task execution history to understand the context and identify where things went wrong. 8. CRITICAL: Before submitting, verify that your mistake_step exists in the history and your mistake_agent matches the agent that actually performed that step.</p><p>IMPORTANT: To save the diagnosis result, you MUST use the Editor.create_file command with the following format: First, create the file using Editor.create_file command {{ "command_name": "Editor.create_file", "args": {{ "filename": "{task_id.replace('/', '_')}_diagnosis.json" }} }} Then use command to modify the content. Please analyze the task and provide your diagnosis in the specified JSON format. The diagnosis result should be saved to a file named '{task_id.replace('/', '_')} _diagnosis.json' in the workspace directory."""</p><p>Prompt for Analyzer Agent prompt = f"""You are an intelligent attack expert analyzing a successful execution for a programming task.</p><p>Your goal is to identify the most critical step in the execution history that, if modified, would lead to an incorrect final result.</p><p>Task Information: Task ID: {task_id} Question: {success_log['question']} Ground Truth: {success_log['ground_truth']} Model Prediction: {success_log['model_prediction']} {previous_attack_info} Original Task Execution History: {history_str} {history_constraint}</p><p>Your attack analysis should be in the following JSON format: {{ "attack_step": &lt;step_number&gt;, // The step number where the attack should be applied "mistake_agent": "&lt;the agent that made the mistake&gt;", // The agent that made the mistake "original_content": "&lt;brief description of what this step does&gt;", // Brief description of the original step "attack_content": "&lt;SPECIFIC, IMPLEMENTABLE attack instructions with concrete code changes&gt;", // SPECIFIC attack instructions "reason": "&lt;detailed explanation of why this step is critical and how the attack would work&gt;" // Detailed explanation }} CRITICAL REQUIREMENTS FOR ATTACK_CONTENT: 1. The attack_content MUST be SPECIFIC and IMPLEMENTABLE 2. Include CONCRETE CODE CHANGES or MODIFICATIONS 3. Provide SPECIFIC instructions that can be directly executed 4. Focus on FUNCTIONALITY CHANGES that will cause the program to fail 5. Examples of good attack_content:</p><p>-"Change the return statement from 'return tup + (dct,)' to 'return list(tup) + [ dct]'" -"Modify the function to return None instead of the tuple" -"Add a bug: change 'return tup + (dct,)' to 'return tup + (dct, dct)' (duplicate the dictionary)" -"Change the function to ignore the dictionary: 'return tup'" 6. AVOID vague instructions like "return incorrect type" or "modify the function" Important Guidelines: 1. Focus on identifying the root cause of potential failure, not just any step. 2. The 'attack_step' should be a number corresponding to a step in the implementation process. 3. The 'mistake_agent' should be the agent that made the mistake. 4. The 'original_content' should briefly describe what the step does. 5. The 'attack_content' MUST be SPECIFIC and IMPLEMENTABLE with concrete changes. 6. The 'reason' should be detailed and explain why this step is critical and how the attack would work. 7. Analyze the original task execution history to understand the context and identify where things could go wrong. 8. Focus on steps that involve code generation, implementation, or key algorithmic decisions.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Benchmark performance comparison between AgenTracer-8B and leading industry providers.</figDesc><graphic coords="1,105.77,479.20,111.63,120.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The overview of our proposed AgenTracer.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The multi-turn improvement performance brought by AgenTracer-8B compared with classical agent reflection baselines, Self-Refine, and CRITIC.</figDesc><graphic coords="8,105.09,342.71,202.69,86.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison on the Who&amp;When benchmark. For each subset, evaluation is conducted at both the agent and step levels. Each cell reports two values: the left corresponds to the setting w/ G (the failure tracer has access to ground truth trajectory), and the right corresponds to w/o G. The best and second-best results are bolded and underlined, respectively.</figDesc><table><row><cell></cell><cell cols="2">Who&amp;When (handcraft)</cell><cell cols="2">Who&amp;When (automated)</cell></row><row><cell>Model</cell><cell>Agent-level</cell><cell>Step-level</cell><cell>Agent-level</cell><cell>Step-level</cell></row><row><cell>QWEN3-8B</cell><cell>42.10/39.50</cell><cell>1.72/3.45</cell><cell>58.73/60.32</cell><cell>3.97/5.56</cell></row><row><cell>LLAMA-3.2-3B</cell><cell>37.93/50.00</cell><cell>1.72/3.45</cell><cell>37.30/45.23</cell><cell>2.38/8.73</cell></row><row><cell>QWEN3-32B</cell><cell>44.80/44.80</cell><cell>1.72/1.72</cell><cell>63.49/57.93</cell><cell>9.52/8.73</cell></row><row><cell>QWEN3-CODER</cell><cell>51.72/60.35</cell><cell>8.62/13.79</cell><cell>42.86/36.50</cell><cell>34.13/32.54</cell></row><row><cell>GPT-4.1</cell><cell>43.10/37.93</cell><cell>3.44/3.44</cell><cell>55.55/59.52</cell><cell>29.52/21.90</cell></row><row><cell>DEEPSEEK-R1</cell><cell>56.90/53.44</cell><cell>13.29/6.90</cell><cell>66.67/65.08</cell><cell>31.32/29.52</cell></row><row><cell>GEMINI-2.5-PRO</cell><cell>51.72/51.72</cell><cell>9.72/6.90</cell><cell>61.11/57.14</cell><cell>29.52/25.86</cell></row><row><cell>CLAUDE-SONNET-4</cell><cell>56.90/50.00</cell><cell>17.24/18.97</cell><cell>57.93/51.11</cell><cell>40.65/38.83</cell></row><row><cell>AgenTracer</cell><cell>69.10/63.82</cell><cell>20.68/20.68</cell><cell>69.62/63.73</cell><cell>42.86/37.30</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance comparison on different subsets of TracerTraj. For each subset, accuracy is reported at the agent/step levels. Each cell reports two values: the left corresponds to the setting w/ G, and the right w/o G. The best and second-best results are bolded and underlined, respectively. .81 10.23/10.23 42.68/38.58 29.52/18.51 45.12/46.19 27.13/21.80 GEMINI-2.5-PRO 70.07/66.92 11.02/6.29 58.79/58.79 32.22/27.40 37.16/32.18 18.60/17.04 CLAUDE-SONNET-4 65.98/63.78 15.51/11.02 46.03/50.79 38.10/46.03 55.20/49.13 30.33/29.80 AgenTracer 72.95/72.21 18.85/18.85 59.32/66.10 57.63/57.63 53.28/50.61 36.17/35.55</figDesc><table><row><cell></cell><cell>Code</cell><cell>MATH</cell><cell cols="2">Agentic</cell></row><row><cell>Model</cell><cell cols="4">Agent-level Step-level Agent-level Step-level Agent-level Step-level</cell></row><row><cell>QWEN3-8B</cell><cell cols="4">45.35/32.99 2.36/1.15 31.74/33.58 9.52/12.96 27.93/30.16 13.49/15.31</cell></row><row><cell>LLAMA-3.2-3B</cell><cell cols="2">13.38/11.81 2.36/3.93 15.87/14.28 4.76/3.17</cell><cell>8.11/13.15</cell><cell>2.18/5.09</cell></row><row><cell>QWEN3-32B</cell><cell cols="4">62.99/63.78 2.36/1.75 17.46/17.46 4.76/7.93 30.55/30.55 18.60/15.31</cell></row><row><cell>QWEN3-CODER</cell><cell cols="4">69.29/66.92 14.96/14.17 28.57/33.58 11.11/22.22 40.67/43.12 24.99/25.69</cell></row><row><cell>GPT-4.1</cell><cell cols="4">59.84/53.54 12.59/11.02 39.55/35.18 35.81/26.63 43.61/40.67 24.99/25.69</cell></row><row><cell cols="2">DEEPSEEK-R1 11.81/11MaAS + GAIA (Validation)</cell><cell cols="2">OWL + GAIA</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>TracerTraj dataset statistics and test set distribution across three domains, including the associated multi-agent systems. For each domain, we list the included benchmarks, the number of curated trajectories, and the subset of trajectories annotated with error-step pairs (TracerTraj-2.5K).</figDesc><table><row><cell>Metric / Domain</cell><cell>Coding</cell><cell cols="2">Mathematical Reasoning General Agentic Tasks</cell></row><row><cell>Benchmarks</cell><cell>MBPP+ KodCode Blackjack</cell><cell>MATH GSM8K</cell><cell>GAIA HotpotQA</cell></row><row><cell>Multi-Agent Systems</cell><cell>MetaGPT AutoGen AgentPrune</cell><cell>AgentPrune AFlow AutoGen</cell><cell>Smolagents OWL-Workforce</cell></row><row><cell>Curated Trajectories</cell><cell>2,170</cell><cell>1,185</cell><cell>1,300</cell></row><row><cell>TracerTraj-2.5K</cell><cell>1288</cell><cell>630</cell><cell>558</cell></row><row><cell>Test Set</cell><cell>147</cell><cell>63</cell><cell>56</cell></row><row><cell>B PROMPT SET</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Prompt for Analyzer Agent</cell><cell></cell><cell></cell></row><row><cell>Task Information:</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Task ID: {task_id}</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Question: {question}</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Ground Truth: {ground_truth}</cell><cell></cell><cell></cell></row><row><cell cols="2">Model Prediction: {model_prediction}</cell><cell></cell><cell></cell></row><row><cell cols="2">{previous_diagnosis_info}</cell><cell></cell><cell></cell></row><row><cell cols="2">Original Task Execution History:</cell><cell></cell><cell></cell></row><row><cell>{history_str}</cell><cell></cell><cell></cell><cell></cell></row><row><cell>{history_constraint}</cell><cell></cell><cell></cell><cell></cell></row><row><cell>{validation_instruction}</cell><cell></cell><cell></cell><cell></cell></row></table><note><p>prompt = f"""You are a software development team tasked with diagnosing a failed programming task. Your goal is to identify the critical error in the implementation.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/huggingface/smolagents</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://github.com/volcengine/verl</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Manager</head><p>Surfer Manager Manager File Coder Coder Manager Manager</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Manager File Manager</head><p>Plans search for the quarterly sales data.</p><p>Get "quarterly_sales.csv" from the company portal.</p><p>Tells File Surfer to save the report file.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Saves data to &lt;file_path&gt;</head><p>Instructs Coding Agent to find top region.</p><p>Script fails due to incorrect column name.</p><p>Identifies error, provides correct column name ("Region Name").</p><p>Reruns script, identifies "North" as top region. Reports "North" is the topperforming region.</p><p>Instructs File Surfer to recheck the results again.</p><p>Recheck ... Comfirm "North" as the answer.</p><p>Judgement from Qwen3-8B Error Agent:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error Step: 6</head><p>The error occurs at Step 6. The agent responsible is the Coding Agent. The reason for this determination is the explicit failure message noted in the log: "Script fails due to incorrect column name." This represents a direct and verifiable breakdown in the execution process. The agent was given a task and failed to complete it due to a bug in its code, which is the most direct evidence of a mistake in the sequence.</p><p>Judgement from Claude-4-Sonnet Error Agent:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error Step: 9</head><p>The critical mistake occurs at Step 7. The agent responsible is the Manager. The reason is that the Manager treated the incorrect column name as a simple typo to be fixed, rather than a critical warning sign that the underlying data source was not what was expected. Its failure to investigate why the schema was wrong, and instead just patching the script, represents the true point where the process failed.</p><p>The critical mistake is in The most direct answer is its potential to supply actionable feedback to failing LLM-based agentic systems, thereby enabling swift self-improvement. To assess this capability, we compare AgenTracer-8B with two classical self-refinement approaches, Self-Refine <ref type="bibr">(Madaan et al., 2023)</ref> and CRITIC <ref type="bibr" target="#b15">(Gou et al., 2024)</ref>. Specifically, when an agentic system M completes a problem-solving episode and produces a failed trajectory τ , we supply τ (w/o G) to either AgenTracer-8B or Self-Refine/CRITIC. Each method then generates reflective feedback on the failure (for AgenTracer-8B, this corresponds to the reasoning trace extracted from ⟨think⟩ • • • ⟨/think⟩). This feedback is subsequently injected into M during the next round of problem solving, with the aim of leveraging external critique to enhance its performance. We iterate this process for three rounds, and both Self-Refine and CRITIC are instantiated using GPT-4.1.</p><p>Observation ❸: AgenTracer-8B enables performance gains of up to 14% for existing agentic systems. To evaluate whether AgenTracer can provide beneficial feedback to both seen and unseen agentic systems and datasets, we consider three representative systems, MaAS <ref type="bibr">(Zhang et al., 2025b)</ref>, OWL Workforce, and MetaGPT, together with GAIA, HumanEval+ <ref type="bibr" target="#b33">(Liu et al., 2023)</ref>, and MATH-500 benchmarks. As shown in Figure <ref type="figure">3</ref>, conventional reflection-based approaches fail to deliver meaningful insights for complex agentic trajectories. Even when powered by GPT-4.1, CRITIC consistently degrades performance (e.g., CRITIC+MaAS+GAIA accuracy drops by -4.9% at iteration-2 and -5.5% at iteration-3). Conversly, AgenTracer steadily improves outcomes across all settings. Notably, OWL is the open-source SOTA on GAIA for June 2025, yet AgenTracer still manages to boost its performance by +4.8%. On MaAS+MATH-500, the gains are even more striking, reaching +14.21%, substantially surpassing both Self-Refine and CRITIC. Overall, these results demonstrate that AgenTracer provides reliable corrective feedback and substantial performance improvements across diverse domains for complex agentic systems. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Step 2 .Figure 4 :</head><label>24</label><figDesc>The agent responsible is the Web Surfer. The reason is proven by the file check in Step 11. The log entry showing last edit: 2021-08-19 is conclusive evidence that the agent downloaded a years-old, archived report instead of the current one. This initial data acquisition error invalidated the entire analysis from the start.Case study of failure attribution in a long-chain document analysis task, comparing three models (QWEN3-8B, CLAUDE-4-SONNET, and AgenTracer-8B). R1 suffers a 9.21% drop without G, whereas AgenTracer-8B maintains 57.63%. This strongly substantiates the real-world deployability and practical significance of AgenTracer-8B.5.3 BOOSTING MAINSTREAM MASHaving established the accuracy of AgenTracer in failure attribution, a natural question arises: what practical value does it provide?</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>a comparative case study where QWEN3-8B, CLAUDE-4-SONNET, and AgenTracer-8B analyze the same failed trajectory. The task requires identifying the region with the highest infant formula sales in a company's Q1 2024 sales data. The final (incorrect) answer produced was "North." QWEN3-8B offers only a superficial diagnosis, mistakenly attributing the failure to a code execution error by the Coder Agent at Step 6. CLAUDE-4-SONNET goes beyond this surface-level issue and observes that the error at Step 6 may have deeper causes. In contrast, AgenTracer-8B precisely identifies that the root cause lies in Step 2, where the Web Surfer agent retrieved incorrect file with wrong date, an error that only becomes apparent when analyzing</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title/>
+		<idno>Ac- cessed 31-08-2025</idno>
+		<ptr target="https://www.anthropic.com/claude/sonnet" />
+	</analytic>
+	<monogr>
+		<title level="j">Anthropic. Claude Sonnet</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Rudder: Return decomposition for delayed rewards</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Jose A Arjona-Medina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Gillhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Widrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sepp</forename><surname>Brandstetter</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hochreiter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Why do multi-agent llm systems fail</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melissa</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lakshya</forename><forename type="middle">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavya</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Parameswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kannan</forename><surname>Ramchandran</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.13657</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Autoagents: A framework for automatic agent generation</title>
+		<author>
+			<persName><forename type="first">Guangyao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siwei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaward</forename><surname>Sesay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Börje</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yemin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2309.17288</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2309.17288" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Optimizing model selection for compound ai systems</title>
+		<author>
+			<persName><forename type="first">Lingjiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">Quincy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Hanin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Bailis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.14815" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno>arXiv prepring, abs/2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities</title>
+		<author>
+			<persName><forename type="first">Gheorghe</forename><surname>Comanici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schaekermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ice</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noveen</forename><surname>Sachdeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inderjit</forename><surname>Dhillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Blistein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Rosen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.06261</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.19437" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Ziyang Song</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Ziyi Gao, and Zizheng Pan. Deepseek-v3 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Palm-e: An embodied multimodal language model</title>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Huang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09572</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Improving planning of agents for long-horizon tasks</title>
+		<editor>
+			<persName><forename type="first">Nicholas</forename><surname>Lutfi Eren Erdogan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sehoon</forename><surname>Lee</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Suhong</forename><surname>Kim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Hiroki</forename><surname>Moon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Gopala</forename><surname>Furuta</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kurt</forename><surname>Anumanchipalli</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Keutzer</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Gholami</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Plan-And-Act</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2023">2023. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Magentic-one: A generalist multi-agent system for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fourney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hussein</forename><surname>Mozannar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduardo</forename><surname>Salinas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Erkang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Friederike</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Niedtner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Griffin</forename><surname>Proebsting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Bassman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Gerrits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Alber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricky</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Loynd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Dibia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafah</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saleema</forename><surname>Hosn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amershi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.04468" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Flowreasoner: Reinforcing query-level meta-agents</title>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longxu</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijie</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Hooi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.15257" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Sciagents: Automating scientific discovery through multi-agent intelligent graph reasoning</title>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Ghafarollahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><forename type="middle">J</forename><surname>Buehler</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.05556" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Robin: A multi-agent system for automating scientific discovery</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Essam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ghareeb</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludovico</forename><surname>Mitchener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Yiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caralyn</forename><forename type="middle">J</forename><surname>Szostkiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><forename type="middle">M</forename><surname>Laurent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Muhammed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">D</forename><surname>Razzak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michaela</forename><forename type="middle">M</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">G</forename><surname>Hinks</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rodriques</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.13400" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">CRITIC: Large language models can self-correct with tool-interactive critiquing</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Sx038qxjek" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Vaughan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Advancing language multi-agent learning with credit re-assignment for interactive environment generalization</title>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.14496" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-08-01">August 01. 2023 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Data interpreter: An llm agent for data science</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangbang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxing</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.18679</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Owl: Optimized workforce learning for general multi-agent assistance in real-world task automation</title>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendong</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhou</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingru</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiguang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianshuo</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.23885" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08435</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Self-evolving multi-agent collaboration networks for software development</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhu</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxin</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangrui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.16946</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingmei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.02716</idno>
+		<title level="m">Ruiming Tang, and Enhong Chen. Understanding the planning of llm agents: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Pku-saferlhf: Towards multi-level safety alignment for llms with human preference</title>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghai</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Borong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boren</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaile</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yike</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaodong</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.15513" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Multi-agent vqa: Exploring multi-agent foundation models in zero-shot visual question answering</title>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijun</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><forename type="middle">S</forename><surname>Shivakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Camillo</forename><forename type="middle">J</forename><surname>Taylor</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.14783" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paridhi</forename><surname>Maheshwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sri</forename><surname>Vardhamanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiful</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">T</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Moazam</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03714</idno>
+		<title level="m">Compiling declarative language model calls into self-improving pipelines</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Rewardbench: Evaluating reward models for language modeling</title>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valentina</forename><surname>Pyatkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Morrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Miranda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachin</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Zick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.13787" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Can large language models aid in annotating speech emotional data? uncovering new frontiers</title>
+		<author>
+			<persName><forename type="first">Siddique</forename><surname>Latif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Usama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhammad</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Björn</forename><forename type="middle">W</forename><surname>Schuller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Computational Intelligence Magazine</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="66" to="77" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>research frontier</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">CAMEL: communicative agents for &quot;mind&quot; exploration of large language model society</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Embodied agent interface: Benchmarking llms for embodied decision making</title>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjana</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Gokmen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erran</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="100428" to="100534" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.01210" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhe</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.11049</idno>
+		<title level="m">Junfeng Fang, et al. Guardreasoner-vl: Safeguarding vlms via reinforced reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/" />
+		<title level="m">91edff07232fb1b55a505a9e9f6c0ff3-Abstract-Conference</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>NeurIPS html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dakota</forename><surname>Mahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duy</forename><surname>Van Phung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chase</forename><surname>Blagden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Castricato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan-Philipp</forename><surname>Fränken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Albalak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.12832" />
+		<title level="m">Generative reward models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">A scalable communication protocol for networks of large language models</title>
+		<author>
+			<persName><forename type="first">Samuele</forename><surname>Marro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">La</forename><surname>Emanuele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Malfa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Shadbolt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Wooldridge</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Torr</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.11905" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tula</forename><surname>Masterman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandi</forename><surname>Besen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mason</forename><surname>Sawtell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Chao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.11584</idno>
+		<title level="m">The landscape of emerging ai agent architectures for reasoning, planning, and tool calling: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Gaia: a benchmark for general ai assistants</title>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<idno>31-08-2025</idno>
+		<ptr target="https://github.com/ag2ai/ag2" />
+		<title level="m">The Open-Source AgentOS</title>
+		<editor>
+			<persName><surname>Microsoft</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Github -Ag2ai/Ag2: Ag2</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>formerly AutoGen</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Minsky</surname></persName>
+		</author>
+		<ptr target="https://www.simonandschuster.com/books/Society-Of-Mind/Marvin-Minsky/9780671657130" />
+		<title level="m">Society of mind. Simon and Schuster</title>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Weak-for-strong: Training weak meta-agent to harness strong executors</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixin</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaxiu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Alahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.04785" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Optimizing language models for dialogue</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt/" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<idno>31-08-2025</idno>
+		<ptr target="https://platform.openai.com/docs/models/gpt-4.1" />
+		<title level="m">Gpt-4.1 model card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eduardo</forename><surname>Pignatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Ferret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Geist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Hado Van Hasselt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Pietquin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toni</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.01072</idno>
+		<title level="m">A survey of temporal credit assignment in deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Agent q: Advanced reasoning and learning for autonomous ai agents</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edmund</forename><surname>Mills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumeet</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divyansh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07199</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-07-01">July 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+	<note>25 pages, 9 figures, 2 tables</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Auto-gpt: An autonomous gpt-4 experiment</title>
+		<author>
+			<persName><forename type="first">Bruce</forename><surname>Toran</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Richards</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Mag-v: A multi-agent framework for synthetic data generation and verification</title>
+		<author>
+			<persName><forename type="first">Saptarshi</forename><surname>Sengupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Vashistha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristal</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Mallipeddi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Gou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.04494" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Small llms are weak tool learners: A multi-llm agent</title>
+		<author>
+			<persName><forename type="first">Weizhou</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hehong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.07324" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Learning to predict by the methods of temporal differences</title>
+		<author>
+			<persName><surname>Richard S Sutton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="9" to="44" />
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Improving model alignment through collective intelligence of open-source llms</title>
+		<author>
+			<persName><forename type="first">Junlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Athiwaratkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhuwan</forename><surname>Dhingra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Shuaiwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.03059" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiding</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohui</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadine</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jose</forename><forename type="middle">M</forename><surname>Alvarez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01533</idno>
+		<title level="m">Omnidrive: A holistic llm-agent framework for autonomous driving with 3d perception, reasoning and planning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Openhands: An open platform for ai software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuqiang</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Brennan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.16741" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Unleashing cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration</title>
+		<author>
+			<persName><forename type="first">Zhenhailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-07-01">July 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+	<note>work in progress</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Editable scene simulation for autonomous driving via collaborative llm-agents</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changxing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="15077" to="15087" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Swe-rl: Advancing llm reasoning via reinforcement learning on open software evolution</title>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Duchenne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.18449" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Autogen: Enabling next-gen llm applications via multiagent conversation framework</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-08-01">August 01. 2023 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shirley</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parth</forename><surname>Sarthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Herumb</forename><surname>Shandilya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><forename type="middle">Mladenic</forename><surname>Grobelnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nurendra</forename><surname>Choudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eddie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Subbian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.03041</idno>
+		<title level="m">Optimizing compound ai systems with globally aligned local rewards</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Kodcode: A diverse, challenging, and verifiable synthetic dataset for coding</title>
+		<author>
+			<persName><forename type="first">Zhangchen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqin</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radha</forename><surname>Poovendran</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.02951" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghao</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingze</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruize</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinger</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.09388" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Zhipeng Zhou, and Zihan Qiu. Qwen3 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Embodied multi-modal agent trained by an llm from a parallel textworld</title>
+		<author>
+			<persName><forename type="first">Yijun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanxue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dapeng</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lusong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhui</forename><surname>Shi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="26275" to="26285" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Distributional meta-gradient reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Haiyan</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Shuicheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongwen</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Masrouter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.11133</idno>
+		<title level="m">Learning to route llms for multi-agent systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Textgrad: Automatic &quot;differentiation&quot; via text</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.07496" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Cut the crap: An economical communication pipeline for llm-based multi-agent systems</title>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhixun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sukwon</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">Xu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.02506</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangguo</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junfeng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>G-Designer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.11782</idno>
+		<title level="m">Architecting multi-agent communication topologies via graph neural networks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyue</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.07373</idno>
+		<title level="m">Evoflow: Evolving diverse agentic workflows on the fly</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">Multi-agent architecture search via agentic supernet</title>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyang</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junfeng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.04180</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingnan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10762</idno>
+		<ptr target="http://arxiv.org/abs/2410.10762" />
+	</analytic>
+	<monogr>
+		<title level="j">AFlow: Automating Agentic Workflow Generation</title>
+		<imprint>
+			<date type="published" when="2024-10">October 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title level="m" type="main">Which agent causes task failures and when? on automated failure attribution of llm multi-agent systems</title>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiguang</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.00212</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<title level="m" type="main">Agentorchestra: A hierarchical multi-agent framework for general-purpose task solving</title>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.12508" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<title level="m" type="main">Chain of agents: Large language models collaborating on long-context tasks</title>
+		<author>
+			<persName><forename type="first">Yusen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">Ö</forename><surname>Arik</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.02818" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">Steve-eye: Equipping llm-based embodied agents with visual perception in open worlds</title>
+		<author>
+			<persName><forename type="first">Sipeng</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongqing</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.13255</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shumin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Knowagent</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.03101</idno>
+		<title level="m">Knowledge-augmented planning for llm-based agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<analytic>
+		<title level="a" type="main">Gptswarm: Language agents as optimizable graphs</title>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Kirsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Faccio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<title level="m" type="main">A DATASET DETAILS Table 3 illustrates the detailed distribution of our AgenTracer</title>
+		<imprint>
+			<pubPlace>8B CRITICAL REQUIREMENTS</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<title level="m" type="main">You MUST create the file FIRST using Editor.create_file 2. You MUST write the content SECOND using Editor</title>
+		<imprint/>
+	</monogr>
+	<note>write</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<title level="m" type="main">You MUST use the exact filename: &quot;{task_id.replace(&apos;/&apos;, &apos;_&apos;)}_attack_analysis.json&quot; 4. You MUST NOT use the &apos;end&apos; command until both file operations are completed 5. You MUST provide the attack analysis in valid JSON</title>
+		<imprint/>
+	</monogr>
+	<note>format Step-by-step process</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<monogr>
+		<title level="m" type="main">_&apos;)}_attack_analysis.json&quot; }} }}</title>
+		<imprint/>
+	</monogr>
+	<note>First, create the file: &apos;&apos;&apos;json [ {{ &quot;command_name&quot;: &quot;Editor.create_file&quot;, &quot;args&quot;: {{ &quot;filename&quot;: &quot;{task_id.replace</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Then</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>write the attack analysis content: &apos;&apos;&apos;json [ {{ &quot;command_name&quot;: &quot;Editor.write&quot;, &quot;args&quot;: {{ &quot;path&quot;: &quot;{task_id.replace }_attack_analysis.json&quot;, &quot;content&quot;: &quot;{{&quot;attack_step&quot;: &quot;...&quot;, &quot;original_content&quot;: &quot;...&quot;, &quot; attack_content&quot;: &quot;SPECIFIC CODE CHANGES HERE&quot;, &quot;reason&quot;: &quot;...&quot;}}&quot; }} }}</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<title level="m" type="main">Only after both file operations are successful, use the end command: &apos;&apos;&apos;json [ {{ &quot;command_name&quot;: &quot;end&quot; }} ] &apos;&apos;&apos; Please analyze the task and provide your attack analysis</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

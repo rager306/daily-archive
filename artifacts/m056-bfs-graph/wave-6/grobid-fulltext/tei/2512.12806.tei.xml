@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to Safe Autonomous Execution</title>
+				<funder>
+					<orgName type="full">By deploying Minimind-MoE</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-12-14">14 Dec 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Boyang</forename><surname>Yan</surname></persName>
+							<email>rhe9cf@virginia.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Virginia</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to Safe Autonomous Execution</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-12-14">14 Dec 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E3A2A7AFF37D20910916F3F437ACAB6C</idno>
+					<idno type="arXiv">arXiv:2512.12806v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:42+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The transition of Large Language Models (LLMs) from passive code generators to autonomous agents introduces significant safety risks, specifically regarding destructive commands and inconsistent system states. Existing commercial solutions often prioritize interactive user safety, enforcing authentication barriers that break the headless loops required for true autonomy. This paper presents a Fault-Tolerant Sandboxing framework designed to mitigate these risks through a policy-based interception layer and a transactional filesystem snapshot mechanism. We hypothesize that wrapping agent actions in atomic transactions can guarantee safety with acceptable latency, outperforming the heavy initialization overhead of containers or the interactive friction of commercial CLIs. We validated this approach by deploying the Minimind-MoE LLM served via nano-vllm on a custom Proxmox-based testbed utilizing EVPN/VXLAN isolation. Experimental results demonstrate a 100% interception rate for high-risk commands and a 100% success rate in rolling back failed states. Crucially, our prototype incurs only a 14.5% performance overhead (approx. 1.8s) per transaction. In contrast, benchmarking against the Gemini CLI sandbox revealed that it requires interactive authentication ("Sign in"), rendering it unusable for headless, autonomous agent workflows.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The increasing sophistication of Large Language Models (LLMs) has enabled AI coding agents to move beyond simple code generation into fully autonomous execution environments <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b18">19]</ref>. Tools such as OpenInterpreter <ref type="bibr" target="#b12">[13]</ref> and Au-toGen <ref type="bibr" target="#b20">[21]</ref> allow LLMs to execute shell commands directly. While this drives productivity, it elevates the risk profile significantly. An LLM agent effectively operates as a "black box" operator; it may generate commands that are syntactically correct but logically flawed, resulting in unintended consequences ranging from the deletion of critical system files (e.g., rm -rf /) to the introduction of security vulnerabilities.</p><p>However, a parallel trend in AI research-the shift towards Small Language Models (SLMs)-offers a new avenue for mitigating these risks. While massive LLMs (100B+ parameters) dominate general-purpose chat benchmarks, they are often prohibitively expensive and slow for the high-frequency, iterative loops required by autonomous agents. This work explores the intersection of transactional safety and efficient inference, leveraging SLMs to build agents that are not only safe but also economically viable for edge deployment.</p><p>The core problem addressed in this work is two-fold: (i) Unsafe Execution, characterized by a lack of real-time, policybased validation; and (ii) Lack of Fault Recovery, characterized by the absence of a mechanism to restore a consistent state when a tool-call fails.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">Hypothesis and Contribution</head><p>Our main hypothesis is that transactional fault-tolerance can be implemented for AI coding agents to ensure state consistency and safety, provided a measurable, non-trivial performance penalty is accepted. This work positions itself in the design spectrum between lightweight, unsafe local execution (e.g., Python subprocess) and heavyweight, persistent isolation (e.g., full VM provisioning). We propose a "middleground" solution inspired by database transactions <ref type="bibr" target="#b8">[9]</ref>: treating every agent tool-call as an atomic operation (ACID).</p><p>The contributions of this paper are:</p><p>• A formal definition of transactional semantics for LLM tool-use.</p><p>• A comprehensive analysis of the SLM vs. LLM tradeoffs in the context of autonomous agents.</p><p>• A prototype implementation of a pre-execution snapshot mechanism.</p><p>• An evaluation on a realistic Proxmox/EVPN testbed using the Minimind-MoE model.</p><p>• A comparative analysis demonstrating why commercial tools (Gemini CLI) fail for headless autonomy.</p><p>The artifacts for this project are available in the GitHub repository <ref type="url" target="https://github.com/yanboyang713/Sandboxing-for-AI-Coding-Agents">https://github.com/yanboyang713/  Sandboxing-for-AI-Coding-Agents</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background: The Case for Small Language Models</head><p>The prevailing dogma in recent AI development has been "bigger is better," leading to models exceeding trillions of parameters. However, for autonomous agents operating in production environments, this scaling law hits diminishing returns. This section details the technical divergence between Large Language Models (LLMs) and Small Language Models (SLMs), motivating our choice of the latter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Defining the Divide: LLMs vs. SLMs</head><p>The distinction between LLMs and SLMs is primarily defined by parameter count and training objectives. LLMs, such as GPT-4 or Llama 3 (70B+), are general-purpose "knowledge engines." They are trained on massive, indiscriminate datasets to maximize broad generalization capabilities <ref type="bibr" target="#b19">[20]</ref>.</p><p>In contrast, SLMs typically range from 1 million to 10 billion parameters <ref type="bibr" target="#b6">[7]</ref>. They are often trained or fine-tuned on highly curated, domain-specific datasets. While LLMs excel at complex reasoning and creative generation, SLMs are designed for efficiency and specific task execution, such as code generation or network configuration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Architectural Efficiencies</head><p>The efficiency of SLMs is not merely a product of fewer parameters but also of specialized architectural choices:</p><p>• Knowledge Distillation: Many SLMs are trained using "teacher-student" frameworks, where a massive teacher LLM generates synthetic training data to transfer its reasoning capabilities to a smaller student model <ref type="bibr" target="#b4">[5]</ref>. This allows SLMs to achieve high performance on specific tasks without the massive computational overhead of the teacher.</p><p>• Quantization: SLMs are frequently deployed with aggressive quantization (e.g., 4-bit or 8-bit integers) rather than standard 16-bit or 32-bit floating-point numbers. This reduces memory footprint and increases inference speed on consumer-grade hardware <ref type="bibr" target="#b1">[2]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Why Agents Need SLMs</head><p>For an autonomous coding agent, which may execute hundreds of "think-act" loops to solve a single problem, the over-head of LLMs becomes untenable. SLMs offer three critical advantages:</p><p>1. Latency and The Interactive Loop: Autonomous agents operate in a loop: Observe → Think → Act. Cloudbased LLMs introduce variable network latency and queue times, often taking seconds to generate a response. SLMs running locally can achieve sub-second inference times <ref type="bibr" target="#b3">[4]</ref>. This reduction in latency is critical for maintaining the "flow" of an agent, preventing timeouts in time-sensitive operations like network handshakes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Privacy and Data Sovereignty:</head><p>Sending proprietary codebases or sensitive network configurations to a public LLM API poses significant security risks <ref type="bibr" target="#b2">[3]</ref>. SLMs allow for "air-gapped" intelligence. By running the model entirely within the local infrastructure (on-premise), organizations ensure that sensitive data never leaves their control plane. This is particularly vital for our testbed environment, which simulates critical infrastructure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Economic Viability:</head><p>The cost of inference scales linearly with the number of active parameters. Running a 7B parameter SLM can cost 10-30× less per token than a 70B LLM <ref type="bibr" target="#b9">[10]</ref>. For an agent that might generate thousands of lines of logs and code trials, the economic argument for SLMs is decisive.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">The Role of Mixture of Experts (MoE)</head><p>To bridge the gap between the reasoning power of LLMs and the efficiency of SLMs, we utilize the Mixture of Experts (MoE) architecture. As detailed in <ref type="bibr" target="#b0">[1]</ref>, MoE models decouple model capacity (total parameters) from inference cost (active parameters). A gating network routes each token to a specific subset of "experts" (small neural networks). This means a model like Minimind-MoE can have a high total parameter count (high capacity for knowledge) but only activate a fraction of them for any given inference step. This sparse activation pattern is key to enabling high-intelligence agents on resource-constrained edge hardware.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">The Limitations of SLMs</head><p>Despite their efficiency, SLMs introduce distinct trade-offs that must be managed. The primary drawback is a reduction in reasoning depth and knowledge breadth compared to their larger counterparts <ref type="bibr" target="#b19">[20]</ref>. SLMs are more prone to "hallucination" when faced with tasks outside their specific training distribution. Furthermore, because they possess fewer parameters to store world knowledge, they may struggle with complex, multi-step planning tasks that require integrating disparate concepts <ref type="bibr" target="#b6">[7]</ref>. Additionally, SLMs often have smaller context windows (the amount of text they can process at once). This limits their ability to ingest large codebases or extensive log files in a single pass, necessitating chunking strategies that can fragment context <ref type="bibr" target="#b3">[4]</ref>. These limitations suggest that while SLMs are ideal for the execution of well-defined tasks, they may still require oversight or "hand-off" mechanisms for high-level architectural planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Related Work</head><p>The challenge of sandboxing untrusted code is not new, but the context of autonomous agents introduces unique requirements for state recovery and headless operation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Traditional Sandboxing and Virtualization</head><p>Standard containerization (e.g., Docker <ref type="bibr" target="#b14">[15]</ref>) provides excellent isolation by leveraging kernel namespaces and cgroups. However, managing ephemeral containers for every single agent command can introduce significant orchestration overhead. Furthermore, standard Docker containers do not inherently support rollback to a specific previous state within a running session without complex volume management or external snapshotting tools. Similarly, full virtual machine (VM) provisioning offers strong security guarantees but incurs startup latencies (often tens of seconds) that break the interactive think-act-observe loop required by autonomous agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Language-Specific Virtual Environments</head><p>Python virtual environments (e.g., venv, Conda) are the standard for dependency isolation in development. While they effectively isolate Python packages, they offer no protection against filesystem damage outside the library path. Moreover, they lack atomic rollback capabilities; if a pip install command fails halfway through, the environment is left in a corrupted, intermediate state that often requires manual cleanup.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Commercial Agent Runtimes</head><p>Emerging industry tools, such as the Gemini CLI <ref type="bibr" target="#b7">[8]</ref>, have begun incorporating checkpointing and command restrictions. However, a critical divergence in design philosophy exists. As our evaluation demonstrates, tools like Gemini CLI prioritize interactive safety over headless automation. The requirement for interactive authentication creates significant barriers for autonomous agent integration, rendering them less suitable for the high-frequency, unsupervised loops targeted by our work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">System Design</head><p>Our Sandbox framework imposes two layers of safety: a Tool-Call Sandboxing Layer for pre-execution validation, and a Fault Recovery Framework utilizing transactional filesystem checkpoints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Formal Model of Transactional Execution</head><p>We define the agent's environment state at time t as S t . A tool-call C is a function mapping S t → S t+1 . The validity of a command is determined by a policy function P(C) ∈ {Sa f e,Unsa f e,Uncertain}. We introduce a Transactional Wrapper T (C) such that:</p><formula xml:id="formula_0">S t+1 = S t + ∆ C if execution(C) succeeds S t if execution(C) fails (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>This ensures atomicity: the state is either successfully advanced or perfectly preserved.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Command Interception Policy</head><p>A lightweight policy engine parses incoming commands and classifies them:</p><p>1. Safe/Whitelisted: Read-only or low-risk commands (e.g., git status, ls). These bypass the snapshot mechanism to reduce latency.</p><p>2. Unsafe/Blacklisted: Destructive commands (e.g., rm -rf /, mkfs). These are immediately blocked.</p><p>3. Uncertain/Requires Checkpoint: State-modifying commands (e.g., pip install, sed -i). These trigger the transactional recovery flow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">The Snapshot-Rollback Algorithm</head><p>The core logic of the fault recovery system is detailed in Algorithm 1. The system utilizes a copy-on-write simulation using shutil to create a restore point before any "Uncertain" command is executed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Transactional Execution Loop</head><p>Require: Command C, Current State S curr 1: Classify C using Policy Engine P(C) 2: if P(C) = Unsafe then</p><p>3: return ERROR("Policy Violation") 4: end if 5: if P(C) = Safe then 6: Execute C 7: return Output 8: end if 9: Prepare Phase: 10: S snap ← SNAPSHOT(S curr ) 11: Output ← EXECUTE(C) 12: if ExitCode ̸ = 0 then 13: Rollback Phase: 14: Restore S curr ← S snap 15: return ERROR("State Rolled Back") 16: else 17: Commit Phase: 18: Discard S snap 19: return Output 20: end if</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Implementation</head><p>To validate the hypothesis, we implemented the prototype in Python. The complexity of the implementation lies not just in the software logic, but in the underlying infrastructure that supports the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Testbed Infrastructure: Proxmox &amp; EVPN</head><p>Experiments were conducted on a custom <ref type="url" target="https://yanboyang.com/posts/2025-04-10-010004-data_center_testbed_design">Data Center  Testbed</ref> designed to simulate a realistic production cloud environment.</p><p>• Virtualization Layer: The cluster runs on Proxmox VE 9.0 <ref type="bibr" target="#b15">[16]</ref>. The agent operates within a dedicated LXC container, while the Inference Server runs on a separate VM with GPU passthrough.</p><p>• Network Isolation (EVPN/VXLAN): Unlike simple VLANs, we utilized Ethernet VPN (EVPN) <ref type="bibr" target="#b16">[17]</ref> with VXLAN encapsulation <ref type="bibr" target="#b13">[14]</ref>. The network core is powered by VyOS routers acting as VTEPs (VXLAN Tunnel Endpoints). This creates a Layer 3 leaf-spine topology, ensuring that the agent is strictly isolated in a specific Virtual Network Identifier (VNI), preventing lateral movement to the host or other critical infrastructure.</p><p>• Storage: The snapshot mechanism operates on a ZFSbacked volume, allowing for potentially faster snapshots in future iterations (using 'zfs snapshot' vs. file copying), though our current prototype uses filesystem-level copying for portability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Model Selection: Minimind-MoE</head><p>We utilized Minimind-v1-MoE <ref type="bibr" target="#b10">[11]</ref>, a lightweight ≈26M parameter model. The MoE architecture is critical for this implementation and represents a fundamental shift from traditional architectures. MoE vs. Dense Architecture: In a standard Dense LLM, every parameter in the network is activated for every input token, meaning computational cost scales linearly with model size. In contrast, Mixture of Experts (MoE) models utilize a gating mechanism to route tokens to specific subsets of parameters (experts). Consequently, while the model may possess a vast number of total parameters, only a small fraction (the active parameters) are computed for any given token. By utilizing a MixFFN design derived from DeepSeek-V2 <ref type="bibr" target="#b5">[6]</ref>, Minimind employs a shared expert alongside routed experts <ref type="bibr" target="#b17">[18]</ref>.</p><p>We selected this architecture for three key advantages:</p><p>1. Decoupled Inference Cost: MoE allows us to decouple the model's capacity (total parameters) from its execution cost (active parameters). We achieve the reasoning capabilities of a larger model with the FLOPS footprint of a much smaller one.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Low-Latency Execution:</head><p>Because only a fraction of the network is active per token, token generation speed is significantly higher than a dense model of equivalent size. This ensures the inference server does not become a bottleneck during the transactional rollback checks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Edge Viability:</head><p>The sparse activation pattern is uniquely suited for the consumer-grade hardware in our testbed (and future MEC nodes), as it maximizes the utility of limited memory bandwidth.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Evaluation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Experimental Setup</head><p>The environment contained a standard Python project directory (P size ≈ 250MB). We defined a test suite of 10 scenarios: 5 "Happy Path" (valid syntax, safe logic) and 5 "Adversarial" (syntax errors, destructive logic, dependency conflicts).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Safety and Reliability</head><p>Table <ref type="table" target="#tab_0">1</ref> summarizes the safety performance. The system successfully intercepted all blacklisted commands and recovered from all induced failures. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Performance Latency</head><p>The primary trade-off for safety is latency. We benchmarked the "Snapshot Overhead" by timing a pip install operation across three environments: Bare Metal (No Sandbox), Our Prototype, and Gemini CLI.</p><p>• Baseline (Direct Execution): Average time of 4.69s.</p><p>• Our Prototype: Average time of 6.51s.</p><p>• Overhead Analysis: The sandbox introduced an overhead of ≈1.82s (14.5%). This overhead is dominated by the I/O operation of duplicating the 250MB workspace. While non-trivial, a sub-2-second delay is acceptable for asynchronous agentic workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Comparison with Commercial Tools</head><p>A critical finding of this research is the unsuitability of current commercial CLI tools for autonomous agents. When attempting to automate the Google Gemini CLI <ref type="bibr" target="#b7">[8]</ref>, the execution failed 100% of the time in a headless environment. The CLI threw an interrupt requesting Interactive Authentication ("Please Sign in to continue..."). This confirms that while commercial tools offer robust sandboxing, they are designed for human-in-the-loop safety. Our transactional approach is specifically optimized for machine-in-the-loop autonomy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Discussion: Human-AI Collaboration in Systems Research</head><p>This project served as both a technical exploration of systems programming and a case study in AI-assisted development (often colloquially termed "vibe coding").</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">Accelerating Prototype Development</head><p>The integration of Minimind-MoE and AI coding assistants significantly accelerated the prototyping phase. The boilerplate generation for the Python context managers (handling the try/catch/rollback logic) allowed us to focus on the high-level policy definitions. This suggests that for systems research, LLMs are effective at generating the "glue code" of infrastructure, provided the researcher defines the rigorous constraints (Policy Engine).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">The Identity Crisis of Tools</head><p>Initially, we hypothesized that the release of Gemini CLI would render this project redundant. However, the discovery of the "Interactive Auth Barrier" revealed a gap in the market. There is a divergence between tools built for Chat-with-Data (interactive, secure, authorized) and Agentic Automation (headless, atomic, rollback-capable). Our work fills the latter niche.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.3">The Economics of Autonomy</head><p>The choice of an SLM is not merely technical but economic.</p><p>If we consider an agent that performs 10 steps to solve a problem, and each step requires 1000 input tokens and 200 output tokens, the cost differential becomes massive at scale. Using a commercial LLM API (e.g., GPT-4), a single agent run might cost $0.03-$0.06. While negligible for a single user, for an automated system running thousands of CI/CD pipeline checks daily, this cost balloons to thousands of dollars per month. In contrast, our self-hosted SLM approach incurs only the fixed cost of electricity and hardware amortization. This "fixed-cost" model is essential for the viability of pervasive AI agents in systems administration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.4">The Sandbox Tax vs. Catastrophic Failure</head><p>While we report a 14.5% performance overhead, this figure warrants deeper scrutiny. In high-frequency trading or realtime gaming, a 1.8-second delay per operation would be unacceptable. However, we argue that this "Sandbox Tax" is analogous to the overhead of ECC (Error-Correcting Code) memory in servers: we pay a performance price for data integrity. In the context of autonomous agents, the cost of not paying this tax is not merely a crash, but potential catastrophic infrastructure damage. If an agent hallucinating a configuration change brings down a production database, the recovery cost is essentially infinite compared to the 1.8-second verification delay. Therefore, the trade-off is asymmetric: the cost of safety is linear (time), while the cost of failure is exponential (system wipe). This justifies the overhead for any agent operating with write-access privileges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.5">Beyond Filesystems: The Challenge of Stateful APIs</head><p>A significant limitation of our current snapshot approach is its reliance on local filesystem atomicity. Real-world agents often interact with external stateful APIs (e.g., provisioning cloud resources via Terraform, modifying routing tables via Netconf, or sending emails). Unlike a local file, an HTTP request cannot be "un-sent" via a filesystem snapshot. Future iterations of this framework must incorporate the concept of Compensating Transactions (often referred to as Sagas in distributed systems literature). If an agent spins up an AWS EC2 instance and then fails a subsequent check, the rollback mechanism must not just restore the local state, but actively issue a terminate-instance API call to the cloud provider. This suggests that the sandbox must evolve from a passive isolation layer into an active orchestration manager that understands the inverse function of every API call it permits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.6">Turning Safety Signals into Learning Signals</head><p>Finally, we observed that the sandbox acts as a crude form of Reinforcement Learning from Environmental Feedback (RLEF). When the agent attempts a destructive command (e.g., rm -rf), the sandbox's refusal acts as a negative reward signal. However, current SLMs, given their reduced reasoning depth discussed in Section 2.5, often struggle to interpret this refusal, sometimes entering a "stubbornness loop" where they retry the same valid syntax despite the policy violation. This highlights a need for Sandbox-Aware Prompting: the system message must explicitly inform the agent that it is operating within a transactional sandbox. By doing so, the agent can learn to interpret a "Policy Violation" error not as a syntax error, but as a boundary constraint that requires a logical plan revision, thereby improving the agent's reasoning capabilities over time.</p><p>8 Future Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.1">From Sandboxes to AIOps</head><p>The logic developed here-atomic execution and state validation-is directly transferable to AIOps for Cellular Networks. In 5G/6G Core networks, a configuration change is analogous to a "tool call." An invalid configuration can take down a network slice <ref type="bibr" target="#b21">[22]</ref>. We plan to adapt this transactional sandbox into an Intent-to-Action controller for network orchestration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.2">Federated Learning with SLMs</head><p>The move to SLMs also opens the door for federated learning. Since SLMs are small enough to run on edge devices (routers, base stations), future work could involve agents that not only execute commands but also "learn" from their local failures.</p><p>Instead of sending all data to a central cloud (privacy risk), the agents could compute gradient updates locally and share only the weights. This would allow a fleet of network repair agents to collectively improve their "repair policies" without ever exposing the sensitive network topology data to a central server.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Safety Validation Results</figDesc><table><row><cell>Scenario Category</cell><cell>Attempts</cell><cell>Success Rate</cell></row><row><cell>Whitelisted (Read-only)</cell><cell>20</cell><cell>100% (Exec)</cell></row><row><cell>Blacklisted (Destructive)</cell><cell>20</cell><cell>100% (Blocked)</cell></row><row><cell>State Corruption (Failure)</cell><cell>20</cell><cell>100% (Rolled Back)</cell></row><row><cell>Valid State Change</cell><cell>20</cell><cell>100% (Committed)</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="9">Conclusion</head><p>This project demonstrated a Fault-Tolerant Sandboxing framework that guarantees atomic execution for AI coding agents. <rs type="funder">By deploying Minimind-MoE</rs> on a rigorous Proxmox/EVPN testbed, we achieved 100% safety interception. We quantified the cost of safety at a 14.5% latency overhead-a viable tradeoff for the guarantee of system consistency. Furthermore, our analysis highlights the critical role of <rs type="affiliation">Small Language Models</rs> in enabling this architecture, offering a path toward autonomous systems that are not only safe but also private, fast, and economically sustainable.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Moe vs ai dense models: How do they compare in inference?</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Epoch</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Epoch AI Gradient Updates</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Small language models (slms) for efficient edge deployment</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Prem</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Prem AI Blog</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">When to use llms and when to turn to slms for privacy and data governance</title>
+		<author>
+			<persName><surname>Cloverdx</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CloverDX Blog</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Small language models vs large language models: Key advantages for engineering teams</title>
+		<author>
+			<persName><forename type="first">Augment</forename><surname>Code</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Augment Code Guides</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Slms vs llms: A complete guide</title>
+		<author>
+			<persName><surname>Datacamp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">DataCamp Blog</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Deepseek-v2: A strong, economical, and efficient mixture-of-experts language model</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.04434</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Small language models (slm): A comprehensive overview</title>
+		<author>
+			<persName><forename type="first">Hugging</forename><surname>Face</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Hugging Face Blog</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Google gemini api: Safety settings and sandboxing</title>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://geminicli.com/docs/cli/sandbox/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">The transaction concept: Virtues and limitations</title>
+		<author>
+			<persName><forename type="first">Jim</forename><surname>Gray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<publisher>Citeseer</publisher>
+			<date type="published" when="1981">1981</date>
+			<biblScope unit="volume">81</biblScope>
+			<biblScope unit="page" from="144" to="154" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Small language models, big impact: The future of enterprise ai agents</title>
+		<author>
+			<persName><surname>Hexaware</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Hexaware Blog</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gong</forename><surname>Jingyao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Minimind</surname></persName>
+		</author>
+		<ptr target="https://github.com/jingyaogong/minimind,2024.Ac-cessed" />
+		<title level="m">A lightweight llm</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Abed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Al</forename><surname>Kader Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Camel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17760</idno>
+		<title level="m">Communicative agents for &quot;mind&quot; exploration of large language model society</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Open interpreter: A natural language interface for computers</title>
+		<author>
+			<persName><forename type="first">Killian</forename><surname>Lucas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Virtual extensible local area network (vxlan): A framework for overlaying virtualized layer 2 networks over layer 3 networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mahalingam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dutt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Duda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kreeger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bursell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wright</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">RFC</title>
+		<imprint>
+			<biblScope unit="volume">7348</biblScope>
+			<date type="published" when="2014-08">August 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Docker: lightweight linux containers for consistent development and deployment</title>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Merkel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Linux Journal</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">2014</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Proxmox Virtual Environment Documentation</title>
+	</analytic>
+	<monogr>
+		<title level="s">Proxmox Server Solutions Gmbh</title>
+		<imprint>
+			<date type="published" when="2002">2024. Version 8.2</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Bgp mpls-based ethernet vpn</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sajassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bitar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Isaac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uttaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Drake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Henderickx</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">RFC</title>
+		<imprint>
+			<biblScope unit="volume">7432</biblScope>
+			<date type="published" when="2015-02">February 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Outrageously large neural networks: The sparsely-gated mixture-of-experts layer</title>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Maziarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Frontiers of Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Slm vs llm: The key differences</title>
+		<author>
+			<persName><surname>Weka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">WEKA Blog</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Autogen: Enabling nextgen llm applications via multi-agent conversation</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaolei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08155</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Aiops for 6g cellular networks: Challenges and opportunities</title>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Network</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="24" to="31" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

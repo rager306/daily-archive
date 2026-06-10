@@ -1,0 +1,2843 @@
+{
+  "layout": {
+    "author": "Boyang Yan",
+    "creation date": null,
+    "file name": "2512.12806.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          62.569,
+          642.732,
+          549.436,
+          679.329
+        ],
+        "content": "Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to Safe Autonomous Execution",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 14.346,
+        "heading level": 2,
+        "id": 43,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          14.04,
+          223.81,
+          36.36,
+          568.19
+        ],
+        "content": "arXiv:2512.12806v1[cs.AI]14Dec2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 55,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          237.856,
+          575.948,
+          374.145,
+          617.723
+        ],
+        "content": "Boyang Yan University of Virginia rhe9cf@virginia.edu",
+        "font": "NimbusMonL-ReguObli",
+        "font size": 11.955,
+        "id": 44,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          151.818,
+          525.96,
+          196.303,
+          541.514
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 45,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          245.608,
+          295.865,
+          520.626
+        ],
+        "content": "The transition of Large Language Models (LLMs) from passive code generators to autonomous agents introduces significant safety risks, specifically regarding destructive commands and inconsistent system states. Existing commercial solutions often prioritize interactive user safety, enforcing authentication barriers that break the headless loops required for true autonomy. This paper presents a Fault-Tolerant Sandboxing framework designed to mitigate these risks through a policy-based interception layer and a transactional filesystem snapshot mechanism. We hypothesize that wrapping agent actions in atomic transactions can guarantee safety with acceptable latency, outperforming the heavy initialization overhead of containers or the interactive friction of commercial CLIs. We validated this approach by deploying the MinimindMoE LLM served via nano-vllm on a custom Proxmox-based testbed utilizing EVPN/VXLAN isolation. Experimental results demonstrate a 100% interception rate for high-risk commands and a 100% success rate in rolling back failed states. Crucially, our prototype incurs only a 14.5% performance overhead (approx. 1.8s) per transaction. In contrast, benchmarking against the Gemini CLI sandbox revealed that it requires interactive authentication (\"Sign in\"), rendering it unusable for headless, autonomous agent workflows.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 46,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          211.012,
+          136.814,
+          226.566
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 47,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.532,
+          69.201,
+          295.868,
+          200.757
+        ],
+        "content": "The increasing sophistication of Large Language Models (LLMs) has enabled AI coding agents to move beyond simple code generation into fully autonomous execution environments [12,19]. Tools such as OpenInterpreter [13] and AutoGen [21] allow LLMs to execute shell commands directly. While this drives productivity, it elevates the risk profile significantly. An LLM agent effectively operates as a \"black box\" operator; it may generate commands that are syntactically correct but logically flawed, resulting in unintended consequences ranging from the deletion of critical system files (e.g., rm -rf /) to the introduction of security vulnerabilities.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 48,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          431.597,
+          559.657,
+          539.242
+        ],
+        "content": "However, a parallel trend in AI research—the shift towards Small Language Models (SLMs)—offers a new avenue for mitigating these risks. While massive LLMs (100B+ parameters) dominate general-purpose chat benchmarks, they are often prohibitively expensive and slow for the high-frequency, iterative loops required by autonomous agents. This work explores the intersection of transactional safety and efficient inference, leveraging SLMs to build agents that are not only safe but also economically viable for edge deployment.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 49,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          370.989,
+          559.654,
+          431.173
+        ],
+        "content": "The core problem addressed in this work is two-fold: (i) Unsafe Execution, characterized by a lack of real-time, policybased validation; and (ii) Lack of Fault Recovery, characterized by the absence of a mechanism to restore a consistent state when a tool-call fails.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 50,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          336.616,
+          493.346,
+          352.17
+        ],
+        "content": "1.1 Hypothesis and Contribution",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 51,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.88,
+          221.992,
+          559.658,
+          329.637
+        ],
+        "content": "Our main hypothesis is that transactional fault-tolerance can be implemented for AI coding agents to ensure state consistency and safety, provided a measurable, non-trivial performance penalty is accepted. This work positions itself in the design spectrum between lightweight, unsafe local execution (e.g., Python subprocess) and heavyweight, persistent isolation (e.g., full VM provisioning). We propose a \"middleground\" solution inspired by database transactions [9]: treating every agent tool-call as an atomic operation (ACID).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          327.843,
+          209.205,
+          467.927,
+          221.209
+        ],
+        "content": "The contributions of this paper are:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          329.337,
+          69.201,
+          559.656,
+          198.787
+        ],
+        "id": 54,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              329.337,
+              174.828,
+              557.999,
+              198.787
+            ],
+            "content": "• A formal definition of transactional semantics for LLM tool-use.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              329.337,
+              139.619,
+              559.656,
+              163.578
+            ],
+            "content": "• A comprehensive analysis of the SLM vs. LLM tradeoffs in the context of autonomous agents.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              329.337,
+              104.41,
+              558.001,
+              128.369
+            ],
+            "content": "• A prototype implementation of a pre-execution snapshot mechanism.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              329.337,
+              69.201,
+              559.652,
+              93.16
+            ],
+            "content": "• An evaluation on a realistic Proxmox/EVPN testbed using the Minimind-MoE model.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 1,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 1,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          65.457,
+          695.283,
+          294.123,
+          719.242
+        ],
+        "content": "• A comparative analysis demonstrating why commercial tools (Gemini CLI) fail for headless autonomy.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 57,
+        "level": "2",
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          651.432,
+          295.137,
+          687.346
+        ],
+        "content": "The artifacts for this project are available in the GitHub repository https://github.com/yanboyang713/ Sandboxing-for-AI-Coding-Agents.",
+        "font": "NimbusMonL-Regu-Extend_850",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0, 0.0, 0.7]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          606.539,
+          294.119,
+          636.041
+        ],
+        "content": "2 Background: The Case for Small Language Models",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 59,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.671,
+          513.81,
+          294.12,
+          597.545
+        ],
+        "content": "The prevailing dogma in recent AI development has been \"bigger is better,\" leading to models exceeding trillions of parameters. However, for autonomous agents operating in production environments, this scaling law hits diminishing returns. This section details the technical divergence between Large Language Models (LLMs) and Small Language Models (SLMs), motivating our choice of the latter.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 60,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          483.985,
+          268.094,
+          499.539
+        ],
+        "content": "2.1 Defining the Divide: LLMs vs. SLMs",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 61,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          454.619,
+          295.777,
+          478.578
+        ],
+        "content": "The distinction between LLMs and SLMs is primarily defined by parameter count and training objectives. LLMs, such",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 62,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          347.022,
+          295.862,
+          454.667
+        ],
+        "id": 63,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              382.888,
+              295.862,
+              454.667
+            ],
+            "content": "as GPT-4 or Llama 3 (70B+), are general-purpose \"knowledge engines.\" They are trained on massive, indiscriminate datasets to maximize broad generalization capabilities [20]. In contrast, SLMs typically range from 1 million to 10 billion parameters [7]. They are often trained or fine-tuned on highly curated, domain-specific datasets. While LLMs excel",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              347.022,
+              295.773,
+              382.936
+            ],
+            "content": "at complex reasoning and creative generation, SLMs are designed for efficiency and specific task execution, such as code generation or network configuration.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          317.198,
+          210.506,
+          332.752
+        ],
+        "content": "2.2 Architectural Efficiencies",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 64,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          287.831,
+          294.293,
+          311.79
+        ],
+        "content": "The efficiency of SLMs is not merely a product of fewer parameters but also of specialized architectural choices:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 65,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          65.457,
+          128.392,
+          295.86,
+          280.253
+        ],
+        "id": 66,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              65.457,
+              196.159,
+              295.771,
+              280.253
+            ],
+            "content": "• Knowledge Distillation: Many SLMs are trained using \"teacher-student\" frameworks, where a massive teacher LLM generates synthetic training data to transfer its reasoning capabilities to a smaller student model [5]. This allows SLMs to achieve high performance on specific tasks without the massive computational overhead of the teacher.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              65.457,
+              128.392,
+              295.86,
+              188.576
+            ],
+            "content": "• Quantization: SLMs are frequently deployed with aggressive quantization (e.g., 4-bit or 8-bit integers) rather than standard 16-bit or 32-bit floating-point numbers. This reduces memory footprint and increases inference speed on consumer-grade hardware [2].",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          98.568,
+          205.915,
+          114.122
+        ],
+        "content": "2.3 Why Agents Need SLMs",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 67,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          69.201,
+          295.777,
+          93.16
+        ],
+        "content": "For an autonomous coding agent, which may execute hundreds of \"think-act\" loops to solve a single problem, the over-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          695.283,
+          557.998,
+          719.242
+        ],
+        "content": "head of LLMs becomes untenable. SLMs offer three critical advantages:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 69,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          327.843,
+          682.412,
+          557.999,
+          695.373
+        ],
+        "content": "1. Latency and The Interactive Loop: Autonomous",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 70,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.571,
+          599.324,
+          559.742,
+          683.059
+        ],
+        "content": "agents operate in a loop: Observe → Think → Act. Cloudbased LLMs introduce variable network latency and queue times, often taking seconds to generate a response. SLMs running locally can achieve sub-second inference times [4]. This reduction in latency is critical for maintaining the \"flow\" of an agent, preventing timeouts in time-sensitive operations like network handshakes.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 71,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.521,
+          431.316,
+          559.742,
+          599.414
+        ],
+        "id": 72,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              317.521,
+              503.365,
+              559.742,
+              599.414
+            ],
+            "content": "2. Privacy and Data Sovereignty: Sending proprietary codebases or sensitive network configurations to a public LLM API poses significant security risks [3]. SLMs allow for \"air-gapped\" intelligence. By running the model entirely within the local infrastructure (on-premise), organizations ensure that sensitive data never leaves their control plane. This is particularly vital for our testbed environment, which simulates critical infrastructure.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.88,
+              431.316,
+              559.655,
+              503.455
+            ],
+            "content": "3. Economic Viability: The cost of inference scales linearly with the number of active parameters. Running a 7B parameter SLM can cost 10–30× less per token than a 70B LLM [10]. For an agent that might generate thousands of lines of logs and code trials, the economic argument for SLMs is decisive.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          317.88,
+          399.771,
+          540.462,
+          415.325
+        ],
+        "content": "2.4 The Role of Mixture of Experts (MoE)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 73,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.551,
+          262.214,
+          559.651,
+          393.769
+        ],
+        "content": "To bridge the gap between the reasoning power of LLMs and the efficiency of SLMs, we utilize the Mixture of Experts (MoE) architecture. As detailed in [1], MoE models decouple model capacity (total parameters) from inference cost (active parameters). A gating network routes each token to a specific subset of \"experts\" (small neural networks). This means a model like Minimind-MoE can have a high total parameter count (high capacity for knowledge) but only activate a fraction of them for any given inference step. This sparse activation pattern is key to enabling high-intelligence agents on resource-constrained edge hardware.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          230.669,
+          473.31,
+          246.223
+        ],
+        "content": "2.5 The Limitations of SLMs",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 75,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.571,
+          69.201,
+          559.747,
+          224.667
+        ],
+        "content": "Despite their efficiency, SLMs introduce distinct trade-offs that must be managed. The primary drawback is a reduction in reasoning depth and knowledge breadth compared to their larger counterparts [20]. SLMs are more prone to \"hallucination\" when faced with tasks outside their specific training distribution. Furthermore, because they possess fewer parameters to store world knowledge, they may struggle with complex, multi-step planning tasks that require integrating disparate concepts [7]. Additionally, SLMs often have smaller context windows (the amount of text they can process at once). This limits their ability to ingest large codebases or extensive log files in a single pass, necessitating chunking strategies that can fragment context [4]. These limitations suggest that",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 76,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          53.641,
+          683.328,
+          295.364,
+          719.242
+        ],
+        "content": "while SLMs are ideal for the execution of well-defined tasks, they may still require oversight or \"hand-off\" mechanisms for high-level architectural planning.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 78,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          650.915,
+          143.09,
+          666.469
+        ],
+        "content": "3 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 79,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          605.499,
+          294.123,
+          641.413
+        ],
+        "content": "The challenge of sandboxing untrusted code is not new, but the context of autonomous agents introduces unique requirements for state recovery and headless operation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 80,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          574.206,
+          294.12,
+          589.76
+        ],
+        "content": "3.1 Traditional Sandboxing and Virtualization",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 81,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.671,
+          424.781,
+          295.861,
+          568.291
+        ],
+        "content": "Standard containerization (e.g., Docker [15]) provides excellent isolation by leveraging kernel namespaces and cgroups. However, managing ephemeral containers for every single agent command can introduce significant orchestration overhead. Furthermore, standard Docker containers do not inherently support rollback to a specific previous state within a running session without complex volume management or external snapshotting tools. Similarly, full virtual machine (VM) provisioning offers strong security guarantees but incurs startup latencies (often tens of seconds) that break the interactive think-act-observe loop required by autonomous agents.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 82,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          393.488,
+          288.991,
+          409.042
+        ],
+        "content": "3.2 Language-Specific Virtual Environments",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 83,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          303.838,
+          295.864,
+          387.573
+        ],
+        "content": "Python virtual environments (e.g., venv, Conda) are the standard for dependency isolation in development. While they effectively isolate Python packages, they offer no protection against filesystem damage outside the library path. Moreover, they lack atomic rollback capabilities; if a pip install command fails halfway through, the environment is left in a corrupted, intermediate state that often requires manual cleanup.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 84,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          272.546,
+          229.431,
+          288.1
+        ],
+        "content": "3.3 Commercial Agent Runtimes",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 85,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.641,
+          158.985,
+          295.867,
+          266.631
+        ],
+        "content": "Emerging industry tools, such as the Gemini CLI [8], have begun incorporating checkpointing and command restrictions. However, a critical divergence in design philosophy exists. As our evaluation demonstrates, tools like Gemini CLI prioritize interactive safety over headless automation. The requirement for interactive authentication creates significant barriers for autonomous agent integration, rendering them less suitable for the high-frequency, unsupervised loops targeted by our work.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          126.572,
+          145.983,
+          142.126
+        ],
+        "content": "4 System Design",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 87,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          69.201,
+          295.773,
+          117.43
+        ],
+        "content": "Our Sandbox framework imposes two layers of safety: a ToolCall Sandboxing Layer for pre-execution validation, and a Fault Recovery Framework utilizing transactional filesystem checkpoints.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 88,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          705.96,
+          557.918,
+          721.514
+        ],
+        "content": "4.1 Formal Model of Transactional Execution",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 89,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.412,
+          626.546,
+          558.359,
+          686.371
+        ],
+        "content": "We define the agent’s environment state at time t as St. A tool-call C is a function mapping St → St+1. The validity of a command is determined by a policy function P(C) ∈ {Safe,Unsafe,Uncertain}. We introduce a Transactional Wrapper T(C) such that:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 90,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          349.303,
+          579.962,
+          376.526,
+          592.733
+        ],
+        "content": "St+1 =",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 91,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          386.752,
+          572.491,
+          525.38,
+          600.385
+        ],
+        "content": "St +∆C if execution(C) succeeds St if execution(C) fails",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 92,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          547.051,
+          580.729,
+          558.667,
+          592.733
+        ],
+        "content": "(1)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 93,
+        "level": "4",
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.571,
+          523.674,
+          559.657,
+          547.633
+        ],
+        "content": "This ensures atomicity: the state is either successfully advanced or perfectly preserved.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 94,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          452.797,
+          498.404,
+          468.351
+        ],
+        "content": "4.2 Command Interception Policy",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 95,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.521,
+          409.249,
+          557.999,
+          433.208
+        ],
+        "content": "A lightweight policy engine parses incoming commands and classifies them:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 96,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          136.66,
+          559.657,
+          379.279
+        ],
+        "id": 97,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              325.352,
+              343.006,
+              559.657,
+              379.279
+            ],
+            "content": "1. Safe/Whitelisted: Read-only or low-risk commands (e.g.,git status,ls). These bypass the snapshot mechanism to reduce latency.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              325.352,
+              292.606,
+              558.0,
+              305.567
+            ],
+            "content": "2. Unsafe/Blacklisted: Destructive commands (e.g., rm",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  335.265,
+                  281.249,
+                  521.446,
+                  293.253
+                ],
+                "content": "-rf /, mkfs). These are immediately blocked.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 28,
+                "level": "4",
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              325.352,
+              207.536,
+              558.174,
+              243.809
+            ],
+            "content": "3. Uncertain/Requires Checkpoint: State-modifying commands (e.g., pip install, sed -i). These trigger the transactional recovery flow.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.88,
+              136.66,
+              520.808,
+              152.214
+            ],
+            "content": "4.3 The Snapshot-Rollback Algorithm",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          317.521,
+          69.201,
+          558.002,
+          117.071
+        ],
+        "content": "The core logic of the fault recovery system is detailed in Algorithm 1. The system utilizes a copy-on-write simulation using shutil to create a restore point before any \"Uncertain\" command is executed.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 98,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          53.641,
+          691.464,
+          228.016,
+          719.91
+        ],
+        "content": "Algorithm 1 Transactional Execution Loop Require: Command C, Current State Scurr",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 101,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          55.769,
+          452.449,
+          229.868,
+          692.199
+        ],
+        "id": 103,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              59.754,
+              680.195,
+              217.733,
+              692.199
+            ],
+            "content": "1: Classify C using Policy Engine P(C)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              667.642,
+              161.392,
+              680.603
+            ],
+            "content": "2: if P(C) = Unsafe then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              655.687,
+              222.764,
+              668.648
+            ],
+            "content": "3: return ERROR(\"Policy Violation\")",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              643.731,
+              95.016,
+              656.692
+            ],
+            "content": "4: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              631.776,
+              150.882,
+              644.737
+            ],
+            "content": "5: if P(C) = Safe then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              620.419,
+              121.476,
+              632.423
+            ],
+            "content": "6: Execute C",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              607.866,
+              140.893,
+              620.827
+            ],
+            "content": "7: return Output",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              595.911,
+              95.016,
+              608.872
+            ],
+            "content": "8: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              59.754,
+              583.956,
+              135.593,
+              596.917
+            ],
+            "content": "9: Prepare Phase:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              565.833,
+              177.177,
+              584.602
+            ],
+            "content": "10: Ssnap ← SNAPSHOT(Scurr)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              553.878,
+              167.803,
+              572.647
+            ],
+            "content": "11: Output ← EXECUTE(C)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              541.923,
+              155.885,
+              561.051
+            ],
+            "content": "12: if ExitCode ̸= 0 then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              536.135,
+              149.81,
+              549.096
+            ],
+            "content": "13: Rollback Phase:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              518.013,
+              166.189,
+              536.782
+            ],
+            "content": "14: Restore Scurr ← Ssnap",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              512.225,
+              229.868,
+              525.186
+            ],
+            "content": "15: return ERROR(\"State Rolled Back\")",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              500.269,
+              86.428,
+              513.23
+            ],
+            "content": "16: else",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              488.314,
+              146.473,
+              501.275
+            ],
+            "content": "17: Commit Phase:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              476.271,
+              133.833,
+              488.961
+            ],
+            "content": "18: Discard Ssnap",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              464.404,
+              140.893,
+              477.365
+            ],
+            "content": "19: return Output",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              55.769,
+              452.449,
+              95.016,
+              465.41
+            ],
+            "content": "20: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 20,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          418.241,
+          153.623,
+          433.795
+        ],
+        "content": "5 Implementation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 105,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          361.387,
+          294.118,
+          409.256
+        ],
+        "content": "To validate the hypothesis, we implemented the prototype in Python. The complexity of the implementation lies not just in the software logic, but in the underlying infrastructure that supports the agent.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 106,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          332.205,
+          294.12,
+          347.759
+        ],
+        "content": "5.1 Testbed Infrastructure: Proxmox & EVPN",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 107,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          290.892,
+          294.287,
+          326.807
+        ],
+        "content": "Experiments were conducted on a custom Data Center Testbed designed to simulate a realistic production cloud environment.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 108,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          65.457,
+          69.201,
+          295.778,
+          286.059
+        ],
+        "id": 109,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              65.457,
+              237.83,
+              294.364,
+              286.059
+            ],
+            "content": "• Virtualization Layer: The cluster runs on Proxmox VE 9.0 [16]. The agent operates within a dedicated LXC container, while the Inference Server runs on a separate VM with GPU passthrough.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              65.457,
+              135.583,
+              295.778,
+              231.632
+            ],
+            "content": "• Network Isolation (EVPN/VXLAN): Unlike simple VLANs, we utilized Ethernet VPN (EVPN) [17] with VXLAN encapsulation [14]. The network core is powered by VyOS routers acting as VTEPs (VXLAN Tunnel Endpoints). This creates a Layer 3 leaf-spine topology, ensuring that the agent is strictly isolated in a specific Virtual Network Identifier (VNI), preventing lateral movement to the host or other critical infrastructure.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              65.457,
+              69.201,
+              295.768,
+              129.385
+            ],
+            "content": "• Storage: The snapshot mechanism operates on a ZFSbacked volume, allowing for potentially faster snapshots in future iterations (using ‘zfs snapshot‘ vs. file copying), though our current prototype uses filesystem-level copying for portability.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          317.88,
+          705.96,
+          513.479,
+          721.514
+        ],
+        "content": "5.2 Model Selection: Minimind-MoE",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 110,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.412,
+          528.103,
+          559.657,
+          695.883
+        ],
+        "content": "We utilized Minimind-v1-MoE [11], a lightweight ≈26M parameter model. The MoE architecture is critical for this implementation and represents a fundamental shift from traditional architectures. MoE vs. Dense Architecture: In a standard Dense LLM, every parameter in the network is activated for every input token, meaning computational cost scales linearly with model size. In contrast, Mixture of Experts (MoE) models utilize a gating mechanism to route tokens to specific subsets of parameters (experts). Consequently, while the model may possess a vast number of total parameters, only a small fraction (the active parameters) are computed for any given token. By utilizing a MixFFN design derived from DeepSeek-V2 [6], Minimind employs a shared expert alongside routed experts [18].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 111,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          327.843,
+          513.495,
+          544.271,
+          525.499
+        ],
+        "content": "We selected this architecture for three key advantages:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 112,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          325.352,
+          293.041,
+          559.648,
+          497.977
+        ],
+        "id": 113,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              325.352,
+              437.793,
+              559.648,
+              497.977
+            ],
+            "content": "1. Decoupled Inference Cost: MoE allows us to decouple the model’s capacity (total parameters) from its execution cost (active parameters). We achieve the reasoning capabilities of a larger model with the FLOPS footprint of a much smaller one.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              325.352,
+              359.439,
+              558.002,
+              419.623
+            ],
+            "content": "2. Low-Latency Execution: Because only a fraction of the network is active per token, token generation speed is significantly higher than a dense model of equivalent size. This ensures the inference server does not become a bottleneck during the transactional rollback checks.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              325.352,
+              293.041,
+              558.349,
+              341.269
+            ],
+            "content": "3. Edge Viability: The sparse activation pattern is uniquely suited for the consumer-grade hardware in our testbed (and future MEC nodes), as it maximizes the utility of limited memory bandwidth.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          317.88,
+          247.538,
+          391.5,
+          263.092
+        ],
+        "content": "6 Evaluation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "id": 114,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          218.24,
+          446.733,
+          233.794
+        ],
+        "content": "6.1 Experimental Setup",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 115,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.551,
+          159.934,
+          559.657,
+          207.803
+        ],
+        "content": "The environment contained a standard Python project directory (Psize ≈ 250MB). We defined a test suite of 10 scenarios: 5 \"Happy Path\" (valid syntax, safe logic) and 5 \"Adversarial\" (syntax errors, destructive logic, dependency conflicts).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 116,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          115.552,
+          455.042,
+          131.106
+        ],
+        "content": "6.2 Safety and Reliability",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 117,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.571,
+          69.201,
+          559.656,
+          105.115
+        ],
+        "content": "Table 1 summarizes the safety performance. The system successfully intercepted all blacklisted commands and recovered from all induced failures.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 118,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          106.23,
+          708.832,
+          241.582,
+          720.836
+        ],
+        "content": "Table 1: Safety Validation Results",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 120,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          630.177,
+          302.437,
+          695.567
+        ],
+        "content": "Scenario Category Attempts Success Rate Whitelisted (Read-only) 20 100% (Exec) Blacklisted (Destructive) 20 100% (Blocked) State Corruption (Failure) 20 100% (Rolled Back) Valid State Change 20 100% (Committed)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 122,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          594.116,
+          190.911,
+          609.67
+        ],
+        "content": "6.3 Performance Latency",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 125,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          540.818,
+          294.287,
+          588.688
+        ],
+        "content": "The primary trade-off for safety is latency. We benchmarked the \"Snapshot Overhead\" by timing a pip install operation across three environments: Bare Metal (No Sandbox), Our Prototype, and Gemini CLI.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          65.457,
+          433.045,
+          295.858,
+          533.208
+        ],
+        "id": 127,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              65.457,
+              520.247,
+              285.909,
+              533.208
+            ],
+            "content": "• Baseline (Direct Execution): Average time of 4.69s.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              65.457,
+              500.257,
+              231.952,
+              513.218
+            ],
+            "content": "• Our Prototype: Average time of 6.51s.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              65.457,
+              433.045,
+              295.858,
+              493.228
+            ],
+            "content": "• Overhead Analysis: The sandbox introduced an overhead of ≈1.82s (14.5%). This overhead is dominated by the I/O operation of duplicating the 250MB workspace. While non-trivial, a sub-2-second delay is acceptable for asynchronous agentic workflows.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          403.16,
+          265.213,
+          418.714
+        ],
+        "content": "6.4 Comparison with Commercial Tools",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 128,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.641,
+          290.086,
+          295.777,
+          397.732
+        ],
+        "content": "A critical finding of this research is the unsuitability of current commercial CLI tools for autonomous agents. When attempting to automate the Google Gemini CLI [8], the execution failed 100% of the time in a headless environment. The CLI threw an interrupt requesting Interactive Authentication (\"Please Sign in to continue...\"). This confirms that while commercial tools offer robust sandboxing, they are designed for human-in-the-loop safety. Our transactional approach is specifically optimized for machine-in-the-loop autonomy.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 129,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          245.133,
+          296.102,
+          274.635
+        ],
+        "id": 130,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              245.133,
+              296.102,
+              274.635
+            ],
+            "content": "7 Discussion: Human-AI Collaboration in Systems Research",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 146,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          53.671,
+          200.204,
+          294.125,
+          236.118
+        ],
+        "content": "This project served as both a technical exploration of systems programming and a case study in AI-assisted development (often colloquially termed \"vibe coding\").",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          170.32,
+          268.297,
+          185.874
+        ],
+        "content": "7.1 Accelerating Prototype Development",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 132,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          69.201,
+          295.771,
+          165.25
+        ],
+        "content": "The integration of Minimind-MoE and AI coding assistants significantly accelerated the prototyping phase. The boilerplate generation for the Python context managers (handling the try/catch/rollback logic) allowed us to focus on the high-level policy definitions. This suggests that for systems research, LLMs are effective at generating the \"glue code\" of infrastructure, provided the researcher defines the rigorous constraints (Policy Engine).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 133,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          705.96,
+          483.83,
+          721.514
+        ],
+        "content": "7.2 The Identity Crisis of Tools",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 134,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.521,
+          616.077,
+          559.742,
+          699.812
+        ],
+        "content": "Initially, we hypothesized that the release of Gemini CLI would render this project redundant. However, the discovery of the \"Interactive Auth Barrier\" revealed a gap in the market. There is a divergence between tools built for Chat-with-Data (interactive, secure, authorized) and Agentic Automation (headless, atomic, rollback-capable). Our work fills the latter niche.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 135,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          584.108,
+          491.96,
+          599.662
+        ],
+        "content": "7.3 The Economics of Autonomy",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 136,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.521,
+          434.449,
+          559.74,
+          577.96
+        ],
+        "content": "The choice of an SLM is not merely technical but economic. If we consider an agent that performs 10 steps to solve a problem, and each step requires 1000 input tokens and 200 output tokens, the cost differential becomes massive at scale. Using a commercial LLM API (e.g., GPT-4), a single agent run might cost $0.03-$0.06. While negligible for a single user, for an automated system running thousands of CI/CD pipeline checks daily, this cost balloons to thousands of dollars per month. In contrast, our self-hosted SLM approach incurs only the fixed cost of electricity and hardware amortization. This \"fixed-cost\" model is essential for the viability of pervasive AI agents in systems administration.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          402.481,
+          558.003,
+          418.035
+        ],
+        "content": "7.4 The Sandbox Tax vs. Catastrophic Failure",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 138,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.412,
+          216.956,
+          559.658,
+          396.332
+        ],
+        "content": "While we report a 14.5% performance overhead, this figure warrants deeper scrutiny. In high-frequency trading or realtime gaming, a 1.8-second delay per operation would be unacceptable. However, we argue that this \"Sandbox Tax\" is analogous to the overhead of ECC (Error-Correcting Code) memory in servers: we pay a performance price for data integrity. In the context of autonomous agents, the cost of not paying this tax is not merely a crash, but potential catastrophic infrastructure damage. If an agent hallucinating a configuration change brings down a production database, the recovery cost is essentially infinite compared to the 1.8-second verification delay. Therefore, the trade-off is asymmetric: the cost of safety is linear (time), while the cost of failure is exponential (system wipe). This justifies the overhead for any agent operating with write-access privileges.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 139,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          171.04,
+          557.996,
+          200.541
+        ],
+        "content": "7.5 Beyond Filesystems: The Challenge of Stateful APIs",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 140,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.521,
+          69.201,
+          558.005,
+          164.891
+        ],
+        "content": "A significant limitation of our current snapshot approach is its reliance on local filesystem atomicity. Real-world agents often interact with external stateful APIs (e.g., provisioning cloud resources via Terraform, modifying routing tables via Netconf, or sending emails). Unlike a local file, an HTTP request cannot be \"un-sent\" via a filesystem snapshot. Future iterations of this framework must incorporate the concept of Compensating Transactions (often referred to as Sagas",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 141,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          53.641,
+          623.552,
+          294.287,
+          719.242
+        ],
+        "content": "in distributed systems literature). If an agent spins up an AWS EC2 instance and then fails a subsequent check, the rollback mechanism must not just restore the local state, but actively issue a terminate-instance API call to the cloud provider. This suggests that the sandbox must evolve from a passive isolation layer into an active orchestration manager that understands the inverse function of every API call it permits.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 143,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          573.708,
+          296.1,
+          603.21
+        ],
+        "content": "7.6 Turning Safety Signals into Learning Signals",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 144,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.641,
+          386.827,
+          294.471,
+          566.203
+        ],
+        "content": "Finally, we observed that the sandbox acts as a crude form of Reinforcement Learning from Environmental Feedback (RLEF). When the agent attempts a destructive command (e.g., rm -rf), the sandbox’s refusal acts as a negative reward signal. However, current SLMs, given their reduced reasoning depth discussed in Section 2.5, often struggle to interpret this refusal, sometimes entering a \"stubbornness loop\" where they retry the same valid syntax despite the policy violation. This highlights a need for Sandbox-Aware Prompting: the system message must explicitly inform the agent that it is operating within a transactional sandbox. By doing so, the agent can learn to interpret a \"Policy Violation\" error not as a syntax error, but as a boundary constraint that requires a logical plan revision, thereby improving the agent’s reasoning capabilities over time.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 145,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          349.81,
+          138.894,
+          365.364
+        ],
+        "id": 146,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              349.81,
+              138.894,
+              365.364
+            ],
+            "content": "8 Future Work",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "previous list id": 130,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          323.443,
+          216.519,
+          338.997
+        ],
+        "content": "8.1 From Sandboxes to AIOps",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 147,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.641,
+          232.203,
+          295.777,
+          315.938
+        ],
+        "content": "The logic developed here—atomic execution and state validation—is directly transferable to AIOps for Cellular Networks. In 5G/6G Core networks, a configuration change is analogous to a \"tool call.\" An invalid configuration can take down a network slice [22]. We plan to adapt this transactional sandbox into an Intent-to-Action controller for network orchestration.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 148,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          196.307,
+          241.481,
+          211.861
+        ],
+        "content": "8.2 Federated Learning with SLMs",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 149,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          53.691,
+          69.201,
+          295.868,
+          188.802
+        ],
+        "content": "The move to SLMs also opens the door for federated learning. Since SLMs are small enough to run on edge devices (routers, base stations), future work could involve agents that not only execute commands but also \"learn\" from their local failures. Instead of sending all data to a central cloud (privacy risk), the agents could compute gradient updates locally and share only the weights. This would allow a fleet of network repair agents to collectively improve their \"repair policies\" without ever exposing the sensitive network topology data to a central server.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 150,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          705.96,
+          392.947,
+          721.514
+        ],
+        "content": "9 Conclusion",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 151,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.521,
+          577.375,
+          559.742,
+          696.976
+        ],
+        "content": "This project demonstrated a Fault-Tolerant Sandboxing framework that guarantees atomic execution for AI coding agents. By deploying Minimind-MoE on a rigorous Proxmox/EVPN testbed, we achieved 100% safety interception. We quantified the cost of safety at a 14.5% latency overhead—a viable tradeoff for the guarantee of system consistency. Furthermore, our analysis highlights the critical role of Small Language Models in enabling this architecture, offering a path toward autonomous systems that are not only safe but also private, fast, and economically sustainable.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 152,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          317.88,
+          546.538,
+          373.424,
+          562.092
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 153,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          317.88,
+          69.201,
+          560.541,
+          537.553
+        ],
+        "id": 154,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              322.861,
+              513.594,
+              559.653,
+              537.553
+            ],
+            "content": "[1] Epoch AI. Moe vs ai dense models: How do they compare in inference? Epoch AI Gradient Updates, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              481.889,
+              558.0,
+              505.848
+            ],
+            "content": "[2] Prem AI. Small language models (slms) for efficient edge deployment. Prem AI Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              450.185,
+              559.739,
+              474.144
+            ],
+            "content": "[3] CloverDX. When to use llms and when to turn to slms for privacy and data governance. CloverDX Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              406.525,
+              559.748,
+              442.439
+            ],
+            "content": "[4] Augment Code. Small language models vs large language models: Key advantages for engineering teams. Augment Code Guides, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              374.82,
+              558.002,
+              398.779
+            ],
+            "content": "[5] DataCamp. Slms vs llms: A complete guide. DataCamp Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              331.16,
+              559.25,
+              367.075
+            ],
+            "content": "[6] DeepSeek-AI. Deepseek-v2: A strong, economical, and efficient mixture-of-experts language model. arXiv preprint arXiv:2405.04434, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              299.456,
+              559.656,
+              323.415
+            ],
+            "content": "[7] Hugging Face. Small language models (slm): A comprehensive overview. Hugging Face Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              267.751,
+              559.652,
+              291.71
+            ],
+            "content": "[8] Google. Google gemini api: Safety settings and sandboxing. https://geminicli.com/docs/cli/sandbox/,",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  339.459,
+                  255.796,
+                  457.317,
+                  267.8
+                ],
+                "content": "2025. Accessed: 2025-10-15.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 15,
+                "level": "5",
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              322.861,
+              212.136,
+              559.654,
+              248.05
+            ],
+            "content": "[9] Jim Gray. The transaction concept: Virtues and limitations. In VLDB, volume 81, pages 144–154. Citeseer, 1981.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.88,
+              180.431,
+              558.0,
+              204.39
+            ],
+            "content": "[10] Hexaware. Small language models, big impact: The future of enterprise ai agents. Hexaware Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.88,
+              136.771,
+              560.541,
+              172.686
+            ],
+            "content": "[11] Gong Jingyao. Minimind: A lightweight llm. https: //github.com/jingyaogong/minimind, 2024. Accessed: 2025-12-01.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.88,
+              69.201,
+              559.656,
+              129.026
+            ],
+            "content": "[12] Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem. Camel: Communicative agents for \"mind\" exploration of large language model society. arXiv preprint arXiv:2303.17760, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 156,
+        "number of list items": 12,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          229.032,
+          295.863,
+          719.242
+        ],
+        "id": 156,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              695.283,
+              294.12,
+              719.242
+            ],
+            "content": "[13] Killian Lucas. Open interpreter: A natural language interface for computers. GitHub repository, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              627.537,
+              295.777,
+              687.362
+            ],
+            "content": "[14] M. Mahalingam, D. Dutt, K. Duda, P. Agarwal, L. Kreeger, T. Sridhar, M. Bursell, and C. Wright. Virtual extensible local area network (vxlan): A framework for overlaying virtualized layer 2 networks over layer 3 networks. RFC 7348, August 2014.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              583.702,
+              295.771,
+              619.616
+            ],
+            "content": "[15] Dirk Merkel. Docker: lightweight linux containers for consistent development and deployment. In Linux Journal, volume 2014, page 2, 2014.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              551.821,
+              295.777,
+              575.78
+            ],
+            "content": "[16] Proxmox Server Solutions Gmbh. Proxmox Virtual Environment Documentation, 2024. Version 8.2.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              507.986,
+              295.37,
+              543.9
+            ],
+            "content": "[17] A. Sajassi, R. Aggarwal, N. Bitar, A. Isaac, J. Uttaro, J. Drake, and W. Henderickx. Bgp mpls-based ethernet vpn. RFC 7432, February 2015.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              440.24,
+              295.863,
+              500.064
+            ],
+            "content": "[18] Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le, Geoffrey Hinton, and Jeff Dean. Outrageously large neural networks: The sparsely-gated mixture-of-experts layer. In International Conference on Learning Representations, 2017.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              372.494,
+              295.774,
+              432.318
+            ],
+            "content": "[19] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, et al. A survey on large language model based autonomous agents. In Frontiers of Computer Science. Springer, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              340.613,
+              295.363,
+              364.572
+            ],
+            "content": "[20] WEKA. Slm vs llm: The key differences. WEKA Blog, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              272.867,
+              295.77,
+              332.692
+            ],
+            "content": "[21] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaolei Zhang, Jiale Liu, et al. Autogen: Enabling nextgen llm applications via multi-agent conversation. arXiv preprint arXiv:2308.08155, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              229.032,
+              295.362,
+              264.946
+            ],
+            "content": "[22] Yan Zhang, Wei Li, and Rui Zhao. Aiops for 6g cellular networks: Challenges and opportunities. IEEE Network, 37(2):24–31, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "previous list id": 154,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 7,
+    "title": "Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to Safe Autonomous Execution"
+  }
+}

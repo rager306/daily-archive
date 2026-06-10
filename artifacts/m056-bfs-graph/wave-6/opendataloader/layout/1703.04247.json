@@ -1,0 +1,5529 @@
+{
+  "layout": {
+    "author": "",
+    "creation date": "D:20170314004001Z",
+    "file name": "1703.04247.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          232.0,
+          36.36,
+          576.4
+        ],
+        "content": "arXiv:1703.04247v1[cs.IR]13Mar2017",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 37,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          66.306,
+          679.242,
+          545.699,
+          697.906
+        ],
+        "content": "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 14.346,
+        "heading level": 2,
+        "id": 22,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          113.401,
+          589.493,
+          498.102,
+          668.237
+        ],
+        "content": "Huifeng Guo∗1 , Ruiming Tang2, Yunming Ye†1, Zhenguo Li2, Xiuqiang He2 1Shenzhen Graduate School, Harbin Institute of Technology, China 2Noah’s Ark Research Lab, Huawei, China 1huifengguo@yeah.net, yeyunming@hit.edu.cn 2{tangruiming, li.zhenguo, hexiuqiang}@huawei.com",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 11.955,
+        "id": 23,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          153.258,
+          561.96,
+          197.743,
+          577.514
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 24,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          73.925,
+          336.407,
+          277.072,
+          556.63
+        ],
+        "content": "Learning sophisticated feature interactions behind user behaviors is critical in maximizing CTR for recommender systems. Despite great progress, existing methods seem to have a strong bias towards low- or high-order interactions, or require expertise feature engineering. In this paper, we show that it is possible to derive an end-to-end learning model that emphasizes both low- and highorder feature interactions. The proposed model, DeepFM, combines the power of factorization machines for recommendation and deep learning for feature learning in a new neural network architecture. Compared to the latest Wide & Deep model from Google, DeepFM has a shared input to its “wide” and “deep” parts, with no need of feature engineering besides raw features. Comprehensive experiments are conducted to demonstrate the effectiveness and efﬁciency of DeepFM over the existing models for CTR prediction, on both benchmark data and commercial data.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 25,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          305.289,
+          136.814,
+          320.843
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 26,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          181.517,
+          296.998,
+          303.11
+        ],
+        "content": "The prediction of click-through rate (CTR) is critical in recommender system, where the task is to estimate the probability a user will click on a recommended item. In many recommender systems the goal is to maximize the number of clicks, and so the items returned to a user can be ranked by estimated CTR; while in other application scenarios such as online advertising it is also important to improve revenue, and so the ranking strategy can be adjusted as CTR×bid across all candidates, where “bid” is the beneﬁt the system receives if the item is clicked by a user. In either case, it is clear that the key is in estimating CTR correctly.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 27,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          126.55,
+          296.998,
+          182.39
+        ],
+        "content": "It is important for CTR prediction to learn implicit feature interactions behind user click behaviors. By our study in a mainstream apps market, we found that people often download apps for food delivery at meal-time, suggesting that the (order-2) interaction between app category and time-stamp",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 28,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          98.429,
+          296.998,
+          119.419
+        ],
+        "content": "∗This work is done when Huifeng Guo worked as intern at Noah’s Ark Research Lab, Huawei.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 30,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          66.21,
+          87.48,
+          152.827,
+          98.507
+        ],
+        "content": "†Corresponding Author.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 31,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.101,
+          463.357,
+          549.904,
+          576.001
+        ],
+        "id": 32,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          315.0,
+          420.986,
+          557.998,
+          462.599
+        ],
+        "content": "Figure 1: Wide & deep architecture of DeepFM. The wide and deep component share the same input raw feature vector, which enables DeepFM to learn low- and high-order feature interactions simultaneously from the input raw features.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 33,
+        "linked content id": 32,
+        "page number": 1,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          315.0,
+          288.849,
+          558.003,
+          410.442
+        ],
+        "content": "can be used as a signal for CTR. As a second observation, male teenagers like shooting games and RPG games, which means that the (order-3) interaction of app category, user gender and age is another signal for CTR. In general, such interactions of features behind user click behaviors can be highly sophisticated, where both low- and high-order feature interactions should play important roles. According to the insights of the Wide & Deep model [Cheng et al., 2016] from google, considering low- and high-order feature interactions simultaneously brings additional improvement over the cases of considering either alone.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 34,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          177.066,
+          558.001,
+          287.7
+        ],
+        "content": "The key challenge is in effectively modeling feature interactions. Some feature interactions can be easily understood, thus can be designed by experts (like the instances above). However, most other feature interactions are hidden in data and difﬁcult to identify a priori (for instance, the classic association rule “diaper and beer” is mined from data, instead of discovering by experts), which can only be captured automatically by machine learning. Even for easy-to-understand interactions, it seems unlikely for experts to model them exhaustively, especially when the number of features is large.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 35,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.201,
+          558.004,
+          175.917
+        ],
+        "content": "Despite their simplicity, generalized linear models, such as FTRL [McMahan et al., 2013], have shown decent performance in practice. However, a linear model lacks the ability to learn feature interactions, and a common practice is to manually include pairwise feature interactions in its feature vector. Such a method is hard to generalize to model high-order feature interactions or those never or rarely appear in the training data [Rendle, 2010]. Factorization Machines",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 36,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          681.403,
+          297.004,
+          738.139
+        ],
+        "content": "(FM) [Rendle, 2010] model pairwise feature interactions as inner product of latent vectors between features and show very promising results. While in principle FM can model high-order feature interaction, in practice usually only order2 feature interactions are considered due to high complexity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 38,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          428.921,
+          297.005,
+          682.021
+        ],
+        "content": "As a powerful approach to learning feature representation, deep neural networks have the potential to learn sophisticated feature interactions. Some ideas extend CNN and RNN for CTR predition [Liu et al., 2015; Zhang et al., 2014], but CNN-based models are biased to the interactions between neighboring features while RNN-based models are more suitable for click data with sequential dependency. [Zhang et al., 2016] studies feature representations and proposes Factorization-machine supported Neural Network (FNN). This model pre-trains FM before applying DNN, thus limited by the capability of FM. Feature interaction is studied in [Qu et al., 2016], by introducing a product layer between embedding layer and fully-connected layer, and proposing the Product-based Neural Network (PNN). As noted in [Cheng et al., 2016], PNN and FNN, like other deep models, capture little low-order feature interactions, which are also essential for CTR prediction. To model both lowand high-order feature interactions, [Cheng et al., 2016] proposes an interesting hybrid network structure (Wide & Deep) that combines a linear (“wide”) model and a deep model. In this model, two different inputs are required for the “wide part” and “deep part”, respectively, and the input of “wide part” still relies on expertise feature engineering.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 39,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          362.74,
+          296.998,
+          429.539
+        ],
+        "content": "One can see that existing models are biased to low- or highorder feature interaction, or rely on feature engineering. In this paper, we show it is possible to derive a learning model that is able to learn feature interactions of all orders in an endto-end manner, without any feature engineering besides raw features. Our main contributions are summarized as follows:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 40,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          63.963,
+          161.922,
+          297.004,
+          358.946
+        ],
+        "id": 41,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              63.963,
+              281.189,
+              297.004,
+              358.946
+            ],
+            "content": "• We propose a new neural network model DeepFM (Figure 1) that integrates the architectures of FM and deep neural networks (DNN). It models low-order feature interactions like FM and models high-order feature interactions like DNN. Unlike the wide & deep model [Cheng et al., 2016], DeepFM can be trained endto-end without any feature engineering.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              63.963,
+              199.637,
+              297.002,
+              277.395
+            ],
+            "content": "• DeepFM can be trained efﬁciently because its wide part and deep part, unlike [Cheng et al., 2016], share the same input and also the embedding vector. In [Cheng et al., 2016], the input vector can be of huge size as it includes manually designed pairwise feature interactions in the input vector of its wide part, which also greatly increases its complexity.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              63.963,
+              161.922,
+              296.998,
+              195.843
+            ],
+            "content": "• We evaluate DeepFM on both benchmark data and commercial data, which shows consistent improvement over existing models for CTR prediction.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          135.025,
+          146.808,
+          150.579
+        ],
+        "content": "2 Our Approach",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 42,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          87.201,
+          297.004,
+          132.082
+        ],
+        "content": "Suppose the data set for training consists of n instances (χ,y), where χ is an m-ﬁelds data record usually involving a pair of user and item, and y ∈ {0,1} is the associated label indicating user click behaviors (y = 1 means the user",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 43,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          670.444,
+          558.002,
+          737.242
+        ],
+        "content": "clicked the item, and y = 0 otherwise). χ may include categorical ﬁelds (e.g., gender, location) and continuous ﬁelds (e.g., age). Each categorical ﬁeld is represented as a vector of one-hot encoding, and each continuous ﬁeld is represented as the value itself, or a vector of one-hot encoding after discretization. Then, each instance is converted to (x,y)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 44,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          380.707,
+          558.0,
+          671.489
+        ],
+        "id": 45,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              315.0,
+              659.047,
+              394.02,
+              671.489
+            ],
+            "content": "where x = [xfield",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  394.018,
+                  658.548,
+                  397.408,
+                  663.529
+                ],
+                "content": "1",
+                "font": "CMR5",
+                "font size": 4.981,
+                "id": 8,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  398.404,
+                  659.047,
+                  426.5,
+                  669.756
+                ],
+                "content": ",xfield",
+                "font": "CMMI7",
+                "font size": 6.974,
+                "id": 9,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  426.499,
+                  658.548,
+                  429.889,
+                  663.529
+                ],
+                "content": "2",
+                "font": "CMR5",
+                "font size": 4.981,
+                "id": 10,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  430.885,
+                  659.047,
+                  471.711,
+                  669.756
+                ],
+                "content": ",...,xfiled",
+                "font": "CMMI10",
+                "font size": 9.963,
+                "id": 11,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  471.709,
+                  658.548,
+                  474.639,
+                  663.529
+                ],
+                "content": "j",
+                "font": "CMMI5",
+                "font size": 4.981,
+                "id": 12,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  475.929,
+                  659.047,
+                  516.755,
+                  669.756
+                ],
+                "content": ",...,xfield",
+                "font": "CMMI10",
+                "font size": 9.963,
+                "id": 13,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  516.753,
+                  658.548,
+                  522.87,
+                  663.529
+                ],
+                "content": "m",
+                "font": "CMMI5",
+                "font size": 4.981,
+                "id": 14,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  315.0,
+                  648.088,
+                  558.001,
+                  671.489
+                ],
+                "content": "] is a ddimensional vector, with xfield",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 15,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  439.894,
+                  647.589,
+                  442.824,
+                  652.57
+                ],
+                "content": "j",
+                "font": "CMMI5",
+                "font size": 4.981,
+                "id": 16,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  315.0,
+                  604.69,
+                  558.0,
+                  660.53
+                ],
+                "content": "being the vector representation of the j-th ﬁeld of χ. Normally, x is high-dimensional and extremely sparse. The task of CTR prediction is to build a prediction model yˆ = CTR model(x) to estimate the probability of a user clicking a speciﬁc app in a given context.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 17,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  315.0,
+                  582.883,
+                  380.138,
+                  597.076
+                ],
+                "content": "2.1 DeepFM",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 10.909,
+                "id": 19,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  315.0,
+                  447.308,
+                  558.004,
+                  580.9
+                ],
+                "content": "We aim to learn both low- and high-order feature interactions. To this end, we propose a Factorization-Machine based neural network (DeepFM). As depicted in Figure 11, DeepFM consists of two components, FM component and deep component, that share the same input. For feature i, a scalar wi is used to weigh its order-1 importance, a latent vector Vi is used to measure its impact of interactions with other features. Vi is fed in FM component to model order-2 feature interactions, and fed in deep component to model high-order feature interactions. All parameters, including wi, Vi, and the network parameters (W(l), b(l) below) are trained jointly for the combined prediction model:",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 20,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  374.318,
+                  428.296,
+                  558.0,
+                  440.739
+                ],
+                "content": "yˆ = sigmoid(yFM + yDNN), (1)",
+                "font": "CMMI10",
+                "font size": 9.963,
+                "id": 21,
+                "page number": 2,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.0,
+              380.707,
+              558.0,
+              422.165
+            ],
+            "content": "where yˆ ∈ (0,1) is the predicted CTR, yFM is the output of FM component, and yDNN is the output of deep component. FM Component",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          330.66,
+          258.507,
+          542.337,
+          368.165
+        ],
+        "id": 46,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          372.881,
+          244.749,
+          497.879,
+          256.753
+        ],
+        "content": "Figure 2: The architecture of FM.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 47,
+        "linked content id": 46,
+        "page number": 2,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          315.0,
+          187.192,
+          557.999,
+          243.032
+        ],
+        "content": "The FM component is a factorization machine, which is proposed in [Rendle, 2010] to learn feature interactions for recommendation. Besides a linear (order-1) interactions among features, FM models pairwise (order-2) feature interactions as inner product of respective feature latent vectors.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 48,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.48,
+          558.005,
+          179.033
+        ],
+        "content": "1In all Figures of this paper, a Normal Connection in black refers to a connection with weight to be learned; a Weight-1 Connection, red arrow, is a connection with weight 1 by default; Embedding, blue dashed arrow, means a latent vector to be learned; Addition means adding all input together; Product, including Innerand Outer-Product, means the output of this unit is the product of two input vector; Sigmoid Function is used as the output function in CTR prediction; Activation Functions, such as relu and tanh, are used for non-linearly transforming the signal.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 50,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          626.608,
+          297.004,
+          737.242
+        ],
+        "content": "It can capture order-2 feature interactions much more effectively than previous approaches especially when the dataset is sparse. In previous approaches, the parameter of an interaction of features i and j can be trained only when feature i and feature j both appear in the same data record. While in FM, it is measured via the inner product of their latent vectors Vi and Vj. Thanks to this ﬂexible design, FM can train latent vector Vi (Vj) whenever i (or j) appears in a data record. Therefore, feature interactions, which are never or rarely appeared in the training data, are better learnt by FM.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 51,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          603.778,
+          296.998,
+          627.339
+        ],
+        "content": "As Figure 2 shows, the output of FM is the summation of an Addition unit and a number of Inner Product units:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          156.095,
+          590.853,
+          160.242,
+          597.826
+        ],
+        "content": "d",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 54,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          181.678,
+          590.853,
+          185.825,
+          597.826
+        ],
+        "content": "d",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 56,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          78.949,
+          576.906,
+          147.319,
+          587.615
+        ],
+        "content": "yFM = w,x +",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          149.533,
+          566.147,
+          166.806,
+          573.618
+        ],
+        "content": "j1=1",
+        "font": "CMR7",
+        "font size": 6.974,
+        "id": 55,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          168.466,
+          566.147,
+          199.039,
+          573.618
+        ],
+        "content": "j2=j1+1",
+        "font": "CMR7",
+        "font size": 6.974,
+        "id": 57,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          267.623,
+          577.344,
+          297.0,
+          589.348
+        ],
+        "content": ", (2)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 61,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          242.664,
+          570.579,
+          263.237,
+          587.864
+        ],
+        "content": "1 · xj",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          204.573,
+          576.905,
+          242.665,
+          587.615
+        ],
+        "content": "Vi,Vj xj",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          263.236,
+          576.407,
+          266.626,
+          581.388
+        ],
+        "content": "2",
+        "font": "CMR5",
+        "font size": 4.981,
+        "id": 60,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          513.302,
+          296.998,
+          559.037
+        ],
+        "content": "where w ∈ Rd and Vi ∈ Rk (k is given)2. The Addition unit ( w,x ) reﬂects the importance of order-1 features, and the Inner Product units represent the impact of order-2 feature interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 62,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          494.823,
+          127.883,
+          507.784
+        ],
+        "content": "Deep Component",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 63,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          69.66,
+          364.224,
+          281.34,
+          482.297
+        ],
+        "id": 64,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          109.769,
+          350.466,
+          241.232,
+          362.47
+        ],
+        "content": "Figure 3: The architecture of DNN.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 65,
+        "linked content id": 64,
+        "page number": 3,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          54.0,
+          183.331,
+          297.004,
+          348.76
+        ],
+        "content": "The deep component is a feed-forward neural network, which is used to learn high-order feature interactions. As shown in Figure 3, a data record (a vector) is fed into the neural network. Compared to neural networks with image [He et al., 2016] or audio [Boulanger-Lewandowski et al., 2013] data as input, which is purely continuous and dense, the input of CTR prediction is quite different, which requires a new network architecture design. Speciﬁcally, the raw feature input vector for CTR prediction is usually highly sparse3, super high-dimensional4, categorical-continuous-mixed, and grouped in ﬁelds (e.g., gender, location, age). This suggests an embedding layer to compress the input vector to a lowdimensional, dense real-value vector before further feeding into the ﬁrst hidden layer, otherwise the network can be overwhelming to train.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 66,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          139.181,
+          296.998,
+          184.061
+        ],
+        "content": "Figure 4 highlights the sub-network structure from the input layer to the embedding layer. We would like to point out the two interesting features of this network structure: 1) while the lengths of different input ﬁeld vectors can be different,",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 67,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          66.653,
+          97.443,
+          296.999,
+          131.044
+        ],
+        "content": "2We omit a constant offset for simplicity. 3Only one entry is non-zero for each ﬁeld vector. 4E.g., in an app store of billion users, the one ﬁeld vector for user",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 69,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          87.48,
+          181.018,
+          98.285
+        ],
+        "content": "ID is already of billion dimensions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 70,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          335.702,
+          676.742,
+          537.296,
+          738.0
+        ],
+        "id": 71,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          350.469,
+          662.984,
+          522.533,
+          674.988
+        ],
+        "content": "Figure 4: The structure of the embedding layer",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 72,
+        "linked content id": 71,
+        "page number": 3,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          315.0,
+          532.165,
+          558.001,
+          653.758
+        ],
+        "content": "their embeddings are of the same size (k); 2) the latent feature vectors (V ) in FM now server as network weights which are learned and used to compress the input ﬁeld vectors to the embedding vectors. In [Zhang et al., 2016], V is pre-trained by FM and used as initialization. In this work, rather than using the latent feature vectors of FM to initialize the networks as in [Zhang et al., 2016], we include the FM model as part of our overall learning architecture, in addition to the other DNN model. As such, we eliminate the need of pre-training by FM and instead jointly train the overall network in an end-to-end manner. Denote the output of the embedding layer as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 73,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          390.892,
+          514.566,
+          558.0,
+          527.147
+        ],
+        "content": "a(0) = [e1,e2,...,em], (3)",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          476.425,
+          558.003,
+          511.387
+        ],
+        "content": "where ei is the embedding of i-th ﬁeld and m is the number of ﬁelds. Then, a(0) is fed into the deep neural network, and the forward process is:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 75,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          382.701,
+          558.001,
+          466.65
+        ],
+        "content": "a(l+1) = σ(W(l)a(l) + b(l)), (4) where l is the layer depth and σ is an activation function. a(l), W(l), b(l) are the output, model weight, and bias of the l-th layer. After that, a dense real-value feature vector is generated, which is ﬁnally fed into the sigmoid function for CTR prediction: yDNN = σ(W|H|+1 · aH + b|H|+1), where |H| is the number of hidden layers.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 76,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          316.948,
+          557.998,
+          383.746
+        ],
+        "content": "It is worth pointing out that FM component and deep component share the same feature embedding, which brings two important beneﬁts: 1) it learns both low- and high-order feature interactions from raw features; 2) there is no need for expertise feature engineering of the input, as required in Wide & Deep [Cheng et al., 2016].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 77,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          297.026,
+          548.815,
+          311.219
+        ],
+        "content": "2.2 Relationship with the other Neural Networks",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 4,
+        "id": 78,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          251.585,
+          557.998,
+          296.465
+        ],
+        "content": "Inspired by the enormous success of deep learning in various applications, several deep models for CTR prediction are developed recently. This section compares the proposed DeepFM with existing deep models for CTR prediction.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 79,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          163.913,
+          558.005,
+          252.989
+        ],
+        "content": "FNN: As Figure 5 (left) shows, FNN is a FM-initialized feedforward neural network [Zhang et al., 2016]. The FM pretraining strategy results in two limitations: 1) the embedding parameters might be over affected by FM; 2) the efﬁciency is reduced by the overhead introduced by the pre-training stage. In addition, FNN captures only high-order feature interactions. In contrast, DeepFM needs no pre-training and learns both high- and low-order feature interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 80,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          80.436,
+          558.003,
+          165.318
+        ],
+        "content": "PNN: For the purpose of capturing high-order feature interactions, PNN imposes a product layer between the embedding layer and the ﬁrst hidden layer [Qu et al., 2016]. According to different types of product operation, there are three variants: IPNN, OPNN, and PNN∗, where IPNN is based on inner product of vectors, OPNN is based on outer product, and PNN∗ is based on both inner and outer products.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 81,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          74.16,
+          631.557,
+          537.84,
+          738.0
+        ],
+        "id": 82,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          113.481,
+          617.799,
+          498.523,
+          629.803
+        ],
+        "content": "Figure 5: The architectures of existing deep models for CTR prediction: FNN, PNN, Wide & Deep Model",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 83,
+        "linked content id": 82,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          71.972,
+          590.915,
+          279.03,
+          602.919
+        ],
+        "content": "Table 1: Comparison of deep models for CTR prediction",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 84,
+        "linked content id": 85,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          62.171,
+          540.565,
+          288.83,
+          590.777
+        ],
+        "id": 85,
+        "level": "3",
+        "number of columns": 5,
+        "number of rows": 5,
+        "page number": 4,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  62.47,
+                  574.239,
+                  112.778,
+                  590.379
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  112.778,
+                  574.239,
+                  158.047,
+                  590.379
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      118.756,
+                      574.869,
+                      152.07,
+                      591.243
+                    ],
+                    "content": "No Pre-training",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 2,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  158.047,
+                  574.239,
+                  200.987,
+                  590.379
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      164.025,
+                      574.869,
+                      195.01,
+                      591.243
+                    ],
+                    "content": "High-order Features",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 6,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  200.987,
+                  574.239,
+                  242.587,
+                  590.379
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      206.964,
+                      574.869,
+                      236.61,
+                      591.243
+                    ],
+                    "content": "Low-order Features",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 9,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  242.587,
+                  574.239,
+                  288.531,
+                  590.379
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      248.565,
+                      574.869,
+                      282.653,
+                      591.243
+                    ],
+                    "content": "No Feature Engineering",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 11,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  62.47,
+                  565.871,
+                  112.778,
+                  574.239
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      80.6,
+                      566.501,
+                      94.548,
+                      574.905
+                    ],
+                    "content": "FNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 13,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  112.778,
+                  565.871,
+                  158.047,
+                  574.239
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      132.299,
+                      561.829,
+                      138.526,
+                      573.915
+                    ],
+                    "content": "×",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 15,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  158.047,
+                  565.871,
+                  200.987,
+                  574.239
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      176.244,
+                      566.72,
+                      182.789,
+                      578.806
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 17,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  200.987,
+                  565.871,
+                  242.587,
+                  574.239
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      218.674,
+                      561.829,
+                      224.901,
+                      573.915
+                    ],
+                    "content": "×",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 19,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  242.587,
+                  565.871,
+                  288.531,
+                  574.239
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      262.337,
+                      566.72,
+                      268.882,
+                      578.806
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 21,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  62.47,
+                  557.502,
+                  112.778,
+                  565.871
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      80.6,
+                      558.132,
+                      94.548,
+                      566.536
+                    ],
+                    "content": "PNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 22,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  112.778,
+                  557.502,
+                  158.047,
+                  565.871
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      132.14,
+                      558.352,
+                      138.685,
+                      570.438
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 24,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  158.047,
+                  557.502,
+                  200.987,
+                  565.871
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      176.244,
+                      558.352,
+                      182.789,
+                      570.438
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 26,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  200.987,
+                  557.502,
+                  242.587,
+                  565.871
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      218.674,
+                      553.46,
+                      224.901,
+                      565.546
+                    ],
+                    "content": "×",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 28,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  242.587,
+                  557.502,
+                  288.531,
+                  565.871
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      262.337,
+                      558.352,
+                      268.882,
+                      570.438
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 30,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 3,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  62.47,
+                  549.133,
+                  112.778,
+                  557.502
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      68.347,
+                      549.763,
+                      106.801,
+                      558.167
+                    ],
+                    "content": "Wide & Deep",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 31,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  112.778,
+                  549.133,
+                  158.047,
+                  557.502
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      132.14,
+                      549.983,
+                      138.685,
+                      562.069
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 33,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  158.047,
+                  549.133,
+                  200.987,
+                  557.502
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      176.244,
+                      549.983,
+                      182.789,
+                      562.069
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 35,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  200.987,
+                  549.133,
+                  242.587,
+                  557.502
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      218.515,
+                      549.983,
+                      225.06,
+                      562.069
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 37,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  242.587,
+                  549.133,
+                  288.531,
+                  557.502
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      262.496,
+                      545.091,
+                      268.723,
+                      557.177
+                    ],
+                    "content": "×",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 39,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 4,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  62.47,
+                  540.964,
+                  112.778,
+                  549.133
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      75.178,
+                      541.395,
+                      99.97,
+                      549.799
+                    ],
+                    "content": "DeepFM",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 6.974,
+                    "id": 40,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  112.778,
+                  540.964,
+                  158.047,
+                  549.133
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      132.14,
+                      541.614,
+                      138.685,
+                      553.7
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 42,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  158.047,
+                  540.964,
+                  200.987,
+                  549.133
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      176.244,
+                      541.614,
+                      182.789,
+                      553.7
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 44,
+                    "level": "1",
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  200.987,
+                  540.964,
+                  242.587,
+                  549.133
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      218.515,
+                      541.614,
+                      225.06,
+                      553.7
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 46,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  242.587,
+                  540.964,
+                  288.531,
+                  549.133
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      262.337,
+                      541.614,
+                      268.882,
+                      553.7
+                    ],
+                    "content": "√",
+                    "font": "CMSY7",
+                    "font size": 6.974,
+                    "id": 48,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 5,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          315.0,
+          596.432,
+          398.017,
+          611.986
+        ],
+        "content": "3 Experiments",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 90,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          538.143,
+          557.998,
+          593.983
+        ],
+        "content": "In this section, we compare our proposed DeepFM and the other state-of-the-art models empirically. The evaluation result indicates that our proposed DeepFM is more effective than any other state-of-the-art model and the efﬁciency of DeepFM is comparable to the best ones among the others.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 91,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          341.998,
+          297.004,
+          507.427
+        ],
+        "content": "To make the computation more efﬁcient, the authors proposed the approximated computations of both inner and outer products: 1) the inner product is approximately computed by eliminating some neurons; 2) the outer product is approximately computed by compressing m k-dimensional feature vectors to one k-dimensional vector. However, we ﬁnd that the outer product is less reliable than the inner product, since the approximated computation of outer product loses much information that makes the result unstable. Although inner product is more reliable, it still suffers from high computational complexity, because the output of the product layer is connected to all neurons of the ﬁrst hidden layer. Different from PNN, the output of the product layer in DeepFM only connects to the ﬁnal output layer (one neuron). Like FNN, all PNNs ignore low-order feature interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          246.107,
+          297.005,
+          335.182
+        ],
+        "content": "Wide & Deep: Wide & Deep (Figure 5 (right)) is proposed by Google to model low- and high-order feature interactions simultaneously. As shown in [Cheng et al., 2016], there is a need for expertise feature engineering on the input to the “wide” part (for instance, cross-product of users’ install apps and impression apps in app recommendation). In contrast, DeepFM needs no such expertise knowledge to handle the input by learning directly from the input raw features.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 87,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          150.216,
+          296.998,
+          238.932
+        ],
+        "content": "A straightforward extension to this model is replacing LR by FM (we also evaluate this extension in Section 3). This extension is similar to DeepFM, but DeepFM shares the feature embedding between the FM and deep component. The sharing strategy of feature embedding inﬂuences (in backpropagate manner) the feature representation by both lowand high-order feature interactions, which models the representation more precisely.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 88,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          87.201,
+          296.998,
+          143.4
+        ],
+        "content": "Summarizations: To summarize, the relationship between DeepFM and the other deep models in four aspects is presented in Table 1. As can be seen, DeepFM is the only model that requires no pre-training and no feature engineering, and captures both low- and high-order feature interactions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 89,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          516.51,
+          424.091,
+          530.703
+        ],
+        "content": "3.1 Experiment Setup",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 4,
+        "id": 92,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          479.257,
+          557.998,
+          515.059
+        ],
+        "content": "Datasets We evaluate the effectiveness and efﬁciency of our proposed DeepFM on the following two datasets.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 93,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          336.266,
+          558.0,
+          480.894
+        ],
+        "id": 94,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              315.0,
+              435.159,
+              557.998,
+              480.894
+            ],
+            "content": "1) Criteo Dataset: Criteo dataset 5 includes 45 million users’ click records. There are 13 continuous features and 26 categorical ones. We split the dataset randomly into two parts: 90% is for training, while the rest 10% is for testing.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.0,
+              336.266,
+              558.0,
+              436.301
+            ],
+            "content": "2) Company∗ Dataset: In order to verify the performance of DeepFM in real industrial CTR prediction, we conduct experiment on Company∗ dataset. We collect 7 consecutive days of users’ click records from the game center of the Company∗ App Store for training, and the next 1 day for testing. There are around 1 billion records in the whole collected dataset. In this dataset, there are app features (e.g., identiﬁcation, category, and etc), user features (e.g., user’s downloaded apps, and etc), and context features (e.g., operation time, and etc).",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          315.0,
+          294.506,
+          558.0,
+          330.906
+        ],
+        "content": "Evaluation Metrics We use two evaluation metrics in our experiments: AUC (Area Under ROC) and Logloss (cross entropy).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 95,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          276.782,
+          397.191,
+          289.743
+        ],
+        "content": "Model Comparison",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 96,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          199.147,
+          558.001,
+          277.263
+        ],
+        "content": "We compare 9 models in our experiments: LR, FM, FNN, PNN (three variants), Wide & Deep, and DeepFM. In the Wide & Deep model, for the purpose of eliminating feature engineering effort, we also adapt the original Wide & Deep model by replacing LR by FM as the wide part. In order to distinguish these two variants of Wide & Deep, we name them LR & DNN and FM & DNN, respectively.6",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 97,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          180.825,
+          396.514,
+          193.786
+        ],
+        "content": "Parameter Settings",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 98,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          157.985,
+          557.998,
+          180.947
+        ],
+        "content": "To evaluate the models on Criteo dataset, we follow the parameter settings in [Qu et al., 2016] for FNN and PNN: (1)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 99,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.48,
+          557.998,
+          150.057
+        ],
+        "id": 101,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              315.0,
+              128.242,
+              527.665,
+              150.057
+            ],
+            "content": "5http://labs.criteo.com/downloads/2014-kaggle-displayadvertising-challenge-dataset/",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.0,
+              87.48,
+              557.998,
+              129.22
+            ],
+            "content": "6We do not use the Wide & Deep API released by Google, as the efﬁciency of that implementation is very low. We implement Wide & Deep by ourselves by simplifying it with shared optimizer for both deep and wide part.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          681.403,
+          296.998,
+          737.242
+        ],
+        "content": "dropout: 0.5; (2) network structure: 400-400-400; (3) optimizer: Adam; (4) activation function: tanh for IPNN, relu for other deep models. To be fair, our proposed DeepFM uses the same setting. The optimizers of LR and FM are FTRL and Adam respectively, and the latent dimension of FM is 10.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 102,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          648.414,
+          296.998,
+          682.336
+        ],
+        "content": "To achieve the best performance for each individual model on Company∗ dataset, we conducted carefully parameter study, which is discussed in Section 3.3.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 103,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          627.232,
+          192.175,
+          641.425
+        ],
+        "content": "3.2 Performance Evaluation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 4,
+        "id": 104,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          602.91,
+          296.998,
+          625.873
+        ],
+        "content": "In this section, we evaluate the models listed in Section 3.1 on the two datasets to compare their effectiveness and efﬁciency.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 105,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          585.04,
+          151.135,
+          598.001
+        ],
+        "content": "Efﬁciency Comparison",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 106,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          551.541,
+          296.998,
+          585.462
+        ],
+        "content": "The efﬁciency of deep learning models is important to realworld applications. We compare the efﬁciency of different models on Criteo dataset by the following formula:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 107,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          55.196,
+          539.324,
+          183.848,
+          551.41
+        ],
+        "content": "|training time of deep CTR model|",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 108,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          459.602,
+          297.004,
+          550.329
+        ],
+        "content": "|training time of LR| . The results are shown in Figure 6, including the tests on CPU (left) and GPU (right), where we have the following observations: 1) pre-training of FNN makes it less efﬁcient; 2) Although the speed up of IPNN and PNN∗ on GPU is higher than the other models, they are still computationally expensive because of the inefﬁcient inner product operations; 3) The DeepFM achieves almost the most efﬁcient in both tests.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 110,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          388.281,
+          167.394,
+          450.109
+        ],
+        "id": 111,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          169.89,
+          388.281,
+          283.281,
+          449.935
+        ],
+        "id": 112,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          352.505,
+          227.639,
+          386.527
+        ],
+        "content": "Figure 6: Time comparison. Effectiveness Comparison",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "id": 113,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          319.006,
+          296.998,
+          352.928
+        ],
+        "content": "The performance for CTR prediction of different models on Criteo dataset and Company∗ dataset is shown in Table 2, where we have the following observations:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 114,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          63.963,
+          87.201,
+          296.998,
+          315.842
+        ],
+        "id": 115,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              63.963,
+              231.32,
+              296.998,
+              315.842
+            ],
+            "content": "• Learning feature interactions improves the performance of CTR prediction model. This observation is from the fact that LR (which is the only model that does not consider feature interactions) performs worse than the other models. As the best model, DeepFM outperforms LR by 0.86% and 4.18% in terms of AUC (1.15% and 5.60% in terms of Logloss) on Company∗ and Criteo datasets.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              63.963,
+              128.481,
+              296.998,
+              234.921
+            ],
+            "content": "• Learning high- and low-order feature interactions simultaneously and properly improves the performance of CTR prediction model. DeepFM outperforms the models that learn only low-order feature interactions (namely, FM) or high-order feature interactions (namely, FNN, IPNN, OPNN, PNN∗). Compared to the second best model, DeepFM achieves more than 0.37% and 0.25% in terms of AUC (0.42% and 0.29% in terms of Logloss) on Company∗ and Criteo datasets.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              63.963,
+              87.201,
+              296.998,
+              132.082
+            ],
+            "content": "• Learning high- and low-order feature interactions simultaneously while sharing the same feature embedding for high- and low-order feature interactions learning improves the performance of CTR prediction model.",
+            "font": "CMSY10",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          334.925,
+          663.679,
+          557.998,
+          737.242
+        ],
+        "content": "DeepFM outperforms the models that learn high- and low-order feature interactions using separate feature embeddings (namely, LR & DNN and FM & DNN). Compared to these two models, DeepFM achieves more than 0.48% and 0.33% in terms of AUC (0.61% and 0.66% in terms of Logloss) on Company∗ and Criteo datasets.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 116,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          360.122,
+          636.75,
+          512.88,
+          648.754
+        ],
+        "content": "Table 2: Performance on CTR prediction.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 117,
+        "linked content id": 118,
+        "page number": 5,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          328.455,
+          522.64,
+          544.545,
+          636.612
+        ],
+        "id": 118,
+        "level": "3",
+        "number of columns": 5,
+        "number of rows": 11,
+        "page number": 5,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  616.089,
+                  384.546,
+                  636.214
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 2,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  626.251,
+                  464.396,
+                  636.214
+                ],
+                "column number": 2,
+                "column span": 2,
+                "kids": [
+                  {
+                    "bounding box": [
+                      393.535,
+                      616.757,
+                      458.418,
+                      637.525
+                    ],
+                    "content": "Company∗ AUC LogLoss",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 2,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  626.251,
+                  544.246,
+                  636.214
+                ],
+                "column number": 4,
+                "column span": 2,
+                "kids": [
+                  {
+                    "bounding box": [
+                      473.485,
+                      616.757,
+                      538.368,
+                      637.525
+                    ],
+                    "content": "Criteo AUC LogLoss",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 4,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  384.546,
+                  616.089,
+                  421.058,
+                  626.251
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  616.089,
+                  464.396,
+                  626.251
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  616.089,
+                  501.008,
+                  626.251
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  616.089,
+                  544.246,
+                  626.251
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  605.728,
+                  384.546,
+                  616.089
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      350.821,
+                      606.396,
+                      362.28,
+                      617.201
+                    ],
+                    "content": "LR",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 8,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  605.728,
+                  421.058,
+                  616.089
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      606.396,
+                      415.081,
+                      617.201
+                    ],
+                    "content": "0.8640",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 10,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  605.728,
+                  464.396,
+                  616.089
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      606.396,
+                      457.298,
+                      617.201
+                    ],
+                    "content": "0.02648",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 12,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  605.728,
+                  501.008,
+                  616.089
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      606.396,
+                      495.031,
+                      617.201
+                    ],
+                    "content": "0.7686",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 14,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  605.728,
+                  544.246,
+                  616.089
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      606.396,
+                      537.248,
+                      617.201
+                    ],
+                    "content": "0.47762",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 16,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 3,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 3,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  595.367,
+                  384.546,
+                  605.728
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      350.072,
+                      596.035,
+                      363.028,
+                      606.84
+                    ],
+                    "content": "FM",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 17,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  595.367,
+                  421.058,
+                  605.728
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      596.035,
+                      415.081,
+                      606.84
+                    ],
+                    "content": "0.8678",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 19,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  595.367,
+                  464.396,
+                  605.728
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      596.035,
+                      457.298,
+                      606.84
+                    ],
+                    "content": "0.02633",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 21,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  595.367,
+                  501.008,
+                  605.728
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      596.035,
+                      495.031,
+                      606.84
+                    ],
+                    "content": "0.7892",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 23,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  595.367,
+                  544.246,
+                  605.728
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      596.035,
+                      537.248,
+                      606.84
+                    ],
+                    "content": "0.46077",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 25,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 4,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 4,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  585.006,
+                  384.546,
+                  595.367
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      347.584,
+                      585.674,
+                      365.517,
+                      596.479
+                    ],
+                    "content": "FNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 26,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  585.006,
+                  421.058,
+                  595.367
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      585.674,
+                      415.081,
+                      596.479
+                    ],
+                    "content": "0.8683",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 28,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  585.006,
+                  464.396,
+                  595.367
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      585.674,
+                      457.298,
+                      596.479
+                    ],
+                    "content": "0.02629",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 30,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  585.006,
+                  501.008,
+                  595.367
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      585.674,
+                      495.031,
+                      596.479
+                    ],
+                    "content": "0.7963",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 32,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  585.006,
+                  544.246,
+                  595.367
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      585.674,
+                      537.248,
+                      596.479
+                    ],
+                    "content": "0.45738",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 34,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 5,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 5,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  574.645,
+                  384.546,
+                  585.006
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      346.091,
+                      575.312,
+                      367.01,
+                      586.117
+                    ],
+                    "content": "IPNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 35,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 6,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  574.645,
+                  421.058,
+                  585.006
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      575.312,
+                      415.081,
+                      586.117
+                    ],
+                    "content": "0.8664",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 37,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 6,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  574.645,
+                  464.396,
+                  585.006
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      575.312,
+                      457.298,
+                      586.117
+                    ],
+                    "content": "0.02637",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 39,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 6,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  574.645,
+                  501.008,
+                  585.006
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      575.312,
+                      495.031,
+                      586.117
+                    ],
+                    "content": "0.7972",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 41,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 6,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  574.645,
+                  544.246,
+                  585.006
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      575.312,
+                      537.248,
+                      586.117
+                    ],
+                    "content": "0.45323",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 43,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 6,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 6,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  564.284,
+                  384.546,
+                  574.645
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      344.347,
+                      564.951,
+                      368.754,
+                      575.756
+                    ],
+                    "content": "OPNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 44,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 7,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  564.284,
+                  421.058,
+                  574.645
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      564.951,
+                      415.081,
+                      575.756
+                    ],
+                    "content": "0.8658",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 46,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 7,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  564.284,
+                  464.396,
+                  574.645
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      564.951,
+                      457.298,
+                      575.756
+                    ],
+                    "content": "0.02641",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 48,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 7,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  564.284,
+                  501.008,
+                  574.645
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      564.951,
+                      495.031,
+                      575.756
+                    ],
+                    "content": "0.7982",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 50,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 7,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  564.284,
+                  544.246,
+                  574.645
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      564.951,
+                      537.248,
+                      575.756
+                    ],
+                    "content": "0.45256",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 52,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 7,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 7,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  553.922,
+                  384.546,
+                  564.284
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      345.28,
+                      548.52,
+                      367.821,
+                      565.395
+                    ],
+                    "content": "PNN∗",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 53,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 8,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  553.922,
+                  421.058,
+                  564.284
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      554.59,
+                      415.081,
+                      565.395
+                    ],
+                    "content": "0.8672",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 55,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 8,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  553.922,
+                  464.396,
+                  564.284
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      554.59,
+                      457.298,
+                      565.395
+                    ],
+                    "content": "0.02636",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 57,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 8,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  553.922,
+                  501.008,
+                  564.284
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      554.59,
+                      495.031,
+                      565.395
+                    ],
+                    "content": "0.7987",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 59,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 8,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  553.922,
+                  544.246,
+                  564.284
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      554.59,
+                      537.248,
+                      565.395
+                    ],
+                    "content": "0.45214",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 61,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 8,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 8,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  543.561,
+                  384.546,
+                  553.922
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      335.381,
+                      544.229,
+                      377.72,
+                      555.034
+                    ],
+                    "content": "LR & DNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 62,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 9,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  543.561,
+                  421.058,
+                  553.922
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      544.229,
+                      415.081,
+                      555.034
+                    ],
+                    "content": "0.8673",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 64,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 9,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  543.561,
+                  464.396,
+                  553.922
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      544.229,
+                      457.298,
+                      555.034
+                    ],
+                    "content": "0.02634",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 66,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 9,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  543.561,
+                  501.008,
+                  553.922
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      544.229,
+                      495.031,
+                      555.034
+                    ],
+                    "content": "0.7981",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 68,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 9,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  543.561,
+                  544.246,
+                  553.922
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      544.229,
+                      537.248,
+                      555.034
+                    ],
+                    "content": "0.46772",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 70,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 9,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 9,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  533.2,
+                  384.546,
+                  543.561
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      334.632,
+                      533.868,
+                      378.469,
+                      544.673
+                    ],
+                    "content": "FM & DNN",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 71,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 10,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  533.2,
+                  421.058,
+                  543.561
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      533.868,
+                      415.081,
+                      544.673
+                    ],
+                    "content": "0.8661",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 73,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 10,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  533.2,
+                  464.396,
+                  543.561
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      533.868,
+                      457.298,
+                      544.673
+                    ],
+                    "content": "0.02640",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 75,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 10,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  533.2,
+                  501.008,
+                  543.561
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      533.868,
+                      495.031,
+                      544.673
+                    ],
+                    "content": "0.7850",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 77,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 10,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  533.2,
+                  544.246,
+                  543.561
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      533.868,
+                      537.248,
+                      544.673
+                    ],
+                    "content": "0.45382",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 79,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 10,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 10,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  328.754,
+                  523.038,
+                  384.546,
+                  533.2
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      340.612,
+                      523.507,
+                      372.488,
+                      534.312
+                    ],
+                    "content": "DeepFM",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "id": 80,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 11,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  384.546,
+                  523.038,
+                  421.058,
+                  533.2
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      390.423,
+                      522.969,
+                      415.081,
+                      534.635
+                    ],
+                    "content": "0.8715",
+                    "font": "NimbusRomNo9L-Medi",
+                    "font size": 8.966,
+                    "id": 82,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 11,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  421.058,
+                  523.038,
+                  464.396,
+                  533.2
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      428.157,
+                      522.969,
+                      457.298,
+                      534.635
+                    ],
+                    "content": "0.02618",
+                    "font": "NimbusRomNo9L-Medi",
+                    "font size": 8.966,
+                    "id": 84,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 11,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  464.396,
+                  523.038,
+                  501.008,
+                  533.2
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      470.373,
+                      522.969,
+                      495.031,
+                      534.635
+                    ],
+                    "content": "0.8007",
+                    "font": "NimbusRomNo9L-Medi",
+                    "font size": 8.966,
+                    "id": 86,
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 11,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  501.008,
+                  523.038,
+                  544.246,
+                  533.2
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      508.107,
+                      522.969,
+                      537.248,
+                      534.635
+                    ],
+                    "content": "0.45083",
+                    "font": "NimbusRomNo9L-Medi",
+                    "font size": 8.966,
+                    "id": 88,
+                    "level": "1",
+                    "page number": 5,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 5,
+                "pdfua_tag": "TD",
+                "row number": 11,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 11,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          315.0,
+          401.033,
+          558.002,
+          511.668
+        ],
+        "content": "Overall, our proposed DeepFM model beats the competitors by more than 0.37% and 0.42% in terms of AUC and Logloss on Company∗ dataset, respectively. In fact, a small improvement in ofﬂine AUC evaluation is likely to lead to a signiﬁcant increase in online CTR. As reported in [Cheng et al., 2016], compared with LR, Wide & Deep improves AUC by 0.275% (ofﬂine) and the improvement of online CTR is 3.9%. The daily turnover of Company∗’s App Store is millions of dollars, therefore even several percents lift in CTR brings extra millions of dollars each year.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 119,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          380.768,
+          452.04,
+          394.961
+        ],
+        "content": "3.3 Hyper-Parameter Study",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 10.909,
+        "heading level": 4,
+        "id": 120,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          335.154,
+          558.0,
+          380.035
+        ],
+        "content": "We study the impact of different hyper-parameters of different deep models, on Company∗ dataset. The order is: 1) activation functions; 2) dropout rate; 3) number of neurons per layer; 4) number of hidden layers; 5) network shape.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 121,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          317.91,
+          399.762,
+          330.871
+        ],
+        "content": "Activation Function",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 122,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          252.048,
+          558.003,
+          319.744
+        ],
+        "content": "According to [Qu et al., 2016], relu and tanh are more suitable for deep models than sigmoid. In this paper, we compare the performance of deep models when applying relu and tanh. As shown in Figure 7, relu is more appropriate than tanh for all the deep models, except for IPNN. Possible reason is that relu induces sparsity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 123,
+        "linked content id": 124,
+        "page number": 5,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          438.45,
+          163.559,
+          559.405,
+          241.316
+        ],
+        "id": 125,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile8.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          315.0,
+          163.559,
+          435.955,
+          239.933
+        ],
+        "id": 124,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile9.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          315.0,
+          131.145,
+          552.705,
+          161.805
+        ],
+        "content": "Figure 7: AUC and Logloss comparison of activation functions. Dropout",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 126,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.201,
+          557.998,
+          132.978
+        ],
+        "content": "Dropout [Srivastava et al., 2014] refers to the probability that a neuron is kept in the network. Dropout is a regularization technique to compromise the precision and the complexity of the neural network. We set the dropout to be 1.0, 0.9, 0.8, 0.7,",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          692.362,
+          296.998,
+          737.242
+        ],
+        "content": "0.6, 0.5. As shown in Figure 8, all the models are able to reach their own best performance when the dropout is properly set (from 0.6 to 0.9). The result shows that adding reasonable randomness to model can strengthen model’s robustness.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 128,
+        "linked content id": 129,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          54.0,
+          596.431,
+          174.96,
+          681.16
+        ],
+        "id": 129,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile10.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          177.45,
+          596.431,
+          298.41,
+          679.911
+        ],
+        "id": 130,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile11.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          563.312,
+          270.386,
+          594.677
+        ],
+        "content": "Figure 8: AUC and Logloss comparison of dropout. Number of Neurons per Layer",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          464.339,
+          296.998,
+          564.014
+        ],
+        "content": "When other factors remain the same, increasing the number of neurons per layer introduces complexity. As we can observe from Figure 9, increasing the number of neurons does not always bring beneﬁt. For instance, DeepFM performs stably when the number of neurons per layer is increased from 400 to 800; even worse, OPNN performs worse when we increase the number of neurons from 400 to 800. This is because an over-complicated model is easy to overﬁt. In our dataset, 200 or 400 neurons per layer is a good choice.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 132,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          369.658,
+          174.96,
+          453.138
+        ],
+        "id": 133,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile12.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          177.45,
+          369.658,
+          298.408,
+          452.206
+        ],
+        "id": 134,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile13.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          60.696,
+          172.659,
+          290.305,
+          367.904
+        ],
+        "id": 135,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              60.696,
+              355.9,
+              290.305,
+              367.904
+            ],
+            "content": "Figure 9: AUC and Logloss comparison of number of neurons.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  54.0,
+                  336.539,
+                  165.98,
+                  349.5
+                ],
+                "content": "Number of Hidden Layers",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 9.963,
+                "id": 4,
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  54.0,
+                  281.402,
+                  296.998,
+                  337.241
+                ],
+                "content": "As presented in Figure 10, increasing number of hidden layers improves the performance of the models at the beginning, however, their performance is degraded if the number of hidden layers keeps increasing. This phenomenon is also because of overﬁtting.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 5,
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  54.0,
+                  186.416,
+                  174.958,
+                  270.2
+                ],
+                "id": 6,
+                "page number": 6,
+                "pdfua_tag": "Figure",
+                "source": "1703.04247_images/imageFile14.png",
+                "type": "image"
+              },
+              {
+                "bounding box": [
+                  177.45,
+                  186.416,
+                  298.408,
+                  270.2
+                ],
+                "id": 7,
+                "page number": 6,
+                "pdfua_tag": "Figure",
+                "source": "1703.04247_images/imageFile15.png",
+                "type": "image"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              61.694,
+              172.659,
+              289.308,
+              184.663
+            ],
+            "content": "Figure 10: AUC and Logloss comparison of number of layers.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          153.297,
+          119.484,
+          166.258
+        ],
+        "content": "Network Shape",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 136,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          87.201,
+          296.998,
+          154.0
+        ],
+        "content": "We test four different network shapes: constant, increasing, decreasing, and diamond. When we change the network shape, we ﬁx the number of hidden layers and the total number of neurons. For instance, when the number of hidden layers is 3 and the total number of neurons is 600, then four different shapes are: constant (200-200-200), increasing (100-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          692.362,
+          557.998,
+          737.242
+        ],
+        "content": "200-300), decreasing (300-200-100), and diamond (150-300150). As we can see from Figure 11, the “constant” network shape is empirically better than the other three options, which is consistent with previous studies [Larochelle et al., 2009].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 138,
+        "linked content id": 139,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          315.0,
+          605.324,
+          435.953,
+          680.08
+        ],
+        "id": 139,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile16.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          438.45,
+          605.324,
+          559.403,
+          680.08
+        ],
+        "id": 140,
+        "page number": 6,
+        "pdfua_tag": "Figure",
+        "source": "1703.04247_images/imageFile17.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          327.096,
+          591.567,
+          545.906,
+          603.571
+        ],
+        "content": "Figure 11: AUC and Logloss comparison of network shape.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 141,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          561.966,
+          404.09,
+          577.52
+        ],
+        "content": "4 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 142,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          513.972,
+          557.998,
+          558.853
+        ],
+        "content": "In this paper, a new deep neural network is proposed for CTR prediction. The most related domains are CTR prediction and deep learning in recommender system. In this section, we discuss related work in these two domains.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 143,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          425.817,
+          558.005,
+          514.533
+        ],
+        "content": "CTR prediction plays an important role in recommender system [Richardson et al., 2007; Juan et al., 2016; McMahan et al., 2013]. Besides generalized linear models and FM, a few other models are proposed for CTR prediction, such as tree-based model [He et al., 2014], tensor based model [Rendle and Schmidt-Thieme, 2010], support vector machine [Chang et al., 2010], and bayesian model [Graepel et al., 2010].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 144,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          239.032,
+          558.005,
+          426.378
+        ],
+        "content": "The other related domain is deep learning in recommender systems. In Section 1 and Section 2.2, several deep learning models for CTR prediction are already mentioned, thus we do not discuss about them here. Several deep learning models are proposed in recommendation tasks other than CTR prediction (e.g., [Covington et al., 2016; Salakhutdinov et al., 2007; van den Oord et al., 2013; Wu et al., 2016; Zheng et al., 2016; Wu et al., 2017; Zheng et al., 2017]). [Salakhutdinov et al., 2007; Sedhain et al., 2015; Wang et al., 2015] propose to improve Collaborative Filtering via deep learning. The authors of [Wang and Wang, 2014; van den Oord et al., 2013] extract content feature by deep learning to improve the performance of music recommendation. [Chen et al., 2016] devises a deep learning network to consider both image feature and basic feature of display adverting. [Covington et al., 2016] develops a two-stage deep learning framework for YouTube video recommendation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 145,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          211.908,
+          394.717,
+          227.462
+        ],
+        "content": "5 Conclusions",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 146,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.201,
+          557.998,
+          208.794
+        ],
+        "content": "In this paper, we proposed DeepFM, a Factorization-Machine based Neural Network for CTR prediction, to overcome the shortcomings of the state-of-the-art models and to achieve better performance. DeepFM trains a deep component and an FM component jointly. It gains performance improvement from these advantages: 1) it does not need any pre-training; 2) it learns both high- and low-order feature interactions; 3) it introduces a sharing strategy of feature embedding to avoid feature engineering. We conducted extensive experiments on two real-world datasets (Criteo dataset and a commercial App Store dataset) to compare the effectiveness and efﬁciency of",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 147,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          681.403,
+          296.998,
+          737.242
+        ],
+        "content": "DeepFM and the state-of-the-art models. Our experiment results demonstrate that 1) DeepFM outperforms the state-ofthe-art models in terms of AUC and Logloss on both datasets; 2) The efﬁciency of DeepFM is comparable to the most efﬁcient deep model in the state-of-the-art.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 148,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          626.608,
+          296.998,
+          682.448
+        ],
+        "content": "There are two interesting directions for future study. One is exploring some strategies (such as introducing pooling layers) to strengthen the ability of learning most useful highorder feature interactions. The other is to train DeepFM on a GPU cluster for large-scale problems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 149,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          603.04,
+          109.544,
+          618.594
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 150,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          557.307,
+          296.997,
+          603.085
+        ],
+        "content": "[Boulanger-Lewandowski et al., 2013] Nicolas BoulangerLewandowski, Yoshua Bengio, and Pascal Vincent. Audio chord recognition with recurrent neural networks. In ISMIR, pages 335–340, 2013.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 151,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          510.297,
+          296.998,
+          556.074
+        ],
+        "content": "[Chang et al., 2010] Yin-Wen Chang, Cho-Jui Hsieh, KaiWei Chang, Michael Ringgaard, and Chih-Jen Lin. Training and testing low-degree polynomial data mappings via linear SVM. JMLR, 11:1471–1490, 2010.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 152,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          474.245,
+          296.998,
+          509.063
+        ],
+        "content": "[Chen et al., 2016] Junxuan Chen, Baigui Sun, Hao Li, Hongtao Lu, and Xian-Sheng Hua. Deep CTR prediction in display advertising. In MM, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 153,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          394.358,
+          297.0,
+          473.012
+        ],
+        "content": "[Cheng et al., 2016] Heng-Tze Cheng, Levent Koc, Jeremiah Harmsen, Tal Shaked, Tushar Chandra, Hrishi Aradhye, Glen Anderson, Greg Corrado, Wei Chai, Mustafa Ispir, Rohan Anil, Zakaria Haque, Lichan Hong, Vihan Jain, Xiaobing Liu, and Hemal Shah. Wide & deep learning for recommender systems. CoRR, abs/1606.07792, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 154,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          358.306,
+          296.997,
+          393.124
+        ],
+        "content": "[Covington et al., 2016] Paul Covington, Jay Adams, and Emre Sargin. Deep neural networks for youtube recommendations. In RecSys, pages 191–198, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 155,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          300.336,
+          297.0,
+          357.073
+        ],
+        "content": "[Graepel et al., 2010] Thore Graepel, Joaquin Qui˜nonero Candela, Thomas Borchert, and Ralf Herbrich. Webscale bayesian click-through rate prediction for sponsored search advertising in microsoft’s bing search engine. In ICML, pages 13–20, 2010.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 156,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          242.367,
+          297.001,
+          299.103
+        ],
+        "content": "[He et al., 2014] Xinran He, Junfeng Pan, Ou Jin, Tianbing Xu, Bo Liu, Tao Xu, Yanxin Shi, Antoine Atallah, Ralf Herbrich, Stuart Bowers, and Joaquin Qui˜nonero Candela. Practical lessons from predicting clicks on ads at facebook. In ADKDD, pages 5:1–5:9, 2014.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 157,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          206.315,
+          296.998,
+          241.134
+        ],
+        "content": "[He et al., 2016] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In CVPR, pages 770–778, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 158,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          170.263,
+          297.001,
+          205.082
+        ],
+        "content": "[Juan et al., 2016] Yu-Chin Juan, Yong Zhuang, Wei-Sheng Chin, and Chih-Jen Lin. Field-aware factorization machines for CTR prediction. In RecSys, pages 43–50, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 159,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          123.253,
+          297.004,
+          169.03
+        ],
+        "content": "[Larochelle et al., 2009] Hugo Larochelle, Yoshua Bengio, J´erˆome Louradour, and Pascal Lamblin. Exploring strategies for training deep neural networks. JMLR, 10:1–40, 2009.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 160,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          87.201,
+          297.0,
+          122.02
+        ],
+        "content": "[Liu et al., 2015] Qiang Liu, Feng Yu, Shu Wu, and Liang Wang. A convolutional click prediction model. In CIKM, 2015.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 161,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          659.485,
+          557.998,
+          738.139
+        ],
+        "content": "[McMahan et al., 2013] H. Brendan McMahan, Gary Holt, David Sculley, Michael Young, Dietmar Ebner, Julian Grady, Lan Nie, Todd Phillips, Eugene Davydov, Daniel Golovin, Sharat Chikkerur, Dan Liu, Martin Wattenberg, Arnar Mar Hrafnkelsson, Tom Boulos, and Jeremy Kubica. Ad click prediction: a view from the trenches. In KDD, 2013.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 162,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          610.405,
+          558.0,
+          656.183
+        ],
+        "content": "[Qu et al., 2016] Yanru Qu, Han Cai, Kan Ren, Weinan Zhang, Yong Yu, Ying Wen, and Jun Wang. Productbased neural networks for user response prediction. CoRR, abs/1611.00144, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 163,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          561.325,
+          558.0,
+          607.103
+        ],
+        "content": "[Rendle and Schmidt-Thieme, 2010] Steffen Rendle and Lars Schmidt-Thieme. Pairwise interaction tensor factorization for personalized tag recommendation. In WSDM, pages 81–90, 2010.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 164,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          534.163,
+          557.998,
+          558.023
+        ],
+        "content": "[Rendle, 2010] Steffen Rendle. Factorization machines. In ICDM, 2010.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 165,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          485.084,
+          558.005,
+          530.861
+        ],
+        "content": "[Richardson et al., 2007] Matthew Richardson, Ewa Dominowska, and Robert Ragno. Predicting clicks: estimating the click-through rate for new ads. In WWW, pages 521– 530, 2007.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 166,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          436.004,
+          557.999,
+          481.781
+        ],
+        "content": "[Salakhutdinov et al., 2007] Ruslan Salakhutdinov, Andriy Mnih, and Geoffrey E. Hinton. Restricted boltzmann machines for collaborative ﬁltering. In ICML, pages 791–798, 2007.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 167,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          386.924,
+          558.004,
+          432.701
+        ],
+        "content": "[Sedhain et al., 2015] Suvash Sedhain, Aditya Krishna Menon, Scott Sanner, and Lexing Xie. Autorec: Autoencoders meet collaborative ﬁltering. In WWW, pages 111–112, 2015.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 168,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          337.844,
+          558.004,
+          383.622
+        ],
+        "content": "[Srivastava et al., 2014] Nitish Srivastava, Geoffrey E. Hinton, Alex Krizhevsky, Ilya Sutskever, and Ruslan Salakhutdinov. Dropout: a simple way to prevent neural networks from overﬁtting. JMLR, 15(1):1929–1958, 2014.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 169,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          299.723,
+          557.998,
+          334.542
+        ],
+        "content": "[van den Oord et al., 2013] A¨aron van den Oord, Sander Dieleman, and Benjamin Schrauwen. Deep content-based music recommendation. In NIPS, pages 2643–2651, 2013.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 170,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          261.603,
+          557.998,
+          296.421
+        ],
+        "content": "[Wang and Wang, 2014] Xinxi Wang and Ye Wang. Improving content-based and hybrid music recommendation using deep learning. In ACM MM, pages 627–636, 2014.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 171,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          223.482,
+          557.997,
+          258.3
+        ],
+        "content": "[Wang et al., 2015] Hao Wang, Naiyan Wang, and Dit-Yan Yeung. Collaborative deep learning for recommender systems. In ACM SIGKDD, pages 1235–1244, 2015.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 172,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          315.0,
+          136.281,
+          558.0,
+          220.179
+        ],
+        "id": 173,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              315.0,
+              174.402,
+              558.0,
+              220.179
+            ],
+            "content": "[Wu et al., 2016] Yao Wu, Christopher DuBois, Alice X. Zheng, and Martin Ester. Collaborative denoising autoencoders for top-n recommender systems. In ACM WSDM, pages 153–162, 2016.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              315.0,
+              136.281,
+              557.998,
+              171.099
+            ],
+            "content": "[Wu et al., 2017] Chao-Yuan Wu, Amr Ahmed, Alex Beutel, Alexander J. Smola, and How Jing. Recurrent recommender networks. In WSDM, pages 495–503, 2017.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          315.0,
+          87.201,
+          557.998,
+          132.979
+        ],
+        "content": "[Zhang et al., 2014] Yuyu Zhang, Hanjun Dai, Chang Xu, Jun Feng, Taifeng Wang, Jiang Bian, Bin Wang, and TieYan Liu. Sequential click prediction for sponsored search with recurrent neural networks. In AAAI, 2014.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 174,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          703.321,
+          296.998,
+          738.139
+        ],
+        "content": "[Zhang et al., 2016] Weinan Zhang, Tianming Du, and Jun Wang. Deep learning over multi-ﬁeld categorical data - A case study on user response prediction. In ECIR, 2016.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 175,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          618.638,
+          297.002,
+          701.277
+        ],
+        "id": 176,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              655.5,
+              297.002,
+              701.277
+            ],
+            "content": "[Zheng et al., 2016] Yin Zheng, Yu-Jin Zhang, and Hugo Larochelle. A deep and autoregressive approach for topic modeling of multimodal data. IEEE Trans. Pattern Anal. Mach. Intell., 38(6):1056–1069, 2016.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              618.638,
+              296.998,
+              653.457
+            ],
+            "content": "[Zheng et al., 2017] Lei Zheng, Vahid Noroozi, and Philip S. Yu. Joint deep modeling of users and items using reviews for recommendation. In WSDM, pages 425–434, 2017.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      }
+    ],
+    "modification date": "D:20170314004001Z",
+    "number of pages": 8,
+    "title": ""
+  }
+}

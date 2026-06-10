@@ -1,0 +1,2933 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Inner Monologue: Embodied Reasoning through Planning with Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2022-07-12">12 Jul 2022</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tomas</forename><surname>Jackson</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Linda</forename><surname>Luu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+						</author>
+						<title level="a" type="main">Inner Monologue: Embodied Reasoning through Planning with Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2022-07-12">12 Jul 2022</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">898965E73BC17D467CB759FCB1849458</idno>
+					<idno type="arXiv">arXiv:2207.05608v1[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:42+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent works have shown how the reasoning capabilities of Large Language Models (LLMs) can be applied to domains beyond natural language processing, such as planning and interaction for robots. These embodied problems require an agent to understand many semantic aspects of the world: the repertoire of skills available, how these skills influence the world, and how changes to the world map back to the language. LLMs planning in embodied environments need to consider not just what skills to do, but also how and when to do them -answers that change over time in response to the agent's own choices. In this work, we investigate to what extent LLMs used in such embodied contexts can reason over sources of feedback provided through natural language, without any additional training. We propose that by leveraging environment feedback, LLMs are able to form an inner monologue that allows them to more richly process and plan in robotic control scenarios. We investigate a variety of sources of feedback, such as success detection, scene description, and human interaction. We find that closed-loop language feedback significantly improves high-level instruction completion on three domains, including simulated and real table top rearrangement tasks and long-horizon mobile manipulation tasks in a kitchen environment in the real world.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Intelligent and flexible embodied interaction requires robots to be able to deploy large repertoires of basic behaviors in appropriate ways, sequence these behaviors as needed for long horizon tasks, and also recognize when to switch to a different approach if a particular behavior or plan is unsuccessful. High-level planning, perceptual feedback, and low-level control are just a few of the sub-tasks that would need to be seamlessly combined together to perform the sort of reasoning required for an embodied agent, such as a robot, to intelligently act in the world. While conventionally these challenges have been approached from the perspective of planning (e.g., TAMP <ref type="bibr" target="#b0">[1]</ref>) or hierarchical learning (e.g., HRL <ref type="bibr">[2]</ref>), effective high-level reasoning about complex tasks also requires semantic knowledge and understanding of the world.</p><p>One of the remarkable observations in recent machine learning research is that large language models (LLMs) can not only generate fluent textual descriptions, but also appear to have rich internalized knowledge about the world <ref type="bibr" target="#b2">[3,</ref><ref type="bibr">4,</ref><ref type="bibr">5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr">7]</ref>. When appropriately conditioned (e.g., prompted), they can even carry out some degree of deduction and respond to questions that appear to require reasoning and inference <ref type="bibr" target="#b7">[8,</ref><ref type="bibr">9,</ref><ref type="bibr">10,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13]</ref>. This raises an intriguing possibility: beyond their ability to interpret natural language instructions, can language models further serve as reasoning models that combine multiple sources of feedback and become interactive problem solvers for embodied tasks, such as robotic manipulation?</p><p>Prior studies show that language helps humans internalize our knowledge and perform complex relational reasoning through thinking in language <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b17">18]</ref>. Imagine the "inner monologue" that happens when a person tries to solve some task: "I have to unlock the door; let me try to pick up the key and put it in the lock... no, wait, it doesn't fit, I'll try another one... that one worked, now I can turn the key." The thought process in this case involves choices about the best immediate action to solve the high-level task ("pick up the key"), observations about the outcomes of attempted actions ("it doesn't fit"), and corrective actions that are taken in response to these observations ("I'll try another one"). Inspired by the human thought process, we propose that such an inner monologue is a natural framework for incorporating feedback for LLMs.</p><p>Our work studies these questions by combining LLMs with various sources of textual feedback, only utilizing few-shot prompting without any additional training. We observe that similarly to recent work <ref type="bibr" target="#b18">[19]</ref>, natural language provides a universal and interpretable interface for such grounding of model communication and allows them to incorporate their conclusions in an overarching inner monologue driven by a language model. While prior work has investigated using language models as planners <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b20">21]</ref> or incorporating</p><p>(b) (c) (a)</p><p>Human Figure <ref type="figure">1</ref>: Inner Monologue enables grounded closed-loop feedback for robot planning with large language models by leveraging a collection of perception models (e.g., scene descriptors and success detectors) in tandem with pretrained language-conditioned robot skills. Experiments show our system can reason and replan to accomplish complex long-horizon tasks for (a) mobile manipulation and (b,c) tabletop manipulation in both simulated and real settings. multimodal-informed perception through language <ref type="bibr" target="#b18">[19]</ref>, to the best of our knowledge no work has studied the critical link of not only planning with language, but also informing embodied feedback with language, which we investigate in this work.</p><p>Specifically, we study methods and sources of feedback for closing the agent-environment loop via an inner monologue and their impact on downstream execution success and new capabilities arising from such interaction. In particular, we combine multiple perception models that perform various tasks such as language-conditioned semantic classification or language-based scene description, together with feedback provided by a human user that the robot is cooperating with. To execute the commands given by a user, the actions are chosen from a set of pre-trained robotic manipulation skills together with their textual descriptions that can be invoked by a language model. Our proposed system Inner Monologue chains together these various components (perception models, robotic skills, and human feedback) in a shared language prompt, enabling it to successfully perform user instructions.</p><p>Finally, we show that Inner Monologue, without requiring additional training beyond a frozen language model and pre-trained robotic skills, can accomplish complex, long-horizon, and unseen tasks in simulation as well as on two real-world robotic platforms. Notably, we show that it can efficiently retry under observed stochastic failure, replan under systematic infeasibility, or request human feedback for ambiguous queries, resulting in significantly improved performance in dynamical environments. As a demonstration of the versatility of LLMs and grounded closed-loop feedback, we additionally show several surprising capabilities emerging from the inner monologue formulation, including continued adaptation to new instructions, self-proposed goals, interactive scene understanding, multilingual interactions, and more.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Task and Motion Planning. Task and motion planning <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b22">23]</ref> requires simultaneously solving a high-level, discrete task planning problem <ref type="bibr">[24,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26]</ref>, and a low-level, continuous motion planning problem <ref type="bibr" target="#b26">[27]</ref>. Traditionally, this problem has been solved through optimization <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b28">29]</ref> or symbolic reasoning <ref type="bibr">[24,</ref><ref type="bibr" target="#b25">26]</ref>, but more recently machine learning has been applied to aspects of the problem via learned representations, learned task-primitives, and more <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr">35,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b37">38]</ref>. Some works utilize language for planning and grounding <ref type="bibr" target="#b38">[39,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b43">44]</ref>. Others have approached the problem through hierarchical learning <ref type="bibr" target="#b44">[45,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b47">48,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b49">50]</ref>. In this work, we leverage pre-trained LLMs and their semantic knowledge, along with trained low-level skills, to find feasible plans.</p><p>Task Planning with Language Models. Various prior works have explored using language as a space for planning <ref type="bibr" target="#b50">[51,</ref><ref type="bibr">52,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b18">19]</ref>. Similar to ours are recent task planning approaches that leverage pre-trained autoregressive LLMs to decompose abstract, high-level instructions into a sequence of low-level steps executable by an agent <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b20">21]</ref> in a zero-shot manner. Specifically, Huang et al. <ref type="bibr" target="#b19">[20]</ref> prompt GPT-3 <ref type="bibr">[9]</ref> and Codex <ref type="bibr" target="#b53">[54]</ref> to generate action plans for embodied agents, where each action step is semantically translated to an admissible action with a Sentence-RoBERTa model <ref type="bibr" target="#b54">[55,</ref><ref type="bibr" target="#b55">56]</ref>. SayCan <ref type="bibr" target="#b20">[21]</ref> instead grounds the actions by mul-tiplying each candidate action's probability under FLAN <ref type="bibr" target="#b56">[57]</ref> with the action's value function, which serves as a proxy for affordance <ref type="bibr" target="#b33">[34]</ref>. However, both approaches effectively produce the plan while assuming that each proposed step is executed successfully by the agent. As a result, these approaches may not be robust in handling intermediate failures in dynamic environments or with poor lower level policies. We explore in Inner Monologue ways to incorporate grounded feedback from the environment into the LLM as we produce each step in the plan.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fusing Vision, Language, and Control in Robotics.</head><p>Various works have investigated strategies for the challenging problem of fusing vision, language, and control <ref type="bibr" target="#b57">[58,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b59">60,</ref><ref type="bibr" target="#b60">61,</ref><ref type="bibr" target="#b61">62,</ref><ref type="bibr" target="#b62">63,</ref><ref type="bibr" target="#b63">64]</ref>. While pretrained LLMs typically train only on text data, pretrained visual-language models (e.g., CLIP <ref type="bibr" target="#b64">[65]</ref>) are trained on joint image(s) and corresponding text captions via variants of masked language modeling (MLM) objective <ref type="bibr" target="#b65">[66,</ref><ref type="bibr" target="#b66">67,</ref><ref type="bibr" target="#b67">68,</ref><ref type="bibr" target="#b68">69]</ref>, contrastive loss <ref type="bibr" target="#b69">[70,</ref><ref type="bibr" target="#b70">71,</ref><ref type="bibr" target="#b64">65]</ref> or other supervised objectives <ref type="bibr" target="#b71">[72,</ref><ref type="bibr" target="#b72">73]</ref>. CLIP has been employed in several robotics and embodied settings in zero-shot manner <ref type="bibr" target="#b73">[74]</ref>, or combined with Transporter networks <ref type="bibr" target="#b74">[75]</ref> as in CLIPort <ref type="bibr" target="#b75">[76]</ref>. Socratic Models <ref type="bibr" target="#b18">[19]</ref> combines several foundation models (e.g., GPT-3 <ref type="bibr">[9]</ref>, ViLD <ref type="bibr" target="#b76">[77]</ref>) and language-conditioned policies, using language as the common interface, and demonstrated manipulating objects in a simulated vision-based robotic manipulation environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Leveraging Embodied Language Feedback with Inner Monologue</head><p>In this section, we introduce how LLMs can act as interactive problem solvers and incorporate embodied environment observations into grounded planning through a process we refer to as Inner Monologue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Statement</head><p>Our setting consists of an embodied robotic agent attempting to perform a high-level natural language instruction i. This robotic agent is only capable of executing short-horizon skills from a library of previously trained policies π k ∈Π with short language descriptions ℓ k , which may be trained with reinforcement learning or behavioral cloning. The "planner," which is a pretrained LLM <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b20">21]</ref>, attempts to find a sequence of skills to accomplish the instruction. To observe the environment, the planner has access to textual feedback o from the environment that can be appended to the instruction or requested by the planner. The observation o may be success detection, object detection, scene description, visual-question answering, or even human feedback. Our work studies to what extent the LLM planner is able to reason over and utilize such feedback to "close the loop" with the environment and improve planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Inner Monologue</head><p>We formulate an "inner monologue" by continually injecting information from the various sources of feedback into the LLM planning language prompts as the robot interacts with the environment. While LLMs have demonstrated exceptional planning capabilities for embodied control tasks <ref type="bibr" target="#b19">[20]</ref>, prior works have found it crucial to ground LLM predictions with external components such as affordance functions <ref type="bibr" target="#b20">[21]</ref> in order to produce useful plans that are executable by robots. However, LLMs used in this context have thus far remained one-directional -providing a list of skills, without making corrections or leveraging opportunities to replan accordingly. In contrast, Inner Monologue studies settings where grounded environment feedback is provided directly to the LLM in a closed-loop fashion. This promotes improved LLM reasoning in complex long-horizon settings, even before any external affordance-based grounding methods are applied.</p><p>Our analysis assumes textual feedback is provided to the planner, but does not assume a single specific method of fusing LLM planning with low-level robotic control or a specific method of extracting environment feedback into language. Rather than focusing on a particular algorithmic implementation, our aim is to provide a case study on the value of incorporating different types of feedback into closed-loop LLM-based planning. Thus, Inner Monologue in Sec 4 utilizes language feedback within separate systems that incorporate different LLMs, different methods of fusing planning with control, different environments and tasks, and different methods of acquiring control policies. We note that in our specific implementations of Inner Monologue, we use pre-trained LLMs for planning that are not finetuned, but rather evaluated solely with few-shot prompting; the full prompts can be found in the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Sources of Feedback</head><p>In theory any type of environment feedback can inform the LLM planner, as long as it can be expressed through language. We focus on the specific forms of feedback shown in Fig <ref type="figure" target="#fig_0">2</ref>, which can be broken down into task-specific feedback, such as success detection, and scene-specific feedback (either "passive" or "active"), which describes the scene. Specific instantiations and implementation details of each type of feedback can be found in Sec 4.1, Sec 4.2, and Sec 4.3 respectively for each domain.</p><p>Success Detection. Semantic success detection is a binary classification problem of whether the low-level skill π k has succeeded. Engineered success detectors can operate on ground-truth state in simulation, while learned success detectors can be trained on real examples of successes and failures in the real world <ref type="bibr" target="#b77">[78,</ref><ref type="bibr" target="#b78">79,</ref><ref type="bibr" target="#b79">80,</ref><ref type="bibr" target="#b80">81,</ref><ref type="bibr" target="#b81">82]</ref>. We use the output of success detectors in language form, which we refer to as Success feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Passive Scene Description.</head><p>While there are many ways to describe the semantics contained within a scene, we use the term Passive Scene Description to broadly describe sources of scene feedback that are consistently provided and follow some structure. Passive Scene Description covers all sources of environment grounding feedback that are automatically provided and injected into the LLM prompt without any active prompting or querying by the LLM planner. One common type of such feedback is object recognition <ref type="bibr" target="#b82">[83,</ref><ref type="bibr" target="#b83">84,</ref><ref type="bibr" target="#b84">85,</ref><ref type="bibr" target="#b85">86]</ref> -we refer to the textual outputs of such object recognizers as Object feedback. We also demonstrate the use of a task-progress scene description in the simulated tabletop rearrangement environment, to which we refer as Scene feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Active Scene Description.</head><p>As the proactive counterpart to Passive Scene Description, Active Scene Description encompasses sources of feedback that are provided directly in response to active queries by the LLM planner. In this case, the LLM can directly ask a question about the scene, and this question can be answered either by a person, or by another pretrained model, such as a Visual Question Answering (VQA) model <ref type="bibr" target="#b86">[87,</ref><ref type="bibr" target="#b87">88,</ref><ref type="bibr" target="#b88">89,</ref><ref type="bibr" target="#b89">90]</ref>. While the previous types of feedback are strictly structured and narrow in their scope, in the Active Scene Description setting the LLM can receive unstructured answers to open-ended questions, allowing it to actively gather information relevant to the scene, the task, or even preferences of the user (in the case of human-provided response). The combined output we send to the LLM planner includes both the LLM-generated question along with the response. As we aim to investigate whether and how a LLM planner can incorporate such feedback and wish to study both structured VQA-style human feedback as well as unstructured human preferences feedback, we only consider human-provided response in this work, which we refer to as Human feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Results</head><p>In order to study how different sources of environment feedback can support a rich inner monologue that enables complex robotic control, we analyze diverse long-horizon manipulation and navigation tasks in simulation and in the real world. As Inner Monologue is not dependent on a specific LLM or a type of grounding feedback, we study different Inner Monologue implementations in three environments with different LLM planning methods and different sources of feedback from the environment. Below, we show results for a tabletop manipulation environment in sim (Sec 4.1) and real (Sec 4.2) as well as a mobile manipulation environment in real (Sec 4.3). For more details about the experiment setup and results, please refer to the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Simulated Tabletop Rearrangement</head><p>We experiment with vision-based block manipulation tasks in a Ravens-based <ref type="bibr" target="#b74">[75]</ref> simulation environment to evaluate our method against several baselines and ablate across varying amounts of textual feedback. Given Sharing across the domains is the same Inner Monologue formulation that uses a pre-trained langauge model to take in a human instruction and decompose it into a sequence of actionable steps by the agent, while accounting for injected embodied feedback from different models, such as object recognizers and success detectors. In real-world kitchen mobile manipulation domain (bottom), we additionally ground the actions using pre-trained affordance functions built in <ref type="bibr" target="#b20">[21]</ref>, which do not communicate back to the language model.</p><p>a number of blocks and bowls on a table, a robotic arm containing a gripper is tasked with rearranging these objects in some desired configuration, specified by natural language (e.g., "putting the blocks in the bowls with matching colors"). We evaluate each method on four seen tasks and four unseen tasks, where seen tasks may be used for training (in the case of supervised baseline) or used as few-shot prompting for LLM planner.</p><p>This instantiation of Inner Monologue uses (i) InstructGPT <ref type="bibr">[9,</ref><ref type="bibr" target="#b90">91]</ref> as the LLM for multi-step planning <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b20">21]</ref>, (ii) scripted modules to provide language feedback in the form of object recognition (Object), success detection (Success), and task-orogress scene description (Scene), and (iii) a pre-trained language-conditioned pick-and-place primitive (similar to CLIPort <ref type="bibr" target="#b75">[76]</ref> and Transporter Nets <ref type="bibr" target="#b74">[75]</ref>). Object feedback informs the LLM planner about the objects present in the scene, and the variant using only Object feedback is similar to the demonstrated example in <ref type="bibr" target="#b18">[19]</ref> in this environment. Success feedback informs the planner about success/failure of the most recent action. However, in the presence of many objects and test-time disturbances, the complex combinatorial state space requires the planner to additionally reason about the overall task progress (e.g., if the goal is to stack multiple blocks, the unfinished tower of blocks may be knocked over by the robot). Therefore, task-progress scene description (Scene) describes the semantic sub-goals inferred by the LLM towards completing the high-level instruction that are achieved by the agent so far. For the variant that uses Object + Scene feedback, due to the additional reasoning complexity, we find that adding chain-of-thought <ref type="bibr">[10,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13]</ref> can improve the consistency between inferred goals and achieved goals.</p><p>We additionally compare to a multi-task CLIPort policy directly trained on long-horizon task instructions (i.e., without using LLM for planning). Because CLIPort is a single-step policy and does not terminate spontaneously during policy rollout, we report CLIPort evaluations with oracle termination (i.e., repeat until oracle indicates task completion) and fixed-step termination (i.e., repeat for k steps). While Inner Monologue terminates when the LLM stops generating new steps, we similarly set the maximum number of steps to be k for practical considerations. We use k =15. To simulate real-world disturbances and evaluate the system's robustness to disturbances, we add Gaussian noise to multiple levels of the system at test time: N (0,3) for pixel observation, N (0,2.5) for policy primitive (i.e., pick-place pixel heatmaps), N (0,0.02m) for place locations.</p><p>Results are shown in Table <ref type="table" target="#tab_0">1</ref>, and example prompt can be found in Fig <ref type="figure" target="#fig_1">3</ref>. Analysis. As shown in Table <ref type="table" target="#tab_0">1</ref>, all variants of Inner Monologue perform well on seen tasks, and by leveraging rich semantic knowledge in the pre-trained LLM, the performance can be directly translated to unseen tasks without further training. Furthermore, aligned with our hypothesis, Inner Monologue with Object + Scene performs the best because of its ability to keep track of all goal conditions and currently achieved goals. Finally, we observe that non-hierarchical and solitary systems such as CLIPort (i) struggle at generalizing to unseen long-horizon tasks under test-time disturbances, and (ii) on training tasks, an oracle is also often required to indicate task completion for good performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Real-World Tabletop Rearrangement</head><p>We evaluate Inner Monologue on a real-world robot platform designed to resemble the simulation experiments presented in Sec 4.1 using motion primitives for tabletop pick and place. The setup consists of a UR5e robot arm equipped with a wrist-mounted Intel RealSense RGB-D camera overlooking a workspace of diverse objects -from toy blocks to food items to condiments (shown in Fig <ref type="figure" target="#fig_1">3</ref>). We use an instantiation of Inner Monologue using (i) InstructGPT <ref type="bibr">[9,</ref><ref type="bibr" target="#b90">91]</ref> as the LLM for multi-step planning, (ii) a pretrained open-vocabulary object recognition with MDETR <ref type="bibr" target="#b91">[92]</ref> to generate a list of currently visible objects and list of previously visible objects that are no longer visible (Object), (iii) heuristics on the object bounding box predictions from MDETR for Success Detection (Success), and (iv) a zero-shot pick and place policy that uses an LLM to parse target objects from a language command (e.g., given by the planner) and then executes scripted suction-based picking and placing primitives at the center of the target objects' bounding boxes. Aside from the pretraining of the LLM and MDETR (which are available out-of-the-box), the system does not require any model finetuning to perform pick and place tasks with new objects.</p><p>We investigate two tasks: (i) a simple 3-block stacking task where 2 blocks are already pre-stacked, and (ii) a more complex long-horizon sorting task to place food in one plate and condiments in another (where categorizing food versus condiments is autonomously done by the LLM planner). Since default pick and place performance is generally quite high on the system, we artificially inject Gaussian noise into the policy actions (i.e., add standard deviation σ=4mm clipped at 2σ) to stress test recovery from failures via replanning with grounded closed-loop feedback. Results are presented in Table <ref type="table" target="#tab_1">2</ref>. Note that the system is also subject to noisy object and success detections due to the additional challenge of real-world perception and clutter. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Analysis.</head><p>We compare different variants of Inner Monologue with different LLM-informed closed-loop feedback, as well as an open-loop variant that only runs object recognition once at the beginning of the task (similar to the system demonstrated in <ref type="bibr" target="#b18">[19]</ref>). The partial 3-block stacking task highlights an immediate failure mode of this baseline, where the initial scene description struggles to capture a complete representation of the scene (due to clutter and occlusion) to provide as input to the multi-step planner. As a result, the system only executes one pick and place action -and cannot recover from mistakes. To address these shortcomings, Inner Monologue (Object + Success) leverages closed-loop scene description and success detection after each step, which allows it to successfully replan and recover from policy mistakes.</p><p>Additional ablations with Inner Monologue also show that (i) common failures induced by lack of closed-loop scene description are largely due to initially occluded objects not being part of the LLM generated plans, and (ii) failures induced by lack of success detection come from not retrying pick and place actions that have failed due to policy noise. Overall, we observe that both components are complementary and important in maintaining robust recovery modes for real rearrangement tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Real-World Mobile Manipulator in a Kitchen Setting</head><p>We implement Inner Monologue in a robotic system using the kitchen environment and task definitions described in SayCan <ref type="bibr" target="#b20">[21]</ref>. The <ref type="url" target="https://everydayrobots.com/">Everyday Robots</ref> robot, a mobile manipulator with RGB observations, is placed in an office kitchen to interact with common objects using concurrent <ref type="bibr" target="#b92">[93]</ref> continuous closed-loop control.</p><p>The baseline, SayCan <ref type="bibr" target="#b20">[21]</ref>, is a method that plans and acts in diverse real world scenarios by combining an LLM with value functions of underlying control policies. While SayCan creates plans that are grounded by the affordances of value functions, the LLM predictions in isolation are never given any closed-loop feedback.</p><p>We use an instantiation of Inner Monologue that uses (i) PALM <ref type="bibr" target="#b7">[8]</ref> as the LLM for multi-step planning, (ii) value functions from pre-trained control policies for affordance grounding <ref type="bibr" target="#b20">[21]</ref>, (iii) a learned visual classification model for success detection feedback (Success), (iv) human-provided object recognition feedback (Object), and (v) pre-trained control policies for relevant skills in the scene. We also perform a case study where we allow the agent to ask questions and source Human feedback directly; results are shown in Fig <ref type="figure" target="#fig_5">5a</ref> and the Appendix.</p><p>We evaluate methods on 120 evaluations over three task families: 1) four manipulation tasks, 2) two dexterous manipulation tasks utilizing drawers, and 3) two long-horizon combined manipulation and navigation tasks.</p><p>In order to better study how Inner Monologue improves reasoning in especially challenging scenarios, we consider an experiment variant where we add adversarial disturbances during control policy executions that cause skill policy rollouts to fail. These disturbances may be fairly simple and just require the policy to try again, or it may complex enough that the policy needs to replan and select a completely new skill. While these failures occur naturally even without perturbances, the adversarial disturbances creates a consistent comparison between methods that requires retrying or replanning to accomplish the original instruction.  Analysis. The results of real robot experiments are shown in</p><p>Table 3. Without adversarial disturbances, the baseline method SayCan performs reasonably on all three task families, yet incorporating LLM-informed feedback on skill success/failure and presence of objects allows the Inner Monologue to effectively retry or replan under natural failures, providing further improvement to the baseline. The most notable difference is in the cases with adversarial disturbances when a policy failure is forced to occur. Without any LLM-informed feedback SayCan has success rate close to 0% since it is does not have explicitly high-level retry behavior. Inner Monologue significantly outperforms SayCan because of its ability to invoke appropriate recovery Human: throw away the snack on the close counter Robot: 1. go to the close counter and ask: What snacks are on the counter? Human: actually I changed my mind, I want you to throw away something on the table 2. go to the table and ask: What snacks are on the table? Human: nevermind i want you to finish your previous task 3. go to the close counter and ask: What snacks are on the counter? Human: apple and chip bag 4. pick up the apple and continue 5. go to the trash and continue 6. put down the apple and continue 7. done Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-question, robot action Replan (a) Continued Adaptation to New Instructions Scene: There is a purple bowl, red block, purple block, blue block, orange bowl, orange block. Human: Put any two blocks inside the purple bowl. Robot thought: Goal state is ["Two blocks are inside the purple bowl."] Robot action: Pick the red block and place it in the purple bowl. Scene: Completed ['Red block is in purple bowl.'] Robot thought: One more block is needed to be inside the purple bowl. Robot action: Pick the purple block and place it in the purple bowl. Scene: The purple block is too heavy to be picked up. What's your new plan? Robot thought: I need to find a lighter block. Robot action: Pick the blue block and place it inside the purple bowl. Scene: Completed ["Two blocks are inside the purple bowl."] Robot thought: I'm done. Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-question, robot action (b) Self-Proposing Goals under Infeasibility Scene: There is a yellow bowl, yellow block, blue block, blue bowl. Human: Put the blocks in the bowls with mismatching colors. Robot thought: Goal state is ["Yellow block is in the blue bowl.", "Blue block is in the yellow bowl."] Robot action: Pick the yellow block and place it in the blue bowl. Scene: Completed ["Yellow block is in the blue bowl."] Robot thought: Blue block is not in the yellow bowl. Human: 我改变主意了，请把蓝色方块也放到蓝色的碗里面。 Robot thought: Goal state is ["Yellow block is in the blue bowl.", "Blue block is in the blue bowl."] Robot action: Pick the blue block and place it in the blue bowl. Scene: Completed ["Yellow block is in the blue bowl.", "Blue block is in the blue bowl."] Robot thought: I'm done. Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-questio n, robot action *Translation: "I changed my plan. Please also put the blue block inside the blue bowl." (c) Multilingual Interaction Scene: There is a purple bowl, red block, purple block, blue block, orange bowl, orange block. Human: Put any two blocks inside the purple bowl. … Robot action: Pick the red block and place it inside the purple bowl. … Robot action: Pick the purple block and place it inside the purple bowl. Scene: The purple block is too heavy to be picked up. What's your new plan? Robot thought: I need to find a lighter block. Robot action: Pick the blue block and place it inside the purple bowl. … Human: What objects are in the purple bowl? Robot thought: The purple bowl contains the red block and the blue block. Human: Where is the purple block? Robot thought: The purple block is on the table. Human: Any objects in the orange bowl? Robot thought: The orange bowl is empty. Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-questio n, robot action (d) Interactive Scene Understanding modes depending on the environment feedback. In-depth analysis on the failure causes indicates that Success and Object feedback can effectively reduce LLM planning failures and thus overall failure rate, albeit at the cost of introducing new failure modes to the system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Emergent Capabilities</head><p>Although LLMs can generate fluent continuation from the prompted examples, we surprisingly find that, when informed with environment feedback, Inner Monologue demonstrates many impressive reasoning and replanning behaviors beyond the examples given in the prompt. Using a pre-trained LLM as the backbone, the method also inherits many of the appealing properties from its versatility and general-purpose language understanding. In this section, we demonstrate a few of these emergent capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Continued Adaptation to New Instructions.</head><p>Although not explicitly prompted, the LLM planner can react to human interaction that changes the high-level goal mid-task. Fig <ref type="figure" target="#fig_5">5a</ref> demonstrates a challenging case, where Human feedback changes the goal during the plan execution, and then changes the goal yet again by saying "finish the previous task". We can see that the planner incorporates the feedback correctly by switching tasks twice. In another instance, despite not being explicitly prompted to terminate after a human says "please stop", the LLM planner generalizes to this scenario and predicts a "done" action.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Proposing Goals under Infeasibility.</head><p>Instead of mindlessly following human-given instructions, Inner Monologue can also act as an interactive problem solver by proposing alternative goals to achieve when the previous goal becomes infeasible. In Fig <ref type="figure" target="#fig_3">5b</ref>, to solve the task "put any two blocks inside the purple bowl", Inner Monologue first attempts an action of picking up the purple block -the action fails as the purple block is intentionally made to be too heavy for the robot. After a hint "the purple block is too heavy", it proposes to "find a lighter block" and successfully solves the task in the end.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multilingual Interaction.</head><p>Pre-trained LLMs are known to be able to translate from one language to another, without any finetuning. We observe that such multilingual understanding also transfers to the embodied settings considered in this work. Specifically, in Fig <ref type="figure" target="#fig_3">5c</ref>, the human-provided new instruction is written in Chinese, but the LLM can correctly interpret it, re-narrate it as a concrete goal to execute in English, and accordingly replan its future actions. Occasionally, we find that this capability even extends to symbols and emojis.</p><p>Interactive Scene Understanding. We also observe that Inner Monologue demonstrates interactive understanding of the scene using the past actions and environment feedback as context. In Fig <ref type="figure" target="#fig_3">5d</ref>, after a task instruction has been executed, we turn to ask questions about the scene, again a structure that has not appeared in the prompt. Surprisingly, we find that it can often correctly answer these questions that require temporal and embodied reasoning.</p><p>Robustness to Feedback Order. In the main experiments of the paper, we prompted the language model following certain conventions. For instance, in the simulated tabletop domain, the convention is [Robot action, Scene, and Robot thought]. In practice, we find that the LLM planner is robust to occasionally swapping the order of feedback. In Appendix Fig <ref type="figure" target="#fig_5">9a</ref>, a new human instruction is injected in the middle of the plan execution, but this structure has not been seen in the example prompts. Yet the planner recognizes the change and generates a new "Robot thought: Goal state is. . . " statement allowing it to solve the new task.</p><p>Robustness to Typos. Inherited from the LLM backbone, our approach is robust to typos in human instruction, as seen in Appendix Fig <ref type="figure">9b</ref>.</p><p>Despite the appealing findings about these emergent capabilities, we observe that they are of varying levels of consistency when no similar examples have been provided in the prompt, likely limited by the current capabilities of the language models. However, we believe that further investigations into these behaviors and addressing their limitations would each lead to exciting future directions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Limitations</head><p>Limiting assumptions and failure modes. In Sec 4.1 and Sec 4.3, we assume access to oracle scene descriptors in the form of human observers or scripted systems to provide textual description back to the LLM planner. We study the viability of learned systems scene desription and object recognition in Appendix Table <ref type="table">5</ref>. As for failure modes, Inner Monologue may fail due to several sources of errors: (1) success detections, (2) LLM planning errors, and (3) control errors. False negative predictions from the success detector lead to additional retry attempts, while false positive predictions add adversarial partial observability to the environment. In some instances, we found that the LLM planners ignored the environment feedback and still proposed policy skills involving objects not present in the scene.</p><p>Limitations of results and future work. The performance of low-level control policies limits not only overall high-level instruction completion performance, but also limits the scope of tasks that the LLM is able to reason over: no matter how much the LLM reasoning improves, it can still be bottlenecked by what low-level control policies are able to achieve. Future work remains open on several fronts. First, with advances in image/video captioning and visual-question answering, a fully automated system of Inner Monologue can be implemented without a human in the loop as an oracle. Second, improvements can be made on how to aggregate potentially inaccurate sources of information, such as using text to describe the uncertainty of the feedback modules, or including additional feedback modules for safety and ethics for the proposed plans.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this work, we investigated the role that environment feedback plays for LLMs reasoning in tasks involving embodied robotic planning and interaction. We presented a general formulation Inner Monologue that combines different sources of environment feedback with methods fusing LLM planning with robotic control policies. Then, we studied how these methods scaled to three different robotic manipulation settings in simulation and the real world. We found that environment feedback significantly improves high-level instruction completion, especially in challenging scenarios with adversarial disturbances. Finally, we analyze emergent capabilities of Inner Monologue that highlight how closed-loop language feedback enables replanning even in complex unseen settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Low-level Policies</head><p>We use a single low-level policy for the real tabletop rearrangement environment that is responsible for performing object-centric pick and place actions as instructed by the language model. The policy takes as input 1) the bounding boxes of all the objects in the scene, 2) the names of the object to pick and the target object for place, 3) the depth image corresponding to the RGB image from which object detection was done, 4) camera intrinsics, and 5) camera pose. It then outputs a 3D pick position and a 3D place location for the robot to follow.</p><p>The pick position is the 3D coordinate of the center of the object bounding box in the robot base frame. This is obtained by first deprojecting the depth image pixel corresponding to the center of the pick object bounding box with the given camera intrinsics, then transforming this point from the camera frame to the robot frame with the given camera pose. Camera pose is known because it is a wrist camera, and we register the delta pose from the mounted camera to the robot end-effector.</p><p>For the block stacking task, the place location is obtained the same way as the pick position. For the object sorting task, the place location is chosen to be a point in the target plate's bounding box that is farthest way from the bounding boxes of other objects. This is done to prevent undesired stacking behavior when placing objects into the plate, which may cause the object to roll off and fall off the table.</p><p>To perform the pick and place motions, the robot moves to a position 15 cm above the intended pick or place position, and then it slowly lowers the end-effector until a 5 N contact force is detected. This is more robust than moving directly to the height obtained from the depth image due to depth sensor noises. We set a threshold for how low the end-effector can go for the object sorting task so picking inaccuracies do not result in accidentally picking up the plate.</p><p>We add planar translation noise to the pick position by sampling the magnitude from a zero-mean Normal distribution and then sampling an angle from a uniform distribution on the unit circle. The standard deviation for the Normal distribution is σ =1.5 cm for the block stacking task, σ =0.7 cm for the object sorting task, and the samples are capped at 1.5σ.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Object Recognition Implementation</head><p>Object detection is done by MDETR <ref type="bibr" target="#b91">[92]</ref>, an open-vocabulary object detection model. It takes as input an RGB image with an image caption, and the model tries to identify the objects described in the caption. To form the caption for our tasks, we join the list of all possible object names together, separated by periods. Note that not all provided objects will be detected due to occlusions. MDETR detections are not always robust or consistent. For example, the detected object bounding box may some times be bigger or smaller than the object, or its center may be far away from the object center. Its performance also drops when objects are in close clutter. These issues with perception further motivate the need for success detection and multi-step environment feedback, so the high-level language model planner can be robust to these inaccuracies.</p><p>Environment Feedback: Success Detection In the real tabletop rearrangement environment, success detection is done by comparing the 2D position of the center of the detected object bounding box after pick and place action with the intended 2D place position. By 2D we mean the x-y spatial coordinates in the base frame of the robot, not the image coordinates. These are obtained by deprojecting the detected bounding box centers from the depth image and converting the resulting 3D point from camera frame to base frame. The detector returns success if the difference between the two positions is less than a threshold. For the block stacking task, the threshold is 3 cm, and for the object sorting task it is 10 cm. While 3 cm is larger than half of the dimension of the blocks we use (4 cm), it is more robust for our case because the center of the detected object bounding box is often not the center of the block. The threshold for object sorting is much higher, because for some objects, once they are placed in the plate, they may roll around until contact with the plate boundary.</p><p>Environment Feedback: Object Recognition For the block stacking task, the scene description contains a list of currently visible objects and a list of previously visible objects that are no longer visible. We may add new objects to the currently visible objects list if, after a robot action, MDETR detects an object that we have not seen before. This happens for the block stacking task as there is an initial partially constructed tower of two blocks, the bottom of which is initially occluded.</p><p>For the object sorting task, the scene description contains a list of currently visible objects and a list of objects that the robot has successfully moved into a plate. Like the block stacking task, some objects are initially occluded, so later actions may reveal them and they will be added to the visible objects list. The successfully moved object list is needed so that the planner does not stop before task completion and that it stops on task completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Inner Monologue for Real-World Mobile Manipulation in a Kitchen Setting</head><p>Large Language Model We use PALM <ref type="bibr" target="#b7">[8]</ref>, a 540B parameter language model trained on a large datasets that include high-quality web documents, books, Wikipedia, conversations, and GitHub code.</p><p>Low-level Policies Following the implementation described in SayCan <ref type="bibr" target="#b20">[21]</ref>, we use a combination of learned and scripted control policies for navigation and manipulation. The learned manipulation policies responsible for counter picking, drawer opening and closing, drawer picking, and countertop object manipulation are Behavior Cloning (BC) policies trained on 68000 teleoperated demonstrations and 12000 autonomous successes that were collected over the course of 11 months using a fleet of 10 robots. The teleoperators use VR headset controllers to track the motion of their hand, which is then mapped onto the robot's end-effector pose. The scripted navigation policies utilize a ground-truth map along with a learned perception module to navigate between different points in the environment. The scripted manipulation policy is solely responsible for countertop placing when preceded by a navigation policy, and follows pre-computed motions. The Value Functions used by SayCan for affordance grounding are provided by the Q-networks of trained RL agents; we follow the RL training setup described in <ref type="bibr" target="#b20">[21]</ref>.</p><p>Environment Feedback: Object Recognition We use human-provided object recognition to provide feedback about the presence of objects visible to the robot camera. For example, if there were only a coke can and an apple on top of the kitchen counter, then the human-provided object recognition feedback would appear as "[scene: coke can, apple]".</p><p>While we utilize human-provided object recognition to gauge the role of maximally accurate Object feedback, we also study the feasibility of using learned object recognition models to provide fully automated Object feedback. We find that two such models, ViLD <ref type="bibr" target="#b76">[77]</ref> and MDETR <ref type="bibr" target="#b91">[92]</ref>, perform worse than humans but still quite resonably at providing Object feedback, even without domain-specific data for fine-tuning. As advances in computer vision improve object detection models that can transfer zero-shot or few-shot to novel environments like our kitchen environment, we expect that fully automated Object feedback will increasingly approach human-provided accuracy.</p><p>ViLD MDETR Precision 85.7% 39.6% Recall 72.0% 87.5% Accuracy 88.9% 68.2%</p><p>Table <ref type="table">5</ref>: Comparison of ViLD <ref type="bibr" target="#b76">[77]</ref> and MDETR <ref type="bibr" target="#b91">[92]</ref>, two open-vocabulary object detection models. We evaluate these two pretrained models on 10 representative kitchen mobile manipulation episodes. ViLD has strong overall accuracy, but still fails to detect objects 28.0% of the time. Environment Feedback: Success Detection We trained a "foresight" success detector on offline data collected from a combination of teleoperated demonstrations and autonomous roll-outs performing the low-level tasks. The input to the model consists of: (1) o 0 , the initial image observation, (2) o f , the final image observation after the policy chose to terminate its chosen skill execution, and (3) l k , the low-level skill which the agent was trying to execute (e.g., "Pick coke can"). The model uses image encoders from CLIP <ref type="bibr" target="#b64">[65]</ref> to embed o 0 and o f , concatenate them, and fuse these representations with a fusion MLP. This image embedding is concatenated with the text embedding obtained by the CLIP text encoder, then passed through another MLP. The output of the model is a scalar denoting the probability of the agent succeeding at the specified task (Fig <ref type="figure" target="#fig_6">7a</ref>). The model is trained with the binary cross entropy loss with respect to the ground truth binary label. We fine tune the CLIP model as well during the training. At inference time within Inner Monologue, we output the text "[success: no]" when the probability is below a certain threshold.</p><p>To reduce false positive predictions, we trained a separate "hindsight" success predictor model. Given the first and last observation, the model outputs a probability distribution over all the possible skills. We used this model to disambiguate between possible tasks that the agent may have achieved. To train this model, we use the symmetric contrastive loss as used in CLIP (Fig <ref type="figure" target="#fig_6">7b</ref>). At inference time, similar to the CLIP model, we take a dot product between the image-fusion embedding and the text embeddings and apply softmax with a learned temperature.</p><p>We combine the foresight and hindsight model by first thresholding the probability from the foresight model by some value τ. If the probability is above, then we run the hindsight model and only predict success if the argmax across all skills is indeed the foresight task.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Feedback: Active Scene Description</head><p>We perform a case study where we allow the LLM agent to ask questions and source Human feedback directly. After each LLM planning step, the LLM chooses between and continue or and ask: for the and continue option the LLM proceeds to the planning the next action to execute, and for the and ask option the LLM proceeds to propose a question to ask the human. The questions proposed by the LLM do not follow any pre-determined format or scope, so human-provided answers are similarly open-ended. These answers can range from confirming factual observations about the scene to providing refinements or changes to the high-level plan. Some examples can be found in Sec D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experiment Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Simulated Tabletop Rearrangement Environment</head><p>There are a total of 8 tasks, listed in Table <ref type="table" target="#tab_0">1</ref>. For all tasks, up to 4 blocks and up to 3 bowls are randomly initialized with different colors (chosen from 10 different colors) and initial locations. A 15 cm distance is enforced between any two objects to avoid collision and penetration at initialization. For tasks that involve a specific object instance or location in the task instruction (e.g., "Put all the blocks in the [x] bowl"), a random task instruction is sampled using the available objects in the scene or all available locations. There are a total of a total of 9 locations (e.g., "top side", "bottom right corner", etc). To allow for automatic evaluations, a binary reward function is defined for each task using ground-truth state of the objects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CLIPort Baseline</head><p>We additionally train a multi-task CLIPort <ref type="bibr" target="#b75">[76]</ref> policy on 4 of the total 8 tasks as an additional baseline (see Table <ref type="table" target="#tab_0">1</ref> for train/test split). The goal is to evaluate whether solitary language-conditioned policies can perform well on long-horizon tasks and generalize to new task instructions.</p><p>Note that this is a different policy as the low-level primitive used in Inner Monologue, though sharing the same architecture. The policy also shares the same training details as the low-level policy used in Inner Monologue but is trained on 20000 demonstrations across 4 training tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Real Tabletop Rearrangement</head><p>There are two tasks in the real tabletop rearrangement domain -a block stacking task and an object sorting task.</p><p>In the block stacking task, the initial state consists of three 4 cm cubes, two of which have been already stacked. The robot needs to complete stacking the full tower either by putting the third block onto the partially stacked two, or by putting the two partially stacked blocks onto the third block. Due to occlusions, the robot only perceives two blocks in the beginning, so without scene description feedback, the planner has a 50% chance of completing the task.</p><p>For the object sorting task, the initial state consists of three fruits, three bottles, and three plates. The fruits and bottles are placed in a clutter in one of the three plates, and the robot is asked to sort them by putting fruits on one of the remaining plates, and bottles on the other. Due to occlusions and reduced object detection performance in clutter, some objects may not be detected in the initial clutter, so scene description feedback is still needed. The three bottles used are a ketchup bottle, a mustard bottle, and a soft drink bottle. The three fruits used are an apple, a strawberry, and a plum. Note these are toy objects made out of plastic, so they are smaller and lighter than their real-world counterparts, and they are also rigid, allowing for robust suction grasps. They have realistic visual appearances, which allow MDETR detections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Real Kitchen Mobile Manipulation</head><p>We follow the environment and open-ended task setup described in SayCan <ref type="bibr" target="#b20">[21]</ref>. An <ref type="url" target="https://everydayrobots.com/">Everyday Robots</ref> robot, a mobile manipulator robot with RGB observations, is placed in a kitchen with multiple named locations that contain a set of 15 household items. Given an unstructured human instruction, the robot must complete the instruction successfully by executing a set of navigation and manipulation skills, which are vision-based concurrent <ref type="bibr" target="#b92">[93]</ref> continuous closed-loop policies. Fig <ref type="figure" target="#fig_7">8</ref> presents a high-level overview of the environment. The full list of tasks are shown in Table <ref type="table" target="#tab_3">6</ref>.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Various types of textual feedback. Success Detection gives task-specific task completion information, Passive Scene Description gives structured semantic scene information at every planning step, and Active Scene Description gives unstructured semantic information only when queried by the LLM planner.</figDesc><graphic coords="4,359.98,74.88,106.77,104.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Different instantiations of Inner Monologue in three distinct domains -simulated tabletop rearrangement (top), real-world tabletop rearrangement (middle), and real-world kitchen mobile manipulation (bottom). Each domain uses different prompts and different feedback models. Sharing across the domains is the same Inner Monologue formulation that uses a pre-trained langauge model to take in a human instruction and decompose it into a sequence of actionable steps by the agent, while accounting for injected embodied feedback from different models, such as object recognizers and success detectors. In real-world kitchen mobile manipulation domain (bottom), we additionally ground the actions using pre-trained affordance functions built in<ref type="bibr" target="#b20">[21]</ref>, which do not communicate back to the language model.</figDesc><graphic coords="5,269.71,251.17,94.35,70.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Failure causes on 120 evaluations. When disturbances are added (red), only the Inner Monologue variants consistently complete the instructions.</figDesc><graphic coords="7,333.72,417.69,170.37,181.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Informing LLM with embodied feedback enables many emergent capabilities, all of which are achieved without similar prompted examples. For instance, Inner Monologue can continually adapt to new instructions given by humans, propose new goals to achieve when faced with infeasibility for the previous plan, interact with humans in different natural languages, and answer questions about the current scene given past actions and feedback.</figDesc><graphic coords="8,445.46,267.86,51.09,51.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>An example of ViLD object detection segmentation mask and bounding box predictions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>( a )</head><label>a</label><figDesc>Foresight success detector (b) Hindsight success detector</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Success Detection architecture used for the Kitchen Environment. (Left) The foresight model predicts whether a given instruction was successfully achieved between the first and last image. (Right) The hindsight model fine-tuned via contrastive loss as used in CLIP [65]. At inference time, the model is used infer among the possible instructions which one was achieved.</figDesc><graphic coords="18,114.71,144.95,190.08,106.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: The experiments were performed in a mock office kitchen mirroring this setup (a), with 5 predicted locations and 15 objects (b). The robot is a mobile manipulator with a 7 degree-of-freedom arm and a gripper with policies trained from an RGB observation (c).</figDesc><graphic coords="19,120.87,404.48,231.66,115.64" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Success rates for various methods, averaged across 50 episodes in Ravens-based environment with test-time disturbances. CLIPort + oracle indicates that CLIPort was provided a "termination" oracle. Although CLIPort can receive visual feedback from the environment, we show that LLM-informed feedback can effectively enable the planner to retry/replan in the presence of failures, while enjoying the generalization benefits of LLMs to unseen tasks.</figDesc><table><row><cell>+LLM</cell><cell>+Inner Monologue</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Inner Monologue (with object recognition and success detection feedback) on a real pick and place robot exceeds the performance of baseline alternatives, as measured by average task success rates over 10 runs. For both tasks, we observe significant improvement in Inner Monologue compared to the baseline, with the two embodied feedback being complementary to each other.</figDesc><table><row><cell></cell><cell>LLM</cell><cell></cell><cell cols="2">+Inner Monologue</cell></row><row><cell>Task Family</cell><cell cols="4">Object Object Success Object + Success</cell></row><row><cell cols="2">Finish 3-block stacking 20%</cell><cell>40%</cell><cell>40%</cell><cell>100%</cell></row><row><cell>Sort fruits from bottles</cell><cell>20%</cell><cell>50%</cell><cell>40%</cell><cell>80%</cell></row><row><cell>Total</cell><cell>20%</cell><cell>45%</cell><cell>40%</cell><cell>90%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Averaged success rate across 120 evaluations on several task families in our real-world mobile manipulation environment. We consider a standard setting and adversarial setting with external human disturbances. In all cases, LLM-informed embodied feedback is shown to be effective in improving robustness of the system, especially when low-level policies are prone to failures.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">+Inner Monologue</cell><cell></cell></row><row><cell>Task Family</cell><cell cols="3">SayCan Success Object + Success</cell><cell>SayCan</cell></row><row><cell>No Disturbances Manipulation</cell><cell>50.0%</cell><cell>62.5%</cell><cell>75.0%</cell><cell>IM w/ Success</cell></row><row><cell>Mobile Manipulation Drawers</cell><cell>50.0% 83.3%</cell><cell>50.0% 83.3%</cell><cell>75.0% 100.0%</cell><cell>IM w/ Success</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>+ Object</cell></row><row><cell>With Disturbances</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Manipulation</cell><cell>12.5%</cell><cell>25.0%</cell><cell>33.3%</cell><cell>SayCan</cell></row><row><cell>Mobile Manipulation Drawers</cell><cell>0.0% 0.0%</cell><cell>25.0% 44.4%</cell><cell>75.0% 44.4%</cell><cell>IM w/ Success</cell></row><row><cell>Total</cell><cell>30.8%</cell><cell>48.7%</cell><cell>60.4%</cell><cell>IM</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>w/ Success</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>+ Object</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Disturbance</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Mobile Manipulation "can you throw away the soda on the table" "I spilled my coke, can you bring me something to clean it up" Drawer Manipulation "leave the top drawer open" "put a coke in the top drawer" List of all instructions in Kitchen Mobile Manipulation tasks. We evaluate the algorithm on 3 families of instructions on a mock kitchen scene. Prompt in Inner Monologue on Simulated Tabletop Rearrangement Visible objects are ["red marker", "red pen", "blue box", "green bowl"] Scene: Occluded objects are [] Robot action: robot.stop() STOP =============== Listing 3: Prompt in Inner Monologue in Kitchen mobile manipulation environment. Hi there, I'm a robot operating in an office kitchen. You can ask me to do various tasks and I'll tell you the sequence of actions I would do to accomplish your task. Human: hold the snickers Robot: 1. pick up the snickers[success: no][scene: snickers] 2. pick up the snickers 2. done. Human: put the trailmix here Robot: 1. put down the trailmix 2. done. Human: put a water bottle and an oatmeal next to the microwave Robot: 1. find a water 2. pick up the water[success: no] 3. pick up the water[success: no] 4. pick up the water 5. go to microwave 6. put down the water[scene: water, microwave] 7. find an oatmeal 8. pick up the oatmeal[scene: oatmeal] 9. go to the microwave 10. put down the oatmeal[scene: microwave, oatmeal, water] 11. done. Human: put a grapefruit from the table into the bowl Robot: 1. find a grapefruit 2. pick up the grapefruit 3. go to the bowl 4. put down the grapefruit 5. done. Human: get a sponge from the counter and put it in the sink Robot: 1. find a sponge 2. pick up the sponge[success: no][scene: sponge] 3. pick up the sponge[success: no] 4. pick up the sponge[scene: sponge] 5. go to the sink 6. put down the sponge 7. done. Human: move a drink from the table to the counter Robot: 1. find a water 2. pick up the water[scene: tea, grapefruit soda, kettle chips] 3. pick up the grapefruit soda 4. go to the counter 5. put down the grapefruit soda[success: no] 6. put down the grapefruit soda 7. done.</figDesc><table><row><cell></cell><cell>Task Instructions</cell></row><row><cell></cell><cell>"pick up a soda"</cell></row><row><cell>Manipulation</cell><cell>"pick up the jalapeno or kettle chips"</cell></row><row><cell></cell><cell>"pick up a snack"</cell></row><row><cell></cell><cell>"pick up a caffeinated drink"</cell></row></table><note><p>Robot: Human: I finished my drink, can you throw it away and bring me a mountain dew Robot: 1. find a sprite 2. pick up the sprite[scene: coke] 3. pick up the coke[success: no][scene: coke]</p></note></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The authors would like to thank <rs type="person">Kanishka Rao</rs> and <rs type="person">Vincent Vanhoucke</rs> for valuable feedback and discussions. In addition, the authors would like to acknowledge the large team who built <ref type="bibr" target="#b20">[21]</ref>, upon which we construct our Kitchen Mobile Manipulation experiments.</p></div>
+			</div>
+			<div type="contribution">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Go to table Scene: lime soda, coke, energy bar Robot Action: pick up energy bar Active Scene Description in context: Robot Action: Go to drawers Robot Ask: Is the drawer open? Human: The drawer is closed. Robot Action: Open the drawer Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-question, robot action Success Detection in context Robot Action: Pick up coke Success: True Robot Action: Bring it to user Human: move all the blocks into mismatching bowls. Scene: There is a yellow block, yellow bowl, blue block, blue bowl, red block, red bowl. Robot: My goal is ['yellow block in blue bowl', 'red block in yellow bowl', 'blue block in red bowl']. Robot: Pick up yellow block and place it in blue bowl. Scene: You achieved ['yellow block in blue bowl'] Robot: I need red block in yellow bowl, blue block in red bowl Robot: Pick up red block and place it in yellow bowl. Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-question, robot action Task-Progress Scene Description Achieved Achieved Success Detection Object Recognition Human: Sort fruits and condiments in different plates Scene: objects = [apple, egg, plum, pizza, cookie, salt, mustard, ketchup, lemon] Scene: occluded objects = [] Robot: robot.pickplace(strawberry, green plate) Robot: robot.pickplace(salt shaker, blue plate) Success Detector: False. Robot: robot.pickplace(salt shaker, blue plate) ... Robot: robot.stop() Success Detection Object Recognition (w/ Potential Occlusion) Action: put the egg on the blue plate True False Initial Action: put the yellow block on the blue bowl True False Initial Human: Bring me a drink from the table Robot: go to the table Scene: I see a coke and lime soda Robot: What kind of drink would you like? Human: Something with caffeine Robot: Pick up coke Success Detector: False Robot: Pick up coke Robot: Bring it to you Robot: Put down the coke Robot: Done Success Detection Object Recognition</p></div>
+			</div>
+
+
+			<div type="contribution">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>===============</head><p>Scene: There is a cyan, yellow, brown block. Human: Move all the blocks to the top left corner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Robot thought:</head><p>Goal state is ["Cyan block is on the top left corner.", "Yellow block is on the top left corner.", "Brown block is on the top left corner."] Robot action: Pick the cyan block and place it on the top left corner. Scene: You have completed ["Cyan block is on the top left corner."] Robot thought: Yellow and brown blocks are not on the top left corner. Robot action: Pick the yellow block and place it on the top left corner. Scene: You have completed ["Cyan block is on the top left corner."] Robot thought: Yellow and brown blocks are not on the top left corner. Robot action: Pick the yellow block and place it on the top left corner. Scene: You have completed ["Cyan block is on the top left corner.", "Yellow block is on the top left corner."] Robot thought: Brown block is not on the top left corner." Robot action: Pick the brown block and place it on the top left corner. Scene: You have completed ["Yellow block is on the top left corner.", "Brown block is on the top left corner."] Robot thought: Cyan block is not on the top left corner Robot action: Pick the cyan block and place it on the top left corner. Scene: You have completed ["Yellow block is on the top left corner.", "Brown block is on the top left corner.", "Cyan block is on the top left corner."] Robot thought: None. =============== Scene: There is a pink, gray, orange block. Human: Move all the blocks to the bottom side. Robot thought: Goal state is [" Pink block is on the bottom side.", "Gray block is on the bottom side.", "Orange block is on the bottom side."]. Robot action: Pick the pink block and place it on the bottom side. Scene: You have completed ["Pink block is on the bottom side."] Robot thought: Gray and orange blocks are not on the bottom side. Robot action: Pick the gray block and place it on the bottom side. Scene: You have completed ["Pink block is on the bottom side.", "Gray block is on the bottom side."] Robot thought: Orange block is not on the bottom side. Robot action: Pick the orange block and place it on the bottom side. Scene: You have completed ["Orange block is on the bottom side."] Robot thought: Pink and gray blocks are not on the bottom side. Robot action: Pick the gray block and place it on the bottom side. Scene: You have completed ["Pink block is on the bottom side.", "Gray block is on the bottom side."] Robot thought: Orange block is not on the bottom side. Robot action: Pick the orange block and place it on the bottom side. Scene: You have completed [" Pink block is on the bottom side.", "Gray block is on the bottom side.", "Orange block is on the bottom side."] Robot thought: None.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 2: Prompt in Inner Monologue on Real Tabletop Rearrangement</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>===============</head><p>Task: Move all blocks to the top left corner Scene: Visible objects are ["cyan block", "yellow block", "brown block"] Scene: Occluded objects are [] Robot action: robot.pick_place("cyan block", "top left corner") Successful action: True Scene: Visible objects are ["cyan block", "yellow block", "brown block"] Scene: Occluded objects are [] Robot action: robot.pick_place("yellow block", "top left corner") Successful action: False Scene: Visible objects are ["cyan block", "yellow block", "brown block"] Scene: Occluded objects are [] Robot action: robot.pick_place("yellow block", "top left corner") Successful action: True Scene: Visible objects are ["yellow block", "brown block"] Scene: Occluded objects are ["cyan block"] Robot action: robot.pick_place("brown block", "top left corner") Successful action: True</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Inner Monologue Implementation Details</head><p>We study three different implementations of Inner Monologue for each of the experimental settings. While each version incorporates textual environment feedback into planning, there are differences in the internal components of each system, as seen in Table <ref type="table">4</ref>.</p><p>Tabletop Rearrangement (Sim) Tabletop Rearrangement (Real) Kitchen Mobile Manipulation (Real)</p><note type="other">LLM</note><p>InstructGPT-1.3B InstructGPT-1.3B PALM-540B Policies CLIPort + TransporterNets MDETR + heuristics Learned policies Success Feedback Ground truth + heuristics MDETR + heuristics Finetuned CLIP Object Feedback Ground truth + heuristics MDETR Human-provided (structured) Scene Feedback Ground truth + heuristics N/A N/A Human Feedback N/A N/A Human-provided (unstructured)</p><p>Table 4: Comparison between different versions of Inner Monologue implemented in three different environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Inner Monologue for Simulated Tabletop Rearrangement</head><p>Large Language Model We use InstructGPT <ref type="bibr" target="#b90">[91]</ref>, a 1.3B parameter language model fine-tuned from GPT-3 <ref type="bibr">[9]</ref> with human feedback, accessed through <ref type="url" target="https://openai.com/api/">OpenAI API</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Low-level Policies</head><p>We use a CLIP-based <ref type="bibr" target="#b64">[65]</ref> Transporter Net <ref type="bibr" target="#b74">[75]</ref> (inspired by CLIPort <ref type="bibr" target="#b75">[76]</ref>) as the pick-and-place primitive that can be invoked by the LLM planner. The policy is trained on 20000 pre-collected demonstrations, where each demonstration contains 1) language instruction of the format "pick up [x] and place it on [y]", 2) top-down view of RGB-D observation of the current environment, 3) expert pick coordinates, and 4) expert place coordinates. The expert pick and place coordinates are obtained by accessing ground-truth object pose in the simulator. Unlike the evaluated settings in <ref type="bibr" target="#b75">[76]</ref>, the demonstrations cover all objects because the focus of this work is not on generalization across object instances but on novel long-horizon behaviors. The policy outputs a 3D pick location and a 3D place location, and a scripted pick-and-place motion is executed following the predicted locations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Feedback: Object Recognition</head><p>We provide the list of objects present in the scene at the start of each episode for the language model (without bounding boxes or coordinates because spatial manipulation is handled by low-level policies). Although it has been shown in <ref type="bibr" target="#b18">[19]</ref> that this can be obtained by off-the-shelf pre-trained open-vocabulary object detection models such as ViLD <ref type="bibr" target="#b76">[77]</ref> and MDETR <ref type="bibr" target="#b91">[92]</ref>, we obtain the list of objects by accessing simulator state for simplicity.</p><p>Environment Feedback: Success Detection For Object + Success method, we provide textual feedback of low-level policy success detection results after each policy execution. The success detector is built using heuristics based on ground-truth object poses: a pick-and-place execution is successful if picked object has a 2D Euclidean distance &lt;4 cm from the place object and its height is greater than the place object. If the place object is a location (e.g., top side of the table) rather than a block or a bowl, the height requirement is not enforced.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Feedback: Passive Scene Description</head><p>For Object + Scene method, we provide task-progress scene description as a list of achieved sub-goals after each pick-and-place execution. At the start of the action plan, the language model first generates a list of desired sub-goals given the high-level instruction. The sub-goals are of the format "[x] is on top of [y]". After each pick-and-place execution, we iterate through all desired sub-goals inferred by the language model, and check which are satisfied using the success detector described above. The full list of currently satisfied sub-goals are appended to the language model prompt. Additionally, we allow the language model to generate chain-of-thought summarization following the achieved sub-goals (i.e., "Robot thought: ..."), which we find to be useful empirically.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Inner Monologue for Real-World Tabletop Rearrangement</head><p>Large Language Model We use InstructGPT <ref type="bibr" target="#b90">[91]</ref>, a 1.3B parameter language model fine-tuned from GPT-3 <ref type="bibr">[9]</ref> with human feedback, accessed through <ref type="url" target="https://openai.com/api/">OpenAI API</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Results</head><p>We show additional results of emergent capability in Fig <ref type="figure" target="#fig_8">9</ref>. Please refer to Sec 4.4 for context.</p><p>Scene: There is a red bowl, yellow bowl, blue bowl, red block, yellow block, blue block. Task: Put all the blocks in bowls with matching colors. … Robot action: Pick the yellow block and place it in the yellow bowl. Scene: Completed ['Red block in red bowl.', 'Yellow block in yellow bowl.'] Robot thought: Blue block is not in a bowl with a matching color. Human: I changed my mind. Can you put all the blocks in the red bowl? Robot thought: Goal state is ["Red block in red bowl.", "Yellow block in red bowl.", "Blue block in red bowl."] Robot action: Pick the blue block and place it in the red bowl. Scene: Completed ['Red block in red bowl.', 'Blue block in red bowl.'] Robot thought: Yellow block is not in the red bowl. … Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-question, robot action Replan (a) Robustness to Feedback Order Scene: There is a yellow block, blue block, yellow bowl, blue bowl on the table. Human: Put the blocks in the bowls with mismatching colors. Robot thought: Goal state is ["Yellow block is in the blue bowl.", "Blue block is in the yellow bowl."] Robot action: Pick the yellow block and place it in the blue bowl. Scene: Completed ["Yellow block is in the blue bowl."] Robot thought: Blue block is not in the yellow bowl. Human: Actully can you put the bloks in the maching bwls? Robot thought: Goal state is ["Yellow block is in the yellow bowl.", "Blue block is in the blue bowl."] Robot action: Pick the yellow block and place it in the yellow bowl. Scene: Completed ["Yellow block is in the yellow bowl."] Robot thought: Blue block is not in the blue bowl. Robot action: Pick the blue block and place it in the blue bowl. Scene: Completed ["Yellow block is in the yellow bowl.", "Blue block is in the blue bowl."] Robot thought: I'm done. Current Color Scheme (feel free to change it): scene descriptor, unimportant prompt, success detector, human, chain-of-thought/robot-questio n, robot action (b) Robustness to Typos Scene: Visible objects are ["brown block"] Scene: Occluded objects are ["cyan block", "yellow block"] Robot action: robot.stop() STOP =============== Task: Stack all the blocks. Scene: Visible objects are ["brown block", "purple block"] Scene: Occluded objects are [] Robot action: robot.pick_place("brown block", "purple block") Successful action: False Scene: Visible objects are ["brown block", "purple block"] Scene: Occluded objects are [] Robot action: robot.pick_place("brown block", "purple block") Successful action: True Scene: Visible objects are ["brown block", "orange block"] Scene: Occluded objects are ["purple block"] Robot action: robot.pick_place("orange block", "brown block") Successful action: True Scene: Visible objects are ["orange block"] Scene: Occluded objects are ["purple block", "brown block"] Robot action: robot.stop() STOP =============== Task: Stack all the blocks. Scene: Visible objects are ["brown block", "purple block"] Scene: Occluded objects are [] Robot action: robot.pick_place("brown block", "purple block") Successful action: True Scene: Visible objects are ["brown block"] Scene: Occluded objects are ["purple block"] Robot action: robot.stop() STOP =============== Task: Put objects in their corresponding bowls Scene: Visible objects are ["red block", "green block", "red bowl", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red block", "red bowl") Successful action: False Scene: Visible objects are ["red block", "green block", "red bowl", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red block", "red bowl") Successful action: True Scene: Visible objects are ["red block", "green block", "red bowl", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("green block", "green bowl") Successful action: True Scene: Visible objects are ["red block", "green block", "red bowl", "green bowl"] Scene: Occluded objects are [] Robot action: robot.stop() STOP =============== Task: Sort pencils and markers and in different containers</p><p>Scene: Visible objects are ["red marker", "red pen", "blue box", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red marker", "green bowl") Successful action: False Scene: Visible objects are ["red marker", "red pen", "blue box", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red marker", "green bowl") Successful action: False Scene: Visible objects are ["red marker", "red pen", "blue box", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red marker", "green bowl") Successful action: True Scene: Visible objects are ["red marker", "red pen", "blue box", "green bowl"] Scene: Occluded objects are [] Robot action: robot.pick_place("red pen", "blue box")</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Additional emergent capabilities in Inner Monologue. While we mostly use a fixed feedback order for each domain, we find that Inner Monologue can seamlessly handle different feedback injected into the prompt, as opposed to the normal case of feedback being provided after the prompt and after planning steps (left). Additionally, it is also robust to typos in the instruction, an ability likely inherited from the backbone LLM (right).</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Integrated task and motion planning in belief space</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">9-10</biblScope>
+			<biblScope unit="page" from="1194" to="1227" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Recent advances in hierarchical reinforcement learning. Discrete event dynamic systems</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mahadevan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="41" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bakhtin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">H</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Riedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.01066</idno>
+		<title level="m">Language models as knowledge bases? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">How can we know what language models know?</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Araki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="423" to="438" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Commonsense knowledge mining from pretrained models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 conference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 conference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP)</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1173" to="1178" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">olmpics-on what language model pre-training captures</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Elazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Goldberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="743" to="758" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">How much knowledge can you pack into the parameters of a language model</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2002.08910</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<title level="m">Large language models are zero-shot reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Lampinen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Matthewson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Tessler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Mcclelland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hill</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02329</idno>
+		<title level="m">Can language models learn from explanations in context? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00114</idno>
+		<title level="m">Show your work: Scratchpads for intermediate computation with language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Thought and language</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Vygotsky</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Thinking in language?: evolution and a modularist possibility</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Carruthers</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Tool and symbol in child development. The vygotsky reader</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Vygotsky</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Play and its role in the mental development of the child</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Vygotsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Soviet psychology</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="6" to="18" />
+			<date type="published" when="1967">1967</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Karch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Moulin-Frier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-Y</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.01134</idno>
+		<title level="m">Vygotskian autotelic artificial intelligence: Language and culture internalization for human-like ai</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.00598</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can and not as i say: Grounding language in robotic affordances. In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Hierarchical planning in the now</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshops at the Twenty-Fourth AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Combined task and motion planning through an extensible planner-independent interface layer</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Riano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chitnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE international conference on robotics and automation</title>
+		<imprint>
+			<date type="published" when="2014">2014. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Strips: A new approach to the application of theorem proving to problem solving</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Fikes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Nilsson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">A structure for plans and behavior</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Sacerdoti</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1975">1975</date>
+		</imprint>
+		<respStmt>
+			<orgName>SRI International, Menlo Park California Artificial Intelligence Center</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Simple hierarchical ordered planner</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Nau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lotem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Munoz-Avila</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shop</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th international joint conference on Artificial intelligence</title>
+		<meeting>the 16th international joint conference on Artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Planning algorithms</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Lavalle</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>Cambridge university press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Logic-geometric programming: An optimization-based approach to combined task and motion planning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Toussaint</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Twenty-Fourth International Joint Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Allen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<title level="m">Differentiable physics and stable modes for tool-use and manipulation planning. Robotics: Science and Systems Foundation</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Search on the replay buffer: Bridging planning and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Neural task programming: Learning to generalize across hierarchical tasks</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">F</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+	<note>Regression planning networks</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chitnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Mcclinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lozano-Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.09634</idno>
+		<title level="m">Inventing relational state and action abstractions for effective and efficient bilevel planning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Value function spaces: Skill-centric state abstractions for long-horizon reasoning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/pdf?id=vgqS1vkkCbE" />
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Universal planning networks: Learning generalizable representations for visuomotor control</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Srinivas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jabri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4732" to="4741" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Learning plannable representations with causal infogan</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kurutach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">31</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Grounding language to autonomously-acquired skills via goal generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Akakzia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-Y</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chetouani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Sigaud</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=chPjI5KMHG" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Modeling long-horizon tasks as sequential interaction landscapes</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pirk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khansari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.04843</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Toward understanding natural language directions</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 5th ACM/IEEE International Conference on Human-Robot Interaction (HRI)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="259" to="266" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="1507" to="1514" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Interpreting and executing recipes with a cooking robot</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bollini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Experimental Robotics</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="481" to="495" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Knepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+		<title level="m">Asking for help using inverse semantics</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Grounding verbs of motion in natural language commands to robots</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Experimental robotics</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="31" to="47" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Learning to map natural language instructions to physical quadcopter control using simulated flight</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Terme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Niklasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Knepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.09664</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Hierarchical foresight: Self-supervised learning of long-horizon tasks via visual subgoal generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<idno>ArXiv, abs/1909.05829</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Relmogen: Integrating motion generation in reinforcement learning for mobile manipulation</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Litany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Hrl4in: Hierarchical reinforcement learning for interactive navigation with mobile manipulators</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martin-Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Language as an abstraction for hierarchical deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.04114</idno>
+		<title level="m">Deep hierarchical planning from pixels</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Exploration through learned language abstraction</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ella</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="29529" to="29540" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Visually-grounded planning without vision: Language models infer detailed plans from high-level instructions</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Jansen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.14259</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.01517</idno>
+		<title level="m">Skill induction and planning with latent language</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Akyurek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.01771</idno>
+		<title level="m">Pre-trained language models for interactive decision-making</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roberta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1907.11692</idno>
+		<title level="m">A robustly optimized bert pretraining approach</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gurevych</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.10084</idno>
+		<title level="m">Sentence-bert: Sentence embeddings using siamese bert-networks</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.01652</idno>
+		<title level="m">Finetuned language models are zero-shot learners</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Prospection: Interpretable plans from language by predicting the future</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Byravan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Foxl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2019 International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="6942" to="6948" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Language-conditioned imitation learning for robot manipulation tasks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Stepputtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Phielipp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ben Amor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="13139" to="13150" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Few-shot object grounding and mapping for natural language robot instruction following</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Knepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.07384</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Language conditioned imitation learning over unstructured data</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2005.07648" />
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">A joint network for grasp detection conditioned on natural language commands</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Vela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4576" to="4582" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">What matters in language conditioned robotic imitation learning</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Burgard</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.06252</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Carnevale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Georgiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Santoro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-C</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Abramson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wayne</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.03139</idno>
+		<title level="m">Intra-agent speech permits zero-shot task acquisition</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8748" to="8763" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<title level="m">Pre-training of deep bidirectional transformers for language understanding</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Vilbert: Pretraining task-agnostic visiolinguistic representations for vision-and-language tasks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tsvetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.10904</idno>
+		<title level="m">Simvlm: Simple visual language model pretraining with weak supervision</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Embodied bert: A transformer model for embodied, language-guided visual task completion</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Suglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Thattai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sukhatme</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.04927</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Big self-supervised models are strong semi-supervised learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kornblith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Swersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="22243" to="22255" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kudugunta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baldridge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.05125</idno>
+		<title level="m">Mural: multimodal, multitask retrieval across languages</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Plate: Visually-grounded planning with transformers in procedural tasks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="4924" to="4930" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Zero-shot anticipation for instructional activities</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="862" to="871" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Simple but effective: Clip embeddings for embodied ai</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kembhavi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="14829" to="14838" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Transporter networks: Rearranging the visual world for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Attarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Krasin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Duong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<analytic>
+		<title level="a" type="main">Cliport: What and where pathways for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="894" to="906" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Open-vocabulary object detection via vision and language knowledge distillation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.13921</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<analytic>
+		<title level="a" type="main">Deep learning for detecting robotic grasps</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saxena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">4-5</biblScope>
+			<biblScope unit="page" from="705" to="724" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<analytic>
+		<title level="a" type="main">Real-world multiobject, multigrasp detection</title>
+		<author>
+			<persName><forename type="first">F.-J</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Vela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="3355" to="3362" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Varley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Swanson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jonschkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08212</idno>
+		<title level="m">Mt-opt: Continuous multi-task robotic reinforcement learning at scale</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<title level="m" type="main">Grounding predicates through actions</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Migimatsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.14718</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<analytic>
+		<title level="a" type="main">Can foundation models perform zero-shot task specification for robot manipulation?</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Niekum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rajeswaran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Learning for Dynamics and Control Conference</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="893" to="905" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<analytic>
+		<title level="a" type="main">Recurrent convolutional neural network for object recognition</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="3367" to="3375" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<analytic>
+		<title level="a" type="main">Faster r-cnn: Towards real-time object detection with region proposal networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1905.05055</idno>
+		<title level="m">Object detection in 20 years: A survey</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b85">
+	<analytic>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bochkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-Y</forename><forename type="middle">M</forename><surname>Liao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.10934</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Optimal speed and accuracy of object detection</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">4</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b86">
+	<analytic>
+		<title level="a" type="main">Vqa: Visual question answering</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Antol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE international conference on computer vision</title>
+		<meeting>the IEEE international conference on computer vision</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2425" to="2433" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b87">
+	<analytic>
+		<title level="a" type="main">Unified vision-language pre-training for image captioning and vqa</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="13041" to="13049" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b88">
+	<analytic>
+		<title level="a" type="main">Once for all: Train one network and specialize it for efficient deployment</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/pdf/1908.09791.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b89">
+	<monogr>
+		<title level="m" type="main">Flamingo: a visual language model for few-shot learning</title>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reynolds</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.14198</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b90">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.02155</idno>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b91">
+	<analytic>
+		<title level="a" type="main">Mdetr-modulated detection for end-to-end multi-modal understanding</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kamath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Carion</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1780" to="1790" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b92">
+	<monogr>
+		<title level="m" type="main">Thinking while moving: Deep reinforcement learning with concurrent control</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.06089</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b93">
+	<monogr>
+		<title level="m" type="main">Human: put the grapes in the bowl and then move the cheese to the table Robot: 1</title>
+		<imprint/>
+	</monogr>
+	<note>find the grapes</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b94">
+	<monogr>
+		<title level="m" type="main">Human: bring me some snack Robot: 1. pick up the peanuts 2. pick up the peanuts</title>
+		<imprint/>
+	</monogr>
+	<note>scene: blue chip bag, 7up</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b95">
+	<monogr>
+		<title level="m" type="main">Human: throw away a coffee cup Robot: 1. find a coffee cup 2. pick up the coffee cup</title>
+		<imprint/>
+	</monogr>
+	<note>success: no]</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b96">
+	<monogr>
+		<title level="m" type="main">Listing 4: Prompt in Inner Monologue in Kitchen mobile manipulation environment with Human interaction Robot: Hi there, I&apos;m a robot operating in an office kitchen. You can ask me to do various tasks and I&apos;ll tell you the sequence of actions I would do to accomplish your task. Human: hold the snickers Robot: 1. pick up the snickers and ask: Because snickers may be too thin to be picked up by my gripper, was I successful at picking it up? Human: Yes, you were successful 2. done. Human: put the trailmix here Robot: 1. put down the trailmix and continue 2. done. Human: can you bring me a drink from the counter? Robot: 1. go to counter and ask: Do you have a preference on what drink you would want? Human: I don</title>
+		<imprint/>
+	</monogr>
+	<note>t want to take in too much sugar, so please bring me anything that&apos;s healthier</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b97">
+	<monogr>
+		<title level="m" type="main">Human: Actually, can you also bring me an energy bar? 5. find energy bar and continue 6. pick up energy bar and continue 7</title>
+		<imprint/>
+	</monogr>
+	<note>put down tea bring it to you and continue 8. put down energy bar and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b98">
+	<monogr>
+		<title level="m" type="main">Human: get a sponge from the counter and put it in the sink Robot: 1. find a sponge and continue 2. pick up the sponge and continue 3. pick up the sponge and continue 4. pick up the sponge and continue 5. go to the sink and continue 6. put down the sponge and continue 7. done. Human: take any food item from the table and put them next to the microwave Robot: 1. go to table and ask</title>
+		<imprint/>
+	</monogr>
+	<note>What food items are there on the table? Human: There are kettle chips and apple on the table 2. find kettle chips and ask: Is this what you want? Human: No, please get me apple instead 3. find an apple and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b99">
+	<monogr>
+		<title level="m" type="main">put down the grapes and continue 5. pick up the cheese and continue 6. pick up the cheese and continue 7</title>
+		<imprint/>
+	</monogr>
+	<note>go to the table and continue 8. put down the cheese and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b100">
+	<monogr>
+		<title level="m" type="main">Human: throw away the food on the table Robot: 1. go to table and ask: What food items are there on the table? Human: There is an orange and lime soda on the table 2</title>
+		<imprint/>
+	</monogr>
+	<note>find an orange and continue 3. pick up the orange and continue 4. go to the trash and continue 5. put down the orange and continue 6. find a lime soda and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b101">
+	<monogr>
+		<title level="m" type="main">Human: I changed my mind. Please keep the lime soda here because I haven&apos;t finished it 8. put down the lime soda and continue</title>
+		<imprint/>
+	</monogr>
+	<note>pick up the lime soda</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b102">
+	<monogr>
+		<title level="m" type="main">Human: let go of the banana Robot: 1. put down the banana and continue 2. done. Human: bring me something healthy to eat Robot: 1. go to counter and ask: What food items do you have? Human: We have apples, bananas, multigrain chips, and kettle chips 2</title>
+		<imprint/>
+	</monogr>
+	<note>find an apple and continue 3. pick up the apple and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b103">
+	<monogr>
+		<title level="m" type="main">bring it to you and continue</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b104">
+	<monogr>
+		<title level="m" type="main">Human: I actually don&apos;t want to have fruits. Can you bring me something else? 6. find multigrain chips and continue 7</title>
+		<imprint/>
+	</monogr>
+	<note>put down the apple pick up multigrain chips and continue 8. bring it to you and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b105">
+	<monogr>
+		<title level="m" type="main">put down multigrain chips and continue 10. done. Human: deliver a can of coke to me Robot: 1. find a coke and continue</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b106">
+	<monogr>
+		<title level="m" type="main">open the drawer and ask: what items are there in the drawer? Human: There is a coke and rice chips 4. pick up the coke from the drawer and continue 5</title>
+		<imprint/>
+	</monogr>
+	<note>put down the coke on the table and continue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b107">
+	<monogr>
+		<title level="m" type="main">put down rice chips on the table and ask: Did I successfully take out everything from the drawer? Human: The coke is still there 9. pick up the coke from the drawer and continue 10</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+		</imprint>
+	</monogr>
+	<note>put down the coke on the table and continue 11. done</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

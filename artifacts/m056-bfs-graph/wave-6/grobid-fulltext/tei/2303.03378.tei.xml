@@ -1,0 +1,2273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main"></title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A6C54AFC5FF530ECBB16BC7431D806DE</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:42+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Robot Visual Perception</term>
+					<term>Dialogue</term>
+					<term>and Planning</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>PaLM-E is a single general-purpose multimodal language model for embodied reasoning tasks, visual-language tasks, and language tasks. PaLM-E transfers knowledge from visual-language domains into embodied reasoning -from robot planning in environments with complex dynamics and physical constraints, to answering questions about the observable world. PaLM-E operates on multimodal sentences, i.e. sequences of tokens where inputs from arbitrary modalities (e.g. images, neural 3D representations, or states, in green and blue) are inserted alongside text tokens (in orange) as input to an LLM, trained end-to-end.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Large language models (LLMs) demonstrate strong reasoning capabilities across various domains, including dialogue <ref type="bibr" target="#b16">(Glaese et al., 2022;</ref><ref type="bibr" target="#b56">Thoppilan et al., 2022)</ref>, step-by-step reasoning <ref type="bibr" target="#b59">(Wei et al., 2022;</ref><ref type="bibr" target="#b27">Kojima et al., 2022)</ref>, math problem solving <ref type="bibr" target="#b29">(Lewkowycz et al., 2022;</ref><ref type="bibr" target="#b43">Polu et al., 2022)</ref>, and code writing <ref type="bibr">(Chen et al., 2021a)</ref>. However, a limitation of such models for inference in the real world is the issue of grounding: while training LLMs on massive textual data may lead to representations that relate to our physical world, connecting those representations to real-world visual and physical sensor modalities is essential to solving a wider range of grounded real-world problems in computer vision and robotics <ref type="bibr" target="#b55">(Tellex et al., 2020)</ref>. Previous work <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref> interfaces the output of LLMs with learned robotic policies and affordance functions to make decisions, but is limited in that the LLM itself is only provided with textual input, which is insufficient for many tasks where the geometric configuration of the scene is important. Further, in our experiments we show that current state-of-the-art visuallanguage models trained on typical vision-language tasks such as visual-question-answering (VQA) cannot directly solve robotic reasoning tasks.</p><p>In this paper we propose embodied language models, which arXiv:2303.03378v1 <ref type="bibr">[cs.</ref>LG] 6 Mar 2023</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Zero-shot Multimodal Chain-of-Thought</head><p>Given &lt;img&gt;. Q: Can I go down this street on a bicycle, yes or no? A: Let's think step by step. 1. do not enter. 2. except bicycles. 3. do not entry except bicycles. 4. yes.</p><p>Given &lt;img&gt;. Q: How many championship rings did the player on the left win in his career A: Let's think step by step. 1. kobe bryant is on the left. 2. kobe bryant has won 5 championship rings.</p><p>Given &lt;img&gt;. Q: Who are the two teams playing in this photo, and which was the last to win a championship, and which year did they win, and who was their star player that year? A: Let's think step by step. 1. team in white is new Zero-shot: Multi-image Relationships york knick. 2. team in green is boston celtic. 3. last to win championship was boston celtic. 4. year was 2008. 5. star player was paul pierce. 6. i am not sure if this is correct. i am not basketball fan. i just google it. Q: Where is &lt;img1&gt; in this scene &lt;img2&gt;? A: a stove top with a pot on it. Q: I am getting just two custom pizza for me and my friend. How much should I pay in total? A: Let's think step by step. 1st step: 2 custom pizzas. 2nd step: 2 x $9.99. 3rd step: $19.98. OCR-free Math Reasoning End-to-End Egocentric Q&amp;A, Dialogue Photo 1, at 10:30 am: &lt;img1&gt;. Photo 2, at 12:45 pm: &lt;img2&gt;. Photo 3, at 3:45 pm: &lt;img3&gt;. Q: I forget, what did I have for lunch, and what time was it? A: Let's think step by step. 1. you had a sandwich for lunch. 2. it was 12:45 pm.</p><p>flour, and a bowl of sugar.. and a spatula.. and a spoon.. and a bag of flour.. and a bag of sugar. When a human asks me to do a task, I will respond with the sequence of actions I would do to accomplish the task with only the items I see. Human: Use all of the ingredients you see to make a cake batter. 1. crack egg. 2. put egg in bowl. 3. put flour in bowl. 4. put sugar in bowl. 5. mix. 6. put in pan. 7. bake. 8. eat. 9. clean up.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Physical Prediction Spatial Grounding</head><p>Given &lt;img&gt; . Q: What flavor is the doughnut on the right? Strawberry.. Q: What flavor is the doughnut on the left? A blueberry.</p><p>Given &lt;img&gt; . Q: What will the robot do next? A: fall.</p><p>Given &lt;img&gt; .</p><p>Figure <ref type="figure">2</ref>: PaLM-E-562B can do zero-shot multimodal chain-of-thought reasoning, can tell visually-conditioned jokes given an image, and demonstrates an array of robot-relevant multimodal-informed capabilities including perception, visually-grounded dialogue, and planning. PaLM-E also generalizes, zero-shot, to multi-image prompts despite only being trained on single-image prompts. PaLM-E can also perform math given an image with textually-interleaved handwritten numbers. In addition, the model can perform, zero-shot, question and answering on temporally-annotated egocentric vision, similar to what was shown in <ref type="bibr" target="#b63">(Zeng et al., 2022)</ref> but end-to-end all in one model.</p><p>directly incorporate continuous inputs from sensor modalities of an embodied agent and thereby enable the language model itself to make more grounded inferences for sequential decision making in the real world. Inputs such as images and state estimates are embedded into the same latent embedding as language tokens and processed by the self-attention layers of a Transformer-based LLM in the same way as text. We start from a pre-trained LLM in which we inject the continuous inputs through an encoder. These encoders are trained end-to-end to output sequential decisions in terms of natural text that can be interpreted by the embodied agent by conditioning low-level policies or give an answer to an embodied question. We evaluate the approach in a variety of settings, comparing different input representations (e.g. standard vs. object-centric ViT encodings for visual input), freezing vs. finetuning the language model while training the encoders, and investigating whether co-training on multiple tasks enables transfer.</p><p>To investigate the approach's breadth, we evaluate on three robotic manipulation domains (two of which are closedloop in the real-world), standard visual-language tasks such as VQA and image captioning, as well as language tasks. Our results indicate that multi-task training improves performance compared to training models on individual tasks. We show that this transfer across tasks can lead to high data-efficiency for robotics tasks, e.g. significantly increasing learning success from handfuls of training examples, and even demonstrating one-shot or zero-shot generalization to novel combinations of objects or unseen objects.</p><p>We scale PaLM-E up to 562B parameters, integrating the 540B PaLM <ref type="bibr" target="#b10">(Chowdhery et al., 2022)</ref> LLM and the 22B Vision Transformer (ViT) <ref type="bibr" target="#b11">(Dehghani et al., 2023)</ref> into, to our knowledge, the largest vision-language model currently reported. PaLM-E-562B achieves state-of-the-art performance on the OK-VQA <ref type="bibr" target="#b39">(Marino et al., 2019)</ref> benchmark, without relying on task-specific finetuning. Although not the focus of our experimentation, we also find (Fig. <ref type="figure">2</ref>) that PaLM-E-562B exhibits a wide array of capabilities including zero-shot multimodal chain-of-thought (CoT) reasoning, few-shot prompting, OCR-free math reasoning, and multiimage reasoning, despite being trained on only single-image examples. Zero-shot CoT <ref type="bibr" target="#b27">(Kojima et al., 2022)</ref>, originally a language-only concept, has been shown on multimodal data with task-specific programs <ref type="bibr" target="#b63">(Zeng et al., 2022)</ref> but to our knowledge, not via an end-to-end model.</p><p>To summarize our main contributions, we (1) propose and demonstrate that a generalist, transfer-learned, multiembodiment decision-making agent can be trained via mixing in embodied data into the training of a multimodal large language model. We show that, (2) while current state-ofthe-art general-purpose visual-language models out-of-thebox (zero-shot) do not well address embodied reasoning problems, it is possible to train a competent general-purpose visual-language model that is also an efficient embodied reasoner. In studying how to best train such models, we (3) introduce novel architectural ideas such as neural scene representations and entity-labeling multimodal tokens. Finally, in addition to our focus on PaLM-E as an embodied reasoner we (4) show that PaLM-E is also a quantitatively competent vision and language generalist, and (5) demonstrate that scaling the language model size enables multimodal finetuning with less catastrophic forgetting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>General vision-language modeling. Building on successes in large language <ref type="bibr" target="#b4">(Brown et al., 2020;</ref><ref type="bibr" target="#b12">Devlin et al., 2018)</ref> and vision <ref type="bibr" target="#b13">(Dosovitskiy et al., 2020</ref>) models, recent years have seen a growing interest in large vision-language models (VLMs) <ref type="bibr" target="#b30">(Li et al., 2019;</ref><ref type="bibr" target="#b35">Lu et al., 2019;</ref><ref type="bibr" target="#b19">Hao et al., 2022;</ref><ref type="bibr" target="#b15">Gan et al., 2022)</ref>. Unlike their predecessors, VLMs are capable of simultaneously understanding both images and text, and can be applied to tasks such as visual question answering <ref type="bibr" target="#b65">(Zhou et al., 2020;</ref><ref type="bibr">Zellers et al., 2021b)</ref>, captioning <ref type="bibr" target="#b20">(Hu et al., 2022)</ref>, optical character recognition <ref type="bibr" target="#b31">(Li et al., 2021)</ref>, and object detection <ref type="bibr">(Chen et al., 2021b)</ref>. The methods by which images are integrated varies. For example, <ref type="bibr" target="#b1">Alayrac et al. (2022)</ref> augments pretrained language models with a mechanism to directly attend to a single context image. In contrast, PaLM-E represents images and text as "multimodal sentences" of latent vectors, allowing it to process multiple images in a flexible way within any part of a sentence. More closely related to our work is Frozen <ref type="bibr" target="#b57">(Tsimpoukelli et al., 2021)</ref> where vision encoder parameters are optimized via backpropagation through a frozen LLM <ref type="bibr">(Lu et al., 2021)</ref>. Inspired by this work, we investigate the design in a broader scope by introducing alternative input modalities (e.g. neural scene representations), and our proposed approach empirically outperforms Frozen by more than 45% on the VQAv2 benchmark. More importantly we demonstrate that PaLM-E is applicable not only to perceptual but also embodied tasks.</p><p>Actions-output models. Prior works focus on combining vision and language inputs in an embodied setting with the goal of direct action prediction <ref type="bibr" target="#b18">(Guhur et al., 2022;</ref><ref type="bibr">Shridhar et al., 2022b;</ref><ref type="bibr">a;</ref><ref type="bibr" target="#b64">Zhang &amp; Chai, 2021;</ref><ref type="bibr" target="#b53">Silva et al., 2021;</ref><ref type="bibr" target="#b24">Jang et al., 2022;</ref><ref type="bibr" target="#b40">Nair et al., 2022;</ref><ref type="bibr" target="#b38">Lynch et al., 2022;</ref><ref type="bibr" target="#b3">Brohan et al., 2022)</ref>. Among these methods, VIMA <ref type="bibr" target="#b25">(Jiang et al., 2022)</ref> explores multimodal prompts similar to PaLM-E. The role of language is perhaps most aptly described as task specification in these works. In contrast, PaLM-E generates high-level instructions as text; in doing so, the model is able to naturally condition upon its own predictions and di-rectly leverage the world knowledge embedded in its parameters. This enables not only embodied reasoning but also question answering, as demonstrated in our experiments. Among works that output actions, perhaps most similar is the approach proposed in Gato <ref type="bibr" target="#b44">(Reed et al., 2022)</ref> which, like PaLM-E, is a generalist multi-embodiment agent. In contrast to Gato, we demonstrate positive transfer across different tasks where the model benefits from diverse joint training across multiple domains.</p><p>LLMs in embodied task planning. There have been several methods proposed to leverage LLMs in embodied domains. While many works focus on understanding natural language goals <ref type="bibr" target="#b37">(Lynch &amp; Sermanet, 2020;</ref><ref type="bibr">Shridhar et al., 2022a;</ref><ref type="bibr" target="#b40">Nair et al., 2022;</ref><ref type="bibr" target="#b38">Lynch et al., 2022)</ref>, fewer consider natural language as a representation for planningthe focus of this work. LLMs contain vast amounts of internalized knowledge about the world <ref type="bibr" target="#b2">(Bommasani et al., 2021)</ref>, but without grounding, generated plans may be impossible to execute. One line of research has employed prompting to elicit a sequence of instructions directly from an LLM either by leveraging semantic similarity between an LLM's generation and an eligible set of instructions <ref type="bibr">(Huang et al., 2022b)</ref>, incorporating affordance functions <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>, visual feedback <ref type="bibr">(Huang et al., 2022c)</ref>, generating world models <ref type="bibr" target="#b41">(Nottingham et al., 2023;</ref><ref type="bibr">Zellers et al., 2021a)</ref>, planning over graphs and maps <ref type="bibr" target="#b48">(Shah et al., 2022;</ref><ref type="bibr">Huang et al., 2022a)</ref>, visual explanations <ref type="bibr" target="#b58">(Wang et al., 2023)</ref>, program generation <ref type="bibr" target="#b33">(Liang et al., 2022;</ref><ref type="bibr" target="#b54">Singh et al., 2022)</ref>, or injecting information into the prompt <ref type="bibr" target="#b63">(Zeng et al., 2022)</ref>. In contrast, PaLM-E is trained to generate plans directly without relying on auxiliary models for grounding. This in turn enables direct integration of the rich semantic knowledge stored in pretrained LLMs into the planning process.</p><p>With few exceptions, the parameters of the LLMs employed in many of these works are employed as-is without further training. In LID <ref type="bibr" target="#b32">(Li et al., 2022)</ref>, this constraint is relaxed and LLM parameters are finetuned to produce a planning network for generating high-level instructions. (SL) 3 <ref type="bibr" target="#b50">(Sharma et al., 2021)</ref> tackles the more challenging task of simultaneously finetuning two LLMs: a planning network, which produces high-level instructions, and a low-level policy network, which selects actions. With PaLM-E, our interests are distinct and complementary: we investigate a generalist, multi-embodiment model, across multiple modalities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">PaLM-E: An Embodied Multimodal Language Model</head><p>The main architectural idea of PaLM-E is to inject continuous, embodied observations such as images, state estimates, or other sensor modalities into the language embedding space of a pre-trained language model. This is realized by encoding the continuous observations into a sequence of vectors with the same dimension as the embedding space of the language tokens. The continuous information is hence injected into the language model in an analogous way to language tokens. PaLM-E is a decoder-only LLM that generates textual completions autoregressively given a prefix or prompt. We call our model PaLM-E, since we use PaLM <ref type="bibr" target="#b10">(Chowdhery et al., 2022)</ref> as the pre-trained language model, and make it Embodied.</p><p>The inputs to PaLM-E consist of text and (multiple) continuous observations. The multimodal tokens corresponding to these observations are interleaved with the text to form multi-modal sentences. An example of such a multi-modal sentence is Q: What happened between &lt;img 1&gt; and &lt;img 2&gt;? where &lt;img i&gt; represents an embedding of an image. The output of PaLM-E is text generated auto-regressively by the model, which could be an answer to a question, or a sequence of decisions produced by PaLM-E in textual form that should be executed by a robot. When PaLM-E is tasked with producing decisions or plans, we assume that there exists a low-level policy or planner that can translate these decisions into low-level actions. Prior work has discussed a variety of ways to train such low-level policies <ref type="bibr" target="#b37">(Lynch &amp; Sermanet, 2020;</ref><ref type="bibr" target="#b3">Brohan et al., 2022)</ref>, and we use these prior methods directly without modification.</p><p>In the following, we describe our approach more formally.</p><p>Decoder-only LLMs. Decoder-only large language models (LLMs) are generative models trained to predict the probability p(w 1:L ) of a piece of text w 1:L = (w 1 , . . . , w L ) that is represented as a sequence of tokens w i ∈ W. Typical neural architectures realize this by factorizing into</p><formula xml:id="formula_0">p(w 1:L ) = L l=1 p LM (w l |w 1:l-1 ),<label>(1)</label></formula><p>where p LM is a large transformer network.</p><p>Prefix-decoder-only LLMs. Since the LLM is autoregressive, a pre-trained model can be conditioned on a prefix w 1:n without the necessity to change the architecture</p><formula xml:id="formula_1">p(w n+1:L |w 1:n ) = L l=n+1 p LM (w l |w 1:l-1 ).<label>(2)</label></formula><p>The prefix or prompt w 1:n provides the context based on which the LLM continues to predict the subsequent tokens w n+1:L . This is often used for inference to steer the predictions of the model. For example, the prompt can contain a description of the task the LLM should solve or examples of desired text completions for similar tasks.</p><p>Token embedding space. The tokens w i are elements of a fixed vocabulary W which is a discrete, finite set corresponding to (sub)words in natural language. Internally, the LLM embeds w i into a word token embedding space X ⊂ R k via γ : W → X , i.e. p LM (w l |x 1:l-1 ) with x i = γ(w i ) ∈ R k . The mapping γ is typically represented as a large embedding matrix of size k × |W| and trained end-to-end. In our case, |W| = 256 000 <ref type="bibr" target="#b10">(Chowdhery et al., 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-modal sentences: injection of continuous observations.</head><p>Multi-modal information such as image observations can be injected into the LLM by skipping the discrete token level and directly mapping the continuous observations into the language embedding space X . To this end, we train an encoder φ : O → X q that maps a (continuous) observation space O (refer to Sec. 4 for details) into a sequence of q-many vectors in X . These vectors are then interleaved with normal embedded text tokens to form the prefix for the LLM. This means that each vector x i in the prefix is formed from either the word token embedder γ or an encoder φ i :</p><formula xml:id="formula_2">x i = γ(w i ) if i a is text token, or φ j (O j ) i if i corresponds to observation O j .</formula><p>(3)</p><p>Note that a single observation O j is usually encoded into multiple embedding vectors. It is possible to interleave different encoders φ i at different locations in the prefix to combine, e.g., information from different observation spaces. Injecting the continuous information this way into the LLM reuses its existing positional encodings. In contrast to other VLM approaches (e.g, <ref type="bibr" target="#b9">(Chen et al., 2022)</ref>), the observation embeddings are not inserted at fixed positions, but instead placed dynamically within the surrounding text.</p><p>Embodying the output: PaLM-E in a robot control loop.</p><p>PaLM-E is a generative model producing text based on multi-model sentences as input. In order to connect the output of the model to an embodiment, we distinguish two cases. If the task can be accomplished by outputting text only as, e.g., in embodied question answering or scene description tasks, then the output of the model is directly considered to be the solution for the task.</p><p>Alternatively, if PaLM-E is used to solve an embodied planning or control task, it generates text that conditions lowlevel commands. In particular, we assume to have access to policies that can perform low-level skills from some (small) vocabulary, and a successful plan from PaLM-E must consist of a sequence of such skills. Note that PaLM-E must determine on its own which skills are available based on the training data and the prompt, and no other mechanism is used to constrain or filter its outputs. Although these policies are language conditioned, they are not capable of solving long-horizon tasks or taking in complex instructions.</p><p>PaLM-E is hence integrated into a control-loop, where its predicted decisions are executed through the low-level policies by a robot, leading to new observations based on which PaLM-E is able to replan if necessary. In this sense, PaLM-E can be understood as a high-level policy that sequences and controls the low-level policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Input &amp; Scene Representations for Different Sensor Modalities</head><p>In this section, we describe the individual modalities that we incorporate into PaLM-E, and how we set up their encoders. We propose different architectural choices for each encoder φ : O → X to map the corresponding modality into the language embedding space. We investigate state estimation vectors, Vision Transformers (ViTs) <ref type="bibr" target="#b13">(Dosovitskiy et al., 2020;</ref><ref type="bibr" target="#b9">Chen et al., 2022;</ref><ref type="bibr" target="#b45">Ryoo et al., 2021)</ref> for 2D image features, and the 3D-aware Object Scene Representation Transformer (OSRT) <ref type="bibr">(Sajjadi et al., 2022a)</ref>. In addition to encoders that represent the input scene globally, we consider object-centric representations that factor observations into tokens that represent individual objects in the scene.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>State estimation vectors.</head><p>State vectors, e.g. from a robot or a state estimate for objects, are perhaps the simplest to input into PaLM-E. Let s ∈ R S be a vector describing the state of the objects in a scene. For example, s could contain the pose, size, color etc. of those objects. Then, the MLP φ state maps s into the language embedding space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vision Transformer (ViT).</head><p>ViT φViT <ref type="bibr" target="#b13">(Dosovitskiy et al., 2020</ref>) is a transformer architecture mapping an image I into a number of token embeddings x1:m = φViT (I) ∈ R m× k. We consider several variants, including the 4 billion parameter model from <ref type="bibr" target="#b9">Chen et al. (2022)</ref>, which we refer to as ViT-4B, and a similar 22 billion parameter model, ViT-22B <ref type="bibr" target="#b11">(Dehghani et al., 2023)</ref>, both of which have been pretrained on image classification. We further investigate the ViT token learner architecture (ViT + TL) <ref type="bibr" target="#b45">(Ryoo et al., 2021)</ref> which is trained end-to-end from scratch. Note that the dimensionality k of the ViT embeddings is not necessarily the same as that of the language model. We therefore project each embedding into x i = φ ViT (I) i = ψ( φViT (I) i ) with ψ being a learned affine transformation.</p><p>Object-centric representations. Unlike language, visual input is not pre-structured into meaningful entities and relationships: while ViT may capture semantics, the structure of the representation resembles a static grid rather than a collection of object instances. This poses a challenge both for interfacing with LLMs which have been pre-trained on symbols, and for solving embodied reasoning which requires interaction with physical objects. We therefore also explore structured encoders that aim to separate visual inputs into distinct objects before injecting them into the LLM. Given ground-truth object instance masks M j , we can decompose ViT's representation into x j 1:m = φ ViT (M j • I) for object j. Object Scene Representation Transformer (OSRT). An alternative that does not require ground-truth segmentations is OSRT <ref type="bibr">(Sajjadi et al., 2022a)</ref>: rather than relying on external knowledge about objects, they are discovered in an unsupervised way through inductive biases in the archi-tecture <ref type="bibr" target="#b34">(Locatello et al., 2020)</ref>. Based on SRT <ref type="bibr">(Sajjadi et al., 2022b)</ref>, OSRT learns 3D-centric neural scene representations on in-domain data through a novel view synthesis task. Its scene representations consist of object slots o j = φOSRT (I 1:v ) j ∈ R k. We project each of these slots into x j 1:m = ψ( φOSRT (I 1:v ) j ) with an MLP ψ. Note that individual objects are always tokenized into multiple embeddings each, i.e. ψ : R k → R m×k for OSRT maps into m-many embeddings.</p><p>Entity referrals. For embodied planning tasks, PaLM-E must be able to reference objects in its generated plan. In many cases, including the majority of our experiments, objects in a scene can be identified in natural language by some of their unique properties. However, there also exist settings where objects are not easily identifiable by language in few words, e.g. if there are multiple blocks on a table of the same color at different locations. For object-centric representations such as OSRT, we label the multi-modal tokens corresponding to an object in the input prompt as follows: Object 1 is &lt;obj 1&gt;. . . . Object j is &lt;obj j&gt;. This enables PaLM-E to reference objects via special tokens of the form obj j in its generated output sentences. In this case, we assume that the low-level policies operate on these tokens as well.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Training Recipes</head><p>PaLM-E is trained on a dataset of the form D = I i 1:ui , w i 1:Li , n i N i=1 , where each example i consists of u i -many continuous observations I i j , a text w i 1:Li , and an index n i . Despite being a decoder-only model, the text consists of a prefix part up to index n i that is formed from multi-modal sentences, and the prediction target, which only contains text tokens. The loss function is therefore a crossentropy loss averaged over the individual non-prefix tokens w i ni+1:Li . To form the multi-modal sentences within the model, we have special tokens in the text that get replaced by the embedding vectors of the encoders at the locations in the text of those tokens. We base PaLM-E on the pretrained 8B, 62B, and 540B parameter variants of PaLM as the decoder-only LLM into which we inject the continuous observations through the input encoders. Those encoders are either pre-trained or trained from scratch, see Sec. 4. We refer to an 8B LLM combined with a 4B ViT as PaLM-E-12B, similarly a 62B LLM + 22B ViT as PaLM-E-84B, and 540B LLM + 22B ViT as PaLM-E-562B.</p><p>Variation with Model freezing. Most of our architectures consist of three parts, an encoder φ, a projector ψ, and the LLM p LM . When training PaLM-E, one way is to update the parameters of all these components. However, LLMs show impressive reasoning capabilities if supplied with a suitable prompt <ref type="bibr" target="#b59">(Wei et al., 2022)</ref>. Therefore, we investigate whether it is possible to freeze the LLM and to just train the input encoders, and if so, how different-modality encoders compare. In this case, the encoder has to produce embedding vectors such that the frozen LLM is grounded on the observations, and also propagate information to the LLM about the capabilities of an embodiment. Training such encodings can be understood as a form of input-conditioned soft-prompting <ref type="bibr" target="#b57">(Tsimpoukelli et al., 2021)</ref>, in relation to normal soft prompts <ref type="bibr" target="#b28">(Lester et al., 2021)</ref>. In experiments with φ OSRT , we also freeze the slot representation, i.e. we only update the small projector ψ which serves as the interface between OSRT and the LLM.</p><p>Co-training across tasks. In our experiments, we investigate the effects of co-training our models on a variety of diverse data. The "full mixture", see App. A, consists primarily of a diverse set of internet-scale vision-and-language data, from a variety of tasks. The sampling frequencies are set such that only 8.9% of the full mixture is embodied data, and there are several tasks for each embodiment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Experiments</head><p>Our experiments consider diverse robotic (mobile) manipulation tasks across three different robot embodiments, in simulation and with two different real robots. We refer to <ref type="url" target="https://palm-e.github.io">https://palm-e.github.io</ref> for videos showing the capabilities of PaLM-E on those tasks. Although not the focus of our work, we evaluate PaLM-E also on general vision-language tasks such as visual-question-answering (VQA), image captioning, and established language modeling tasks.</p><p>We split our experimental investigation into two broad categories. First, we compare the different input representations from Sec. 4 with respect to performance, generalization, and data-efficiency. The second thread of experiments focuses on one architecture, the main PaLM-E version, consisting of a pre-trained ViT and PaLM language model that takes in raw images as the continuous inputs. Here we show that a single model, trained on a mixture of many datasets, across diverse tasks, and across robot embodiments, can simultaneously achieve high performance on all of those tasks. Crucially, we investigate whether co-training on these datasets enables transfer (Fig. <ref type="figure" target="#fig_1">3</ref>): despite different tasks and embodiments, the performance on the individual tasks increases by training on the mixture of tasks. We study the influence on performance, generalization, and data efficiency with respect to co-training strategies and model parameter size. Finally, we consider if freezing the LLM and just training the ViT that injects vision into the LLM is a viable path.</p><p>As baselines, we consider the state-of-the art visual language model PaLI <ref type="bibr" target="#b9">(Chen et al., 2022)</ref>, which has not been trained on embodiment robot data, as well as the SayCan algorithm <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>, supplied with oracle affordances.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TAMP Data Only</head><p>Lang.</p><p>Table Data Only SayCan Data Only Full Mixture (All robots + WebLI, VQA, COCO, etc.) 0% 25% 50% 75% 100% PaLM-E Training Data Success Rate or Accuracy TAMP Success (Table 1) Language-Table Success (  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1.">Robot Environments / Tasks</head><p>Our three robot environments (Fig. <ref type="figure" target="#fig_0">1</ref>) include a Task and Motion Planning (TAMP) domain where a robot has to manipulate (grasp and stack) objects, a table-top pushing environment, and a mobile manipulation domain. In each domain, PaLM-E is trained on expert data from that domain. In many cases, this is a sparse amount of data per task. The TAMP tasks involve large combinatorics over possible plans, and many decision sequences are infeasible. PaLM-E has to generate plans that consist of multiple steps, with complicated decision boundaries. The multi-object tabletop pushing environment is taken from the publicly available Language-Table dataset <ref type="bibr" target="#b38">(Lynch et al., 2022)</ref> and is challenging since it includes several objects, large cardinality of language, and complex pushing dynamics. For both the TAMP and Language-Table environment, PaLM-E has to reason about the poses of the objects. It is not sufficient to know which objects are on the table or knowing their rough relationships, the more fine-grained details about the scene geometry are important for solving the tasks. Finally, we consider a mobile manipulation domain similar to SayCan <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>, where a robot has to solve a variety of tasks in a kitchen environment, including finding objects in drawers, picking them, and bringing them to a human. For all domains we consider both planning and VQA tasks in those environments. For the mobile manipulation and Language-Table environments, PaLM-E is integrated into the control loop to execute the plans in the real world, and has to adjust the plan in presence of external disturbances or failures of the low-level control policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2.">TAMP Environment</head><p>Tab. 7 (appendix) shows planning success rates and VQA performance for the TAMP environment. The LLM is frozen in these experiments (for pre-trained LLM). For the results reported in Tab. 7, the input representations are trained on a dataset containing 96,000 training scenes of solely the TAMP environment, i.e. no other data is part of the mixture. For 3-5 objects in the scene, which is the same number as in the training set, most input representations perform similarly well. However, when increasing the number of objects, it turns out that using a pre-trained LLM improves performance considerably, especially with entity referrals. Furthermore, we show that a 62B LLM shows better out-of-distribution generalization compared to the 8B variant, while a non-pretrained LLM shows basically no outof-distribution generalization. The SayCan baseline <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref> utilizes oracle affordance functions and has difficulties solving this environment, since affordance functions only constrain what is possible right now, but are not informative enough for the LLM to construct long-horizon plans in TAMP environments.</p><p>Tab. 1 shows results for 3-5 objects when training on 1% of the dataset, which corresponds to only 320 examples for each of the two planning tasks. Here we see that there are significant differences between the input representations, especially for the planning tasks. First, pre-training the LLM is beneficial in the low data regime for state inputs. Second, both ViT variants (ViT+TL, ViT-4B) do not perform well in solving the planning tasks for this little data. However, if we co-train on all other robot environments as well as general vision-language datasets (ViT-4B generalist), then the performance of the ViT-4B more than doubles. This shows a significant transfer effect between different robot embodiments and tasks. Finally, using OSRT as the input representation leads to the best performance here, demonstrating the strengths of 3D-aware object representations. We also observe another instance of transfer here: when we remove the TAMP VQA data and only train on the 640 planning tasks examples, there is a (slight) drop in performance. The state-of-the art vision-language model PaLI <ref type="bibr" target="#b9">(Chen et al., 2022)</ref> that was not trained on robot data is not able to solve the tasks. We only evaluated it on q 2 (objects left/right/center on the table) and q 3 (vertical object relations), since those most resemble typical VQA tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3.">Language-Table Environment</head><p>Tab. 2 reports success rates on long-horizon tasks from the Language-Table environment <ref type="bibr" target="#b38">(Lynch et al., 2022)</ref>. PaLM-E is integrated into a control loop that takes as input the longhorizon task and the current image, and outputs an instruction for the low-level policy. We see that joint training on internet-scale vision and language results in a more effective model for robot planning, particularly in the few-shot regime with only 10 demos per task. Scaling the 12B model to the 84B model leads to improvements on 2 of 3 tasks. As with the TAMP environment, neither SayCan nor zero-shot PaLI are effective, unable to solve the easiest task tested.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TAMP Data Only</head><p>Lang.</p><p>Table Data Only SayCan Data Only Full Mixture (All robots + WebLI, VQA, COCO, etc.) 0% 25% 50% 75% 100% PaLM-E Training Data Success Rate or Accuracy LLM finetune (full mixture) LLM finetune (single robot) without pretraining LLM frozen (full mixture) LLM frozen (single robot) 20% 40% 60% 80% 100% 94.9% 48.6% 42.9% 74.3% 31.8% Transfer from full mixture is particularly effective. Note that full mixture contains only 1% of the training data (320 examples each) for the tasks evaluated here. Shown is the mean of tasks p 1 , p 2 .</p><p>Real Robot Results and Few-Shot Generalization. In Fig. <ref type="figure" target="#fig_5">7</ref>, a), we see PaLM-E is capable of guiding a real robot through a multi-stage tabletop manipulation task, while remaining robust to adversarial disturbances. Given the observed image and a long-horizon goal, e.g. "sort the blocks by colors into corners", PaLM-E outputs language subgoals at 1 Hz to the policies from <ref type="bibr" target="#b38">Lynch et al. (2022)</ref>, that output low-level robot actions at 5 Hz. Prior work <ref type="bibr" target="#b38">(Lynch et al., 2022)</ref> instead involved a human in the loop to interactively guide subgoals and corrections. In Fig. <ref type="figure" target="#fig_3">5</ref>, <ref type="figure">b</ref>) we see PaLM-E is capable of one-shot and zero-shot learning. Here, we finetuned PaLM-E on 100 different long horizon tasks with a single training example each, e.g. "put all the blocks in the center", "remove the blue blocks from the line". We additionally see that PaLM-E can generalize zero-shot to tasks involving novel object pairs (Fig. <ref type="figure" target="#fig_5">7</ref>, <ref type="figure">c</ref>) and to tasks involving objects that were unseen in either the original robot dataset or the finetuning datasets, e.g. a toy turtle (Fig. <ref type="figure" target="#fig_3">5</ref>, <ref type="figure">d</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4.">Mobile Manipulation Environment</head><p>We demonstrate the performance of PaLM-E on challenging and diverse mobile manipulation tasks. We largely follow the setup in <ref type="bibr" target="#b0">Ahn et al. (2022)</ref>, where the robot needs to plan a sequence of navigation and manipulation actions based on an instruction by a human. For example, given the instruction "I spilled my drink, can you bring me something to clean it up?", the robot needs to plan a sequence containing "1. Find a sponge, 2. Pick up the sponge, 3. Bring it to the user, 4. Put down the sponge." Inspired by these tasks, we develop 3 use cases to test the embodied reasoning abilities of PaLM-E: affordance prediction, failure detection, and long-horizon planning. The low-level policies are from RT-1 <ref type="bibr" target="#b3">(Brohan et al., 2022)</ref>, a transformer model that takes RGB image and natural language instruction, and outputs end-effector control commands.  PaLM-E outperforms PaLI (zero-shot), as well as thresholding on value functions trained with QT-OPT (Tab. 4).</p><p>Failure detection. For a robot to do closed-loop planning, it is also important to detect failures, as is shown in <ref type="bibr">(Huang et al., 2022c)</ref>. The multi-modal prompt is Given &lt;img&gt;. Q: Was &lt;skill&gt; successful?. Tab. 4 shows that PaLM-E outperforms PaLI (zero-shot), as well as a finetuned version of CLIP on this dataset. PaLM-E also outperforms the algorithm proposed in <ref type="bibr" target="#b60">Xiao et al. (2022)</ref> that leverages two CLIP models trained with hindsight relabeled data. This method has access to more information than our method, and was specifically designed to just solve failure detection on this dataset.</p><p>Real robot results: Long-horizon planning. Finally, we use PaLM-E to perform embodied planning end-to-end for mobile manipulation tasks. The prompt structure for this task is Human: &lt;instruction&gt; Robot: &lt;step history&gt;. I see &lt;img&gt;. PaLM-E is trained to generate the next step of the plan, conditioned on the history of taken steps and the current image observation of the scene. After each step is decoded, we map them to a low-level policy as defined in <ref type="bibr" target="#b0">Ahn et al. (2022)</ref>. This process is done in an autoregressive manner, until PaLM-E outputs "terminate". We train the model by using the runs from <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>, which contains 2912 sequences. We qualitatively evaluated the model in a real kitchen and found the model can carry out long-horizon mobile manipulation tasks, even under adversarial disturbances (Fig. <ref type="figure" target="#fig_3">5</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.5.">Performance on General Visual-Language Tasks</head><p>Although it is not the focus of our work, we report in Tab. 5 results on general vision-language tasks, including OK-VQA <ref type="bibr" target="#b39">(Marino et al., 2019)</ref>, VQA v2 <ref type="bibr" target="#b17">(Goyal et al., 2017)</ref> and COCO captioning <ref type="bibr" target="#b8">(Chen et al., 2015)</ref>. A single, generalist Zero-shot Baselines Task 1 Task 2 Task 3 SayCan (oracle afford.) (Ahn et al., 2022) 0.0 --PaLI (Chen et al., 2022) 0.0 -trained from LLM+ViT LLM Task # Demos PaLM-Eon scratch pretrain frozen finetune 10 20 40 10 20 40 10 20 80 12B Single robot n/a 20.0 30.0 50.0 2.5 6.3 2.5 11.3 16.9 28.3 12B Full mixture --20.0 --36.3 --29.4 12B Full mixture --80.0 --57.5 --50.0 12B Full mixture 70.0 80.0 80.0 31.3 58.8 58.8 57.5 54.4 56.3 84B Full mixture --90.0 --53.8 --64.4</p><p>Table 2: Results on planning tasks in the simulated environment from <ref type="bibr" target="#b38">Lynch et al. (2022)</ref>.</p><p>Task 1. Q: There is a block that is closest to {i.e., top right corner}. Push that block to the other block of the same color.</p><p>Task 2. Q: How to sort the blocks by colors into corners?</p><p>Task 3. Q: How to push all the blocks that are on the {left/right} side together, without bringing over any of the blocks that are on the {right/left} side?</p><p>Table <ref type="table">3</ref>: Task prompts for Tab. 2.</p><p>Baselines Failure det. Affordance PaLI (Zero-shot) <ref type="bibr" target="#b9">(Chen et al., 2022)</ref> 0.73 0.62 CLIP-FT <ref type="bibr" target="#b60">(Xiao et al., 2022)</ref> 0.65 -CLIP-FT-hindsight <ref type="bibr" target="#b60">(Xiao et al., 2022)</ref> 0.89 -QT-OPT <ref type="bibr" target="#b26">(Kalashnikov et al., 2018</ref>) -0.63 PaLM-E-12B from LLM+ViT LLM trained on scratch pretrain frozen Single robot n/a 0.54 0.46 Single robot 0.91 0.78 Full mixture 0.91 0.87 Full mixture 0.77 0.91 Table 5: Results on general visual-language tasks. For the generalist models, they are the same checkpoint across the different evaluations, while task-specific finetuned models use differentfinetuned models for the different tasks. COCO uses Karpathy splits. † is 32-shot on OK-VQA (not finetuned).</p><p>PaLM-E-562B model achieves the highest reported number on OK-VQA, including outperforming models finetuned specifically on OK-VQA. Compared to <ref type="bibr" target="#b57">(Tsimpoukelli et al., 2021)</ref>, PaLM-E achieves the highest performance on VQA v2 with a frozen LLM to the best of our knowledge. This establishes that PaLM-E is a competitive visual-language generalist, in addition to being an embodied reasoner on robotic tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.6.">Performance on General Language Tasks</head><p>Tab. 8 reports the averaged performance of PaLM-E on 21 general language benchmarks for Natural Language Understanding (NLU) and Natural Language Generation (NLG) tasks. The notable trend is that with increasing model scale, there is considerably less catastrophic forgetting of language capabilities. As seen in Fig. <ref type="figure" target="#fig_4">6</ref>, while for the smallest (PaLM- E-12B) model 87.3% of its NLG performance (relative) has degraded during multimodal training, merely 3.9% have been degraded for the largest model (PaLM-E-562B).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Summary of Experiments &amp; Discussion</head><p>Generalist vs specialist models -transfer. As summarized in Fig. <ref type="figure" target="#fig_1">3</ref>, we have shown several instances of transfer in this work, meaning that PaLM-E trained on different tasks and datasets at the same time leads to significantly increased performance relative to models trained separately on the different tasks alone. In Fig. <ref type="figure" target="#fig_2">4</ref>, co-training on the "full mixture" achieves more than double the performance. In Tab. 9, we see significant improvements in performance if we add LLM/ViT pre-training, and training on the full mixture instead of the mobile manipulation data alone. For the Language-Table <ref type="table">experiment</ref> in Tab. 2, we observe analogous behaviour.</p><p>Data efficiency. Compared to available massive language or vision-language datasets, robotics data is significantly less abundant. As discussed in the last paragraph, our model exhibits transfer, which aids PaLM-E to solve robotics tasks from very few training examples in the robotics domain, e.g. between 10 and 80 for Language Table or 320 for TAMP. The OSRT results show another instance of data-efficiency by using a geometric input representation. A promising opportunity for future work is to combine this with a method benefitting from large-scale visual data.</p><p>Retaining language capabilities. We have shown two paths to retain the language capabilities of the model during multimodal training. As one option, freezing the LLM and only training the input encoders is a viable path for building embodied language models, although this approach occasionally struggled for robotics tasks (Tab. 2). As an alternative route, when the whole model is trained end-to-end, the model retains significantly more of its original language performance with increasing model scale (Fig. <ref type="figure" target="#fig_4">6</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">Conclusion</head><p>We proposed to build an embodied language model by injecting multi-modal information such as images into the embedding space of a pre-trained LLM. Experiments showed that off-the-shelf state-of-the-art vision-language models trained on general VQA and captioning tasks are not sufficient for embodied reasoning tasks, as well as limitations of a recent proposal for grounding language models through affordances. To overcome these limitations, we proposed PaLM-E, a single model that is able to control different robots in simulation and in the real world, while at the same time being quantitatively competent at general VQA and captioning tasks. In particular the novel architectural idea of ingesting neural scene representations (i.e., OSRT) into the model is particularly effective, even without large-scale data.</p><p>PaLM-E is trained on a mixture of diverse tasks across multiple robot embodiments as well as general vision-language tasks. Importantly, we have demonstrated that this diverse training leads to several avenues of transfer from the visionlanguage domains into embodied decision making, enabling robot planning tasks to be achieved data efficiently. While our results indicate that frozen language models are a viable path towards general-purpose embodied multimodal models that fully retain their language capabilities, we have also surfaced an alternative route with unfrozen models: scaling up the language model size leads to significantly less catastrophic forgetting while becoming an embodied agent. Our largest model, PaLM-E-562B, showcases emergent capabilities like multimodal chain of thought reasoning, and the ability to reason over multiple images, despite being trained on only single-image prompts. Table, while remaining robust to adversarial disturbances. We find evidence that PaLM-E is capable of one-shot and zero shot generalization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Data Mixture</head><p>Tab. 6 shows the dataset and sampling frequency for the "full mixture" as referred to in the experiments. The majority of the data distribution is general vision-language tasks, with less than 10% robot data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Environment Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. Task and Motion Planning (TAMP)</head><p>The training scenes for the TAMP environment contain 3-5 cube-shaped objects of different sizes, colors and sampled initial poses. Fig. <ref type="figure" target="#fig_6">8</ref> show an example test scene that contains 6 objects.</p><p>In the global version, we consider the following three VQA tasks: Dataset in full mixture Sampling frequency % Webli (Chen et al., 2022) 100 52.4 VQ 2 A <ref type="bibr" target="#b5">(Changpinyo et al., 2022)</ref> 25 13.1 VQG <ref type="bibr" target="#b5">(Changpinyo et al., 2022)</ref> 10 5.2 CC3M <ref type="bibr" target="#b49">(Sharma et al., 2018)</ref> 25 13.1 Object Aware <ref type="bibr" target="#b42">(Piergiovanni et al., 2022)</ref> 10 5.2 OKVQA <ref type="bibr" target="#b39">(Marino et al., 2019)</ref> 1 0.5 VQAv2 <ref type="bibr" target="#b17">(Goyal et al., 2017)</ref> 1 0.5 COCO <ref type="bibr" target="#b8">(Chen et al., 2015)</ref> 1 0.5 Wikipedia text 1 0.5 (robot) Mobile Manipulator, real 6 3.1 (robot) Language Table <ref type="bibr" target="#b38">(Lynch et al., 2022)</ref>, sim and real 8 4.2 (robot) TAMP, sim 3 1.6</p><p>Table 6: Dataset sampling frequency and ratio for the "full mixture" referred to in experiments. • q 2 : object-table relation. Example prompt: Given &lt;img&gt;. Q: Is the red object left, right, or center of the table?. Target: A: The red object is in the center of the table.</p><p>• q 3 : object-object relations. Example prompt: Given &lt;img&gt;. Q: Is the yellow object below the blue object?. Target: A: No, the yellow object is not below the blue object.</p><p>• q 4 : plan feasibility. Example prompt: Given &lt;img&gt;. Q: Is it possible to first grasp the blue object, then place it on the yellow object, and then grasp the yellow object?. Target: A: No, this is not possible.</p><p>as well as the two planning tasks</p><p>• p 1 : grasping. Example prompt: Given &lt;img&gt;. Q: How to grasp the green object?. Target: A: First grasp the orange object and place it on the table, then grasp the green object.</p><p>• p 2 : stacking. Example prompt: Given &lt;img&gt;. Q: How to stack the white object on top of the red object?. Target: A: First grasp the green object and place it on the table, then grasp the white object and place it on the red object.</p><p>For the object-centric version with entity referrals, all prompts contain the prefix &lt;prefix&gt; = Obj 1 is &lt;obj 1 &gt;. . . . Obj j is &lt;obj j &gt;., and the VQA task q 1 is about the color of an object. The other tasks (except with the different prefix, and entity referrals), remain the same.</p><p>We utilize the planner from <ref type="bibr" target="#b14">Driess et al. (2020)</ref> to generate the dataset for the planning tasks. The low-level policies are also obtained with the method of <ref type="bibr" target="#b14">Driess et al. (2020)</ref>.</p><p>φ LLM pre-trained q 1 q 2 q 3 q 4 p 1 p 2 3 -5 objects SayCan (w/ oracle affordances) ----38.7 33.3 state 100.0 99.3 98.5 99.8 97.2 95.5 state (unfrozen) 100.0 98.8 100.0 97.6 97.7 95.3 state 100.0 98.4 99.7 98.5 97.6 96.0 state (w/o entity referrals) 100.0 98.8 97.5 98.1 94.6 90.3 ViT + TL (obj. centric) 99.6 98.7 98.4 96.8 9.2 94.5 ViT + TL (global) -60.7 90.8 94.3 70.7 69.2 ViT-4B (global) -98.2 99.4 99.0 96.0 93.4 ViT-4B generalist -97.1 100.0 98.9 97.5 95.2 OSRT 99.6 99.1 100.0 98.8 98.1 95.7 6 objects state 20.4 39.2 71.4 85.2 56.5 34.3 state 100.0 98.5 94.0 89.3 95.3 81.4 state (w/o entity referrals) 77.7 83.7 93.6 91.0 81.2 57.1 8 objects state 18.4 27.1 38.1 87.5 24.6 6.7 state 100.0 98.3 95.3 89.8 91.3 89.3 state (w/o entity referrals) 60.0 67.1 94.1 81.2 49.3 49.3 6 objects + OOD tasks state (8B LLM) -0 0 72.0 0 0 state (8B LLM) -49.3 89.8 68.5 28.2 15.7 state (62B LLM) -48.7 92.5 88.1 40.0 30.0</p><p>Table <ref type="table">7</ref>: Success rates on TAMP environment for different input representations. 3-5 objects in the scene correspond to the training distribution. OOD tasks means out-of-distribution tasks where the objects are referenced by color, although in the trainig data they have been referenced by their special tokens objj in the object-centric case. The SayCan baseline <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref> utilizes oracle, one-step affordance functions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Interactive Language Table</head><p>We use the Language-Table real-world tabletop setup and simulated environment from Interactive Language <ref type="bibr" target="#b38">(Lynch et al., 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data collection.</head><p>For each task, given the long horizon instruction, we prompt a labeler to enter a short horizon command every 4 seconds. We pass the short horizon instructions to an Interactive Language policy trained using the same procedure as in <ref type="bibr" target="#b38">Lynch et al. (2022)</ref>. The policy executes 40 steps (10Hz for 4 seconds) before requiring another command from the labeler. This is repeated until the labeler determines the long horizon instruction is complete and issues a 'done' instruction. The data collection procedure for the real world experiments are the same as in simulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Train and Evaluation.</head><p>To train the finetuned versions of these models, we train a pretrained PaLM-E model for 9,000 additional steps, in order to support a data complexity sweep without training several separate models from scratch on slightly different versions of the full mixture. For Tasks 2 and 3 in simulation, we implement an automated reward to measure the success rate, and we evaluate PaLM-E by running 80 rollouts for each task.</p><p>Given the current image and high level task, PaLM-E issues a text instruction which a trained low-level policy executes for 4 seconds before PaLM-E issues a new text instruction. For Task 1, we use a test-set and report validation accuracy. This is because the task only requires one step to solve, despite being a complicated visual and linguistic processing task and cannot be solved by the low-level policy from the prompt alone. C. Natural Language Generation and Understanding Results PaLM-8B PaLM-E-12B PaLM-62B PaLM-E-84B PaLM-540B PaLM-E-562B Category 1-shot evals (unfrozen) (unfrozen) (unfrozen) TriviaQA (wiki) (EM) 48.5 10.1 72.7 31.8 81.4 74.6 NLG Natural Questions (EM) 10.6 1.6 23.1 7.6 29.3 27.2 NLG WebQuestions (EM) 12.6 3.4 19.8 7.9 22.6 21.8 NLG Lambada 57.8 1.4 75.5 26.1 81.8 83.3 NLG HellaSwag 68.2 48.4 79.7 75.3 83.6 83.5 NLU StoryCloze 78.7 68.7 83.8 83.9 86.1 86.3 NLU Winograd 82.4 71.8 85.3 86.4 87.5 89.0 NLU Winogrande 68.3 55.3 76.8 72.5 83.7 83.0 NLU RACE-M 57.7 43.2 64.1 57.4 69.3 70.3 NLU RACE-H 41.6 33.2 48.7 42.3 52.1 52.8 NLU PIQA 76.1 68.1 80.9 78.2 83.9 84.9 NLU ARC-e 71.3 53.4 78.9 71.4 85.0 86.3 NLU ARC-c 42.3 30.9 51.8 46.7 60.1 62.6 NLU OpenBookQA 47.4 41.4 51.2 51.6 53.6 55.8 NLU BoolQ 64.7 61.6 83.1 81.6 88.7 89.4 NLU Copa 82.0 77.0 93.0 91.0 91.0 93.0 NLU RTE 57.8 54.9 71.5 59.6 78.7 75.1 NLU Wic 50.6 50.0 48.6 50.2 63.2 64.1 NLU WSC 81.4 68.4 84.9 75.8 86.3 85.6 NLU ReCoRD 87.8 71.2 91.0 78.5 92.8 92.5 NLU CB 41.1 37.5 55.4 73.2 83.9 80.3 NLU Avg NLU 64.7 55.0 72.3 69.2 78.2 78.5 Avg NLG 32.4 4.1 47.8 18.4 53.8 51.7 NLU delta (%, relative) -15.0% -4.3% +0.4% NLG delta (%, relative) -87.3% -61.6% -3.8%</p><p>Table <ref type="table">8</ref>: Full language evaluation task results on both NLU and NLG tasks, for both the original PaLM models and for associated PaLM-E (unfrozen) models. The PaLM-E models with a frozen LLM have the same performance as their corresponding underlying PaLM models.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Photo 1 :</head><label>1</label><figDesc>Photo 1: &lt;img1&gt;. Photo 2: &lt;img2&gt;. Q: What is in Photo 1 but NOT in Photo 2? A: sunglasses. Photo 1: &lt;img1&gt;. Photo 2: &lt;img2&gt;. Q: What is in Photo 1 but NOT in Photo 2? A: Let's think step by step and explain. Photo 1 has sunglasses on top of folded clothes. Photo 2 does not have sunglasses on top of folded clothes. Therefore, sunglasses are in Photo 1 but not in Photo 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Overview of transfer learning demonstrated by PaLM-E: across three different robotics domains, using PaLM and ViT pretraining together with the full mixture of robotics and general visual-language data provides a significant performance increase compared to only training on the respective in-domain data. See Tab. 1, Fig. 4, Tab. 2, Tab. 4 for additional data in each domain.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Planning success results in the TAMP environment (1% data) for PaLM-E-12B, comparing of the effects of PaLM-E models (i) using the full training mixture, (ii) pre-training (ViT and PaLM), and (iii) freezing or finetuning the language model.Transfer from full mixture is particularly effective. Note that full mixture contains only 1% of the training data (320 examples each) for the tasks evaluated here. Shown is the mean of tasks p 1 , p 2 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: A single PaLM-E model directs the low-level policies of two real robots. Shown is a long-horizon mobile manipulation task in a kitchen, and one-shot / zero-shot generalization with a tabletop manipulation robot.</figDesc><graphic coords="8,463.05,229.76,165.29,101.44" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Results on general language tasks (NLG = natural language generation): increasing scale leads to less catastrophic forgetting between a corresponding PaLM-E model and its inherited PaLM model. See full suite of tasks and results in Tab. 8.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: PaLM-E interactively guides a real robot through long-horizon manipulation tasks on Language-Table, while remaining robust to adversarial disturbances. We find evidence that PaLM-E is capable of one-shot and zero shot generalization.</figDesc><graphic coords="14,244.70,450.48,172.41,96.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Two TAMP environment test examples. Left with 6 objects (training data contains 3-5 objects), right with 4 objects.</figDesc><graphic coords="15,183.81,273.33,113.37,91.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 )</head><label>2</label><figDesc>SayCan Affordances (Table4)</figDesc><table><row><cell>Different models for different robots,</cell><cell>One model for all robots</cell></row><row><cell>trained from scratch</cell><cell>with ViT + PaLM pre-training</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Comparison of different input representations on TAMP environment (in terms of success rates), where data from TAMP constitutes only 1% (i.e., 320 samples for p 1 , p 2 each) of total training data size. PaLM-E outperforms both PaLI and SayCan on embodied VQA and planning tasks. Cross-domain transfer is observed, since the PaLM-E with ViT-4B trained on our full data mixture improves planning performance. OSRT, despite using no large-scale data, provides the most effective input encodings for learning. (GT) means ground-truth object-centric information provided. In all experiments, the LLM is frozen. The non-object centric ViT-4B variant utilizes color to reference objects, hence q 1 cannot be evaluated here. The LLM is frozen in these experiments (except for the case where it is not pre-trained). Sec. B.1 describes the tasks q 1 -q 4 , p 1 , q 2 .</figDesc><table><row><cell>Object-</cell><cell>LLM</cell><cell cols="2">Embodied VQA</cell><cell>Planning</cell></row><row><cell cols="5">centric q ViT + TL pre-train q 1 q 2 q 3 (GT) 34.7 54.6 74.6 91.6 24.0 14.7</cell></row><row><cell>ViT-4B single robot</cell><cell cols="4">-45.9 78.4 92.2 30.6 32.9</cell></row><row><cell>ViT-4B full mixture</cell><cell cols="4">-70.7 93.4 92.1 74.1 74.6</cell></row><row><cell>OSRT (no VQA)</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-71.9 75.1</cell></row><row><cell>OSRT</cell><cell cols="4">99.7 98.2 100.0 93.7 82.5 76.2</cell></row><row><cell cols="5">Affordance prediction. We investigate PaLM-E's perfor-</cell></row><row><cell cols="5">mance at affordance prediction, i.e. whether a skill of the</cell></row><row><cell cols="5">low-level policy can be executed in the current environment.</cell></row><row><cell cols="5">This can be formulated as the VQA problem Given &lt;img&gt;.</cell></row></table><note><p>4 p 1 p 2 SayCan (oracle afford.) (Ahn et al., 2022) ----38.7 33.3 PaLI (zero-shot) (Chen et al., 2022) -0.0 0.0 ---PaLM-E (ours) w/ input enc: State (GT) 99.4 89.8 90.3 88.3 45.0 46.1 State (GT) 100.0 96.3 95.1 93.1 55.9 49.7</p><p>Q: Is it possible to &lt;skill&gt; here?.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Mobile manipulation environment: failure detection and affordance prediction (F1 score).</figDesc><table><row><cell></cell><cell cols="2">VQAv2</cell><cell>OK-VQA</cell><cell>COCO</cell></row><row><cell>Model</cell><cell cols="2">test-dev test-std</cell><cell>val</cell><cell>Karpathy test</cell></row><row><cell>Generalist (one model)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>PaLM-E-12B</cell><cell>76.2</cell><cell>-</cell><cell>55.5</cell><cell>135.0</cell></row><row><cell>PaLM-E-562B</cell><cell>80.0</cell><cell>-</cell><cell>66.1</cell><cell>138.7</cell></row><row><cell>Task-specific finetuned models</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Flamingo (Alayrac et al., 2022) 82.0</cell><cell>82.1</cell><cell>57.8 †</cell><cell>138.1</cell></row><row><cell>PaLI (Chen et al., 2022)</cell><cell>84.3</cell><cell>84.3</cell><cell>64.5</cell><cell>149.1</cell></row><row><cell>PaLM-E-12B</cell><cell>77.7</cell><cell>77.9</cell><cell>60.1</cell><cell>136.0</cell></row><row><cell>PaLM-E-66B</cell><cell>-</cell><cell>-</cell><cell>62.9</cell><cell>-</cell></row><row><cell>PaLM-E-84B</cell><cell>80.5</cell><cell>-</cell><cell>63.3</cell><cell>138.0</cell></row><row><cell cols="2">Generalist (one model), with frozen LLM</cell><cell></cell><cell></cell><cell></cell></row><row><cell>(Tsimpoukelli et al., 2021)</cell><cell>48.4</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>PaLM-E-12B frozen</cell><cell>70.3</cell><cell>-</cell><cell>51.5</cell><cell>128.0</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>The authors would like to thank, for their advice, help and support: <rs type="person">Xi Chen</rs>, <rs type="person">Etienne Pot</rs>, <rs type="person">Sebastian Goodman</rs>, <rs type="person">Maria Attarian</rs>, <rs type="person">Ted Xiao</rs>, <rs type="person">Keerthana Gopalakrishnan</rs>, <rs type="person">Kehang Han</rs>, <rs type="person">Henryk Michalewski</rs>, <rs type="person">Neil Houlsby</rs>, <rs type="person">Basil Mustafa</rs>, <rs type="person">Justin Gilmer</rs>, <rs type="person">Yonghui Wu</rs>, <rs type="person">Erica Moreira</rs>, <rs type="person">Victor Gomes</rs>, <rs type="person">Tom Duerig</rs>, <rs type="person">Henning Meyer</rs>, and <rs type="person">Kendra Byrne</rs>.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Additional Data for Affordance and Success Detection</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Precision</head><p>Recall F1-score PaLI (Zero-shot) <ref type="bibr" target="#b9">(Chen et al., 2022)</ref> 0.59 0.98 0.73 CLIP-FT <ref type="bibr" target="#b60">(Xiao et al., 2022)</ref> 0.50 0.95 0.65 CLIP-FT-hindsight <ref type="bibr" target="#b60">(Xiao et al., 2022)</ref> 1 Table 10: Mobile manipulation environment: affordance prediction, showing individual precision and recall scores.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Image Attribution</head><p>The image of the New York Knicks and Boston Celtics in Figure <ref type="figure">2</ref> is under the terms CC-by-2.0 (<ref type="url" target="https://creativecommons.org/licenses/by/2.0/">https://  creativecommons.org/licenses/by/2.0/</ref>), and was posted to Flickr by kowarski at <ref type="url" target="https://www.flickr.com/photos/27728232@N00/8666371367">https://www.flickr.  com/photos/27728232@N00/8666371367</ref>. The egocentric video images are from <ref type="url" target="https://youtu.be/-UXKmqBPk1w">https://youtu.be/  -UXKmqBPk1w</ref>, as in <ref type="bibr" target="#b63">(Zeng et al., 2022)</ref>, via permission from creator Cody Wanner.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 9 :</head><label>9</label><figDesc>Mobile manipulation environment: failure detection, showing individual precision and recall scores.</figDesc><table><row><cell>.0</cell><cell>0.80</cell><cell>0.89</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Flamingo: a visual language model for few-shot learning</title>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reynolds</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.14198</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">On the opportunities and risks of foundation models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Hudson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Adeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Von Arx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brunskill</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07258</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Rt-1: Robotics transformer for real-world control at scale</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.06817</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">All you may need for vqa are image captions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Changpinyo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kukliansky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Szpektor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2205.01883" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Pix2seq: A language modeling framework for object detection</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Fleet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.10852</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Microsoft COCO captions: Data collection and evaluation server</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+		<idno>CoRR, abs/1504.00325</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Changpinyo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piergiovanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Padlewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Salz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grycner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mustafa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Beyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.06794</idno>
+		<title level="m">A jointly-scaled multilingual language-image model</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Scaling vision transformers to 22 billion parameters</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Djolonga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mustafa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Padlewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Heek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gilmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Geirhos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Alabdulmohsin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.05442</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<title level="m">Pre-training of deep bidirectional transformers for language understanding</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">An image is worth 16x16 words: Transformers for image recognition at scale</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gelly</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.11929</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Deep visual reasoning: Learning to predict action sequences for task and motion planning from an initial scene image</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-S</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Toussaint</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of Robotics: Science and Systems (R:SS)</title>
+		<meeting>of Robotics: Science and Systems (R:SS)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Vision-language pre-training: Basics, recent advances, and future trends</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Computer Graphics and Vision</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="163" to="352" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Improving alignment of dialogue agents via targeted human judgements</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mcaleese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Trebacz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aslanides</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Firoiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ewalds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rauh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weidinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chadwick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Thacker</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.14375</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Making the V in VQA matter: Elevating the role of image understanding in Visual Question Answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Summers-Stay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">P.-L</forename><surname>Guhur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tapaswi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Laptev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schmid</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.04899</idno>
+		<title level="m">Instruction-driven history-aware policies for robotic manipulations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Language models are general-purpose interfaces</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.06336</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Scaling up vision-language pre-training for image captioning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="17980" to="17989" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Visual language maps for robot navigation</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Burgard</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.05714</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.07207</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Bc-z: Zero-shot task generalization with robotic imitation learning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khansari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kappler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="991" to="1002" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vima</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03094</idno>
+		<title level="m">General robot manipulation with multimodal prompts</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Scalable deep reinforcement learning for vision-based robotic manipulation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Quillen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Holly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="651" to="673" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">The power of scale for parameter-efficient prompt tuning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Constant</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08691</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Solving quantitative reasoning problems with language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ramasesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Slone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Schlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gutman-Solo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.14858</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yatskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Visualbert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.03557</idno>
+		<title level="m">A simple and performant baseline for vision and language</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Transformer-based optical character recognition with pre-trained models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Florencio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Trocr</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.10282</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Akyurek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.01771</idno>
+		<title level="m">Pre-trained language models for interactive decision-making</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07753</idno>
+		<title level="m">Code as policies: Language model programs for embodied control</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Object-centric learning with slot attention</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Locatello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mahendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kipf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="11525" to="11538" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Pretraining task-agnostic visiolinguistic representations for vision-and-language tasks. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vilbert</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.05247</idno>
+		<title level="m">Pretrained transformers as universal computation engines</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Language conditioned imitation learning over unstructured data</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.07648</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Betker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.06407</idno>
+		<title level="m">Interactive language: Talking to robots in real time</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Okvqa: A visual question answering benchmark requiring external knowledge</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Marino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rastegari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Learning language-conditioned robot behavior from offline data and crowd-sourced annotation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1303" to="1315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Do embodied agents dream of pixelated sheep?</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Nottingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fox</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12050</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Embodied decision making using language guided world modelling</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Pre-training image-language transformers for open-vocabulary tasks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piergiovanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Angelova</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baksys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.01344</idno>
+		<title level="m">Formal mathematics statement curriculum learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zolna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Barth-Maron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sulsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Springenberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.06175</idno>
+		<title level="m">A generalist agent</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piergiovanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arnab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Angelova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tokenlearner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.11297</idno>
+		<title level="m">What can 8 learned tokens do for images and videos? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Object Scene Representation Transformer</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S M</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mahendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Van Steenkiste</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pavetić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lučić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Guibas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kipf</surname></persName>
+		</author>
+		<ptr target="https://osrt-paper.github.io/" />
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Scene representation transformer: Geometry-free novel view synthesis through set-latent scene representations</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S M</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Pot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Bergmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Radwan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lučić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="6229" to="6238" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Osinski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lmnav</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.04429</idno>
+		<title level="m">Robotic navigation with large pre-trained models of language, vision, and action</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Conceptual captions: A cleaned, hypernymed, image alt-text dataset for automatic image captioning</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ACL</title>
+		<meeting>ACL</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Skill induction and planning with latent language</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.01517</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Cliport: What and where pathways for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="894" to="906" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perceiver-Actor</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.05451</idno>
+		<title level="m">A multi-task transformer for robotic manipulation</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Lancon-learn: Learning with language to enable generalization in multi-task manipulation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Moorman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zaidi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gopalan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gombolay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1635" to="1642" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Prog-Prompt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+		<title level="m">Generating situated robot task plans using large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Robots that use language</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gopalan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kress-Gazit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Matuszek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Robotics, and Autonomous Systems</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="25" to="55" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Annual Review of Control</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-T</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Multimodal few-shot learning with frozen language models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tsimpoukelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Eslami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hill</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="200" to="212" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01560</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Robotic skill acquisition via instruction augmentation with visionlanguage models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.11736</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kembhavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Piglet</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.00188</idno>
+		<title level="m">Language grounding through neuro-symbolic interaction in a 3d world</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Multimodal neural script knowledge models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Merlot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="23634" to="23651" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Socratic models: Composing zeroshot multimodal reasoning with language</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.00598</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Hierarchical task learning from language instructions with unified transformers and selfmonitoring</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.03427</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Unified vision-language pre-training for image captioning and vqa</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
