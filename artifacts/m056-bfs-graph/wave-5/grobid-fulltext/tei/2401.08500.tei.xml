@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Code Generation with AlphaCodium: From Prompt Engineering to Flow Engineering</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-01-16">16 Jan 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tal</forename><surname>Ridnik</surname></persName>
+							<email>tal.r@codium.ai</email>
+						</author>
+						<author>
+							<persName><forename type="first">Dedy</forename><surname>Kredo</surname></persName>
+							<email>dedy.k@codium.ai</email>
+						</author>
+						<author>
+							<persName><forename type="first">Itamar</forename><surname>Friedman</surname></persName>
+							<email>itamar.f@codium.ai</email>
+						</author>
+						<title level="a" type="main">Code Generation with AlphaCodium: From Prompt Engineering to Flow Engineering</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-01-16">16 Jan 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">DAB7C4EE2E03128F69D934F6112FE14C</idno>
+					<idno type="arXiv">arXiv:2401.08500v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code generation problems differ from common natural language problems -they require matching the exact syntax of the target language, identifying happy paths and edge cases, paying attention to numerous small details in the problem spec, and addressing other code-specific issues and requirements. Hence, many of the optimizations and tricks that have been successful in natural language generation may not be effective for code tasks. In this work, we propose a new approach to code generation by LLMs, which we call AlphaCodium -a test-based, multistage, code-oriented iterative flow, that improves the performances of LLMs on code problems. We tested AlphaCodium on a challenging code generation dataset called CodeContests, which includes competitive programming problems from platforms such as Codeforces. The proposed flow consistently and significantly improves results. On the validation set, for example, GPT-4 accuracy (pass@5) increased from 19% with a single well-designed direct prompt to 44% with the AlphaCodium flow. Many of the principles and best practices acquired in this work, we believe, are broadly applicable to general code generation tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>With a sparse reward signal, code generation tasks require searching in the huge structured space of possible programs. Correct solutions to the same problem can look significantly different, and judging if a partial or incorrect solution is useful is a difficult challenge -a single-character edit can completely alter the solution's behavior. Due to the unique nature of code generation tasks, common prompting techniques that have been optimized for natural language tasks <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b9">10]</ref>, may not be as effective when applied to code generation.</p><p>Recent large-scale transformer-based language mod-els <ref type="bibr" target="#b11">[12]</ref> have successfully generated code that solves simple programming tasks <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b0">1]</ref>. However, real-world code problems are often different in nature -they are more nuanced, and can be defined by a long natural language task description (i.e., spec), that contains multiple details and rules that the solution code must address. The introduction of CodeContests <ref type="bibr" target="#b7">[8]</ref>, a dataset curated from competitive programming platforms such as Codeforces <ref type="bibr" target="#b8">[9]</ref>, enabled the evaluation of models and flows on more challenging code problems, which usually include a lengthy problem description. A private test set, with more than 200 unseen tests per problem, enables to evaluate the generated code comprehensively, and to reduce false positive rates to a minimum.</p><p>The primary work addressing the CodeContests dataset was AlphaCode <ref type="bibr" target="#b7">[8]</ref>, a code generation system developed by DeepMind, that utilizes a fine-tuned network specifically for competitive programming tasks. AlphaCode generates a very large number of possible solutions (up to 1M), that are then processed and clustered, and among them a small number (∼ 10) is chosen and submitted. While the results of AlphaCode are impressive, the need to fine-tune a model specifically for code-oriented tasks, and the heavy computational brute-force-like load, makes it impractical for most real-life usages. CodeChain <ref type="bibr" target="#b6">[7]</ref> is another work to tackle competitive programming tasks, which introduced a novel inference framework to improve code generation in LLMs through a chain of sub-module-based self-revisions.</p><p>In this paper, we present AlphaCodium, a code-oriented flow that revolves around an iterative process where we repeatedly run and fix a generated code against input-output tests. Two key elements for AlphaCodium flow are (a) generating additional data, such as problem reflection and test reasoning, to aid the iterative process, and (b) enrichment of public tests with additional AI-generated tests. The proposed flow, which is depicted in Figure <ref type="figure" target="#fig_1">1</ref>, is divided into two main phases: a pre-processing phase where we reason about the problem in natural language, and an iterative code generation phase where we generate, run, and fix a code solution against public and AI-generated tests.  Iterating on public tests stabilizes and improves the solution but leaves "blind spots" because the public tests are not comprehensive. The full AlphaCodium flow, which includes a pre-processing phase as well as iterations on public and AI-generated tests, allows the solution to be further improved, leading to increased solve ratio.</p><p>A key observation when designing AlphaCodium flow is that generating additional useful tests is easier than generating a correct code solution. Adding specific tests requires mainly understanding the problem, some insight, and basic brute-force or logical reasoning. There is no need to fully "solve" the problem when generating additional tests.</p><p>AlphaCodium flow also utilizes novel code-oriented design concepts, tricks, and best practices, such as: (1) YAML structured output; <ref type="bibr" target="#b1">(2)</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>bullet point analysis to encourage semantic reasoning; (3) generating modular code; (4) soft decisions with double validation; (5) encouraging exploration and postponing direct decisions; (6) test anchors.</head><p>AlphaCodium's flow, when compared against a well-designed single prompt, consistently and significantly improves the performance of LLMs on CodeContests problems. This is true both for open-source models (DeepSeek <ref type="bibr" target="#b2">[3]</ref>) and closed-source models (GPT <ref type="bibr" target="#b4">[5]</ref>). For GPT-4 on the validation set, for example, the pass@5 accuracy improved from 19% to 44%. AlphaCodium also outperforms previous works, while having a significantly smaller computational budget -it achieves superior results over AlphaCode, for example, with four orders of magnitude fewer LLM calls.</p><p>We believe many of the principles and best practices used in this work broadly apply to general code generation tasks. In addition, we argue that utilizing harder and more complicated benchmarks like CodeContests dataset will allow the community to better evaluate LLMs, compared to more simplistic benchmarks, which are common today, like HumanEval <ref type="bibr" target="#b1">[2]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">CodeContests Dataset</head><p>CodeContests <ref type="bibr" target="#b7">[8]</ref> is a challenging code generation dataset introduced by Google's DeepMind, involving problems curated from competitive programming platforms such as Codeforces <ref type="bibr" target="#b8">[9]</ref>. The dataset contains 10K code problems that can be used to train LLMs, as well as a validation and test set to assess the ability of LLMs to solve challenging code problems.</p><p>In this work, instead of training a dedicated model, we focused on developing a code-oriented flow, that can be applied to any LLM pre-trained to support coding tasks, such as GPT <ref type="bibr" target="#b4">[5]</ref> or DeepSeek <ref type="bibr" target="#b2">[3]</ref>. Hence, we chose to ignore the train set, and focused on the validation and test sets of CodeContests, which contain 107 and 165 problems, respectively. Figure <ref type="figure">2</ref>(a) depicts an example of a typical problem from CodeContests dataset. Each problem consists of a description and public tests, available as inputs to the model. The goal is to generate a code solution that produces the correct output for any (legal) input. A private test set, which is not available to the model or contesters, is used to evaluate the submitted code solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>What makes CodeContests a good dataset for evaluating LLMs on code generation tasks:</head><p>1) CodeContests, unlike many other competitive programming datasets <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b1">2]</ref>, utilizes a comprehensive private set of tests to avoid false positives -each problem contains ∼200 private input-output tests the generated code solution must pass.</p><p>2) LLMs generally do not excel at paying attention to small details, because they typically transform the problem description to some "average" description, similar to common cases on which they were trained. Real-world code problems, on the other hand, frequently contain minor details that are critical to their proper resolution. A key feature of the CodeContests dataset is that the problem descriptions are, by design, complicated and lengthy, with small details and nuances (see a typical description in Figure <ref type="figure">2(a)</ref>). We feel that adding this degree of freedom of problem understanding is beneficial since it simulates real-life problems, which are often complicated and involve multiple factors and considerations. This is in contrast to more common code datasets such as HumanEval <ref type="bibr" target="#b1">[2]</ref>, where the problems are easier, and presented in a concise manner. An example of a typical HumanEval problem appears in appendix A.</p><p>Figure <ref type="figure">2</ref>(b) depicts the model's introspection on the problem presented in Figure <ref type="figure">2(a</ref>). Note that proper selfreflection makes the problem clearer and more coherent. This illustrates the importance of problem understanding as part of a flow that can lead, with high probability, to generating a correct code solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">The Proposed Flow</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Overview</head><p>Due to the complicated nature of code generation problems, we observed that single-prompt optimizations, or even chain-of-thought prompts, have not led to meaningful improvement in the accuracy of LLMs on CodeContests. The model struggles to understand and comprehend the problem, and continuously produces wrong code, or a code that passed public tests but fails to generalize to unseen private tests. Common flows, that are suitable for natural language tasks, may not be optimal for code-generation tasks, which include an untapped potential -repeatedly running the generated code, and validating it against known examples.</p><p>Instead of common prompt engineering techniques used in NLP, we found that to solve CodeContest problems it was more beneficial to employ a dedicated code-generation and testing-oriented flow, that revolves around an iterative process where we repeatedly run and fix the generated code against input-output tests (see Figure <ref type="figure">2(a)</ref> for examples of such tests). Two key elements for this code-oriented flow are (a) generating additional data in a pre-processing stage, such as self-reflection and public tests reasoning, to aid the iterative process, and (b) enrichment of the public tests with additional AI-generated tests.</p><p>In Figure <ref type="figure" target="#fig_1">1</ref>(a) we present AlphaCodium flow for solving competitive programming problems. The flow is divided into two main phases:</p><p>• The pre-processing phase represents a linear flow</p><p>where AlphaCodium reasons about the problem, in natural language,</p><p>• The code iterations phase includes iterative stages where AlphaCodium generates, runs, and fixes a solution code against certain tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Flow stages</head><p>In this section, we will review the different stages used in AlphaCodium flow (Figure <ref type="figure" target="#fig_1">1(a)</ref>):</p><p>Problem reflection Describe the problem, in bullet points, while addressing the problem goal, inputs, outputs, rules, constraints, and other relevant details that appear in the problem description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Mr.</head><p>Chanek's city can be represented as a plane. He wants to build a housing complex in the city. There are some telephone poles on the plane, which is represented by a grid a of size (n + 1) × (m + 1). There is a telephone pole at (x, y) if a_{x, y} = 1.For each point (x, y), define S(x, y) as the square of the Euclidean distance between the nearest pole and (x, y). Formally, the square of the Euclidean distance between two points (x_1, y_1) and (x_2, y_2) is (x_2 -x_1)^2 + (y_2 -y_1)^2. To optimize the building plan, the project supervisor asks you the sum of all S(x, y) for each 0 ≤ x ≤ n and 0 ≤ y ≤ m. Help him by finding the value of ∑_{x=0}^{n} {∑_{y=0}^{m} {S(x, y)}}. ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problem Description</head><p>Input: 2 2 101 000 000 Output: 18 ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Public Tests</head><p>Input: 5 4 10010 00000 01000 00001 00100 00010 Output: 36 ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Private Tests</head><p>(a) A typical CodeContests problem.</p><p>-The problem is about a city represented as a plane with a grid of size (n + 1) x (m + 1) where some points have telephone poles.</p><p>-The task is to calculate the sum of the squares of the Euclidean distances from each point in the grid to its nearest telephone pole.</p><p>-The grid is represented by a matrix where 1 indicates the presence of a telephone pole and 0 indicates its absence.</p><p>-The input consists of the size of the grid (n, m) and the grid itself.</p><p>-The output is a single integer, the sum of the squares of the Euclidean distances from each point to its nearest telephone pole.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-reflection on the problem (b) An AI-generated self-reflection on the problem.</head><p>Figure <ref type="figure">2</ref>: Problem description and reflection -an example of a typical CodeContests problem, with AI-generated selfreflection on the problem. While the original description is lengthy and complicated, proper self-reflection makes the problem clearer and more coherent, leading to improved code solutions.</p><p>Public tests reasoning Explain why each test input leads to the output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generate possible solutions</head><p>Generate a list of 2-3 possible solutions to the problem, described in natural language.</p><p>Rank solutions Rank the possible solutions and choose the "best solution", in terms of correctness, simplicity, and robustness. (not necessarily take the "most efficient" solution).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generate additional AI tests</head><p>Generate an additional 6-8 diverse input-output tests for the problem. Try to cover cases and aspects not covered by the original public tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial code solution</head><p>The goal of this stage is to generate an initial code solution to the problem. It is essential that this code will reasonably "close" to the correct code, so the run-fix iterations in the next stages will have a better chance of succeeding. The stage flow:</p><p>• Choose a potential solution. Generate a corresponding code, and run it on selected public and AI tests.</p><p>• Repeat this process until the tests pass, or until a trylimit is reached.</p><p>• The first code that passes the tests, or the code with the closest output (see appendix D), will be used as the base code for the next steps.</p><p>Iterate on public tests Start from the base code. Iteratively run it on the public tests. If the code fails on a specific test, try to fix it, given the error message.</p><p>Iterate on AI-generated Tests Continue the run-fix iterations on the AI-generated tests. Use "test anchors" (see section 4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Additional insights</head><p>In this section, we will offer additional insights and share intuitions about the proposed flow.</p><p>Firstly, the flow relies on knowledge accumulation -trying to progress from easy to hard, gaining knowledge and insight along the way to help with the more difficult stages. For example, the output of the first step, problem reflection, can be utilized as prompt input to more difficult steps like generate possible solutions. The pre-processing phase's outputs are used to aid the most challenging and critical phase, code iterations, where we try to generate code that correctly solves the problem.</p><p>Another key observation in designing AlphaCodium is that for AI, generating more tests is easier than generating a full solution code. Generating additional tests requires mainly understanding the problem and basic brute-force or logical reasoning. There is no need to fully "solve" the problem in order to generate additional useful input-output test pairs. This is in contrast to generating a correct solution code, which requires a complete algorithmic solution, equivalent to correctly solving any possible pair of inputoutput tests. As a result, we can generate more AI tests, and then leverage them to improve the code creation phase, as described in Figure <ref type="figure" target="#fig_1">1(b)</ref>. We further amplify the contribution of these additional tests by asking the model to focus on aspects not addressed by the original public tests, such as large inputs, edge cases, and so on.</p><p>Also note that some steps can be combined into a single LLM call, and the flow in Figure <ref type="figure">2</ref>(a) is a conceptual flow, emphasizing the process's high-level steps. In practice, structured output (see section 4) enables to combine multiple stages into a single LLM call, in order to save resources, or because a model performs better when doing specific tasks concurrently.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Code-Oriented Design Concepts</head><p>In this section we will present additional design concepts, tricks, and best practices we found beneficial when trying to solve code generation problems. AlphaCodium flow proposed in Figure <ref type="figure" target="#fig_1">1</ref> extensively uses these design concepts.</p><p>YAML Structured output: the usage of structured output -asking the model to generate an output in YAML format, equivalent to a given Pydantic class -is a key component in our proposed flow. An example of such instruction (possible solutions stage) appears in Figure <ref type="figure">3</ref>.</p><p>Structured output eliminates the majority of the hassle and dark knowledge required for "prompt engineering" and instead allows complicated tasks to be presented in a straightforward, code-like manner. It also makes it possible to obtain complex answers that involve several stages, representing a logical and methodical thinking process.</p><p>While newer versions of GPT models <ref type="bibr" target="#b4">[5]</ref> have built-in support for JSON-style output, we argue that YAML output is far more suitable specifically for code generation tasks, see appendix B.</p><p>Semantic reasoning via bullet points analysis: when asking an LLM to reason about an issue, better results are obtained when demanding the output to be in bullet points format. Bullet points encourage an in-depth understanding of the problem, and force the model to divide the output into logical semantic sections, leading to improved results. For example, with self-reflection on a problem in bullet points (Figure <ref type="figure">2 (b)</ref>), each bullet point represents a semantic understanding of a different part of the problem -general description, goals and rules, input structure, and output structure.</p><p>LLMs do better when generating a modular code: when LLMs are asked to generate a single lengthy function, we observed poor results -the code often contains bugs or logical mistakes. Even worse, a single monolithic code hurts the ability to perform iterative fixing -the model struggles to pinpoint and fix problems, even when given the error message. When clearly asking the model to: "divide the generated code into small sub-functions, with meaningful names and functionality", we observe a better-produced code, with fewer bugs, and higher success rates for the iterative fixing stages.</p><p>Soft decisions with double validation: LLMs tend to struggle with code tasks that require them to think, reason, and make strict, non-trivial decisions. Let's take for example the task of generating additional tests for a problem. Quite often, some of the tests the model generates will be plain wrong. With a double validation process, we add an extra step where, given the generated output, the model is asked to re-generate the same output, but correct it if needed. For example, given the generated AI tests as input, the model is asked to re-generate the same tests, while correcting wrong output, if exists. We found that this step of double validation, while encouraging the model to be critical and to reason, is more effective than asking a direct yes\no question: "is this test correct?" Postpone decisions, try to avoid direct questions, and leave room for exploration: when we ask the model direct questions regarding complicated issues, we consistently see hallucinations and wrong answers. To counter this, we adopt a flow of gradual data accumulation, from easier tasks to harder ones:</p><p>... Your goal is to present possible solutions to the problem. Make sure that each solution fully addresses the problem goals, rules, and constraints.</p><p>The output must be a YAML object equivalent to type $PossibleSolutions, according to the following Pydantic definitions: class Solution(BaseModel):</p><p>name: str = Field(description="The name of the solution") content: str = Field(description="A description of the solution") why_it_works: str = Field(description="Why this solution is correct. Be specific\ and detailed regarding the problem rules and goals") complexity: str = Field(description="The complexity of the solution")</p><p>class PossibleSolutions(BaseModel): possible_solutions: List[Solution] = Field(max_items=3, description="A list of\ possible solutions to the problem. Make sure each solution fully addresses the\ problem rules and goals, and has a reasonable runtime -less than three seconds\ on a modern computer, given the problem constraints for large inputs.")</p><p>Figure <ref type="figure">3</ref>: Example for a prompt with structured output (generate possible solutions stage)</p><p>• Start with the easiest tasks -self-reflection on the problem, and reasoning about public tests.</p><p>• Move to generating additional AI tests, and possible solutions to the problem</p><p>• Only after we acquire the model's answers to the tasks above, we move to actual code generation, and run-fix iterations.</p><p>As another example, instead of choosing a single algorithmic solution to the problem, we prefer to rank several possible solutions, and give priority, but not exclusiveness, to the top-ranked solution when generating initial code. Since the model can be wrong, it's better to avoid irreversible decisions, and leave room for exploration and code iterations with different possible solutions.</p><p>Test anchors: even with double validation, some AIgenerated tests will be wrong. This makes iterations on them challenging -when a test fails, how can we know if it is because the code is wrong, or because the test is wrong? When we ask the model directly "who is wrong", we often see hallucinations, and may end up with a wrongly fixed code. To tackle this problem, we utilized a technique of test anchors:</p><p>• Iterate first on the public tests, which we know are correct. When finished, set all the passed tests as anchor tests.</p><p>• Now iterate on the AI-generated tests, one by one. If a test passes, add it to the list of test anchors</p><p>• If a test fails, assume it's because the code is incorrect, and try to fix the code. However, demand that the fixed code will also pass all the test anchors already acquired. As a result, the test anchors will protect us against an incorrectly fixed code.</p><p>Another optimization for test anchors is to sort the AIgenerated tests from easy to hard. That way, there are more chances that the iterative process will acquire anchors at the beginning of the process, which can be used as protection later when iterating on the more complicated AI tests.</p><p>What did not work for us: In appendix C we present additional tricks and methods we tried, which have not led to improved results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Direct prompt vs. AlphaCodium flow</head><p>In Table <ref type="table" target="#tab_0">1</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Comparison to previous works</head><p>In Table <ref type="table" target="#tab_1">2</ref> we compare AlphaCodium results to other methods from the literature. As can be seen, when comparing AlphaCodium to CodeChain with the same model (GPT-3.5) and the same metric (pass@5), AlphaCodium consistently does better.</p><p>When comparing AlphaCodium to AlphaCode work, we need to take into account that AlphaCode uses a different generation methodology -fine-tuning an (unknown) model specifically for code problems, generating a very large number of code solutions, clustering them, and submitting K solutions from the top clusters. pass@10@100K, for example, means the 100K (!) solutions were generated and clustered, and 10 solutions were finally chosen and submitted. AlphaCode used a fine-tuned model, and utilized a bruteforce-like approach with a significantly higher number of LLM calls. Yet, the top results achieved by AlphaCodium are better Note that neither AlphaCode nor CodeChain papers <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b6">7]</ref>  ample -how to treat problems with multiple solutions, how to address tolerance issues, timeouts, and more. We compare to the numbers reported in the papers, but release a full reproducible code and evaluation script of AlphaCodium, to enable future comparisons to be more reliable and consistent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Computational effort and comparison to Al-phaCode and AlphaCode2</head><p>With AlphaCodium flow we perform ∼15-20 LLM calls per solution, so a pass@5 submission involves ∼ 100 LLM calls.</p><p>AlphaCode did not report how many LLM calls were done per run <ref type="bibr" target="#b7">[8]</ref>. Let's assume one call per run was done (unknown, could be more), then a pass@10@100K (i.e. ten submissions, curated from 100,000 generated solutions) involves 1M LLM calls, four orders of magnitude more than AlphaCodium. Yet, the top results obtained by Alpha-Codium are better.</p><p>Recently, a new work called AlphaCode2 <ref type="bibr" target="#b10">[11]</ref> was published, where a Gemini-Pro model was fine-tuned and evaluated on code programming problems. The paper also reported results on a CodeContests benchmark, but on an up-dated variant that they did not release to the public. According to AlphaCode2 report: "AlphaCode2 requires about 100 samples to reach the level of performance of AlphaCode with a million samples, making it over 10000× more sample efficient." Hence both AlphaCode2 and AlphaCodium are four orders of magnitude more efficient than Alpha-Code, LLMs call-wise. But, AlphaCode2 utilized a modern foundation model (Gemini-Pro) that was heavily fine-tuned specifically for CodeContests competition, while Alpha-Codium uses general-purpose models as-is, and improves their performances without extra data and an expensive training phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusions</head><p>In this paper, we introduced AlphaCodium, a codeoriented flow that iteratively runs and fixes a generated code against input-output tests. The flow is divided into two main phases: a pre-processing phase, where AlphaCodium reasons about the problem in natural language, and a code iterations phase, in which AlphaCodium iterates on public and AI-generated tests.</p><p>AlphaCodium also utilizes additional design concepts, tricks, and best practices we found beneficial for code generation: structured output in YAML format, generating modular code, semantic reasoning via bullet point analysis, soft decisions with double validation, encouraging exploration, and test anchors.</p><p>We tested AlphaCodium on a challenging code generation dataset called CodeContests. The proposed flow consistently and significantly improves results of various closed-source and open-source models. AlphaCodium also outperforms previous works from the literature, while having a significantly smaller computational budget.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendices</head><p>A. Typical HumanEval code problem / * Check if in given vector of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements({1.0, 2.0, 3.0}, 0.5) false &gt;&gt;&gt; has_close_elements({1.0, 2.8, 3.0, 4.0, 5.0, 2.0}, 0.3) true * / #include&lt;stdio.h&gt; #include&lt;vector&gt; #include&lt;math.h&gt; using namespace std; bool has_close_elements(vector&lt;float&gt; numbers, float threshold){ B. Why YAML output is better suited for code generation tasks than JSON output While newer GPT versions 1 have inherent support for JSON-style output, we argue that YAML output is far better for code generation. Why -generated code often contains single-quote, double-quote, special characters, and so on. LLMs will struggle to validly place these characters inside a JSON format, since a JSON output needs to be surrounded with initial double quotes (see Figure <ref type="figure" target="#fig_2">4 (a)</ref>). In contrast, YAML output with block scaler 2 must only obey indention. Any text or code with proper indention will be a legal one (see Figure <ref type="figure" target="#fig_2">4 (b)</ref>).</p><p>In addition, as can be seen in Figure <ref type="figure" target="#fig_2">4</ref>, since YAML format doesn't need curly brackets, quotations or escape characters, its output has fewer tokens than JSON, hence reducing cost and inference time, and resulting in increased quality as the model needs to pay attention to fewer tokens that are not essential. 1 <ref type="url" target="https://platform.openai.com/docs/guides/text-generation/json-mode">https://platform.openai.com/docs/guides/text-generation/json-mode</ref> 2 <ref type="url" target="https://yaml-multiline.info/">https://yaml-multiline.info/</ref> </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>-</head><figDesc>The correct solution to the problem -The solution represented by the generated code (b) Illustrating the improvement from AlphaCodium.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Illustration of AlphaCodium flow contribution -with direct prompt, the model struggles to solve code problems. Iterating on public tests stabilizes and improves the solution but leaves "blind spots" because the public tests are not comprehensive. The full AlphaCodium flow, which includes a pre-processing phase as well as iterations on public and AI-generated tests, allows the solution to be further improved, leading to increased solve ratio.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Comparison of the same output, once in JSON format, and once in YAML format. Taken from OpenAI playground.</figDesc><graphic coords="9,50.84,432.18,246.05,193.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>we compare AlphaCodium results to the results obtained with a single well-designed direct prompt. The metric being used is pass@k, defined as the percentage of problems solved by using k generated solutions per Comparison of AlphaCodium flow results to direct prompt on various models.</figDesc><table><row><cell>model</cell><cell>set</cell><cell>method</cell><cell>score</cell></row><row><cell></cell><cell></cell><cell></cell><cell>(pass@5)</cell></row><row><cell>DeepSeek</cell><cell>validation</cell><cell cols="2">Direct AlphaCodium 20% 7%</cell></row><row><cell>-33B [3]</cell><cell>test</cell><cell cols="2">Direct prompt 12% AlphaCodium 24%</cell></row><row><cell>GPT-3.5</cell><cell>validation test</cell><cell cols="2">Direct prompt 15% AlphaCodium 25% Direct prompt 8% AlphaCodium 17%</cell></row><row><cell>GPT-4</cell><cell>validation test</cell><cell cols="2">Direct prompt 19% AlphaCodium 44% Direct prompt 12% AlphaCodium 29%</cell></row><row><cell cols="4">problem. As can be seen, AlphaCodium flow consistently</cell></row><row><cell cols="4">and significantly improves the performance of LLMs on</cell></row><row><cell cols="4">CodeContests problems. This is true both for open-source</cell></row><row><cell cols="4">(DeepSeek) and close-source (GPT) models, and for both</cell></row><row><cell cols="4">the validation and test sets. For GPT-4 on the validation set,</cell></row><row><cell cols="4">for example, the pass@5 score improves from 19% to 44%</cell></row><row><cell cols="2">-x2.3 improvement.</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>released a reproducible open-source solution for Code-Contests, including end-to-end generation and evaluation scripts. There are subtleties when evaluating results. For ex-Comparison of AlphaCodium to other works from the literature.</figDesc><table><row><cell>model</cell><cell>set</cell><cell>method</cell><cell>score</cell></row><row><cell></cell><cell></cell><cell>AlphaCodium</cell><cell>25%</cell></row><row><cell></cell><cell>validation</cell><cell>(pass@5) CodeChain</cell><cell>17%</cell></row><row><cell>GPT-3.5</cell><cell></cell><cell>(pass@5) AlphaCodium</cell><cell>17%</cell></row><row><cell></cell><cell>test</cell><cell>(pass@5) CodeChain</cell><cell>14%</cell></row><row><cell></cell><cell></cell><cell>(pass@5)</cell><cell></cell></row><row><cell>GPT-4</cell><cell></cell><cell>AlphaCodium</cell><cell>44%</cell></row><row><cell></cell><cell></cell><cell>(pass@5)</cell><cell></cell></row><row><cell>AlphaCode</cell><cell>validation</cell><cell>AlphaCode (pass@10@1K) AlphaCode</cell><cell>17% 24%</cell></row><row><cell></cell><cell></cell><cell>(pass@10@100K)</cell><cell></cell></row><row><cell>GPT-4</cell><cell></cell><cell>AlphaCodium</cell><cell>29%</cell></row><row><cell></cell><cell></cell><cell>(pass@5)</cell><cell></cell></row><row><cell>AlphaCode</cell><cell>test</cell><cell>AlphaCode (pass@10@1K) AlphaCode</cell><cell>16% 28%</cell></row><row><cell></cell><cell></cell><cell>(pass@10@100K)</cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>C. What didn't work for us 1. Injecting the failed execution trace to the prompt: In addition to giving the model the error message when doing iterative fixing, we also tried giving it the trace of the last X (50) lines executed. We have not observed improvement from this.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2.</head><p>Injecting the last K failed code solutions to the prompt: When doing iterative fixing, we tried injecting the last K failed code solutions to the prompt, in order to steer the model in different directions. We have not observed improvement from this.</p><p>3. Injecting the last git patch diff to the prompt: When doing iterative fixing, we also tried to give the last applied code patch diff to the prompt. No improvement was seen.</p><p>4. Complicated single-stage prompts: we have not observed any significant improvement in results when trying to manipulate and optimize a single-stage prompt, or a chain of non-iterative prompts. The model still struggles to understand the lengthy problem description, tends to ignore specific details, and consistently produces wrong code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Estimating distance between tests' outputs</head><p>When we run a solution code against an input test, the code generates an output. We compare this output to the expected output, and end up with a boolean answer: pass or failed. However, it is also beneficial to try and estimate in some sense the distance between the generated output and the correct output. For this matter, we employed the following logic:</p><p>• If the test output is a number, calculate the L2 distance.</p><p>• If the test output is an array of numbers, calculate the sum of L2 distances between corresponding array cells.</p><p>• If the test output is an array of strings, compare each cell separately (boolean comparison), and return the number of non-identical cells.</p><p>This methodology enables us to produce a distance between each generated output and the correct output on CodeContests.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Deepseek coder: Let the code write itself</title>
+		<author>
+			<persName><surname>Deepseek</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2023. 2, 3, 7</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Chain-of-verification reduces hallucination in large language models</title>
+		<author>
+			<persName><forename type="first">Shehzaad</forename><surname>Dhuliawala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.11495</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Gpt-3: Its nature, scope, limits, and consequences. Minds and Machines</title>
+		<author>
+			<persName><forename type="first">Luciano</forename><surname>Floridi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimo</forename><surname>Chiriatti</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="page">5</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.09938</idno>
+		<title level="m">Measuring coding challenge competence with apps</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Codechain: Towards modular code generation through chain of self-revisions with representative sub-modules</title>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Gokul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08992</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">7</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page">7</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Codeforces as an educational platform for learning programming in digitalization</title>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Mirzayanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oksana</forename><surname>Pavlova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mavrin</forename><surname>Pavel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Melnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Plotnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Parfenov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Stankevich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Olympiads in Informatics</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Can generalist foundation models outcompete special-purpose tuning? case study in medicine</title>
+		<author>
+			<persName><forename type="first">Harsha</forename><surname>Nori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dean</forename><surname>Carignan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Edgar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolo</forename><surname>Fusi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Larson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishung</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.16452</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Gemini: a family of highly capable multimodal models</title>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

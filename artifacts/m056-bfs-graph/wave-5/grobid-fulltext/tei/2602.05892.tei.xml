@@ -1,0 +1,1643 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CONTEXTBENCH: A Benchmark for Context Retrieval in Coding Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-11">11 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Han</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Letian</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bohan</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rili</forename><surname>Feng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaming</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yue</forename><surname>Pan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Earl</forename><forename type="middle">T</forename><surname>Barr</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Federica</forename><surname>Sarro</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhaoyang</forename><surname>Chu</surname></persName>
+							<email>zhaoyang.chu.25@ucl.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+							<email>he.ye@ucl.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CONTEXTBENCH: A Benchmark for Context Retrieval in Coding Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-11">11 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CE027BC70701E559C3ED9E21C3CF0D99</idno>
+					<idno type="arXiv">arXiv:2602.05892v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>LLM-based coding agents have shown strong performance on automated issue resolution benchmarks, yet existing evaluations largely focus on final task success, providing limited insight into how agents retrieve and use code context during problem solving. We introduce CONTEXTBENCH, a process-oriented evaluation of context retrieval in coding agents. CONTEXTBENCH consists of 1,136 issueresolution tasks from 66 repositories across eight programming languages, each augmented with human-annotated gold contexts. We further implement an automated evaluation framework that tracks agent trajectories and measures context recall, precision, and efficiency throughout issue resolution. Using CONTEXTBENCH, we evaluate four frontier LLMs and five coding agents. Our results show that sophisticated agent scaffolding yields only marginal gains in context retrieval ("The Bitter Lesson" of coding agents), LLMs consistently favor recall over precision, and substantial gaps exist between explored and utilized context. CONTEXTBENCH augments existing end-to-end benchmarks with intermediate gold-context metrics that unbox the issue-resolution process. These contexts offer valuable intermediate signals for guiding LLM reasoning in software tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Model (LLM) coding agents, exemplified by SWE-agent <ref type="bibr" target="#b25">[26]</ref>, OpenHands <ref type="bibr" target="#b22">[23]</ref>, and Agentless <ref type="bibr" target="#b23">[24]</ref> have recently demonstrated strong proficiency in real-world software engineering tasks, including bug fixing <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b17">18]</ref>, feature implementation <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b7">8]</ref>, and interaction with terminal-based execution environments <ref type="bibr" target="#b14">[15]</ref>. These agents are autonomous systems capable of multi-step reasoning and tool use, enabling them to solve complex, repository-scale tasks in real-world development scenarios.</p><p>Limitations of Existing Benchmarks. Advancements in this area are typically assessed on benchmarks such as SWE-bench <ref type="bibr" target="#b11">[12]</ref> and SWE-bench Pro <ref type="bibr" target="#b8">[9]</ref>, which curate tasks from realworld GitHub issues and require agents to submit patches validated by test suites. However, these benchmarks prioritize end-to-end task success rates (e.g., Pass@k) and ignore how coding agents arrive at their solutions. In particular, they overlook the evaluation of context retrieved from large codebases, which underpins the agent's reasoning. Without verifying intermediate contexts, high success rates may result from trial-and-error or overfitting to specific test cases, yielding coding agents that are unreliable in practical scenarios. We therefore argue for a context-based evaluation system that opens the black box of software tasks and addresses the key question: "How do LLM agents retrieve and use critical code context when resolving software engineering tasks?" </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CONTEXTBENCH: Beyond End-to-End Benchmarking.</head><p>To address this question, we develop a semi-automated pipeline for curating Gold Contexts, defined as standard sets of repository artifacts that expert developers identify as necessary to resolve a given issue. We begin by sampling high-quality tasks from four widely used benchmarks, i.e., SWE-bench Verified <ref type="bibr" target="#b11">[12]</ref>, Multi-SWEbench <ref type="bibr" target="#b28">[29]</ref>, SWE-PolyBench PB500 <ref type="bibr" target="#b19">[20]</ref>, and SWE-bench Pro <ref type="bibr" target="#b8">[9]</ref>. After deduplication via rulebased matching and embedding-based similarity detection, we select challenging tasks based on three difficulty metrics, i.e., agent solvability; edit scope; and edit dispersion based on gold patches. For each selected task, human experts iteratively annotate and refine the required context in a human-in-the-loop process, ensuring compact and sufficient gold contexts for issue resolution.</p><p>Building on this pipeline, we introduce CONTEXTBENCH, an extensive benchmark designed to evaluate the context retrieval ability of coding agents in software engineering tasks, enabling fine-grained analysis of agent behavior beyond conventional end-to-end issue resolution metrics. CONTEXTBENCH comprises 1,136 issue resolution tasks from 66 code repositories across 8 programming languages. These tasks are annotated with 522,115 lines of human-verified gold contexts covering 23,116 classes and functions within 4,548 files. To facilitate efficient evaluation, we also identify a Lite subset of 500 tasks based on task difficulties.</p><p>We further introduce an automated evaluation framework with a systematic suite of metrics to assess how effectively LLM agents retrieve code contexts during problem solving. These metrics evaluate code context recall and precision at different stages of task resolving, complementing the final success rate. Specifically, we instrument the agent's trajectory to record all code regions it inspects. We then utilize the tree-sitter<ref type="foot" target="#foot_0">foot_0</ref> tool to parse the corresponding repository and map both gold and agent contexts onto a shared coordinate system that captures their file paths, AST blocks, and line ranges. Based on this alignment, we compute recall, precision, and F1 using interval overlap at three granularities: file, block, and line levels. Figure <ref type="figure" target="#fig_0">1</ref> summarizes the results for four LLMs and five coding agents on CONTEXTBENCH, highlighting systematic differences in retrieval behavior across models and agents.</p><p>Take-Aways. We benchmark four state-of-the-art LLMs, including GPT-5 <ref type="bibr" target="#b21">[22]</ref>, Claude Sonnet 4.5 <ref type="bibr">[1]</ref>, Gemini 2.5 Pro <ref type="bibr" target="#b6">[7]</ref>, and Devstral 2 <ref type="bibr" target="#b16">[17]</ref>, as well as five widely used coding agents, including mini-SWE-agent, SWE-agent <ref type="bibr" target="#b25">[26]</ref>, OpenHands <ref type="bibr" target="#b22">[23]</ref>, Agentless <ref type="bibr" target="#b23">[24]</ref>, and Prometheus <ref type="bibr" target="#b5">[6]</ref>. Our analysis reveals several key findings: ❶ Sophisticated scaffolding does not necessarily lead to better context retrieval performance. Across five coding agents, more complex retrieval scaffolds do not consistently outperform a simple baseline, as shown in Figure <ref type="figure" target="#fig_0">1a</ref>, suggesting potential overengineering and echoing "The Bitter Lesson" of AI research. ❷ CONTEXTBENCH is challenging for state-of-the-art LLMs. State-of-the-art LLMs struggle to retrieve effective code contexts, often covering relevant information while introducing substantial noise that undermines retrieval precision, as shown in Figure <ref type="figure" target="#fig_0">1b</ref>. ❸ Recall is favored over precision in LLM context retrieval. All evaluated LLMs retrieve broad context to maximize coverage, introducing substantial noise and yielding limited precision and F1 gains. ❹ Balanced retrieval improves performance and cost efficiency. Models that balance retrieval frequency and context granularity achieve higher Pass@1 at lower cost, while aggressive retrieval mainly increases token consumption. ❺ Significant gaps exist between retrieved and utilized context. Agents often inspect gold-relevant code but fail to retain or use it in final patch generation, highlighting consolidation as a key bottleneck.</p><p>Contributions. To summarize, our work provides three key contributions as follows:</p><p>• We construct CONTEXTBENCH, containing 1,136 full instances for evaluating context retrieval in coding agents, each of which provides expert-annotated, verified gold context for assessing intermediate states of issue resolution.</p><p>• CONTEXTBENCH moves beyond final success-rate evaluation by enabling dynamic, processoriented assessment across issue resolution stages through tracking and comparing agentretrieved and gold contexts, providing an important intermediate signal for rewarding agent behavior.</p><p>• We evaluate four frontier LLMs and five coding agents on context retrieval recall and precision, yielding new insights into how LLMs and coding agents retrieve code context during problem solving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">CONTEXTBENCH: A Benchmark to Assess Context Retrieval Ability for Coding Agents</head><p>As illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, we present CONTEXTBENCH, a benchmark for evaluating the agent's context retrieval ability in software engineering tasks, which is curated through three key steps: (1) Task Deduplication. We pool tasks from multiple issue resolution benchmarks and eliminate exact and near-duplicate tasks through both rule-based and embedding-based detection. (2) Task Selection.</p><p>We select challenging tasks using three difficulty metrics, i.e., agent solvability, the scope and dispersion of edits in the ground-truth patch, prioritizing tasks that are complex or remain unsolved by existing agents. (3) Expert Annotation. For each selected task, expert developers iteratively annotate gold contexts in a human-in-the-loop process by tracing essential code dependencies from the ground-truth patches. We then validate each annotated context by evaluating whether an LLM (e.g., GPT-5), conditioned solely on the context, can generate a patch that passes the official test suite or whether the context achieves high inter-annotation consistency. Based on this pipeline, we collect 1,136 task instances with verified gold contexts across 66 repositories and 8 programming languages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Step 1: Task Deduplication</head><p>We curate CONTEXTBENCH by systematically sampling tasks from four widely used issue resolution benchmarks, i.e., SWE-bench Verified <ref type="bibr" target="#b11">[12]</ref> (500 tasks), Multi-SWE-bench <ref type="bibr" target="#b28">[29]</ref> (1632 tasks), SWE-PolyBench PB500 <ref type="bibr" target="#b19">[20]</ref> (500 tasks), and SWE-bench Pro <ref type="bibr" target="#b8">[9]</ref> (1865 tasks), totaling 4,497 tasks. These benchmarks offer high-quality task sources curated from real-world GitHub repositories and issues, with strong reproducibility guarantees and multilingual coverage across Python, Java, JavaScript, TypeScript, Go, Rust, C, and C++.</p><p>The source benchmarks originate from GitHub and may contain overlapping tasks across repositories.</p><p>To ensure uniqueness, we apply rule-based matching on task metadata (e.g., repository names and issue identifiers) to eliminate exact duplicates, yielding 3,981 tasks. We further compute embeddingbased semantic similarity between issue descriptions and remove near-duplicates above a predefined threshold (e.g., 0.9). Finally, we manually inspect borderline cases flagged by the threshold to avoid false removals, resulting in 3,100 unique tasks. This deduplication step ensures that each task</p><p>Step 1: Task Deduplication SWE-bench Verified Similarity Detection Step 2: Task Selection Step 3: Expert Annotation Rule Matching Deduplicated Issue Tasks Leaderboard Agent Solvability Edit Scope Less Agents Solved More Agents Solved Few Files Modified Many Files Modified Clustered Edits (Low Dispersion) Scattered Edits (High Dispersion) Edit Dispersion Expert Developer Ground-Truth Patch Candidate Contexts LLM Annotate &amp; Refine Contexts Input Generated Patch Official Test Suite Pass? Retry Two Rounds Fail Pass Check Compactness Gold Contexts Agreement Complete Test Collect SWE-Bench Pro Multi-SWEbench SWE-PolyBench Output Source Benchmarks ContextBench Pipeline in CONTEXTBENCH corresponds to a distinct real-world issue, minimizing bias from redundant evaluations. More implementation details are provided in Section A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Step 2: Task Selection</head><p>To ensure that CONTEXTBENCH evaluates challenging and non-trivial context retrieval scenarios, we rank candidate tasks using three complementary difficulty metrics, i.e., agent solvability, the scope and dispersion of edits in the ground-truth patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Solvability.</head><p>We automatically crawl results from the public leaderboards of the source benchmarks and use them as a coarse proxy for task difficulty. For each task, we record the number of agents that successfully resolve it and prioritize tasks that remain unsolved or have been solved by only a few agents.</p><p>Edit Scope. For each issue task, we analyze its ground-truth patch and record the number of modified files. We prioritize tasks with larger edit scopes, as they typically require more extensive context retrieval and involve more complex reasoning patterns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Edit Dispersion.</head><p>We measure the distribution of code edits across files and directories in the repository. To quantify this, we compute the average structural distance between edited regions in the repository tree parsed by Tree-Sitter. We prioritize tasks with highly dispersed edits that span multiple modules or distant files, since these cases involve broader contextual dependencies over scattered code regions.</p><p>Based on these difficulty metrics, we select 1,500 candidate tasks. We then manually review them to remove cases that appear challenging by metrics but are semantically trivial, such as large-scale variable renaming across multiple files or bulk formatting changes that do not affect program logic, resulting in a final set of 1,136 tasks. More implementation details are provided in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Step 3: Expert Annotation</head><p>The annotation is conducted collaboratively by six authors of this paper and a group of engaged expert developers over four months. To ensure quality and consistency, we adopt a human-in-theloop procedure where annotators iteratively construct and refine gold contexts for 1,136 selected tasks, validating them through LLM-based patch generation and inter-annotator agreement checks. All annotators have over three years of software development experience working with large-scale codebases. To ensure the annotators can proficiently mark the data, we provide detailed guidelines 3 if "model_name" in response.llm_output: 4 . . . and examples that illustrate how to trace code dependencies, identify relevant artifacts, and record annotations in a standardized format. We also specify clear criteria and task requirements to guide annotators throughout the process. Please refer to the details of our annotation process in Section F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Annotation.</head><p>The annotation process begins with the ground-truth patch for each issue task. Annotators follow the provided guidelines to trace essential code dependencies and semantically related artifacts originating from the modified regions. For each edited location, they inspect its function and class invocations, inheritance relations, and related control-flow and data-flow paths. Annotators also review the surrounding code within the same file or module to identify components that are semantically relevant to the modification. Through this tracing process, annotators are instructed to ensure that the recorded contexts are sufficient for issue resolution while remaining as compact as possible by excluding redundant or irrelevant code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Verification.</head><p>To validate whether each annotated context is sufficient to resolve its corresponding issue, we utilize a state-of-the-art LLM (e.g., GPT-5) as an evaluator. For each task, the model is conditioned solely on the annotated context and prompted to generate multiple candidate patches (e.g., 5 attempts). We then consider an annotated context sufficient if at least one generated patch successfully passes the official test suite, including both fail-to-pass and pass-to-pass test cases. Detailed rationale and protocol are provided in Section G.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Refinement.</head><p>When an annotated context passes verification, we assign it to a different annotator, distinct from the one who performed the initial annotation, to conduct compactness checking. This secondary annotator reviews the verified context to identify and remove any code segment that is redundant or irrelevant to issue resolution. Subsequently, the two annotators jointly review the updated context, resolve any disagreement, and finalize a consensus version of the gold context.</p><p>If an annotated context fails verification, we conduct two additional rounds of annotation and verification, each handled by a different annotator. In each round, the new annotator identifies the context by independently tracing code dependencies and then validates it through the LLM-based verification procedure described earlier. This iterative process accounts for the possibility that some tasks are inherently difficult for LLMs to solve, not necessarily due to incomplete context annotation. After the two additional rounds, all three annotators jointly inspect the resulting contexts, reconcile differences, and refine them into a final context version.</p><p>Consequently, the annotation process produces a gold context represented by a compact set of code regions that are essential for resolving the issue and generating the corresponding patch, as illustrated in Figure <ref type="figure">3</ref>. This collaborative refinement ensures that each gold context in CONTEXTBENCH is both semantically sufficient for issue resolution and as concise as possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">CONTEXTBENCH Statistics</head><p>Figure <ref type="figure" target="#fig_4">4</ref> illustrates the data filtering pipeline, showing how tasks are processed through deduplication, selection, and expert annotation. This pipeline produces CONTEXTBENCH, a repository-level benchmark featuring human-verified gold contexts. As summarized in Table <ref type="table" target="#tab_0">1</ref>, CONTEXTBENCH comprises 66 repositories and 1,136 issue tasks across eight programming languages, with context  annotations provided at the file, block, and line levels, encompassing 4,548 files, 23,116 blocks, and 522,115 lines of code. These gold contexts enable systematic evaluation of intermediate context retrieval beyond final task resolution rates. To facilitate efficient evaluation, we further construct a Lite subset of 500 tasks, selected based on coding agent solvability and the scope and dispersion of edits in the ground-truth patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">CONTEXTBENCH Evaluation Protocol</head><p>To evaluate the context retrieval ability of coding agents, we instrument their execution to trace the code regions they inspect during issue resolution and subsequently compare their retrieved contexts with human-verified gold contexts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Context Tracing.</head><p>For each issue task, we instruct the agent to perform the full resolution process while automatically recording every accessed code segment, including the corresponding file path, line range, and content. We then apply regular expressions to extract these regions and standardize them into structured &lt;PATCH CONTEXT&gt; blocks, which serve as intermediate checkpoints representing the agent's context snapshots throughout its execution trajectory. Moreover, we require the coding agent to explicitly declare, before submitting its final patch, the code context it considers essential for generating the patch. This final declared context may not completely overlap with the intermediate checkpoint contexts, as it reflects the agent's own judgment of what information is most relevant to the patch. More implementation details are provided in Section C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Context Evaluation.</head><p>We then parse the entire repository with the tree-sitter tool to construct a unified structural coordinate system, onto which both the gold and agent contexts are mapped for comparison. The two context sets are aligned across three granularities: (i) the file level, by matching file paths; (ii) the block level, by aligning Abstract Syntax Tree (AST) nodes at definition level, including classes, functions, interfaces, and trait declarations (detailed in Section E); and (iii) the line level, by comparing line ranges using their byte offsets within files. This structured alignment enables fine-grained comparison between the gold and agent contexts. Based on this alignment, we evaluate recall, precision, F1, and process-level context dynamics (e.g., efficiency, redundancy, and usage) at the file, block, and line levels, with detailed definitions provided in Section H. To evaluate coding agents' capability in retrieving effective contexts for software engineering tasks, we investigate the following Research Questions (RQs):</p><p>• RQ1: Benchmarking Coding Agents. How effectively do coding agents retrieve contexts from large-scale repositories when resolving issues using a state-of-the-art LLM (i.e., GPT-5)?</p><p>• RQ2: Benchmarking Large Language Models. How effectively do LLMs retrieve code contexts for issue resolution when equipped with a standard coding agent framework (i.e., mini-SWEagent)?</p><p>• RQ3: Analysis of Context Retrieval Patterns. What characteristic patterns emerge when LLM agents retrieve code contexts?</p><p>• RQ4: Analysis of Context Retrieval Dynamics. What dynamics emerge in LLM agents' context retrieval processes during task execution?</p><p>• RQ5: Analysis of Gold Context Robustness. How robust are the human-verified gold contexts?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">RQ1: Benchmarking Coding Agents</head><p>Table <ref type="table" target="#tab_1">2</ref> benchmarks five coding agents that are open-sourced, actively maintained, and representative of major paradigms in context retrieval. Specifically, we assess a standard baseline that retrieves context through simple bash commands (i.e., min-SWE-agent <ref type="bibr" target="#b25">[26]</ref>) and four state-of-the-art scaffolds, including embedding-based semantic retrieval (i.e., Agentless <ref type="bibr" target="#b23">[24]</ref>), file-system navigation via specialized interfaces (i.e., SWE-agent <ref type="bibr" target="#b25">[26]</ref>, OpenHands <ref type="bibr" target="#b22">[23]</ref>), and graph-based repository retrieval (i.e., Prometheus <ref type="bibr" target="#b5">[6]</ref>). All agents are evaluated with an advanced LLM backbone (i.e., GPT-5 <ref type="bibr" target="#b21">[22]</ref>). Detailed experiment settings are listed in Section C.2.</p><p>The results reveal distinct context retrieval behaviors across coding agents, driven by differences in their tool interfaces and control policies. Some agents (e.g., Prometheus) favor broad exploration and retrieve larger contexts, achieving higher recall but lower precision, whereas others adopt more conservative strategies. Yet, despite differences in retrieval strategies, their overall context metrics often fall below those of the baseline mini-SWE-agent. This finding suggests that current agent frameworks may be over-engineered for context retrieval. In practice, simple iterative search and inspection through basic shell commands can already recover a substantial portion of the necessary context, whereas more complex orchestration introduces additional overhead and may even degrade retrieval performance.</p><p>Answer to RQ1: Sophisticated agent scaffolding does not necessarily improve context retrieval performance, revealing potential over-engineering in current designs, which echoes "The Bitter Lesson" of AI research. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">RQ2: Benchmarking Large Language Models</head><p>Table <ref type="table" target="#tab_2">3</ref> benchmarks four state-of-the-art LLMs, including GPT-5 <ref type="bibr" target="#b21">[22]</ref>, Claude Sonnet 4.5 <ref type="bibr">[1]</ref>, Gemini 2.5 Pro <ref type="bibr" target="#b6">[7]</ref>, and Devstral 2 <ref type="bibr" target="#b16">[17]</ref>, in retrieving relevant code contexts from large-scale codebases when resolving issues using the standard coding agent scaffold (i.e., mini-SWE-agent <ref type="bibr" target="#b25">[26]</ref>). Detailed experiment settings are listed in Section C.2.</p><p>The results suggest that state-of-the-art LLMs still face challenges in retrieving effective context during issue resolution. For instance, their block-level F1 scores fall below 0.45, while line-level F1 scores remain below 0.35. Moreover, higher recall does not necessarily indicate better context retrieval performance, as a clear trade-off exists between recall and precision. Some LLMs tend to expand retrieved contexts aggressively to achieve higher recall, while introducing excessive irrelevant content that results in lower precision. For example, GPT-5 achieves higher recall at both the block and line levels but sacrifices precision, leading to lower overall F1 and, consequently, reduced issue resolution performance compared to Claude Sonnet 4.5.</p><p>We also observe a positive correlation between context recall and downstream task success. LLM agents that cover a larger portion of gold contexts tend to achieve higher Pass@1 scores. This finding reinforces the central premise of CONTEXTBENCH: context retrieval quality is not merely a diagnostic auxiliary metric but a meaningful predictor of end-to-end performance. However, the observed recall-precision trade-off suggests that gains from broader retrieval must be balanced with more accurate evidence selection; otherwise, excessive context can introduce noise and impair the agent's reasoning and issue resolution performance.</p><p>Answer to RQ2: State-of-the-art LLMs struggle with effective code context retrieval, often covering relevant information at the cost of introducing substantial noise and sacrificing retrieval precision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">RQ3: Analysis of Context Retrieval Patterns</head><p>Table <ref type="table" target="#tab_3">4</ref> compares the context retrieval patterns across LLM agents on CONTEXTBENCH, measured by the number of retrieval steps per instance, lines retrieved per step, total lines retrieved per instance, and cost per instance.</p><p>We can observe that LLMs adopt different context retrieval strategies, trading off retrieval steps against retrieval granularity. GPT-5 retrieves context in the fewest rounds (5.87), with substantially more lines per step (119.29 lines of code on average), whereas Devstral 2 performs the most retrieval rounds (22.16) while retrieving much smaller contexts per step (11.98 lines of code, approximately 10% of GPT-5). Notably, Claude Sonnet 4.5 adopts a more balanced strategy, combining moderate retrieval rounds with moderate context size. Recall in Table <ref type="table" target="#tab_2">3</ref>, this balanced behavior aligns with its strong performance, achieving the best line-level F1 score and Pass@1 resolution rate.</p><p>The last column of Table <ref type="table" target="#tab_3">4</ref> reports the average cost per instance for context retrieval. Devstral 2 is the most expensive due to more retrieval rounds that produce costly output tokens. This suggests that reducing the number of queries is an effective way to lower LLM cost. Answer to RQ3: LLMs differ in how they balance retrieval rounds and context granularity, and models with more balanced strategies achieve better line-level retrieval quality and end-to-end resolution performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">RQ4: Analysis of Context Retrieval Dynamics</head><p>Beyond evaluating the final aggregated contexts submitted before patch generation, we further analyze how coding agents retrieve context step by step during execution, using the metrics detailed in Section H. As shown in Table <ref type="table" target="#tab_4">5</ref>, LLM agents exhibit different context retrieval dynamics. Among them, Claude Sonnet 4.5 demonstrates a particularly unique behavior: it achieves the highest efficiency, capturing relevant gold contexts earlier than other models, but at the cost of substantial redundancy. This behavior may stem from its exploration strategy, in which the model repeatedly revisits previously accessed files to maintain coverage of potentially relevant code regions, leading to redundant retrieval of overlapping content.</p><p>We also observe a consistent context usage drop across all evaluated agents, indicating that a considerable portion of the retrieved context during execution is ultimately unused in the final patch generation. Consequently, many gold contexts successfully retrieved at intermediate steps are not incorporated into the final reasoning process, leading to issue resolution failures despite retrieval success. Notably, Gemini 2.5 Pro and Devstral 2 exhibit the most severe context loss, which likely explains their relatively low issue resolution rates.</p><p>Answer to RQ4: LLM agents exhibit diverse context retrieval dynamics, revealing inherent trade-offs between efficiency and redundancy. Moreover, the significant drop in context usage hinders effective issue resolution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">RQ5: Analysis of Gold Context Robustness</head><p>Our gold contexts are human-annotated based on a gold patch. However, in practice, a single issue may admit multiple semantically equivalent but syntactically different patches, raising the question of whether the collected gold context is reliable under solution multiplicity.</p><p>To answer this question, we analyze how gold contexts vary across multiple distinct test-passing patches for the same issue. Specifically, we conduct a case study on 82 tasks from CONTEXTBENCH, each with two semantically equivalent patches, for which we derive corresponding patch-conditioned gold contexts using the same context tracing procedure. We quantify consistency using the Jaccard similarity between each pair of contexts, detailed in Section H. For each task, we report the average similarity across all context pairs. Across all evaluated instances, the average Jaccard similarity is 0.9518 (average distance 0.0482), indicating that our gold contexts are highly consistent across alternative valid patches.</p><p>Answer to RQ5: The high consistency of gold contexts across semantically equivalent patches supports their reliability for context retrieval evaluation. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Related Work</head><p>Repository-Level Code Evaluation Benchmarks. Repository-level benchmarks ground evaluation in real-world codebases and executable test suites, making them the de facto standard for assessing end-to-end issue resolution. SWE-bench and its variants (Lite, Verified, multilingual extensions <ref type="bibr" target="#b29">[30]</ref>, long-horizon tasks <ref type="bibr" target="#b9">[10]</ref>, live environments <ref type="bibr" target="#b30">[31]</ref>, goal-oriented settings <ref type="bibr" target="#b26">[27]</ref>, and freelance scenarios <ref type="bibr" target="#b15">[16]</ref>) evaluate whether a system can produce a test-passing patch under realistic repository settings <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b11">12]</ref>, while complementary benchmarks such as RepoBench <ref type="bibr" target="#b13">[14]</ref> and SWE-PolyBench <ref type="bibr" target="#b19">[20]</ref> emphasize cross-file completion or structure-aware analysis. Despite their realism, these benchmarks are predominantly outcome-driven: they largely measure final task success, offering limited visibility into whether agents succeed by identifying the right information or by compensating through extensive exploration <ref type="bibr" target="#b5">[6]</ref>. Our work complements outcome-only evaluation by (i) introducing verified gold contexts and (ii) enabling dynamic, process-level evaluation of context retrieval beyond final outcomes.</p><p>Coding Agents. LLM-based coding agents address repository-level issue resolution through either pipeline-based or agentic designs. Pipeline-based systems decompose tasks into fixed stages with controlled context selection <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b27">28]</ref>, agentic systems adopt open-ended interaction loops in which agents dynamically search, inspect, and modify codebases via tool calls <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b5">6]</ref>. Despite architectural diversity, context retrieval remains a shared bottleneck. Existing benchmarks primarily evaluate end-to-end success, making it difficult to compare how agents retrieve and manage code context. CONTEXTBENCH fills this gap by providing a retrieval-centric benchmark that directly evaluates context acquisition behavior, independent of final patch correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Analysis and Failure Diagnosis.</head><p>Recent work analyzes agent trajectories to diagnose failure modes via manual inspection, error taxonomies, or large-scale statistics over execution logs <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr">2,</ref><ref type="bibr">3,</ref><ref type="bibr" target="#b18">19]</ref>. Such analyses have improved understanding of where agents fail (e.g., reasoning deadlocks, tool misuse, runtime exceptions), and some studies report that context-related errors are frequent in repository-level settings. However, trajectory analysis is often labor-intensive, difficult to standardize across frameworks, and typically provides post hoc explanations rather than instance-level supervision. CONTEXTBENCH addresses this gap by offering a scalable, standardized evaluation layer: verified gold contexts and automatic metrics that quantify retrieval effectiveness without requiring manual reading of long trajectories, while still enabling connections between intermediate retrieval behavior and end-to-end outcomes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We introduced CONTEXTBENCH, a benchmark for process-level evaluation of context retrieval in LLM-based coding agents. By augmenting existing issue-resolution benchmarks with humanannotated gold contexts and retrieval-centric metrics, CONTEXTBENCH enables analysis beyond end-to-end success rates. Our evaluation across four frontier LLMs and five coding agents reveals limited benefits from complex agent scaffolding, consistent recall-over-precision retrieval behavior, and notable gaps between retrieved and utilized context. These results highlight the need for processoriented evaluation and suggest intermediate context signals as a promising direction for improving LLM-based software engineering systems.</p><p>This work introduces a new process-level evaluation paradigm for LLM-based coding agents, enabling the community to move beyond coarse-grained end-to-end metrics toward a deeper understanding of agentic reasoning and context utilization. By providing verified gold contexts and automated retrieval metrics, CONTEXTBENCH facilitates transparent, reproducible, and fine-grained assessment of how coding agents interact with large-scale codebases. We expect this benchmark to support the development of more reliable and interpretable software engineering agents, improving their robustness in real-world development workflows. In the broader context, this work contributes to responsible AI research by promoting rigorous evaluation practices, reducing overfitting to leaderboard-style benchmarks, and fostering more trustworthy integration of AI systems in software engineering and related domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Details on Data Filtering</head><p>This subsection provides a detailed description of the data filtering pipeline used to construct the final evaluation task set. The filtering process is designed to progressively remove redundancy, lowinformative tasks, and annotation artifacts, while preserving task diversity and evaluation difficulty.</p><p>Initial task pool. We begin with an initial pool of approximately 4.4k source tasks aggregated from existing software engineering benchmarks, including SWE-bench Verified, SWE-PolyBench, and other related curated datasets. Although these tasks originate from real-world issue and pull request scenarios, our work does not directly crawl raw repositories; instead, it consolidates and refines tasks from established benchmarks. At this stage, the task set intentionally serves as a broad superset and contains substantial redundancy and variability in task characteristics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ID-based deduplication.</head><p>As a first step, we apply an ID-level deduplication procedure that removes tasks with identical or invalid issue/PR identifiers. This step eliminates exact duplicates introduced during dataset aggregation and ensures that each remaining task corresponds to a unique identifier. After this filtering, 3.9k tasks remain.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic deduplication.</head><p>Next, we perform semantic-level deduplication using an embeddingbased filtering strategy. Each task is encoded into a semantic vector representation using a pretrained embedding model, and pairwise cosine similarity is computed between task embeddings. Tasks whose cosine similarity exceeds a predefined threshold of 0.90 are considered semantically redundant and are filtered out, even if their identifiers differ. This step removes near-duplicate tasks that differ only in superficial wording while preserving semantically distinct problem instances. After semantic deduplication, the task set is reduced to 3.1k tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Details on Agent Solvability</head><p>Difficulty-based filtering. The third stage applies difficulty-based filtering and accounts for the largest reduction in task count. Specifically, we exclude tasks that fall into one of the following categories: (i) high solvability, where the task is trivially solvable by most models and provides limited evaluative value; (ii) low dispersion, where model performance exhibits minimal variance across different capability levels; and (iii) limited scope, where the task can be resolved using only minimal and easily obtainable context. Concretely, tasks classified as limited scope typically involve fewer than four distinct code hunks in the annotated gold context provided to the agent, and therefore do not sufficiently exercise context retrieval or multi-step reasoning capabilities. This step is critical for ensuring that the benchmark meaningfully differentiates model behaviors. After difficulty-based filtering, 1.5k tasks remain.</p><p>Annotation filtering. Finally, we apply a manual annotation filter to ensure annotation quality and consistency. Tasks are retained only if they are associated with high-quality gold context annotations that are complete, precise, and suitable for structured analysis. This manual review step removes residual noise and annotation artifacts that are difficult to detect automatically. The final benchmark consists of 1.2k tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Implementation Details on Agent Context Tracing</head><p>We describe our context extraction mechanism and the adaptations applied across multiple agents. For clarity, we divide this section into two parts: A1.1 focuses on model variations within the mini-SWE-agent; A1.2 focuses on cross-agent differences for the same model under varying prompt designs and context extraction protocols.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Model Variations within mini-SWE-Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.1 Context Extraction Architecture</head><p>In this subsection, we analyze how different models behave under the mini-SWE-agent context extraction protocol. We extend the default agent architecture with a ContextAwareAgent class to enable structured and standardized context collection.</p><p>To enforce strict structure and machine-readability, prompts are augmented with predefined templates, and the &lt;PATCH CONTEXT&gt; block is extracted using a verification function with regular expressions. This setup ensures consistency, reproducibility, and automated verification within mini-SWE-agent workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.2 Two-Stage Submission Protocol</head><p>The submission workflow follows a two-stage protocol. In the first stage, when the agent detects either MINI SWE AGENT FINAL OUTPUT or COMPLETE TASK AND SUBMIT FINAL OUTPUT, it does not finalize the task immediately. Instead, it raises a ContextRequested exception, which triggers a structured context request. In the second stage, the agent validates the returned context format and proceeds with final submission only after successful verification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.3 Format Validation Mechanism</head><p>To enforce strict structure and machine-readability, the prompt is augmented with predefined templates that explicitly constrain the output format. Format validation is performed by a dedicated verification function, and a regular expression is used to extract the standardized &lt;PATCH CONTEXT&gt; block for downstream processing.</p><p>This design enforces strict structural constraints on contextual information, ensuring consistency, reproducibility, and compatibility with automated verification and downstream processing pipelines in agent-based software engineering workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.4 Cross-Model Evaluation Results</head><p>After establishing the context extraction framework within mini-SWE-agent, we evaluated its effectiveness across four distinct models: Claude Sonnet 4.5, GPT-5, Gemini 2.5 Pro, and DevStral2. Under this standardized extraction protocol, all four models demonstrated robust adherence to the framework, consistently producing accurate and machine-verifiable &lt;PATCH CONTEXT&gt; information.</p><p>These results indicate that the context extraction mechanism effectively constrains model outputs, ensuring that the returned context is both structured and semantically relevant for downstream task submission.</p><p>During the evaluation, we observed that DevStral2 occasionally exhibited unexpected behaviors that deviated from the standardized output protocol. These anomalies are discussed in detail in Section K, where we provide the corresponding raw interaction traces and highlight the specific issues encountered.</p><p>Context Control Templates in mini-SWE-Agent (context aware.yaml) context request template: | &lt;context request&gt; Before finalizing your submission, please provide the CODE CONTEXT you used to generate the patch. Requirements List ONLY the specific code sections from source files that you examined to create your patch. Format (strictly follow) Each entry must include: -File: &lt;absolute file path&gt; -Lines: &lt;start line&gt;-&lt;end line&gt; Example File: /testbed/src/core/handler.ext Lines: 34-56 File: /testbed/lib/utils.ext Lines: 128-145 File: /testbed/src/parser.ext Lines: 67-89 DO NOT Include -Explanations, reasoning, or commentary -Error messages or debugging output -Test code or test results -Documentation or comments -Any non-code content Please format your response as: THOUGHT: Providing code context used for patch generation. &lt;PATCH CONTEXT&gt; File: &lt;absolute file path&gt; Lines: &lt;start line&gt;-&lt;end line&gt; File: &lt;absolute file path&gt; Lines: &lt;start line&gt;-&lt;end line&gt; &lt;/PATCH CONTEXT&gt; '''bash echo COMPLETE TASK AND SUBMIT FINAL OUTPUT &amp;&amp; (git status &gt;/dev/null 2&gt;&amp;1 &amp;&amp; git add -A &amp;&amp; git diff --cached) || (cd */. 2&gt;/dev/null &amp;&amp; git add -A &amp;&amp; git diff --cached) || (echo "Error: No git repository found") ''' **CRITICAL:** Provide ONLY file paths and line ranges (no code snippets, no explanations) within &lt;PATCH CONTEXT&gt; tags. &lt;/context request&gt; context confirmation template: | &lt;context received&gt; Context received and recorded ({{context length}} characters). Now proceeding with final submission. &lt;/context received&gt; Experiment Setting environment: timeout: 180 pull timeout: 3600 env: PAGER: cat MANPAGER: cat LESS: -R PIP PROGRESS BAR: 'off' TQDM DISABLE: '1' environment class: docker model: model name: "anthropic/claude-sonnet-4-5-20250929" model kwargs: drop params: true temperature: 0.0 C.2 Cross-Agent Comparison for the Same Model</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.1 Context Extraction Protocol Extension</head><p>To evaluate the impact of agent architecture and prompt design on context extraction, we extended the standardized context enforcement protocol, originally developed for mini-SWE-agent, to multiple other agents, including SWE-Agent, Openhands, and Prometheus. Each of these agents adopts a context extraction framework built upon the mini-SWE-agent as the foundational design, with agent-specific adaptations to accommodate differences in workflow and output formatting.</p><p>In all systems, an explicit pre-submission constraint was introduced, requiring the agent to output the precise code context prior to executing the final submission call. This ensures that all inspected source files and line ranges are consistently logged, enabling reproducibility, auditing, and automated verification of agent behavior.</p><p>Moreover, prompt templates and verification routines were adjusted for each agent to maintain a uniform, machine-readable &lt;PATCH CONTEXT&gt; structure. These adaptations facilitate a controlled comparison of context extraction effectiveness across heterogeneous agent frameworks, and provide a foundation for analyzing the influence of agent-specific design choices on model performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.2 SWE-Agent Implementation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pre-Submission Context Enforcement Specification in SWE-Agent</head><p>Required Format: In the next response, the agent must:</p><p>1. Output a &lt;PATCH CONTEXT&gt; block listing all source files and line ranges examined.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Invoke the submit function.</head><p>Format for &lt;PATCH CONTEXT&gt; &lt;PATCH_CONTEXT&gt; File: /testbed/path/to/file1.ext Lines: 10-50 File: /testbed/path/to/file2.ext Lines: 100-150 &lt;/PATCH_CONTEXT&gt; Rules • List only source files that were viewed or edited (exclude test files).</p><p>• Include the exact line ranges examined.</p><p>• Do not include code snippets, explanations, or commentary.</p><p>• This step is mandatory and cannot be skipped. config.yaml model: name: gpt-5 api base: api key: per instance cost limit: 0.0 total cost limit: 0.0 temperature: 1.0 top p: null retry: retries: 10 min wait: 5 max wait: 60 completion kwargs: timeout: 120 tools: execution timeout: 600 env variables: PAGER: cat MANPAGER: cat LESS: -R GIT PAGER: cat</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.3 Openhands Implementation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Extraction Protocol in Openhands (system prompt context aware.j2)</head><p>Explore-context marking protocol. When exploring source code context (e.g., reading files or printing line ranges), the agent is required to emit a machine-parseable explore-context block before the corresponding command.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Explore Context Format</head><p>&lt; EXPLORE_CONTEXT &gt; File : / absolute / path / to / file . ext Lines : &lt; start &gt; -&lt; end &gt; &lt;/ EXPLORE_CONTEXT &gt;</p><p>The explore-context block must contain one or more file-range entries with absolute paths and positive line indices. It is only included when the command prints source code content to stdout and must not be used for metadata-only commands (e.g., ls, grep, git status).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Patch Context Submission Requirement</head><p>Before finalizing the submission, the agent must provide the code context used for patch generation. Format (strictly enforced):</p><p>THOUGHT : Providing code context used for patch generation . &lt; PATCH_CONTEXT &gt; File : &lt; absolute_file_path &gt; Lines : &lt; start_line &gt; -&lt; end_line &gt; File : &lt; absolute_file_path &gt; Lines : &lt; start_line &gt; -&lt; end_line &gt; &lt;/ PATCH_CONTEXT &gt; Only absolute file paths and line ranges are permitted inside the &lt;PATCH CONTEXT&gt; block. Explanations, comments, debugging output, test code, or any non-code content are strictly disallowed.</p><p>Unlike mini-SWE-agent and SWE-Agent, Openhands employs a different prompt format. Nevertheless, this variation in prompt design does not preclude the implementation of an equivalent context extraction mechanism. By adapting the extraction protocol to accommodate the agent-specific prompt structure, we ensure that the resulting &lt;PATCH CONTEXT&gt; outputs remain consistent, structured, and machine-verifiable, thereby preserving the integrity and comparability of the context extraction process across heterogeneous agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.4 Agentless Enhancements</head><p>Bug Fixes and Compatibility. Additionally, we implement several extensions and bug fixes for Agentless to ensure compatibility with the SWE-bench evaluation harness. We adapt to SWE-bench harness API changes by fixing import paths due to the test spec module restructuring. We also unify Docker environment configurations by removing hardcoded docker specs and aligning with build env images() to ensure consistent env image key generation. Additionally, we remove the deprecated pip option -no-use-pep517 which has been removed in pip ≥ 23.0.</p><p>Multi-Language Support. To support cross-language evaluation, we optimize the multi-language adaptation capability of Agentless, enabling better support for multi-language benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improvement 1: Dynamic File Extension Adaptation</head><p>Strategy: Automatically detect the repository's primary programming language by analyzing file extension frequency, then dynamically inject the most common extension into prompt examples. Detection Method:</p><p>• Traverse repository structure to count file extensions • Select extension with highest occurrence (e.g., .py, .java, .js, .go)</p><p>• Replace hard-coded examples with detected extension Before: Hard-coded Python Extensions For example: ''' file1.py file2.py ''' ### Examples: ''' full_path1/file1.py line: 10 class: MyClass1 full_path2/file2.py function: MyClass2.my_method ''' After: Repository-Adaptive Extensions For example: ''' file1.&lt;detected_extension&gt; file2.&lt;detected_extension&gt; ''' ### Examples: ''' full_path1/file1.&lt;detected_extension&gt; line: 10 class: MyClass1 full_path2/file2.&lt;detected_extension&gt; function: MyClass2.my_method '''</p><p>Impact: Eliminates language-specific bias in fault localization prompts, enabling cross-language applicability without manual configuration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improvement 2: Language-Agnostic DIFF Examples</head><p>Strategy: Replace language-specific DIFF examples with universal "Hello World" modification patterns that adapt to the detected programming language.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Before: Python-Specific DIFF Example</head><p>Here is an example: '''python ### mathweb/flask/app.py &lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH from flask import Flask ======= import math from flask import Flask &gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE ''' Impact: Provides language-appropriate syntax examples without domain-specific dependencies (e.g., Flask), improving LLM understanding across diverse codebases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.5 Framework Generalization Results</head><p>After applying the standardized context extraction framework to all five agents-mini-SWE, SWE-Agent, Openhands, agentless, and Prometheus-we observed that each system was able to accurately produce the corresponding &lt;PATCH CONTEXT&gt; outputs. This demonstrates that the framework is robust and generalizable across heterogeneous agent architectures, effectively constraining model outputs to a structured, machine-verifiable format.</p><p>The consistent extraction of patch context across agents facilitates reproducibility and auditing, and provides a reliable basis for downstream evaluation of model performance in automated software engineering tasks. Moreover, these results indicate that the underlying principles of context enforcement can be adapted to accommodate differences in prompt design, agent workflow, and system architecture without compromising the fidelity or completeness of the extracted context. Overall, the successful deployment of the framework across multiple agents underscores its utility as a foundational tool for systematic evaluation and comparison of agent-based patch generation systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Gold Context Definition and Scope</head><p>Gold Context as a Compact Sufficient Reference. In CONTEXTBENCH, we define the gold context as a human-annotated set of code regions that is verified to be sufficient for resolving the issue, while being as compact as possible under our annotation guideline (the minimal context principle). We do not claim global minimality: enforcing a globally minimal sufficient set is generally intractable in repository-scale codebases due to the combinatorial space of dependency chains and code spans. Instead, our refinement stage removes clearly redundant regions while preserving sufficiency under an executable feasibility check (Section G). Accordingly, precision/F1 should be interpreted with respect to this compact-and-verified reference, rather than as a strict penalty for retrieving any additional context that may also be helpful.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Block-Level (AST) Alignment Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Block-Level (AST) Alignment.</head><p>At the block level, we do not treat arbitrary AST nodes as evaluation units. Instead, we standardize blocks as definition-level symbols (e.g., function/method/class/interface/trait definitions) to ensure cross-language consistency. Concretely, we parse each repository file with tree-sitter and extract a language-specific set of node types that correspond to top-level or member definitions (Table <ref type="table">6</ref>). Each extracted node is mapped to a canonical block span by its file path and (start line, end line) range (converted from tree-sitter byte offsets). This design ensures that "block" refers to comparable semantic units across languages (definitions that encapsulate reusable logic or APIs), rather than low-level syntax nodes whose granularity varies substantially across parsers.</p><p>Table 6: Tree-sitter node types used for block-level (definition-level) evaluation across languages. Blocks are standardized as definition-level symbols to improve cross-language comparability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Details on Annotation</head><p>To obtain precise problem-specific contextual annotations, we developed a dedicated annotation frontend that supports multiple annotators working in parallel with randomized task assignment. The interface provides lightweight IDE-like functionalities, including navigation via function and variable references, as well as object-oriented class definition lookup, enabling annotators to efficiently explore repository-level codebases. (a) Code annotation view. (b) Sidebar with issue description and statistics. For a given annotation task, annotators are blinded to each other's annotations to prevent information leakage and anchoring bias.</p><p>We refer readers to the main paper for the full annotation and verification pipeline.This multi-round blind annotation protocol ensures both correctness and robustness of the resulting gold context dataset.</p><p>Our annotator team consists of highly trained software engineering experts with advanced research experience in large-scale codebases.</p><p>All annotators underwent a unified training process before participating in the annotation tasks. During training, we enforced a standardized annotation guideline, requiring annotators to provide precise and minimal contextual information. Specifically, annotators were instructed to follow a minimal context principle, selecting only the code segments that were strictly necessary for resolving the issue, and avoiding redundant or irrelevant code regions.</p><p>The annotation time per issue ranged from approximately 20 minutes to 1.5 hours, depending on the complexity of the repository and the issue scope. On average, producing a high-quality annotation for a single issue in a repository-scale project requires approximately 40 minutes of effort by an expert annotator.</p><p>For repositories with exceptionally large or complex codebases, we imposed an upper bound on annotation time to control annotation cost and prevent diminishing returns from excessively long inspection sessions.</p><p>We periodically audited annotations to ensure guideline compliance and consistency across annotators.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Details on Context Verification</head><p>This subsection provides additional details on the context verification procedure used in our analysis. The goal of this process is to determine whether an annotated context contains sufficient information to resolve its corresponding issue, rather than to evaluate or compare the repair capabilities of specific language models.</p><p>Verification Setup. For each task, we condition a strong state-of-the-art language model (e.g., GPT-5) solely on the annotated context, without access to any external files, repositories, or retrieval mechanisms. The model is prompted to generate multiple independent candidate patches (five attempts in our experiments), each following the same prompt template. All generated patches are evaluated using the official test suite associated with the task, including both fail-to-pass and pass-to-pass test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sufficiency Criterion.</head><p>An annotated context is considered sufficient if at least one of the generated patches passes the entire test suite. This criterion is intentionally defined in terms of existence rather than consistency: we do not require the model to reliably solve the task across all attempts. Instead, we only check whether a valid solution is possible given the provided context. This aligns with our objective of verifying context sufficiency, rather than measuring average model performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rationale.</head><p>Using a strong language model in this setting serves as a conservative lower-bound feasibility check. If even a capable agent fails to produce a correct fix when restricted to the annotated context, it is unlikely that the context alone contains all information required to resolve the issue. Conversely, a successful patch indicates that the annotated context is, in principle, sufficient to support a correct solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sampling and Stochasticity.</head><p>We employ multiple independent generations to mitigate the effects of stochastic decoding and occasional generation failures. This design reduces false negatives caused by randomness, while avoiding over-reliance on a single generation outcome. Importantly, correctness is determined exclusively by the test suite, independent of the model's internal confidence or reasoning traces.</p><p>Overall, this verification procedure should be interpreted as a feasibility-oriented validation of annotated contexts, rather than a benchmark of language model repair performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Details on Evaluation Metrics</head><p>We evaluate coding agents by quantifying how effectively they retrieve relevant context compared to the human-verified gold contexts. Formally, given an issue task T , let C G denote the gold context, C A denote the final context retrieved by the agent, and C A i represent the intermediate context snapshot collected at the i-th checkpoint during the agent's execution trajectory. All C G , C A , and C A i are represented as sets of code elements at a specified granularity (e.g., file, AST block, or line).</p><p>Context Recall. This metric quantifies the proportion of the gold context required for issue resolution that is successfully retrieved by the agent, formulated as:</p><formula xml:id="formula_0">Recall(C A , C G ) = |C A ∩ C G | |C G | .<label>(1)</label></formula><p>A higher recall indicates that the coding agent is more effective at covering the essential context, whereas a lower score suggests that critical information is missing from its retrieved context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Precision.</head><p>This metric quantifies the proportion of the agent's retrieved context that overlaps with the gold context, defined as:</p><formula xml:id="formula_1">Precision(C A , C G ) = |C A ∩ C G | |C A | .<label>(2)</label></formula><p>A higher precision indicates that the coding agent retrieves relevant and concise context, whereas a lower score suggests over-retrieval with redundant or irrelevant information that may introduce noise and hinder reasoning.</p><p>Context F1. Context recall and precision capture two complementary aspects of an agent's context retrieval behavior. High recall with low precision indicates over-retrieval, where the agent includes excessive irrelevant context, while high precision with low recall indicates under-retrieval, where essential information is missed. To provide a balanced evaluation, we compute the F1 score as the harmonic mean of precision and recall, defined as:</p><formula xml:id="formula_2">F 1 = 2 × Precision × Recall Precision + Recall . (<label>3</label></formula><formula xml:id="formula_3">)</formula><p>Context Retrieval Efficiency. Beyond the final retrieved context C A , we evaluate retrieval as a process along the trajectory. For each run, we log every file-observation action and construct a sequence of intermediate context snapshots {C A t } T t=1 , where C A t is the set of code elements (at a chosen granularity) inspected at step t. We define the cumulative explored context up to step t as</p><formula xml:id="formula_4">A (t) = t i=1 C A i .<label>(4)</label></formula><p>We then track the cumulative gold coverage curve Coverage(A (t) , C G ) over t = 1, . . . , T and summarize how early an agent reaches high gold coverage using the normalized area under this curve:</p><formula xml:id="formula_5">AUC-Cov = 1 T T t=1 Recall(A (t) , C G ).<label>(5)</label></formula><p>A higher AUC-Cov indicates that the agent retrieves critical gold evidence earlier during execution (i.e., reaches high coverage with fewer observation steps), whereas a lower value suggests that the agent either misses gold evidence or only discovers it late after many iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Retrieval Redundancy.</head><p>While AUC-Cov captures how quickly coverage increases, it does not measure whether an agent repeatedly inspects the same regions. We therefore quantify redundancy by measuring how much of each newly retrieved snapshot overlaps with what has already been observed. Formally, for t ≥ 2, we define the per-step redundancy ratio as the fraction of elements in C A t that have appeared in previous steps:</p><formula xml:id="formula_6">Redun t = C A t ∩ t-1 i=1 C A i C A t .<label>(6)</label></formula><p>We report the overall redundancy as the average across steps:</p><formula xml:id="formula_7">Redun = 1 T -1 T t=2 Redun t .<label>(7)</label></formula><p>A higher redundancy indicates that an agent spends more retrieval budget revisiting previously seen context (i.e., looping or re-reading), whereas a lower redundancy indicates more novel context acquisition per step.</p><p>Evidence Drop (Retrieval ̸ = Use). High explored coverage does not necessarily translate to effective patching, because agents may observe gold-relevant regions during exploration but fail to retain them in the final aggregated patch context Ã. To quantify this gap, we define the explored-gold set as the gold elements that have been observed at least once during the trajectory:</p><formula xml:id="formula_8">G seen = T t=1 C A t ∩ C G .<label>(8)</label></formula><p>We then measure how much of this observed gold evidence is kept in the final patch context by</p><formula xml:id="formula_9">Keep = C A ∩ C G |G seen | ,<label>(9)</label></formula><p>and define evidence drop as its complement:</p><formula xml:id="formula_10">Drop = 1 -Keep = 1 - C A ∩ C G T t=1 C A t ∩ C G .<label>(10)</label></formula><p>A lower Drop (higher Keep) indicates that the agent successfully consolidates and preserves goldrelevant evidence it has already discovered, whereas a higher Drop indicates that gold evidence is frequently observed but discarded during consolidation, highlighting failures in localization and evidence selection rather than pure recall-oriented retrieval.</p><p>Gold Context Robustness. Our gold contexts are human-annotated based on a gold patch. However, in practice, a single issue may admit multiple semantically equivalent but syntactically different patches, raising the question of whether the collected gold context is reliable under solution multiplicity. To answer this question, we analyze how gold contexts vary across multiple distinct testpassing patches for the same issue. We conduct a case study on 82 instances from CONTEXTBENCH. For each instance, we collect two or three semantically equivalent patches and derive a patchconditioned gold context for each patch using the same patch-driven context tracing procedure. Let G = {G (1) , . . . , G (K) } denote the set of gold contexts for a given instance. We quantify consistency using the Jaccard similarity (Equation <ref type="formula" target="#formula_11">11</ref>) between each pair of contexts. For each instance, we report the average similarity across all context pairs.</p><formula xml:id="formula_11">Jaccard(G (i) , G (j) ) = |G (i) ∩ G (j) | |G (i) ∪ G (j) | .<label>(11)</label></formula><p>Note that all reported metrics are averaged over evaluated tasks. Each metric can be computed at three granularities: file, block, and line levels. By evaluating context retrieval across multiple metrics and granularities, CONTEXTBENCH provides a more fine-grained understanding of agent behavior, beyond conventional end-to-end evaluation metrics that focus solely on final task success rates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I Details on Empirical Study</head><p>This subsection provides implementation-level details of our empirical analysis. To analyze agent behavior beyond final patch correctness, we instrument the evaluation pipeline to record intermediate artifacts, including tool-call logs, retrieved file and element contexts, and step-by-step edit trajectories.</p><p>Based on these records, we perform manual inspection to trace how each agent localizes relevant files, retrieves semantic information, and arrives at its final fix. All annotation and analysis are conducted with the support of the annotation frontend UI introduced earlier, which enables structured inspection and labeling of the recorded artifacts. The following case studies illustrate this analysis procedure for different agents, highlighting how the recorded artifacts are used to diagnose failure points at various stages of the debugging process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I.1 Case 1: Prometheus Agent -Incomplete Class Semantics Retrieval</head><p>Task: Fix issue psf requests-1921 where setting session headers to None sends literal "None" instead of omitting the header.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Diagnostic Findings:</head><p>Root Cause: File localization failure propagated through all stages. Operating on surface-level keywords from the issue ("models", "db table "), the agent lacked mechanisms to: (i) trace error codes to implementation sources, (ii) recognize Django's architectural separation of validation from model logic. This initial misstep rendered all downstream localization (element and edit) ineffective, as they operated on an incorrect file set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I.3 Case 3: OpenHands Agent -Cross-Context Exploration Gap</head><p>Task: Fix for django django-11138 regarding ignored TIME ZONE values in multi-backend configurations.</p><p>Diagnostic Findings:</p><p>1. Keyword-Centric Search Bias: The agent relied heavily on grep for string matching. Since this specific SQL function is unique to MySQL, the tool's output anchored the agent's search space to the MySQL implementation, effectively shielding the relevant SQLite and Oracle modules from the localization process. 2. Structural Observation-Action Gap: While ls -R tool calls explicitly listed the sqlite3/ and oracle/ directories, the agent's heuristic failed to trigger follow-up audit calls (e.g., view or targeted grep) for these parallel modules. This represents a failure to translate structural awareness into diagnostic action. 3. Cross-Backend Reproduction Paradox: Faced with environment constraints for MySQL, the agent used bash tool calls to successfully run a reproduction script in a SQLite environment. Although the tool-verified evidence confirmed the bug's presence in SQLite, the localization logic failed to propagate this feedback, resulting in a "reproduce in SQLite, fix in MySQL" logical disconnect. 4. Canonical Pattern Neglect: Despite retrieving the base operations class via view, the agent bypassed the framework's canonical connection.timezone name property. Instead, it utilized tool calls to inject non-standard dictionary-access logic (settings dict.get('TIME ZONE')), failing to align with Django's architectural standards.</p><p>Root Cause: Search-Induced Context Tunneling. The agent's localization strategy is highly sensitive to initial tool-call results but lacks semantic generalization. High-relevance hits in one module (MySQL) acted as a distractor, suppressing the horizontal exploration of parallel modules (SQLite/Oracle). This reliance on keyword-driven slicing leads to systemic fix incompleteness in modular architectures where logic is distributed across similar but syntactically distinct files. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J Cross-Language Radar Distributions for File/Block/Line Metrics</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>K Potential Data Contamination and Protocol Misalignment in Devstral2</head><p>During our evaluation with the mini-SWE-agent framework, we observed anomalous behaviors from DevStral2 that raise concerns about potential data contamination and protocol misalignment. Specifically, after reading the issue description, DevStral2 frequently produced a long, structured solution plan in a single response, outlining the complete debugging and patching procedure without waiting for any feedback from the agent framework. The model often hallucinated intermediate system states, behaving as if it had already received environment responses. When the framework subsequently returned invalid-output feedback, DevStral2 tended to directly trigger the final submit action without performing corrective iterations.</p><p>One plausible explanation is training data contamination, where DevStral2 may have been exposed to SWE-bench instances, patches, or benchmark-derived artifacts during pretraining or fine-tuning. Such leakage can induce benchmark-specific memorization, resulting in unrealistically confident and fully structured solution traces. Another contributing factor may be a mismatch between the model's training on interactive coding protocols and the simplified execution semantics of mini-SWE-agent, leading to premature assumptions about system states and response formats.</p><p>These behaviors can significantly distort benchmark evaluation. First, memorization of benchmark instances can artificially inflate reported performance, violating the independence assumption between training and test data. Second, hallucinated system states undermine the validity of agent trajectories, making it difficult to distinguish genuine reasoning from spurious pattern completion. Finally, premature submission without iterative correction disrupts the intended evaluation protocol, reducing the reliability of automated correctness assessment.</p><p>We emphasize that such artifacts highlight the importance of strict data hygiene and protocol-aligned training for code-generation models evaluated on public software engineering benchmarks. Future benchmark evaluations should incorporate contamination detection and protocol compliance checks to ensure fair and reproducible comparisons.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DevStral2 Raw JSON Response Trace</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 1: DevStral2 Raw JSON Response Trace</head><p>" extra " : { " response " : { " id " : " 7 2 4 5 4 b 0 8 8 4 2 c 4 3 3 ab 3 c 5 e 2 3 b 0 b 8 e 4 3 9 4 " , " created " : 1 7 6 8 6 4 2 6 7 5 , " model " : " devstral -2 5 1 2 " , " object " : " chat . completion " , " system_fingerprint " : null , " choices " : [ { " finish_reason " : " tool_calls " , " index " : 0 , " message " : { " content " : "I ' ll start by exploring the Django codebase ... &lt; EXPLORE_CONTEXT &gt;\ n File : / testbed / django / core / management / base . py \ nLines : 1 -1 0 0 \ n &lt;/ EXPLORE_CONTEXT &gt;\ n \ n ''' bash \ nfind / testbed -type f -name \" base . py \" | \ grep \" management \" | head -5 \n ' ' '\ n \ n ... ... Perfect ! I found the issue . Now let me create a test script to reproduce the problem ... ''' bash \ ncat &lt;&lt;' EOF ' &gt; / testbed / t es t_ m ut u al ly _ ex c lu si v e . py \ nimport os \ nimport sys \ n import django \ nfrom django . core . management import call_command \ n from django . core . management . base import BaseCommand , CommandError \ n ... Let me run the core management tests : \ n \ n ''' bash \ ncd / testbed &amp;&amp; python -m pytest tests / core_management / -v 2 &gt;&amp; 1 | head -1 0 0 \n ' ' '\ n \ n Let me check what tests exist : \ n \ n ''' bash \ nfind / testbed / tests -type f -name \"*. py \" | xargs grep -l \" m u t ua l l y _e x c l us i v e _g r o u p \" | head -5 \n ' ' '\ n \ n Let me check if there ' s a test file for the management module : \ n \ n ''' bash \ nfind / testbed / tests -type f -name \"* management *. py \" | head -1 0 \n ' ' '\ n \ n ... Now let me verify the fix one more time and check if there are any syntax errors ... Great ! The tests pass . Let me create a final summary of the changes ... The fix is minimal , handles edge cases , and doesn ' t break existing functionality ." , " role " : " assistant " , " tool_calls " : null , " function_call " : null , " p r o vi d e r _s p e c if i c _ fi e l d s " : null } , " p r o vi d e r _s p e c if i c _ fi e l d s " : { } } ] , " usage " : { " completion_tokens " : 1 3 9 8 9 , " prompt_tokens " : 1 8 3 6 , " total_tokens " : 1 5 8 2 5 , " c o m p l e t i o n _ t o k e n s _ d e t a il s " : null , " prom pt_to kens _d et ails " : null } } } { " role " : " user " , " content " : " Please always provide EXACTLY ONE action in triple backticks , found 1 0 7 actions .\ n \ nPlease format your action in triple backticks as shown in &lt; response_example &gt;.\ n \n &lt; response_example &gt;\ nHere are some thoughts about why you want to perform the action .\ n \n ' ' ' bash \n &lt; action &gt;\ n ' ' '\n &lt;/ response_example &gt;\ n \ nIf you have completed your assignment , please consult the first message about how to \ nsubmit your solution ( you will not be able to continue working on this task after that ) ." , " timestamp " : <ref type="formula" target="#formula_0">1 7 6 8 6 4 2 8 7 7 . 7 6 1 8 9 0 6</ref>} , " extra " : { " response " : { " id " : " 4 8 6 b 7 9 cc 0 2 4 b 4 7 3 5 a 9 1 b 0 a 1 a 8 ca 7 c 9 0 9 " , " created " : 1 7 6 8 6 4 2 8 7 8 , " model " : " devstral -2 5 1 2 " , " object " : " chat . completion " , " system_fingerprint " : null , " choices " : [ { " finish_reason " : " stop " , " index " : 0 , " message " : { " content " : " THOUGHT : I have successfully implemented the fix for the issue where ' call_command ' fails when an argument of a required mutually exclusive group is passed in kwargs . The fix has been applied to '/ testbed / django / core / management / __init__ . py ' and thoroughly tested . Now I need to submit the solution .\ n \n ' ' ' bash \ necho C O M P L E T E _ T A S K _ A N D _ S U B M I T _ F I N A L _ O U T P U T &amp;&amp; ( git status &gt;/ dev / null 2 &gt;&amp; 1 &amp;&amp; git add -A &amp;&amp; git diff --cached ) || ( cd */. 2 &gt;/ dev / null &amp;&amp; git add -A &amp;&amp; git diff --cached ) || ( echo \" Error : No git repository found \") \n ' ' '" , " role " : " assistant " , " tool_calls " : null , " function_call " : null , " p r o vi d e r _s p e c if i c _ fi e l d s " : null } , " p r o v id e r _ sp e c i fi c _ fi e l d s " : { } } ] , " usage " : { " completion_tokens " : 1 3 6 , " prompt_tokens " : 1 5 9 2 5 , " total_tokens " : 1 6 0 6 1 , " c o m p l e t i o n _ t o k e n s _ d e t a il s " : null , " prom pt_t okens _det ails " : null } } }</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Radar plots comparing context retrieval performance on CONTEXTBENCH. (a) Coding agent comparison and (b) LLM comparison, both evaluated at file-, block-, and line-level granularity in terms of precision, recall, and F1. Across both LLMs and agents, higher recall is consistently favored over precision.</figDesc><graphic coords="2,299.22,71.57,228.92,228.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An overview of the CONTEXTBENCH construction pipeline. CONTEXTBENCH is curated through three key steps: (1) Task Deduplication removes exact and near-duplicate tasks from multiple issue resolution benchmarks using rule-based and embedding-based detection. (2) Task Selection identifies challenging tasks based on agent solvability and the scope and dispersion of edits in ground-truth patches. (3) Expert Annotation employs a human-in-the-loop procedure in which expert developers trace code dependencies to construct gold contexts, which are validated through LLM-based patch generation and inter-annotator agreement checks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>1 getattr (handler, on_llm_end) (*args, **kwargs) langchain/callbacks/manager.py langchain/llms/openai.py class BaseOpenAI(BaseLLM): model_name: str = "text-davinci-003" 1 2 langchain/callbacks/openai_info.py 1 def on_llm_end(self, response: LLMResult, **kwargs: Any) -&gt; None: 2 . . .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>6 "Figure 3 :</head><label>63</label><figDesc>Figure 3: An illustrative example of the human-verified gold context. This example is derived from the issue task associated with Pull Request #4009 in the langchain-ai/langchain repository. The blue, red, and green arrows represent the manually annotated contextual dependencies associated with variable, function, and class invocations, respectively.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: The data flow during the CONTEXTBENCH construction pipeline. We construct CONTEXTBENCH step by step, starting from task deduplication and selection to gold context annotation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5</head><label>5</label><figDesc>Figure 5 presents the annotation frontend UI. The code annotation view (left) allows annotators to select minimal problem-specific code spans with lightweight IDE-style navigation. The side panel (right) displays structured task metadata, including issue descriptions, reference patches, and real-time annotation statistics, enabling annotators to maintain awareness of the overall task scope.</figDesc><graphic coords="24,108.00,225.12,229.69,243.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Annotation frontend UI. Annotators select minimal problem-specific code context while monitoring task-level metadata in the side panel.</figDesc><graphic coords="24,353.52,210.09,150.50,262.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>(a)Figure 6 :</head><label>6</label><figDesc>Figure 6: Radar distributions of localization quality across eight programming languages. Columns correspond to granularity (File / Block / Line), and rows correspond to metric (Precision / Recall / F1). Each radar axis is one language; values are computed on the per-language split under the same evaluation protocol as the main paper.</figDesc><graphic coords="31,123.81,390.15,118.79,127.59" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Statistics of CONTEXTBENCH.A repository-level benchmark spanning 8 programming languages and introducing human-verified gold contexts to expose intermediate context retrieval signals missing from final task resolution rate evaluation.</figDesc><table><row><cell cols="3">Language #Repo #Task</cell><cell cols="3">Context Statistics #File #Block #Line</cell></row><row><cell>Python</cell><cell>20</cell><cell>512</cell><cell>1,520</cell><cell cols="2">6,714 115,122</cell></row><row><cell>Java</cell><cell>6</cell><cell>57</cell><cell>262</cell><cell>3,030</cell><cell>49,057</cell></row><row><cell>JavaScript</cell><cell>9</cell><cell>153</cell><cell>819</cell><cell>3,949</cell><cell>87,907</cell></row><row><cell>TypeScript</cell><cell>8</cell><cell>119</cell><cell>537</cell><cell>1,106</cell><cell>40,621</cell></row><row><cell>Go</cell><cell>7</cell><cell>104</cell><cell>679</cell><cell>3,000</cell><cell>71,596</cell></row><row><cell>Rust</cell><cell>9</cell><cell>63</cell><cell>272</cell><cell>1,842</cell><cell>50,402</cell></row><row><cell>C</cell><cell>3</cell><cell>68</cell><cell>250</cell><cell>1,591</cell><cell>62,300</cell></row><row><cell>C++</cell><cell>4</cell><cell>60</cell><cell>209</cell><cell>1,884</cell><cell>45,110</cell></row><row><cell>Total</cell><cell>66</cell><cell>1,136</cell><cell>4,548</cell><cell cols="2">23,116 522,115</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance of different coding agents on context retrieval. We evaluate five coding agents, including a basic baseline and four state-of-the-art scaffolds, on CONTEXTBENCH Lite using an advanced LLM (i.e., GPT-5). We report recall, precision, and F1 at the file, block, and line levels, along with the Pass@1 issue resolution rate. The results suggest that more sophisticated scaffolding does not necessarily lead to better context retrieval performance, indicating potential over-engineering in current agent designs, which echoes "The Bitter Lesson" of AI research.</figDesc><table><row><cell>Coding Agent</cell><cell></cell><cell>File-Level</cell><cell>Block-Level</cell><cell>Line-Level</cell><cell>Pass@1↑</cell></row><row><cell></cell><cell cols="4">Recall↑ Precision↑ F1↑ Recall↑ Precision↑ F1↑ Recall↑ Precision↑ F1↑</cell></row><row><cell cols="2">mini-SWE-Agent 0.682</cell><cell>0.709 0.634 0.645</cell><cell>0.369 0.375 0.606</cell><cell cols="2">0.301 0.312 0.472</cell></row><row><cell>Agentless</cell><cell>0.609</cell><cell>0.352 0.390 0.328</cell><cell>0.344 0.242 0.461</cell><cell cols="2">0.318 0.376 0.452</cell></row><row><cell>SWE-agent</cell><cell>0.726</cell><cell>0.537 0.544 0.625</cell><cell>0.312 0.285 0.476</cell><cell cols="2">0.228 0.208 0.490</cell></row><row><cell>OpenHands</cell><cell>0.733</cell><cell>0.400 0.463 0.505</cell><cell>0.283 0.190 0.472</cell><cell cols="2">0.203 0.130 0.490</cell></row><row><cell>Prometheus</cell><cell>0.717</cell><cell>0.336 0.403 0.646</cell><cell>0.258 0.285 0.584</cell><cell cols="2">0.195 0.231 0.512</cell></row><row><cell cols="5">3 Can Coding Agents Retrieve Effective Contexts to Resolve Issues?</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance of various LLMs on code context retrieval. We assess four state-of-the-art LLMs on CONTEXTBENCH Lite with standard coding agent scaffolding, reporting recall, precision, and F1 at the file, block, and line levels, along with the Pass@1 issue resolution rate. The results reveal that they still struggle with effective context retrieval, overlooked by prior end-to-end benchmarking.</figDesc><table><row><cell>LLM</cell><cell></cell><cell>File-Level</cell><cell>Block-Level</cell><cell>Line-Level</cell><cell>Pass@1↑</cell></row><row><cell></cell><cell cols="4">Recall↑ Precision↑ F1↑ Recall↑ Precision↑ F1↑ Recall↑ Precision↑ F1↑</cell></row><row><cell>GPT-5</cell><cell>0.682</cell><cell>0.709 0.634 0.645</cell><cell>0.369 0.375 0.606</cell><cell cols="2">0.301 0.312 0.472</cell></row><row><cell cols="2">Claude Sonnet 4.5 0.720</cell><cell>0.665 0.624 0.631</cell><cell>0.449 0.420 0.588</cell><cell cols="2">0.374 0.344 0.530</cell></row><row><cell>Gemini 2.5 Pro</cell><cell>0.587</cell><cell>0.752 0.600 0.393</cell><cell>0.632 0.403 0.313</cell><cell cols="2">0.529 0.311 0.364</cell></row><row><cell>Devstral 2</cell><cell>0.660</cell><cell>0.693 0.615 0.478</cell><cell>0.576 0.422 0.404</cell><cell cols="2">0.485 0.332 0.402</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Context retrieval patterns of different LLM agents. LLMs vary in how they balance retrieval rounds and context granularity, and those that maintain a more balanced strategy tend to achieve higher line-level retrieval accuracy and stronger end-to-end issue resolution performance.</figDesc><table><row><cell>LLM</cell><cell>Avg. Steps Per Instance</cell><cell>Avg. Lines Per Step</cell><cell>Avg. Cost ($) Per Instance</cell></row><row><cell>GPT-5</cell><cell>↓5.87</cell><cell>↑119.29</cell><cell>0.45</cell></row><row><cell>Claude Sonnet 4.5</cell><cell>14.38</cell><cell>29.74</cell><cell>0.76</cell></row><row><cell>Gemini 2.5 Pro</cell><cell>7.57</cell><cell>26.29</cell><cell>↓0.38</cell></row><row><cell>Devstral 2</cell><cell>↑22.16</cell><cell>↓11.98</cell><cell>↑0.91</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Context retrieval dynamics of different LLM agents. LLM agents show diverse retrieval dynamics, exposing trade-offs between efficiency and redundancy. In addition, the significant loss of context usage impedes effective issue resolution.</figDesc><table><row><cell>LLM</cell><cell cols="3">Efficiency↑ Redundancy↓ Usage Drop↓</cell></row><row><cell>GPT-5</cell><cell>0.591</cell><cell>0.487</cell><cell>0.179</cell></row><row><cell>Claude Sonnet 4.5</cell><cell>0.658</cell><cell>0.708</cell><cell>0.196</cell></row><row><cell>Gemini 2.5 Pro</cell><cell>0.529</cell><cell>0.558</cell><cell>0.431</cell></row><row><cell>Devstral 2</cell><cell>0.616</cell><cell>0.672</cell><cell>0.435</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://tree-sitter.github.io/tree-sitter/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://github.com/langchain-ai/langchain/pull/4009</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>After: Python Hello World Example</head><p>Here is an example: '''python ### example/hello.py &lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH print("Hello World") ======= print("Hello") print("World") &gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE ''' After: Java Hello World Example</p><p>Here is an example: '''java ### example/Hello.java &lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH System.out.println("Hello World"); ======= System.out.println("Hello"); System.out.println("World"); &gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE ''' After: JavaScript Hello World Example Here is an example: '''javascript ### example/hello.js &lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH console.log("Hello World"); ======= console.log("Hello"); console.log("World"); &gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE ''' After: Go Hello World Example Here is an example: '''go ### example/hello.go &lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH fmt.Println("Hello World") ======= fmt.Println("Hello") fmt.Println("World") &gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE ''' Adaptation Logic: • Detect repository language from file extensions • Select corresponding Hello World DIFF template • Inject into repair prompts at runtime Python function definition, class definition, async function definition JavaScript function declaration, class declaration, method definition, arrow function TypeScript function declaration, class declaration, method definition, interface declaration TSX function declaration, class declaration, method definition, interface declaration Java method declaration, class declaration, interface declaration, constructor declaration Go function declaration, method declaration, type declaration Rust function item, impl item, struct item, trait item C function definition, struct specifier C++ function definition, class specifier, struct specifier C# method declaration, class declaration, interface declaration PHP function definition, method declaration, class declaration Ruby method, class, module Swift function declaration, class declaration, protocol declaration Kotlin function declaration, class declaration Scala function definition, class definition, trait definition</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Introducing claude sonnet 4</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-sonnet-" />
+		<imprint>
+			<date type="published" when="2025-05-04">4-5, 2025</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Understanding software engineering agents: A study of thought-action-result trajectories</title>
+		<author>
+			<persName><forename type="first">Islem</forename><surname>Bouzenia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.18824</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Why do multiagent llm systems fail</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melissa</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lakshya</forename><forename type="middle">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavya</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Parameswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kannan</forename><surname>Ramchandran</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.13657</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Silin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longfei</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiguo</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.23361</idno>
+		<title level="m">Swe-exp: Experience-driven software issue resolution</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Beyond final code: A process-oriented error analysis of software development agents in real-world github scenarios</title>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxiao</forename><surname>Jiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.12374</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Prometheus: Unified knowledge graphs for issue resolution in multilingual codebases</title>
+		<author>
+			<persName><forename type="first">Zimin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.19942</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities</title>
+		<author>
+			<persName><forename type="first">Gheorghe</forename><surname>Comanici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schaekermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ice</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noveen</forename><surname>Sachdeva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inderjit</forename><surname>Dhillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Blistein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Rosen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.06261</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Nocodebench: A benchmark for evaluating natural language-driven feature addition</title>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhonghao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialun</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.18130</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Swe-bench pro: Can ai agents solve long-horizon software engineering tasks</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Da</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwin</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanak</forename><surname>Ide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lauffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitin</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chetan</forename><surname>Pasari</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rane</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.16941</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Swe-bench pro: Can ai agents solve long-horizon software engineering tasks?</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Da</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwin</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanak</forename><surname>Ide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lauffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitin</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chetan</forename><surname>Pasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karmini</forename><surname>Rane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maya</forename><surname>Sampath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsa</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Kundurthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifan</forename><surname>Hendryx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Bharadwaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raja</forename><surname>Holm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Aluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Calvin</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Jacobson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brad</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kenstler</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Trae agent: An llm-based agent for software engineering with test-time scaling</title>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangxin</forename><surname>Zhao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.23370</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world GitHub issues</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Simiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liehao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoli</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.13941</idno>
+		<title level="m">An empirical study on failures in automated issue solving</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Repobench: Benchmarking repository-level code auto-completion systems</title>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.03091</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">A</forename><surname>Merrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">G</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Raj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Bercovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeong Yeon</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Walshe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">Kelly</forename><surname>Buchanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Poulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianna</forename><surname>Nezhurina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenia</forename><surname>Jitsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orfeas</forename><surname>Menis Mastromichalakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zizhao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Liangyu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anurag</forename><surname>Kashyap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan-Lucas</forename><surname>Uslu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedang</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Dillmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lanpouthakoun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bardia</forename><surname>Koopah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Etash</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Dreiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Krauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyin</forename><surname>Amanfu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Pimpalgaonkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangning</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuandong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqing</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanli</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hange</forename><surname>Heineman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.11868</idno>
+		<editor>Manish Shetty, Michael Yang, Nabil Omi, Negin Raoof, Shanda Li, Terry Yue Zhuo, Wuwei Lin, Yiwei Dai, Yuxin Wang, Wenhao Chai, Shang Zhou, Dariush Wahdany, Ziyu She, Jiaming Hu, Zhikang Dong, Yuxuan Zhu, Sasha Cui, Ahson Saiyed, Arinbjörn Kolbeinsson, Jesse Hu, Christopher Michael Rytting, Ryan Marten, Yixin Wang, Alex Dimakis, Andy Konwinski, and Ludwig Schmidt</editor>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Terminal-bench: Benchmarking agents on hard, realistic tasks in command line interfaces</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Swe-lancer: Can frontier llms earn $1 million from real-world freelance software engineering?</title>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Miserendino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejal</forename><surname>Patwardhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Heidecke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Introducing: Devstral 2 and mistral vibe cli</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Mistral</surname></persName>
+		</author>
+		<ptr target="https://mistral.ai/news/devstral-2-vibe-cli" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Training software engineering agents and verifiers with SWE-gym</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navdeep</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-second International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Detecting silent failures in multi-agentic ai trajectories</title>
+		<author>
+			<persName><forename type="first">Divya</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harshit</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anuska</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>George</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mudit</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pratibha</forename><surname>Moogi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2511.04032</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Shihab Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Buchholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Esler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Valentin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Franceschi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wistuba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teja</forename><surname>Prabhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sivaprasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jung</forename><surname>Woo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anoop</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Deoras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Zappella</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Callot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.08703</idno>
+		<title level="m">Swe-polybench: A multi-language benchmark for repository level evaluation of coding agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Haifeng Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roychoudhury</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Specrover</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.02232</idno>
+		<title level="m">Code intent extraction via llms</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaditya</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Tart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adi</forename><surname>Ganesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Mclaughlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ananthram</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.03267</idno>
+		<title level="m">Openai gpt-5 system card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Openhands: An open platform for AI software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuqiang</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations, ICLR 2025</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">April 24-28, 2025. OpenReview.net, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2511.13646</idno>
+		<title level="m">Live-swe-agent: Can software engineering agents self-evolve on the fly? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">SWE-agent: Agent-computer interfaces enable automated software engineering</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Press</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Codeclash: Benchmarking goal-oriented software engineering</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pacheco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaowei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lingxi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.11838</idno>
+		<title level="m">Repository-level issue resolution framework enhanced by procedural knowledge guided scaling</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shulin</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aoyan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongsheng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangqiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.02605</idno>
+		<title level="m">Multi-SWE-bench: A multilingual benchmark for issue resolving</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Multi-swe-bench: A multilingual benchmark for issue resolving</title>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shulin</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aoyan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongsheng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangqiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xiang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Linghao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maoquan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elsie</forename><surname>Nallipogu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingnong</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Swe-bench goes live!</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Autocoderover: Autonomous program improvement</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2024</biblScope>
+			<biblScope unit="page" from="1592" to="1604" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Where llm agents fail and how they can learn from failures</title>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muxin</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qipeng</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuyang</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.25370</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Partial Class Retrieval: Agent logs show successful retrieval of CaseInsensitiveDict&apos;s setitem and getitem methods (lines 71-78), but no retrieval of its init or update methods</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Semantic Mismatch: The generated patch passed a generator expression to CaseInsensitiveDict (line 54 of requests/sessions.py): merged_setting = dict_class (( k , v ) for k , v in ... if v is not None ) Analysis of the missing init reveals it requires a mapping with .items(</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Impact: 26 test failures due to dropped headers, broken authentication, and cookie persistence failures</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Gold Patch Comparison: The correct fix adds a single filtering line after merging, preserving proper initialization: merged_setting = dict (( k , v ) for (k , v ) in merged_setting . items (</title>
+		<imprint/>
+	</monogr>
+	<note>if v is not None</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Root Cause: Element-level slicing insufficiency-the agent retrieved operational methods but missed constructor semantics, leading to API contract violation. I.2 Case 2: Agentless -Failure at File Localization Stage Task: Fix for django django-11630</title>
+		<imprint/>
+	</monogr>
+	<note>Diagnostic Findings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m">The agent retrieved 10 files, including 5 from django/db/models/* (e.g., base.py, options.py, fields/) and 5 framework configuration files</title>
+		<imprint/>
+	</monogr>
+	<note>File Localization Stage 1 Failure Critically, django/core/checks/model checks.py-the source of error E028 based on gold patch analysis-was never retrieved</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Cascading Failure: With incorrect files localized in Stage 1, subsequent element localization (Stage 2) focused on ModelBase, Options classes, and edit localization (Stage 3) modified options.py&apos;s db table calculation. The gold patch, by contrast, modifies logic in model checks</title>
+		<imprint/>
+	</monogr>
+	<note>py to conditionally emit warnings when database routers are configured</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Information-Architecture Gap: The issue mentions &quot;db table collision&quot; (symptom-level) but not the validation framework (implementation-level)</title>
+		<imprint/>
+	</monogr>
+	<note>File tree shows core/checks/ exists but lacks semantic annotations Without backward-tracing from error code E028 to its source, the agent inferred the problem resided in model definition layers</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

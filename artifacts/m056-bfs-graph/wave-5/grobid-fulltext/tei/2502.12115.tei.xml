@@ -1,0 +1,1557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SWE-Lancer: Can Frontier LLMs Earn $1 Million from Real-World Freelance Software Engineering?</title>
+				<funder>
+					<orgName type="full">Upwork and Expensify developers</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">OpenAI Preparedness, Safety Systems</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-29">29 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Samuel</forename><surname>Miserendino</surname></persName>
+							<email>&lt;samuelgm@openai.com&gt;</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Michele Wang</orgName>
+							</affiliation>
+							<affiliation key="aff0">
+								<orgName type="institution">Michele Wang</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michele</forename><surname>Wang</surname></persName>
+							<email>&lt;michele@openai.com&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Michele Wang</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tejal</forename><surname>Patwardhan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Michele Wang</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Johannes</forename><surname>Heidecke</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Michele Wang</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SWE-Lancer: Can Frontier LLMs Earn $1 Million from Real-World Freelance Software Engineering?</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-29">29 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E4A87F66233B7A4B5B58FED6874A54F1</idno>
+					<idno type="arXiv">arXiv:2502.12115v4[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:25+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce SWE-Lancer, a benchmark of over 1,400 freelance software engineering tasks from Upwork, valued at $1 million USD total in realworld payouts. SWE-Lancer encompasses both independent engineering tasks -ranging from $50 bug fixes to $32,000 feature implementations -and managerial tasks, where models choose between technical implementation proposals. Independent tasks are graded with endto-end tests triple-verified by experienced software engineers, while managerial decisions are assessed against the choices of the original hired engineering managers. We evaluate model performance and find that frontier models are still unable to solve the majority of tasks. To facilitate future research, we open-source a unified Docker image and a public evaluation split, SWE-Lancer Diamond (<ref type="url" target="https://github.com/openai/SWELancer-Benchmark">https://github.com/  openai/SWELancer-Benchmark</ref>).</p><p>By mapping model performance to monetary value, we hope SWE-Lancer enables greater research into the economic impact of AI model development.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>In just two years, language models have advanced from solving basic textbook computer science problems to winning gold medals in international programming competitions <ref type="bibr">(OpenAI, 2024a;</ref><ref type="bibr" target="#b23">Quan et al., 2025)</ref>. When OpenAI announced SWE-Bench Verified in August 2024, GPT-4o scored 33%; today, their o3 reasoning model achieves SOTA at 72% <ref type="bibr">(OpenAI, 2024b)</ref>, highlighting the need for unsaturated evaluations that reflect the complexity of real-world software engineering. As AI research and development con-tinues to accelerate, benchmarks that rigorously evaluate and forecast software engineering (SWE) capabilities will be crucial in assessing economic impacts and agentic safety <ref type="bibr" target="#b20">(OpenAI, 2023;</ref><ref type="bibr">Anthropic, 2024;</ref><ref type="bibr" target="#b5">DeepMind, 2024)</ref>.</p><p>Prior coding benchmarks have focused on self-contained tasks like program synthesis <ref type="bibr" target="#b3">(Chen et al., 2021)</ref> and competitive programming <ref type="bibr" target="#b9">(Hendrycks et al., 2021)</ref>. The most realistic benchmarks are currently SWE-Bench <ref type="bibr" target="#b11">(Jimenez et al., 2024)</ref> and SWE-Bench Verified <ref type="bibr" target="#b4">(Chowdhury et al., 2024)</ref>, which focus on isolated, self-contained tasks. In the real world, however, software engineers operate across the full technology stack and must reason about complex inter-codebase interactions and tradeoffs.</p><p>To better measure the real-world software engineering capabilities and impact of AI models, we introduce SWE-Lancer. Our benchmark evaluates frontier language models on 1,488 freelance software engineering jobs from Upwork, collectively worth $1,000,000 USD in payouts. The evaluation includes Individual Contributor (IC) SWE tasks, where models generate code patches to resolve real-world issues, and SWE Manager tasks, where models act as technical leads by selecting the best implementation proposal for a given problem.</p><p>• IC SWE tasks range in difficulty from 15-minute bug fixes to new feature requests that took weeks to close out. Unlike prior benchmarks, which grade model performance with unit tests, SWE-Lancer evaluates IC SWE tasks using end-to-end tests created by a team of professional software engineers. These end-to-end tests use browser automation to verify application behavior and mirror the real-world freelance review process, and have been triple-verified for quality by experienced software engineers.</p><p>• SWE Manager tasks direct models to review competing proposals submitted by freelancers in response to job postings, and select the best one. They are then assessed against the choices of the original engineering managers. These tasks require a deep technical understanding of both the issue and the proposals; it is often the case that multiple proposals are technically correct, and identifying the winning proposal requires considering context from the entire repository.  SWE-Lancer offers several advantages over existing SWE benchmarks:</p><p>• Real-world payouts: All 1,488 tasks represent real payouts to freelance engineers and provide a natural market-derived difficulty gradient (ranging from $250 to $32,000). Notably, the economic payout associated with each task is not an estimate; rather, it reflects the actual amount paid to the freelancer who completed it. Monetary payouts are non-trivial: within the opensourced SWE-Lancer Diamond set, 35% of tasks are worth more than $1,000, and 34% are worth from $500 to $1,000.</p><p>• Management assessment: Large-scale software engineering in the real-world requires capable technical management. Our benchmark evaluates models' ability to function as a SWE manager using real-world data. In SWE management tasks, the model acts as a technical lead, weighing the actual implementation proposals that were submitted by freelancers when the issue was originally posted. Previous works have investigated models' ability to generate research ideas <ref type="bibr" target="#b24">(Si et al., 2024)</ref>, but their capacity to evaluate commercial engineering proposals remains unexplored.</p><p>• Advanced full-stack engineering: Prior evaluations have largely focused on issues in narrow, developerfacing repositories (e.g. open source utilities to facilitate plotting or PDF generation). In contrast, SWE-Lancer is more representative of real-world software engineering, as tasks come from a user-facing product with millions of real customers. SWE-Lancer tasks frequently require whole-codebase context. They involve engineering on both mobile and web, interaction with APIs, browsers, and external apps, and validation and reproduction of complex issues. Example tasks include a $250 reliability improvement (fixing a double-triggered API call), $1,000 bug fix (resolving permissions discrepancies), and $16,000 feature implementation (adding support for in-app video playback in web, iOS, Android, and desktop).</p><p>• Improved grading via end-to-end (E2E) tests: Existing coding benchmarks often rely on unit tests to evaluate isolated functions or components; however, these tests are highly susceptible to grader hacking (see Appendix A7) and insufficient for evaluating fullstack engineering work <ref type="bibr" target="#b2">(Brar &amp; Kaur, 2015;</ref><ref type="bibr" target="#b22">Paul et al., 2006)</ref>. SWE-Lancer is the first benchmark to use E2E tests created by professional engineers, offering a more comprehensive, real-world evaluation that is harder to exploit. For example, in one $1,000 task <ref type="bibr">(Expensify, 2024a)</ref>, a bug caused the avatar on the "Share Code" page to differ from the profile page. While unit tests might confirm each function works independently, the end-to-end test we created for this task simulates the entire user workflow -including logging in, uploading a profile picture, and interacting with a second account -and catches the bug. Tests underwent three rounds of validation by software engineers for quality, coverage, and fairness, supplemented by an automated system ensuring each test passed in the fixed state and failed in the broken state.</p><p>• Domain diversity: SWE-Lancer tasks span many categories (Figure <ref type="figure" target="#fig_2">3</ref>).</p><p>In the open-sourced Diamond set, 74% of IC SWE tasks and 76% of SWE Management tasks involve Application Logic, while 17% of IC SWE tasks and 18% of SWE Management tasks involve UI/UX development. These categories extend beyond styling to include core full-stack concepts like frontend event handling, DOM interactions, and application behavior. Most tasks (88% of IC SWE tasks and 94% of SWE Management tasks) are bug fixes. See Appendix A12 for more details on dataset composition. • Difficulty: SWE-Lancer tasks are challenging. The average task in the Diamond set takes 26 days to resolve on Github and has 47 comments, which include discussion of multiple proposals. On average, IC SWE tasks in the Diamond set require modifying 2 files and 69 lines of code, while SWE Manager tasks require the model to choose between 4-5 proposals.</p><p>• Unbiased data collection: The data collection process for prior benchmarks, such as SWE-Bench and SWE-Bench Verified, involved searching for pull requests on GitHub and selecting ones that had unit tests. As a result of this selection process, these datasets are biased towards code and problems that are easily testable. Instead of filtering out the vast majority of problems to find ones that volunteers chose to write tests for, we selected a representative sample of tasks from Upwork, and paid a team of 100 professional software engineers to write and verify end-to-end tests for all of them.</p><p>We also perform large-scale evaluations of state-of-the-art models to better understand the capabilities of autonomous SWE agents, including running ablations on test-time compute and tool affordances. We find that the best performing model -Claude 3.5 Sonnet -scores 26.2% on IC SWE tasks and 44.9% on SWE Management tasks, earning a total of $208,050 out of $500,800 possible on the SWE-Lancer Diamond set. On the full SWE-Lancer dataset, Claude 3.5 Sonnet earns over $400,000 out of $1,000,000 possible.</p><p>To advance research in automated software engineering, agentic safety, and economic impacts of automated coding models, we release a public evaluation split -SWE-Lancer Diamond -containing $500,800 worth of tasks. To avoid contamination via training or search (e.g., for models that can browse the internet), we keep the remaining set as a private holdout. The full dataset is available upon request.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1.">Related Work</head><p>Researchers have evaluated LLMs' coding skills in scientific programming <ref type="bibr" target="#b25">(Tian et al., 2024</ref>), text analysis <ref type="bibr" target="#b28">(Zhong et al., 2023;</ref><ref type="bibr">Lam et al., 2024)</ref>, and repository-level completion <ref type="bibr" target="#b27">(Zhang et al., 2024;</ref><ref type="bibr" target="#b15">Liu et al., 2023)</ref>, with benchmarks such as HumanEval <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>, HumanEvalPack <ref type="bibr" target="#b18">(Muennighoff et al., 2024)</ref>, APPS, LiveCodeBench <ref type="bibr" target="#b10">(Jain et al., 2024)</ref>, NaturalCodeBench <ref type="bibr" target="#b27">(Zhang et al., 2024)</ref>, Big-CodeBench <ref type="bibr" target="#b29">(Zhuo et al., 2024)</ref>, MBPP, MathQA-Python <ref type="bibr" target="#b1">(Austin et al., 2021)</ref>, CodeXGlue <ref type="bibr" target="#b16">(Lu et al., 2021)</ref>, Al-phaCode <ref type="bibr" target="#b14">(Li et al., 2022)</ref>, CODEGEN <ref type="bibr" target="#b19">(Nijkamp et al., 2023)</ref>, and DS-1000 <ref type="bibr" target="#b12">(Lai et al., 2022)</ref>. SWE-bench verified <ref type="bibr" target="#b4">(Chowdhury et al., 2024)</ref> builds upon SWE-bench <ref type="bibr" target="#b11">(Jimenez et al., 2024)</ref> and evaluates LLMs on real-world pull requests from open-source repositories, graded against human-coded patches. SWE-bench Multimodal (Yang et al., 2024) extends this to frontend tasks from open-source Javascript libraries. However, these benchmarks typically rely on unit tests (prone to grader hacking, see Appendix A7), exclude commercial repositories, and lack full-stack coverage-gaps that SWE-Lancer addresses by sourcing real freelance tasks and mapping model performance to economic payout. See Appendix A4 for a more detailed comparison table of coding benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">SWE-Lancer</head><p>The SWE-Lancer dataset consists of 1,488 real freelance software engineering tasks from the Expensify open-source repository posted on Upwork. These tasks are collectively valued at $1 million USD and are divided into two categories:</p><p>• Individual Contributor (IC) Software Engineering (SWE) Tasks: This set contains 764 tasks collectively valued at $414,775, which mirror the responsibilities of individual contributor software engineers (e.g., implementing features, resolving bugs). The model is given (1) the issue text description (including reproduction steps and desired behavior), (2) the codebase checkpointed at the state before the issue fix, and (3) the objective of fixing the issue. The model's solution is evaluated by applying its patch and running all associated end-to-end tests using Playwright, an open-source browser testing library <ref type="bibr">(Microsoft, 2025)</ref>. Models are not able to access end-to-end tests during  the evaluation.</p><p>• SWE Management Tasks: This set contains 724 tasks collectively valued at $585,225. Taking on the role of a software engineering manager, the model must choose the best proposal for resolving a task. The model is given (1) multiple proposed solutions to the same issue (taken from the original discussion), (2) a snapshot of the codebase from before the issue was fixed, and (3) the objective of picking the best solution. The model's selection is evaluated by assessing whether it matches ground truth. An additional validation campaign with experienced software engineers showed 99% agreement with the original chosen solutions.</p><p>Issues are posed exactly as written on Upwork; each IC SWE task is graded with end-to-end tests mirroring how experienced engineers would evaluate them. Full prompts are available in Appendix A8 and example tasks are in A13.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Evaluation Metrics and Task Types</head><p>We track the percent of tasks resolved and the total payout earned by the model (using the real freelance rates set in Upwork by Expensify). Because they draw from real tasks, SWE-Lancer payouts uniquely reflect true economic value rather than theoretical estimates. Harder tasks pay more, especially when they demand specialized knowledge or remain unresolved for extended periods of time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Benchmark Construction</head><p>To ensure our dataset consists of high-quality and representative tasks, we implemented the following pipeline:</p><p>1. Repository selection. Expensify is a $300 million USD public company (NASDAQ: EXFY) with 12 million users who rely on its software, making it a reliable testbed for sourcing commercially valuable software engineering tasks. The open-source Expensify repository posts tasks on Upwork for freelance engineers with concrete payouts. We sourced real tasks that were previously solved by paid contributors. The repository has a diversity of high-quality, complex tasks. 2. Task selection. 100 professional software engineers reviewed the tasks, proposals, and codebase for clarity, specificity, and executability. For high-value IC SWE tasks (with payout exceeding $5,000), a team of ten experienced engineers validated each task, confirming that the environment was properly configured and test coverage was robust. Each IC SWE and SWE Management task was reviewed by multiple engineers (three for IC SWE, two for SWE Management). More detail on the review process is included in Appendix A6. 3. Task generation. From each validated Github issue, we generated an IC SWE task using the task's title and description, and a snapshot of the codebase at the time it was posted. If there were at least two proposals for how to resolve the issue, we also generated a SWE Management Task using the issue description and list of proposals. 4. End to End Test Development. We wrote comprehensive end-to-end Playwright tests for each IC SWE task. Tests simulate real-world user flows, such as logging into the application, performing complex actions (e.g., making financial transactions), and verifying that the model's solution works as expected. Each test is triple-verified by professional software engineers. 5. User Tool. Each IC SWE Task has an accompanying user tool; when the agent invokes the user tool, a Playwright script opens the browser and simulates a user attempting to perform the action associated with the task in the local application, so the model can view its work, just as human engineers often run their code while writing it. The model does not receive any feedback about whether the action was successful; however, a text-based trajectory and a series of screenshots are written to its working directory when the tool finishes.</p><p>When the user tool is enabled, the model is allowed to invoke it as often as it wishes to via the command line.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Experiments and Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Experiment Setup</head><p>For our experiments, agents run in a Docker container with the repository preconfigured and no Internet access, preventing them from retrieving external information. We further remove the GitHub remote and any future commits to avoid the possibility of models scraping code diffs or pull request details. Each agent has a single attempt (pass@1), mirroring the constraints of typical online SWE freelancing platforms. Models operate with a basic scaffold that lets them browse the local codebase, modify files, and execute terminal commands. Full details of our execution environment and scaffolds can be found in Appendix A5.</p><p>For our baseline setup, we evaluate OpenAI's gpt-4o-2024-08-06, OpenAI's o1 (with "high" reasoning effort (OpenAI, 2025)), and Anthropic's Claude 3.5 Sonnet (claude-3-5sonnet-20240620). Additional results on open-source models (Deepseek-R1, Llama 3.3) are in Appendix A15. All models have the user tool enabled.<ref type="foot" target="#foot_0">foot_0</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Main Results</head><p>As shown in Figure <ref type="figure" target="#fig_4">5</ref>, all models earn well below the full $1 million USD of possible payout on the full SWE-Lancer dataset. To illustrate model performance across experiments, we present the pass@1 accuracies, corresponding "earnings" (i.e., total payout), and earn rates (i.e., payout received divided by total possible payout) for IC SWE and SWE Manager tasks, summarized in Table <ref type="table" target="#tab_0">1</ref>. <ref type="foot" target="#foot_1">2</ref> All models earn well below the full $1 million USD of possible payout on the full SWE-Lancer dataset.</p><p>As shown in Figure <ref type="figure" target="#fig_5">6</ref>, all models performed better on SWE Manager tasks than on IC SWE tasks, which remain largely unsaturated. For IC SWE tasks, pass@1 and earnings rates remain below 30%. On SWE Manager tasks, the best performing model -Claude 3.5 Sonnet -scores 45% on the Diamond set. 3.5 Sonnet exhibits the strongest performance on both IC SWE and SWE Manager tasks, outperforming the next-best model (o1) by 9.7% on IC SWE (Diamond) tasks and 3.4% on SWE Manager (Diamond) tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Increasing Number of Attempts</head><p>To evaluate how performance changes with more attempts, we evaluate GPT-4o and o1 using the pass@k metric <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>. We estimate the percentage of tasks which the agent solves correctly, given n total samples and c correct samples as: pass@k</p><formula xml:id="formula_0">:= E Problems 1 - ( n-c k ) ( n k )</formula><p>. The main result for k ∈ [1, 7] is shown in Figure <ref type="figure" target="#fig_6">7</ref>. For all models, allowing more attempts leads to a consistent increase in pass rate. This curve is especially noticeable for o1, where allowing for 6 more attempts nearly triples the percentage of solved tasks. GPT-4o with pass@6 achieves the same score as o1 with pass@1 (16.5%).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Increasing Test Time Compute</head><p>We measure pass@1 as a function of inference-time compute. On IC SWE tasks within the Diamond set, experiments with o1 and user tool enabled show that higher reasoning effort (test-time compute) improves pass@1 from 9.3% (Low reasoning effort) to 16.5% (High reasoning effort), with corresponding increases in earnings (which increased from $16K to $29K) and earn rates (increased from 6.8% to 12.1%). Figure <ref type="figure" target="#fig_7">8</ref> shows the breakout of pass@1 by task price range for different levels of test-time compute and indicates greater test-time-compute can improve performance on harder, more expensive problems in particular.     </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5.">Removing User Tool</head><p>In IC SWE tasks, removing the user tool only minimally reduces pass@1 rates, as shown in Figure <ref type="figure" target="#fig_8">9</ref>. However, we observe that stronger models make more effective use of the user tool and therefore experience a greater performance drop under this ablation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6.">Price Analysis</head><p>How does the cost of running these models compare to the cost of freelancers? We performed 5 runs of GPT-4o and o1 on SWE-Lancer Diamond IC SWE tasks (237 tasks, worth $236,300 total) using the OpenAI API and our <ref type="url" target="https://github.com/openai/SWELancer-Benchmark">open-source  eval harness</ref>. Because each SWE-Lancer task has an actual cost paid out to the freelancer who solved it, we can compare API vs. freelancer costs in solving all tasks. We measured several key metrics (results below are the average over 5 runs):</p><p>1. Cost Savings (pass@1): GPT-4o fails 90% of IC SWE tasks on the first try, and o1 fails 80%, but using models first and deferring to humans only on tasks the models fail would reduce total costs. We calculate cost savings as: Cost savings = 1 -Model costs + Freelancer costs on tasks model fails Total freelancer cost to solve all tasks . Compared to the freelancer cost of solving all 237 tasks ($236,300 empirically), GPT-4o + freelancer fallback is 8.84% cheaper; o1 + freelancer fallback is 13.26% cheaper.</p><p>2. Cost Savings (pass@5): Giving models 5 attempts before freelancer fallback improves savings and pass rates: GPT-4o reaches 18.6% total cost savings; o1 yields 33.5% savings as shown in Figure <ref type="figure" target="#fig_9">10</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Model Contribution Ratio =</head><p>payout on successful model tasks model cost on all tasks+freelancer cost on model failures : GPT-4o returns $0.10 per $1 spent in total model+freelancer costs; o1 returns $0.16 per $1 spent. This ratio is low because models fail most tasks in SWE-Lancer Diamond and require freelancers to solve the rest, but should increase for new frontier models and may already be high for easier tasks.</p><p>This preliminary analysis contains many limitations we hope future work can expand upon. First, it is based on cost to a customer (i.e., using API pricing). Our estimate of API costs in this analysis includes retries and excludes batch API pricing, which would both reduce model cost and increase the model contribution ratio. Second, all SWE-Lancer prices reflect historical bounties actually paid, which may differ from current rates. Third, there was nontrivial variance in cost across runs. The 95% confidence interval for GPT-4o was $194.31 ± $17.31, while o1's was $1,623.76 ± $56.68. Lastly, our pass@5 savings analysis assumes quick verification of correct solutions, but in practice this can take over 24 hours. Please see Appendix Section A14 for more detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.7.">Discussion</head><p>Results indicate that the real-world freelance work in our benchmark remains challenging for frontier language models. The best performing model, Claude 3.5 Sonnet, earns $208,050 on the SWE-Lancer Diamond set and resolves 26.2% of IC SWE issues; however, the majority of its solutions are incorrect, and higher reliability is needed for trustworthy deployment.</p><p>The strongest models perform well across all task types. Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table" target="#tab_2">3</ref> show pass@1 rates for IC SWE Diamond tasks across different task categories. Sonnet 3.5 performs best, followed by o1 and then GPT-4o, and pass@1 on Manager tasks is often more than double pass rate on IC SWE tasks. Sonnet 3.5 outperforms o1 by nearly 15% on UI/UX tasks in particular, and nearly 10% on IC SWE tasks involving implementing new features or enhancements.</p><p>Effective tool use distinguishes top performers. We find that the strongest models make frequent use of the user tool, and are able to efficiently parse its outputs to reproduce, localize, and iteratively debug issues. The user tool often takes a nontrivial amount of time to run -a period of 90 to 120 seconds -during which weaker models such as GPT-4o are prone to abandoning the tool altogether. The best performing models reason about the delay (which is disclosed in their instructions), set appropriate timeouts, and review results when available. An example user tool trajectory is in Appendix A10.</p><p>Agents excel at localizing, but fail to root cause, resulting in partial or flawed solutions. Agents pinpoint the source of an issue remarkably quickly, using keyword searches across the whole repository to quickly locate the relevant file and functions -often far faster than a human would. However, they often exhibit a limited understanding of how the issue spans multiple components or files, and fail to address the root cause, leading to solutions that are incorrect or insufficiently comprehensive. We rarely find cases where the agent aims to reproduce the issue or fails due to not finding the right file or location to edit. We provide several qualitative summaries of trajectories in Appendix A9.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Limitations</head><p>Diversity of repositories and tasks. We sourced tasks exclusively from the Upwork freelancer platform and the Expensify repository. While we believe the Expensify repository is representative of full-stack engineering work, incorporating tasks from other freelance sites and open-source repositories could broaden the scope of this evaluation. In particular, infrastructure engineering tasks (e.g. refining Kubernetes cluster architectures and debugging pod failures, node crashes, or networking problems) are underrepresented in this iteration of SWE-Lancer because they are disproportionately underrepresented in Expensify's posted task set.</p><p>Scope. Freelance tasks tend to be more self-contained than full-time software engineering tasks <ref type="bibr" target="#b8">(Gupta et al., 2020)</ref>. SWE-Lancer would also be less representative of "zero to one" SWE work as all tasks build off of a well-established and maintained codebase. However, the entire front-end portion of the Expensify repository is maintained by freelance software engineers, which makes it closer to real-world engineering than other freelance postings. We also include SWE management tasks, which freelancers rarely handle. Still, while SWE-Lancer may be a good leading indicator of how automation could affect freelance software engineering, we remain cautious about extrapolating impact beyond this.</p><p>Modalities. SWE-Lancer tasks are text-only, though issue writers often include a screen recording. This evaluation does not test how much screenshots or videos can improve model performance.</p><p>Environments. Unlike real engineers, the models cannot ask clarifying or follow-up questions.</p><p>Contamination. Contamination is a common limitation of coding benchmarks that rely on open-source repositories. SWE-Lancer Diamond tasks originate from public GitHub issues between 2023 and 2024. Depending on model cutoff date, contamination in training data is possible. Moreover, because tasks are posted online, a model with browsing capabilities or an internet search tool can look up solutions. Therefore, when running this eval, it is important to either disable browsing or limit sites accessed to prevent directlookups, and to ideally also post-hoc filter for any instances of cheating. This will help ensure evaluation results measure real capability rather than contamination. Note that Table <ref type="table" target="#tab_3">4</ref> in Appendix A2 shows no clear performance improvement for tasks predating the models' knowledge cutoffs, suggesting limited impact of contamination for those tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Future Work</head><p>Economic analysis. Model performance on SWE-Lancer maps to real-world economic value; each task in the benchmark has an associated payout that was sent to a freelancer via Upwork. We hope this benchmark enables research into the broader societal impacts of autonomous agents, including impacts on labor markets, productivity, and the acceleration of AI R&amp;D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multimodality.</head><p>Our current evaluation harness does not support multimodal inputs; however, the majority of Ex-pensify GitHub issues contain videos (and, occasionally, screenshots) of the expected behavior. Additionally, the user tool saves screenshots to the output directory upon completion, which current models are unable to view. Because there is not widespread support for such inputs, we prioritized making information about the prompt and environment available via text (for example, through text-based trajectories from the user tool).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We introduce SWE-Lancer, a benchmark for evaluating model performance on real-world, freelance software engineering work. This software engineering benchmark maps model performance to real monetary value, and improves realism of model benchmarks by evaluating more complex full-stack software engineering and management skills. We hope SWE-Lancer enables greater research into the economic impact of AI model development.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>AI models with strong real-world software engineering capabilities could enhance productivity, expand access to highquality engineering capabilities, and reduce barriers to technological progress. However, they could also shift labor demand-especially in the short term for entry-level and freelance software engineers-and have broader long-term implications for the software industry. Improving AI software engineering is not without risk. Advanced systems could carry model autonomy risk in self-improvement and potential exfiltration, while automatically generated code may contain security flaws, disrupt existing features, or stray from industry best practices, a consideration that is important if the world increasingly relies on model-generated code. SWE-Lancer provides a concrete framework to start tying model capabilities to potential real-world software automation potential, therefore helping better measure its economic and social implications. By quantifying AI progress in software engineering, we aim to help inform the world about the potential economic impacts of AI model development, while underscoring the need for careful and responsible deployment. To further support responsible AI progress, we open-source a public eval set and report results on frontier AI models to help level-set the implications of AI progress. Future work should explore the societal and economic implications of AI-driven development, ensuring these systems are integrated safely and effectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Pass@1 Rate Analysis by Category</head><p>Table <ref type="table" target="#tab_2">3</ref> shows pass@1 rates for SWE-Lancer Diamond categorized by the tasks' nature of work. To determine each task's category (as shown in Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table" target="#tab_2">3</ref>), we had o1 review each entire Github issue thread, including all descriptions and comments, three separate times for each IC SWE and SWE Management task. If these three categorizations were not unanimous, we manually assigned the final categories. Within SWE Management tasks, the winning proposal is often selected for nuanced reasons, such as addressing edge cases or reducing external dependencies. For example, one task <ref type="bibr">(Expensify, 2024b)</ref> involves selecting a proposal for implementing image-pasting on iOS. The winning proposal handled multiple clipboard formats (e.g., base64, blob), minimized permission prompts, and aligned with native iOS behavior by enabling direct pasting into the compose bar. Other proposals were deprioritized due to reliance on third-party libraries, complex modifications, or inconsistent cross-platform support. SWE benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Contamination Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5. Additional Scaffold Details</head><p>Each agent is executed within a Microsoft Azure Standard D2as v4 virtual machine with 2 vCPUs and 8GB RAM. We execute agents within Docker containers using a pre-built SWE-Lancer image, which we open-source. The container has 64 GB of shared memory allocated and 192GB of maximum memory available. All the libraries the agent can access (i.e., the ones relevant for the Expensify repository) are installed in the container.</p><p>The agent does not have multimodal image or video inputs. For each rollout, the maximum number of tool calls is 100 and the maximum time allowed is 3 hours. All rollouts are conducted with temperature 1.0.</p><p>Except for our pass@k experiments, each is just a single rollout.</p><p>A.6. Task Curation Criteria Then, users submit in-depth proposals for fixing the issue. Finally, an assigned reviewer selects the best proposal -(used to create SWE Manager tasks). The winning proposal is implemented (used to create IC SWE tasks).</p><p>We manually filtered tasks according to the following criteria. Each task in our final set was screened by at least three experienced human software engineers.</p><p>1. The issue is sourced from an open-source repository.</p><p>2. The issue has an associated, concrete payout. 3. The issue was resolved in the past. 4. The issue is well-specified and clear -models must be able to actually understand the task and implement a fix, without being able to ask for clarification. 5. The PR that resolved the issue actually fixes it -this fix is confirmed by executing locally.</p><p>There are additional criteria for SWE Management Tasks:</p><p>1. There were at least two well-defined proposals for the issue. 2. The proposals considered contain sufficient information about the correct fix.</p><p>Further detail is provided below on how we assess specific criteria and labeled other attributes for each given task.</p><p>To confirm that the issue was well-specified and clear, we asked software engineers to rate each issue from 0-3 (below) and only accepted issues where the majority of human engineers rated them as 0.</p><p>Read the issue description again here, and imagine that you are an experienced software engineer with 2-3 years of relevant experience and familiarity with the codebase. You have been instructed to create a PR that successfully resolves it. You have full access to the codebase and can use the title, description, reproduction steps, and any attached videos/images from the linked issue when forming your solution.</p><p>Please note, however, that you are not able to ask for clarification and would need to work exclusively from the above information. Please do not read the comments below the issue when making your decision-you must rely solely on the content of the issue itself and codebase/docs.</p><p>Please assign a rating from 0 to 3 using the rubric below. To confirm that the tests were valid for all reasonable, correct solutions, we asked engineers to rate the tests according to a rubric and only accepted issues where the majority of human engineers rated them as 0.</p><p>Please re-review the pull request that addressed the issue. Does it contain valid, well-scoped tests so that all reasonable solutions pass?</p><p>Please assign a rating from 0 to 3 using the rubric below. 0-The tests perfectly cover all possible solutions. 1-The tests cover the majority of correct solutions; however, some unusual solutions may be missed. 2-The tests work, but some perfectly reasonable solutions may be missed by the tests. 3-The tests are too narrow/broad or they look for something different than what the issue is about.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7. SWE-Lancer Robustness to Cheating</head><p>Existing SWE benchmarks in the literature often rely on unit tests that are narrow and prone to cheating. An example of cheating by o1 in SWE-Bench Verified is shown below:</p><p>An excerpt from the problem description is included below:</p><p>Queryset raises NotSupportedError when RHS has filterable=False attribute.</p><p>In response, o1 adds an underscore before filterable so that the branch never executes:</p><p>2: ASSISTANT → ALL django/db/models/sql/query.py &lt;&lt;&lt;&lt;&lt;&lt; SEARCH if not getattr(expression, 'filterable', True): raise NotSupportedError( expression.__class__.__name__ + ' is disallowed in the filter ' 'clause.' ) ======== if not getattr(expression, '_filterable', True): raise NotSupportedError( expression.__class__.__name__ + ' is disallowed in the filter ' 'clause.' ) &gt;&gt;&gt;&gt;&gt;&gt; REPLACE</p><p>As language models grow more capable, it is increasingly important to publish challenging, un-hackable software engineering benchmarks. SWE-Lancer's human-validated end-to-end tests emulate the actual workflow of a human engineer, rather than relying on a handful of selectively chosen test cases. As a result, SWE-Lancer is inherently more resistant to cheating and can more accurately reflect a model's capacity to produce genuine, economically valuable solutions for real-world engineering challenges.</p><p>"""You are an expert software engineer maintaining the Expensify repository. It has already been cloned, and is present in /app/expensify (your CWD). You have been tasked with fixing the following issue: {issue title} {full HTML documentation of issue, including how to reproduce the bug, the actual vs. expected behavior, and which platforms are affected}</p><p>The reward for the correct fix is ${price}. You do not need to push your changes to the repository, we will deal with this for you.</p><p>Do not attempt to run the app; simply make your changes and then end your turn. Do not end your turn until you have submitted your code changes. You absolutely must not leave action items / TODOs.</p><p>---You will be provided with a user tool, which you can call by running "bash -i -c 'user-tool'" in the command line, which has a user open the app with your local changes and perform the actions specified in the bug report. It could take up to a minute for the user to finish using the app. When you call the user tool, when the user finishes /app/expensify/user_tool/ will be populated with folders called output_browser1 ... n for as many browsers as were used by the user during their test. Inside each folder, you will find a file called trace.trace, which contains the trajectory the user took. Here are a few things to note:</p><p>-You will need to parse this file programmatically in order to open it.</p><p>-If a row has "type":"screencast-frame", then the "sha1" property will correspond to a .jpeg file in the resources folder, which is a screenshot of the browser at that time. -If you want to view the page as HTML, rather than a JPEG, you can look for rows that are called "type":"frame-snapshot"; you can print them out to see the HTML at this point in time. -You should review the rows with type "type" set to "log", "before", or "after" as they are important and show what actions are being taken.</p><p>-All of the rows are in order, so e.g. you can find an interesting log row and then look at the next row that is a frame-snapshot to see the HTML.</p><p>You should use this to help you iteratively debug and fix the issue. You can call it as often as you need to. When you call the user tool, you wait 90,000 milliseconds (e.g. by setting the timeout argument to 90000)! """ Models are prompted with the following general template for SWE Management Tasks. o1 Interaction Summary 1. Locate the Target File • The model begins by scanning the directory structure to find relevant files: !ls -l /app/expensify • It searches for zip-related validation logic: !grep -irn "zip" /app/expensify • To find the isValidZipCode function, it narrows the search: !grep -irn "ValidationUtils" /app/expensify/src | grep -i zip !grep -irn "isValidZipCode" /app/expensify/src • The model identifies the right file to modify and sees that we use a regex to validate zip code: !grep -A 20 "function isValidZipCode" /app/expensify/src/libs/ValidationUtils.ts • The model finds a reference to AddressForm.tsx aims to understand how the zipPostCode field is being processed and how the zip code input values are sanitized before being validated or used !grep -C 40 "zipPostCode?.trim" /app/expensify/src/ components/AddressForm.tsx 2. Search for the Issue • The model looks for where ZIPCODE appears in the codebase. Through this, it finds the regex used to validate US zip codes. !grep -irn "ZIP_CODE:" /app/expensify/src • The model looks more to see how textttAddressForm is used in the overall codebase, and specifically how zipcode is used. !grep -A 50 -B 50 "import AddressForm" /app/expensify/src/pages/ AddressPage.tsx</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Diagnose the Validation Logic</head><p>• The model reasons through the root cause of why a validation error does not display when a user enters a comma in the "zip code" field in the "Home Address Screen", and concludes that the likely issue is that the InputWrapper for the zip code field bypasses the form validation logic by using onValueChange.</p><p>The error is being set in the validator but is not displayed due to either: 1) missing triggers for validation during typing (onChange) or focus loss (onBlur), or 2) Mismatched field IDs causing the validation result to not propagate correctly.</p><p>• It hypothesizes that the fix involves removing the manual state handler for the zipcode field, so the "Home Address" form now relies solely on the form's built-in validation logic (via the validator prop in the FormProvider), and entering a comma in the ZIP/postcode field will immediately show the "incorrect zip format" error.</p><p>(a) Validation is not triggered dynamically (e.g., on typing or focus loss). (b) Mismatched field IDs (zipPostCode vs. addressZipCode) may prevent the error from displaying. 4. Modify the Code • The model makes a patch, removing the custom onValueChange so that the form's natural validator is invoked and the zip/postcode error now displays as expected when the user enters a comma. diff --git a/src/components/AddressForm.tsx b/src/components/AddressForm.tsx index 71928c1..ce4f25c 100644 ---a/src/components/AddressForm.tsx +++ b/src/components/AddressForm.tsx @@ -182,7 +182,6 @@ function AddressForm({ /&gt; &lt;/View&gt; &lt;View style={styles.formSpaceVertical} /&gt; -{/ * Remove onValueChange so this field uses the form's standard validation * /} &lt;InputWrapper InputComponent={TextInput} inputID={INPUT_IDS.ZIP_POST_CODE} @@ -190,7 +189,6 @@ function AddressForm({ label={translate('common.zip')} -onValueChange={setZipcode} defaultValue={zipcode} maxLength={countryRegexDetails?.maxLength} shouldSaveDraft={shouldSaveDraft} 5. Clean Up and Submit • The model submits the patch, believing the issue is resolved.</p><p>• The model's fix addresses the basic issue of the error not showing up when the user types a comma, but it does not fully address other issues which were captured in the real PR.</p><p>Evaluation. o1 successfully identified the relevant files, including ValidationUtils.ts and AddressForm.tsx, and correctly recognized that by removing onValueChange it could fall back to the form's normal validator, which would solve this particular issue. However, o1's solution was not fully comprehensive and did not pass our end-to-end test. It didn't address other issues which were all addressed in the pull request and Github discussion:</p><p>• Missing Validation Triggers: o1's patch does not enable validation on key events like onBlur or onChange, which is necessary for providing immediate feedback to users. The real pull request added logic to validate dynamically when the user interacts with the field.</p><p>• No Country-Specific Validation: o1's patch does not handle country-specific zip code formats or provide tailored feedback. The pull request implemented dynamic validation based on country-specific regexes and included zipFormat hints to guide users.</p><p>• Does Not Address Non-Zip Countries: o1's patch overlooks cases where some countries do not require a zip code. The pull request included logic to handle these scenarios, such as disabling or hiding the zip field when applicable.</p><p>• Error Message Improvements: o1's patch does not enhance error messages for clarity or localization. The pull request ensured errors were dynamically adjusted and localized based on the user's country and language settings.</p><p>4o Interaction Summary 1. Locate the Target File • The model scans the directory structure to find relevant files: os.listdir("/app/expensify")</p><p>• It navigates to the source code: src_path = "/app/expensify/src" os.listdir(src_path)</p><p>• After multiple iterations, it finds and opens AddressPage.tsx: address_page_path = os.path.join(pages_path, 'AddressPage.tsx') with open(address_page_path, 'r') as f: address_page_content = f.read() print <ref type="bibr">(address_page_content[:2000</ref>])</p><p>• The model searches for AddressForm, which likely contains input validation, directing it to ValidationUtils.ts, where the zip/postcode validation logic is located. 2. Search for the Issue</p><p>• The model searches for postcode-related validation within ValidationUtils.ts by writing a Python function.</p><p>• It finds the isValidZipCode(zipCode: string) function and its associated regex for validating zip codes.</p><p>• The model then examines CONST.ts to locate the regex:</p><formula xml:id="formula_1">US: { regex: /ˆ[0-9]{5}(?:[-][0-9]{4})?$/ }</formula><p>• Despite correctly identifying the regex that flags commas as invalid, the model notices that the validation error message is not shown, indicating the issue lies in how errors are handled within AddressForm.tsx.</p><p>• The model searches for the error message related to zip/postcode validation and hypothesizes it is triggered by: errors.zipPostCode = translate ('privatePersonalDetails.error.incorrectZipFormat', { zipFormat: countryZipFormat });</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Modify the Code</head><p>• The model decides to modify the code to ensure that validation errors display for the zip code field.</p><p>• Instead of fixing the validation logic, it incorrectly modifies the regex itself.</p><p>• The model identifies and modifies AddressForm.tsx to allow multiple zip code formats, but this change does not fix the validation issue:</p><formula xml:id="formula_2">@@ -3615,7 +3615,7 @@ const CONST = { GA: {}, GB: { -regex: /ˆ[A-Z]{1,2}[0-9R][0-9A-Z]?\s * [0-9][A-Z-CIKMOV]{2}$/ + regex: /ˆ(,|[A-Z]{1,2}[0-9R][0-9A-Z]? \s * ([0-9][ABD-HJLNP-UW-Z]{2})?)$/</formula><p>samples: 'LA102UX, BL2F8FX, BD1S9LU, WR4G 6LH', }, GD: {}, @@ -4134,7 +4134,7 @@ const CONST = { UG: {}, UM: {}, US: { -regex: /ˆ[0-9]{5}(?:[-][0-9]{4})?$/ + regex: /ˆ(,|[A-Za-z0-9]{5,10})$/ samples: '12345, 12345-1234, 12345 1234', }, UY: {},</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Attempt to Use the User Tool</head><p>• The model attempts to test the fix using the user tool but struggles with execution.</p><p>• It does not verify if an error message appears in the UI, failing to confirm whether the issue is actually resolved. 5. Clean Up and Submit</p><p>• The model submits the modified regex, believing the issue is resolved.</p><p>• However, the fix does not surface an error message when a user enters a comma, meaning the original problem persists.</p><p>Evaluation. GPT-4o followed a similar approach to o1, correctly identifying the necessary files and analyzing the regex pattern. However, it also overlooked the UI mechanisms responsible for displaying validation errors, failing to recognize that the issue stemmed from how validation logic was triggered. Instead of modifying the validation logic, GPT-4o attempted to adjust the regex, which did not address the core problem. The model conducted minimal testing and did not verify whether error messages appeared as expected in the UI. It also did not attempt a full form submission to validate its fix, limiting the effectiveness of its approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Claude 3.5 Sonnet Interaction Summary</head><p>1. Locate the Target File</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• The model scans the Expensify repository:</head><p>ls -la /app/expensify</p><p>• It then searches for files related to addresses and validation, writing a function to do so:</p><p>import os def search_files(directory, keyword): matching_files = [] for root, dirs, files in os.walk(directory): for file in files: if keyword.lower() in file.lower(): matching_files.append(os.path.join(root, file)) return matching_files address_files = search_files('/app/expensify/src/components', 'address') print("Address-related files in components directory:") for file in address_files: print(file) print("\nSearching for validation-related files:") validation_files = search_files('/app/expensify/src/components', 'validat') for file in validation_files: print(file)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Identify the Validation Logic</head><p>• The model identifies AddressForm.tsx as where validation logic is implemented. It reads in the content to find where zip code / postcode validation is implemented, and then uses regex to find the specific validator function.</p><p>import re with open('/app/expensify/src/components/AddressForm.tsx', 'r') as file: content = file.read()</p><p>not address other issues which were addressed in the pull request:</p><p>• Missing Country-Specific Zip Code Validation: Claude's patch used a generic validation approach and did not incorporate country-specific ZIP code formats. The pull request introduced a regex-based validation system that dynamically applies the correct format based on the selected country.</p><p>• No Dynamic Format Guidance: Claude's patch did not provide users with real-time hints on the expected ZIP code format for their country. The pull request added a feature that dynamically updates the hint text to show the correct format when a country is selected</p><p>• Failure to Handle Countries Without ZIP Codes: Claude's solution assumed that all countries require a ZIP code, leading to false validation errors in places where postal codes are not used. The pull request correctly allows empty ZIP fields when a country does not have a postal system.</p><p>• Lack of Centralized Validation Logic: Claude's patch scattered ZIP code validation across multiple locations in the codebase. The pull request centralized validation logic into a utility function (ValidationUtils), making it easier to maintain and extend.</p><p>• Inconsistent Error Messaging: Claude's patch did not enhance error messages, making them generic and unhelpful.</p><p>The pull request ensured that error messages now specify the correct ZIP format when validation fails, guiding users to enter the correct value.</p><p>• Validation Not Integrated with User Actions: Claude's solution did not validate ZIP codes dynamically based on user input. The pull request implemented onBlur and onChange validation triggers, ensuring that errors appear in real-time as the user types.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.10. Model Usage of User Tool</head><p>Here we provide an example of o1 using the user tool to help solve an issue in which an error page appears when a new user navigates to a concierge link after finishing the onboarding flow, when instead they should be able to navigate to the concierge chat.</p><p>Example of o1 using the user tool 1. Extracting Logs and Snapshots: The model parses trace.trace to extract logs and frame snapshots from the user tool, to understand key UI transitions and find error messages or timeouts related to the "join" button or concierge navigation.</p><p>trace_path = "/app/expensify/user_tool/output_browser1/trace.trace" logs = [] with open(trace_path, "r", encoding="utf-8") as f: for line in f: data = json.loads(line) if data.get("type") in ["log", "before", "after"]: logs.append(data) for entry in logs: print(entry)</p><p>2. Searching for Missing Elements in Snapshots: The model then searches frame snapshots for the "Join" button so it can see if the UI is rendering it correctly. If "join" was missing, it could mean a rendering issue or a missing translation. If "join" was present but disabled, it suggested a logic issue in the button's properties.</p><p>trace_path = "/app/expensify/user_tool/output_browser1/trace.trace" frame_snapshots = [] with open(trace_path, "r", encoding="utf-8") as f: for line in f: data = json.loads(line) if data.get("type") == "frame-snapshot": frame_snapshots.append(data) snapshots_near_call_15 = [] start_call_15 = 25250.356 end_call_15 = 55271.523 for snap in frame_snapshots: time = snap.get("timestamp") if time is not None and start_call_15 &lt;= time &lt;= end_call_15: snapshots_near_call_15.append(snap) for i, snap in enumerate(snapshots_near_call_15): html = snap.get("snapshot", {}).get("html", "") if "Join" in html: print(f"Snapshot {i} has 'Join' in it.") if "join" in html: print(f"Snapshot {i} has 'join' in it.")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Checking for the Join Button's Disabling Logic:</head><p>The model then searches user tool traces for isDisabled conditions affecting the button by running subprocess.run(["grep", "-Rni", "Join", "src/pages/signin"])</p><p>It finds the following logic, which supported its suspicions that the button was incorectly disabled due to network status or account errors.</p><p>&lt;Button isDisabled={network.isOffline || !!account?.message} success large text={translate('welcomeSignUpForm.join')} isLoading={account?.isLoading} onPress={() =&gt; Session.signUpUser()} pressOnEnter style={[styles.mb2]} /&gt;</p><p>4. Fixing the "Join" Button: The model removed isDisabled from the code to ensure that the Join button could always be clicked.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5.</head><p>Fixing the Missing Translation for "Join": The model checked if welcomeSignUpForm.join was missing anbd added a transition. Without a defined translation, "Join" would not appear on the button.</p><p>diff --git a/src/languages/en.ts b/src/languages/en.ts index 0000000..1111111 100644 ---a/src/languages/en.ts +++ b/src/languages/en.ts @@ -1,6 +1,9 @@ export default { + welcomeSignUpForm: { + join: 'Join', + }, common: { cancel: 'Cancel', yes: 'Yes',  Below, we share an example, filled-in SWE Manager task prompt, exactly as it is given to the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Example SWE Manager Task</head><p>You are an expert software engineering manager working on the Expensify repository. You have tasked your team with addressing the following issue:</p><p>[Paid] [$8000] zip /postcode validation error message not displayed for entering ',' on the Home address screen ___ ## Action Performed: 1. go to Settings &gt; profile&gt; personal details &gt;Home address 2. type the zip /postcode as , ## Expected Result: it should show validation error message ## Actual Result: does not show validation message ## Workaround: unknown ## Platforms: &lt;!---Check off any platforms that are affected by this issue ---&gt; Which of our officially supported platforms is this issue occurring on? -[ ] Android / native -[ ] Android / Chrome -[ ] iOS / native -[ ] iOS / Safari -[ ] MacOS / Chrome / Safari -[ ] MacOS / Desktop &lt;details&gt;&lt;summary&gt;Upwork Automation -Do Not Edit&lt;/summary&gt; &lt;ul&gt; &lt;li&gt;Upwork Job URL: <ref type="url" target="https://www.upwork.com/jobs/">https://www.upwork.com/jobs/</ref>˜015b692899f4b1568b&lt;/li&gt; &lt;li&gt;Upwork Job ID: 1623772333283323904&lt;/li&gt; &lt;li&gt;Last Price Increase: 2023-03-02&lt;/li&gt; &lt;/ul&gt; &lt;/details&gt; You will be paid $8000.0 if your team fixes the issue. Since you are a manager, your task is to select the best proposal regaerding how to fix the issue from the below options: Proposal: 0: # Proposal ## Restating the problem Some unwanted characters are allowed in zip code ## Root Cause 'Regex ' is not being validated correctly for zip code # Solution Here are some conditions for the post code: -Every postal code system uses only A-Z and/or 0-9 and sometimes space/dash -Not every country uses postal codes (ex. Ireland outside of Dublin), but we'll ignore that here. -The shortest postal code format is Sierra Leone with NN -The longest is American Samoa with NNNNN-NNNNNN -You should allow one space or dash. -Should not begin or end with space or dash 'ˆ[a-z0-9][a-z0-9\-]{0,10}[a-z0-9]$' This regex should cover all those conditions source: <ref type="url" target="https://stackoverflow.com/a/19844362/15373641">https://stackoverflow.com/a/19844362/15373641</ref> So I'll just this validation to the 'Personal information Page' as well as the 'Home Address Screen'. Not posting a code diff due to changed proposal guidelines ** Note: ** As mentioned by @Beamanator in <ref type="url" target="https://expensify.slack.com/archives/C049HHMV9SM/">https://expensify.slack.com/archives/C049HHMV9SM/</ref> p1675845424815519?thread_ts=1675838827.973319&amp;cid=C049HHMV9SM We also have to allow letters like in Canadian zip codes, therefore allowing the alphabets - <ref type="figure">-------------------------------------------</ref>Proposal: 1: ORIGINAL PROPOSAL (comment #1424743785):</p><p>-</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-------------------------------------------------------------------------------## Proposal</head><p>### Please re-state the problem that we are trying to solve in this issue. The validation on the 'AddressPage' component is insufficient, leading to many problems. We need to add proper validation for all the fields in the component.</p><p>### What is the root cause of that problem?</p><p>The root cause behind this issue is that none of the values on the home address are validated properly, the only thing checked is if the fields are empty or not in</p><p>'AddressPage'. <ref type="url" target="https://github.com/Expensify/App/blob/b113107ba03dce15a4e87bad994829987f916dfa/src/">https://github.com/Expensify/App/blob/b113107ba03dce15a4e87bad994829987f916dfa/src/</ref> pages/settings/Profile/PersonalDetails/AddressPage.js#L115-L122 ### What changes do you think we should make in order to solve the problem? The validation in 'AddressPage' is outdated and does not validate all fields properly. The best case would be to check the validations performed in ' CompanyPage' and then use the 'ValidationUtils' to ensure that not just the zip code, but all fields are correctly validated. ** EDIT: ** Adding the required checks for each field: For each required field, we can run it through 'ValidationUtils.isRequiredFulfilled ()' first.</p><p>** Zip code ** : Zip codes across the world can vary differently, they need not be of 5 digits only. I suggest we just do a basic sanity check and not do anything else .</p><p>-** Solution 1 ** Create a map of regexes with respective country specific zip code matching and then validate according to user input.</p><p>-** Solution 2 (Better IMO) ** It doesn't really matter whatever the zip code the user enters. We can just perform a basic sanity check and then let the user enter whatever they want. The regex for the same is -'ˆ[\w][\w\-]{0,10}[\w]$'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------ADDITIONAL NOTE (comment #1424971869):</head><p>"My [proposal](<ref type="url" target="https://github.com/Expensify/App/issues/14958#issuecomment">https://github.com/Expensify/App/issues/14958#issuecomment</ref> -1424743785) will resolve <ref type="url" target="https://github.com/Expensify/App/issues/15003">https://github.com/Expensify/App/issues/15003</ref> as well !"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------FURTHER DISCUSSION (comment #1427798502):</head><p>"Thanks for the feedback and context! For the zip code in Personal Information page, since we want to support zip code from any region in the world, it isn't really possible to create a single super regex to perform validation according to the country.</p><p>We are presented with two choices right now: ** Solution 1 ** Create a map of regexes with respective country specific zip code matching and then validate according to user input.</p><p>** Solution 2 (Better IMO) ** It doesn't really matter whatever the zip code the user enters. We can just perform a basic sanity check and then let the user enter whatever they want. The regex for the same is -'ˆ[\w][\w\-]{0,10}[\w]$'.</p><p>As for the other fields, no need for the detailed validation and we can perform just the basic sanity check."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------ADDITIONAL CLARIFICATION (comment #1431621152):</head><p>"My [proposal](<ref type="url" target="https://github.com/Expensify/App/issues/14958#issuecomment">https://github.com/Expensify/App/issues/14958#issuecomment</ref> -1424743785) will resolve <ref type="url" target="https://github.com/Expensify/App/issues/15003">https://github.com/Expensify/App/issues/15003</ref> as well !"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------FURTHER UPDATES (selected excerpts from conversation by same author):</head><p>(comment #1427798502 also mentioned):</p><p>"Thanks for the feedback and context! For the zip code in Personal Information page, since we want to support zip code from any region in the world, it isn't really possible to create a single super regex to perform validation according to the country. We can just do a basic sanity check, or we can optionally do a map of country code to zip code." (comment #1442138427): "If we proceed with adding the map to 'CONST.js', we can store each country's name, iso code, and the regex. Then if the user picks a country that does not exist in the map, we fallback to a simpler approach. That might be the best scenario."</p><p>(comment #1450806934):</p><p>"Yes please let's keep it all in the E/App repo for now. If we proceed with adding this in E/A, we should create a new file for storing the regex map. Or we could place it in 'CONST.js'. Ha, sure. We could either (1) proceed with adding the map to 'CONST.js', (2) create a new file for storing the regex map, or (3) create a new npm package for this." (comment #1459820688):</p><p>"While investigating more, I ran across a potential issue, can you please shed some light on this: Our most common use case involves the user searching for an address in the address line and choosing from the autocomplete. However, sometimes the zip code from that API is incomplete or doesn't match the stricter regex. In those cases, maybe we should help the user by letting them correct it . We'll show an error for them to fix it." We can add proper validation for all fields in the particular page including the</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------(End of unified proposal from 'Prince-Mendiratta'.) --------------------------------------------</head><note type="other">Proposal</note></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Evaluation flow for IC SWE tasks; the model only earns the payout if all applicable tests pass.</figDesc><graphic coords="2,100.02,67.06,396.84,141.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Evaluation flow for SWE Manager tasks; during proposal selection, the model has the ability to browse the codebase.</figDesc><graphic coords="2,100.02,243.15,396.83,156.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Breakdown of the different types of IC SWE issues in SWE-Lancer with examples from the Diamond Set. Blue categories on the left represent task topics, while green categories at right represent task types.</figDesc><graphic coords="4,100.02,67.06,396.86,167.58" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure4. SWE-Lancer issues are dynamically priced based on real-world difficulty. In the example above<ref type="bibr" target="#b6">(Expensify, 2023)</ref>, SWE managers rejected 5 early proposals that did not appropriately address edge cases. The initial request priced at $1,000 was increased to $8,000 over four weeks until it was solved.</figDesc><graphic coords="4,156.71,280.42,283.45,177.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Total payouts earned by each model on the full SWE-Lancer dataset including both IC SWE and SWE Manager tasks.</figDesc><graphic coords="5,311.05,306.71,226.77,162.96" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Model pass@1 performance on IC SWE and SWE Manager in the Diamond set and the full set; Claude 3.5 Sonnet performs the best and earns $208K in total on the Diamond set and over $400K on the Full set.</figDesc><graphic coords="6,59.05,67.06,226.77,162.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Pass@k performance on IC SWE tasks within the SWE-Lancer Diamond set increases with the number of attempts allowed.</figDesc><graphic coords="6,307.44,286.47,226.77,166.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure8. o1 pass@1 performance on Diamond IC SWE tasks by price range of task. Higher reasoning effort improves overall pass@1 and improves performance on harder, more expensive tasks.</figDesc><graphic coords="6,307.44,518.71,226.77,162.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 .</head><label>9</label><figDesc>Figure 9. Pass@1 performance on Diamond IC SWE tasks slightly decreases when the model cannot use the user tool.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 10 .</head><label>10</label><figDesc>Figure 10. Attempting tasks with o1 before passing failed tasks to freelancers could reduce costs by 1/3 on Diamond IC SWE tasks.</figDesc><graphic coords="7,114.19,449.25,368.50,166.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 11 .</head><label>11</label><figDesc>Figure 11. Real-world illustration of the iteration process for submitting and choosing solutions to Github issues. This task was incorporated into our SWE-Lancer dataset.</figDesc><graphic coords="14,85.84,139.47,425.17,469.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 12 .</head><label>12</label><figDesc>Figure12. Lifecycle of an Upwork task. First, project maintainers post a software engineering task to Upwork with an associated payout. Then, users submit in-depth proposals for fixing the issue. Finally, an assigned reviewer selects the best proposal -(used to create SWE Manager tasks). The winning proposal is implemented (used to create IC SWE tasks).</figDesc><graphic coords="16,55.44,241.72,486.00,118.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>0-</head><figDesc>The issue is well-specified, and it is clear what is required for a successful solution. 1-There are some blanks to fill in about the issue, but there is a sensible interpretation of what is required for a successful solution. 2-The issue is vague, and there is room for ambiguity. It is unclear what a successful solution would look like.3-It is almost impossible to understand what you are being asked to do without further information.Issue Well-Specified Score: [0 to 3] Please explain your choice above. Include references to specific filenames, function/class names, or lines of code where relevant.[Text box]    </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>Please re-state the problem that we are trying to solve in this issue. Validation errors are not shown in the address page with zip code ### What is the root cause of that problem? We don't validate zip codes. In fact In the particular page i don't see any validation except empty check validation. https://github.com/Expensify/App/blob/main/src/pages/settings/Profile/ PersonalDetails/AddressPage.js#L116 ### What changes do you think we should make in order to solve the problem? &lt;!--DO NOT POST CODE DIFFS --&gt;</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Full pass@1 Accuracies and Earnings for IC SWE and SWE Manager. Earnings are rounded to the nearest thousand. SWE-Lancer Diamond contains 237 IC SWE tasks worth $236,300 and 265 SWE Manager tasks worth $264,500, totaling 502 tasks worth $500,800. The full set has 764 IC SWE tasks worth $414,775 and 724 SWE Manager tasks worth $585,225, totaling 1,488 tasks worth $1,000,000. In the table below, overall metrics for SWE-Lancer Diamond and SWE-Lancer Full sets are highlighted in blue, while baseline metrics for IC SWE (Diamond) and SWE Manager (Diamond) tasks are highlighted in green.</figDesc><table><row><cell>Model</cell><cell>User Tool</cell><cell>Dataset</cell><cell cols="4">Reasoning Effort pass@1 Dollars Earned / Total Earn Rate</cell></row><row><cell>GPT-4o</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>N/A</cell><cell>8.0%</cell><cell>$14k / $236k</cell><cell>6.0%</cell></row><row><cell>o1</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>Low</cell><cell>9.3%</cell><cell>$16k / $236k</cell><cell>6.8%</cell></row><row><cell>o1</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>Medium</cell><cell>15.6%</cell><cell>$24k / $236k</cell><cell>9.9%</cell></row><row><cell>o1</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>High</cell><cell>16.5%</cell><cell>$29k / $236k</cell><cell>12.1%</cell></row><row><cell>3.5 Sonnet</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>N/A</cell><cell>26.2%</cell><cell>$58k / $236k</cell><cell>24.5%</cell></row><row><cell>GPT-4o</cell><cell>No</cell><cell>IC SWE (Diamond)</cell><cell>N/A</cell><cell>8.0%</cell><cell>$17k / $236k</cell><cell>7.2%</cell></row><row><cell>o1</cell><cell>No</cell><cell>IC SWE (Diamond)</cell><cell>High</cell><cell>13.1%</cell><cell>$23k / $236k</cell><cell>9.7%</cell></row><row><cell>GPT-4o</cell><cell>Yes</cell><cell>IC SWE (Full)</cell><cell>N/A</cell><cell>8.6%</cell><cell>$29k / $415k</cell><cell>6.9%</cell></row><row><cell>o1</cell><cell>Yes</cell><cell>IC SWE (Full)</cell><cell>High</cell><cell>20.3%</cell><cell>$78k / $415k</cell><cell>18.9%</cell></row><row><cell>3.5 Sonnet</cell><cell>Yes</cell><cell>IC SWE (Full)</cell><cell>N/A</cell><cell>21.1%</cell><cell>$89k / $415k</cell><cell>21.5%</cell></row><row><cell>GPT-4o</cell><cell>N/A</cell><cell>SWE Manager (Diamond)</cell><cell>N/A</cell><cell>37.0%</cell><cell>$125k / $265k</cell><cell>47.1%</cell></row><row><cell>o1</cell><cell>N/A</cell><cell>SWE Manager (Diamond)</cell><cell>High</cell><cell>41.5%</cell><cell>$137k / $265k</cell><cell>51.8%</cell></row><row><cell>3.5 Sonnet</cell><cell>N/A</cell><cell>SWE Manager (Diamond)</cell><cell>N/A</cell><cell>44.9%</cell><cell>$150k / $265k</cell><cell>56.8%</cell></row><row><cell>GPT-4o</cell><cell>N/A</cell><cell>SWE Manager (Full)</cell><cell>N/A</cell><cell>38.7%</cell><cell>$275k / $585k</cell><cell>47.0%</cell></row><row><cell>o1</cell><cell>N/A</cell><cell>SWE Manager (Full)</cell><cell>High</cell><cell>46.3%</cell><cell>$302k / $585k</cell><cell>51.6%</cell></row><row><cell>3.5 Sonnet</cell><cell>N/A</cell><cell>SWE Manager (Full)</cell><cell>High</cell><cell>47.0%</cell><cell>$314k / $585k</cell><cell>53.7%</cell></row><row><cell>GPT-4o</cell><cell>N/A</cell><cell>SWE-Lancer Diamond</cell><cell>N/A</cell><cell>23.3%</cell><cell>$139k / $501k</cell><cell>27.7%</cell></row><row><cell>o1</cell><cell>N/A</cell><cell>SWE-Lancer Diamond</cell><cell>High</cell><cell>29.7%</cell><cell>$166k / $501k</cell><cell>33.1%</cell></row><row><cell>3.5 Sonnet</cell><cell>N/A</cell><cell>SWE-Lancer Diamond</cell><cell>N/A</cell><cell>36.1%</cell><cell>$208k / $501k</cell><cell>41.5%</cell></row><row><cell>GPT-4o</cell><cell>N/A</cell><cell>SWE-Lancer Full</cell><cell>N/A</cell><cell>23.3%</cell><cell>$304k / $1M</cell><cell>30.4%</cell></row><row><cell>o1</cell><cell>N/A</cell><cell>SWE-Lancer Full</cell><cell>High</cell><cell>32.9%</cell><cell>$380k / $1M</cell><cell>38.0%</cell></row><row><cell>3.5 Sonnet</cell><cell>N/A</cell><cell>SWE-Lancer Full</cell><cell>N/A</cell><cell>33.7%</cell><cell>$403k / $1M</cell><cell>40.3%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Diamond Task Pass Rates by Task Type</figDesc><table><row><cell>IC SWE</cell><cell>SWE Manager</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Diamond Task Pass Rates by Nature of Work</figDesc><table><row><cell>IC SWE</cell><cell>SWE Manager</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Diamond Pass@1 Rate Analysis Based on Task Creation Date.</figDesc><table><row><cell>IC SWE</cell><cell>Manager</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 .</head><label>7</label><figDesc>Number of tasks by task nature within SWE-Lancer Diamond and SWE-Lancer Full datasets.</figDesc><table><row><cell>Diamond</cell><cell>Full</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 8 .</head><label>8</label><figDesc>Resolution time and comments count within SWE-Lancer Diamond and SWE-Lancer Full datasets.</figDesc><table><row><cell></cell><cell></cell><cell>Diamond</cell><cell></cell><cell></cell><cell>Full</cell><cell></cell></row><row><cell>Metric</cell><cell cols="6">IC SWE SWE Manager Both IC SWE SWE Manager Both</cell></row><row><cell>Resolution Time</cell><cell>25.00</cell><cell>27.99</cell><cell>26.15</cell><cell>20.33</cell><cell>25.00</cell><cell>21.47</cell></row><row><cell>Comments</cell><cell>41.94</cell><cell>51.55</cell><cell>47.01</cell><cell>36.39</cell><cell>47.39</cell><cell>41.74</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 .</head><label>9</label><figDesc>Proportion of Tasks in each Price Range for SWE-Lancer Diamond and SWE-Lancer Full</figDesc><table><row><cell>Price Range</cell><cell>Diamond</cell><cell>Full</cell></row><row><cell>Under $500</cell><cell>31.5%</cell><cell>44.2%</cell></row><row><cell>$500 -$1000</cell><cell>33.9%</cell><cell>28.1%</cell></row><row><cell>$1000 -$2000</cell><cell>25.3%</cell><cell>23.9%</cell></row><row><cell>$2000 and up</cell><cell>9.4%</cell><cell>3.8%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 10 .</head><label>10</label><figDesc>IC SWE statistics for SWE-Lancer Diamond and SWE-Lancer Full datasetsBelow, we share an example, filled-in IC SWE task prompt, exactly as it is given to the model.</figDesc><table><row><cell>Metric</cell><cell cols="2">Diamond</cell><cell></cell><cell>Full</cell></row><row><cell></cell><cell cols="4">Mean Max Mean Max</cell></row><row><cell>Lines of Code</cell><cell>69</cell><cell>1812</cell><cell>55</cell><cell>1812</cell></row><row><cell>Number of Files</cell><cell>2</cell><cell>21</cell><cell>2</cell><cell>39</cell></row><row><cell>Issue Word Count</cell><cell>271</cell><cell>466</cell><cell>270</cell><cell>2842</cell></row><row><cell cols="3">A.13. Example IC SWE and SWE Management Task Prompts</cell><cell></cell><cell></cell></row><row><cell>Example IC SWE Task</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">You are an expert software engineer maintaining the Expensify repository. It has</cell></row><row><cell cols="5">already been cloned, and is present in /app/expensify (your CWD). You have been</cell></row><row><cell cols="2">tasked with fixing the following issue:</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">[HOLD for payment 2023-10-09] [$500] A new tab opens when downloading offline</cell></row><row><cell>___</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>## Action Performed:</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">1. From user A, Send an attachment to user B.</cell><cell></cell><cell></cell></row><row><cell cols="4">2. Be offline for user B before opening the attachment</cell><cell></cell></row><row><cell cols="2">3. Click on the attachment sent from User A</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">4. Click on the download button at the top</cell><cell></cell><cell></cell><cell></cell></row><row><cell>## Expected Result:</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>the inactive download button is shown.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Do not attempt to run the app; simply make your changes and then end your turn. Do not end your turn until you have submitted your code changes. You absolutely must not leave action items / TODOs.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Due to rate limits, we evaluated Claude 3.5 Sonnet on the full set with pass@1 only.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Because pass@1 represents one sample, there can be significant variance between runs.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This evaluation would not have been possible without the help of those at OpenAI who work on foundational systems used by teams across the company. In particular, we would like to thank <rs type="person">Evan Mays</rs> and <rs type="person">Kevin Liu</rs> for underlying evaluation infrastructure development, <rs type="person">Nat McAleese</rs> for coming up with the name SWE-Lancer and for valuable feedback and collaboration on the price analysis, <rs type="person">Rachel Dias</rs> for human data vendor sourcing and setup, <rs type="person">Jack Edwards</rs> for open-source codebase cleanup and price analysis support, <rs type="person">Grace Kim</rs> for task validation support, <rs type="person">Oliver Jaffe</rs>, <rs type="person">Jack Edwards</rs>, <rs type="person">Giulio Starace</rs> and <rs type="person">James Aung</rs> for support with running open-source models, <rs type="person">Patrick Chao</rs> for plotting library development, <rs type="person">Olivia Watkins</rs> and <rs type="person">Philip Guo</rs> for valuable feedback on the price analysis, <rs type="person">Phoebe Thacker</rs> and <rs type="person">Mia Glaese</rs> for human data team leadership, <rs type="person">Olivia Watkins</rs>, <rs type="person">Patrick Chao</rs>, <rs type="person">Miles Wang</rs>, <rs type="person">Leyton Ho</rs>, <rs type="person">Andy Applebaum</rs>, <rs type="person">Leon Maksin</rs>, <rs type="person">Joel Parish</rs>, <rs type="person">Kevin Liu</rs>, <rs type="person">Aleksander Madry</rs>, and <rs type="person">Alex Beutel</rs> for feedback on earlier drafts of the paper, the many software engineer annotators for qualitychecking tasks, the <rs type="funder">OpenAI Preparedness, Safety Systems</rs>, and Research organizations for sponsoring this work, and the <rs type="funder">Upwork and Expensify developers</rs> and contributors for open-sourcing their original process.</p></div>
+<div><head>A.8. Prompting</head><p>Models are prompted with the following general template for IC SWE Tasks. We did not find variance in performance when including vs. excluding the prices from the promtp.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>by the author(s). ** Version Number: ** 1.2.67-7 ** Reproducible in staging?: ** y ** Reproducible in production?: ** new feature ** If this was caught during regression testing, add the test name, ID and link from TestRail: ** ** Email or phone of affected tester (no customers): ** ** Logs: ** <ref type="url" target="https://stackoverflow.com/c/expensify/questions/4856">https://stackoverflow.com/c/expensify/questions/4856</ref> ** Notes/Photos/Videos: ** <ref type="url" target="https://user-images.githubusercontent.com/43996225/217662506-507818da-7e76-4a4a-b8b8">https://user-images.githubusercontent.com/43996225/217662506-507818da-7e76-4a4a-b8b8</ref> -5525fc66e651.mov <ref type="url" target="https://user-images.githubusercontent.com/43996225/217662521-34c3d804-483d-4e42-a8fe">https://user-images.githubusercontent.com/43996225/217662521-34c3d804-483d-4e42-a8fe</ref> -e87aaf5490fc.mp4 ** Expensify/Expensify Issue URL: ** ** Issue reported by: ** @gadhiyamanan ** Slack conversation: ** <ref type="url" target="https://expensify.slack.com/archives/C049HHMV9SM/">https://expensify.slack.com/archives/C049HHMV9SM/</ref> p1675838827973319 [View all open jobs on GitHub](<ref type="url" target="https://github.com/Expensify/App/issues?q=is%3Aopen+">https://github.com/Expensify/App/issues?q=is%3Aopen+</ref> is%3Aissue+label%3A%22Help+Wanted%22)</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A.4. Coding and Software Engineering Evaluations Comparison Table <ref type="table">Table 5</ref>. Comparison of SWE-Lancer to existing coding and SWE-related benchmarks: SWE-Lancer uniquely maps model performance to monetary metrics, incorporates full-stack tasks and management tasks, and evaluates using execution-based end-to-end tests hand-crafted by engineers. In contrast, other benchmarks rely on pre-existing tests within repositories or tests generated by LLMs.</p><p>Evaluation Language Dataset Source Data Type Capabilities Tested Monetary Metric? Evaluation Method Source of Evaluation Method SWE-Lancer Javascript / Typescript Open-source and commercial Expensify repo of issues posted on Upwork Professional software engineering problem statements Software engineering ✔ End-to-end test Hand-written by professional software engineers SWE-Bench Verified Python Open-source GitHub repos GitHub issues from all developer frameworks Software maintenance ✖ Unit test Sourced from original repository SWE-Bench Multimodal Javascript / Typescript / HTML / CSS Open-source GitHub repos GitHub issues focused on developer tools and utilities Software maintenance tasks using multimodal data ✖ Unit test Sourced from original repository RepoCoder Python Open-source Python repos GitHub issues from Python repositories that meet certain criteria (post Jan '23, non-fork, 100+ stars, 80%+ Python, unit tests) Code completion ✖ Unit test, similarity metrics Sourced from original repository RepoBench Python and Java Github-Code Dataset and newly crawled GitHub data (post-Feb 2023) Single and multi-file code snippets Code retrieval and completion ✖ Similarity metrics N/A LiveCodeBench Python LeetCode, AtCoder, and CodeForces contests Coding problems designed for use in competitive programming competitions Code generation ✖ Unit test Generated using LLMs NaturalCodeBench Python and Java User queries from online coding services Problem statements derived from real-world user queries Code generation ✖ Automated unit testing Generated using GPT-4 then refined by humans BigCodeBench Python Human expert curation Natural language tasks composed of multiple substeps Code completion ✖ Unit test Generated using GPT-4 then refined by humans HumanEval Python Hand-written by human experts Python functions Code generation ✖ Unit tests Hand-written by human experts CodeXGLUE Python / Java / JS / PHP / Ruby / Go / C / C#) Open-source GitHub repos &amp; newly curated sets 14 task-specific code/text datasets Code understanding &amp; generation ✖ Unit test, similarity metrics Benchmark authors (Lu et al., 2021) MBPP Python Crowd sourced, some are expert verified Short entry-level Python functions Code completion ✖ Unit test Crowd sourced MathQA-Python Python Converted from MathQA Solving mathematical word problems using Python Python program synthesis ✖ Correctness Sourced from MathQA AlphaCode C++ / Python / Java Scraped from Codeforces Competition coding problems Code generation ✖ Unit test Scraped from Codeforces MTPB Python Human expert written Multi-turn coding problems and prompts Code completion ✖ Unit test Human expert written DS-1000 Python Collected from StackOverflow Data science problems Fixing code ✖ Unit test Collected from StackOverflow Comparing Learnings Against Prior Benchmarks: For SWE-Lancer's IC SWE tasks, one comparable benchmark is SWE-Bench Multimodal, where GPT-4o solved 12.2% of visual programming tasks when given the best scaffold and multimodal capabilities. This is comparable to GPT-4o scoring 8.0% on our IC SWE Diamond tasks when the model can ingest image screenshots via the user tool. On SWE-Bench Verified, the industry standard benchmark for software engineering, GPT-4o currently scores 38.8% using the best available scaffold, but only 8% on SWE-Lancer Diamond IC SWE tasks -likely because SWE-Bench Verified focuses on bugfixes, and SWE-Lancer includes open-ended problems (adding new features, reliability) and full-stack development. This highlights the need for more challenging, unsaturated SWE Management Task Instructions f"""You are an expert software engineering manager working on the Expensify repository. You have tasked your team with addressing the following issue: {issue title} {full HTML documentation of issue, including how to reproduce the bug, the actual vs. expected behavior, and which platforms are affected} You will be paid {'price'} if your team fixes the issue. Since you are a manager, your task is to select the best proposal regarding how to fix the issue from the below options: {list of all proposals} ---For your convenience, the Expensify repository has already been cloned, and is present in /app/expensify (your CWD). You should not attempt to run the app or implement the entire fix, but you can review the codebase to understand the context of the issue. When you are ready to submit your answer, please create a JSON file in /app/expensify/manager_decisions.json with the following format: { selected_proposal_id: int, } You must write your output to this path exactly: '/app/expensify/manager_decisions.json'. You must not submit to anywhere in /mnt/data, just write to '/app/expensify/manager_decisions.json' exactly! """ A.9. Qualitative Analysis of Rollouts</p><p>We conduct a qualitative analysis of task instances from SWE-Lancer, focusing on model-generated solutions and debugging strategies. The analysis is based on agent trajectories under the default configuration of o1, 4o, and Claude 3.5 Sonnet.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Issue Summary.</head><p>The Expensify app fails to display a validation error message when users enter a comma (,) in the zip/postcode field on the Home Address screen, allowing invalid input. This issue occurs across multiple platforms and may stem from missing input sanitization or incomplete validation logic. The bug was observed in staging and production, potentially introduced during the N7 Account Settings update (Issue #14958).</p><p>Note on end-to-end tests. The end-to-end tests we developed for each issue are robust and reflect the key considerations from the original Github discussion. While this issue initially concerned the commas in zip-code validation, much of the discussion in the Github thread focused on improving validation overall, including country-specific regex dictionaries and handling edge cases where the user hasn't selected a country or a country lacks a postal system. Thus, our end-to-end tests measure not just whether the model's code causes the validation error to appear when entering a comma, but also whether it can comprehensively handle the full range of global zip-code formats.</p><p># Locate the validator function validator_pattern = re.compile(r'const validator = useCallback\((. * ?)\s * =&gt;\s * {(. * ?)}\s * ,\s * \[translate\]\);', re.DOTALL) validator_match = validator_pattern.search(content) if validator_match: print("Validator function found:") print(validator_match.group(0)) else: print("Validator function not found")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Modify the Code and Submit</head><p>• The model modifies the validator function to enforce the no comma rule, generating the following diff. This modifies AddressForm.tsx to ensure that entering a comma in the Zip / Postcode field triggers a validation error message, by adding a new validation rule that specifically checks for a comma.</p><p>• Although this fixed the specified bug, the zip code validation logic is too restrictive, and doesn't support international zip codes which are checked for in our end-to-end tests.</p><p>diff --git a/src/components/AddressForm.tsx b/src/components/AddressForm.tsx index 4470481d2be..ecd380bf9ce 100644 ---a/src/components/AddressForm.tsx +++ b/src/components/AddressForm.tsx @@ -118,7 +118,10 @@ function AddressForm({ ErrorUtils.addErrorMessage(errors, 'firstName', translate(' bankAccount.error.firstName')); if (countrySpecificZipRegex) { + if (values.zipPostCode &amp;&amp; values.zipPostCode.includes(',')) { + errors.zipPostCode = translate('privatePersonalDetails.error .noCommaAllowed'); + } else if (countrySpecificZipRegex) { + if (!countrySpecificZipRegex.test(values.zipPostCode?.trim() .toUpperCase())) { if (ValidationUtils.isRequiredFulfilled(values. zipPostCode?.trim())) { errors.zipPostCode = translate(' privatePersonalDetails.error.incorrectZipFormat' , {zipFormat: countryZipFormat}); @@ -126,8 +129,11 @@ function AddressForm({ errors.zipPostCode = translate('common.error. fieldRequired'); } } + } else if (!CONST.GENERIC_ZIP_CODE_REGEX.test(values?. zipPostCode?.trim()?.toUpperCase() ?? '')) { + errors.zipPostCode = translate('privatePersonalDetails.error .incorrectZipFormat'); + } return errors;</p><p>Evaluation. Claude 3.5 Sonnet was extremely quick to identify validation logic as the root cause of the issue and fixed the specified bug, but it was not fully comprehensive and did not pass our end-to-end test. Despite fixing the logic so commas in the zip code field now get flagged, and identifying that validation was failing for valid international zip codes, Claude did 6. Fixing Concierge Navigation Issues: The model then examined ConciergePage.tsx and found the app tried to go back when there was no history. It added a check to prevent navigation errors. This helped resolve the root cause of the issue: it prevented the app from breaking when a new user without prior history wanted to navigate to the Concierge page.</p><p>diff --git a/src/pages/ConciergePage.tsx b/src/pages/ConciergePage.tsx index 1234567..abcdef0 100644 ---a/src/pages/ConciergePage.tsx +++ b/src/pages/ConciergePage.tsx @@ -35,7 +35,9 @@ function ConciergePage({session}: ConciergePageProps) { if (!session || !session.authToken) { Session.signOutAndRedirectToSignIn(); return; -} + } else if (navigation.canGoBack()) { + navigation.goBack(); // Only navigate back if history exists. + }</p><p>7. Verifying the Fixes with the User Tool: After applying all fixes, the model reran the user tool to confirm it worked appropriately.</p><p>In summary, o1 used the user tool to iteratively debug the issue by extracting logs, analyzing UI snapshots, and identifying key failures. It first ran the tool to collect trace.trace logs, filtering for log, before, and after entries to detect errors and timeouts. It then inspected frame-snapshot data to verify if the "Join" button was rendered correctly and whether it was disabled. Upon discovering issues with button accessibility and missing translations, o1 modified the UI logic and added missing translations, then reran the user tool to validate fixes. Finally, it used the tool to confirm that new users could successfully sign up and access Concierge without encountering timeouts or navigation errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.11. Holdout Set</head><p>We maintain a $499,200 private holdout set to mitigate risks from contamination and model browsing. This internal-only set contains $178,475 worth of IC SWE tasks that were augmented by professional software engineers: to construct this split, we held the task description and test cases for issues constant, and instructed software engineers familiar with the Expensify repository to reintroduce the bug or issue in a distinct but equivalent way. This approach mirrors real-world software development cycles where recurring issues (such as downtime or unexpected behavior) have diverse and persistent root causes. As with all tasks, these issues were triple-verified by professional software engineers for clarity, faithfulness, and feasibility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.12. Additional SWE-Lancer Dataset Details</head><p>Here we describe more details around dataset composition for both the SWE-Lancer Diamond set and full set. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------</head><note type="other">Proposal</note><p>: 3: ## Proposal ### Re-state the problem zip/postcode validation error message not displayed for entering , on the Home address screen ### What is the root cause of that problem? The root cause of this problem is the non-existent validation function for zip/ postcode field. ### What changes do you think we should make in order to solve the problem? &lt;!--DO NOT POST CODE DIFFS --&gt; Solution is very simple!!! Before clicking save button, just validate the zip/ postcode field by using this function and show the validation error message if the user entered wrong. ''' / ** * @param {String} postcode * @returns {Boolean} * / function isValidPostalCode(postcode) { return /ˆ[0-9]{5}(?:-[0-9]{4})?$/.test(postcode); } ''' ### What alternative solutions did you explore? (Optional) Optionally, we can use postal code API for postal code validation from <ref type="url" target="https://developer.bring.com/api/postal-code/">https://  developer.bring.com/api/postal-code/</ref> - <ref type="figure">------------------------------------------</ref>-Proposal: 4: ## Proposal ### Please re-state the problem that we are trying to solve in this issue. Some unwanted characters are allowed in zip code ### What is the root cause of that problem? 'Regex ' is not being validated correctly for zip code ### What changes do you think we should make in order to solve the problem? &lt;!--DO NOT POST CODE DIFFS --&gt; 'Regex' is not validated for zip code. I'd propose adding an existing ' ValidationUtils' function for zip code or a new function if it's not already there. Then hooking that to all forms that have zip code.</p><p>** Note: ** We can also handle unexpected punctuation like ',' by either removing it or showing an error.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------Proposal: 5:</head><p>ORIGINAL PROPOSAL (comment #1427806164):</p><p>- <ref type="figure">-------------------------------------------------------------------------------#</ref># Proposal ### Please re-state the problem that we are trying to solve in this issue. -',' is allowed in zip / postcode input validation -space-only (' ') is allowed in all fields but not actually saved ### What is the root cause of that problem? There's no validation check for all fields on Home address screen, except 'required' validation. <ref type="url" target="https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/">https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/</ref> pages/settings/Profile/PersonalDetails/AddressPage.js#L98-L123 Then why are they saved and then reset to previous values when re-visit this page? ( main root cause of #15003) ' ' passes current validation and 'updateHomeAddress' api is called. The issue is that we pass trimmed values as api params so actually empty values are sent to server which causes api to fail. That's why values are reverted back to original. ### What changes do you think we should make in order to solve the problem? ** For zipcode: ** I checked context: &gt; be aware that the current validation on that page only allows numbers (and an optional -) but in the new Home Address form we have to also allow letters since some countries have letters in their zip codes So I think just allowing letters in current validation of zip code which was used in bank account step should be simple solution. <ref type="url" target="https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/">https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/</ref> CONST.js#L780 New zipcode regex for Home address would be: '/[a-zA-Z0-9]{5}(?:[-][a-zA-Z0-9]{4})?/' We can add new flag param called 'shouldAllowLetters' in 'isValidZipCode' function and use this in both Home address page and Personal information page. <ref type="url" target="https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/">https://github.com/Expensify/App/blob/39d9b660e387b28688a221b976f0fbf52873cc67/src/</ref> libs/ValidationUtils.js#L167-L169 ** For all fields: ** -Validate trimmed value instead of raw value by using 'isRequiredFullfilled' function defined in 'ValidationUtils' -(optional) For other strict validations, we can use existing logic in 'CompanyStep ' ** Addon: ** I noticed no-trim issue happens on 'CompanyStep' as well, which has the same root cause as #15003. ' ' is correct in frontend validation but incorrect in backend validation because it's trimmed on api call. It would be good to fix them too in this issue.</p><p><ref type="url" target="https://user-images.githubusercontent.com/108292595/219962759-8c140cf8-5888-4af9-">https://user-images.githubusercontent.com/108292595/219962759-8c140cf8-5888-4af9-</ref>b478-b3a16a2ee1b3.mp4</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------------------------------------------</head><p>UPDATED PROPOSAL (comment #1436038776):</p><p>"## Proposal </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------------------------------</head><p>For your convenience, the</p><p>Expensify repository has already been cloned, and is present in /app/expensify (your CWD). You should not attempt to run the app or implement the entire fix, but you can review the codebase to understand the context of the issue. When you are ready to submit your answer, please create a JSON file in /app/ expensify/manager_decisions.json with the following format: { selected_proposal_id: int, } You must write your output to this path exactly: '/app/expensify/manager_decisions. json'. You must not submit to anywhere in /mnt/data, just write to '/app/ expensify/manager_decisions.json' exactly!</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.14. Price Analysis -Additional Details</head><p>To estimate API costs, we created new OpenAI API keys and measured the amount spent after each run. We used gpt-4o-2024-08-06 and OpenAI's o1 with high reasoning effort.</p><p>We also calculated these additional metrics (results below are the average over 5 runs):</p><p>1. Cost Ratio, not conditioned on success: Ignoring success and simply calculating total model API cost / total freelancer cost across all tasks: GPT-4o costs 0.08% of freelancer cost and o1 costs 0.7%.</p><p>2. Model Earnings on correctly solved tasks / Model API Cost over all tasks: On solved tasks: GPT-4o earns $109 for every $1 of API cost, and o1 earns $20 for every $1 of API cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.15. Evaluation of Open-Source Models</head><p>In addition to the main models evaluated in Section 3, we also ran preliminary evaluations on two open-source models:</p><p><ref type="url" target="https://huggingface.co/deepseek-ai/DeepSeek-R1">Deepseek-R1</ref> and <ref type="url" target="https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct">Meta Llama 3.3 70B Instruct;</ref> however, performance here may be underelicited due to some limitations described below. 1. Poor instruction following led to models struggling to navigate the codebase and localize the issue. Our scaffold provided guidance for how the model could familiarize itself with the repository, essentially instructing the model to begin by running ls with a Python block, waiting for a reply, and always proceeding step by step. While models like Claude 3.5 Sonnet, GPT-4o, and o1 followed these instructions to understand the codebase structure, Deepseek-R1 in particular would not follow these instructions and would rarely inspect the directory tree, instead either hallucinating the repository structure or running a superficial context-blind search, with something like the below: import os target_file = "UserProfilePage.js" found = None for root, _dirs, files in os.walk("/workspace/project"): if target_file in files: found = os.path.join(root, target_file) break print("Found:", found if found else "Not found")</p><p>The above code from R1 incorrectly assumes the repo lives under /workspace/project, relies on an exact name match (which would miss if the file was actually called UserProfilePage.tsx or userProfilePage.js, and returns a binary outcome (found vs. not found) instead of listing related files.</p><p>2. Despite instructions to proceed step by step, models would try to solve the whole task at once. Our scaffold instructed models to not try to solve the problem all at once, but both Deepseek-R1 and Llama 3.3 would try to write a full patch right away instead of fully understanding how the problem arises. Claude, GPT-4o, and o1 all frequently grepped the codebase with various keywords and read the contents of key files to understand the issue -we did not observe this with the open-source models.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>[</head><figDesc>Updated](https://github.com/Expensify/App/issues/14958#issuecomment-1427806164) based on scope change https://github.com/Expensify/App/issues/14958#issuecomment -1431431974" (No major changes shown, just referencing the original proposal and stating it has been updated.)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 6 .</head><label>6</label><figDesc>Number of tasks by task type within SWE-Lancer Diamond and SWE-Lancer Full datasets.We already have validations for these in other flows like company step. We can reuse the same functionality here as well.For ex: We already have validation util for zipcode here -https://github.com/ Expensify/App/blob/main/src/libs/ValidationUtils.js#L167</figDesc><table><row><cell>Diamond</cell><cell>Full</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_17"><head>Table 11 .</head><label>11</label><figDesc>Preliminary pass@1 Accuracies and Earnings for IC SWE and SWE Manager on open-source models. Earnings are rounded to the nearest thousand. SWE-Lancer Diamond contains 237 IC SWE tasks worth $236,300 and 265 SWE Manager tasks worth $264,500, totaling 502 tasks worth $500,800. The full set has 764 IC SWE tasks worth $414,775 and 724 SWE Manager tasks worth $585,225, totaling 1,488 tasks worth $1,000,000.preliminary results in Table11reflect one seed on our default scaffold. We suspect a more customized scaffold could result in significantly higher performance on IC SWE tasks (which are more dependent on scaffolding) from these open-source models, especially Deepseek-R1. We used the same scaffold used to run the OpenAI and Anthropic models; customizing this scaffold to better serve open-source models would likely elicit better performance. Below, we summarize the common failure modes we observed from Deepseek-R1 and Llama 3.3 70B under the current scaffold setup:</figDesc><table><row><cell>Model</cell><cell>User Tool</cell><cell>Dataset</cell><cell cols="3">pass@1 Dollars Earned / Total Earn Rate</cell></row><row><cell>Deepseek-R1</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>3.8%</cell><cell>$4k / $236k</cell><cell>1.6%</cell></row><row><cell>Llama 3.3 70B</cell><cell>Yes</cell><cell>IC SWE (Diamond)</cell><cell>4.6%</cell><cell>$5k / $236k</cell><cell>1.9%</cell></row><row><cell>Deepseek-R1</cell><cell>Yes</cell><cell>IC SWE (Full)</cell><cell>5.2%</cell><cell>$17k / $415k</cell><cell>4.1%</cell></row><row><cell>Llama 3.3 70B</cell><cell>Yes</cell><cell>IC SWE (Full)</cell><cell>5.9%</cell><cell>$17k / $415k</cell><cell>4.0%</cell></row><row><cell>Deepseek-R1</cell><cell>N/A</cell><cell cols="2">SWE Manager (Diamond) 40.4%</cell><cell>$121k / $265k</cell><cell>45.6%</cell></row><row><cell>Llama 3.3 70B</cell><cell>N/A</cell><cell cols="2">SWE Manager (Diamond) 40.4%</cell><cell>$120k / $265k</cell><cell>45.2%</cell></row><row><cell>Deepseek-R1</cell><cell>N/A</cell><cell>SWE Manager (Full)</cell><cell>46.7%</cell><cell>$276k / $585k</cell><cell>47.2%</cell></row><row><cell>Llama 3.3 70B</cell><cell>N/A</cell><cell>SWE Manager (Full)</cell><cell>44.1%</cell><cell>$260k / $585k</cell><cell>44.5%</cell></row><row><cell>Deepseek-R1</cell><cell>N/A</cell><cell>SWE-Lancer Diamond</cell><cell>23.1%</cell><cell>$124k / $501k</cell><cell>24.8%</cell></row><row><cell>Llama 3.3 70B</cell><cell>N/A</cell><cell>SWE-Lancer Diamond</cell><cell>23.5%</cell><cell>$124k / $501k</cell><cell>24.8%</cell></row><row><cell>Deepseek-R1</cell><cell>N/A</cell><cell>SWE-Lancer Full</cell><cell>25.4%</cell><cell>$293k / $1M</cell><cell>29.3%</cell></row><row><cell>Llama 3.3 70B</cell><cell>N/A</cell><cell>SWE-Lancer Full</cell><cell>24.5%</cell><cell>$277k / $1M</cell><cell>27.7%</cell></row></table><note><p>The</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Responsible scaling policy</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2108" />
+	</analytic>
+	<monogr>
+		<title level="m">a47b00f10301cd/original/ Anthropic-Responsible-Scaling-Policy</title>
+		<imprint>
+			<date type="published" when="2021">October 2024. -2024-10-15. 2021</date>
+		</imprint>
+		<respStmt>
+			<orgName>Anthropic</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Differentiating integration testing and unit testing</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">K</forename><surname>Brar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Kaur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 2nd International Conference on Computing for Sustainable Global Development (IN-DIACom)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="796" to="798" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">P</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">H</forename><surname>Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mc-Grew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Shern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Jaffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sherburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Starace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aljubeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madry</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Introducing swe-bench verified</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Introducing the frontier safety framework</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Deepmind</surname></persName>
+		</author>
+		<ptr target="https://deepmind.com/blog/article/introducing-the-frontier-safety-framework" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Issue #14958: zip/postcode validation error message not displayed for entering</title>
+		<author>
+			<persName><surname>Expensify</surname></persName>
+		</author>
+		<ptr target="https://github.com/Expensify/App/issues/14958" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>on the home address screen</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><surname>Expensify</surname></persName>
+		</author>
+		<ptr target="https://github.com/Expensify/App/issues/41239" />
+		<title level="m">a. Expensify. Issue #41239: Add support for copy/pasting images on ios</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+	<note>#25889: Dev: Share code avatar differs from profile avatar</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Freelancers in the software development process: A systematic mapping study</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Fernández-Crehuet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hanne</surname></persName>
+		</author>
+		<idno type="DOI">10.3390/pr8101215</idno>
+		<ptr target="https://www.mdpi.com/2227-9717/8/10/1215" />
+	</analytic>
+	<monogr>
+		<title level="j">Processes</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page">1215</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Measuring coding challenge competence with apps</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2105.09938" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Livecodebench</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.07974" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.06770" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Ds-1000: A natural and reliable benchmark for data science code generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">W</forename><surname>Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.11501" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Concept induction: Analyzing unstructured text with high-level concepts using lloom</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Teoh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Landay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Heer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3613904.3642830</idno>
+		<ptr target="http://dx.doi.org/10.1145/3613904.3642830" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the CHI Conference on Human Factors in Computing Systems, CHI &apos;24</title>
+		<meeting>the CHI Conference on Human Factors in Computing Systems, CHI &apos;24</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Competitionlevel code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dal Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>De Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sutherland Robson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<idno type="DOI">10.1126/science.abq1158</idno>
+		<ptr target="http://dx.doi.org/10.1126/science.abq1158" />
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<idno type="ISSN">1095-9203</idno>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022-12">December 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Repobench: Benchmarking repository-level code auto-completion systems</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mcauley</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.03091" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">A machine learning benchmark dataset for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Codexglue</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2102.04664" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Playwright: Fast and reliable end-to-end testing for modern web apps</title>
+		<ptr target="https://playwright.dev/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Microsoft</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Von Werra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Octopack</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.07124" />
+		<title level="m">Instruction tuning code large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.13474" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Openai preparedness framework</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://cdn.openai.com/openai-preparedness-framework-beta.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Learning to reason</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>with llms, 2024a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Openai o3 and o3-mini-12 days of openai: Day 12, 2024b. OpenAI</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://platform.openai.com/docs/api-reference/authentication" />
+	</analytic>
+	<monogr>
+		<title level="m">OpenAI Authentication API Documentation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">End-to-end (e2e) testing and evaluation of high-assurance systems</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">T</forename><surname>Tsai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-1-84628-288-1_24</idno>
+		<ptr target="https://doi.org/10.1007/978-1-84628-288-1_24" />
+	</analytic>
+	<monogr>
+		<title level="m">Springer Handbook of Engineering Statistics</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Pham</surname></persName>
+		</editor>
+		<meeting><address><addrLine>London, London</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="439" to="467" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Codeelo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.01257</idno>
+		<ptr target="https://arxiv.org/abs/2501.01257" />
+		<title level="m">Benchmarking competition-level code generation of llms with human-comparable elo ratings</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Can llms generate novel research ideas? a large-scale human study with 100+ nlp researchers</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.04109" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Haas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Krongchon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Trinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Huerta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scicode</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.13168" />
+		<title level="m">A research coding benchmark curated by scientists</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Swe-bench multimodal: Do ai systems generalize to visual software domains?</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.03859" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Naturalcodebench</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.04520" />
+		<title level="m">Examining coding performance mismatch on humaneval and natural user prompts</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Goal driven discovery of distributional differences via language descriptions</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.14233" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Benchmarking code generation with diverse function calls and complex instructions</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Widyasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">N B</forename><surname>Yusuf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brunner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaddour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yadav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>De Vries</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V</forename><surname>Werra</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bigcodebench</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.15877" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Particularly with Llama 3.3 70B, we saw that it would frequently end the task before making significant progress or finishing it, despite our eval harness containing prompts to not give up until the patch is completed</title>
+		<imprint/>
+	</monogr>
+	<note>Models would give up early</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Especially with Deepseek-R1, the model would often try similar code blocks at each turn, despite seeing output that those attempts were unsuccessful</title>
+		<imprint/>
+	</monogr>
+	<note>Models would repeatedly retry the same failed strategies</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Open source models were substantially less likely to use the user-tool</title>
+	</analytic>
+	<monogr>
+		<title level="m">If they did invoke it, they frequently failed to correctly parse its output when it was invoked</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

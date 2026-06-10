@@ -1,0 +1,1315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SWE-Bench+: Enhanced Coding Benchmark for LLMs</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-10">10 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Reem</forename><surname>Aleithan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haoran</forename><surname>Xue</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mohammad</forename><forename type="middle">Mahdi</forename><surname>Mohajer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elijah</forename><surname>Nnorom</surname></persName>
+							<email>ennorom@yorku.ca</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gias</forename><surname>Uddin</surname></persName>
+							<email>guddin@yorku.ca</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Song</forename><surname>Wang</surname></persName>
+							<email>wangsong@yorku.ca</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Lassonde School of Engineering York University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SWE-Bench+: Enhanced Coding Benchmark for LLMs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-10">10 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E945037845BDBA2C697C5D9CCA18B615</idno>
+					<idno type="arXiv">arXiv:2410.06992v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:25+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) in Software Engineering (SE) can offer assistance for coding. To facilitate a rigorous evaluation of LLMs in practical coding contexts, Carlos et al. introduced the SWE-bench dataset, which comprises 2,294 real-world GitHub issues and their corresponding pull requests, collected from 12 widely used Python repositories. Several impressive LLM-based toolkits recently are developed and evaluated on this dataset. However, a systematic evaluation of the quality of SWE-bench remains missing. In this paper, we addressed this gap by presenting an empirical analysis of the SWE-bench dataset. We conducted a manual screening of instances where SWE-Agent + GPT-4 successfully resolved issues by comparing the model-generated patches with the actual pull requests. SWE-Agent+GPT-4 was at the top of SWE-bench leaderboard during the time of our study. Our analysis reveals some critical issues with the SWE-bench dataset: 1) 32.67% of the successful patches involve "cheating" as the solutions were directly provided in the issue report or the comments. We refer to as 'solution leakage' problem. 2) 31.08% of the passed patches are suspicious patches due to weak test cases, i.e., the tests were not adequate to verify the correctness of a patch. When we filtered out these problematic issues, the resolution rate of SWE-Agent+GPT-4 drops from 12.47% to 3.97%. We also observed that the same data quality issues also exist in the two variants of SWE-bench, i.e., SWE-bench Lite and SWE-Bench Verified. In addition, over 94% of the issues were created before LLM's knowledge cutoff dates, posing potential data leakage issues.</p><p>The critical problem in the current versions of SWE-bench dataset motivated us to refine it to build a more rigorous evaluation dataset SWE-Bench+. We created SWE-bench+ by collecting GitHub issues that were created after the training cutoff dates of the LLMs to prevent the potential data leakage problem. We also ensure that the issues collected do not contain solutions in their reports or comments. After carefully analyzing the passed instances from the SWE-Agent + GPT-4 model with the new dataset, SWE-Bench+, we observed a decline in the pass rate, dropping from 3.97% (as seen on the refined SWE-Bench) to a resolution rate of 0.55%. We further evaluated SWE-RAG + GPT-4, SWE-RAG + GPT-3.5, and AutoCodeRover + GPT-4o models on the new dataset to verify our findings, where the resolution rates of the models drop significantly, which are 0.73%, 0.55%, and 3.83%, respectively.</p><p>Preprint. Under review.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>1 Introduction SWE-bench aka Software Engineering Benchmark dataset is created to systematically evaluate the capabilities of an LLM in resolving software issues. The dataset contains 2,294 complex issues from <ref type="bibr">GitHub Jimenez et al. (2024)</ref>. Given as input the issue information to an LLM, the task for the LLM is to modify the code base to address the issue (i.e., resolution). Each input for an issue consists of a description and a pull request with a reference to the corresponding buggy code repository. Each issue can be either a bug report or a new feature request. The pull request contains the code changes made by developers to address the issue, along with test cases designed to check if the feature is properly implemented or if the bug is successfully fixed. Two variants of the SWE-bench datasets are recently developed: SWE-bench Lite<ref type="foot" target="#foot_0">foot_0</ref> and SWE-bench Verified<ref type="foot" target="#foot_1">foot_1</ref> . SWE-bench Lite focuses on 300 issues related to bug fixing. SWE-bench Verified contains 500 verified issues with clear issue descriptions and strong test cases.</p><p>A significant body of work from both academia and industry has so far utilized SWE-bench and its variants to develop and to test LLM coding capabilities <ref type="bibr">Chen et</ref>  <ref type="formula">al. (2024); Zhang et al. (2024a);  Xia et al. (2024); Yang et al. (2024b); Zhang et al. (2024c); Rosa et al. (2024)</ref>; <ref type="bibr" target="#b26">Zan et al. (2024)</ref>. Given an issue and its associated buggy code repository, these LLM-based approaches can perform a series of complex tasks, such as reasoning about the target bug's location, analyzing the root cause of the issue, proposing strategies for fixing the bug, and ultimately writing a patch to fix the issue. Within less than one year, the resolution rate on SWE-bench Full increased from 0.17% (for RAG+GPT3.5) to around 22.00% (for Honeycomb). The performance of the LLMs on SWE-bench Lite and Verified went up to 45%.</p><p>However, are the LLMs actually resolving the issues in SWE-bench?</p><p>In this paper, we answer the above question by offering two contributions. First, we present an empirical study of state-of-the-art (SOTA) LLMs on SWE-bench Full that explores 1) the quality of SWE-bench issues with a focus on the testing adequacy of the test cases used for validating patches and 2) the quality of patches generated by the LLMs to fix the issues. Second, we present an enhancement of SWE-bench Full, which we call SWE-bench+.</p><p>During our empirical study, SWE-Agent+GPT-4 was at the top of the SWE-bench online leaderboard. Other top approaches (e.g., Honeycomb, Amazon Q Developer Agent, and Factory Code Droid) were either closed-sourced commercial tools or not verified by the SWE-bench team regarding reproducibility. SWE-agent <ref type="bibr">Yang et al. (2024b)</ref> allows LLM agents to execute basic file operations via shell commands to achieve interaction between the LLM engine and a software repository. First, we picked issues claimed as resolved by SWE-Agent+GPT-4. We did this by filtering only the instances with evaluation logs showing that all tests passed. Second, we performed a patch validation study by comparing the gold patches (i.e., original) to the model patches (i.e., generated). We did this by comparing the files changed, the lines changed, and the code changes made in the fixes (both original and generated). Third, we determined eight patterns in the generated fixes by reviewing the issue reports, the corresponding tests, and the available discussions of issues (which are treated as hints to LLMs).</p><p>Our identified six patterns in the 251 SWE-Agent+GPT-4 patches can be broadly divided into two types: suspicious fixes and correct fixes. Suspicious fixes corresponded to 63.75% (i.e., 160) of the patches. Two patterns were prevalent in those fixes: 1) Answer Leak. In 32.67% of the resolved instances, the solutions were outlined directly in the issue reports or comments. 2) Weak Tests. In 31.08% of the resolved instances, the changes made by the model are either incorrect, incomplete, or applied to different files or functions compared to the gold patch. Despite these discrepancies, the changes pass the tests, indicating that the tests are too weak to catch such errors. In addition, the dataset can also suffer from potential data leak issues. This is because 94% of the instances in SWE-bench and their pull requests were created prior to the training cut-off dates of the LLMs, meaning that all issue reports in the full SWE-bench dataset may have been exposed to the LLMs during their training phases, raising concerns about potential data leakage.</p><p>Based on the above observation, we considered fixes corresponding to issues with answer leakage and weak tests as 'suspicious fixes'. In Figure <ref type="figure" target="#fig_0">1a</ref>, we show the distribution of such fixes in the three Figure 2: Overview of robustness analysis for SWE-Bench datasets literature datasets (i.e., SWE-bench full, lite, verified). In Figure 1b, we show that after filtering these suspicious fixes, the correct resolution rate of SWE-Agent+GPT-4 dropped to 3.97% from 12.47%. This drastic drop in resolution rate raises concerns about the robustness of the model-generated patches and the reliability of the SWE-bench dataset itself.</p><p>To address the problems in SWE-bnech datasets, we created SWE-bench+ dataset, which ensures that: 1) the data were created after the models' training cut-off dates, and 2) the issues do not include solutions in the issue description or comments. SWE-bench+ dataset is created by following the same data collection methodology described in the SWE-Bench dataset; except we filtered out issues with answer leakage problems. Considering the training cut-off dates of the LLMs used in our study-GPT-3.5 (turbo-16k-0613) with a cut-off in September 2021, GPT-4 (1106) up to April 2023, and GPT-4o (2024-05-13) up to October 2023, we opted to collect data starting a month after the most recent model's cut-off date. To the end, we gathered issues from the period of 2023-11-01 to 2024-08-22. As we show in Figure <ref type="figure" target="#fig_0">1a</ref>, SWE-bench+ has no issues with solution leakage whereas all the other three datasets suffer from this. SWE-bench+ also has the lowest proportion of issues with weak test cases among all the SWE-bench variants. As such, we consider SWE-bench+ as the most robust dataset among the available SWE-bench variants. When we ran SWE-Agent+GPT-4 on SWE-bench+ dataset, its resolution rate dropped to 0.55% (see Figure <ref type="figure" target="#fig_0">1</ref>).</p><p>We further evaluated the SWE-RAG + GPT-4, SWE-RAG + GPT-3.5, and AutoCodeRover + GPT-4o models on the new dataset to verify our findings. The resolution rates of the models dropped significantly, with the new rates being 0.73%, 0.55%, and 3.83%, respectively. In comparison, the previously reported resolution rates on the SWE-Bench leaderboard were 1.31% for SWE-RAG + GPT-4, 0.17% for SWE-RAG + GPT-3.5, and 18.83% for AutoCodeRover + GPT-4o.</p><p>Artifacts. While working on merging our SWE-bench+ to SWE-bench project repository, we release the dataset of SWE-bench+ to help other researchers replicate and extend our study<ref type="foot" target="#foot_2">foot_2</ref> . </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Robustness Analysis of SWE-Bench</head><p>We conducted an empirical study of SWE-Agent+GPT-4 generated patches for issues in the SWEbench Full dataset. The goal of our study was to identify whether the patches exhibit any potential problems. Figure <ref type="figure">2</ref> outlines the major steps we followed in our study. The input is the set of all issues in SWE-bench. Each issue contains a description and the patch to address the issue. Each patch is a diff of code changes. We call this a "gold patch". We picked SWE-Agent + GPT-4 and applied it on each issue to create a fix. We refer to the model output for an issue as a "generated patch". We then compared the gold and generated patches to an issue by analyzing the corresponding files changed in the pull requests on GitHub with the same instance_id. As we studied the model generated patches, we also examined the logs and trajectories generated by the model. Logs provide the step-by-step execution of the models. The trajectory data provide a detailed record of the models' decision-making processes while making a resolution as a patch.</p><p>To reduce potential biases during the comparison between gold and generated patches, three authors independently performed the patch validation study. Each author carefully examined the files and lines changed, reviewed the issue descriptions, and evaluated the implementation styles and intentions behind both the model-generated and developer-generated patches. The disagreements were resolved through a broader discussion involving all the authors.</p><p>For the model generated patches, we focused on instances where the generated patches resolved the issue and passed all associated tests. As a result, we identified 251 instances from the SWE-Bench Full dataset. Note that, to ensure the patches passed all tests, we reviewed the evaluation logs of 286 instances initially marked as resolved by SWE-Agent + GPT-4 in the results.json file from the SWE-Bench Full evaluation repository and selected only those with logs confirming that all tests passed following the application of the generated patches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Critical issues of SWE-Bench</head><p>Among the 251 generated patches that passed all test cases in SWE-bench Full dataset, we found several patches as problematic/suspicious. Table <ref type="table" target="#tab_0">1</ref> outlines six patterns in the 251 generated patches, four related to the suspicious fixes and two related to the correct fixes. To explain each pattern, we provide definitions, including the number of instances associated with each pattern and the likely root causes. We discuss each pattern below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.1">Patterns extracted from the suspicious fixes</head><p>We observed four patterns in the suspicious fixes, one is attributed to solution leakage and the other three are attributed to weak test case problems in the SWE-bench dataset.</p><p>1. Solution leak: represents instances where the solution to the issue is clearly outlined in the issue description or comments on GitHub. Since both the issue descriptions and comments (referred to as hints_text in the SWE-Bench study) are provided as input to the models, these LLM models can extract the solutions directly from this information instead of generating it independently. 32.67% of the successfully resolved issues followed this pattern, making it the most common among resolved patches. This raises significant concerns about a model's actual performance and the validity of the SWE-Bench instances as benchmarks. If a model is simply copying the solution it already has access Figure 4: Incorrect fix generated by the model for django-32517</p><p>to, it isn't demonstrating true problem-solving capabilities but rather replicating what is provided, thus limiting the assessment of its ability to generate new solutions. The example shown in Figure <ref type="figure" target="#fig_1">3</ref> illustrates issue report 16669<ref type="foot" target="#foot_3">foot_3</ref> from the sympy project, where the issue description provided the exact solution code patch required to resolve the issue, which makes it possible for the model to directly copy the solution from the issue report and generate the same solution as provided.</p><p>2. Incorrect fixes: refer to cases where the model-generated patches provide incorrect solutions, yet pass the test cases when they should have failed. This pattern was present 12.75% of the passed instances. Suggesting a weakness in test cases where the functionality of the issue resolution is not correctly captured. The fact that incorrect patches can pass the test cases raises suspicion about the relevance and accuracy of the test cases in assessing whether the issue has been fully resolved. Figure <ref type="figure">4</ref> shows a comparison between the model-generated patch and the gold patch for django-32517<ref type="foot" target="#foot_4">foot_4</ref> .</p><p>According to the issue description, a new functionality is needed to reverse a Python OrderedSet by implementing the __reversed__ function. The gold patch demonstrates the correct behavior, where the entire dictionary is reversed, while the generated patch only reverses the dictionary's keys. As a result, the two patches produce entirely different outputs, as they apply different methods to the dictionary.</p><p>3. Different files/functions changed: This pattern refers to cases where the model-generated patches modify files or functions unrelated to the issue at hand. These files differ from those altered in the gold patch, yet the model's patches still pass the test cases despite this discrepancy. This highlights a weakness in the model's ability to accurately locate and address the source of the issue. The fact that the test cases pass, even though changes were made in irrelevant files, suggests that the test cases are either weak or irrelevant and should have failed in detecting the incorrect modifications. Figure <ref type="figure" target="#fig_2">5</ref> presents an example from issue-26093 of Matplotlib project<ref type="foot" target="#foot_5">foot_5</ref> , where the model-generated patch modifies the cbook.py file, while the gold patch makes changes to the _axes.py file. This shows that the model's patch affects a completely different file from the gold patch, highlighting the model's inability to accurately identify the correct file containing the bug. Figure 6: Incomplete fix generated by the model for django-31056 4. Incomplete fixes: This pattern refers to model-generated patches that offer incomplete implementations compared to the gold patches, often omitting critical details. For instance, some patches include only partial if-else statements, neglecting edge cases that the gold patch addresses.</p><p>Although the model-generated patches follow the correct implementation approach, they overlook important aspects that could lead to failures in production or when handling edge cases. This underscores a weakness in the test cases, as they fail to capture the finer details necessary for a comprehensive issue resolution.</p><p>The example provided in Figure <ref type="figure">6</ref> shows the same change being made by the model and the one made by the developers in the gold patch<ref type="foot" target="#foot_6">foot_6</ref> . The gold patch provides a complete fix while the model patch provides a partial fix. Specifically, the gold patch properly handles the detection of an event loop in the current thread by including a try-except block to catch RuntimeError when an event loop is unavailable and checks if the event loop is running before raising an exception. Additionally, it wraps the entire logic in a condition that checks the environment variable DJANGO_ALLOW_ASYNC_UNSAFE. In contrast, the generated patch is missing critical parts of this logic, such as the try-except block and the check for a running event loop. As a result, the model-generated patch is incomplete, missing key error handling and flow control that are necessary for ensuring safe operation.</p><p>2.1.2 Patterns extracted from the correct fixes 1. Different fixes from gold patches: This pattern refers to cases where the model-generated patches present an entirely different solution to the issue compared to the gold patch. Although the coding style and implementation differ, the model-generated patches correctly resolve the issue. Instances in this pattern are considered a correct resolution of the issues. 2. More comprehensive fixes: In contrast to the previous pattern, this refers to instances where the model-generated patches are more comprehensive than the gold patches. For example, the modelgenerated patches may include additional if-else cases or other logic that the gold patch does not address. This showcases a strength of LLMs, as they can generate more thorough solutions that cover scenarios developers might overlook, resulting in potentially safer and more robust solutions (e.g., by incorporating try-catch statements or handling edge cases more effectively). We consider this pattern as a correct resolution of the issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Updated Resolution Rate of SWE-Agent + GPT-4 on SWE-Bench Full</head><p>After identifying these patterns, we recalculated the resolution rate of SWE-Agent + GPT-4, focusing exclusively on patches classified under the correct fixes patterns. This new resolution criteria resulted in a significant drop in the resolution percentage, as shown in Figure <ref type="figure" target="#fig_0">1b</ref>. The performance of SWE-Agent+GPT-4 decreased from 12.47% to 5.49% when considering only correct fixes-those where the model generated either correct but different implementations from the gold patch (30.27% of the time) or more comprehensive fixes than the gold patch (5.98% of the time). We excluded all suspicious fixes, which included instances where the model generated incorrect solutions (12.75%), where the issue report contained a direct solution (32.67%), where changes were made in files unrelated to the gold patch (3.59%), and cases where the model produced incomplete fixes, missing critical details of the solution (14.74%).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Updated Resolution Rate of SWE-Agent+GPT-4 on SWE-bench Lite and Verified</head><p>Two new variants of SWE-Bench are recently developed, SWE-Bench Lite and SWE-Bench Verified, each designed with different goals. SWE-Bench Lite focuses on instances with lower evaluation costs and increased accessibility. On the other hand, SWE-Bench Verified aims to provide a curated subset of SWE-Bench, where human annotators filter out issues with underspecified descriptions or weak unit tests that might reject valid solutions. However, neither of these new datasets addresses the solution leakage problem, which was the primary motivation for our study. To investigate this, three of the authors reviewed all issue reports for the instances in SWE-Bench Lite and SWE-Bench Verified for cases of solution leakage. In SWE-Bench Lite, we identified 18 instances where the solution was directly provided in the issue description or discussion on GitHub. Similarly, in SWE-Bench Verified, 37 instances contained direct solutions in either the issue description or the discussion on GitHub.</p><p>Table <ref type="table" target="#tab_1">2</ref> shows more details.</p><p>We also observed additional suspicious fixes in both SWE-Bench Lite and SWE-Bench Verified, as summarized in</p><p>Table 2. Specifically, 9.26% of fixes in SWE-Bench Lite and 12.50% in SWE-Bench Verified were incorrect fixes generated by SWE-Agent+GPT-4. Additionally, 5.56% of fixes in SWE-Bench Lite and 9.82% in SWE-Bench Verified were incomplete fixes from the same model. Notably, there were no issues involving changes to different functions or files, as the model correctly identified the buggy file in all cases for both datasets. Despite this, the overall suspicious fix patterns led to 48.14% suspicious fixes in SWE-Bench Lite and 55.36% in SWE-Bench Verified, significantly reducing the resolution rates-from 18% to 9.33% in SWE-Bench Lite and from 22.4% to 10.0% in SWE-Bench Verified. 3 Building SWE-Bench+</p><p>To address the issues of the current SWE-Bench datasets and ensure a more accurate evaluation of the models' effectiveness in resolving issues, we utilized a new dataset, SWE-Bench+, which focuses on issues with no clear solution provided in the issue report and without potential risk of data leakage.</p><p>The primary objective of SWE-Bench+ is to assess the models' ability to generate accurate patches for real-world GitHub issues without the risk of bias or prior exposure to the solution. To maintain consistency and fairness when comparing the resolution rates of the models onSWE-Bench and SWE-Bench+, we followed the same data collection methodology outlined in the SWE-Bench study, using their open-source scripts.</p><p>First, we selected the same 12 projects from SWE-Bench, except Django, which was excluded as its issues are now tracked outside of GitHub. Given that the LLMs we used in the models (GPT-4, GPT-3.5, and GPT-4o) were all trained on data up to October 2023, we collected issues that appeared after October 2023. Once the issues were collected, we applied the same filtering process described in the SWE-Bench study. This included using attribute filtering to retain only issues that resolve a problem and contribute tests, followed by an execution filter to keep only issues that install successfully and their PRs pass all tests. We then manually check all the instances to eliminate all the instances with a clear solution details in the issue report. By following this method, we obtained 548 task instances (issues) from the selected projects, with the distribution shown in Figure <ref type="figure" target="#fig_3">7</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Robustness of SWE-Bench+</head><p>After collecting the data and identifying the correct repository versions, the next step was to run the selected models to generate patches that would address the issues. The models chosen for this task were SWE-RAG with GPT-3.5 (turbo-16k-0613), SWE-RAG with GPT-4 (1106), SWE-Agent with GPT-4 (1106), and AutoCodeRover (v20240620) paired with GPT-4o (2024-05-13). These models were selected based on their performance, large context window, cost, and the fact that they are open-source, making them more favorable compared to other options.</p><p>At the beginning of the project, SWE-Agent had the highest resolution rate on the SWE-Bench leaderboard among all open-source models. Since we studied this model thoroughly in relation to SWE-Bench, we selected it to ensure a fair comparison. SWE-RAG+GPT-4 and SWE-RAG+GPT-3.5 were also chosen for the study due to their higher token limits compared to the Claude models. Initial trials with SWE-Agent+Claude 3 Opus and RAG-based Claude models (SWE-RAG+Claude 3 Opus and SWE-RAG+Claude 2) revealed that the token limits were exceeded before completing experiments on all 548 SWE-Bench+ instances. As the leaderboard frequently updates, with new models surpassing older ones, AutoCodeRover+GPT-4o recently ranked among the top three models, and since it is open-source, we also included it in the study. We following their instructions to run the models on our SWE-Bench+ dataset.</p><p>Our evaluation followed a four-step technique, described in Figure <ref type="figure">2</ref>, to ensure that the resolution rates of the models on SWE-Bench+ accurately reflected their correctness. Specifically, in Step 1, we stored all the model-generated diff files as patches in separate json files, we then utilized the scripts provided by the SWE-Bench to evaluate the generated patches. In Step 2, once the evaluation results were generated, we manually reviewed the instances marked as resolved and selected only those where all tests in PASS_TO_PASS and FAIL_TO_PASS had passed. In other words, we filtered out instances where the patches were successfully applied, and all associated tests passed. In Step 3, after filtering the resolved instances where all tests passed, we analyzed the resolution rates of the models. Finally, in Step 4, we performed a similar patch validation study as described in Section 2, comparing the model-generated patches to the gold patches. We found that solution-leak related issues are now resolved. However, a prominent issue with weak test cases persists. As shown in Table <ref type="table" target="#tab_2">3</ref>, on average, around 67.72% of the resolved instances did not truly resolve the issue, despite passing all the tests. The prominent pattern identified was the models' inability to accurately locate the buggy files or lines. This raises concerns about the models' ability to locate the bug. In other cases, the model generated incomplete or incorrect fixes, not resolving the bug. These findings show that the issue with weak tests still persists and needs future investigation.</p><p>As a result of the patch validation analysis, the resolution rates were 0.73% for SWE-RAG+GPT-4, 0.55% for SWE-RAG+GPT-3.5, 0.55% for SWE-Agent+GPT-4, and 3.83% for AutoCodeRover+GPT-4o. These rates are significantly lower than the reported resolution rates on the SWE-Bench leaderboard were 1.31% for SWE-RAG + GPT-4, 0.17% for SWE-RAG + GPT-3.5, and 18.83% for AutoCodeRover + GPT-4o. This drop in performance for all models when moving from SWE-Bench Full to SWE-Bench+, highlights the impact of excluding suspicious fixes on the overall resolution rates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Effectiveness-aware Evaluation</head><p>Despite the notable success in resolving issues, we also observed significant variations in the costs of the approaches tested. While some models excelled in accuracy and efficiency, they required more computational resources, longer processing times, and higher costs. Specifically, SWE-Agent+GPT-4 and AutoCodeRover+GPT-4 had the longest code generation times, with SWE-Agent+GPT-4 averaging around 4 minutes per instance, resulting in a total of approximately 37 hours to generate patches for SWE-Bench+ issues. The average generation time for AutoCodeRover was 4.5 minutes per instance, resulting in 41 hours in total to generate patches for all SWE-Bench+ instances, making it a top performer in issue resolution for SWE-Bench+ instances. However, this disparity highlights the trade-offs between performance and cost-effectiveness, particularly for models like SWE-Agent+, where balancing time, cost, and resource allocation is critical for real-world applications.</p><p>In terms of cost, we identified two metrics, i.e., the average cost per instance (calculated by dividing the total cost by the 548 instances in SWE-Bench+ that the models were tested on) and the effectiveness-aware cost per instance (calculated by dividing the total cost by the number of instances successfully resolved by the model). The detailed cost of each model measured by the two metrics is shown in Table <ref type="table" target="#tab_3">4</ref>. Overall, SWE-Agent+GPT-4 was the most expensive model, with an average cost of $0.24 per instance and an effectiveness-aware cost of $32.5 per issue fixed, as shown in Table <ref type="table" target="#tab_3">4</ref>. Despite its high cost, its performance was comparable to RAG+GPT-4, which was much more cost-efficient, with an average cost of $0.05 per instance and an effectiveness-aware cost of $10.0. On the other hand, AutoCodeRover+GPT-4 delivered the highest resolution rate of 3.83% among all models. Although relatively costly on average, especially for larger datasets with an average cost of $0.46 per instance, AutoCodeRover's effectiveness-aware cost was relatively low at $12.61 per issue fixed, given its high-resolution rate compared to the SWE-Agent approach. Meanwhile, RAG+GPT-3.5 had the lowest average cost, at $0.05 per instance, but a relatively high effectiveness-aware cost of $32 due to its poorer performance in resolving issues correctly.</p><p>We recommend that future research not only assess the accuracy of the proposed models but also take into account the financial cost associated with their implementation and operation, ensuring they are not only performant but also practical for large-scale and long-term use.</p><p>6 Related Work</p><p>LLM for Software Engineering. Large Language Models (LLMs) have emerged as powerful tools and demonstrated impressive capabilities in various software engineering tasks, including code generation Jiang et al. (2024); Li &amp; Döhmen (2024); Chen et al. (2021); Luo et al. (2024); Du et al. (2024), program repair Zhang et al. (2024b); Yang et al. (2024a); de Fitero-Dominguez et al. (2024) and bug detection Alrashedy &amp; Binjahlan (2024); Hossain et al. (2024). The development of code generation benchmarks has been crucial for evaluating LLM performance. Notably, HumanEval Chen et al. (2021) was introduced to assess the functional correctness of code generated by LLMs. Building on this foundation, AlphaCode Li et al. (2022) demonstrated competitive performance in solving complex programming problems. To address limitations in existing benchmarks, EvalPlus Liu et al. (2024) enhanced HumanEval with more comprehensive test cases and revealed a significant overestimation of LLM performance in previous evaluations. LLMs also have shown promising results in program repair and bug detection. For example, AlphaRepair Xia &amp; Zhang (2022) employed a zero-shot learning approach that outperformed traditional automated program repair (APR) tools. Further research demonstrated that LLMs could surpass existing APR techniques, particularly when fine-tuned on domain-specific data Xia et al. (2023). The application of LLMs in bug detection with innovative approaches like FUzzGPT Deng et al. (2023b) and TitanFuzz Deng et al. (2023a) leveraging these models to generate edge-case test inputs and perform mutation-based fuzzing for deep learning libraries. There are several comprehensive studies have explored LLM applications across various software engineering domains Fan et al. (2023); Hou et al. (2024), delved into the natural language to code generation Zan et al. (2023), and analyzed the evolution and performance of Code LLMs across different tasks Zheng et al. (2024). Benchmark Dataset Quality for Code Generation. To achieve accurate and reliable outcomes in code generation tasks with LLMs, it is essential to use high-quality evaluation benchmark datasets during the training and evaluation steps Shi et al. (2022); Jimenez et al. (2024). With the growing interest and significance of code generation and program repair in software engineering, this highlights the critical need for trustworthy and reliable evaluation benchmark datasets Jimenez et al. (2024); Zan et al. (2024). To tackle this challenge, SWE-bench was developed to assist developers in evaluating LLMs using real-world GitHub issues Jimenez et al. (2024). A critical part of making a reliable dataset is to make it representative of real-world and complex software challenges and issues Chen et al. (2024); Tao et al. (2024). The "Diversity Empowers Intelligence" (DEI) framework Zhang et al. (2024a) further shows how diversity and comprehensiveness of data can enhance the performance of Large Language Models (LLMs) in code generation tasks. Given the critical need for high-quality benchmark datasets in evaluating code generation models, Liu et al. Liu et al. (2024) introduce EvalPlus, a framework specifically designed to improve the evaluation of LLMgenerated code. This framework addresses challenges like insufficient tests and noisy benchmarks by augmenting existing datasets with automated test input generation using LLM and mutationbased strategies. Their findings show the need for more rigorous testing in LLM code generation to improve benchmark quality in the field.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In this paper, we presented the first empirical study on the robustness of the SWE-Bench dataset. Our study identified significant limitations in the original SWE-Bench dataset, particularly issues with solution leakage and weak test cases, which undermined the reliability of previous model assessments.</p><p>To address these challenges, we introduced SWE-Bench+, a dataset free from solution leakage and built with issues created after LLM training cut-off dates to ensure more rigorous and accurate evaluations. Through extensive testing, we demonstrated that while SWE-Bench+ resolves the data leakage concerns, weak test cases continue to pose challenges, with model resolution rates dropping further in this refined environment. Despite the reduced pass rates, SWE-Bench+ establishes a more reliable framework for assessing the true capabilities of LLMs in software development, offering insights into how these models can be better developed and evaluated. Future work should focus on improving the test case robustness in SWE-Bench+ and exploring more effective strategies for filtering data to further minimize biases and inaccuracies.</p><p>For future work, further investigation into the issue of weak test cases is needed, along with suggestions for improving test quality to create more accurate and relevant test suites. Another potential avenue of research could explore the underlying causes of the high failure rates and propose strategies to mitigate them. Additionally, similar studies could be conducted on other leading evaluation benchmarks, such as Human-Eval, to compare results and identify broader patterns.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison of performance metrics and patterns across SWE-bench datasets</figDesc><graphic coords="3,127.80,241.89,356.27,124.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Solution Leakage in issue report for sympy-16669</figDesc><graphic coords="5,127.80,72.12,356.25,152.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Different files changed by model for issue-26093 of Matplotlib</figDesc><graphic coords="6,137.64,71.88,336.55,95.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: SWE-Bench+ dataset compared to SWE-Bench</figDesc><graphic coords="8,156.24,72.04,296.77,145.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Patterns found among the 251 successful patches generated by SWE-Agent + GPT-4</figDesc><table><row><cell>Type</cell><cell>Pattern</cell><cell>Numbers (percentage)</cell><cell>Root cause</cell></row><row><cell></cell><cell>Solution leak</cell><cell>82 (32.67%)</cell><cell>solution leakage</cell></row><row><cell></cell><cell>Incorrect fixes</cell><cell>32 (12.75%)</cell><cell>weak tests</cell></row><row><cell>Suspicious fixes</cell><cell>Different files/functions changed</cell><cell>9 (3.59%)</cell><cell>weak tests</cell></row><row><cell></cell><cell>Incomplete fixes</cell><cell>37 (14.74%)</cell><cell>weak tests</cell></row><row><cell></cell><cell>Different fixes from gold patches</cell><cell>76 (30.27%)</cell><cell>-</cell></row><row><cell>Correct fixes</cell><cell>More comprehensive fixes than gold patches</cell><cell>15 (5.98%)</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Patterns found among SWE-Bench Lite (total passed: 54, 18.0%) and SWE-Bench Verified (total passed: 112, 22.4%) datasets with successful patches generated by SWE-Agent + GPT-4.</figDesc><table><row><cell>Pattern</cell><cell cols="4">SWE-Bench Lite Percentage (Lite) SWE-Bench Verified Percentage (Verified)</cell></row><row><cell>Incorrect fixes</cell><cell>5</cell><cell>9.26%</cell><cell>14</cell><cell>12.50%</cell></row><row><cell>Incomplete fixes</cell><cell>3</cell><cell>5.56%</cell><cell>11</cell><cell>9.82%</cell></row><row><cell>Different Files/Functions Changed</cell><cell>0</cell><cell>0.00%</cell><cell>0</cell><cell>0.00%</cell></row><row><cell>Solution Leak</cell><cell>18</cell><cell>33.33%</cell><cell>37</cell><cell>33.04%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance of different models on SWE-bench+</figDesc><table><row><cell>Pattern</cell><cell cols="4">SWE-RAG+GPT-4 SWE-RAG+GPT-3.5 SWE-Agent+GPT-4 AutoCodeRover+GPT-4o</cell></row><row><cell>Correct</cell><cell>4</cell><cell>3</cell><cell>3</cell><cell>21</cell></row><row><cell>(Suspicious) Different files/functions changed</cell><cell>16</cell><cell>11</cell><cell>14</cell><cell>7</cell></row><row><cell>(Suspicious) Incorrect fixes</cell><cell>2</cell><cell>6</cell><cell>3</cell><cell>15</cell></row><row><cell>(Suspicious) Incomplete fixes</cell><cell>1</cell><cell>0</cell><cell>0</cell><cell>3</cell></row><row><cell>Total</cell><cell>23</cell><cell>20</cell><cell>32</cell><cell>42</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Average cost of different models on SWE-Bench+</figDesc><table><row><cell>Model</cell><cell cols="3">Avg cost per instance cost per issue fixing Avg time per instance</cell></row><row><cell>RAG+GPT 4</cell><cell>$0.24</cell><cell>$32.5</cell><cell>30 seconds</cell></row><row><cell>RAG+GPT 3.5</cell><cell>$0.05</cell><cell>$10.0</cell><cell>30 seconds</cell></row><row><cell>SWE_AGENT+GPT 4</cell><cell>$3.59</cell><cell>$655.0</cell><cell>4 minutes</cell></row><row><cell>AutoCode Rover+GPT 4o</cell><cell>$0.46</cell><cell>$12.61</cell><cell>4.5 minutes</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://www.swebench.com/lite.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://openai.com/index/introducing-swe-bench-verified/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://zenodo.org/records/13879453</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://github.com/sympy/sympy/issues/16669</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>https://code.djangoproject.com/ticket/32517</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>https://github.com/matplotlib/matplotlib/issues/26093</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>https://code.djangoproject.com/ticket/31056</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Language models are better bug detector through code-pair classification</title>
+		<author>
+			<persName><forename type="first">Kamel</forename><surname>Alrashedy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Binjahlan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.07957" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Coder: Issue resolving with multi-agent and task graphs</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Gang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Cheshkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Aliev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangtai</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.01304" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Enhanced automated code vulnerability repair using large language models</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>De Fitero-Dominguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eva</forename><surname>Garcia-Lopez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Garcia-Cabot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jose-Javier</forename><surname>Martinez-Herraiz</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.engappai.2024.109291</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/S0952197624014490" />
+	</analytic>
+	<monogr>
+		<title level="j">Engineering Applications of Artificial Intelligence</title>
+		<idno type="ISSN">0952-1976</idno>
+		<imprint>
+			<biblScope unit="volume">138</biblScope>
+			<biblScope unit="page">109291</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot fuzzers: Fuzzing deep-learning libraries via large language models</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.14834" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Large language models are edge-case fuzzers: Testing deep learning libraries via fuzzgpt</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Shizhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.02014" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Evaluating large language models in class-level code generation</title>
+		<author>
+			<persName><forename type="first">Xueying</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaofeng</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3597503.3639219</idno>
+		<ptr target="https://doi.org/10.1145/3597503.3639219" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/ACM 46th International Conference on Software Engineering, ICSE &apos;24</title>
+		<meeting>the IEEE/ACM 46th International Conference on Software Engineering, ICSE &apos;24<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Large language models for software engineering: Survey and open problems</title>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beliz</forename><surname>Gokkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Harman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitya</forename><surname>Lyubarskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubho</forename><surname>Sengupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shin</forename><surname>Yoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.03533" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A deep dive into large language models for automated bug localization and repair</title>
+		<author>
+			<persName><forename type="first">Soneya</forename><surname>Binta Hossain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaopeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Hao</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingjun</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hoan</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Tripp</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3660773</idno>
+		<ptr target="https://doi.org/10.1145/3660773" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Softw. Eng</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<date type="published" when="2024-07">July 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Large language models for software engineering: A systematic literature review</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiapu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Grundy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.10620" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">A survey on large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Juyong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiasi</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungju</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghun</forename><surname>Kim</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.00515" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.06770" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Towards efficient data wrangling with llms using code generation</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Till</forename><surname>Döhmen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3650203.3663334</idno>
+		<ptr target="https://doi.org/10.1145/3650203.3663334" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eighth Workshop on Data Management for End-to-End Machine Learning, DEEM &apos;24</title>
+		<meeting>the Eighth Workshop on Data Management for End-to-End Machine Learning, DEEM &apos;24<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">9798400706110</biblScope>
+			<biblScope unit="page" from="62" to="66" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><forename type="middle">Dal</forename><surname>Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyprien</forename><surname>De Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">J</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<idno type="DOI">10.1126/science.abq1158</idno>
+		<ptr target="http://dx.doi.org/10.1126/science.abq1158" />
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<idno type="ISSN">1095-9203</idno>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022-12">December 2022</date>
+			<pubPlace>Esme Sutherland Robson</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Large language model-based code generation for the control of construction assembly robots: A hierarchical generation approach</title>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Fordjour Antwi-Afari</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.dibe.2024.100488</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/S2666165924001698" />
+	</analytic>
+	<monogr>
+		<title level="j">Developments in the Built Environment</title>
+		<idno type="ISSN">2666-1659</idno>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page">100488</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Can github issues be solved with tree of thoughts?</title>
+		<author>
+			<persName><forename type="first">Ricardo</forename><surname>La</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosa</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Hulse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangdi</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.13057" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Are we building on the rock? on the importance of data preprocessing for code summarization</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangwen</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="107" to="119" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Magis: Llm-based multi-agent framework for github issue resolution</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.17927" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Less training, more repairing please: Revisiting automated program repair via zero-shot learning</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2207.08281" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Automated program repair in the era of large pre-trained language models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 45th</title>
+		<meeting>the 45th</meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<idno type="DOI">10.1109/ICSE48619.2023.00129</idno>
+		<ptr target="https://doi.org/10.1109/ICSE48619.2023.00129" />
+		<title level="m">International Conference on Software Engineering, ICSE &apos;23</title>
+		<imprint>
+			<publisher>IEEE Press</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1482" to="1494" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Agentless: Demystifying llm-based software engineering agents</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.01489" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Cref: An llm-based conversational software repair framework for programming tutors</title>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiguo</forename><surname>Pian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacques</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tegawendé</forename><forename type="middle">F</forename><surname>Bissyandé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfu</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3650212.3680328</idno>
+		<ptr target="https://doi.org/10.1145/3650212.3680328" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2024</biblScope>
+			<biblScope unit="page" from="882" to="894" />
+		</imprint>
+	</monogr>
+	<note>Association for Computing Machinery</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.15793" />
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering, 2024b</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dianjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingchao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongji</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.09420" />
+		<title level="m">Large language models meet nl2code: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ailun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongshuai</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dezhi</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangtai</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongji</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.14354" />
+		<title level="m">Swe-bench-java: A github issue resolving benchmark for java</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Diversity empowers intelligence: Integrating expertise of software engineering agents</title>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shelby</forename><surname>Heinecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.07060" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">A critical review of large language model on software engineering: An example from chatgpt and automated program repair</title>
+		<author>
+			<persName><forename type="first">Quanjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongke</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunrong</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.08879" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Autocoderover: Autonomous program improvement</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.05427" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zibin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dewu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxi</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachi</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.10372" />
+		<title level="m">A survey of large language models for code: Evolution, benchmarking, and future trends</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

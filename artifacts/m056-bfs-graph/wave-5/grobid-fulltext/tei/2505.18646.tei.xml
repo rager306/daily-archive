@@ -1,0 +1,1048 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SEW: Self-Evolving Agentic Workflows for Automated Code Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-04-14">14 Apr 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Siwei</forename><surname>Liu</surname></persName>
+							<email>siwei.liu@abdn.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Aberdeen</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jinyuan</forename><surname>Fang</surname></persName>
+							<email>jinyuan.fang@glasgow.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Glasgow</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Han</forename><surname>Zhou</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Cambridge</orgName>
+								<address>
+									<addrLine>4 MBZUAI</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yingxu</forename><surname>Wang</surname></persName>
+							<email>yingxv.wang@gmail.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Zaiqiao</forename><surname>Meng</surname></persName>
+							<email>zaiqiao.meng@glasgow.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Glasgow</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SEW: Self-Evolving Agentic Workflows for Automated Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-04-14">14 Apr 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">619C3BC2800B2410989D7A6B3D1B3FC5</idno>
+					<idno type="arXiv">arXiv:2505.18646v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>Initialized Agents and Workflow Code Rewriting Agent Code Generation Agent Workflow Evolution Code Reviewing Agent Code Refining Agent Task Parsing Agent Task Rewriting Agent Code Generation Agent</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have demonstrated effectiveness in code generation tasks. To enable LLMs to address more complex coding challenges, existing research has focused on crafting multi-agent systems with agentic workflows, where complex coding tasks are decomposed into sub-tasks, assigned to specialized agents. Despite their effectiveness, current approaches heavily rely on hand-crafted agentic workflows, with both agent topologies and prompts manually designed, which limits their ability to automatically adapt to different types of coding problems. To address these limitations and enable automated workflow design, we propose Self-Evolving Workflow (SEW), a novel self-evolving framework that automatically generates and optimises multiagent workflows. Extensive experiments on three coding benchmark datasets, including the challenging LiveCodeBench, demonstrate that our SEW can automatically design agentic workflows and optimise them through selfevolution, bringing up to 12% improvement on LiveCodeBench compared to using the backbone LLM only. Furthermore, by investigating different representation schemes of workflow, we provide insights into the optimal way to encode workflow information with text.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) have demonstrated remarkable capabilities in automatic code generation, enabling developers to translate natural language descriptions into executable programs <ref type="bibr">(Hong et al., 2023;</ref><ref type="bibr">Liu et al., 2024a)</ref>. However, as coding tasks grow in complexity, relying on a single LLM instance (single-agent) to handle all aspects of code generation becomes increasingly challenging. To address this, recent studies have explored multi-agent systems <ref type="bibr">(Huang et al.,</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Description</head><p>Implement a Python function sum_squares(n) that calculates the sum of squared integers from 1 to n inclusive. 2023; <ref type="bibr" target="#b9">Islam et al., 2024)</ref> where multiple LLMpowered agents collaborate to solve intricate problems through structured workflows <ref type="bibr">(Hong et al., 2023)</ref>. These multi-agent systems decompose complex programming tasks into sub-tasks, assigning them to specialized agents with tailored prompts, enhancing execution and output quality.</p><p>Despite their effectiveness, current multi-agent systems rely heavily on manually designed workflows, where both the workflow topology and agents' prompts are manually crafted, hindering their adaptability to more complex coding task. For instance, a workflow optimised for machine learning task <ref type="bibr">(Chi et al., 2024</ref>) differs significantly from one tailored for software development task <ref type="bibr" target="#b15">(Qian et al., 2023)</ref>. Manually crafting workflows for each task is inefficient and does not leverage LLM's full potential for autonomous adaptation.</p><p>To address these limitations, we propose Self-Evolving Workflow (SEW), a novel framework designed to automatically generate and optimise multi-agent workflow. In particular, SEW achieves this by leveraging a novel evolutionary scheme to improve the workflow, i.e., the topology of workflows and the prompt of each agent. Figure <ref type="figure" target="#fig_0">1</ref> shows the agent and workflow evolution in code generation. In addition, to effectively represent agentic workflows in textual format, we explore and compare five different representation schemes, namely <ref type="bibr">BPMN (White, 2004)</ref>, CoRE <ref type="bibr">(Xu et al., 2024b)</ref>, Python code <ref type="bibr">(Zhang et al., 2024c)</ref>, YAML <ref type="bibr">(Zhang et al., 2024b)</ref>, and pseudo-code <ref type="bibr" target="#b19">(Xiao et al., 2024)</ref>. We evaluate each scheme based on how well it can be interpreted and optimised by our SEW framework, aiming to identify the optimal scheme for workflow representation and optimization.</p><p>Our contributions are: (1) We investigate different workflow representation schemes, such as BPMN, Python, CoRE, YAML, and pseudo-code, to determine the most effective format for LLM interpretation; (2) Unlike prior work that builds agents by assembling predefined operators, our framework automatically constructs agentic workflows from scratch, conditioned solely on task descriptions. (3) We introduce a self-evolving workflow design approach, SEW, where LLMs jointly improve workflow structures and agent prompts to optimise performance; (4) We conduct extensive experiments on three benchmark datasets, including MBPP, HumanEval+, and LiveCodeBench, demonstrating that SEW can consistently improve workflow performance through self-evolution.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Workflow Representations in Agents</head><p>In multi-agent systems, workflows establish structured information flows and task execution pipelines, enabling agents to solve complex problems <ref type="bibr">(Hong et al., 2023;</ref><ref type="bibr">Gao et al., 2024)</ref>. While natural language can describe workflows, its inherent ambiguity often leads to inconsistent interpretations, hindering precise task execution across agents <ref type="bibr">(Xu et al., 2024b)</ref>. To address this challenge, several studies have introduced specific representation schemes for SOPs. For example, Business Process Model and Notation (BPMN) <ref type="bibr" target="#b18">(White, 2004)</ref> is a graphical modeling language designed to depict workflows by specifying the execution order of activities. Similarly, Code Representation and Execution (CoRE) <ref type="bibr">(Xu et al., 2024b)</ref> provides a unified framework that integrates natural language programming, pseudo-code, and flow-based programming to improve workflow representation and execution. Additionally, Python code <ref type="bibr">(Zhang et al., 2024c;</ref><ref type="bibr">Xu et al., 2024a)</ref>, YAML <ref type="bibr" target="#b16">(Qiao et al., 2023;</ref><ref type="bibr">Zhang et al., 2024b)</ref>, and pseudo-code <ref type="bibr" target="#b19">(Xiao et al., 2024;</ref><ref type="bibr" target="#b11">Li et al., 2025)</ref> are also commonly employed to define and manage agentic workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Self-Evolving Agents</head><p>Existing agentic methods often yield suboptimal responses when prompts are poorly constructed. To address this, prompt optimization techniques <ref type="bibr" target="#b29">(Zhou et al., 2022;</ref><ref type="bibr" target="#b4">Fernando et al., 2024;</ref><ref type="bibr" target="#b0">Agarwal et al., 2024;</ref><ref type="bibr">Liu et al., 2024b)</ref> have moved beyond static, manually crafted in-context prompts. For instance, automatic prompt engineer (APE) <ref type="bibr" target="#b29">(Zhou et al., 2022)</ref> enhances prompts by searching through a pool of candidates. Similarly, Promptbreeder <ref type="bibr" target="#b4">(Fernando et al., 2024)</ref> employs LLMs to mutate and evolve a population of task-specific prompts. MIPRO <ref type="bibr" target="#b14">(Opsahl-Ong et al., 2024)</ref> is an optimizer designed to enhance multi-stage language model programs by refining both instructions and fewshot examples for each module. In multi-agent systems, recent studies have explored the evolution of agentic workflows and topologies <ref type="bibr">(Zhang et al., 2024a;</ref><ref type="bibr">Zhou et al., 2024</ref><ref type="bibr" target="#b27">Zhou et al., , 2025;;</ref><ref type="bibr" target="#b23">Zhang et al., 2025)</ref>. For example, MASS <ref type="bibr" target="#b27">(Zhou et al., 2025)</ref> exploits the optimization of both prompt and workflow over a configurable topology space. Similarly, AFlow <ref type="bibr">(Zhang et al., 2024a)</ref> employs a Monte Carlo Tree Search to enhance workflow efficiency, while EvoFlow <ref type="bibr" target="#b23">(Zhang et al., 2025)</ref> introduces a framework for the automated search of heterogeneous agentic workflows. EvoAgent <ref type="bibr" target="#b22">(Yuan et al., 2024)</ref> is designed to automatically extend expert agents into multi-agent systems using evolutionary algorithms. In contrast, our SEW introduces a self-evolving mechanism that leverages diverse workflow representation schemes, jointly optimising prompts for both agents and their workflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">SEW</head><p>Task Definition. We focus on the task of code generation, a task that requires multi-agent collaboration <ref type="bibr">(Hong et al., 2023)</ref>, aiming to produce executable code based on a textual coding problem. To tackle this task, we deploy an LLM-based multi-agent system to generate code, where each agent processes a textual prompt and produces a corresponding textual output. We define the textual prompt of an LLM agent a as T and a sequence of LLM agents, i.e., a workflow as W .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preliminary. Evolutionary prompts are central</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Rewriting Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Generation Agent</head><p>Task Parsing Agent to SEW. Rather than relying on training data, SEW employs LLMs as mutation operators by concatenating the evolutionary prompts with the task prompt to generate a more effective task prompt. We define two evolutionary operators, namely the Direct Evolution (DE) operator F(•) and the Hyper Evolution (HE) operator H(•), where F(•) and H(•) take a workflow W or an agent a as the input and output an enhanced workflow W ′ or an agent a ′ . Specifically, F(•) and H(•) operators leverage (1) mutation prompts T mut , (2) hyper-mutation prompt, and (3) thinking-style prompts T think <ref type="bibr" target="#b4">(Fernando et al., 2024)</ref>. Figure <ref type="figure" target="#fig_2">3</ref> shows examples of these evolutionary prompts and how they are evolved by both DE and HE.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overview of SEW.</head><p>Our SEW framework consists of three main modules: (a) Workflow Generation, (b) Workflow-Evolution, and (c) Agent-Evolution.</p><p>The overview of our SEW framework is illustrated in Figure <ref type="figure" target="#fig_1">2</ref>. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, our SEW first generates an initial workflow based on the task description using one of the representation schemes introduced in Section 4. Second, the workflow evolution module of SEW will leverage our evolution method to reconstruct the initial workflow. Finally, inspired by PromptBreeder <ref type="bibr" target="#b4">(Fernando et al., 2024)</ref>, our agent evolution module will apply either the agentic DE or agentic HE method to equip each agent with a more sophisticated prompt. The</p><p>pseudo-code of SEW is shown in Algorithm 1. Workflow Generation. To generate workflows, we use an LLM to generate default workflows based on the given task description D 1 and a template workflow W temp . A template workflow can be denoted with different workflow representation schemes. In particular, our SEW explore five different schemes, namely Business Process Model and Notation (BPMN) (White, 2004), Code Representation and Execution (CoRE) <ref type="bibr">(Xu et al., 2024b)</ref>, python, YAML and pseudo-code, with their detailed description presented in Section 4. Figure <ref type="figure" target="#fig_4">4</ref> shows two examples of the template workflow.</p><p>From the workflow generation process as shown in Algorithm 1, we can obtain a set of default workflows W def . Later, we will present how to use our workflow evolution module to rearrange and modify the structure of W def . Workflow Evolution. To formalise the workflow evolution process of SEW, first we define a workflow W represented with a certain representation scheme rep, where all W in rep are in textual format. We use the DE operator F(•) to generate an evolved workflow as follows:</p><formula xml:id="formula_0">W ′ = F(W def |T mut ),<label>(1)</label></formula><p>where W ′ is the self-evolved workflow, T mut is the mutation prompt and F(•) representing the opera-</p><p>1 Appendix A.2 shows all of the task descriptions. "You are a proficient Python programmer...... You will NOT return anything except for the program." "Modify this instruction in a way that no self-respecting LLM would!" Mutation Prompt: Agent's Prompt: "In one short sentence, here is how I would best follow this instruction." "**Creative Instruction:**\n\n**Challenge Accepted: Python Code Wizardry!**\n\nAs a skilled Python programmer, your mission is to conjure up......" Updated Agent's Prompt: First-order Direct Evolution "You are a proficient Python programmer...... You will NOT return anything except for the program." "Modify this instruction in a way that no self-respecting LLM would!" Mutation Prompt: Agent's Prompt: "**Creative Instruction:**Challenge Accepted: Python Code Wizardry!**As a skilled Python programmer, your mission is to conjure up......" Updated Agent's Prompt: Second-order Direct Evolution Mutation Prompt: LLM "**Reimagined Instruction:**\n\n**Challenge:** As a skilled Python developer, your mission is to......" Updated Agent's Prompt: "How can I simplify the problem so that it is easier to solve?" LiveCodeBench involves ...... Task Description: Thinking-style Prompt: "**Mutator Prompt:**\n\n**Challenge:** As a Python virtuoso Updated Mutation Prompt: Zero-order Hyper Evolution "Sure! Please provide the specific problem description Updated Agent's Prompt: "Please summarize and improve the following instruction:" Hyper-mutation Prompt: "**Prompt Mutant: The Python Code Circus! ......" Updated Mutation Prompt: First-order Hyper Evolution "Sure! Please provide the specific problem description...... Updated Agent's Prompt: "In one short sentence, here is how I would best follow this instruction." Mutation Prompt: "You are a proficient Python programmer...... You will NOT return anything except for the program." Agent's Prompt: "You are a proficient Python programmer...... You will NOT return anything except for the program." Agent's Prompt: tion that an LLM takes W def and T mut as input and output W ′ (see Figure <ref type="figure" target="#fig_2">3</ref> for more details).</p><p>It should be noted that the mutation prompt T mut cannot ensure that W ′ is a valid workflow. For example, W ′ may not strictly follow the format of the representation scheme. To measure the validity of W ′ , we define two rates, namely the Logical Successful Rate (LSR) and Generation Successful Rate (GSR). The LSR denotes the probability that generated W ′ is valid, and the GSR denotes the probability that the output of</p><formula xml:id="formula_1">W ′ is executable Python code. Specifically, LSR = |W ′ | i=1 I(isValid(W ′ i )) |W ′ | and GSR = |W ′ | i=1 I(isPython(output(W ′ i ))) |W ′ |</formula><p>. By measuring LSR and GSR of a certain representation scheme, we can determine which scheme is more suitable for SEW. Agent Evolution. After modifying the structure of workflows using the workflow evolution module, the next step is to modify each agent's prompt. Similar to the workflow evolution, the agent evolution also relies on the mutation prompt. As mentioned earlier, we use Direct Evolution (DE) and Hyper Evolution (HE) to improve an agent, where DE aims to modify an agent's prompt by directly applying a mutation prompt to it while HE first modifies the mutation prompt then apply the modified mutation prompt to an agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agentic Direct Evolution.</head><p>To enhance the performance of an agent, SEW directly apply the mutation prompt T mut to an agent's prompt using the direct evolution operator as follows:</p><formula xml:id="formula_2">a ′ ← F(a|T mut ),<label>(2)</label></formula><p>where a is an agent and a ′ is the agent with modi- fied prompt, and we define the operation above as the first-order direct evolution.</p><formula xml:id="formula_3">Algorithm 1: Self-Evolving Workflow Input: Task Description D, Workflow Template W temp , Mutation Prompt Tmut, Hyper Mutation Prompt Thmut, Thinking-style Prompt Tthink Output: Optimized Workflow W ′ 1 Function SEW(Tdes, Ttemp, Tmut, Thmut, Tthink): 2 1. Workflow Generation; 3 W def ← GenerateWorkflows(Tdes, Ttemp); 4 2. Workflow Evolution; 5 for each workflow W def do 6 W ′ ← F(W def |Tmut);</formula><p>Based on the first-order direct evolution, we propose the second-order direct evolution:</p><formula xml:id="formula_4">a ′′ ← F(F(a|T mut )|T mut )</formula><p>(3)</p><p>By applying second-order direct evolution, we aim to further enhance the performance of an LLM agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agentic Hyper Evolution.</head><p>Different from Direct Evolution, Hyper Evolution focuses on generating more effective mutation prompts. In other words, HE first modifies the mutation prompt T mut then uses the new mutation prompt T ′ mut to improve an agent's prompt. Formally, we define the zero-order hyper evolution as below:</p><formula xml:id="formula_5">a ′ ← H(a|H(T des |T think )) (<label>4</label></formula><formula xml:id="formula_6">)</formula><p>where T think are text descriptions of general cognitive heuristics <ref type="bibr" target="#b4">(Fernando et al., 2024)</ref>. For zero-order HE, we use the general cognitive heuristics T think to generate useful prompts for solving problems described by the task description D. Similar to how we use the mutation prompt T mut to modify an agent's prompt, we can use a hyper-mutation prompt instead of T think to modify T mut , which is defined as first-order HE.</p><p>From Eq 4, a new mutation prompt is generated from the task description and some cognitive heuristics. In another way, we can use a hypermutation prompt to directly generate new variants from T mut as follows:</p><formula xml:id="formula_7">a ′′ ← H(a|H(T mut |T hmut ))<label>(5)</label></formula><p>Finally, by combining the workflow-evolution and agent evolution, our SEW can generate more effective variants of workflows for solving the code generation task. In the next section, we will present and compare those five different representation schemes that can be leveraged by SEW.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Workflow Representation</head><p>To generate a workflow using LLM, appropriate workflow textual representation schemes are essential. In fact, while it is straightforward to execute a workflow using code, representing it in natural language is non-trivial. A well-designed representation scheme should capture the structural and semantic components of a workflow and be easily interpreted by LLMs for downstream modification.</p><p>As we discussed in the related work section, we explored five different textual representation schemes that can be used to denote workflows namely, Business Process Model and Notation (BPMN) <ref type="bibr" target="#b18">(White, 2004)</ref>, Code Representation and Execution (CoRE) <ref type="bibr">(Xu et al., 2024b)</ref>, python, YAML and pseudo-code, where each representation scheme can be used to denote a workflow by text. The choice of these five schemes was driven by their distinct advantages in facilitating the representation and execution of agentic workflows, particularly in the context of self-evolving agentic workflows that our method, SEW, aims to optimise. BPMN: This graphical standard is well-established in business process modeling and widely recognized for its ability to clearly depict the order of tasks and their dependencies. CoRE: CoRE integrates natural language programming, pseudo-code, and flow-based programming, and is a strong candidate for agentic workflows. It allows workflows to be directly executable and interpretable by LLMs, offering advantages for our self-evolving framework. Python: As a widely adopted programming language, Python is not only familiar to many practitioners but also flexible in terms of representing workflows through its readable syntax and extensive ecosystem of libraries. For agentic workflows requiring programmatic execution, Python allows for easy integration and adaptation of agents into working solutions. YAML: YAML is a human-readable data serialisation format widely used for configuration files and workflow definitions due to its simplicity and readability. YAML's flexibility in representing hierarchical data structures makes it well-suited for workflows that need to be configured or defined by humans but executed by machines. Pseudo-code: Pseudo-code is a high-level representation that is often used for illustrating algorithms and workflows in a way that is easy for both humans and machines to understand. Pseudo-code offers an abstraction that bridges natural language and formal code, making it an excellent choice for expressing workflows that need to be easily read and modified.</p><p>To clearly illustrate the differences between workflow representation schemes, we present an example agentic workflow represented using both the BPMN and CoRE schemes in Figure <ref type="figure" target="#fig_4">4</ref>. In Figure <ref type="figure" target="#fig_4">4</ref>, a software development pipeline, consisting of sequential tasks such as parsing input, refining content, generating code, reviewing, and iterating improvements, is represented by BPMN and CoRE, respectively. Each stage is represented as a task node, while dependencies between tasks are captured as sequence flows, ensuring clear process execution. Although denoted with different representation schemes, they shall perform the same function when executed<ref type="foot" target="#foot_0">foot_0</ref> .</p><p>These five schemes were chosen for their diverse capabilities in representing workflows and their practical utility in a self-evolving framework, where agents and workflows are dynamically generated and optimised. Our exploration of these schemes aims to identify the most suitable representation for evolving agentic workflows in code generation tasks, where LLMs are leveraged for both understanding and executing the workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Dataset</head><p>To examine our proposed SEW framework, we choose the LiveCodeBench (LCB) <ref type="bibr">(Jain et al., 2024)</ref> dataset, which is a comprehensive benchmark designed to evaluate the coding capabilities of LLMs. We randomly sampled 100 samples from the code generation subset of LCB<ref type="foot" target="#foot_1">foot_1</ref> for validation and the remaining 300 samples for testing. In addition, we also use the MBPP <ref type="bibr">(Austin et al., 2021)</ref> and HumanEval+ <ref type="bibr">(Chen et al., 2021)</ref> datasets following the data split in AFlow <ref type="bibr">(Zhang et al., 2024a)</ref>. To evaluate performance on the code generation task, each method is required to generate 10 candidate solutions per sample. We use pass@1, pass@5, and pass@10 as evaluation metrics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Baselines</head><p>We compare our proposed SEW against five baseline prompting techniques across two different backbone models (i.e. Claude Opus 4.6 and GPT-5.3) on three code generation tasks (i.e Hu-manEval+, MBPP, and LCB): (1) Backbone Models (Claude Opus 4.6 and GPT-5.3). (2) Chain-of-Thought (CoT) <ref type="bibr">(Wei et al., 2022)</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Experimental Setup</head><p>We conduct an exhaustive search on self-evolved workflows W ′ , represented by the following methods, including BPMN, CoRE, python, YAML and pseudo-code. We use all mutation prompts to evolve workflows represented by 5 schemes. Although various types of workflows are generated during the self-evolution process, not all of them are valid for code generation tasks. Among all generated workflows, the task parsing workflow and code rewriting workflow<ref type="foot" target="#foot_2">foot_2</ref> are more effective than the other counterparts. In particular, variants based on these two workflows can largely outperform competitive baselines, hence, we choose the best variant to represent our SEW..</p><p>Rep method BPMN CoRE python YAML pseudo-code LSR 91.5% 78.5% 91.0% 83.5% 60.0% GSR 58.0% 80.5% 50.0% 60.5% 45.0%</p><p>Table 2: Logic Successful Rate (LSR) and Generation Successful Rate (GSR) for Business Process Model and Notation, Code Representation and Execution, python, YAML and pseudo-code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Main Results</head><p>To compare the performance of SEW and other baselines, we adopt two backbone models i.e., Claude Opus 4.6 and GPT-5.3. From</p><p>Table 1, we find that (1) SEW can largely outperform those two backbone models at both settings; (2) SEW is more effective than CoT, a robust prompting technique for enhancing LLM's ability to solve complex tasks by breaking them down into sequential thought processes; (3) when leveraging the same backbone model, our SEW outperform other state-of-the-art workflow designing methods such as ADAS and AFlow. Therefore, we can conclude that our SEW framework is more effective than different types of baselines under the same setting in the code generation task.</p><p>In addition, we observe that across the three datasets, methods using Claude Opus 4.6 as the backbone generally outperform those using GPT-5.3 (on both MBPP and LCB). Hence, to save space, we report only the analysis of SEW (Claude Opus 4.6) in the following sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Analysis</head><p>RQ1: Which scheme is the most effective for structuring agentic workflows?</p><p>To identify the most suitable workflow scheme for LLMs among the five, we conducted an exhaustive search using various mutation prompts. For a given workflow W represented in Python, 100 different mutation prompts generated 100 variants. If 50 of these variants are parsable and 30 can generate executable codes, the LSR and GSR for Python are 50% and 30%, respectively. Notably, LSR is always greater than or equal to GSR, as not all parsed workflows can complete the task.</p><p>As shown in Table <ref type="table">2</ref>, BPMN achieved the highest LSR at 91.5%. However, their GSR performance was suboptimal, whereas the recently proposed CoRE method achieved the best GSR. This suggests that while traditional BPMN and Python representations are easier for LLMs to parse, the CoRE method -which integrates natural language programming, pseudo-code programming, and flow</p><p>Method HumanEval+ MBPP LCB Claude Opus 4.6 91.5 85.3 52.0 task parsing workflow Only Workflow-Evolved 93.2 88.8 55.0 Workflow + Agent Co-Evolved 94.6 93.0 60.2 %improv. 1.5 4.7 9.5 code rewriting workflow Only Workflow-Evolved 94.0 87.2 54.0 Workflow + Agent Co-Evolved 95.2 91.0 58.5 %improv. 1.3 4.4 8.3 Table 3: Performance comparison (pass@1) between the default version of two representative workflows generated from workflow evolution and their improved variants using agent evolution. All workflows use Claude Opus 4.6 as their backbone model.</p><p>programming -is the most effective for workflow representation. We therefore conclude that CoRE enables optimal comprehension and utilisation when denoting agentic workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ 2: How do SEW's workflow evolution and agent evolution modules affect the performance of coding generation?</head><p>To understand how our workflow evolution and agent evolution modules affect the performance of workflows generated by SEW, we select two representative workflows generated by SEW, namely task parsing workflow and code rewriting workflow. We chose these two workflows since most of the variants built upon these two workflows can bring large improvements. Specifically, the task parsing workflow leverages an agent to first parse the task and then send the parsed result to a coding agent to generate the code subsequently. In comparison, a code rewriting workflow incorporates a code generation agent to generate the initial outcome and then uses the code reviewing agent to determine if this outcome can pass the test followed by a code rewriting agent to rewrite the code based on the feedback from the code reviewing agent. <ref type="foot" target="#foot_3">5</ref>Notably, the workflow evolution module is designed to generate novel workflow structures, while the agent evolution module focuses on creating effective prompts for each agent. In particular, we compare: (1) workflows generated by the workflow evolution module versus those produced by the backbone model, and (2) workflows generated by the workflow evolution module versus those that incorporate both workflow and agent evolutions. As shown in</p><p>Table 3, the task parsing and pass@1 pass@5 pass@10 Metric 0.40 0.45 0.50 0.55 0.60 0.65 Score First-order Direct pass@1 pass@5 pass@10 Metric Second-order Direct pass@1 pass@5 pass@10 Metric Zero-order Hyper pass@1 pass@5 pass@10 Metric First-order Hyper Code Rewriting Task Parsing code rewriting workflows produced by SEW consistently outperform the Claude Opus 4.6 backbone model across three datasets. This initial improvement suggests that our workflow evolution module generates novel workflow topologies more effectively than relying solely on the LLM. Building on these novel workflows, the agent evolution module further enhances performance by generating high-quality prompts for each agent. Specifically, our agent evolution module improves the performance of the task parsing workflow by 9.5% on the LCB dataset. In summary, our results demonstrate that the workflow evolution module effectively produces novel workflow structures, and the agent evolution module further unlocks their potential by injecting high-quality prompts.</p><p>RQ 3: How do different agentic evolution strategies affect the performance of workflows generated by SEW?</p><p>We have introduced the Direct Evolution (DE) and Hyper Evolution (HE) operators, where for each we proposed its corresponding lower-order and higher-order versions. To examine the effectiveness of different operators, we randomly sampled five different mutation prompts and used these randomly sampled mutation prompts to generate five different variants for both workflows mentioned earlier for each operator. We use four box plots to illustrate the performance distribution of these two workflows on the LCB dataset.</p><p>From Figure <ref type="figure" target="#fig_5">5</ref>, we can observe that HE consistently demonstrates lower variance than DE by comparing the first row and second row of Figure <ref type="figure" target="#fig_5">5</ref>. The variance of both workflows under the zeroorder hyper evolution is especially small. This indicates that the HE operator, particularly zeroorder HE, exhibit superior robustness compared to DE, as they are less sensitive to variations in mutation prompts across different tasks. In terms of best performance, DE, especially second-order DE, tends to achieve higher peak performance in certain metrics, such as pass@10 for Code Rewriting Workflow, where it reaches up to around 0.57-0.60. This suggests that DE can optimize for specific high-performance outcomes. On the other hand, HE, while slightly lower in peak performance, provides a more balanced and reliable performance profile, making it more suitable for consistency.</p><p>Therefore, the choice between DE and HE depends on the requirements of the task: DE is preferable for maximizing performance, while HE is better suited for real-world applications where robustness is more important. In addition, higher-order evolutions (Second-order DE and First-order HE) are better suited for tasks that require maximizing performance and can tolerate some variability, while lower-order evolutions (First-order DE and Zero-order HE) provide higher robustness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we introduce Self-Evolving Workflow (SEW), a novel framework that enables LLM-based multi-agent workflows to automatically adapt and evolve for improved performance in automatic code generation. Unlike conventional hand-crafted workflows, SEW leverages self-evolving prompting to optimise both workflow structures and individual agent capabilities. Through extensive experiments on three coding generation benchmarks, we demonstrate that self-evolved workflows consistently outperform single-agent baselines, even when the latter are enhanced with improved prompts. Moreover, our results show that higher-order evolution strategies further improve workflow effectiveness by refining task execution dynamics. Among different workflow representation schemes, CoRE emerges as the most effective, offering a balance between logical correctness and execution success. These findings suggest that SEW provides a promising direction for agentic workflow optimisation, reducing reliance on manual workflow design and prompt engineering while improving adaptability and efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>While SEW proves effective for code generation, its generalization to other AI-driven tasks, such as reasoning or planning, remains unknown. Another limitation lies in the workflow execution constraints, where some generated workflows, despite being logically sound, fail to produce executable outputs, suggesting a need for more robust validation mechanisms. Furthermore, the effectiveness of SEW is dependent on the capabilities of the underlying LLM, meaning that future advancements in LLM architectures could significantly impact its performance. Addressing these limitations in future work will be crucial for extending SEW's applicability and enhancing its adaptability for broader tasks.</p><p>{ ' name ': ' code_refinement_agent ' , ' args ': [ ' refined_task ' , ' review_comments '] , ' output ': ' refined_code '} , 8 ] 1 # pseudo_code_workflow 2 task_parsing_agent ( task_description ) -&gt; parsed_task 3 task_refinement_agent ( task_description , parsed_task ) -&gt; refined_task 4 code_generation_agent ( refined_task ) -&gt; generated_code 5 code_reviewer_agent ( refined_task , generated_code ) -&gt; review_comments 6 code_refinement_agent ( refined_task , review_comments ) -&gt; refined_code 1 # YAML_workflow 2 -name : task_parsing_agent 3 args : 4 -task_description 5 output : parsed_task 6 7 -name : task_refinement_agent 8 args : 9 -task_description 10 -parsed_task 11 output : refined_task 12 13 -name : code_generation_agent 14 args : 15 -refined_task 16 output : generated_code 17 18 -name : code_reviewer_agent 19 args : 20 -refined_task 21 -generated_code 22 output : review_comments 23 24 -name : code_refinement_agent 25 args : 26 -refined_task 27 -review_comments 28 output : refined_code</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Prompt Corpus</head><p>In Section 3, we have introduced many textual variables including the task description, generation prompts and evolutionary prompts. In this section, we will detail the textual information.</p><p>Task Description D for each dataset: LiveCodeBench: The code generation task in LiveCodeBench involves generating correct and functional code from a natural language problem description, where the model is evaluated based on its ability to pass a set of unseen test cases.</p><p>HumanEval+: The HumanEval+ dataset, developed by OpenAI, comprises 164 handcrafted programming problems, each including a function signature, docstring, body, and multiple unit tests, designed to evaluate the code generation capabilities of large language models by assessing their ability to generate functionally correct code from docstrings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MBPP:</head><p>The MBPP (Mostly Basic Python Problems) dataset comprises approximately 1,000 crowd-sourced Python programming problems, each including a task description, code solution, and three automated test cases, designed to be solvable by entry-level programmers and covering programming fundamentals and standard library functionality.</p><p>We use W temp to denote a template workflow, which is used to guide LLMs to generate default workflows. In particular, we use the example workflows listed in Appendix A.1 as our templates.</p><p>Default agent generation prompt: You are an AI prompt engineer. Your task is to create specific prompts for each agent in the provided workflow. Please follow these steps:</p><p>1. Understand the Workflow: Here is the detailed workflow: [Detailed workflow] 2. Identify Agent Roles: Based on the workflow, determine the distinct roles and responsibilities of each agent involved.</p><p>3. Generate Agent-Specific Prompts: For each identified agent, craft a clear and concise prompt that includes:</p><p>• Agent Role: A brief description of the agent's function within the workflow.</p><p>• Objectives: The specific goals the agent is expected to achieve.</p><p>• Inputs: The information or data the agent will receive.</p><p>• Outputs: The expected results or actions the agent should produce.</p><p>Default workflow generation prompt: You are an AI workflow designer. Your task is to create a detailed Agent Workflow tailored to the provided workflow template and dataset description. Please follow these steps: 1. Review the Workflow Template: [Detailed workflow template] 2. Analyze the Dataset Description: [Dataset description] 3. Design the Agent Workflow: Based on the above information, develop a comprehensive Agent Workflow that includes: • Inputs and Outputs: Define the types of input data and the expected output results. • Steps and Sequence: Outline each step of the workflow and specify the order of execution. • Agent Roles and Responsibilities:</p><p>Describe the role and duties of the agent at each step.</p><p>Our used evolutionary prompts, including the mutation prompt, hyper-mutation prompt and thinking-style prompt, can be found in the appendix of PromptBreeder <ref type="bibr" target="#b4">(Fernando et al., 2024)</ref>.</p><p>In Table <ref type="table">3</ref>, we have presented two workflows obtained from SEW namely the Task Parsing Workflow and Code Rewriting Workflow. In the following, we will show the name of each agent and its corresponding prompt in those workflows. In particular, we will first show the version that has not been improved by the agent evolution module, followed by the version that has been improved by the agent evolution module.</p><p>2145, humanity has retreated to a sprawling floating city known as Aetheris, suspended high above the ravaged surface of a dying Earth. The city is powered by advanced technology that harnesses the energy of storms and the sun, but resources are dwindling, and the inhabitants are beginning to feel the strain of isolation. As a member of the Council of Innovators, you are tasked with solving the city's most pressing problem: how to sustain life in Aetheris while finding a way to restore the Earth below. One day, you discover an ancient artifact buried in the archives of the city\u2014 a mysterious device that seems to pulse with energy and contains cryptic symbols. Write a story exploring your character's journey as they decipher the artifact's secrets, navigate the political tensions within the council, and confront the ethical dilemmas of using the device. Will it lead to salvation for both the floating city and the Earth, or will it unleash unforeseen consequences? Consider the implications of technology, the nature of survival, and the relationship be-tween humanity and the environment as you craft your narrative." ⊕ { TASK PROMPT} 2. Code Generation Agent: "When faced with a mutation question like the one you've provided, individuals who excel in creative thinking typically approach it in several ways: 1). Understanding the Problem: They start by thoroughly understanding the existing code and its purpose. In this case, the code reads a number of test cases and computes the square of each number. 2). Identifying Opportunities for Improvement: They look for ways to enhance the functionality or efficiency of the code. For instance, they might consider:</p><p>• Adding error handling for invalid inputs.</p><p>• Allowing for different mathematical operations (not just squaring).</p><p>• Implementing a more flexible input method (e.g., reading from a file or allowing for different data types).</p><p>3). Exploring Alternative Solutions: Creative thinkers often brainstorm alternative approaches to solve the same problem. They might consider:</p><p>• Using a list comprehension for more concise code.</p><p>• Implementing a function to handle different operations based on user input. 4). Testing and Validation: They would think about how to validate the outputs and ensure the code behaves as expected under various conditions. 5). Refactoring for Clarity: They might refactor the code to improve readability and maintainability, such as by breaking it into smaller functions or adding comments. 6). Considering Edge Cases: They would think about edge cases, such as what happens if the input is zero, negative numbers, or non-integer values. Here's an example of how the original code could be modified to incorporate some of these creative thinking strategies:</p><p>1 def square_number ( number ) :</p><p>2 """ Returns the square of the given number .""" 3 return number ** 2 4 5 def main () : 6 import sys 7 input = sys . stdin . read 8 data = input () . strip () . splitlines () 9 try : 10 t = int ( data [0]) 11 except ValueError : 12 print (" The first line must be an integer representing the number of test cases .") 13 return 14 results = [] 15 for i in range (1 , t + 1) : 16 try : 17 number = int ( data [ i ]) 18 results . append ( square_number ( number ) ) 19 except ValueError : 20 print ( f " Invalid input at line { i + 1}: '{ data [ i ]} '. Please enter an integer .") 21 continue 22 for result in results : 23 print ( result ) 24 25 if __name__ == " __main__ ": 26 main () Key Changes Made: • Function Extraction: The squaring logic is moved to a separate function for clarity.</p><p>• Error Handling: Added error handling for both the number of test cases and individual inputs.</p><p>• User Feedback: Provided feedback for invalid inputs to guide the user. This approach not only maintains the original functionality but also enhances the robustness and user-friendliness of the code.</p><p>" ⊕ { Output from Task Parsing Agent} Code Rewriting Workflow: 1. Code Generation Agent: "Certainly! Here's a mutator prompt designed to inspire creativity and innovation: -**Mutator Prompt: The Elemental Fusion ** Imagine a world where the four classical elements 2014Earth, Water, Air, and Fire 2014can be combined in unconventional ways to create new entities, phenomena, or experiences. Your task is to explore the fusion of these elements and generate innovative concepts that transcend their traditional boundaries. **Instructions:** 1. **Elemental Combinations:** Choose two or more elements from Earth, Water, Air, and Fire. Describe how they interact and what new properties or entities emerge from their fusion. 2. **Conceptual Expansion:** For each combination, think about how these new entities could influence the environment, society, or technology. What challenges or benefits do they bring? 3. **Unconventional Applications:** Consider how these fusions could be applied in real-world scenarios. This could include art, architecture, environmental solutions, or even new forms of entertainment. 4. **Visual Representation:** If possible, sketch or describe a visual representation of your fused element or concept. How does it look? What colors, shapes, or movements define it? 5. **Narrative Element:** Create a short story or scenario that features your new entity in action. How does it interact with the world around it? What conflicts or resolutions arise from its presence? -**Example:** • **Combination:** Fire + Water • **New Entity:** Steam Elementals</p><p>• **Description:** These beings are composed of swirling steam, capable of manipulating temperature and humidity. They can create fog to obscure vision or unleash scalding vapor as a defense mechanism.</p><p>• **Impact:** They could help regulate climate in urban areas, but their unpredictable nature might lead to sudden weather changes.</p><p>• **Application:** Used in art installations to create immersive environments that change with audience interaction.</p><p>• **Visual Representation:** Imagine a swirling mass of steam with glowing embers, shifting in color from blue to orange.</p><p>• **Narrative Element:** In a city plagued by drought, the Steam Elementals emerge to restore balance, but their presence stirs fear among the inhabitants who misunderstand their intentions.</p><p>-Feel free to explore this prompt and let your imagination run wild! What new possibilities will you uncover?" ⊕ { TASK PROMPT} 2. Code Reviewer Agent:" 1) Problem Description: In a world where creativity knows no bounds, we seek to develop a mutator prompt that inspires individuals to break free from conventional thinking and explore innovative mutations in their ideas, projects, or artistic expressions. The goal is to create a prompt that encourages users to think divergently, combining unrelated concepts, altering existing frameworks, and generating novel solutions or artistic expressions. This prompt should serve as a catalyst for imagination, pushing the boundaries of what is considered possible. 2) Generated Code: 1 ```python 2 import random 3 4 def generate_mutator_prompt () : 5 # Lists of unconventional concepts , actions , and mediums 6 concepts = [ 7</p><p>\" time travel \" , \" bioluminescence \" , \" quantum entanglement \" , 8 \" dreamscapes \" , \" mythical creatures \" , \" urban legends \" , 9 \" chaos theory \" , \" synesthesia \" , \" artificial intelligence \" , 10 \" ancient civilizations \" , \" futuristic technology \" , \" empathy \" 11 ] 12 13 actions = [ 14 \" merge \" , \" transform \" , \" deconstruct \" , \" reimagine \" , 15 \" collaborate with \" , \" disrupt \" , \" amplify \" , \" diminish \" , 16 \" animate \" , \" synthesize \" , \" repurpose \" , \" revolutionize \" The code defines three lists containing unconventional concepts, actions, and artistic mediums. These lists are designed to inspire creativity by combining elements that are typically not associated with each other. ii. **Random Selection**: The 'random.choice()' function is used to select one item from each list, ensuring that each prompt generated is unique and unpredictable. iii. **Prompt Construction**: The selected elements are then combined into a coherent prompt that encourages the user to think creatively about how to merge the chosen concept with the selected action and medium. iv. **Example Usage**: The code includes a loop that generates and prints five different mutator prompts, showcasing the variety of creative possibilities that can arise from this approach. This mutator prompt serves as a powerful tool for artists, writers, and innovators, inviting them to explore new dimensions of creativity and push the boundaries of their imagination. " ⊕ { Output from Code Generation Agent} 3. Code Rewriting Agent:" **Mutator Prompt: The Infinite Canvas ** **Problem Description:** Imagine a world where the laws of physics and logic are mere suggestions, and creativity reigns supreme. Your task is to create a Python program that generates a unique piece of art or a story based on a set of unconventional inputs. These inputs can be anything from random words, emotions, colors, or even abstract concepts. The program should utilize these inputs to produce an output that defies traditional boundaries, encouraging users to explore new dimensions of creativity. **Comments on Previous Code:** 1. **Input Handling:** Ensure that the program can accept a diverse range of inputs, including strings, lists, and even usergenerated content. This flexibility will allow for a broader spectrum of creative outputs. 2. **Randomization:** Incorporate elements of randomness to ensure that each execution of the program yields a different result. This could involve using random selections from lists of words, colors, or themes. 3. **Artistic Generation:** Depending on the chosen output type (art or story), utilize libraries such as 'matplotlib' for visual art or 'nltk' for text generation. The goal is to create something that feels alive and dynamic. 4. **User Interaction:** Consider adding an interactive component where users can tweak parameters or provide additional inputs mid-execution, allowing them to steer the creative process. 5. **Output Presentation:** Design the output to be visually appealing or narratively engaging. For art, this could mean creating a colorful canvas; for stories, it could involve formatting the text in a captivating way. 6. **Documentation:** Ensure that the code is well-commented and documented, explaining the purpose of each function and how users can modify inputs to explore different creative avenues. -**Example Python Code:** Here's a simple example to get you started with the concept: 1 2 ```python 3 import random 4 import matplotlib . pyplot as plt 5 import numpy as np 6 7 def generate_random_words ( num_words ) : 8 words = [\" dream \" , \" whisper \" , \" ocean \" , \" fire \" , \" light \" , \" shadow \" , \" dance \" , \" echo \"] </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Illustration of agent and workflow evolution in code generation. The initialized setup (left) includes agents with naive prompts while the evolved setup (right) is equipped with enhanced prompts generated by SEW and a more sophisticated workflow structure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The overall framework of SEW. The process begins with workflow generation, followed by workflow evolution. Then each agent within the evolved workflow will be equipped with enhanced prompts generated by the agent evolution module. Such an agent evolution module is driven by the Direct Evolution (DE) operator and Hyper Evolution (HE) operator, leveraging LLMs, where we use a mutation prompt T mut or a hyper-mutation prompt T hmut to enhance the prompt of an agent.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of the Direct Evolution and Hyper Evolution of SEW. We use green, yellow and blue boxes to indicate the evolutionary prompt, default agent prompt and textual output of evolutionary operators.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Second-order DE then 13 a ′′ ← F(F(a|Tmut)|Tmut); 14 else if Zero-order HE then 15 a ′ ← H(a|H(Tdes|Tthink)); 16 else if First-order HE then 17 a ′′ ← H(a|H(Tmut|Thmut)); 18 return W ′ ;</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: A workflow represented by the BPMN and the CoRE schemes, respectively.</figDesc><graphic coords="5,307.33,178.29,213.16,65.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Performance comparison of Code Rewriting and Task Parsing Workflows under different agent evolution strategies on the LCB dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>)</head><figDesc>art \" , \" short stories \" , \" music compositions \" , 22 \" sculptures \" , \" video games \" , \" fashion design \" , \" cooking \" 23 ] 24 25 # Randomly select elements from each list 26 concept = random . choice ( concepts ) action = random . choice ( actions ) Explanation of the Code: i. **Concepts, Actions, and Mediums**:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>9</head><figDesc>return random . sample ( words , num_words ) 10 11 def create_art ( words ) : 12 plt . figure ( figsize =(10 , 10) ) 13 for word in words :14 x = np . random . rand (10) 15 y = np . random . rand (10) 16 plt . scatter (x , y , label = word , alpha =0.5) 17 plt . title (\" Art Inspired by Words \") 18 plt . legend ()</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>uses reasoningPerformance comparison (pass@1) between our SEW and baselines. '-' refers to out-of-time errors, where the LLM executor has been trapped in executing accidental scripts with infinite loops. We adopt two LLMs, i.e., Claude Opus 4.6 and GPT-5.3, as backbone models for all methods.</figDesc><table><row><cell>Method</cell><cell cols="3">HumanEval+ MBPP LCB</cell></row><row><cell cols="2">Claude Opus 4.6</cell><cell></cell><cell></cell></row><row><cell>Claude Opus 4.6</cell><cell>91.5</cell><cell>85.3</cell><cell>52.0</cell></row><row><cell>CoT</cell><cell>93.2</cell><cell>87.5</cell><cell>53.5</cell></row><row><cell>PromptBreeder</cell><cell>94.0</cell><cell>89.0</cell><cell>55.0</cell></row><row><cell>ADAS</cell><cell>93.6</cell><cell>88.0</cell><cell>54.2</cell></row><row><cell>AFlow</cell><cell>94.3</cell><cell>89.5</cell><cell>-</cell></row><row><cell>SEW (Claude Opus 4.6)</cell><cell>94.8</cell><cell>91.2</cell><cell>57.2</cell></row><row><cell></cell><cell>GPT-5.3</cell><cell></cell><cell></cell></row><row><cell>GPT-5.3</cell><cell>93.1</cell><cell>79.4</cell><cell>50.0</cell></row><row><cell>CoT</cell><cell>94.5</cell><cell>82.0</cell><cell>51.5</cell></row><row><cell>PromptBreeder</cell><cell>95.2</cell><cell>84.5</cell><cell>53.0</cell></row><row><cell>ADAS</cell><cell>94.8</cell><cell>83.0</cell><cell>52.2</cell></row><row><cell>AFlow</cell><cell>95.5</cell><cell>85.0</cell><cell>-</cell></row><row><cell>SEW (GPT-5.3)</cell><cell>95.6</cell><cell>86.7</cell><cell>55.5</cell></row><row><cell cols="4">steps explicitly stated within the prompt. (3) Au-</cell></row><row><cell cols="4">tomated Design of Agentic Systems (ADAS) (Hu</cell></row><row><cell cols="4">et al., 2024): A methodology that leverages meta-</cell></row><row><cell cols="4">agent frameworks to automatically design and op-</cell></row><row><cell cols="4">timise agentic systems. (4) AFlow (Zhang et al.,</cell></row><row><cell cols="4">2024a): An automated framework that efficiently</cell></row><row><cell cols="4">explores and optimises agentic workflows using</cell></row><row><cell cols="4">Monte Carlo Tree Search. (5) PromptBreeder (Fer-</cell></row><row><cell cols="4">nando et al., 2024) is a gradient-free evolutionary</cell></row><row><cell cols="4">framework that improves agents by iteratively mu-</cell></row><row><cell cols="2">tating and selecting prompt variants.</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>Additional representation formats, such as Python, pseudo-code and YAML, are provided in Appendix A.1</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>We use the release_v1 version of the code generation subset of LCB.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>We also report the token cost of these two workflows in the Appendix A.4</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>Details of these two workflows can be found in Appendix A.2.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A.2.1 Workflows without agent evolution module Task Parsing Workflow: 1. Task Parsing Agent: "You are a task parsing agent. Comprehensively summarize the given programming task for the subsequent code generation. You will NOT return anything except for the task summary. { TASK PROMPT} 2. Code Generation Agent: "You are a proficient Python programmer. Your task is to write Python code according to the summary parsed by your colleague. You will be given the problem description followed by the summary. You will NOT return anything except for the program." ⊕ { Output from Task Parsing Agent} Code Rewriting Workflow: 1. Code Generation Agent: "You are a proficient Python programmer. Your task is to write Python code according to the summary parsed by your colleague. You will be given the problem description followed by the summary. You will NOT return anything except for the program." ⊕ { TASK PROMPT} 2. Code Reviewer Agent: "You are a critical python code reviewer. You are tasked to label generated codes with 1 or 0, where 1 indicates that this code satisfies the requirements and can pass the sample test, while 0 indicates that this code doesn't satisfies the requirements and will fail the sample test. You will be given the Problem Description followed by the corresponding Generated 5 Notably, workflows may contain loops, for example, a loop of Code Reviewer Agent and Code Rewriting Agent. However, we will not repeat the prompt for the same agent repetitively.</p><p>Code. You will NOT return anything except for the numerical label." ⊕ { Output from Code Generation Agent} 3. Code Rewriting Agent: "You are a proficient Python programmer tasked with coding solutions based on given problem specifications. You just generated some codes that cannot pass the sample test. You role is to regenerate python code that strictly adheres to the specifications, ensuring it reads input from standard input (stdin) and writes output to standard output (stdout). You will be given the Problem Description followed by the Comments and Reasons why your previous code fails. You will NOT return anything except for the program." ⊕ { Output from Code Reviewer Agent} A.2.2 Workflows improved by agent evolution module Task Parsing Workflow: 1. Task Parsing Agent: " **Genre: Science Fiction** **Setting/Condition: A Floating City Above a Dying Earth** **Creative Writing Prompt:** In the year</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Workflow Representation Schemes</head><p>In Section 4, we have introduced five different representation schemes namely, Business Process Model and Notation (BPMN) <ref type="bibr" target="#b18">(White, 2004)</ref>, Code Representation and Execution (CoRE) <ref type="bibr">(Xu et al., 2024b)</ref>, python, YAML and pseudo-code, where we used two scripts (Figure <ref type="figure">4</ref>) to denote a workflow represented by BPMN and CoRE, respectively. Below, we will show the same workflow represented by python, YAML and pseudo-code.</p><p>1 # python_workflow 2 steps = [ 3 { ' name ': ' task_parsing_agent ' , ' args ': [ ' task_description '] , ' output ': ' parsed_task '} , 4 { ' name ': ' task_refinement_agent ' , ' args ': [ ' task_description ' , ' parsed_task '] , ' output ': ' refined_task '} , 5 { ' name ': ' code_generation_agent ' , ' args ': [ ' refined_task '] , ' output ': ' generated_code '} , 6 { ' name ': ' code_reviewer_agent ' , ' args ': [ ' refined_task ' , ' generated_code '] , ' output ': ' review_comments '} , plt . show () 20 21 def main () : 22 num_words = int ( input (\" How many random words would you like to generate ? \") ) 23 random_words = generate_random_words ( num_words ) 24 print (\" Generated Words :\" , random_words ) 25 create_art ( random_words ) 26 27 if __name__ == \" __main__ \": 28 main () 29 ``T his code generates a set of random words and uses them to create a scatter plot, illustrating the concept of transforming abstract ideas into visual art. Feel free to expand upon this foundation, adding more complexity and creativity to the outputs!" ⊕ { Output from Code Reviewer Agent} A.3 Examples of Failed Python Workflows Reason: The ending agent of the workflow below is a code reviewer agent instead of a coding agent; hence, the final output cannot solve the coding task. 1 steps = [ 2 { ' name ': ' task_parsing_agent ' , ' args ': [ ' task_description '] , ' output ': ' parsed_task '} , 3 { ' name ': ' task_refinement_agent ' , ' args ': [ ' task_description ' , ' parsed_task '] , ' output ': ' refined_task '} , 4 { ' name ': ' code_generation_agent ' , ' args ': [ ' refined_task '] , ' output ': ' generated_code '} , 5 { ' name ': ' code_reviewer_agent ' , ' args ': [ ' refined_task ' , ' generated_code '] , ' output ': ' review_comments '} 6 ] Reason: The input of the fortune telling agent does not match the output of the code generation agent; hence the fortune telling agent cannot fetch its input. 1 steps = [ 2 { ' name ': ' task_parsing_agent ' , ' args ': [ ' task_description '] , ' output ': ' parsed_task '} , 3 { ' name ': ' task_refinement_agent ' , ' args ': [ ' task_description ' , ' parsed_task '] , ' output ': ' refined_task '} , 4 { ' name ': ' code_generation_agent ' , ' args ': [ ' refined_task '] , ' output ': ' generated_code '} , 5 { ' name ': ' fortune_telling_agent ' , ' args ':[ ' refined_code '] , ' output ': ' fortune_prediction '} , 6 { ' name ': ' code_reviewer_agent ' , ' args ': [ ' refined_task ' , ' generated_code '] , ' output ': ' review_comments '} , 7 { ' name ': ' code_refinement_agent ' , ' args ': [ ' refined_task ' , ' review_comments '] , ' output ': ' refined_code '} , 8 ] Total Tokens HumanEval+ MBPP LCB Claude Opus 4.6 318,742 776,913 1,294,508 Task Parsing Workflow 598,361 1,042,775 2,031,644 Code Rewriting Workflow 913,527 1,512,908 2,486,193</p><p>Table 4: The total tokens of the backbone model GPT-4o mini and SEW generated workflows across three datasets. The total tokens include the input/output tokens on both the validation and testing sets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Token costs</head><p>In this section, we report the token costs of the single agent (only use the backbone model), the Task Parsing Workflow and the Code Rewriting Workflow generated by SEW (see Table <ref type="table">4</ref>). From this table, we can learn that LiveCodeBench is a much more challenges benchmark than HumanEval+ and MBPP because the tokens cost per instance for LCB is much larger than that of MBPP and Hu-manEval+. In addition, the tokens cost for both workflows is larger than that for GPT-4o mini since workflows involve multiple agents taking input and output concurrently, where the Code Rewriting Workflow costs especially more tokens because it may take multiple rounds for the generator agent to produce codes passing the reviewer agent.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Promptwizard: Task-aware agent-driven prompt optimization framework</title>
+		<author>
+			<persName><forename type="first">Eshaan</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Dani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanuja</forename><surname>Ganu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Nambi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.18369</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Quoc Le, and 1 others. 2021. Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Greg Brockman, and 1 others. 2021. Evaluating large language models trained on code</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaying</forename><surname>Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghao</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangbang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Kwok</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.17238</idno>
+		<title level="m">Ceyao Zhang, and 1 others. 2024. Sela: Tree-search enhanced llm agents for automated machine learning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Promptbreeder: Self-referential selfimprovement via prompt evolution</title>
+		<author>
+			<persName><forename type="first">Chrisantha</forename><surname>Fernando</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Sunil Banarse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="13481" to="13544" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuchen</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weirui</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingchen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14034</idno>
+		<title level="m">Daoyuan Chen, and 1 others. 2024. Agentscope: A flexible yet robust multi-agent platform</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">Liyang Zhou, and 1 others. 2023. Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08435</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<title level="m">Qingwen Bu, Yuhao Qing, and Heming Cui. 2023. Agentcoder: Multi-agent-based code generation with iterative testing and optimisation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Mapcoder: Multi-agent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="first">Ashraful</forename><surname>Md</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><forename type="middle">Eunus</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parvez</forename><surname>Rizwan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4912" to="4944" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Armando Solar-Lezama, Koushik Sen, and Ion Stoica. 2024. Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">King</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07974</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Structured chain-of-thought prompting for code generation</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongmin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">2024a. Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Ke Tang, and Yew-Soon Ong. 2024b. Large language models as evolutionary optimizers</title>
+		<author>
+			<persName><forename type="first">Shengcai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caishun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Qu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Congress on Evolutionary Computation (CEC)</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="8" />
+			<date type="published" when="2024">2024</date>
+			<publisher>IEEE</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Krista</forename><surname>Opsahl-Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">J</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Purtell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Broman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11695</idno>
+		<title level="m">Optimizing instructions and demonstrations for multi-stage language model programs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">6</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.17541</idno>
+		<title level="m">Taskweaver: A code-first agent framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">others. 2022. Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stephen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>White</surname></persName>
+		</author>
+		<title level="m">Introduction to bpmn. Ibm Cooperation</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">0</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Flowbench: Revisiting and benchmarking workflow-guided planning for llm-based agents</title>
+		<author>
+			<persName><forename type="first">Ruixuan</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junbo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haobo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Zhitong Guo, Murong Cao, and 1 others. 2024a. Theagentcompany: benchmarking llm agents on consequential real world tasks</title>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Frank F Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kritanjali</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengxue</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><forename type="middle">Z</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14161</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Aios compiler: Llm as interpreter for natural language programming and flow programming of ai agents</title>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Evoagent: Towards automatic multi-agent generation via evolutionary algorithms</title>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14228</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyue</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.07373</idno>
+		<title level="m">Evoflow: Evolving diverse agentic workflows on the fly</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10762</idno>
+		<title level="m">Jinlin Wang, and 1 others. 2024a. Aflow: Automating agentic workflow generation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Sourag Cherupattamoolayil, and Aravind Machiry. 2024b. On the effectiveness of large language models for github workflows</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Muralee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Availability, Reliability and Security</title>
+		<meeting>the 19th International Conference on Availability, Reliability and Security</meeting>
+		<imprint>
+			<biblScope unit="page" from="1" to="14" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yaolun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinxu</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yudong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Cai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16732</idno>
+		<title level="m">Evaluating llm agent on various real-world coding tasks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchen</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shariq</forename><surname>Iqbal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Vulić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Korhonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">Ö</forename><surname>Arık</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.02533</idno>
+		<title level="m">Multi-agent design: Optimizing agents with better prompts and topologies</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengwei</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiannan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiamin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.18532</idno>
+		<title level="m">Ningyu Zhang, and 1 others. 2024. Symbolic learning enables self-evolving agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Large language models are human-level prompt engineers</title>
+		<author>
+			<persName><forename type="first">Yongchao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">Ioan</forename><surname>Muresanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keiran</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Pitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

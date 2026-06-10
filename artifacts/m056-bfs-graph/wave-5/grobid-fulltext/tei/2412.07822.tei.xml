@@ -1,0 +1,1093 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MAGE: A Multi-Agent Engine for Automated RTL Code Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Yujie</forename><surname>Zhao</surname></persName>
+							<email>jzhao@ucsd.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hejia</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hanxian</forename><surname>Huang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhongming</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jishen</forename><surname>Zhao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Equal</forename><surname>Contribution</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<addrLine>San Diego La Jolla</addrLine>
+									<postCode>92093</postCode>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MAGE: A Multi-Agent Engine for Automated RTL Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E21111B754375D9EB826A8DD67454156</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The automatic generation of RTL code (e.g., Verilog) through natural language instructions has emerged as a promising direction with the advancement of large language models (LLMs). However, producing RTL code that is both syntactically and functionally correct remains a significant challenge. Existing single-LLM-agent approaches face substantial limitations because they must navigate between various programming languages and handle intricate generation, verification, and modification tasks. To address these challenges, this paper introduces MAGE, the first open-source 1 multi-agent AI system designed for robust and accurate Verilog RTL code generation. We propose a novel high-temperature RTL candidate sampling and debugging system that effectively explores the space of code candidates and significantly improves the quality of the candidates. Furthermore, we design a novel Verilog-state checkpoint checking mechanism that enables early detection of functional errors and delivers precise feedback for targeted fixes, significantly enhancing the functional correctness of the generated RTL code. MAGE achieves a 95.7% rate of syntactic and functional correctness code generation on VerilogEval-Human v2 benchmark, surpassing the state-of-the-art Claude-3.5-sonnet by 23.3%, demonstrating a robust and reliable approach for AIdriven RTL design workflows.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Digital hardware design usually requires engineers to define the architecture and functionality of hardware by writing code in hardware description languages (HDLs), such as Verilog and VHDL. As VLSI designs become more complex, hardware design workflows using HDLs are increasingly timeconsuming and error-prone <ref type="bibr" target="#b0">[1]</ref>- <ref type="bibr" target="#b2">[3]</ref>, often requiring multiple iterations to debug functional correctness. Although electronic design automation (EDA) tools have advanced to support this workflow <ref type="bibr" target="#b3">[4]</ref>- <ref type="bibr" target="#b6">[7]</ref>, the demand for more efficient and automated hardware design solutions remains crucial.</p><p>Large Language Models (LLMs) <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref> have recently shown promising potential in assisting and improving hardware design <ref type="bibr" target="#b9">[10]</ref>- <ref type="bibr" target="#b12">[13]</ref>. Recent studies explored leveraging LLMs to improve the correctness of RTL code generation through model fine-tuning <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b14">[15]</ref>, training of domainadaptive models <ref type="bibr" target="#b15">[16]</ref>, and single-agent methods <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref> that augment LLMs by incorporating results and feedback from compilers or simulators to refine the generated code.</p><p>However, previous studies using a single LLM or a single agent face substantial limitations. First, these approaches fall short of the context-switch between tasks, programming languages, and knowledge domains. As a result, the quality of RTL design suffers: for instance, a single Claude-3.5-sonnet agent <ref type="bibr" target="#b8">[9]</ref> has a functionality pass rate of only 75.0% even for simple design tasks <ref type="bibr" target="#b18">[19]</ref>- <ref type="bibr" target="#b20">[21]</ref>. Second, HDLs are specifically designed to describe the logic and architecture of digital hardware at a low level, focusing on the flow of data between registers, the timing of operations, and hardware characteristics such as propagation delays and signal dependencies. Directly adopting general-purpose LLM or multi-agent designs will produce low-accuracy RTL code that fails to meet timing constraints, resulting in wrong designs <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b19">[20]</ref>.</p><p>To address these challenges, we propose MAGE, the first open-source Multi-AGent Engine to achieve automatic highquality RTL code generation. Different from the existing single-agent RTL code generation frameworks <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref>, MAGE enables specialized agents to handle distinct aspects in the RTL development pipeline. Inspired by real-world RTL design workflows, where specialists focus on distinct stages, our approach, MAGE, employs a specialized multi-agent architecture composed of four types of key agents: the RTL code generation agent, testbench generation agent, judge agent, and debug agent. Each type plays a specific role, working collaboratively within our tailored recursive framework to generate optimized and reliable RTL code.</p><p>MAGE consists of three key design principles. First, mimicking the iterative nature of human RTL design teams in addressing complex design challenges, we developed a high-efficiency collaboration workflow with a delicate design context communication protocol. Second, we propose a novel high-temperature RTL candidate sampling and debugging system, which leverages both high-temperature sampling and simulation-based scoring to identify promising candidates. Our key insight is that higher temperatures result in more diverse LLM outputs, while also increasing the likelihood of including the highest-quality candidates for optimization in the next stage. Finally, we propose a novel Verilog-state checkpointing and validation scheme, which substantially improves the functional correctness. Unlike conventional methods that provide feedback only on the final output mismatch <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref>, MAGE validates an RTL design by comparing state values with expected outputs at each clock edge. This enables early detection of functional errors and provides precise feedback for targeted fixes.</p><p>In summary, we make the following contributions: • We design MAGE, the first open-source LLM-based multiagent system for robust and accurate Verilog RTL code generation. By decomposing a complex hardware design into manageable sub-tasks, we design LLM agents to handle sub-tasks and design the system to enable effective agent communication and collaboration.</p><p>• We propose a novel high-temperature RTL candidate sampling system, notably enhancing generated code quality by exploring the benefits of high-randomness generation.</p><p>• We propose a novel Verilog-state checkpoint checking mechanism, which provides precise feedback for targeted fixes, significantly improving the RTL code quality.</p><p>• MAGE achieves a 95.7% rate of syntactic and functional correctness code generation on the VerilogEval-Human v2 benchmark, surpassing all existing methods, representing a critical step toward automating and optimizing hardware design workflows, offering a more robust methodology for AI-driven RTL design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND AND MOTIVATION A. Characteristics and challenges of LLM-based RTL design</head><p>Decomposing Complex Traditional RTL Design. Traditional digital hardware design flows necessitate hardware engineers to iteratively perform: (1) implement Verilog code to specify hardware architectures and behaviors, (2) customize test benches to rigorously verify the correctness of these hardware descriptions (3) iterate between Verilog simulations, signal waveform reasoning, and code refining until all output signals match expected behavior. This iterative loop among design, verification, and refinement makes the RTL design process not only challenging but also highly demanding in terms of both time and expertise. The complexity of traditional Verilog RTL design calls for decomposing the whole process into multiple manageable sub-stages and adopting different specialists (agents) for different sub-stages. Related Work on LLM-based RTL Design. Recent works <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b21">[22]</ref>, <ref type="bibr" target="#b22">[23]</ref> train or fine-tune general code generation LLMs by incorporating RTL domain knowledge to enhance the correctness of RTL code generation. Singleagent methods <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref> further integrate simulation results and introduce more stages in the code generation process, such as planning, verification, and code refining based on the feedback from simulation. However, this process involves generating both synthesizable and non-synthesizable code for RTL generation and verification, and context switches among different sub-tasks in multiple iterations, necessitating different domain knowledge and problem-solving abilities. Thus, adopting a single agent for all these tasks in the hardware design process leads to sub-optimal results, as they have to process such complex contexts in each interaction and maintain consistency through a long unified conversation history.</p><p>In contrast, multi-agent systems distribute tasks among agents with independent conversation histories, enabling specialized task handling and greater modularity. However, Aivril <ref type="bibr" target="#b23">[24]</ref> only implements a basic two-agent division between code generation and review, still requiring a single agent to handle both synthesizable RTL and non-synthesizable verification code, thus failing to address the fundamental context-switching challenges. Verilogcoder <ref type="bibr" target="#b24">[25]</ref> further constrains accessibility and system adaptability through its closedsource implementation and reliance on proprietary components (e.g., its Abstract Syntax Tree and Waveform Tracing Tool). Temperature Sampling for LLM-based RTL Design. Given an input requirement, LLMs rely on a specific decoding strategy to generate the code auto-regressively. Temperature sampling method <ref type="bibr" target="#b25">[26]</ref> uses a temperature coefficient T (usually ∈ [0, 1]) to control the sampling randomness. Increasing the temperature avoids overly conservative results and promotes diversity in code generation, thus enhancing the chance of exploring the correct answers. However, this comes at the cost of introducing more noise and errors in the generation results. Recent studies <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b27">[28]</ref> show that high-temperature sampling can improve correctness in software code generation through multiple sampling iterations. However, higher temperatures tend to result in poorer performance for RTL design as explored in recent studies <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b20">[21]</ref>. We found a key reason for this is that single-agent mechanisms restrict the ability to design independent and efficient sampling and feedback, thereby hindering the optimization potential of hightemperature sampling for RTL code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Opportunity on Effective Code Generation</head><p>To tackle the aforementioned limitations of both existing single-agent and multi-agent systems for RTL code generation, we identify potential opportunities to develop effective RTL code generation frameworks to improve correctness.</p><p>First, to further reduce the mutual influence between nonsynthesizable testbenches and synthesizable RTL code generation, as well as to decrease the complexity of tasks assigned to each agent, we recognize the necessity of appropriately distributing tasks among multiple agents and organizing the workflow effectively. Specifically, previous works (e.g., <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b23">[24]</ref>) employed a single agent to generate both non-synthesizable testbenches and synthesizable RTL code simultaneously. However, <ref type="bibr" target="#b28">[29]</ref> found that generating testbenches and code together within the same conversation may lead to a corresponding decrease in effectiveness. Moreover, test cases generated in this manner can become biased and influenced by the code, resulting in a loss of objectivity and diversity.</p><p>Second, based on our analysis in Sec. II-A, we thoroughly reviewed existing multi-agent systems <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b24">[25]</ref>, where we found that all of them are closed-source and dependent on third-party proprietary tools that are not LLM-directlyadapted. This inevitably limits system extensibility and transparency. Therefore, we identify the need for an open-sourced multi-agent system.</p><p>STEP STEP STEP STEP STEP Check Passed a_in=1,b_in=0, and=0, q=1 Check Passed Check Passed a_in=0,b_in=1, and=1, q=0 mismatched info + sliding window log + previous code checkpoint'1 checkpoint'2 CLK iter-1 iter-2 iter-3 Simulate and Evaluate TestBench RTL Debugging with Verilog-State Checkpoint If TestBench is incorrect, regenerate an optimized testbench. TestBench Generation Waveform WF-TextLog RTL High-Temperature Sampling &amp; Ranking Simulate, Score and Rank the candidates generated sampled by RTL agent. Gen Candidates Parse Test Bench Test Bench Judge Re-Generate (a) Overall architecture of MAGE Analyze RTL with Verilog-State Checkpoints, refine RTL, simulate to update checkpoints, and decide to accept or rollback refinements (b) Legend Specification (c) Details of High-Temperature Sampling and Ranking (Step 4) (d) Details of RTL Debugging with State Checkpoint (Step 5) Rollback TestBench Agent RTL Agent Judge Agent Debug Agent Simulator High-Temperature Sampling e.g. c=4, T=0.85 Candidate r1 Candidate r2 Candidate r3 Candidate r4 Score and Rank Candidate r3 Candidate r4 Candidate r1 Top-K Selected Candidates Debug Step Output Tools Candidate r2 score=0.95 score=0.82 score=0.68 score=0.51 Parse Output Checkpointed Checkpointed Finally, to address the limitation of high-temperature sampling for RTL code generation described in Sec. II-A, we summarize the key to efficiently sampling RTL code candidates process to mitigate the impact of randomness while leveraging the exploration benefits. Given that RTL code is synthesizable and a practical miscount scoring method is applicable, we prioritize candidate selection at an early stage by identifying top-scoring candidates. This approach allows us to reduce the exploration cost by filtering suboptimal results early.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Opportunity on Effective Code Debugging</head><p>Most existing LLM approaches for RTL code generation <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref> rely on the direct application of original golden testbenches, which can only provide pass rates. This provides very limited feedback to LLMs in fine-tuning RTL code as pass rates alone lack detailed insights into crucial aspects such as timing analysis, signal interactions, variable values, and mismatch information, all of which are essential for ensuring high-quality RTL design. VerilogCoder <ref type="bibr" target="#b24">[25]</ref> applies closed-source Abstract Syntax Tree (AST) analysis, which significantly restricts flexibility and transparency. Furthermore, the introduction of tools that output in graphical form, which LLM can not directly apply, increases the complexity of tasks for LLMs and reduces their effectiveness. Therefore, we identify the requirement for an optimized testbench, which will output a log resembling a simulated waveform in text form, which can be directly adaptable by LLMs. This shifts the reliance on closed-source tools to a fully open-source LLMbased textual protocol, alongside significant improvements in LLM RTL code debug effectiveness, improving both the extension of the framework and the quality of the analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. MAGE DESIGN</head><p>We present MAGE, a multi-agent engine designed specifically for RTL. This system integrates an RTL-specific context communication protocol with high-efficiency, LLM-adapted tools for fine-tuning RTL, all within a productive and orchestrated process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Multi-Agent System Overview</head><p>Figure <ref type="figure" target="#fig_0">1</ref> depicts a comprehensive overview of the workflow implemented in MAGE. Inspired by the collaborative division of work approaches of human RTL design teams, our framework incorporates four types of agents, each playing a specific and concrete role in the automation process. Figure <ref type="figure" target="#fig_0">1 (b)</ref> specifically delineates the responsibilities and tasks assigned to each agent, ensuring a clear understanding of the workflow. (1) A Testbench Generation Agent is responsible for creating optimized test benches in a textual-waveform-output format based on the natural language specifications and any available golden test benches. (2) A RTL Generation Agents convert these specifications along with the optimized test bench into Verilog code, incorporating syntax checking to ensure code validity. (3) A Judge Agent then takes over by simulating and evaluating the generated RTL code against the optimized test bench. It scores the RTL code candidates and decides whether any require debugging or if the test bench needs to be regenerated. (4) A Debug Agent performs iterative refinements on any code that fails initial tests, using textual waveform-like simulation outputs as feedback for improvements. Our method mimics the division of labor in human teams and enhances the efficiency and accuracy of automated RTL design. It should be noted that, whether in RTL code generation or debugging, the agent will perform at most s = 5 iterations to automatically fix syntax errors.</p><p>Based on the distinct and specific roles of multiple agents, we have designed an efficient workflow to ensure that each agent's unique contributions are seamlessly integrated, facilitating a coherent progression throughout the workflow. Figure <ref type="figure" target="#fig_0">1</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. High-Temperature RTL Sampling and Scoring</head><p>As depicted in Sec. II-B, high-temperature sampling has a better chance of exploring the correct code. However, in prior studies on Temperature Sampling for RTL code generation like <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b27">[28]</ref>, it is commonly acknowledged that high-temperature sampling introduces significant randomness, often resulting in reduced correctness. To address this issue, we first explore the potential opportunity of using multiple RTL code generation candidates in high-temperature sampling to reduce simulated mismatch counts in one iteration. Fig. <ref type="figure" target="#fig_2">2</ref> shows the distribution of normalized mismatch counts for the best candidates at two different temperatures. We observe that the best candidate with high temperature has a lower mismatch count for most problems. This suggests that, despite increased randomness, high-temperature sampling yields better performance when the sampling is sufficiently extensive. The improvement in pass rates at each stage, as shown in Fig. <ref type="figure" target="#fig_2">2</ref>, indicates the potential benefits of performing an effective sampling policy at high temperatures.</p><p>Based on the above observation, we propose a High-Temperature Sampling and Ranking Process as follows: 1. We sample c RTL code candidates for issue i:</p><formula xml:id="formula_0">R i = {r 1 i , r 2 i , . . . , r c i }, r i ∼ P T (r | p sys , SP i , T B i ) (<label>1</label></formula><p>) Here, T is the temperature, p sys denotes the system prompt of the RTL code generation, SP i is the natural language specification of the issue i, and T B i is the corresponding testbench. The term P T (r | p sys , SP i , T B i ) represents the probability distribution of the generated RTL code given the temperature, system prompt, specification, and testbench. 2. We select the Top-K candidates from R i based on their scores. Specifically, each candidate in R i is evaluated to obtain a normalized mismatch-based score as follows:</p><formula xml:id="formula_1">s(r) = 1 - m(r) tc(r)<label>(2)</label></formula><p>where m(r) is the mismatch count and tc(r) is the total number of checks of the generated RTL code r. We then select the K candidates with the highest scores, denoted as follows:</p><formula xml:id="formula_2">R ⋆ i,0 = arg max A⊆Ri,|A|=K r∈A s(r)<label>(3)</label></formula><p>3. We employ a debug agent to perform debugging trials, generating a new candidate r ⋆ trial = D(r ⋆ ) for each selected candidate r ⋆ , where D(r) denotes the debug trial for RTL code r. The selected candidate set at iteration m is then updated as:</p><formula xml:id="formula_3">R ⋆ i,m = { arg max r∈{D(r ⋆ ),r ⋆ } s(r) | r ⋆ ∈ R ⋆ i,m-1 }<label>(4)</label></formula><p>And this process repeats until max</p><formula xml:id="formula_4">r∈R ⋆ i,m</formula><p>s(r) = 1 or the iteration limit is reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. RTL Debugging with State Checkpoint Mechanism</head><p>Our objective is to design a mechanism that is entirely LLM-based, independent of third-party closed-source tools, and effective in improving RTL debugging efficiency. To achieve this, we propose the RTL Debugging with State Checkpoint Mechanism, which follows these steps: 1. Utilizing the optimized testbench generated in Step 1 and 2 , we extract the input vector I, the DUT, and the output O, and subsequently identify the earliest mismatch point as:</p><formula xml:id="formula_5">t m = min{t | O DU T (t) ̸ = O exp (t), t ≥ 0}<label>(5)</label></formula><p>where O DUT (t) is the output vector from the DUT at time t, and O exp (t) is the expected output vector at time t.</p><p>2. We generate the State Checkpoint and collect the textual waveform window as:</p><formula xml:id="formula_6">W = I(t ′ ), O DU T (t ′ ), O exp (t ′ ) | t ′ ∈ max(t m -L W , 0), t m<label>(6)</label></formula><p>where W represents the textual waveform window, L W is the window length parameter, and I(t ′ ) is the input vector at clock edge t ′ . 3. The debugging agent then takes the textual waveform window W and the original testbench as inputs, generates a new trial of debugged RTL code, and performs replacement actions to correct the identified faults in the RTL. The simulation is subsequently rerun to verify if the mismatch is resolved in the updated State Checkpoint.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. EXPERIMENTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experimental Setup</head><p>Benchmarks. Two widely used benchmarking datasets: VerilogEval-v1-Human <ref type="bibr" target="#b19">[20]</ref> and VerilogEval-v2 <ref type="bibr" target="#b24">[25]</ref>. Model. Claude 3.5 Sonnet 2024-10-22 <ref type="bibr" target="#b8">[9]</ref>. Baselines. i. Vanilla models: Generating RTL code in a single pass using language models, including both general-purpose LLMs (e.g. GPT-4o <ref type="bibr" target="#b29">[30]</ref>, Claude 3.5 Sonnet <ref type="bibr" target="#b8">[9]</ref>) and RTL-specified models (e.g. ITERTL <ref type="bibr" target="#b21">[22]</ref>, CodeV <ref type="bibr" target="#b22">[23]</ref>). ii. LLM Agent systems: Agent-based systems designed to enhance LLM performance for RTL code generation, including open-source solutions (OriGen <ref type="bibr" target="#b12">[13]</ref>) and closed-source ones (e.g. VeriAssist <ref type="bibr" target="#b16">[17]</ref>, AutoVCoder <ref type="bibr" target="#b17">[18]</ref>, VerilogCoder <ref type="bibr" target="#b24">[25]</ref>, AIVRIL <ref type="bibr" target="#b23">[24]</ref>). Configurations. Our implementation of MAGE integrates the opensource Verilog compiler and simulator Icarus Verilog <ref type="bibr" target="#b30">[31]</ref> with an LLM-agnostic API interface offered by the opensource framework LlamaIndex <ref type="bibr" target="#b31">[32]</ref>. Based on the superior performance <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b32">[33]</ref>, <ref type="bibr" target="#b33">[34]</ref> of Claude 3.5 Sonnet <ref type="bibr" target="#b8">[9]</ref> in multiple coding tasks, we choose to run experiments with that language model. In accordance with the VerilogEval V1 <ref type="bibr" target="#b19">[20]</ref> and V2 <ref type="bibr" target="#b20">[21]</ref> benchmark, we conducted experiments to measure Pass@1 under 2 settings: Low Temperature (T=0, top p=0.01, n=1) and High Temperature (T=0.85, top p=0.95, n=20). Here, temperature T is described in Sec. II-A. Top p limits the output pool to a cumulative probability threshold. n represents the number of evaluation runs. Metrics. Following prior works <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b20">[21]</ref>, the Pass@1 metric is computed as:</p><formula xml:id="formula_7">pass@k = E Problems 1 - n-cp k n k<label>(7)</label></formula><p>where k = 1, and c p is the number of passing runs. This Pass@1 metric, which accounts for multiple runs, reflects the expected percentage of problems that the system solves correctly when executed once for each problem.</p><p>TABLE I: Pass rates of different temperature configurations in MAGE. Config High Temp 94.8 95.7 Low Temp 89.1 93.6 VerilogEval-Human Pass@1 VerilogEval-V2 Pass@1</p><p>As shown in Table <ref type="table">I</ref>, the High Temperature setting achieves higher Pass@1, so it is adopted for subsequent experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Key Results</head><p>Table <ref type="table">II</ref> shows the comparison of MAGE and baselines. For a fair comparison, we select the highest pass rate among their experiment configuration. MAGE achieves the best performance on both benchmarks, delivering consistent improvements over specialized (e.g., VerilogCoder) and general-purpose systems(e.g., GPT-4, CodeQwen). Specifically, MAGE obtains a Pass@1 score of 94.8% on VerilogEval-Human and 95.7% on VerilogEval-V2, surpassing all baselines. These results underline the effectiveness of MAGE in advancing the capabilities of LLM-driven coding systems.</p><p>MAGE not only outperforms closed-source systems but also demonstrates substantial improvement over accessible solutions, including vanilla models and open-source coding systems. For instance, compared to the highest-performing vanilla LLMs (e.g., Claude 3.5 Sonnet), MAGE achieves a relative improvement of +19.8% on VerilogEval-Human and +23.3% on VerilogEval-V2. Similarly, against open-source systems like OriGen (54.4% Pass@1 on VerilogEval-Human), MAGE significantly improves the functional correctness, showcasing its superior performance in scenarios where accessible and reproducible solutions are prioritized.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Ablation Study Multi-Agent System.</head><p>We conducted an ablation study to assess the effectiveness of task distribution among multiple agents. The study compared three configurations: (a) Vanilla LLM, which involves one-pass RTL code generation using a single LLM; (b) Single-Agent, where different agents in the MAGE system were merged into a single agent by sharing a common generation history; and (c) Multi-Agent, the proposed system that assigns tasks to specialized agents based on their roles. As shown in Table <ref type="table">III</ref>, the multi-agent configuration achieves the highest pass rate (93.6%), outperforming both the vanilla (72.4%) and single-agent (83.9%) setups. These results indicate that effective task partitioning can significantly enhance the performance of LLM-based systems, particularly for complex tasks like RTL code generation, which require handling both synthesizable RTL code and non-synthesizable testbenches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RTL Code State Checkpoint Mechanism.</head><p>We also conducted case studies to evaluate the effectiveness of the proposed RTL Code State Checkpoint mechanism. For example, Fig. <ref type="figure" target="#fig_3">3</ref> illustrates a debugging case study with and without state checkpoints. Without checkpoints, when only the log is provided to the LLM Debug Agent, the agent can only approximate</p><p>TABLE III: Multi-Agent task distribution ablation study: Pass Rates with Claude 3.5 Sonnet 2024-10-22, Low-Temperature Setting. Config Type Pass% 72.4 Pass% 83.9 Improvement(∆) +11.5 Pass% 93.6 Improvement(∆) +21.2 VerilogEval-V2 Pass@1 Vanila LLM Single-Agent Multi-Agent the problematic location in the buggy RTL code, making it unlikely to identify and fix the issue. In contrast, with state checkpoints included in the log, the LLM Debug Agent can reason more effectively, pinpointing mismatches in the output and identifying missing logic terms. This leads to a more accurate and efficient bug-fixing process. Sampling and Debugging Mechanisms. Our experimental data demonstrates the effectiveness of the proposed sampling and debugging mechanisms in enhancing the quality of generated RTL. Fig. <ref type="figure" target="#fig_4">4</ref>(a) illustrates that the RTL generated with the sampling strategy consistently outperforms the RTL without sampling across different problems. The score distribution indicates that, without sampling, the RTL scores are nearly uniformly spread across the range [0, 1]. However, after applying the sampling method, the scores are concentrated near 1, reflecting a significant quality improvement. Fig. <ref type="figure" target="#fig_4">4 (b</ref>) depicts the improvement in the mean score across multiple rounds of debugging, starting from an initial score of 0.669 and reaching 0.890 after sufficient refinement. This consistent increase in score demonstrates the cumulative benefit of iterative debugging, leading to more optimal RTL solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. CONCLUSION</head><p>In this paper, we propose MAGE, the first open-source LLM-based multi-agent system designed for automated and accurate Verilog RTL code generation. Integrated with a novel High-Temperature RTL Sampling and Scoring process, MAGE effectively explores more potentially correct candidates, leading to higher pass rates than prior studies. Augmented with RTL Debugging with State Checkpoint Mechanism, MAGE further optimizes the code with more precise feedback. Our system represents a critical step toward automating and optimizing hardware design workflows, offering a more robust methodology for AI-driven RTL design.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: (a) The overview of MAGE, (b) the roles of four types of agents, (c) state check module, and (d) sampling and debugging module.</figDesc><graphic coords="3,50.82,52.36,229.03,257.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>(a) demonstrates the entire process is systematically divided into five main steps as depicted as follows: Step 1 -Generate initial textual-waveform-output testbenches. To reduce the limitations of pass-rate-output golden testbenches, which is analyzed in Sec. II-C, we directly utilize natural language specifications to generate optimized testbenches that can output State Checkpoints, which will be used in Step 5 (see Figure 1 (d) and Sec. III-C). Furthermore, since natural language specifications may contain ambiguities, we combine the input with the golden testbench if available. Step 2 -Based on the natural language specifications and the optimized testbench, we generate an initiate RTL code. Step 3 -If the initial RTL code cannot pass the optimized testbench, the judge agent evaluates the testbench and regenerates it if deemed incorrect. Step 4 -If the RTL code is deemed correct, we will employ an High-Temperature RTL Sampling and Scoring Process (see Figure 1 (c) and detailed in Sec. III-B) to generate and ranking RTL code Candidates. Step 5 -If the RTL code candidates still have function errors, we will employ a RTL Debugging with State Checkpoint Mechanism (see Figure 1 (d) and Sec. III-C) to make effective debug trials and debug the selected RTL code candidates.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Normalized mismatch count of generated testbenches at different stages under varying temperature configurations (Low temperature: T = 0, n = 1; High temperature: T = 0.85, n = 20), using the Claude 3.5 Sonnet model (dated 2024-10-22) across two benchmarks: VerilogEval-v1-Human [20] and VerilogEval-v2 [21]. Problems that directly passed before Step 4 and those with zero mean mismatches in both configurations are not shown in the figure. The blue violin plot shows that candidates (blue dots) generated with high-temperature sampling typically have lower mean mismatch counts across most problems compared to those generated with low temperatures (purple dots).</figDesc><graphic coords="4,311.98,171.71,250.11,133.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: The Case Study of RTL Code State Checkpoint on Prob093-ece241-2014-q3.</figDesc><graphic coords="6,64.78,426.73,80.63,70.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Score S(r) improvement of RTL by sampling and debugging. (a) Score distribution: generated RTL without sampling versus sampled and selected best RTL candidate; (b) Score distribution and the mean score of generated RTL in each debug round. Data of problems fixed before entering the debug stage are not included.</figDesc><graphic coords="6,317.97,249.24,236.59,103.19" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>System LLM Model N/A GPT-4o 51.3 N/A N/A Claude 3.5 Sonnet * 60.3 N/A N/A 75.0 72.4 N/A ITERTL [22] 42.9 N/A N/A CodeV [23] 53.2 N/A OriGen [13] 54.4 N/A VeriAssist [17] GPT-4 50.5 N/A AutoVCoder [18] CodeQwen1.5-7B 48.5 N/A VerilogCoder [25] GPT-4 Turbo N/A 94.2 AIVRIL [24] Claude 3.5 Sonnet * 64.7 N/A 94.8 95.7 Improvement(∆) † +19.8 +23.3 System Type VerilogEval-Human Pass@1 VerilogEval-V2 Pass@1 Generic LLM Claude 3.5 Sonnet 2024-10-22 RTL-specified LLM Open Source DeepSeek-Coder-7B + LoRA Closed Source Closed Source Closed Source Closed Source MAGE (ours) Open Source Claude 3.5 Sonnet 2024-10-22 * Claude 3.5 Sonnet has two versions: 2024-06-20 and 2024-10-22. The cited paper [24] does not specify which version was used. † The improvement is directly compared to the performance of the same model without employing the MAGE system. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>= (~c &amp; d) | (c &amp; ~d); mux_in[1] = 1'b0; mux_in[2] = (~c &amp; ~d) | (c &amp; ~d); mux_in[3] = (c &amp; d); end First mismatch at time 50: Inputs: c=1, d=1 Got mux_in=1000 (8), Expected mux_in=1001 (9). Log With Checkpoint Let's analyze the mismatch for cd=11: mux_in[0] should be 1 Current output 1000, expected 1001 Problem with mux_in[0]: mux_in[0] should be 1 for: -cd=01: (~c &amp; d) -cd=10: (c &amp; ~d) -cd=11: (c &amp; d) &lt;--missing this term</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">HardFails: Insights into software-exploitable hardware bugs</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dessouky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Haney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Persyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kanuparthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khattri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-R</forename><surname>Sadeghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rajendran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">28th USENIX Security Symposium (USENIX Security 19</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="213" to="230" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">On hardware security bug code fixes by prompting large language models</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pearce</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Forensics and Security</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">RTL-repair: Fast symbolic repair of hardware design code</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Laeufer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Fajardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Nikolić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3620666.3651346</idno>
+		<ptr target="https://doi.org/10.1145/3620666.3651346" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems</title>
+		<meeting>the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="867" to="881" />
+		</imprint>
+	</monogr>
+	<note>ser. ASPLOS &apos;24</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">EDA for IC implementation, circuit design, and process technology</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lavagno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Scheffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Martin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>CRC press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Scheffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lavagno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Martin</surname></persName>
+		</author>
+		<title level="m">EDA for IC system design, verification, and testing</title>
+		<imprint>
+			<publisher>CRC press</publisher>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">C-based soc design flow and eda tools: An asic and system vendor perspective</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wakabayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Okamoto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1507" to="1522" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A survey and evaluation of fpga high-level synthesis tools</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V.-M</forename><surname>Sima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pilato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Canis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hsiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ferrandi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1591" to="1604" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anadkat</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">The claude 3 model family: Opus, sonnet, haiku</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www-cdn.anthropic.com/de" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">8</biblScope>
+		</imprint>
+	</monogr>
+	<note>ba9b01c9ab7cbabf5c33b80b7bbc618857627/Model Card Claude 3.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Benchmarking large language models for automated verilog rtl code generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Garg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 Design, Automation &amp; Test in Europe Conference &amp; Exhibition (DATE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Betterv: Controlled verilog generation with discriminative guidance</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-L</forename><surname>Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03375</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Rtlfixer: Automatically fixing rtl syntax errors with large language model</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tsai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st ACM/IEEE Design Automation Conference</title>
+		<meeting>the 61st ACM/IEEE Design Automation Conference</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Origen: Enhancing RTL code generation with code-to-code augmentation and self-reflection</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16237</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Dave: Deriving automatically verilog from english</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 ACM/IEEE Workshop on Machine Learning for CAD</title>
+		<meeting>the 2020 ACM/IEEE Workshop on Machine Learning for CAD</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="27" to="32" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Rtlcoder: Fully open-source and efficient llm-assisted rtl code generation technique</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-D</forename><surname>Ene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kirby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Pinckney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Alben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Bayraktaroglu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.00176</idno>
+		<title level="m">ChipNemo: Domainadapted LLMs for chip design</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Towards LLM-powered Verilog RTL assistant: Self-verification and selfcorrection</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.00115</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Autovcoder: A systematic framework for automated Verilog code generation using llms</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.18333</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">RTLLM: An open-source benchmark for design rtl generation with large language model</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 29th Asia and South Pacific Design Automation Conference (ASP-DAC</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="722" to="727" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Verilogeval: Evaluating large language models for verilog code generation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Pinckney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Khailany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/ACM International Conference on Computer Aided Design (ICCAD)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Revisiting verilogeval: Newer LLMs, in-context learning, and specification-to-RTL tasks</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Pinckney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Batten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Khailany</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.11053</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Itertl: An iterative framework for fine-tuning llms for rtl code generation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.12022</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Codev: Empowering LLMs for verilog generation through multi-level summarization</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Nan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.10424</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Aivril: Ai-driven rtl generation with verification in-the-loop</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-E</forename><surname>Gaillardon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tenace</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.11411</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Verilogcoder: Autonomous Verilog coding agents with graph-based planning and abstract syntax tree (AST)based waveform tracing tool</title>
+		<author>
+			<persName><forename type="first">C.-T</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Khailany</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08927</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">A learning algorithm for boltzmann machines</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">H</forename><surname>Ackley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Sejnowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Cognitive science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="147" to="169" />
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Codegeex: A pre-trained model for code generation with multilingual evaluations on humaneval-x</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17568</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Hot or cold? adaptive temperature sampling for code generation with large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="437" to="445" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Agentcoder: Multi-agent-based code generation with iterative testing and optimisation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Hello GPT-4o</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/hello-gpt-4o/" />
+		<imprint>
+			<date type="published" when="2024-11">2024. November-2024</date>
+			<biblScope unit="volume">15</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">The icarus verilog compilation system</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Williams</surname></persName>
+		</author>
+		<ptr target="https://github.com/steveicarus/iverilog" />
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">LlamaIndex</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://github.com/jerryjliu/llamaindex" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Raising the bar on SWE-bench Verified with Claude 3.5 Sonnet</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/research/swe-bench-sonnet" />
+		<imprint>
+			<date type="published" when="2024-11">2024. November-2024</date>
+			<biblScope unit="volume">15</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Evaluating large language models for automatic register transfer logic generation via high-level synthesis</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Swaroopa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mukherjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Debnath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.02793</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

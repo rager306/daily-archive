@@ -1,0 +1,2653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Demystifying LLM-based Software Engineering Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-29">29 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Steven</forename><surname>Chunqiu</surname></persName>
+							<email>chunqiu2@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Xia</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+							<email>yinlind2@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+							<email>sorend2@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+							<email>lingming@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Demystifying LLM-based Software Engineering Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-29">29 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1773F5ACA56BB73471E1A7EB780059BE</idno>
+					<idno type="arXiv">arXiv:2407.01489v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in large language models (LLMs) have significantly advanced the automation of software development tasks, including code synthesis, program repair, and test generation. More recently, researchers and industry practitioners have developed various autonomous LLM agents to perform end-to-end software development tasks. These agents are equipped with the ability to use tools, run commands, observe feedback from the environment, and plan for future actions. However, the complexity of these agent-based approaches, together with the limited abilities of current LLMs, raises the following question: Do we really have to employ complex autonomous software agents? To attempt to answer this question, we build AGENTLESS -an agentless approach to automatically resolve software development issues. Compared to the verbose and complex setup of agent-based approaches, AGENTLESS employs a simplistic three-phase process of localization, repair, and patch validation, without letting the LLM decide future actions or operate with complex tools. Our results on the popular SWE-bench Lite benchmark show that surprisingly the simplistic AGENTLESS is able to achieve both the highest performance (32.00%, 96 correct fixes) and low cost ($0.70) compared with all existing open-source software agents! In fact, AGENTLESS has already been adopted by OpenAI as the go-to approach to showcase the real-world coding performance of both GPT-4o and the new OpenAI o1 models. Furthermore, we manually classified the problems in SWE-bench Lite and found problems with exact ground truth patches or insufficient/misleading issue descriptions. As such, we construct SWE-bench Lite-S by excluding such problematic issues to perform more rigorous evaluation and comparison. Our work highlights the currently overlooked potential of a simplistic, cost-effective technique in autonomous software development. We hope AGENTLESS will help reset the baseline, starting point, and horizon for autonomous software agents, and inspire future work along this crucial direction. We have open-sourced AGENTLESS at: <ref type="url" target="https://github.com/OpenAutoCoder/Agentless">https://github.com/OpenAutoCoder/Agentless</ref> * Contributed equally with author ordering decided by <ref type="url" target="https://senseis.xmp.net/?Nigiri">Nigiri</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have become the go-to default choice for code generation <ref type="bibr" target="#b28">[31,</ref><ref type="bibr" target="#b25">28,</ref><ref type="bibr" target="#b50">53,</ref><ref type="bibr" target="#b86">89]</ref>. State-of-the-art LLMs like GPT-4 <ref type="bibr" target="#b68">[71]</ref> and Claude 3.5 Sonnet <ref type="bibr" target="#b23">[26]</ref> have demonstrated their prowess in being able to synthesize code snippets based on given user description. However, compared to the main evaluation setting of simple, self-contained problems, applying LLMs on repository-level software engineering tasks has been understudied. Software engineering tasks like feature addition, program repair, and test generation require an in-depth understanding of not only information within files, containing thousands of lines of code, but also repository-level dependencies across files.</p><p>Recently, to address the gap and evaluate the ability of tools to automatically solve real-world software engineering problems, the popular SWE-bench <ref type="bibr" target="#b41">[44]</ref> benchmark has been developed. In SWE-bench, each problem consists of a real-world GitHub issue description and the corresponding Python repository. The task is to modify the repository to resolve the issue, either fixing a bug or introducing a new feature. Recently, the authors have published a subset of the benchmark -SWE-bench Lite <ref type="bibr" target="#b20">[23]</ref> (300 problems) that performs further filtering and focuses on bug fixing issues.</p><p>To solve the challenging real-world software development problems from SWE-bench, inspired by the Devin AI Software Engineer <ref type="bibr" target="#b5">[7]</ref>, there has been a significant body of work from both academia and industry focusing on developing agent-based approaches <ref type="bibr" target="#b105">[108,</ref><ref type="bibr" target="#b34">37,</ref><ref type="bibr" target="#b98">101,</ref><ref type="bibr" target="#b27">30,</ref><ref type="bibr" target="#b61">64,</ref><ref type="bibr" target="#b26">29]</ref>. While there is not a fixed definition for agent-based approaches, they generally equip LLMs with a set of tools and allow agents to iteratively and autonomously perform actions, observe feedback, and plan future steps <ref type="bibr" target="#b53">[56]</ref>. Example tools can include the ability to open/write/create files, search for code lines, run tests, and execute shell commands. In each attempt to solve a problem, agent-based approaches will have multiple turns, where each turn consists of performing an action. Subsequent turns depend on previous actions and the feedback information the agent receives from the environment.</p><p>At first glance, agent-based approaches appear to be a natural and straightforward way to tackle software development tasks. After all, human developers also perform similar actions and use feedback to plan future steps. However, the disparity between human and current LLM abilities leads to the following limitations of agent-based approaches:</p><p>• Complex tool usage/design. To utilize tools, current agent-based approaches apply an abstraction layer between the agent and the environment. Examples are mapping real actions to API calls so that agents can use tools by outputting an API call instruction. However, such abstractions and API call specifications require careful design of input/output formats and can easily lead to incorrect or imprecise tool design/usage, especially for more complex action spaces. Given the iterative nature of agent-based approaches, where current action/plan depends on previous turns, incorrectly or imprecisely defining/using a tool can both reduce performance and incur additional cost in wasted LLM queries.</p><p>• Lack of control in decision planning. In addition to using tools, current agent-based approaches also delegate the decision-making process to the agents, allowing them to decide when and what action to perform. The agents decide the current action to take based on previous actions taken and the feedback provided by the environment, often with minimal checks to ensure the action taken make sense. Due to the large possible action space and feedback response, it can be extremely easy for autonomous agents to become confused and perform sub-optimal explorations. Furthermore, to solve an issue, an agent can take upwards of 30 or 40 turns, which makes it extremely difficult to both understand the decisions made by the agents and also debug the exact turns where an incorrect decision is made.</p><p>• Limited ability to self-reflect. Existing agents struggle with the capability to perform self-reflection <ref type="bibr" target="#b66">[69,</ref><ref type="bibr" target="#b38">41]</ref>. That is to say they tend to take all information/feedback and do not know how to filter out or correct irrelevant, incorrect, or misleading information <ref type="bibr" target="#b81">[84,</ref><ref type="bibr" target="#b104">107]</ref>.</p><p>The limited ability to self-reflect means that an incorrect step can be easily amplified and negatively affect all future decisions made by the agent.</p><p>In this paper, we advocate that instead of rushing to develop increasingly complex LLM agent-based approaches and tools for software development (which can also be non-trivial to use or replicate due to the fully autonomous setup), we should first take a step back and ask the following introspective question: Do we really have to employ complex autonomous software agents?</p><p>Our work. We set out to answer this important question by building AGENTLESS -an agentless approach to automatically resolve software development issues. To solve each issue, AGENTLESS follows a simple three phase process: localization, repair, and patch validation. In the localization process, AGENTLESS employs a hierarchical process to first localize the fault to specific files, then to relevant classes or functions, and finally to fine-grained edit locations. AGENTLESS's localization process make uses of both LLM-based localization as well classic information-retrieval-based localization idea <ref type="bibr" target="#b106">[109]</ref>. To perform repair, AGENTLESS takes the localized edit locations and generates multiple candidate patches in a simple diff format. At the same time, AGENTLESS generates reproduction tests that can reproduce the original error and help with candidate patch selection. Finally, AGENTLESS re-ranks all remaining patches and selects one to submit in order to fix the issue. While AGENTLESS leverages LLMs to perform each detailed task, unlike prior complex agent-based tools, AGENTLESS does not allow LLMs to autonomously decide future actions or operate with any complex tools. Our deliberate choice to avoid using agents not only allows AGENTLESS to have a simplistic and straightforward design that is easy to understand, but also helps avoid the above-mentioned limitations of LLM agents in software development. We evaluate AGENTLESS on the popular SWE-bench Lite <ref type="bibr" target="#b20">[23]</ref> benchmark and demonstrate that AGENTLESS not only achieves the highest performance (32.00%) among all open-source approaches, but also does so at a fraction of the cost! Furthermore, we performed a fine-grained manual analysis on the SWE-bench Lite dataset and classified all its problems into different categories across dimensions like problem description, ground truth patch, and bug location information. Surprisingly, we observed that SWE-bench Lite contains problems with exact ground truth patch in the description (4.3%), problems with missing critical information needed to solve the issue (10.0%), and problems that include misleading solutions in the issue description (5.0%). Recognizing these issues, we built SWE-bench Lite-S, which removes such problematic problems, and serves as a more rigorous benchmark to evaluate the ability to solve real-world software development challenges. Overall, in an era focused on achieving top placements on leaderboards, our work highlights the overlooked potential of a simplistic, cost-effective technique in autonomous software development. We hope AGENTLESS will help reset the baseline, starting point, and horizon for autonomous software agents, and inspire future work along this crucial direction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Contributions.</head><p>In this work, we make the following contributions:</p><p>• An agentless approach. We propose AGENTLESS, an agentless approach to automatically solve software development problems. AGENTLESS leverages LLM-empowered prompting-based and embedding-based retrieval to perform hierarchical localization. During repair, AGENTLESS samples multiple candidate patches in a simple diff format for efficient patch generation. AGENTLESS then generates reproduction tests to verify that the issue has been resolved. Finally, AGENTLESS leverages both regression tests and generated reproduction tests to select the final submission patch.</p><p>• Extensive evaluation. We evaluate AGENTLESS on the popular SWE-bench Lite dataset comparing against state-of-the-art agent-based approaches. Our results demonstrates that AGENTLESS is able to achieve higher performance (32.00%, 96 correct fixes) than all open-source approaches, with comparably low cost as well. This shows the previously overlooked potential of a simplistic technique in autonomous software development. Additionally, AGENTLESS has already been adopted by OpenAI as the go-to approach to showcase the real-world coding performance of GPT-4o <ref type="bibr" target="#b31">[34]</ref> as well as the new o1 model family <ref type="bibr" target="#b71">[74]</ref> We further perform a rigorous ablation study to understand the effectiveness of different components of AGENTLESS on the final performance.</p><p>• SWE-bench Lite-S benchmark. We performed manual classifications on the problems in the popular SWE-bench Lite dataset. We found that there are problematic problems with unclear, misleading issue descriptions, as well as problems that contain exact ground truth patches. To address these issues, we constructed a filtered dataset of SWE-bench Lite-S that excludes such problematic issues, enabling more rigorous evaluation and comparison. This has also been confirmed recently by OpenAI, which acknowledged our benchmark and released SWE-bench Verified <ref type="bibr" target="#b31">[34]</ref> along the same direction.</p><p>2 Background and Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Agent-based Software Engineering</head><p>With the emergence and popularity of agent-based frameworks <ref type="bibr" target="#b89">[92]</ref>, recently researchers and industry practitioners have begun developing agent-based approaches to solve software engineering tasks. Devin <ref type="bibr" target="#b5">[7]</ref> (and OpenDevin <ref type="bibr" target="#b15">[17]</ref>, open-source alternative), is one of the first end-to-end LLM agent-based framework. Devin uses agents to first perform planning based on user requirement, then allows the agent to use file editor, terminal, and web search engine tools to iteratively perform the task. SWE-agent <ref type="bibr" target="#b98">[101]</ref> designs a custom agent-computer interface (ACI) that allows the LLM agent to interact with the repository environment with actions such as reading, editing files, and running bash commands. Aider <ref type="bibr" target="#b34">[37]</ref> first provides a detailed repository map constructed with static and call graph analysis to the LLM to localize the files that require editing; then it generates a simple diff format as the editing patch and uses regression testing to verify if the patch is plausible. Moatless <ref type="bibr" target="#b13">[15]</ref> is another open-source agent tool that obtains relevant code locations by providing the agent with both code search tools as well as retrieval methods using LLMconstructed queries. Similar to Aider, Moatless also generates a simple diff format as the final submitted patch. AutoCodeRover <ref type="bibr" target="#b105">[108]</ref> further provides the LLM agent with specific code search APIs (e.g., searching methods in a certain class) to iteratively retrieve code context and locate the bug locations. SpecRover <ref type="bibr" target="#b78">[81]</ref> later improves over AutoCodeRover and targets specifications (i.e., inferring the intended program behavior) by generating function summaries and also feedback messages during specific agent steps. Furthermore, SpecRover also attempts to generate reproduction tests to reproduce the original issue used to select the final patch. In addition to these highlighted examples, there has been a plethora of other agent-based approaches developed in both open-source <ref type="bibr" target="#b34">[37,</ref><ref type="bibr" target="#b16">19,</ref><ref type="bibr" target="#b3">5,</ref><ref type="bibr" target="#b101">104]</ref> and close-source/commercial products <ref type="bibr" target="#b26">[29,</ref><ref type="bibr" target="#b27">30,</ref><ref type="bibr" target="#b61">64,</ref><ref type="bibr" target="#b11">13,</ref><ref type="bibr" target="#b7">9,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b14">16,</ref><ref type="bibr" target="#b55">58,</ref><ref type="bibr" target="#b2">4,</ref><ref type="bibr" target="#b19">22,</ref><ref type="bibr" target="#b17">20,</ref><ref type="bibr" target="#b10">12,</ref><ref type="bibr" target="#b12">14,</ref><ref type="bibr" target="#b8">10,</ref><ref type="bibr">2]</ref>.</p><p>Compared to these agent-based techniques, AGENTLESS offers a simplistic, interpretable, and cost-effective solution to tackle real-world software engineering issues. Different from agent-based tools, AGENTLESS contains well-defined stages of localization, repair, and patch validation without letting the LLM agent decide future actions or use complex tools. AGENTLESS demonstrates for the first time that an agentless approach can achieve very competitive performance, without the additional baggage of having to provide excessive tools or model complex environment behavior/feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Fault Localization and Program Repair</head><p>Fault localization (FL) <ref type="bibr" target="#b87">[90]</ref> techniques aim to identify the suspicious locations (e.g., statements or methods) in source code related to bugs. Dynamic FL techniques mainly include spectrum-based FL (SBFL) <ref type="bibr" target="#b44">[47,</ref><ref type="bibr" target="#b22">25,</ref><ref type="bibr" target="#b21">24]</ref> and mutation-based FL (MBFL) <ref type="bibr" target="#b74">[77,</ref><ref type="bibr" target="#b65">68,</ref><ref type="bibr" target="#b60">63]</ref>. SBFL typically computes source code locations primarily covered by failing tests as more suspicious than locations primarily covered by passing tests. MBFL further improves upon that to additionally consider the impact of each source code location on the test outcomes (measured using mutation testing <ref type="bibr" target="#b73">[76]</ref>). Besides dynamic techniques, researchers have also proposed to directly leverage information retrieval (IR) techniques <ref type="bibr" target="#b82">[85]</ref> for static FL. Such IR-based techniques <ref type="bibr" target="#b84">[87,</ref><ref type="bibr" target="#b79">82,</ref><ref type="bibr" target="#b85">88]</ref> formulate FL as a search problem and compare the textual similarity between code elements and the bug report (i.e., query). Moreover, learning-based techniques have also been proposed to leverage machine learning to combine multiple sources of dynamic/static information, including DeepFL <ref type="bibr" target="#b51">[54]</ref>, FLUCCS <ref type="bibr" target="#b83">[86]</ref>, and TRANSFER <ref type="bibr" target="#b64">[67]</ref>. Recently, researchers have proposed LLM-based FL <ref type="bibr" target="#b95">[98,</ref><ref type="bibr" target="#b88">91,</ref><ref type="bibr" target="#b76">79,</ref><ref type="bibr" target="#b45">48]</ref>, which leverages the powerful code and natural language understanding of modern LLMs to directly localize bugs. Meanwhile, most such LLM-based techniques either cannot perform repository-level FL due to the limited context window of LLMs <ref type="bibr" target="#b95">[98]</ref>, or rely on complicated/costly agentic design to navigate through the codebase <ref type="bibr" target="#b45">[48,</ref><ref type="bibr" target="#b76">79]</ref>. In contrast, AGENTLESS employs a simplistic hierarchical FL process (based on both LLMs and IR) to efficiently compute the fine-grained edit locations.</p><p>After localizing the bug, the next step is to perform repair. Automated program repair <ref type="bibr" target="#b35">[38]</ref> (APR) has been widely studied to automatically generate patches for bugs. Traditional APR techniques can be categorized as template-based <ref type="bibr" target="#b54">[57,</ref><ref type="bibr" target="#b36">39]</ref>, heuristic-based <ref type="bibr" target="#b48">[51,</ref><ref type="bibr" target="#b47">50]</ref>, and constraint-based <ref type="bibr" target="#b62">[65,</ref><ref type="bibr" target="#b58">61]</ref> tools. While effective, traditional APR tools suffer from scalability issues and are limited by their patch variety. As such, researchers have proposed learning-based APR tools either by training NMT (neural machine translation) models <ref type="bibr" target="#b40">[43,</ref><ref type="bibr" target="#b52">55,</ref><ref type="bibr" target="#b30">33,</ref><ref type="bibr" target="#b107">110]</ref> or using pre-trained LLMs to perform repair <ref type="bibr" target="#b93">[96,</ref><ref type="bibr" target="#b91">94,</ref><ref type="bibr" target="#b46">49,</ref><ref type="bibr" target="#b103">106]</ref>. Specifically, LLM-based APR tools, which sample multiple candidate patches per bug, have been shown</p><p>Project Codebase Repo structure ... views/ ._init._.py csrf.py static.py generic/ detail.py ._init._.py edit.py list.py ... Localize to Top-N Files Localize to Classes &amp; Functions Generate Patches Localization Repair LLM Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... 1 2 4 6 class Truncator def _text_chars def _truncate_html csrf.py class Handler def load_middleware def _matrixify generic/detail.py class RegexValidator def ._call._ def ._eq._ static.py Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... def edit_matrix(): if debug and name: ... class Handler: def load_middleware ... class ExtHandler: ... class:Handler ExtHandler function:edit_matrix Localize to Edit Locations if debug and not name: method_is_async = ... lines: 120-230 class Handler: def load_middleware ... Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... class: Handler Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... Patch+12 -20 Patch+12 -20 Patch+12 -20 5 Embedding Issue: Lambdify misinterprets some matrix expressions Using lambdify on an ... Generate Reprod. Tests test.py test.py test.py def test(): assert ... test.py def test(): assert ... to be the state-of-the-art due to the powerful coding capability of modern LLMs <ref type="bibr" target="#b91">[94]</ref>. More recently, agent-based APR techniques have also been proposed <ref type="bibr" target="#b94">[97,</ref><ref type="bibr" target="#b26">29,</ref><ref type="bibr" target="#b37">40,</ref><ref type="bibr" target="#b29">32,</ref><ref type="bibr" target="#b102">105]</ref>. Inspired by existing LLM-based APR tools, AGENTLESS samples multiple candidate patches per issue to maximize the chance of generating a correct fix. Different from most LLM-based APR techniques, AGENTLESS generates patches using a simple diff format <ref type="bibr" target="#b34">[37]</ref> to avoid generating the complete code and instead focus on producing cost-efficient small edits, increasing the reliability and accuracy of patch generation (less chances for hallucination). Furthermore, different from the simplistic bugs studied in most prior work <ref type="bibr" target="#b91">[94]</ref>, AGENTLESS targets complex repository-level issues spanning multiple locations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">LLM-based Test Generation</head><p>In addition to localizing and repairing bugs, another research area that has been adopting LLM is test generation. One area of test generation is fuzz testing <ref type="bibr" target="#b100">[103]</ref>, also known as fuzzing, to generate large amounts of inputs in order to expose bugs in systems. Researchers have applied LLMs to perform fuzzing in domains such as DL libraries <ref type="bibr" target="#b32">[35,</ref><ref type="bibr" target="#b33">36]</ref>, OS Kernel <ref type="bibr" target="#b97">[100,</ref><ref type="bibr" target="#b67">70]</ref>, compilers <ref type="bibr" target="#b90">[93,</ref><ref type="bibr" target="#b96">99,</ref><ref type="bibr" target="#b72">75]</ref>, network protocols <ref type="bibr" target="#b63">[66]</ref>, and mobile applications <ref type="bibr" target="#b56">[59]</ref>. LLM-based fuzzers have demonstrated their impact by detecting many bugs not found by traditional fuzzers as well as unlocking new fuzzing domains. Besides fuzzing, researchers have also proposed to leverage LLMs for unit test generation to test individual software units (e.g., methods/classes) <ref type="bibr" target="#b53">[56]</ref>, such as CodeMosa <ref type="bibr" target="#b49">[52]</ref>, ChatTester <ref type="bibr" target="#b99">[102]</ref>, TestPilot <ref type="bibr" target="#b80">[83]</ref>, and CoverUp <ref type="bibr" target="#b75">[78]</ref>.</p><p>Bug reproduction is a critical step in investigating bug reports <ref type="bibr" target="#b43">[46]</ref>, and is integrated into many recent software engineering agents [17, 81, 10, 14, 9, 101, 27]. For example, SpecRover <ref type="bibr" target="#b78">[81]</ref> begins by generating a test to reproduce the issue described in the bug report; the test then guides the context retrieval and patching process.Unlike such agent-based approaches, which generate a reproduction test and rely on an LLM agent to decide whether the test is correct, AGENTLESS simply executes multiple sampled tests and verifies if the execution results indicate the issue has been reproduced.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">AGENTLESS Approach</head><p>Figure <ref type="figure" target="#fig_0">1</ref> shows the overview of AGENTLESS, consisting of three phases: localization, repair, and patch validation. We first take in the issue description and the existing project codebase as input. Then, we begin our hierarchical localization process by turning the project codebase into a tree-like structure that illustrates the relative location of each file in the project 1 . Next, using this repository structure along with the original issue description, we prompt the LLM to localize and rank the top N most suspicious files that likely require editing to solve the issue 2 . Since our repository structure format does not contain detailed source code information, we additionally retrieve files with most relevant code snippets with the issue description using embedding-based retrieval 3 . We then combine the retrieved files with the LLM-localized files to obtain the final list of suspicious files. However, not all contents in each file need to be modified. As such, we provide a skeleton for each file (i.e., a list of declaration headers of the classes and functions) and ask the LLM to output a specific list of classes and functions that we should examine more closely to fix the bug 4 . We then provide the complete code content of the previous locations and ask the LLM to finalize a smaller set of edit locations (i.e., classes, functions, or even specific lines) 5 . For the repair phase, we provide the code snippets at these edit locations together with the issue description and prompt the LLM to sample multiple patches to solve the issue 6 . Next, we enter the patch validation phase, where we first ask the LLM to sample multiple reproduction tests that aim to replicate the original issue 7 , and then select the optimal one based on actual execution results on the original codebase 8 . AGENTLESS uses the reproduction test along with existing regression tests for patch ranking/selection 9 . Finally, AGENTLESS selects the top-ranked patch as the final patch for submission 10 . We now describe the steps in each of AGENTLESS's phases in more detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Localization</head><p>To fix or implement a new feature, the first step is to obtain the locations in the source code, as without the correct locations, it can be impossible to provide the right edits. The difficulty lies in the fact that there could be hundreds of files with thousands of lines of code each in a repository, whereas the correct locations to edit are only a few selected lines or functions. AGENTLESS addresses this by using a simple three-step hierarchical localization process: 1) localize to suspicious files; 2) localize each selected files into relevant classes, functions, and variables; 3) localize to code edit locations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Localize to suspicious files.</head><p>First, AGENTLESS narrows down potential locations to specific suspicious files. Instead of providing the complete code snippet for each file, AGENTLESS constructs a concise representation of the repository's file and directory structure, similar to the Linux tree command. We refer to this as the repository structure format, which begins with the root folder of the repository and organizes code files or folder names. Files and folders at the same directory level are aligned vertically, and files/folders in sub-directories are indented. We recursively traverse the entire repository to obtain the structure, which will be used as input for the LLM. The repository structure format provides the necessary file paths alongside the neighboring file names to maintain organizational information in the original codebase. AGENTLESS then inputs the processed repository structure along with the original issue description to an LLM, and requests it to identify a list of the top N suspicious files that need further inspection or modification to resolve the issue.</p><p>To compliment the prompting-based localization (using file names only), AGENTLESS also uses a simple embedding-based retrieval method to identify additional suspicious files. However, instead of embedding all files in the repository, AGENTLESS first filters out irrelevant folders. This is done by providing the previously described repository structure and asking the LLM to produce a list of irrelevant folders that do not need to be further inspected or modified to resolve the issue. After removing all files from these irrelevant folders, AGENTLESS divides each remaining file into chunks of code segments and computes the embedding for each chunk using an embedding model. AGENTLESS then embeds the original issue description (i.e., the query) and computes the cosine similarity between the resulting query embedding and each chunk embedding to retrieve a list of relevant files that contain code segments with the highest similarity to the query. Finally, AGENTLESS combines the files obtained via prompting with those retrieved via embedding by selecting top N most common files localized by both, resulting in a final list of relevant files.</p><p>3.1.2 Localize to related elements. class UUIDField(CharField): default_error_messages = { 'invalid': _('Enter a valid UUID.'), } def prepare_value(self, value): ... def to_python(self, value): ... class JSONField(CharField): default_error_messages = { 'invalid': _('Enter a valid JSON.'), } widget = Textarea def ._init._(self, encoder=None, decoder=None): ... def to_python(self, value): # Process JSON path from the right-hand side ... def slugify(value, allow_unicode=False): django/forms/fields.py After obtaining the list of suspicious files, AGENTLESS proceeds to the second part of the localization process: localize the related elements within these files. Directly providing the complete context of all files can be large. As such, AGENTLESS builds a compressed format of each file that contains the list of class, function, or variable declarations. We refer to this format as the skeleton format, with an example shown in Figure <ref type="figure" target="#fig_1">2</ref>. In the skeleton format, we provide only the headers of the classes and functions in the file. For classes, we further include any class fields and methods (signatures only). Additionally, we also keep comments in the class and module level to provide further information. Compared to providing the entire file context to the model, the skeleton format is a much more concise representation, especially when the file contains thousands of lines, making it impractical/costly to process all at once with existing LLMs. We provide the skeleton of all suspicious files to the LLM at one time in a single prompt, enabling the model to comprehensively analyze the pertinent information and decide the most relevant elements. Using this input, we prompt the LLM to provide a list of related classes and functions that one should examine to fix the provided issue. The previous localization step provided us with a list of related code elements; since we localize top N suspicious files, these localized related code elements could be from different files. We now directly provide the code content from these elements to the LLM and ask it to localize specific edit locations. Compared to using the entire file, the input context here is much smaller. With this input, we then ask the LLM to identify the final set of edit locations, specified by line numbers, functions, or classes. Our simple hierarchical localization allows AGENTLESS to select a set of relevant code snippets as edit locations for repair.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Localize to edit locations.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Repair</head><p>In the repair stage, the goal is to produce the correct patch to solve the issue. Following existing work on LLM-based program repair [96, 49, 95, 42], we first utilize the identified edit locations and construct a context window of code snippets to provide to the LLM for repair. For example, if the identified location was a class from line 40 to 78, we would produce a context window of <ref type="bibr">[40 -x, 78 + x]</ref> where x denotes the context window size. The intuition behind adding the additional code before and after the identified location is to provide the LLM with relevant contextual information for better program repair <ref type="bibr" target="#b93">[96]</ref>. If multiple edit locations are identified, we would concatenate these context windows together separated with "..." to indicate missing context in the middle.</p><p>Using the code snippets, we then ask the LLM to generate patches to solve the issue. However, instead of directly producing the entire code snippet to replace the entire given context, AGENTLESS asks the LLM to generate a Search/Replace edit <ref type="bibr" target="#b34">[37]</ref>: a simple diff format to efficiently create each patch. Figure <ref type="figure" target="#fig_2">3</ref> shows an example of the Search/Replace format containing two main parts: 1) search: the original code snippet we want to replace and 2) replace: the replacement code snippet we want to replace with. To apply the generated Search/Replace diff to the original file, we can simply match the search code snippet and replace it with the replacement. This simple diff format avoids generating the complete code and instead focuses on producing small edits, which are not only more cost-efficient, but also more reliable and accurate (less chances for hallucination). For each issue, AGENTLESS uses the LLM to generate multiple potential patches (starting with greedy and then sample multiple patches with higher temperature). Since AGENTLESS generates multiple candidate patches per issue, we need a way to select a final patch for submission. Please note that under the realistic SWE-bench setup, the original project codebase can only provide regression tests and not any reproduction tests (i.e., bug-triggering tests). This is because the issue has just been raised and the developers have not added any additional tests to trigger the issue. As such, different from the Generate-and-Validate program repair setup <ref type="bibr" target="#b59">[62]</ref>, we do not have access to bug-triggering tests.</p><p>Following prior work <ref type="bibr" target="#b78">[81,</ref><ref type="bibr" target="#b27">30]</ref>, AGENTLESS generates additional reproduction test to help with patch selection. More specifically, AGENTLESS leverages the LLM to synthesize a complete testing file that attempts to both reproduce the original issue described in the issue description, as well as verify whether the issue has been fixed. Figure <ref type="figure">4</ref> shows an example of the reproduction test that we want the model to synthesize. If the issue is reproduced, the test outcome should print Issue reproduced. On the other hand, the test should output Issue resolved if the issue has been fixed. We also include another output of Other issues if the test runs into any unexpected issues. To generate the reproduction test, AGENTLESS provides the original issue description with an example reproduction test to demonstrate the test format. Similar to repair, we also sample multiple candidate reproduction tests and then execute each test on the original repository to filter any tests that do not output Issue reproduced. Finally, we normalize each test (remove comments, extra spaces, and normalize test names) and then select the test with the highest number of occurrence as the final reproduction test for each issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Patch selection.</head><p>Using the generated reproduction tests, we start our patch selection process to pick the final submission patch. AGENTLESS first runs all the existing tests in the repository to identify a set of passing tests that successfully pass in the original codebase. However, not all of those passing tests should be considered as regression tests since solving the issue may require changing some of the existing functionalities. Therefore, AGENTLESS provides the list of passing tests to the LLM and ask it to identify any tests that should not be ran to check if the issue has been correctly fixed (i.e., the tests that may be updated/patched during issue fixing). After removing the LLM-identified non-regression tests, we obtain a final set of regression tests. We then run the set of regression tests on all the generated patches. AGENTLESS then keeps the patches with the lowest number of regression failures. For those patches, AGENTLESS then runs the selected reproduction test and only keeps patches that output Issue resolved. Meanwhile, because the reproduction test is generated by the LLM and can potentially be incorrect/imprecise, it could be possible that no patch can pass the reproduction test; in that case, AGENTLESS will fall back on only using the regression test results for selection. AGENTLESS then applies a re-ranking approach using majority voting:</p><p>We first normalize each patch to ignore surface-level differences (e.g., extra spaces, newlines, and comments), and then select the patch with the highest number of occurrences as the final patch for submission. More specifically, to standardize the patch, we begin by parsing both the old and new code (after applying the patch) into abstract syntax trees. Next, we unparse the trees into a canonical source code format with docstrings removed. Finally, we compute the textual diff between the standardized old and new code to get the normalized patch.</p><p>AGENTLESS solves repository-level issues using a simple step-by-step procedure. We note here that none of the techniques used by AGENTLESS in isolation are revolutionary, but instead AGENTLESS smartly combines existing techniques to construct an easy-to-understand approach. Different from prior autonomous agent-based tools that involve complex interactions with the environment, AGENTLESS uses a simplistic three-phase approach to localize, repair, and validate without relying on any agents for decision-making. By conducting localization in a hierarchical manner, AGENTLESS can efficiently and effectively compute the fine-grained locations for editing. AGENTLESS then performs repair by sampling multiple patches using a simple diff format. AGENTLESS's patch validation approach can further aid the patch selection process by producing reproduction tests that can help verify if the issue is fixed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>Datasets. We evaluate AGENTLESS and baselines using the popular SWE-bench dataset <ref type="bibr" target="#b41">[44]</ref> to test the ability to solve real-world software engineering issues. Each problem in SWEbench requires submitting a patch to solve the underlying issue described in the input issue description. In particular, we focus on the widely used SWE-bench Lite version <ref type="bibr" target="#b20">[23]</ref>, containing 300 self-contained problems with better quality. Furthermore, we also conduct a detailed study (Section 6.1) on the SWE-bench Lite benchmark to not only demonstrate potential issues and biases, but also produce a more rigorous filtered set of problems for better evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation.</head><p>We implement AGENTLESS using GPT-4o (gpt-4o-2024-05-13) <ref type="bibr" target="#b69">[72]</ref>. By default, we query the LLM with greedy decoding. During sampling, we use a sampling temperature of 0.8. For the embedding-based retrieval method, we implement our approach using LlamaIndex <ref type="bibr" target="#b57">[60]</ref>. We use OpenAI's text-embedding-3-small <ref type="bibr" target="#b70">[73]</ref> model to compute the embedding with chunk size of 512 and chunk overlap of 0. For each issue, we first localize to the top three suspicious files, and then localize to an unrestricted number of suspicious classes and functions within these files, all using greedy decoding. Next, to maximize the chances of finding the correct edit locations, we draw four samples of edit locations per issue (i.e., the third step in the localization phase). This gives us 4 separate sets of edit locations per issue. For each set, we adopt a context window of ± 10 lines around each edit location, and generate 10 patches (1 greedy and 9 samples). This results in a total of 40 patches per bug. We adopt the same Search/Replace edit format from prior work <ref type="bibr" target="#b34">[37]</ref>, and use the built-in Python ast library [18] to perform parsing in our normalization step. To generate the reproduction tests, we also generate 40 samples (1 greedy and 39 samples) in total prior to patch selection (described in Section 3.3.1). The regression tests are obtained by first running all the tests to obtain a set of passing tests that successfully pass in the original repository and then use the LLM to identify any non-regression tests (described in Section 3.3.2). We do not directly use the provided list of regression tests already identified in the PASS TO PASS field of SWE-bench as requested by the SWE-bench maintainers <ref type="foot" target="#foot_0">1</ref> . We modify the official SWE-bench evaluation setup to be able to freely execute arbitrary regression and reproduction tests.</p><p>Baselines. We compare AGENTLESS against 26 agent-based approaches. These baseline tools represent the state-of-the-art performance on SWE-bench. We include state-of-the-art open-source as well as commercial or closed-source baselines (indicated via a ). We note here that the majority of the closed-source baselines do not provide any trajectories, just the submission patches. Therefore, we cannot verify the steps taken to arrive at the final patches. Moreover, we also include a simple agentless baseline using retrieval-augmented generation (RAG) proposed as part of SWE-bench <ref type="bibr" target="#b41">[44]</ref> for comparison. In this case, the agentless baseline uses the LLM to directly generate a patch file by providing it with the file content of the most relevant files, retrieved using BM25 <ref type="bibr" target="#b77">[80]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics.</head><p>Following prior work We compute this metric over three granularities: file, function, and line. We report that a patch contains the correct location if it edits a superset of all locations in the ground truth patch. For baseline tools, we directly use the reported results either from the official leaderboard <ref type="bibr" target="#b42">[45]</ref> or from the tool's official paper/repository.</p><p>5 Evaluation Compared with all open-source approaches, AGENTLESS is able to achieve the highest performance of 32.00% (96 / 300) on SWE-bench Lite. Additionally, AGENTLESS only costs on average $0.70, which is less than most prior agent-based approaches. Comparing against the RAG agentless baselines, we see that while AGENTLESS costs slightly more, AGENTLESS is also able to fix way more issues. 5.1.1 Unique issues fixed. Figure <ref type="figure" target="#fig_5">5</ref> shows the unique issues solved by AGENTLESS compared with the top-performing closed-source / commercial and open-source approaches ("Others" indicates all other approaches within each category). First, we see that compared to the open-source agent-based tools, AGENT-LESS is able to fix 2 issues that no other tools can resolve, showing the success of using a simple agentless approach in solving difficult issues. Furthermore, even when compared with high-performing commercial approaches, AGENTLESS is still able to offer a unique fix. This low number of unique fixes can be attributed to the fact there are already tools built on top of earlier versions of AGENTLESS (e.g., Isoform <ref type="bibr" target="#b10">[12]</ref>) or partly inspired by AGENTLESS (e.g., Bytedance MarsCode <ref type="bibr" target="#b55">[58]</ref>), thereby reducing the unique issues resolved by AGENTLESS. Nevertheless, our results show that AGENTLESS can be competitive/complementary compared to existing agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.2">Localization performance.</head><p>In real-world software development, apart from directly fixing the issue, providing the correct edit location to developers is extremely helpful for debugging. As such, we examine the locations of the patches generated by each technique compared with the ground truth patch. We note here that it is possible to fix a bug in a different location than the ground truth, however comparing against the ground truth patch can still serve as an approximate measure. Table <ref type="table" target="#tab_0">1</ref> additionally shows the percentage of submitted patches with correct locations for each tool, across line, function, and file levels. We first observe that the percentage of patches with correct locations correlates heavily with the solve rate. Interestingly, the highest result for file-level location is OpenCSG StarShip at 90.0%, significantly higher than even the best-performing approaches while at the same time having a relatively low solve rate (23.67%). As OpenCSG StarShip is a commercial product that does not provide source code or detailed trajectories, it is difficult to explain this huge difference between localization and repair performance. In terms of localization performance, by using our simple hierarchical approach, AGENTLESS remains very competitive compared with previous agent-based approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.3">Reproduction test results.</head><p>AGENTLESS uses regression and generated reproduction tests to perform filtering in order to select the final submission patch. Therefore, we evaluate the quality of our generated reproduction tests. We note here that as described in Section 3.3.1, we only use the generated reproduction test if it can successfully reproduce the original issue in the original repository. Out of the 300 problems in SWE-bench Lite, AGENTLESS is able to produce 213 reproduction tests that output the required reproduction message when evaluated on the original repository. However, these tests might still be incorrect as a correct reproduction should also be able to verify that the issue has been correctly resolved. To evaluate this, we directly apply the ground truth patch provided in SWE-bench<ref type="foot" target="#foot_1">foot_1</ref> . We found that only 94 tests correctly output the Issues resolved message after applying the ground truth patches. This steep drop-off can be partially explained as sometimes the issue description provided in the problem may not contain enough information to generate complete test cases for validating a correct solution. However, this problem is partially mitigated as AGENTLESS takes a conservative approach of requiring all patches to pass the regression test suite first and will remove a patch if it cannot pass the regression tests but passes on the generated reproduction test. This reduces the likelihood of an incorrect reproduction test selecting a correct patch. Furthermore, if all generated patches cannot pass the reproduction test, AGENTLESS will fall back on only using the regression test results for selection. In Section 5.2.3 we closely examine the impact of using both regression and reproduction test for patch selection has on the performance. Although released very recently, AGENTLESS has already received widespread adoption. In Table <ref type="table" target="#tab_0">1</ref>, there are two baseline tools (indicated via ) already built upon earlier versions of our AGENTLESS: RepoGraph <ref type="bibr" target="#b16">[19]</ref> is an open-source tool combining AGENTLESS with repository-level graph, while Isoform <ref type="bibr" target="#b10">[12]</ref> is a closedsource commercial tool also built upon AGENTLESS. Additionally, Bytedance MarsCode <ref type="bibr" target="#b55">[58]</ref> is partly inspired by AGENTLESS in patch sampling/selection and OpenDevin <ref type="bibr" target="#b15">[17]</ref> is in the process of integrating AGENTLESS into their ecosystem. Furthermore, AGENTLESS has also been adopted by OpenAI as the default approach when showcasing the real-world coding performance of GPT-4o on their new SWE-bench Verified benchmark <ref type="bibr" target="#b31">[34]</ref>, where AGENTLESS also achieves the best performance compared with all other studied agent-based solutions. At the time of finishing up this draft, OpenAI just released the new o1 model family and also adopted AGENTLESS as the top/default approach to showcase their performance on SWE-bench <ref type="bibr" target="#b71">[74]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.4">Adoption of AGENTLESS.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Ablation study on components of AGENTLESS</head><p>Next, we look at how each component in the localization, repair, and patch validation phases contributed to the final AGENTLESS performance. Unless otherwise specified, we vary the configuration of one component while using the default parameters for all other settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">Localization ablation.</head><p>Table <ref type="table" target="#tab_1">2</ref> shows the performance and cost for each of the 3 steps in AGENTLESS's localization phase. We show after each localization step the percentage of problems whose ground truth edit locations remain in the location set ("Contains GT"), the average lines of code of each location set ("LoC"), and the average dollar cost of each step ("Avg.$"). The bold method indicates the default setting of AGENTLESS. First, we examine the different configurations of file level localization. To start with, for the retrieval method based on embeddings, we see that without including the irrelevant folder filtering to remove irrelevant folders for embedding (described in Section 3.1.1), both the performance and cost become worse. This demonstrates the importance of limiting the number of files to consider during embedding and focusing on essential parts of the repository for more cost-efficient and effective localization. We see that using the prompting-based or the embedding-based retrieval method alone can locate the ground truth file in 78.7% and 67.7% of cases respectively. This can be further improved by combining them to obtain 81.7% correct file localization, showing that prompting-based and embedding-based retrieval methods can complement each other in identifying different sets of relevant files. Using all of the localized files leads to a large context window (&gt;3000). As such, in our second localization step, we localize to the relevant classes and functions, and are able to drastically reduce the context window (&lt;800). We compare our input of using skeleton format (described in Section 3.1.2) to provide a more concise representation with the baseline of using the complete file content. We observe that by using the complete file content, not only is the cost much higher but also the number of localized groundtruth issues is reduced. The reason is most likely that LLMs cannot handle long context very well, so providing the entire file contents can confuse the model. Conversely, by using a more concise representation as the input, we can effectively localize the correct related locations that are needed for inspection and editing.</p><p>Next, AGENTLESS localizes to the exact edit locations needed to achieve even more context reduction without losing much of the localization accuracy. We compare the different ways we can perform the edit location localization: 1) "Greedy": using greedy decoding to obtain one set of edit locations, 2) "Direct from file-level": directly go from file-level localization to the edit locations (instead the default of localizing from file-level to related elements and then to edit locations), 3) "Multi-samples merged": sample multiple sets of edit locations and merging them into one set, and 4) "Multi-samples": sample multiple sets of edit locations. We first observe that by directly going from file-level to the edit locations, both the cost and performance are worse. The reason is that the model can become confused when providing a large context, demonstrating the importance of our hierarchical localization design. We also find that when merging multiple samples together, the amount of ground truth localized is higher but at the expense of having to add more context as the input during the repair phase. Our default settings also sample the edit locations multiple times, however instead of merging, we perform repair on them separately to make use of the fact each sampled location set can provide similar localization performance while also limiting the input context. In short, by using hierarchical localization steps, AGENTLESS can successfully minimize the cost while performing effective localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">Repair ablation.</head><p>We now look at the impact of our different repair setups on the final performance. Table <ref type="table" target="#tab_2">3</ref> shows the different settings and inputs for our repair phase with their performance and cost.Starting with using the greedy location set generated in the edit location generation stage, we observe that we can already achieve very high performance of more than 88 issues fixed. Similarly, for the "Multi-samples merged" where we merged multiple location sets into one, we can also achieve comparable performance. The performance can be further improved by considering each sampled locations separately (to generate 10 candidate patches each) when performing repair to achieve 96 fixes. The reason is that each different location sets may localize different ground truth locations and provide different context that can be helpful to fix specific issues. By using different edit locations and combining with our extensive test filtering and selection stage, AGENTLESS can drastically improve the repair performance. Next, we examine the impact of using different numbers of sampled candidate patches on the performance of AGENTLESS. Figure <ref type="figure" target="#fig_6">6</ref> shows the number of issues fixed as we increase the number of samples. Note that the sample interval increases by 4 since we use 4 different sets of locations as input. First, we see that by just using 1 greedy sample for each location set, AGENTLESS can already achieve a significant number of correct fixes of 80. We can continue to improve repair performance by adding more samples. However, we observe that the performance plateaus at around 40 samples where adding additional candidate patches does not improve performance. This is because we perform majority voting after test filtering to select the final submission patch, which means that later samples may be ignored since it is difficult for them to offset the majoritively voted patch. Interestingly, we can also see from the figure that if we consider all patch samples (instead of only selecting one patch) for each issue, the total number of possible issues that AGENTLESS can solve is 126 (42.0%). This shows a high upper bound for the potential of AGENTLESS with future work being even better patch re-ranking and selection techniques to further improve the overall performance.  <ref type="table" target="#tab_3">4</ref> shows the result and additional cost of different approaches. We see that by only using majority voting, we can already achieve 77 correct fixes. By adding the existing regression tests, and filter for candidate patches with the lowest amount of regression errors, we can improve performance to 81 issues resolved. Furthermore, the most significant performance improvement was achieved by incorporating additional filtering based on the generated reproduction tests, resulting in the final AGENTLESS performance of 96 fixes. This demonstrates the impact of our patch selection approach, specifically our reproduction test generation, which is able to make use of the high number of candidate patches generated and filter for the correct patch for final submission. However, using reproduction tests also comes with additional costs as AGENTLESS needs to generate these tests which are not provided in the original project repository. Next, we look at our reproduction test generation strategy. Figure <ref type="figure" target="#fig_7">7</ref> shows the repair performance (bar, left axis), the total number of selected and plausible reproduction tests (lines, right axis) as we increase the number of candidate reproduction tests generated per issue. Recall that we only select the reproduction test if it can successfully output the Issue reproduced message when evaluated on the original repository. We further consider a selected reproduction test as plausible if it can successfully verify that the ground truth developer patch has fixed the original issue (i.e., output Issue resolved). To begin with, when we only generate one reproduction test (i.e., using the greedy output) per issue, we only produce 100 selected tests for all 300 issues in SWE-bench Lite with the repair performance being 90. We can increase the number of selected reproduction tests by increasing the number of candidate re-production tests we generate. However, it is interesting to note that the number of plausible reproduction tests does not increase drastically (apart from going from 1 to 5 samples). The reason again is due to some ambiguity in the issue description where it may not contain sufficient information to reproduce and verify the issue has been resolved. Nevertheless, we observe a small improvement in the number of issues resolved, reaching final performance of 96 correct fixes as we increase the number of candidate reproduction tests to 40 per issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.3">Patch validation ablation.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Additional Analysis on SWE-bench Lite</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Problem Classification</head><p>Contains partial reproducible example 8.7% Contains reproducible example 54.3% Info in NL 27.0% Not enough info 10.0% (a) Description quality Some steps in NL 7.7% No solution 73.3% Misleading 5.0% Exact patch 4.3% Complete steps in NL 9.7% (b) Solution in description Line Function File Overall 0 20 40 60 80 100 Percentage 90.3% 68.0% 50.0% 39.3% 3.0% 6.7% 13.7% 13.7% 6.7% 13.7% 15.3% 24.7% 11.7% 21.0% 22.3% None Stack trace Natural language Keywords (c) Location information We now take a closer look at the problems in SWE-bench Lite. We first classify the existing problems to gain better understanding and additional insights on exactly what types of problems AGENTLESS and prior approaches can solve. Specifically, we perform manual classification based on the issue description and ground truth developer patch of each problem. Below describes each of classification dimensions and their categories in more detail:</p><p>1) Description quality. We first inspect whether each issue description contains sufficient information to perform the desired task. Figure <ref type="figure" target="#fig_8">8a</ref> shows the distribution of each category: (i) contains enough information in natural language, (ii) contains reproducible failure example, (iii) contains partially reproducible example, and (iv) does not contain enough information.We observe that while a majority of the tasks in SWE-bench Lite contains sufficient information, with many having some small failure examples to showcase the bug, there is a non-trivial percentage (10.0%) of problems which do not contain enough information. Such problems include those that require implementing a new function with a specific name or adding an error message with a specific string that was not provided in the problem description. <ref type="foot" target="#foot_2">3</ref> This means the test will fail if the function name or error message string does not match exactly, even if the underlying functionality is correctly implemented. Another example of insufficient information are problems that have multiple different interpretations on how to solve the issue, and only a subset of them can pass the ground truth test. For instance, the issue description will outline two possible solutions suggestions with only one of them aligned well with developer intention. Implementing the other proposed solution suggestion will lead to test failure. This highlights the necessity to further sanitize/improve SWE-bench Lite where these problems with uninformative descriptions shall be further excluded.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) Solution in description.</head><p>We also examine whether the solution or steps to solve the problem are already provided in the issue description. Figure <ref type="figure" target="#fig_8">8b</ref> shows the breakdown of our categories: (i) no solution or steps provided, (ii) partial solution provided (e.g., some steps in natural language), (iii) complete solution provided (e.g., complete steps in natural language), (iv) exact patch provided, and (v) misleading solution or steps. Interestingly, we observe that 4.3% of issues contain the exact ground truth patch in the issue description, while an additional 9.7% of issues describe the exact steps required to come up with the correct solution. This shows that certain problems in SWE-bench Lite can be much easier to solve since they provide the solution either in exact code snippets or natural language. Furthermore, we also observe 5.0% of issues contain proposed solution or steps in the issue description that do not reflect the ground truth patch introduced by the developers. This further highlights potential issues with the benchmark, as these discrepancies can mislead tools to generate incorrect solutions simply by following the issue description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) Location information.</head><p>We further check if the issues description contains the correct location information. We divide the granularity into line, function, and file level. Our categories are: (i) exact locations in natural language, (ii) exact locations provided in failure stack traces, iii) related keywords in the issue description that can be used to search for the location, and (iv) not provided. We first observe that only in very few cases (&lt;10%), the issue provides the exact lines needed to fix the bug. However, this number increases as we increase the granularity to functions and files where we found that around half of the issues already provide the location of the file needed to be edited in the description. To repair a bug or introduce a new feature, finding the location to make the edit is extremely important. As such, we leverage this classification and focus our later analysis on the effect the provided location has on the repair performance of AGENTLESS and baseline approaches.</p><p>These classification dimensions and categories raise potential issues with the SWE-bench Lite problems such as unsolvable questions, misleading potential solutions, and significant differences in problem difficulties. These issues have not been properly considered by either the benchmark creation process or prior approaches. Furthermore, we hope our classification can provide additional insights on the type of problems that can be solved by existing and future approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">SWE-bench Lite-S</head><p>Building on the above problem classifications, we will more rigorously compare and contrast AGENTLESS and existing work. Specifically, we focus on a subset of the problems in SWE-bench Lite after removing the problems that contain the exact patch in the problem description, misleading solutions, or do not provide enough information in the original issue description. This eliminates the less reasonable problems and normalizes the difficulty level of the benchmark. We refer to our subset of 249 problems as SWE-bench Lite-S. We note here that our approach of identifying and excluding problematic problems has already been confirmed by a later work done by OpenAI, where they have released a similar filtered benchmark of SWE-bench Verified <ref type="bibr" target="#b31">[34]</ref>.</p><p>Table <ref type="table" target="#tab_4">5</ref> shows the results on the SWE-bench Lite-S benchmark and the corresponding ranking of each approach. We also included the results on the original 300 problems in SWE-bench Lite for comparison. While the general ranking of all approaches stay roughly the same, we do observe some small ranking changes. Compared to the original SWE-bench Lite, our filtered benchmark of SWE-bench Lite-S provides a more accurate reflection of the true capability of autonomous software development tools.</p><p>Using the classification results, we further examine the types of problems that are solved by AGENTLESS and prior approaches on SWE-bench Lite-S. Figure <ref type="figure" target="#fig_9">9</ref> shows the solve rate of various top-performing open-source and closed-source approaches across the different categories of problems. We first examine if having code examples to reproduce the error in the issue description can help the LLM better solve the issue in Figure <ref type="figure" target="#fig_9">9a</ref>. Surprisingly, we found that the solve rate of all prior approaches drop when evaluated on the problems with reproducible code examples. Many agent-based approaches <ref type="bibr" target="#b98">[101,</ref><ref type="bibr" target="#b15">17,</ref><ref type="bibr" target="#b27">30]</ref> attempt to first reproduce the error, however, this may not improve performance even on problems with already provided reproducible examples. However, we observe the performance for AGENTLESS remains very high on the problems with reproducible code examples. This is because AGENTLESS generates reproduction tests using the original issues descriptions, hence can better make use of the reproducible code examples provided (similarly for  MentatBot which also contains an explicit test generation step). This demonstrate the importance of the test generation stage for patch selection. Next, we look at the effect of ground truth patch/solution in the issue description. Figure <ref type="figure" target="#fig_9">9b</ref> shows the expected result where all selected techniques perform better on issues that already provide solution steps in natural language. Furthermore, in Figure <ref type="figure" target="#fig_9">9c</ref>, we examine the solve rate with respect to the location information provided in the issues description. Unsurprisingly, we found that the highest solve rates are on problems where the location is provided in natural language followed by stack traces. The most difficult problems are those that do not contain any clues about the location of the issue in the description. We observe that compared with closed-source approaches, AGENTLESS performs comparably when the location is provided in either natural language, stack trace, or keywords. However, the closed-source agent tools perform better compared to AGENTLESS in the case where no location clue is provided. This highlights an advantage of agent-based tools in solving these more complex problems where they are able to use complex code search tools. This represents potential future work for AGENTLESS to target and further improve these types of problems.</p><p>6.3 SWE-bench Verified Similar to SWE-bench Lite-S and inspired by similar concerns in Section 6.1, OpenAI has produced a newly filtered dataset of SWE-bench Verified <ref type="bibr" target="#b31">[34]</ref> validated by human developers to ensure each issue has sufficient amounts of information to be solved. Table <ref type="table" target="#tab_5">6</ref> shows the performance of AGENTLESS compared with prior agent-based approaches on SWE-bench Verified. Similar to the results on SWE-bench Lite, AGENTLESS maintains its strong performance and is able to solve 194 out of 500 problems (38.80%). AGENTLESS is able to achieve the second highest performance compared with open-source approaches and perform better than many closed-source / commercial techniques. Furthermore, we note that AGENTLESS performs the best among all techniques that use GPT-4o as the LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Threats to Validity</head><p>Internal. One threat to validity comes from the data leakage of ground truth developer patches in SWE-bench Lite being part of the training data for GPT-4o. Since GPT-4o is a closed-source model, we do not have access to the training data. Meanwhile, we note here that prior work almost exclusively used similar closed-source LLMs (e.g., GPT-4o, GPT-4, Claude-3.5, etc), and our approach can outperform all existing open-source solutions with same models. Furthermore, the authors of SWE-bench <ref type="bibr" target="#b41">[44]</ref> compared the resolve rate of issues collected before and after the knowledge cutoff date of GPT-4, and did not find any significant difference. To completely address this threat, we would need to retrain GPT-4o from scratch which would be infeasible for an academic project.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>External.</head><p>One main external threat comes from our evaluation dataset of SWE-bench Lite. While the performance of AGENTLESS might not generalize to other datasets, SWE-bench Lite is by far the most popular evaluation dataset which contains a diverse range of problems.</p><p>In addition, OpenAI has independently performed an extensive evaluation of AGENTLESS and other open-source solutions on SWE-bench Lite, SWE-bench, and their new SWE-bench Verified benchmark, further confirming that AGENTLESS outperforms all other open-source agents <ref type="bibr" target="#b31">[34]</ref>. Moreover, on Sept. 12th 2024, OpenAI just released the new o1 model family and also adopted Agentless as the top approach to showcase their performance on SWEbench <ref type="bibr" target="#b71">[74]</ref>. In the future, we plan to further address this threat by evaluating AGENTLESS on other benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion</head><p>We propose AGENTLESS-an agentless approach to automatically tackle software development problems. AGENTLESS uses a simple three phase approach of localization, repair, and patch validation. Compared to prior agent-based approaches, AGENTLESS deliberately disallows the LLM for autonomous tool usage or planning. Our evaluation on the popular SWE-bench Lite benchmark demonstrates that AGENTLESS can achieve the highest performance compared with other open-source techniques while at the same time minimizing the cost. Furthermore, we perform a detailed classification of problems in SWE-bench Lite to not only offer new insights but to construct a more rigorous benchmark of SWE-bench Lite-S after removing problematic problems.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of AGENTLESS.</figDesc><graphic coords="5,301.54,191.19,157.27,91.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: File skeleton format.</figDesc><graphic coords="7,364.96,122.26,140.51,111.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Search/Replace edit format.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>3. 3 Figure 4 :</head><label>34</label><figDesc>Figure 4: Example reproduction test.</figDesc><graphic coords="8,344.93,226.64,160.38,170.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>[108], we report 1) % Resolved: the percentage of resolved problems in the benchmark, 2) Avg. $ Cost: average inference cost of running the tool, and 3) Avg. # Tokens: average number of input and output tokens used to query to LLM. Additionally, we also report the % Correct Location: the percent of problems where the patch produced by the tool covers the edit location(s) of the ground truth developer patch.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Venn diagram for issue fixes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Repair performance as the number of patch samples increases.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Reproduction test and repair results as number of samples increases.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Categorization and corresponding breakdown of the SWE-bench Lite problems.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Solve rate of selected approaches (orange means open-source while indigo means closed-source) on different problem categories in SWE-bench Lite-S. Red dotted line indicates the average solve rate on the entire SWE-bench Lite-S for each approach.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>simpler design and overall technique. It is important to note here that many of the top techniques are closed-source/commercial and did not release any source code to reproduce experiments or even trajectories for further verification.</figDesc><table><row><cell>Tool</cell><cell>LLM</cell><cell>% Resolved</cell><cell>Avg. $ Cost</cell><cell>Avg. # Tokens</cell><cell cols="3">% Correct Location Line Function File</cell></row><row><cell>CodeStory Aide [2]</cell><cell cols="2">GPT-4o+ Claude 3.5 S 129 (43.00%)</cell><cell>-</cell><cell cols="2">-41.7%</cell><cell cols="2">58.7% 72.0%</cell></row><row><cell>Bytedance MarsCode [58]</cell><cell>NA</cell><cell>118 (39.33%)</cell><cell>-</cell><cell cols="2">-42.7%</cell><cell cols="2">58.0% 79.7%</cell></row><row><cell>Honeycomb [10]</cell><cell>NA</cell><cell>115 (38.33%)</cell><cell>-</cell><cell cols="2">-44.3%</cell><cell cols="2">57.0% 69.3%</cell></row><row><cell>MentatBot [14]</cell><cell>GPT-4o</cell><cell>114 (38.00%)</cell><cell>-</cell><cell cols="2">-37.3%</cell><cell cols="2">53.3% 69.3%</cell></row><row><cell>Gru [20]</cell><cell>NA</cell><cell>107 (35.67%)</cell><cell>-</cell><cell cols="2">-38.3%</cell><cell cols="2">54.3% 75.0%</cell></row><row><cell>Isoform [12]</cell><cell>NA</cell><cell>105 (35.00%)</cell><cell>-</cell><cell cols="2">41,963 38.7%</cell><cell cols="2">55.3% 72.0%</cell></row><row><cell>SuperCoder2.0 [22]</cell><cell>NA</cell><cell>102 (34.00%)</cell><cell>-</cell><cell cols="2">-41.7%</cell><cell cols="2">63.7% 65.7%</cell></row><row><cell>Alibaba Lingma Agent [13]</cell><cell>GPT-4o+ Claude 3.5 S</cell><cell>99 (33.00%)</cell><cell>-</cell><cell cols="2">-40.0%</cell><cell cols="2">58.7% 75.0%</cell></row><row><cell>Factory Code Droid [9]</cell><cell>NA</cell><cell>94 (31.33%)</cell><cell>-</cell><cell cols="2">-36.7%</cell><cell cols="2">55.7% 72.7%</cell></row><row><cell>Amazon Q Developer-v2 [4]</cell><cell>NA</cell><cell>89 (29.67%)</cell><cell>-</cell><cell cols="2">-40.3%</cell><cell cols="2">52.0% 74.3%</cell></row><row><cell>SpecRover [81]</cell><cell>GPT-4o+ Claude 3.5 S</cell><cell>93 (31.00%)</cell><cell>$0.65</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>CodeR [30]</cell><cell>GPT-4</cell><cell>85 (28.33%)</cell><cell>$3.34</cell><cell cols="2">323,802 35.7%</cell><cell cols="2">52.3% 67.0%</cell></row><row><cell>MASAI [27]</cell><cell>NA</cell><cell>84 (28.00%)</cell><cell>-</cell><cell cols="2">-38.7%</cell><cell cols="2">56.3% 75.0%</cell></row><row><cell>SIMA [3]</cell><cell>GPT-4o</cell><cell>83 (27.67%)</cell><cell>$0.82</cell><cell cols="2">-37.0%</cell><cell cols="2">54.0% 79.0%</cell></row><row><cell>IBM Research Agent-101 [1]</cell><cell>NA</cell><cell>80 (26.67%)</cell><cell>-</cell><cell cols="2">-39.7%</cell><cell cols="2">56.7% 73.3%</cell></row><row><cell>OpenCSG StarShip [16]</cell><cell>GPT-4</cell><cell>71 (23.67%)</cell><cell>-</cell><cell cols="2">-39.0%</cell><cell cols="2">61.7% 90.7%</cell></row><row><cell>Amazon Q Developer [4]</cell><cell>NA</cell><cell>61 (20.33%)</cell><cell>-</cell><cell cols="2">-34.0%</cell><cell cols="2">43.7% 71.7%</cell></row><row><cell>RepoUnderstander [64]</cell><cell>GPT-4</cell><cell>64 (21.33%)</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>AutoCodeRover-v2 [6]</cell><cell>GPT-4o</cell><cell>92 (30.67%)</cell><cell>-</cell><cell cols="2">-35.0%</cell><cell cols="2">52.3% 69.3%</cell></row><row><cell>RepoGraph [19]</cell><cell>GPT-4o</cell><cell>89 (29.67%)</cell><cell>-</cell><cell cols="2">-36.7%</cell><cell cols="2">51.3% 71.0%</cell></row><row><cell>Moatless [15]</cell><cell>Claude 3.5 S</cell><cell>80 (26.67%)</cell><cell>$0.17</cell><cell cols="2">-38.7%</cell><cell cols="2">54.7% 78.7%</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>74 (24.67%)</cell><cell>$0.14</cell><cell cols="2">-36.0%</cell><cell cols="2">52.0% 73.0%</cell></row><row><cell>OpenDevin+CodeAct v1.8 [17]</cell><cell>Claude 3.5 S</cell><cell>80 (26.67%)</cell><cell>$1.14</cell><cell cols="2">-38.0%</cell><cell cols="2">49.7% 67.3%</cell></row><row><cell>Aider [37]</cell><cell>GPT-4o+ Claude 3.5 S</cell><cell>79 (26.33%)</cell><cell>-</cell><cell cols="2">-35.3%</cell><cell cols="2">50.0% 69.7%</cell></row><row><cell>SWE-agent [101]</cell><cell>Claude 3.5 S</cell><cell>69 (23.00%)</cell><cell>$1.62</cell><cell cols="2">521,208 40.7%</cell><cell cols="2">54.3% 72.0%</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>55 (18.33%)</cell><cell>$2.53</cell><cell cols="2">498,346 29.3%</cell><cell cols="2">42.3% 58.3%</cell></row><row><cell></cell><cell>GPT-4</cell><cell>54 (18.00%)</cell><cell>$2.51</cell><cell cols="2">245,008 30.7%</cell><cell cols="2">45.3% 61.0%</cell></row><row><cell>AppMap Navie [5]</cell><cell>GPT-4o</cell><cell>65 (21.67%)</cell><cell>-</cell><cell cols="2">-29.7%</cell><cell cols="2">44.7% 59.7%</cell></row><row><cell>AutoCodeRover [108]</cell><cell>GPT-4</cell><cell>57 (19.00%)</cell><cell>$0.45</cell><cell cols="2">38,663 29.0%</cell><cell cols="2">42.3% 62.3%</cell></row><row><cell>RAG [101]</cell><cell>Claude 3 Opus</cell><cell>13 (4.33%)</cell><cell>$0.25</cell><cell cols="2">-22.0%</cell><cell cols="2">30.0% 57.0%</cell></row><row><cell></cell><cell>GPT-4</cell><cell>8 (2.67%)</cell><cell>$0.13</cell><cell cols="2">-12.7%</cell><cell cols="2">23.3% 47.3%</cell></row><row><cell></cell><cell>Claude-2</cell><cell>9 (3.00%)</cell><cell>-</cell><cell cols="2">-16.7%</cell><cell cols="2">24.3% 46.7%</cell></row><row><cell></cell><cell>GPT-3.5</cell><cell>1 (0.33%)</cell><cell>-</cell><cell>-</cell><cell>6.3%</cell><cell cols="2">11.3% 27.3%</cell></row><row><cell>AGENTLESS</cell><cell>GPT-4o</cell><cell>96 (32.00%)</cell><cell>$0.70</cell><cell cols="2">78,166 35.3%</cell><cell cols="2">52.0% 69.7%</cell></row></table><note><p>Results on SWE-bench Lite. Note: indicates approaches that are closed-source (i.e., source code is not released). indicates approaches built on top of an earlier version of our AGENTLESS. '-' indicates that the relevant information to compute this has not been released.</p><p>indicates that multiple models are used, but some of them are not specified. Claude 3.5 S is short for Claude 3.5 Sonnet.</p><p>5.1 Performance on SWE-bench Lite</p><p>Table1</p><p>shows the main evaluation result of AGENTLESS and prior agent-based approaches on SWE-bench Lite. We observe that AGENTLESS is able to solve 96 out of 300 problems (32.00%). While this is not the highest percentage of problems solved on SWE-bench Lite, AGENTLESS is extremely competitive compared with prior agent-based approaches while using a much</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance of different localization steps.</figDesc><table><row><cell>Method</cell><cell>Contains GT</cell><cell cols="2">LoC Avg. $</cell></row><row><cell cols="2">File level localization</cell><cell></cell><cell></cell></row><row><cell>Prompting-based</cell><cell cols="2">78.67% 3,221</cell><cell>$0.02</cell></row><row><cell>Embedding-based (w/o irrelevant filtering)</cell><cell cols="2">67.67% 3,388</cell><cell>$0.05</cell></row><row><cell>Embedding-based (w/ irrelevant filtering)</cell><cell cols="2">70.33% 3,622</cell><cell>$0.04</cell></row><row><cell>Combined</cell><cell cols="2">81.67% 3,424</cell><cell>$0.06</cell></row><row><cell cols="2">Related element localization</cell><cell></cell><cell></cell></row><row><cell>Complete file</cell><cell>53.67%</cell><cell>778</cell><cell>$0.15</cell></row><row><cell>Skeleton format</cell><cell>58.33%</cell><cell>698</cell><cell>$0.02</cell></row><row><cell cols="2">Edit location localization</cell><cell></cell><cell></cell></row><row><cell>Greedy</cell><cell>50.67%</cell><cell>189</cell><cell>$0.06</cell></row><row><cell>Direct from file-level</cell><cell>47.00%</cell><cell>208</cell><cell>$0.18</cell></row><row><cell>Multi-samples merged</cell><cell>56.33%</cell><cell>342</cell><cell>$0.07</cell></row><row><cell></cell><cell>49.67%</cell><cell>165</cell><cell></cell></row><row><cell>Multi-samples</cell><cell>49.33% 49.33%</cell><cell>180 168</cell><cell>$0.07</cell></row><row><cell></cell><cell>48.33%</cell><cell>213</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance of different repair setups.</figDesc><table><row><cell>Method</cell><cell cols="2">Performance Avg. $</cell></row><row><cell>Greedy location (40 samples)</cell><cell>88 (29.33%)</cell><cell>$0.22</cell></row><row><cell>Multi-samples merged (40 samples)</cell><cell>85 (28.33%)</cell><cell>$0.24</cell></row><row><cell>Multi-samples (4 x 10 samples)</cell><cell>96 (32.00%)</cell><cell>$0.29</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Performance of different patch selection.</figDesc><table><row><cell>Method</cell><cell cols="2">Performance Avg. $</cell></row><row><cell>Majority voting</cell><cell>77 (25.67%)</cell><cell>$0.00</cell></row><row><cell>+Regression test</cell><cell>81 (27.00%)</cell><cell>$0.01</cell></row><row><cell>+Reproduction test</cell><cell>96 (32.00%)</cell><cell>$0.25</cell></row></table><note><p>Finally, we examine the impact of our different test generation and patch selection configurations has on performance. Table</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Performance and ranking on SWE-bench Lite-S. * indicates a tie in ranking.</figDesc><table><row><cell>Tool</cell><cell>LLM</cell><cell>SWE-bench Lite % Resolved Rank</cell><cell>SWE-bench Lite-S % Resolved Rank</cell></row><row><cell>CodeStory Aide [2]</cell><cell cols="2">GPT-4o+ Claude 3.5 S 129 (43.00%) 1</cell><cell>114 (45.78%) 1</cell></row><row><cell>Bytedance MarsCode [58]</cell><cell>NA</cell><cell>118 (39.33%) 2</cell><cell>106 (42.57%) 2</cell></row><row><cell>Honeycomb [10]</cell><cell>NA</cell><cell>115 (38.33%) 3</cell><cell>98 (39.36%) 3</cell></row><row><cell>MentatBot [14]</cell><cell>GPT-4o</cell><cell>114 (38.00%) 4</cell><cell>96 (38.55%) 4</cell></row><row><cell>Gru [20]</cell><cell>NA</cell><cell>107 (35.67%) 5</cell><cell>94 (37.75%) 5</cell></row><row><cell>Isoform [12]</cell><cell>NA</cell><cell>105 (35.00%) 6</cell><cell>91 (36.55%) 6</cell></row><row><cell>SuperCoder2.0 [22]</cell><cell>NA</cell><cell>102 (34.00%) 7</cell><cell>87 (34.94%) 7</cell></row><row><cell>Alibaba Lingma Agent [13]</cell><cell>GPT-4o+ Claude 3.5 S</cell><cell>99 (33.00%) 8</cell><cell>86 (34.54%) 8</cell></row><row><cell>Factory Code Droid [9]</cell><cell>NA</cell><cell>94 (31.33%) 10</cell><cell>82 (32.93%) 10</cell></row><row><cell>Amazon Q Developer-v2 [4]</cell><cell>NA</cell><cell>89 (29.67%) 12*</cell><cell>76 (30.52%) 13</cell></row><row><cell>CodeR [30]</cell><cell>GPT-4</cell><cell>85 (28.33%) 14</cell><cell>71 (28.51%) 14*</cell></row><row><cell>MASAI [27]</cell><cell>NA</cell><cell>84 (28.00%) 15</cell><cell>70 (28.11%) 16</cell></row><row><cell>SIMA [3]</cell><cell>GPT-4o</cell><cell>83 (27.67%) 16</cell><cell>71 (28.51%) 14*</cell></row><row><cell>IBM Research Agent-101 [1]</cell><cell>NA</cell><cell>80 (26.67%) 17*</cell><cell>66 (26.51%) 18*</cell></row><row><cell>OpenCSG StarShip [16]</cell><cell>GPT-4</cell><cell>71 (23.67%) 22</cell><cell>56 (22.49%) 23*</cell></row><row><cell>Amazon Q Developer [4]</cell><cell>NA</cell><cell>61 (20.33%) 26</cell><cell>51 (20.48%) 25*</cell></row><row><cell>RepoUnderstander [64]</cell><cell>GPT-4</cell><cell>64 (21.33%) 25</cell><cell>51 (20.48%) 25*</cell></row><row><cell>AutoCodeRover-v2 [6]</cell><cell>GPT-4o</cell><cell>92 (30.67%) 11</cell><cell>79 (31.73%) 11</cell></row><row><cell>RepoGraph [19]</cell><cell>GPT-4o</cell><cell>89 (29.67%) 12*</cell><cell>77 (30.92%) 12</cell></row><row><cell>Moatless [15]</cell><cell>Claude 3.5 S</cell><cell>80 (26.67%) 17*</cell><cell>67 (26.91%) 17</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>74 (24.67%) 21</cell><cell>62 (24.90%) 21</cell></row><row><cell>OpenDevin+CodeAct v1.8 [17]</cell><cell>Claude 3.5 S</cell><cell>80 (26.67%) 17*</cell><cell>65 (26.10%) 20</cell></row><row><cell>Aider [37]</cell><cell>GPT-4o+ Claude 3.5 S</cell><cell>79 (26.33%) 20</cell><cell>66 (26.51%) 18*</cell></row><row><cell>SWE-agent [101]</cell><cell>Claude 3.5 S</cell><cell>69 (23.00%) 23</cell><cell>58 (23.29%) 22</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>55 (18.33%) 28</cell><cell>45 (18.07%) 27*</cell></row><row><cell></cell><cell>GPT-4</cell><cell>54 (18.00%) 29</cell><cell>42 (16.87%) 29</cell></row><row><cell>AppMap Navie [5]</cell><cell>GPT-4o</cell><cell>65 (21.67%) 24</cell><cell>56 (22.49%) 23*</cell></row><row><cell>AutoCodeRover [108]</cell><cell>GPT-4</cell><cell>57 (19.00%) 27</cell><cell>45 (18.07%) 27*</cell></row><row><cell>RAG [101]</cell><cell>Claude 3 Opus</cell><cell>13 (4.33%) 30</cell><cell>10 (4.02%) 30</cell></row><row><cell></cell><cell>GPT-4</cell><cell>8 (2.67%) 32</cell><cell>5 (2.01%) 32</cell></row><row><cell></cell><cell>Claude-2</cell><cell>9 (3.00%) 31</cell><cell>6 (2.41%) 31</cell></row><row><cell></cell><cell>GPT-3.5</cell><cell>1 (0.33%) 33</cell><cell>0 (0.00%) 33</cell></row><row><cell>AGENTLESS</cell><cell>GPT-4o</cell><cell>96 (32.00%) 9</cell><cell>84 (33.73%) 9</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Performance on SWE-bench Verified.</figDesc><table><row><cell>Tool</cell><cell>LLM</cell><cell>% Resolved</cell></row><row><cell>Tools [11]</cell><cell cols="2">Claude 3.5 Sonnet (20241022) 245 (49.00%)</cell></row><row><cell></cell><cell>Claude 3.5 Haiku</cell><cell>203 (40.60%)</cell></row><row><cell>Solver [21]</cell><cell>NA</cell><cell>227 (45.40%)</cell></row><row><cell>Gru [20]</cell><cell>NA</cell><cell>226 (45.20%)</cell></row><row><cell>Honeycomb [10]</cell><cell>NA</cell><cell>203 (40.60%)</cell></row><row><cell>Amazon Q Developer-v2 [4]</cell><cell>NA</cell><cell>194 (38.80%)</cell></row><row><cell>Factory Code Droid [9]</cell><cell>NA</cell><cell>185 (37.00%)</cell></row><row><cell>Amazon Q Developer [4]</cell><cell>NA</cell><cell>128 (25.60%)</cell></row><row><cell>Composio SWEkit [8]</cell><cell>Claude 3.5 Sonnet</cell><cell>203 (40.60%)</cell></row><row><cell>AutoCodeRover-v2 [6]</cell><cell>GPT-4o</cell><cell>192 (38.40%)</cell></row><row><cell>SWE-agent [101]</cell><cell>Claude 3.5 Sonnet</cell><cell>168 (33.60%)</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>116 (23.20%)</cell></row><row><cell></cell><cell>GPT-4</cell><cell>112 (22.40%)</cell></row><row><cell>Alibaba Lingma Agent [13]</cell><cell>Lingma SWE-GPT 72b</cell><cell>144 (28.80%)</cell></row><row><cell>AppMap Navie [5]</cell><cell>GPT-4o</cell><cell>131 (26.20%)</cell></row><row><cell>AGENTLESS</cell><cell>GPT-4o</cell><cell>194 (38.80%)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>If we directly use the PASS TO PASS tests the performance on SWE-bench Lite will be 98.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Note that the ground truth patch is only applied here to evaluate the test quality, and is not used during the AGENTLESS process for selecting the reproduction tests.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>These types of problems still exist in the benchmark despite claims that they have been completely removed by the filtering process according to SWE-bench Lite.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Sadly the bike is currently broken.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>We thank <rs type="person">Jiawei Liu</rs> and <rs type="person">Yuxiang Wei</rs> for providing some of the resources used to run the experiments. One of the authors would like to thank <rs type="person">Jun Yang</rs> for generously gifting his old bike <ref type="bibr" target="#b2">4</ref> which allowed the author to travel faster and thus increasing research speed.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<ptr target="https://github.com/swe-bench/experiments/blob/main/evaluation/lite/20240612_IBM_Research_Agent101/README.md/" />
+		<title level="m">101: A Software Engineering Agent for Code Assistance developed by IBM Research</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Sima</forename><surname>Alex</surname></persName>
+		</author>
+		<ptr target="https://github.com/swe-bench/experiments/tree/main/evaluation/lite/20240706_sima_gpt4o" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Amazon Q Developer The most capable generative AI-powered assistant for software development</title>
+		<ptr target="https://aws.amazon.com/q/developer//" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<ptr target="https://appmap.io/blog/2024/06/20/appmap-navie-swe-bench-leader/" />
+		<title level="m">AppMap speedruns to the top of the SWE Bench Leaderboard</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<ptr target="https://autocoderover.dev/" />
+		<title level="m">AutoCodeRover Autonomous Software Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<ptr target="https://www.cognition.ai/introducing-devin" />
+		<title level="m">Devin, AI software engineer</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Empower your AI agents with Composio -a platform for managing and integrating tools with LLMs and AI agents using Function Calling</title>
+		<ptr target="https://docs.composio.dev/introduction/intro/overview" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<ptr target="https://www.factory.ai/" />
+		<title level="m">Factory Bringing Autonomy to Software Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Honeycomb</title>
+		<ptr target="https://honeycomb.sh" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Introducing computer use</title>
+		<ptr target="https://www.anthropic.com/news/3-5-models-and-computer-use" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>a new Claude 3.5 Sonnet, and Claude 3.5 Haiku</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Isoform</title>
+		<ptr target="https://github.com/swe-bench/experiments/tree/main/evaluation/lite/20240829_Isoform" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<ptr target="https://github.com/swe-bench/experiments/tree/main/evaluation/lite/20240622_Lingma_Agent" />
+		<title level="m">Lingma Agent</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<ptr target="https://mentat.ai/blog/mentatbot-sota-coding-agent" />
+		<title level="m">MentatBot: New SOTA Coding Agent, Available Now</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<ptr target="https://github.com/aorwall/moatless-tools" />
+		<title level="m">Moatless Tools</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">OpenCSG StarShip</title>
+		<ptr target="https://opencsg.com/product?class=StarShip/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">OpenDevin: Code Less, Make More</title>
+		<ptr target="https://github.com/OpenDevin/OpenDevin/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<ptr target="https://github.com/ozyyshr/RepoGraph" />
+		<title level="m">RepoGraph: Enhancing AI Software Engineering with Repository-level Code Graph</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">The Road to Ultimate Pull Request Machine</title>
+		<ptr target="https://gru.ai/blog/road-to-ultimate-pull-request-machine/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Solver</title>
+		<ptr target="https://solverai.com" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">SuperCoder</title>
+		<ptr target="https://superagi.com/supercoder/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">SWE-bench Lite</title>
+		<ptr target="https://www.swebench.com/lite.html" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A practical evaluation of spectrum-based fault localization</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Zoeteweij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rob</forename><surname>Golsteijn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arjan Jc</forename><surname>Van Gemund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Systems and Software</title>
+		<imprint>
+			<biblScope unit="volume">82</biblScope>
+			<biblScope unit="page" from="1780" to="1792" />
+			<date type="published" when="2009">2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">On the accuracy of spectrum-based fault localization</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Zoeteweij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arjan Jc</forename><surname>Van Gemund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Testing: Academic and industrial conference practice and research techniques-MUTATION</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2007">2007. 2007</date>
+			<biblScope unit="page" from="89" to="98" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet/" />
+		<title level="m">Introducing Claude 3.5 Sonnet</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atharv</forename><surname>Sonwane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nalin</forename><surname>Wadhwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhav</forename><surname>Mehrotra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiteja</forename><surname>Utpala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Bairi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11638</idno>
+		<title level="m">Aditya Kanade, and Nagarajan Natarajan. 2024. MASAI: Modular Architecture for Software-engineering AI Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732[cs.PL]</idno>
+		<title level="m">Program Synthesis with Large Language Models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Islem</forename><surname>Bouzenia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Premkumar</forename><surname>Devanbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.17134</idno>
+		<title level="m">Repairagent: An autonomous, llm-based agent for program repair</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Gang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Cheshkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Aliev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01304</idno>
+		<title level="m">CodeR: Issue Resolving with Multi-Agent and Task Graphs</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Flakiness Repair in the Era of Large Language Models</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 IEEE/ACM 46th International Conference on Software Engineering: Companion Proceedings</title>
+		<meeting>the 2024 IEEE/ACM 46th International Conference on Software Engineering: Companion Proceedings</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="441" to="443" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">SequenceR: Sequence-to-Sequence Learning for End-to-End Program Repair</title>
+		<author>
+			<persName><forename type="first">Zimin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><surname>Kommrusch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis-Noël</forename><surname>Pouchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denys</forename><surname>Poshyvanyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transaction on Software Engineering</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Introducing SWE-bench Verified</title>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Aung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Jun Shern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Jaffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dane</forename><surname>Sherburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulio</forename><surname>Starace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Mays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Dias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marwan</forename><surname>Aljubeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-swe-bench-verified/" />
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI Blog</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Zero-Shot Fuzzers: Fuzzing Deep-Learning Libraries via Large Language Models</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">32nd International Symposium on Software Testing and Analysis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>ISSTA</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Edge-Case Fuzzers: Testing Deep Learning Libraries via FuzzGPT</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Shizhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">46th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Gauthier</surname></persName>
+		</author>
+		<ptr target="https://aider.chat/" />
+		<title level="m">Aider is AI pair programming in your terminal</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Automatic Software Repair: A Survey</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Gazzola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Micucci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonardo</forename><surname>Mariani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="page" from="34" to="67" />
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Practical Program Repair via Bytecode Mutation</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Ghanbari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Benton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 28th ACM SIGSOFT International Symposium on Software Testing and Analysis<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2019">2019. ISSTA 2019</date>
+			<biblScope unit="page" from="19" to="30" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dávid</forename><surname>Hidvégi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khashayar</forename><surname>Etemadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sofia</forename><surname>Bobadilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.06598</idno>
+		<title level="m">Cigar: Cost-efficient program repair with llms</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Large Language Models Cannot Self-Correct Reasoning Yet</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Huaixiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=IkmD3fKBPQ" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Impact of Code Language Models on Automated Program Repair</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaud</forename><surname>Lutellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Tan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICSE48619.2023.00125</idno>
+		<ptr target="https://doi.org/10.1109/ICSE48619.2023.00125" />
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/ACM 45th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1430" to="1442" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">CURE: Code-Aware Neural Machine Translation for Automatic Program Repair</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaud</forename><surname>Lutellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM 43rd International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2021-05">2021. 2021. May 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can Language Models Resolve Realworld Github Issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://www.swebench.com/" />
+		<title level="m">SWE-bench Leaderboard</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Bugredux: Reproducing field failures for in-house debugging</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Orso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2012 34th international conference on software engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="474" to="484" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Empirical evaluation of the tarantula automatic fault-localization technique</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mary</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrold</forename><surname>Jean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 20th IEEE/ACM international Conference on Automated software engineering</title>
+		<meeting>the 20th IEEE/ACM international Conference on Automated software engineering</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="273" to="282" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">A quantitative and qualitative evaluation of LLM-based explainable fault localization</title>
+		<author>
+			<persName><forename type="first">Sungmin</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabin</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shin</forename><surname>Yoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1424" to="1446" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>FSE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Patch Generation with Language Models: Feasibility and Scaling Behavior</title>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Sophia D Kolak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><forename type="middle">Le</forename><surname>Martins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Goues</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Josua Hellendoorn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Deep Learning for Code Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">History Driven Program Repair</title>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2016 IEEE 23rd International Conference on Software Analysis, Evolution, and Reengineering (SANER)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="213" to="224" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">GenProg: A Generic Method for Automatic Software Repair</title>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thanhvu</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Forrest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Westley</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="54" to="72" />
+			<date type="published" when="2012">2012. 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">CODAMOSA: Escaping Coverage Plateaus in Test Generation with Pre-trained Large Language Models</title>
+		<author>
+			<persName><forename type="first">Caroline</forename><surname>Lemieux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuvendu</forename><forename type="middle">K</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Sen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">45th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>et al. 2023. Starcoder: may the source be with you</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Deepfl: Integrating multiple fault diagnosis dimensions for deep fault localization</title>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM SIGSOFT international symposium on software testing and analysis</title>
+		<meeting>the 28th ACM SIGSOFT international symposium on software testing and analysis</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="169" to="180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">DLFix: Context-Based Code Transformation Learning for Automated Program Repair</title>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohua</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tien</forename><forename type="middle">N</forename><surname>Nguyen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM/IEEE 42nd International Conference on Software Engineering (Seoul, South Korea) (ICSE &apos;20)</title>
+		<meeting>the ACM/IEEE 42nd International Conference on Software Engineering (Seoul, South Korea) (ICSE &apos;20)<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="602" to="614" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenpeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.02977</idno>
+		<title level="m">Large Language Model-Based Agents for Software Engineering: A Survey</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">TBar: Revisiting Template-Based Automated Program Repair</title>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Koyuncu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tegawendé</forename><forename type="middle">F</forename><surname>Bissyandé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 28th ACM SIGSOFT International Symposium on Software Testing and Analysis<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2019">2019. 2019</date>
+			<biblScope unit="page" from="31" to="42" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.00899</idno>
+		<title level="m">MarsCode Agent: AI-native Automated Bug Fixing</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Make llm a testing expert: Bringing human-like interaction to mobile gui testing via functionality-aware decisions</title>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengzhuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Che</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dandan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/ACM 46th International Conference on Software Engineering</title>
+		<meeting>the IEEE/ACM 46th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><surname>Llamaindex</surname></persName>
+		</author>
+		<ptr target="https://www.llamaindex.ai/" />
+		<title level="m">LlamaIndex, Data Framework for LLM Applications</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Staged Program Repair with Condition Synthesis</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering</title>
+		<meeting>the 2015 10th Joint Meeting on Foundations of Software Engineering<address><addrLine>Bergamo, Italy; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ESEC/FSE</publisher>
+			<date type="published" when="2015">2015. 2015</date>
+			<biblScope unit="page" from="166" to="178" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">An analysis of the search spaces for generate and validate patch generation systems</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Software Engineering</title>
+		<meeting>the 38th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="702" to="713" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Can automated program repair refine fault localization? a unified debugging approach</title>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Ghanbari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 29th ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="75" to="87" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yingwei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingping</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongyu</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01422</idno>
+		<title level="m">How to Understand Whole Software Repository? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Angelix: Scalable Multiline Program Patch Synthesis via Symbolic Analysis</title>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Mechtaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jooyong</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Software Engineering</title>
+		<meeting>the 38th International Conference on Software Engineering<address><addrLine>Austin, Texas</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="691" to="701" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Large language model guided protocol fuzzing</title>
+		<author>
+			<persName><forename type="first">Ruijie</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Mirchev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st Annual Network and Distributed System Security Symposium (NDSS)</title>
+		<meeting>the 31st Annual Network and Distributed System Security Symposium (NDSS)</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Marcel B öhme, and Abhik Roychoudhury</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Improving fault localization and program repair with deep semantic features and transferred knowledge</title>
+		<author>
+			<persName><forename type="first">Xiangxin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xudong</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 44th International Conference on Software Engineering</title>
+		<meeting>the 44th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1169" to="1180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Ask the mutants: Mutating faulty programs for fault localization</title>
+		<author>
+			<persName><forename type="first">Seokhyeon</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunho</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moonzoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shin</forename><surname>Yoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2014 IEEE Seventh International Conference on Software Testing, Verification and Validation</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="153" to="162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Is Self-Repair a Silver Bullet for Code Generation?</title>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Theo X Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yaroslav</forename><surname>Oliinyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Scott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Tsang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongzhou</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houman</forename><surname>Homayoun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.03897</idno>
+		<title level="m">Fuzzing BusyBox: Leveraging LLM and Crash Reuse for Embedded Bug Unearthing</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno>ArXiv abs/2303.08774</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">GPT-4 Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/hello-gpt-4o/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/new-embedding-models-and-api-updates/" />
+		<title level="m">New embedding models and API updates</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/openai-o1-system-card/" />
+		<title level="m">OpenAI o1 System Card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">The Mutators Reloaded: Fuzzing Compilers with Large Language Model Generated Mutation Operators</title>
+		<author>
+			<persName><forename type="first">Xianfei</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanyan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ASPLOS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Mutation testing advances: an analysis and survey</title>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Papadakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marinos</forename><surname>Kintis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yves</forename><surname>Le Traon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Harman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in computers</title>
+		<imprint>
+			<publisher>Elsevier</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="page" from="275" to="378" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Metallaxis-FL: mutation-based fault localization</title>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Papadakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yves</forename><surname>Le Traon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Software Testing, Verification and Reliability</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="605" to="628" />
+			<date type="published" when="2015">2015. 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Altmayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pizzorno</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emery</forename><forename type="middle">D</forename><surname>Berger</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.16218</idno>
+		<title level="m">CoverUp: Coverage-Guided LLM-Based Test Generation</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.16362</idno>
+		<title level="m">AgentFL: Scaling LLM-based Fault Localization to Project-Level Context</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: BM25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Haifeng Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roychoudhury</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.02232</idno>
+		<title level="m">SpecRover: Code Intent Extraction via LLMs</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Improving bug localization using structured information retrieval</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ripon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarfraz</forename><surname>Lease</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dewayne</forename><forename type="middle">E</forename><surname>Khurshid</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perry</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2013 28th IEEE/ACM International Conference on Automated Software Engineering (ASE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="345" to="355" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Nadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aryaz</forename><surname>Eghbali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Tip</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.06527[cs.SE]</idno>
+		<title level="m">Adaptive Test Generation Using a Large Language Model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="31210" to="31227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<analytic>
+		<title level="a" type="main">Modern information retrieval: A brief overview</title>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Singhal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Data Eng. Bull</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="35" to="43" />
+			<date type="published" when="2001">2001. 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<analytic>
+		<title level="a" type="main">Fluccs: Using code and change metrics to improve fault localization</title>
+		<author>
+			<persName><forename type="first">Jeongju</forename><surname>Sohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shin</forename><surname>Yoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 26th ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="273" to="283" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<analytic>
+		<title level="a" type="main">Evaluating the usefulness of ir-based fault localization techniques</title>
+		<author>
+			<persName><forename type="first">Qianqian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Parnin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Orso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 international symposium on software testing and analysis</title>
+		<meeting>the 2015 international symposium on software testing and analysis</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1" to="11" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b85">
+	<analytic>
+		<title level="a" type="main">Version history, similar report, and structure: Putting them together for improved bug localization</title>
+		<author>
+			<persName><forename type="first">Shaowei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd international conference on program comprehension</title>
+		<meeting>the 22nd international conference on program comprehension</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="53" to="63" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b86">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.02120</idno>
+		<title level="m">Magicoder: Source Code Is All You Need</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b87">
+	<analytic>
+		<title level="a" type="main">A survey on software fault localization</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Franz</forename><surname>Wotawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="page" from="707" to="740" />
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b88">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Papadakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Harman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.15276</idno>
+		<title level="m">Large language models in fault localisation</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b89">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864</idno>
+		<title level="m">The rise and potential of large language model based agents: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b90">
+	<analytic>
+		<title level="a" type="main">Universal Fuzzing via Large Language Models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Paltenghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Le Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">46th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b91">
+	<analytic>
+		<title level="a" type="main">Automated Program Repair in the Era of Large Pre-trained Language Models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM/IEEE 45th International Conference on Software Engineering (ICSE &apos;23)</title>
+		<meeting>the ACM/IEEE 45th International Conference on Software Engineering (ICSE &apos;23)</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b92">
+	<analytic>
+		<title level="a" type="main">Automated program repair in the era of large pre-trained language models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 45th International Conference on Software Engineering (ICSE 2023)</title>
+		<meeting>the 45th International Conference on Software Engineering (ICSE 2023)</meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b93">
+	<analytic>
+		<title level="a" type="main">Less training, more repairing please: revisiting automated program repair via zero-shot learning</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="959" to="971" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b94">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.00385</idno>
+		<title level="m">Keep the Conversation Going: Fixing 162 out of 337 bugs for $0.42 each using ChatGPT</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b95">
+	<analytic>
+		<title level="a" type="main">Large language models for test-free fault localization</title>
+		<author>
+			<persName><forename type="first">Aidan Zh</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Martins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Hellendoorn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 46th IEEE/ACM International Conference on Software Engineering</title>
+		<meeting>the 46th IEEE/ACM International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b96">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runyu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reyhaneh</forename><surname>Jabbarvand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.15991[cs.SE]</idno>
+		<title level="m">White-box Compiler Fuzzing Empowered by Large Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b97">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.00563</idno>
+		<title level="m">Kernelgpt: Enhanced kernel fuzzing via large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b98">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15793</idno>
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b99">
+	<analytic>
+		<title level="a" type="main">Evaluating and improving chatgpt for unit test generation</title>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1703" to="1726" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>FSE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b100">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Zeller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gordon</forename><surname>Marcel B Öhme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Fraser</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Holler</surname></persName>
+		</author>
+		<title level="m">The fuzzing book</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b101">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07060</idno>
+		<title level="m">Diversity Empowers Intelligence: Integrating Expertise of Software Engineering Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b102">
+	<monogr>
+		<title level="m" type="main">Acfix: Guiding llms with mined common rbac practices for context-aware repair of access control vulnerabilities in smart contracts</title>
+		<author>
+			<persName><forename type="first">Lyuye</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kairan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.06838</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b103">
+	<monogr>
+		<author>
+			<persName><forename type="first">Quanjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunrong</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01466</idno>
+		<title level="m">A Systematic Literature Review on Large Language Models for Automated Program Repair</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b104">
+	<monogr>
+		<title level="m" type="main">Siren&apos;s song in the AI ocean: a survey on hallucination in large language models</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yafu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyang</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deng</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lemao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingchen</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinting</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enbo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulong</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.01219</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b105">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05427[cs.SE]</idno>
+		<title level="m">Zhiyu Fan, and Abhik Roychoudhury. 2024. Au-toCodeRover: Autonomous Program Improvement</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b106">
+	<analytic>
+		<title level="a" type="main">Where should the bugs be fixed? more accurate information retrieval-based bug localization based on bug reports</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2012 34th International conference on software engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="14" to="24" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b107">
+	<analytic>
+		<title level="a" type="main">A Syntax-Guided Edit Decoder for Neural Program Repair</title>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan-An</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 29th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="341" to="353" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

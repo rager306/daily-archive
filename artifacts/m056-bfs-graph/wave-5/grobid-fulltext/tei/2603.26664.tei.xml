@@ -1,0 +1,912 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Learning to Commit: Generating Organic Pull Requests via Online Repository Memory</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-27">27 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mo</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">L</forename><forename type="middle">H</forename><surname>Xu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qitai</forename><surname>Tan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ting</forename><surname>Cao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunxin</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Learning to Commit: Generating Organic Pull Requests via Online Repository Memory</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-27">27 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C5A6CA8840E6245BB397FDB972F1C28F</idno>
+					<idno type="arXiv">arXiv:2603.26664v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:25+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language model (LLM)-based coding agents achieve impressive results on controlled benchmarks yet routinely produce pull requests that real maintainers reject. The root cause is not functional incorrectness but a lack of organicity: generated code ignores project-specific conventions, duplicates functionality already provided by internal APIs, and violates implicit architectural constraints accumulated over years of development. Simply exposing an agent to the latest repository snapshot is not enough: the snapshot reveals the final state of the codebase, but not the repository-specific change patterns by which that state was reached. We introduce Learning to Commit, a framework that closes this gap through Online Repository Memory. Given a repository with a strict chronological split, the agent performs supervised contrastive reflection on earlier commits: it blindly attempts to resolve each historical issue, compares its prediction against the oracle diff, and distils the gap into a continuously growing set of skills-reusable patterns capturing coding style, internal API usage, and architectural invariants. When a new PR description arrives, the agent conditions its generation on these accumulated skills, producing changes grounded in the project's own evolution rather than generic pretraining priors. Evaluation is conducted on genuinely future, merged pull requests that could not have been seen during the skill-building phase, and spans multiple dimensions including functional correctness, code-style consistency, internal API reuse rate, and modified-region plausibility. Experiments on an expert-maintained repository with rich commit history show that Online Repository Memory effectively improves organicity scores on held-out future tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The past three years have witnessed a remarkable acceleration in AI-assisted software engineering. Coding agents built on large language models now resolve a substantial fraction of tasks on curated benchmarks such as SWE-bench <ref type="bibr" target="#b0">[1]</ref>, while libraries like HumanEval <ref type="bibr" target="#b1">[2]</ref> and MBPP <ref type="bibr" target="#b2">[3]</ref> are largely saturated. Repository-scale benchmarks such as FEA-Bench and FeatureBench further extend evaluation from isolated code generation to multi-file feature implementation in realistic repositories <ref type="bibr">[4; 5]</ref>. These numbers have fuelled optimism that LLM agents are ready for industrial deployment. Yet professional maintainers of complex repositories remain cautious: they acknowledge that AIgenerated code is often functionally correct, but still routinely reject pull requests because the code feels alien-written by someone who has never read the project. In practice, this alien quality manifests not only as stylistic mismatch but also as unnecessary code bloat: the agent re-implements utilities, wrappers, or control flow patterns that the repository already contains.</p><p>The gap between benchmark scores and industrial merge-rate reflects a structural blind spot in how we currently evaluate coding agents. Benchmarks such as SWE-bench still cast software engi-neering as a sequence of isolated, one-off tasks: an agent sees an issue, edits the codebase, and succeeds if the tests pass, without carrying any accumulated knowledge forward. Furthermore, they typically evaluate issues out of chronological order, ignoring how a repository and its conventions naturally evolve over time. COMMIT0 <ref type="bibr" target="#b5">[6]</ref> stresses whole-library implementation from API specifications, while SWE-CI <ref type="bibr" target="#b6">[7]</ref> extends evaluation over months of consecutive commits. At the same time, repository-level systems such as Repository Memory and SGAgent show that richer codebase context improves localisation and repair <ref type="bibr">[8; 9]</ref>, and PR-centric works such as Coeditor, Clean-PR, and R2E-Gym suggest that commit and PR histories are valuable learning signals <ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref>. Yet these settings still share the same basic premise: the agent is not expected to undergo anything like repository-specific onboarding before it starts writing code. This omission matters because the current repository snapshot shows only the finished building, not why particular supports, interfaces, and boundaries were introduced along the way. More broadly, it reflects a shift that is now becoming central in agent research: capability no longer depends only on managing context within a single session, but increasingly on managing and updating memory across sessions and across time. While recent frameworks like SWE-Bench-CL <ref type="bibr" target="#b12">[13]</ref> attempt to evaluate such continual learning chronologically, they rely on unsupervised self-reflection. Without explicit expert supervision, agents are prone to accumulating self-reinforcing errors.</p><p>This missing onboarding step is precisely what separates a seasoned contributor from an outsourced newcomer. When a human engineer joins a mature codebase, she does not immediately open a text editor. She reads prior commits, studies module boundaries, discovers which internal utilities are idiomatic, and internalises the preferences of the maintainers. Only then does she open a pull request that looks as if it grew organically from the repository itself. Current agents skip this process entirely, producing what we term alien code: syntactically valid, often functionally correct, but stylistically foreign, architecturally dissonant, and full of redundant reimplementations of existing helper functions, often inflating patch size in the process. Even when such patches pass unit tests, maintainers reject them for exactly the reasons that a junior engineer would be asked to revise a first contribution.</p><p>To generate code that is not merely correct but genuinely organic, we introduce Learning to Commit, a framework centred on Online Repository Memory. The key idea is simple: organicity is learnable from the commit history, which records how a project has chosen to evolve over time. Given a repository with a strict chronological split, the agent performs supervised contrastive reflection on earlier commits-blindly attempting each historical change, comparing its prediction against the oracle diff, and distilling the gap into a continuously growing, incrementally updatable set of skills. When a new PR description arrives, the agent retrieves and conditions its generation on these skills, producing changes aligned with the repository's naming conventions, preferred abstractions, and maintainer preferences.</p><p>Evaluating coding agents is frequently compromised by pre-training data leakage-a pervasive vulnerability in current evaluations, as evidenced by recent efforts like SWE-Bench++ <ref type="bibr" target="#b13">[14]</ref>. By design, our same-repository, time-split evaluation inherently guarantees zero data leakage. Skills are built exclusively from commits before a hard cutoff date, while evaluation tasks are drawn from genuinely future merged commits. We measure success not only by functional correctness but also by code-style consistency, internal API reuse, and modified-region plausibility. While we validate on an expert-maintained internal repository in this work, the pipeline is designed to be extended to highquality public GitHub repositories in future work. In this paper, we establish repository-personalised adaptation as a first-class evaluation objective for coding agents. Our contributions are:</p><p>• We formalise repository-personalised online adaptation through the Learning to Commit framework, establishing both an online learning mechanism for agents to organically align with evolving codebases and a rigorous evaluation paradigm.</p><p>• We propose a training-free, online skill extraction method that distils repository-specific conventions via supervised contrastive reflection-comparing the agent's blind attempts against oracle diffs to accumulate abstract, reusable development skills.</p><p>• We construct and release a strict time-split benchmark of curated repositories with multidimensional metrics (code style, API reuse, modified-region plausibility), demonstrating that our framework effectively improves organicity over existing paradigms. 2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Static Evaluation Paradigms and Repository-Level Agents</head><p>Early benchmarks evaluated large language models in isolated, stateless environments [2; 3], which recently evolved into realistic, repository-level tasks like SWE-bench <ref type="bibr" target="#b0">[1]</ref> and its multi-file or generative extensions <ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>. To tackle these complex scenarios, recent works scale up training data through automated PR harvesting <ref type="bibr">[11; 12; 15]</ref>, with works like SWE-Bench++ <ref type="bibr" target="#b13">[14]</ref> specifically designing recent cutoffs to ensure zero data leakage and design multi-agent workflows with specialized roles and reasoning steps <ref type="bibr">[9; 16]</ref>. However, these data-centric and workflow-based approaches treat tasks as static snapshots, completely ignoring the chronological evolution of software. While SWE-CI <ref type="bibr" target="#b6">[7]</ref> introduces a temporal CI-loop to penalize technical debt, it primarily evaluates performance degradation rather than empowering the agent to actively learn and internalize repository-specific conventions over time. Crucially, these existing paradigms rely almost exclusively on functional test passes as their success metric, lacking multi-dimensional organicity evaluation to assess codebase stylistic consistency, internal API reuse, and architectural fit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Agent Memory and Continual Learning in Software Engineering</head><p>To capture historical developer intent, models have incorporated commit histories via static weight updates <ref type="bibr">[10; 17]</ref> or passive retrieval augmentation <ref type="bibr" target="#b7">[8]</ref>, yet both lack an active trial-and-error learning process. The necessity for dynamic continual learning is highlighted by the performance degradation observed in long-horizon tasks <ref type="bibr">[7; 18]</ref>, prompting explorations into online agent memory at various granularities <ref type="bibr" target="#b18">[19]</ref><ref type="bibr" target="#b19">[20]</ref><ref type="bibr" target="#b20">[21]</ref>. Most notably, SWE-Bench-CL <ref type="bibr" target="#b12">[13]</ref> evaluates continual learning chronologically but relies on unsupervised self-reflection; consequently, it is highly vulnerable to "garbagein-garbage-out" errors when early attempts fail, as autonomous reflection without ground-truth validation often leads to self-reinforcing errors <ref type="bibr" target="#b18">[19]</ref>. Even with stepwise environmental feedback <ref type="bibr" target="#b21">[22]</ref>, signals remain too noisy to extract deep design patterns. Our work bridges this gap: by strictly partitioning history to prevent data leakage, our agent attempts historical commits and receives oracle diffs as dense supervision. Through supervised contrastive distillation between blind attempts and expert patches, the agent extracts reusable, repository-specific development patterns into a continuously refined skill document, ensuring failures drive optimal, history-conditioned memory updates. Table <ref type="table" target="#tab_0">1</ref> summarises how our protocol compares with representative prior benchmarks across these key dimensions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Formulation</head><p>Let C = (c 1 , c 2 , . . . , c T ) denote a chronological sequence of high-quality commits from a target repository R. Each commit c t is associated with a repository snapshot S t (the codebase state at the parent commit), an oracle code diff ∆ t , and a synthetic issue description d t that specifies the task intent without leaking the implementation. A temporal cutoff T * strictly partitions the sequence into a history prefix C -= {c t : t ≤ T * } for learning and a held-out test set C + = {c k : k &gt; T * } for evaluation.</p><p>Code Repository High-Quality Commit Filtering &amp; Temporal Split Historical Commits 𝒞 - Future Commits 𝒞 + Selected Past Commits Agent Blind Attempt Oracle Diff Step1:Repository Onboarding via Contrastive Reflection Supervised Contrastive Reflection Repository Memory Structured skill docs Given a future task description d k ∈ C + , the objective is to generate a patch ∆k that is simultaneously functionally correct and organically aligned with the repository, under the constraint that the agent may only use C -for adaptation. The Learning to Commit framework decomposes this into two phases (illustrated in Fig. <ref type="figure" target="#fig_0">1</ref>): (1) Repository Onboarding (Learning Phase), where the agent iteratively builds a reusable skill document M from C -through on-policy contrastive reflection; and (2) Skill-Conditioned Resolution (Solve Phase), where, given d k and the repository snapshot S k , the agent autonomously resolves the task conditioned on the accumulated skills M.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gap Reflection Skills</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dense On-Policy Supervision</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Repository-Specific Skill Extraction</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Repository Onboarding via Contrastive Reflection</head><p>The learning phase mimics how a human developer onboards onto a new project: not by passively reading documentation, but by actively attempting tasks and learning from the gap between one's own output and expert practice. We initialise an empty skill document M (0) = ∅. For each learning commit c t ∈ C -, the agent executes a three-step loop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 1 (Blind Attempt):</head><p>The agent receives the repository snapshot S t and the synthetic issue description d t , along with the current skill document M (t-1) . It autonomously explores the codebase using standard tool-use capabilities (file reading, searching, editing) and produces a candidate patch ∆t .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 2 (Oracle Revelation and Contrastive Reflection):</head><p>The ground-truth oracle diff ∆ t -representing the accepted solution by a human domain expert-is revealed. The agent compares its own attempt ∆t against ∆ t , identifying discrepancies in file localisation, implementation logic, API usage, and coding style. The gap between the two serves as dense, on-policy supervision: the larger the discrepancy, the richer the learning signal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 3 (Skill Update):</head><p>Based on the contrastive reflection, the agent updates the skill document through explicit CRUD operations-creating new entries for previously unknown patterns, revising entries that were partially correct, and deprecating entries contradicted by the oracle evidence:</p><formula xml:id="formula_0">M (t) = UPDATE M (t-1) , ∆t , ∆ t , d t .<label>(1)</label></formula><p>The resulting skill document M consolidates abstract, reusable development patterns that typically encompass: (1) coding style and naming conventions, (2) the existence and correct usage of internal API utilities, (3) implicit architectural constraints and module boundaries, and (4) maintainer preference patterns such as error handling style and test organisation. Unlike static RAG over commit histories, this on-policy learning loop ensures the extracted patterns are precisely calibrated to the agent's own capability gaps-addressing exactly the mistakes the agent would otherwise make.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Skill-Conditioned Resolution</head><p>When a future task d k ∈ C + arrives, the agent receives the repository snapshot S k , the task description d k , and the full accumulated skill document M. The agent then autonomously resolves the task using standard tool-use capabilities-reading relevant files, searching the codebase, and applying edits-conditioned on the development patterns recorded in M. No rigid retrieval pipeline or preplanned workflow is imposed; the agent decides which skills to consult and which files to explore based on its own judgement, mirroring how a human developer with internalised project knowledge would approach a new task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Dataset Construction</head><p>We preliminarily validate the framework on a large-scale internal reinforcement learning training repository, where every commit has been reviewed and approved by domain experts, ensuring highquality ground-truth patches. The data curation pipeline proceeds in five stages. (i) Commit scanning and quality filtering: we extract the full non-merge commit history, apply programmatic pre-filters to remove trivial changes (e.g., fewer than 10 modified lines, version bumps), and use an LLM to assess whether each remaining commit exhibits substantive, learnable development patterns. Commits whose diffs exceed 180K tokens are excluded. In our pilot repository, this substantially reduces the raw commit pool to high-quality candidates (concrete numbers in §4). (ii) Unsupervised category clustering: to prevent the learning curriculum from collapsing onto a single change pattern, we sample the rationales from the first stage and perform unsupervised clustering to identify core development categories (yielding seven categories spanning architecture design, concurrency, testing, etc.). (iii) Category tagging: each retained commit is then assigned a primary category label by an LLM that considers the commit title, the rationale, and the full patch content.</p><p>Following the initial tagging, we construct the final benchmark sets. (iv) Stratified sampling with temporal split: commits are chronologically ordered and split into learning and test pools. Within each pool, we perform stratified proportional downsampling across categories to construct a balanced curriculum. (v) Synthetic query generation: for each task, an LLM synthesises an issue-style natural-language query from the commit message and diff. The prompt specifies the "what" and "why" of the task while strictly omitting implementation details (exact file paths, function names, or solution strategies), emulating a realistic user issue that does not leak the oracle patch. Crucially, the strict temporal split ensures that all learning commits predate all test commits, completely preventing information leakage from evaluation tasks into the skill-building phase. Scaling this pipeline to diverse open-source GitHub repositories is a direct extension planned for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Evaluation Metrics</head><p>Evaluating the organicity of AI-generated patches requires moving beyond functional test passes. We evaluate generated patches ∆k against oracle patches ∆ k across two complementary metric families.  single-judge bias, we run evaluations with two independent judge models and report agreement rates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Deterministic code metrics.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Repository and dataset curation. We evaluate our framework on an internal, expert-maintained reinforcement learning training repository comprising agent environments, judge evaluation, and orchestration subsystems. Starting with 2,738 non-merge commits, we apply the filtering and LLMassessment pipeline described in §3.4. This yields 386 high-quality, substantive commits (a 77.2% suitability rate) distributed across seven core development categories, such as architecture design, concurrency and IPC, and defensive programming. Following a strict temporal split, we perform stratified sampling to construct a balanced curriculum of 24 historical learning commits and 7 genuinely future, held-out test tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental design and baselines.</head><p>To isolate the effect of repository-specific onboarding, we evaluate a skill-conditioned agent (which receives the accumulated memory M) against a baseline agent (which operates without any skill document), both powered by Claude Opus 4.6 with identical tool-use capabilities. We investigate the skill-building process across four experimental conditions by crossing two learning modes with two curriculum assignments. For the learning mode, the agent extracts skills either Sequentially (progressively fusing insights through iterative trial-and-error) or in Parallel (processing commits concurrently before a final pairwise merge). For curriculum assignment, each test task is paired either with learning commits strictly from its own category (by category) to simulate targeted onboarding, or with the entire learning corpus (all) to simulate comprehensive repository adaptation. This yields four conditions-seq-all, seq-bycat, par-all, and par-bycat-each evaluated on all 7 test tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Deterministic code metrics. Table <ref type="table" target="#tab_1">2</ref> reports file-level localisation accuracy (File IoU), problemsolving efficiency (trajectory steps), and patch bloat (line deviation ratio) across all four conditions. The skill-conditioned agent achieves consistently higher File IoU in three out of four settings, with the largest gain of +19 percentage points in seq-all (80% vs. 61%). In the same setting, the skill agent also uses 21% fewer tool calls (56.8 vs. 71.9 steps), suggesting that accumulated skills help the agent navigate the codebase more efficiently. Line deviation ratio is lower for the skill agent in three out of four settings, indicating patches closer in size to the oracle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-dimensional LLM judge.</head><p>Table <ref type="table" target="#tab_2">3</ref> reports overall pairwise win rates from two independent judge models (Claude Opus 4.6 and Gemini 3.1 Pro). The skill-conditioned agent wins more often than the baseline in three out of four settings under both judges, with the strongest results in par-bycat (54%/57%) and seq-all (55%/58%). Table <ref type="table" target="#tab_3">4</ref> breaks down the par-bycat results by dimension: the skill agent's advantage is concentrated in Q2 (logic similarity, 50% vs. 25%) and Q3 (redundancy reduction, 54% vs. 41%), while the baseline retains a slight edge on Q1 (scope alignment) and Q4 (code style). Across all four settings, Q3 (redundancy and hallucination) shows the most consistent skill advantage (39-69% win rate), with high inter-judge agreement. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Analysis</head><p>Learning mode comparison. Sequential learning with full-corpus assignment (seq-all) produces the highest-quality skills: File IoU reaches 80%, trajectory steps are minimised, and pairwise win rate is among the highest. This is consistent with our expectation that progressive, on-policy refinement of a single skill document yields more coherent and deeply fused knowledge than parallel extraction followed by post-hoc merging. However, par-bycat achieves comparable File IoU (80%) with targeted category-specific skills, suggesting that focused, domain-aligned learning can compensate for the lack of sequential fusion.</p><p>The asymmetric value of skills. Our results reveal that repository-specific skills provide asymmetric benefits across capability dimensions. The strongest gains appear in file localisation (File IoU +10-18%), core logic reproduction (Q2 win rate 50% vs. 25%), and redundancy reduction (Q3 favours skill agents in three out of four settings). Meanwhile, fine-grained scope alignment (Q1) and code style (Q4) show marginal or neutral effects. This pattern suggests that accumulated skills primarily help agents understand where to make changes and what internal patterns to reuse, while surface-level stylistic conformance may require additional mechanisms beyond the current skill representation.</p><p>Case study. The largest positive effect appears on a task requiring the agent to fix a shared-RNG concurrency bug in a judge client module. The skill agent, having learned the repository's module structure during onboarding, correctly localises the fix to the judge client file (File IoU = 100%), while the baseline agent misidentifies the target entirely, editing an unrelated API module (File IoU = 0%). Conversely, the largest negative effect occurs on a training-step guard logic fix, where both agents correctly identify the core bug but the skill agent retains a redundant defensive guard that the baseline omits, resulting in slightly more verbose code. This illustrates that skills occasionally induce over-caution without functionally harming the solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion and Future Work</head><p>While large language model-based coding agents excel on isolated programming benchmarks, they frequently fail to produce "organic" pull requests in real-world software engineering because they lack an understanding of repository-specific human preferences and historical context. To bridge this gap, we presented Learning to Commit, an agentic framework that empowers models to actively learn from a repository's evolution. By performing on-policy contrastive reflection on historical commits, the agent distils implicit architectural constraints and coding conventions into a reusable repository memory. Our results demonstrate that this historical adaptation enables agents to significantly improve file localisation, reduce patch bloat, and generate contributions that genuinely align with expert maintainers' expectations.</p><p>As a foundational step toward repository-adaptive agents, this work naturally opens several avenues for future research. First, while our framework demonstrates strong efficacy on a highly coupled, industrial codebase, scaling the data curation and evaluation pipeline to a diverse set of high-quality, popular open-source GitHub repositories is a critical next step to verify its generalisability. Second, although our multi-dimensional LLM judge provides a granular assessment of organicity, relying on LLMs as evaluators inherently introduces potential biases and inaccuracies; future work must explore more robust, verifiable metrics for evaluating true alignment with human coding preferences.</p><p>Finally, an important direction is to examine whether repository-specific skills transfer to broader coding tasks and established evaluation settings, further clarifying the scope and limits of historical adaptation in moving coding agents toward seasoned, long-term contributors.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of the Learning to Commit framework. Real repositories are time-split into past commits (for skill learning) and future commits (for evaluation). In Step 1, the agent performs on-policy contrastive reflection: it blindly attempts each historical commit, then compares its prediction against the oracle diff to extract repository-specific development patterns into a structured skill document. In Step 2, the agent generates organic patches for unseen future tasks, guided by the accumulated skills. In Step 3, generated patches are evaluated against oracle commits across multiple dimensions including file IoU, line deviation, and multi-dimensional LLM judge scores.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>( 1 ) 2 )</head><label>12</label><figDesc>File IoU: the Jaccard similarity |F( ∆) ∩ F * k |/|F( ∆) ∪ F * k | between the files modified by the agent and those in the oracle, measuring localisation accuracy. (Trajectory steps: the total number of tool calls during the solve phase, reflecting problem-solving efficiency. (3) Line deviation ratio: (| ∆| -|∆ k |)/|∆ k |, measuring patch bloat; agents that fail to reuse internal APIs typically produce inflated diffs. Multi-dimensional LLM judge. We employ a pairwise A/B evaluation protocol in which an advanced LLM compares the baseline agent (without skills) against the skill-conditioned agent across four dimensions: (Q1) scope alignment-accuracy of the modified file and function locations; (Q2) logic similarity-proximity to the oracle's core implementation logic; (Q3) redundancy and hallucination-code conciseness and absence of over-engineering, a key indicator of successful skill utilisation; and (Q4) code style-adherence to the repository's native conventions. To reduce</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison of representative repository-level benchmarks and agentic learning paradigms. Columns progress from basic capabilities to our unique contributions: leveraging historical context, continual learning across tasks, strict data leakage prevention, oracle-supervised memory updates, and multi-dimensional organicity evaluation. Symbol legend: ✓ = fully satisfies; ✗ = not supported.</figDesc><table><row><cell>Framework / Paradigm</cell><cell cols="5">Chronological Eval Historical Memory Zero Data Leakage Oracle Supervision Organicity Eval</cell></row><row><cell>SWE-bench [1]</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>SWE-Bench++ [14]</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell></row><row><cell>RepoMem [8]</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>SWE-CI [7]</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>SWE-Bench-CL [13]</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>Learning to Commit (Ours)</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Deterministic code metrics across four experimental conditions. Bold indicates the better result in each pair. File IoU measures localisation accuracy (↑), Steps measures solve efficiency (↓), and Line Deviation measures patch bloat relative to the oracle (↓, closer to 0 is better).</figDesc><table><row><cell>Setting</cell><cell cols="3">File IoU (Skill / Base) Steps (Skill / Base) Line Dev. (Skill / Base)</cell></row><row><cell>seq-all</cell><cell>80% / 61%</cell><cell>56.8 / 71.9</cell><cell>0.69 / 1.59</cell></row><row><cell>par-bycat</cell><cell>80% / 68%</cell><cell>62.7 / 62.7</cell><cell>0.62 / 0.88</cell></row><row><cell>par-all</cell><cell>81% / 72%</cell><cell>67.7 / 68.3</cell><cell>0.80 / 1.06</cell></row><row><cell>seq-bycat</cell><cell>71% / 71%</cell><cell>75.0 / 76.4</cell><cell>1.22 / 1.13</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Overall pairwise win rates (%) of the skill-conditioned agent, as judged by two independent LLMs. Bold indicates skill agent wins more than 50%.</figDesc><table><row><cell>Setting</cell><cell cols="2">Claude Judge Gemini Judge</cell></row><row><cell>par-bycat</cell><cell>54%</cell><cell>57%</cell></row><row><cell>seq-all</cell><cell>55%</cell><cell>58%</cell></row><row><cell>par-all</cell><cell>46%</cell><cell>54%</cell></row><row><cell>seq-bycat</cell><cell>26%</cell><cell>46%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Dimension-level breakdown for the par-bycat setting (averaged over Claude and Gemini judges).</figDesc><table><row><cell>Dimension</cell><cell cols="2">Skill Win Base Win</cell><cell>Tie</cell></row><row><cell>Q1: Scope Alignment</cell><cell>25%</cell><cell>41%</cell><cell>34%</cell></row><row><cell>Q2: Logic Similarity</cell><cell>50%</cell><cell>25%</cell><cell>25%</cell></row><row><cell>Q3: Redundancy &amp; Halluc.</cell><cell>54%</cell><cell>41%</cell><cell>5%</cell></row><row><cell>Q4: Code Style</cell><cell>27%</cell><cell>38%</cell><cell>36%</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.06770" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2108.07732" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Fea-bench: A benchmark for evaluating repositorylevel code generation for feature implementation</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangyue</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scarlett</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.06680" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Featurebench: Benchmarking agentic coding for complex feature development</title>
+		<author>
+			<persName><forename type="first">Qixing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuzhe</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feiyang</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lue</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dandan</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.10975" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenting</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Celine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><forename type="middle">T</forename><surname>Chiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cardie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Gallé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.01769" />
+		<title level="m">Commit0: Library generation from scratch</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Swe-ci: Evaluating agent capabilities in maintaining codebases via continuous integration</title>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xander</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.03823" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Improving code localization with repository memory</title>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongdong</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2510.01003" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Sgagent: Suggestion-guided llm-based multi-agent framework for repository-level software repair</title>
+		<author>
+			<persName><forename type="first">Quanjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunrong</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xiao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.23647" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Coeditor: Leveraging contextual changes for multiround code auto-editing</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isil</forename><surname>Dillig</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.18584" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qinglin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runcong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangxiang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Gui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.07457" />
+		<title level="m">Peng cheng, and Yeyun Gong. Pull requests as a training signal for repolevel code editing</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Koushik Sen, and Ion Stoica. R2egym: Procedural environments and hybrid verifiers for scaling open-weights swe agents</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Shetty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.07164" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Swe-bench-cl: Continual learning for coding agents</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayan</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fatih</forename><surname>Uysal</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.00014" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Swe-bench++: A framework for the scalable generation of software engineering benchmarks from open-source repositories</title>
+		<author>
+			<persName><forename type="first">Lilin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Ramalho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Celestino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Phuc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Umang</forename><forename type="middle">Kumar</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Onassis</forename><surname>Portillo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Osunwa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Maduekwe</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2512.17419" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoxin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanzhe</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongshuai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihua</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jirong</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Jia</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.09892" />
+		<title level="m">Immersion in the github universe: Scaling coding agents to mastery</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Agyn: A multi-agent system for team-based autonomous software engineering</title>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Benkovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vitalii</forename><surname>Valkov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.01465" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Commitbart: A large pre-trained model for github commits</title>
+		<author>
+			<persName><forename type="first">Shangqing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhou</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofei</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2208.08100" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Swe context bench: A benchmark for context learning in coding</title>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minhao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junde</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.08316" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Memory for autonomous llm agents:mechanisms, evaluation, and emerging frontiers</title>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Du</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.07670" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Structurally aligned subtask-level memory for software engineering agents</title>
+		<author>
+			<persName><forename type="first">Kangning</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wencong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.21611" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Live-evo: Online evolution of agentic memory from continuous feedback</title>
+		<author>
+			<persName><forename type="first">Yaolun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijiong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazheng</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.02369" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Openclaw-rl: Train any agent simply by talking</title>
+		<author>
+			<persName><forename type="first">Yinjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.10165" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

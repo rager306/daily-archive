@@ -1,0 +1,1431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CODETASTE: Can LLMs Generate Human-Level Code Refactorings?</title>
+				<funder ref="#_MErBfzZ">
+					<orgName type="full">Swiss State Secretariat for Education, Research and Innovation</orgName>
+					<orgName type="abbreviated">SERI</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-08">8 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Alex</forename><surname>Thillen</surname></persName>
+							<email>&lt;athillen@ethz.ch&gt;</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">ETH Zurich</orgName>
+								<address>
+									<settlement>Zurich</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">ETH Zurich</orgName>
+								<address>
+									<settlement>Zurich</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Niels</forename><surname>Mündler</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">ETH Zurich</orgName>
+								<address>
+									<settlement>Zurich</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Veselin</forename><surname>Raychev</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">ETH Zurich</orgName>
+								<address>
+									<settlement>Zurich</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">ETH Zurich</orgName>
+								<address>
+									<settlement>Zurich</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CODETASTE: Can LLMs Generate Human-Level Code Refactorings?</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-08">8 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4AD494F280D4E0BCF65DE1B57E04CEB6</idno>
+					<idno type="arXiv">arXiv:2603.04177v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:25+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>LLM coding agents can generate working code, but their solutions often accumulate complexity, duplication, and architectural debt. Human developers address such issues through refactoring: behavior-preserving program transformations that improve structure and maintainability. We investigate whether agents (i) can execute refactorings reliably and (ii) identify the refactorings that human developers actually chose in real codebases. To this end, we construct CODE-TASTE, a benchmark mined from large multifile open-source refactorings. To score solutions, we combine repository test suites that measure functional correctness with tailored static checks that verify removal of undesired and introduction of desired code patterns using dataflow reasoning. Our results show a clear gap: agents perform well at implementing refactorings that are specified in detail, but often fail to discover the human refactoring choices when given a focus area for changes. A propose-then-implement decomposition improves alignment, and selecting the best-aligned proposal before implementation can yield further gains. CODETASTE provides an evaluation target and a potential preference signal for aligning coding agents with human refactoring decisions in realistic codebases. We release the benchmark, leaderboard, and code 1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Coding agents are being rapidly adopted across the software engineering industry <ref type="bibr" target="#b24">(Mürtz &amp; Müller, 2025;</ref><ref type="bibr" target="#b32">Sarkar, 2025)</ref>, mostly fueled by their recent impressive performance on autonomous resolution of real-world software engineering tasks <ref type="bibr" target="#b15">(Jimenez et al., 2024;</ref><ref type="bibr" target="#b2">Badertdinov et al.,</ref> Proceedings of the 43 rd International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 2025). However, success on issue resolution does not imply that agents can sustain code quality across iterations. SlopCodeBench <ref type="bibr" target="#b27">(Orlanski et al., 2026)</ref> evaluates iterative specification updates and measures verbosity and structural erosion, showing that coding-agent-generated code becomes longer and more structurally strained as requirements evolve. A recent effort to build a web browser, including a rendering engine, using autonomous coding agents <ref type="bibr" target="#b20">(Lin, 2026)</ref> illustrates some practical consequences: despite making notable early progress, the agents effectively stalled, unable to continue extending a codebase they had themselves created. Similarly, an experiment tasking a team of agents to autonomously build a C compiler (Carlini, 2026) produced a functional 100,000-line codebase capable of compiling the Linux kernel, but resulted in rigid, inefficient code that lacked human-like abstraction (Lattner, 2026). These observations suggest that while current methods excel at producing functional patches, they struggle to produce code that remains comprehensible and extensible over time. Meanwhile, humans address these issues through refactoring, the software engineering practice of applying behavior-preserving transformations that improve structure and maintainability <ref type="bibr" target="#b11">(Fowler, 2018)</ref>.</p><p>Lack of Challenging Refactoring Benchmarks While benchmarks for performance at code generation and repair <ref type="bibr" target="#b7">(Chen et al., 2021;</ref><ref type="bibr" target="#b15">Jain et al., 2025;</ref><ref type="bibr" target="#b15">Jimenez et al., 2024;</ref><ref type="bibr" target="#b2">Badertdinov et al., 2025)</ref> have recently scaled with increasing model competence, benchmarks for refactoring capabilities are lagging behind. While OpenAI reports that they train and evaluate their models on large-scale code refactoring tasks, their evaluation framework remains undisclosed <ref type="bibr">(OpenAI, 2025a)</ref>. The wider community is therefore limited to available open benchmarks, which are limited in size and diversity: Across 6 recent benchmarks for code refactorings, most are limited to single-file edits, and all are restricted to a single programming language <ref type="bibr" target="#b16">(Kovacic et al., 2025;</ref><ref type="bibr" target="#b0">Aider-AI, 2024;</ref><ref type="bibr" target="#b5">Cassano et al., 2023;</ref><ref type="bibr" target="#b21">Liu et al., 2025;</ref><ref type="bibr" target="#b36">Xu et al., 2026;</ref><ref type="bibr" target="#b12">Gautam et al., 2025)</ref>. This limitation causes these benchmarks to quickly become obsolete. For example, GPT-5.1 CODEX already achieves 75% accuracy on SWE-Refactor, a benchmark proposed only 2 months prior to the model release. Beyond this size limitation, these benchmarks measure capabilities at following well-specified refactoring instruction, and do not measure whether coding agents can determine adequate refactorings autonomously. This distinction matters for the practical application of coding agents: to bootstrap a code base out of accumulated technical debt, agents must recognize when code has become unmaintainable and determine what transformations are necessary to restore clarity <ref type="bibr" target="#b28">(Perry &amp; Wolf, 1992)</ref>. Meanwhile, existing evidence suggests that LLMs struggle at this task: A recent study found that LLMs rarely identify refactoring opportunities on their own, with LLMs discovering less than a fifth of humanproposed refactoring opportunities <ref type="bibr" target="#b21">(Liu et al., 2025)</ref>.</p><p>Our Work In this work, we investigate this challenge extensively and use precise code-level measurements to assess whether state-of-the-art coding agents can autonomously discover and implement relevant refactorings in real-world code bases. We introduce an alignment score that combines functional-correctness preservation with how closely a generated patch reflects the intended human refactoring. Our results indicate a clear gap: while state-of-the-art coding agents score highly on implementing complex refactorings that are specified in detail, achieving up to 70% alignment in our evaluation, they fail to mitigate undesired coding patterns correctly when no concrete refactoring is specified, achieving less than 8% alignment in the direct Open Track setting. We propose and release the benchmark designed for this task, CODETASTE, to the public, along with a leaderboard of recent coding agents, and our code implementation.</p><p>Scalable Pipeline for Refactoring Instances. We mine popular GitHub repositories for large multi-file refactorings performed by human developers. We then filter and transform these to 100 high-quality refactoring tasks. For each task, we generate an executable environment and static analysis rules that match the changed code patterns. The latter support semantic dataflow reasoning within files. This provides more flexibility than syntactic matching while also supporting automatic verification. After the coding agent applies a refactoring, we measure performance, ensuring that (i) the repository test suite passes and (ii) the static analysis rules confirm code pattern transformation.</p><p>Two Complementary Tracks for Evaluating Agent Performance. Our benchmark features two tracks: In the Instructed Track the agent is tasked to correctly implement a detailed refactoring. Frontier models achieve alignment scores of up to 69.6%, indicating both correct implementations and consistent transformation. The Open Track evaluates whether agents can propose refactorings that align with human developer choices. In this track, the agent is only tasked to improve a general focus area. We discover that agents struggle significantly here: direct Open Track alignment remains below 8%, and even oracle-supported selection reaches only up to 20.6%. Our case studies show that current agents often take shortcuts and tend towards applying minimal, insufficient changes unless explicitly instructed to plan out a refactoring.</p><p>We observe that, still, agent rankings on our benchmark correlate with rankings on other coding benchmarks <ref type="bibr" target="#b15">(Jimenez et al., 2024;</ref><ref type="bibr" target="#b23">Mündler et al., 2024)</ref>, with for example GPT-5.2 ranking above QWEN3, with the former achieving 7.9% alignment in the Open Track direct setting while the latter scores only 2.0%. This suggests that human refactoring preferences are already partially captured by general model training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Methodology</head><p>CODETASTE is constructed using a simple, six-step pipeline, summarized in Figure <ref type="figure" target="#fig_0">1</ref>. Starting from a dataset of historic code changes, it (i) mines large, multi-file refactorings performed by human developers, (ii) translates each Figure <ref type="figure">2</ref>. Data funnel for obtaining the CODETASTE benchmark instances. In each step of the main commit pipeline, we filter for the top n entries using (1) keywords, (2) complexity checks, (3) LLM assessment. From the resulting entries, we extract 100 instances for which our agentic setup produces (4) a working execution environment and (5) valid static analysis rules.</p><p>refactoring into task descriptions for our two tracks, (iii) builds a reproducible execution environment that can run each repository's unit tests, and (iv) generates static analysis rules that capture desired and undesired patterns of the transformation. The pipeline then (v) runs coding agents in the resulting environments and (vi) evaluates their patches with tests and static rules. We use this pipeline to generate 100 challenging refactoring tasks.</p><p>For evaluation, coding agents are run inside the execution environment and tasked to produce a candidate patch that implements the described refactoring. To allow agents to leverage their full capabilities, they can interact with the task description, the codebase, the test suite, and the execution environment, to produce a final predicted patch, which is simply extracted as the applied changes to the codebase. Finally, we evaluate this patch using (i) the test suite to validate whether the functionality has been preserved and (ii) the static analysis rules to validate how consistently the refactoring was implemented.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Notation and Definitions</head><p>We introduce the notation to describe test suites of codebases, changes to codebases in the form of patches, static analysis rules, and derived metrics.</p><p>Test Suites A codebase R is a collection of code files. On any codebase R, a set of tests T can be used to check the correctness of the code files. Executing a test suite T of repository R runs a total number of tests |T | and returns exec R (T ) = (P R , F R ) as counts of passing tests P R and failing tests F R . If execution of the test suite fails unexpectedly, e.g., due to a crash, we set (P R , F R ) = (0, 0).</p><p>Codebases and Patches Following the notation of <ref type="bibr" target="#b23">Mündler et al. (2024)</ref>, patches X are collections of line changes to files, and R•X denotes codebase R after applying patch X. In this case, the human-authored base state is R. The developer written golden patch is denoted X * , and the corresponding golden state is R • X * .</p><p>Let L R be the set of lines in R, where each line l ∈ L R is a triple (f, n, s) representing its file, line number in the file, and line content, in this order. A patch X induces a partial mapping M X : L R ⇀ L R•X tracking line persistence.</p><formula xml:id="formula_0">Two lines l ∈ L R and l ′ ∈ L R•X are unchanged in patch X (l ≡ X l ′ ) iff M X (l) = l ′ . Lines deleted by X are excluded from dom(M X ), while new lines in R • X lack a preimage.</formula><p>Edited lines are represented by a deleted line and a new line, respectively. We define the sets of added</p><formula xml:id="formula_1">lines L + X = L R•X \ im(M X ), the removed lines L - X = L R \ dom(M X ) and changed lines L X = L + X ∪ L - X .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Static Analysis Rules</head><p>A static analysis rule γ is a declarative query over code, expressed as a pattern over abstract syntax tree nodes, with optional additional constraints on language, filename, or semantic properties like taint flow <ref type="bibr" target="#b3">(Bull et al., 2002;</ref><ref type="bibr" target="#b33">Semgrep)</ref>. For a codebase R, if the query pattern matches lines of code L ⊆ L R , and the additional constraints are satisfied, the rule γ matches the witness ω = L. All matches of γ on codebase R form a multiset Ω(γ, R) = {ω 1 , . . . , ω k }.</p><p>We derive two metrics from Ω(γ, R):</p><p>1. Match Count M(γ, R) = |Ω(γ, R)|: the number of witnesses of a given rule γ in codebase R, and 2. Line Coverage C(γ, R) = ω∈Ω(γ,R) ω ⊆ L R : the subset of all lines in R that are covered by γ.</p><p>Figure <ref type="figure" target="#fig_1">3</ref> illustrates these quantities for a pair of rules (γ -, γ + ) that capture the refactoring of a selector pattern in JavaScript. Each old selector call is a witness for γ -, and each new store-hook call is a witness for γ + . The match count of each rule is 1, while the total matches cover 4 lines of code in X1 and 2 lines of code in X2 . Figure <ref type="figure" target="#fig_1">3</ref> further illustrates the intended level of abstraction: both changes satisfy the same additive rule γ + despite different hook names and formatting, because the rule encodes the structural pattern rather than a line-exact patch. A separate example with symbolic propagation is provided in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Benchmark Construction</head><p>In this section, we outline our benchmark construction pipeline, sketched in Figure <ref type="figure">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Data Curation</head><p>Each task instance in our benchmark corresponds to a commit in a codebase. We obtain a list of commits for further processing using a three-stage pipeline that is summarized in the left half of Figure <ref type="figure">2</ref>. The full details on the pipeline can be found in Appendix A.1.</p><p>We first query and keyword-filter candidate commits to prioritize 5000 commits that perform large refactorings. Second, we prefilter to around 1000 commits by removing repositories that are not publicly accessible anymore, commits that perform documentation-only changes, and code patches that are excessively large or too small to be relevant. Third, we assess commit messages and patches with a small LLM, tasking it to assign scores along simple categories, and keep the highest-ranked 160 candidates.</p><p>We run these three steps four times, once for each of the years 2023, 2024, and 2025 from the GitHub Archive <ref type="bibr" target="#b13">(Grigorik, 2011)</ref>, and once for the GitHub Activity Data dataset <ref type="bibr">(GitHub, 2016)</ref>, each time producing 160 instances. From these 640 instances, we choose the best 100 by score. This forms the set of instances for which we then generate tasks, execution environments and static rules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Task Generation</head><p>For each task instance, we use an LLM to generate a highly detailed task description following a fixed format. The LLM is instructed to structure the task description as three components: 1) Title: A brief heading for the refactoring task. 2) Summary: A concise overview of the technical changes, and 3) Why: The rationale and relevance of the refactoring, with the goal of providing a highly detailed task description structured similarly to the instructions a human could write for a coding agent. As input, the LLM is provided with the commit message, associated Pull Requests, including titles, bodies, and linked issues, and the code of the golden patch X * . The prompt used for this generation can be found in Figure <ref type="figure" target="#fig_2">14</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Build Environment</head><p>To provide a stable and reproducible execution environment, our method utilizes a multi-phase bootstrap pipeline that pairs each benchmark instance with a specialized containerized environment.</p><p>Phase 1: Agentic Environment Setup For each instance, our method starts with a containerized base environment into which it places a copy of the pre-refactoring codebase R and the post-refactoring codebase R • X * . We provide further details on the concretely used environments in Appendix A.2. Then, a coding agent is initialized inside the container and tasked with installing any additionally re-quired system dependencies and creating a script s that allows reproducing a standardized execution environment for the repository and orchestrates running its test suite. We provide the prompt in Figure <ref type="figure" target="#fig_0">12</ref> and an example excerpt of the generated scripts in Figure <ref type="figure" target="#fig_1">13</ref>.</p><p>Upon completion of the environment setup by this agent, our pipeline validates the reproducibility of the environment by executing the pre-and post-refactoring test suites exec R (T ) and exec R•X * (T ) using the standardized execution script s. A bootstrapping process is deemed successful only if at least n test cases are discovered and at least α% of all discovered test cases pass, or formally:</p><formula xml:id="formula_2">∀R ′ ∈ {R, R • X * }. |T R ′ | ≥ n and P R ′ |T R ′ | ≥ α</formula><p>In our main construction run, we set n = 10 and α = 30%. During test evaluation we set a limit to the time and storage consumed by the test suite execution, limiting execution time to 15 minutes, and writable storage to 5GB.</p><p>Phase 2: Runtime Creation After validation, the resulting image is transformed into a hardened runtime to prevent leaking the golden state and standardize the interface for agent evaluation. First, in order to ensure that the golden state R•X * is inaccessible from the base state R during inference, the pipeline removes the repository's commit history and any network access from inside the container. Second, we add a unified entrypoint script that serves as the primary orchestration layer during benchmark inference. This script is executed upon container start to orchestrate the coding agent under test and extract the generated patch X for later evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Rule Generation</head><p>To capture the semantic intent of a code transformation without overfitting to specific concrete changes, we describe desired code changes using static analysis rules.</p><p>Additive and Reductive Rules We distinguish two types of rules: additive and reductive rules. The additive rules Γ + describe desired code patterns, that should be introduced by a refactoring. The reductive rules Γ -describe code patterns that are undesired and should be removed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rule Discovery</head><p>We use a coding agent to describe the refactoring of the repository in terms of additive and reductive rules that match the post-refactoring and prerefactoring states of the repository, respectively. For this task, the agent is provided with (i) the task description obtained in §3.2, (ii) read-only access to the pre-refactoring repository R and (iii) specialized commands to register generated rules. This setup deliberately prevents the model</p><p>γ - 1 pattern: useStoreSelector($SELECTOR) X1 1 @@ -29,7 +29,9 @@ interface EventsChartProps extends BoxProps { 2 const EventsChart: ReactFCWithChildren&lt;EventsChartProps&gt; = ({ events, ...rest }) =&gt; { 3 -const { theme } = useStoreSelector( (state) =&gt; state.settings) // ω - 1 4 + const theme = useSettingStore( 5 + (state) =&gt; state.theme // ω + 1 6 + ) 7 8 const chartRef = useRef&lt;any&gt;(null) γ + 1 pattern: $HOOK($STATE =&gt; $STATE.$FIELD) 2 metavariable-regex: 3 metavariable: $HOOK 4 regex: ^use[A-Z][a-zA-Z] * Store$ X2 1 @@ -29,7 +30,7 @@ interface EventsChartProps extends BoxProps { 2 const EventsChart: ReactFCWithChildren&lt;EventsChartProps&gt; = ({ events, ...rest }) =&gt; { 3 -const { theme } = useStoreSelector( (state) =&gt; state.settings) // ω - 1 4 + const theme = useSystemStore(state =&gt; state.theme) // ω + 1 5 6 const chartRef = useRef&lt;any&gt;(null) from seeing the post-refactoring state R • X * or the refactoring patch X * itself, in order to avoid overfitting.</p><p>To ensure that the generated rules are correctly describing actual changes to the repository, the rule registration tool provided to the agent performs an additional step of validation, distinguishing additive and reductive rules.</p><p>The additive rules may not have any witnesses in the prerefactoring state R. Conversely, to ensure the rule actually describes a desired pattern that was also implemented by a human developer, it has to have at least one witness in the golden post-refactoring state R • X * .</p><formula xml:id="formula_3">∀γ ∈ Γ + : M(γ, R • X * ) &gt; 0 ∧ M(γ, R) = 0 Meanwhile, reductive patterns must not have witnesses in R • X * but must have at least one witness in R. ∀γ ∈ Γ -: M(γ, R) &gt; 0 ∧ M(γ, R • X * ) = 0</formula><p>To complete the rule generation step, the agent uses an additional tool call that signals completion. We detail the available tools in Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Additional Filtering</head><p>The previous steps can produce additive patterns that are overly strict: While they match actual human choices made during the refactoring, the choices might be arbitrary and not expected to be made similarly by other human developers. Such rules can concern for example exact naming of introduced classes or variables. To filter out such rules, we apply an additional heuristic filter on the generated rules. To this end, we prompt an LLM to classify whether a given rule enforces an arbitrary implementation choice, and filter out rules flagged by the LLM. We validate the choices on a small sample by a human expert and find a high agreement of 80%. We provide additional details in Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5.">CODETASTE</head><p>We apply the described pipeline, using SONNET 4.5 as the main LLM to synthesize task descriptions, set up build environments and generate static rules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset Overview</head><p>We thus obtain CODETASTE, our main benchmark, consisting of 100 instances distributed across 87 repositories and 6 programming languages. The detailed distribution across languages is shown in Figure <ref type="figure" target="#fig_2">4</ref>, and Appendix A.7 reports mean alignment scores by primary language. Beyond the 100 instances evaluated in this paper, we release an additional 150 mined refactoring commits with task descriptions and static analysis rule sets to support future benchmark expansion. The benchmark comprises complex and large refactorings, as shown in Figure <ref type="figure" target="#fig_3">5</ref>, Mean Max Task Prompts Instructed Track 1921.02 3451.0 (# Characters) Open Track 38.00 68.0 Evaluation Total Tests 1638.53 12449 Additive Rules 17.94 70 Reductive Rules 63.41 120 Total Rules 81.35 160 Golden Solutions Files Changed 91.52 290 Lines Added 1190.33 7172 Lines Removed 1415.06 11649 Lines Edited 2605.39 18821</p><p>with instances on average requiring edits to 91.52 files and 2605.39 lines of code. The most complex tasks require up to 18821 line changes across up to 290 files. To validate correctness, the benchmark runs an average of 1638.53 tests and validates an average of 17.94 additive and 63.41 reductive rules per instance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Inference</head><p>The benchmark evaluates coding agents on the base commit R within the pre-configured execution environment, where they are provided with a refactoring task. The agents are free to navigate and modify the entire environment, but have restricted access to the internet to prevent them from obtaining solutions from the original repository. Upon completion, we extract a generated patch X from the modifications to the repository state.</p><p>Tracks Regarding the refactoring task, the benchmark features two main tracks. In the Instructed Track, the agent is provided with a detailed description of the refactor to implement. This track mostly evaluates the coding agent's capability to perform long-context tasks consistently. These tasks contain significant detail, as shown in Figure <ref type="figure" target="#fig_3">5</ref>, with on average 1921.02 characters per description.</p><p>The goal of the Open Track is to vaguely define the area of the desired refactoring, or a problematic aspect of the code base, to avoid completely random exploration, but not to reveal directly what is desired as a refactoring. We derive the Open Track description via a secondary LLM pass over the Instructed Track full description. In the end, we manually investigated all Open Track descriptions to confirm that they indeed do not reveal the actual refactoring. Examples of both description types are shown in Figures <ref type="figure" target="#fig_2">14</ref> and <ref type="figure" target="#fig_3">15</ref>.</p><p>The average description is significantly shorter than in the Instructed Track, with only 38 characters on average.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Open Track Modes</head><p>To allow for fine-grained understanding of the refactoring agent decisions in the Open Track, we define three different modes of inference sketched in Figure <ref type="figure" target="#fig_4">6</ref>. In Direct mode, the agent implements changes directly from the instruction. In Plan mode, the agent first generates a single implementation plan. Then, the agent is reinitialized and prompted to execute this plan in a second pass. In Oracle Multiplan mode, the agent generates multiple candidate plans. An LLM-based oracle judge with access to the full refactoring description then selects the plan that is closest to the refactoring. Finally, the agent is reinitialized to execute the selected plan. The used prompts are provided in Figures <ref type="figure" target="#fig_4">16</ref><ref type="figure" target="#fig_12">17</ref><ref type="figure" target="#fig_7">18</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental Evaluation</head><p>In this section, we report the results of our extensive evaluation of coding agents on CODETASTE. Functional Correctness To evaluate functional correctness of a predicted patch X, we require that the test suite does not report a major regression. Concretely, we require a minimum number p min of test cases to pass on the patched code base R • X, and a maximum number f max of test cases to fail. To determine p min and f max , we execute the test suites of both R and R • X * for k times. We then set p min = min i∈{1,...,k} (P i R , P i R•X * ) and f max = max i∈{1,...,k} (F i R , F i R•X * ), where P i R denotes the number of passing tests of the i-th run on codebase R, and F i R failing tests respectively. Finally, we define functional correctness as PASS(</p><formula xml:id="formula_4">X) = 1 F R• X ≤ f max ∧ P R• X ≥ p min .</formula><p>We set k = 5 to account for flaky tests, following prior work <ref type="bibr" target="#b23">(Mündler et al., 2024)</ref>.</p><p>Instruction Following Rate We assess adherence to the refactoring intent using the discovered static analysis rules</p><formula xml:id="formula_5">Γ. Let 1 M (γ, R) = 1[M(γ, R) &gt; 0] indicate that rule γ matches in state R.</formula><p>The instruction following rate (IFR) measures the recall of additive and reductive rules in the resulting state R • X. The goal is to reward patches that produce code matching additive rules and penalize patches that fail to remove reductive rules. Consequently, the additive score IFR + is the percentage of rules γ ∈ Γ + that match on the predicted state of the repository R • X, and the reductive score IFR -is the percentage of rules γ ∈ Γ - that no longer match there. The total instruction following score IFR is a weighted combination of the scores. By construction, IFR(X * ) = 1.</p><formula xml:id="formula_6">IFR + ( X) = 1 |Γ + | γ∈Γ + 1 M (γ, R • X) IFR -( X) = 1 |Γ -| γ∈Γ - 1 -1 M (γ, R • X) IFR( X) = |Γ -| |Γ| IFR -( X) + |Γ + | |Γ| IFR + ( X)</formula><p>Alignment Score We combine the instruction following rate and the functional correctness into an alignment score A. Concretely, the alignment score A( X) = PASS( X) × IFR( X). The multiplication ensures that adherence to refactoring intent is only rewarded if the generated patch is also functionally correct.</p><p>Precision Precision PREC( X) measures how well X avoids unrelated changes. For reported agent diff-size and precision metrics, we compute L + X and L - X after filtering out build, vendor, documentation, configuration, commentonly, and whitespace changes. For a codebase R, C Γ (R) = ∪ γ∈Γ C(γ, R) is the set of lines matched by the rule set Γ.</p><p>We define additive precision PREC + as the percentage of added lines L + X that also match the additive rules Γ + . Negative precision PREC -is the percentage of removed lines L - X that were matched by the reductive rules Γ -in R. Precision PREC is the weighted average of these terms.</p><formula xml:id="formula_7">PREC + ( X) = |L + X ∩ C Γ + (R • X)| |L + X | PREC -( X) = |L - X ∩ C Γ -(R)| |L - X | PREC( X) = |L + X | |L X | PREC + ( X) + |L - X | |L X | PREC -( X)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Results on the Instructed Track</head><p>Even in the Instructed Track, where agents are provided with a detailed blueprint specifying the exact refactoring transformations required, notable performance gaps emerge among frontier systems. Unless otherwise specified, metrics in this section and §4.3 are instance averages.</p><p>SOTA Agents Have Major Differences GPT-5.2 statistically significantly outperforms all other agents on A (Appendix A.8), achieving an average A of 69.6%. In contrast, GPT-5.1 M, SONNET 4.5, and MINIMAX M2.7 achieve only 34.4%, 32.1%, and 30.5%, respectively. The opensource QWEN3 lags substantially behind at 10.7%.</p><p>Notably, all of GPT-5.2, GPT-5.1 M and SONNET 4.5 have high IFR scores of 89.0%, 70.4% and 67.0%. However, the A of the latter two is significantly lower than for GPT-5.2, since their PASS is roughly 30 percentage-points below GPT-5.2's 76.0% at 47.0% and 43.0%, respectively.</p><p>Thus, while all frontier agents are able to follow detailed and large-scale changes, there are large gaps in maintaining code correctness. In our case studies, we find that GPT-5.2 achieves higher PASS rates by applying targeted, individual patches, whereas SONNET 4.5 runs indiscriminate search-and-replace commands. While one might suspect that propensity to validate outputs with the test suite might have a strong effect, GPT-5.2 actually runs tests less frequently than SONNET 4.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overall High Precision</head><p>Overall, all agents achieve similar precision scores, with GPT-5.1 M, SONNET 4.5, and GPT-5.2 achieving 50.2%, 50.1%, and 48.4%, respectively. These scores effectively cluster around human precision at 48.5%. This suggests that with clearly specified refactoring intent, frontier agents can keep changes in scope without substantial unrelated modifications. Thorough Refactorings Are Expensive The higher alignment of GPT-5.2 is resource-intensive. To manage execution costs, agents have a $11 budget per task; overbudget runs are terminated and evaluated with available output. GPT-5.2 hit this limit in 14 instances, compared to only 3 instances for SONNET 4.5. The mean cost for GPT-5.2 in instructed mode is $5.17, compared to $3.46 for SONNET 4.5 and $0.59 for GPT-5.1 M. This reflects GPT-5.2's targeted patches, while SONNET 4.5 relies on cheaper search and replace commands (e.g. sed -i).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Results on the Open Track</head><p>Achieving high IFR on the Open Track is significantly harder. This is because agents are only provided with a high-level focus area and need to recover human architectural choices. In Direct Inference mode, the maximal achieved alignment score A over all agents is 7.9%, as can be seen in Figure <ref type="figure" target="#fig_7">8b</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Planning Helps Large Refactorings</head><p>When agents first propose a plan before implementing it (Plan Mode), there is a substantial increase in A. For GPT-5.2, the A nearly doubles from 7.9% to 15.1%. On average across all agents, the scores increase by about 2.2 percentage points, corresponding to a 36% relative increase. This suggests that explicit reasoning before editing helps recover large-scale refactoring intents. Case studies (Appendix C.1) show that planning yields repository-wide transformations reflecting high-level architectural thinking. For GPT-5.2, GPT-5.1 M, and SONNET 4.5, the corresponding patches are approximately 2 to 3 times larger (measured by |L X |) and achieve up to a 76% relative increase in IFR. The broader scope can come at the cost of up to 23 percentage-points lower PASS rates (Direct vs. Plan). QWEN3 exhibits the largest decline, whereas GPT-5.2 sees no decline. Details across all agents and modes are presented in Table <ref type="table">5</ref>.</p><p>Suggestions Generally Include Human Choices Oracle Multiplan tests whether generated proposals include one closer to the human refactoring. Here, agents generate several proposals, and an LLM with oracle knowledge chooses the plan closest to the desired refactoring. GPT-5.2 reaches an A of 20.6%, statistically significantly above all other agents (Appendix A.8). Interestingly, SONNET 4.5 does not improve in this setting, with its score dropping slightly from 10.7% in Plan mode to 10.1%. This might indicate that, when tasked to generate several possible refactorings, the model shifts into a different, less aligned distribution of refactoring plans. A randomized six-plan control finds no evidence that the Oracle Judge biases plan selection (Appendix A.6). Across Open Track settings, we can see in Table <ref type="table">4</ref> that IFR -is generally higher than IFR + , suggesting that identifying and mitigating undesirable patterns is easier than reproducing the human-introduced design choices.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Failure Modes in Open Track</head><p>To answer what the Open Track actually tests, we investigated a sample of patches from GPT-5.2 and SONNET 4.5 and compared them with the golden patch. Some observed issues concern (a) fixating on salient subjects, e.g., a typo in a class name, ignoring the broader focus area, (b) resorting to lazy, hacky workarounds, e.g., creating a compatibility shim to bypass updating hundreds of import statements, (c) relying on destructive, repository-wide replaceall string commands, leaving the codebase in a broken and inconsistent state, and (d) working on entirely different aspects of the system than required. While we cannot predict what a realistic upper bound for human alignment is on a refactoring, we observe that even the best current agents have major issues choosing appropriate refactorings. We include examples of LLM-assisted manual analysis on such cases in Appendix C.  <ref type="bibr" target="#b18">(Li et al., 2025;</ref><ref type="bibr" target="#b10">Du et al., 2025)</ref>, unit test generation <ref type="bibr" target="#b23">(Mündler et al., 2024)</ref>, function generation <ref type="bibr" target="#b19">(Liang et al., 2025)</ref>, code performance <ref type="bibr" target="#b14">(He et al., 2025)</ref>, and security <ref type="bibr" target="#b6">(Chen et al., 2026)</ref>, but not on refactoring.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methods to improve refactoring</head><p>Pomian et al. (2024) evaluate whether models can decide when to extract code into external methods. Zhang et al. (2024) evaluate the function-level capability of models at rewriting Python code into idiomatic expressions. Shirafuji et al. (2023) similarly prompt GPT-3.5 with few-shot prompts to evaluate its refactoring capabilities. All of these methods are limited to very specific refactorings, while our benchmark covers a wide range of potential refactorings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Limitations</head><p>CODETASTE contains 100 instances, so we treat small gaps between agents as suggestive rather than decisive, particularly in the Open Track. This scale partly reflects the cost of constructing the execution environment and rule set for each instance, as well as the cost of running frontier coding agents, where a single agent run on one task often exceeds USD $10. Further, the distribution across the six languages is uneven, and task difficulty may vary, limiting languagespecific conclusions. Finally, Open Track alignment measures agreement with the original human refactoring, which does not capture all valid refactoring decisions. Although we audit additive rules that encode arbitrary implementation choices, CODETASTE relies on LLM-assisted construction steps, which may introduce systematic biases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Conclusion</head><p>We introduced CODETASTE, a benchmark for evaluating refactoring agents on real, large, many-file changes mined from open-source repositories. Our results demonstrate that when provided with explicit refactoring instructions, current agents achieve relatively strong, yet unsaturated, performance. However, alignment collapses when only a focus area is provided. Propose-then-implement strategies and oracle selection over multiple plans increase alignment by up to 2.61-fold, yet remain far from human choices. These findings highlight that autonomous judgment about what to refactor remains a key bottleneck. We hope CODE-TASTE serves as a rigorous evaluation target and a preference signal for agents to preserve code quality long-term.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experimental Details and Ablations</head><p>In this section, we provide additional details about the implementation, hyperparameters, datasets, and so on.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Data Curation Pipeline Details</head><p>We obtain a list of commits for further processing using a three-stage pipeline.</p><p>Stage 1: Querying and Keyword Filtering We filter out all repositories with less than 90 stars. Among those, we search for commits that edit at least 45 files and feature specific keywords. Concretely, let K + and K -denote the sets of keywords indicative of refactoring and non-refactoring commits, respectively. We further distinguish between strong (K ± strong ) and weak (K ± weak ) keywords, which form subsets of K + and K -. For instance, deduplicate ∈ K + strong , reorganize ∈ K + weak , fix ∈ K - strong , and lint ∈ K - strong . Commit messages M of candidate commits must satisfy:</p><formula xml:id="formula_8">Count(M, K - strong ) = 0 and Count(M, K + ) Count(M, K - weak ) ≥ 2</formula><p>We then obtain the top 5000 commits sorted lexicographically descending by (Count(M, K + strong ), Count(M, K + weak ), #stars, #files changed).</p><p>Stage 2: Prefiltering We remove all repositories and commits that are not accessible anymore, i.e., have been deleted or made private. To exclude pure documentation changes, we require a minimum of 25 edits in files that have a file extension of typical programming languages, such as .py or .cpp. Via manual inspection, we determine that we need to remove extreme outliers, which include, for example, entire virtual environments. We retain only those commits that satisfy:</p><formula xml:id="formula_9">0.5p 10 ≤ changes ≤ 2p 90</formula><p>where changes refers to the number of added or removed lines, and the number of created, deleted, modified, or moved files. Finally, to exclude highly repetitive and simple search-and-replace refactorings, we sort the results by the ratio of First, the LLM is prompted to score the commit message across several dimensions: a score for being a project-wide change S large , a score for behavior-preserving refactoring S refactor , and a message cohesion score S cohesion . The model also estimates a length penalty P length for multi-topic messages, a triviality penalty P trivial for simple edits, and a penalty for general uncertainty P unc . We retain the top 1,120 candidates based on the overall message score S msg calculated as:</p><formula xml:id="formula_10">S msg = (0.35S large + 0.45S refactor + 0.2S cohesion ) -(0.2P length + 0.2P trivial + 0.2P unc )</formula><p>Next, the LLM is prompted to analyse the code diff, focusing on the refactoring likelihood S refactor and the estimated complexity S complexity of the change. It also identifies penalties for mixed content P mixed , evidence of behavior-altering logic P risky , signs of automation P auto , uncertainty P unc , and the presence of trivial changes P trivial . The diff-specific score S diff is defined by:</p><formula xml:id="formula_11">S diff = (0.8S refactor + 0.2S complexity ) -1.5(0.4P mixed + 0.2P risky + 0.1P unc + 0.15P trivial + 0.15P auto )</formula><p>We retain the top 160 candidates based on a combined score S total that prioritizes the diff analysis over the commit message:</p><formula xml:id="formula_12">S total = S msg + 3S diff<label>4</label></formula><p>Running the Pipeline This pipeline is run four times, once each on the main table of the GitHub Activity Data dataset (GitHub, 2016) and the three main tables for 2023, 2024 and 2025 respectively in the GitHub Archive <ref type="bibr" target="#b13">(Grigorik, 2011)</ref>, filtered to PullRequestEvent for merged pull requests. We obtain the count of "stars", an indication of popularity, for each repository from donbarbos (2026). The four runs produce 4 × 160 = 640 candidates. For each candidate, we first assess the quality of the generated static rules and then confirm the correctness of the generated execution environment. We keep the first 100 candidates that pass both checks capping the downstream evaluation cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Details of the Execution Environment Agent</head><p>We use a polyglot container based on Ubuntu 24.04 with pre-configured toolchains and version managers for common language ecosystems. The base image includes: (i) Python 3.8-3.11 managed via uv, (ii) Node.js 22.12.0 (default) managed via Node Version Manager (NVM), (iii) Go v1.23.4 and a Rust toolchain (cargo), (iv) OpenJDK, and (v) C/C++ via GCC/Clang.</p><p>The build environment agent, SONNET 4.5 in the CLAUDE CODE harness, is restricted to $5 cost and 90 minutes time. To ensure portability of the benchmark, we limit the size of the writable storage layer, after all setup is completed, to 5GB. Further, we enforce a 15-minute time limit on running the test suite. This container is then committed.</p><p>In the runtime setup, we concretely remove the git commit history and remote origins to prevent leakage of golden commits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Details of the Rule Agent</head><p>In this section, we detail the specific commands that the rule discovery agent can use.</p><p>• BashExplore R (cmd): Executes a set of read-only shell commands in the base codebase R to identify relevant code patterns (e.g., ls, rg).</p><p>• Register(Γ candidates ): Submits candidate rules in yaml syntax. Without loss of generality, we show the registration of additive rules only.</p><p>Registration: Every valid additive rule is registered:</p><formula xml:id="formula_13">Γ + = Γ + ∪ {γ ∈ Γ candidates | M(γ, R • X * ) &gt; 0 ∧ M(γ, R) = 0 }</formula><p>To prevent redundant rules, candidates must be sufficiently distinct from previously registered rules; we require pairwise Jaccard overlap of matched lines to be at most 0.95.</p><p>Feedback: For each γ ∈ Γ candidates , the agent receives the match counts M(γ, R) and M(γ, R • X * ), as well as rejection reasons (if applicable). In the case of execution failures (e.g., SyntaxError or OpengrepError), the agent is forwarded parts of error message for refining the rules in the next iteration. For highly discriminative but invalid rules where M(γ, R • X * ) &gt; 10 × M(γ, R), the agent is provided with a witness ω ∈ Ω(γ, R) to facilitate adding exemptions.<ref type="foot" target="#foot_1">foot_1</ref> </p><p>• Finish(): Signals completion and returns the valid registered rule set.</p><p>Restrictive Additive Rule Audit For the final rule curation, we used Gemini 3.1 Pro to identify additive rules that enforce arbitrary implementation choices and filtered rules based on these decisions. To assess this filter, we audited 30 randomly selected additive rules with a human expert; Table <ref type="table" target="#tab_1">2</ref> reports the human-Gemini agreement, including Cohen's κ. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4. Complete List of Used Repositories</head><p>We provide a complete list of the 87 repositories included in CODETASTE in Table <ref type="table" target="#tab_2">3</ref>. We have checked the license for all repositories and confirm they are compliant to be used in CODETASTE. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5. Complete Data for Instruction Following and Test Passing</head><p>We provide detailed results on the instruction following, alignment score, test pass rate, precision, and edited lines of code for the different models and settings in Tables <ref type="table">4</ref><ref type="table">5</ref><ref type="table">6</ref>. For completeness, we also report A + and A -, which are defined with respect to only the IFR + and IFR -, respectively, below.</p><formula xml:id="formula_14">A + ( X) = PASS( X) × IFR + ( X) A -( X) = PASS( X) × IFR -( X)</formula><p>Table <ref type="table">7</ref>. Mean alignment score by primary programming language. We report mean ± standard error over model-instance runs; lower scores indicate more difficult alignment. C includes C/C++ instances and has 3 benchmark instances. Setting C Go Java JavaScript Python Rust Instructed 57.5 ± 11.8 34.4 ± 3.4 34.7 ± 5.0 35.6 ± 3.6 30.2 ± 4.9 44.4 ± 7.5 Open / Direct 29.7 ± 11.2 6.4 ± 1.4 3.7 ± 1.3 5.9 ± 1.5 5.2 ± 2.2 1.5 ± 1.1 Open / Plan 29.0 ± 10.6 7.8 ± 1.5 1.8 ± 1.1 9.6 ± 1.9 8.4 ± 2.8 10.4 ± 4.3 Open / Multiplan 18.9 ± 9.7 8.7 ± 1.7 5.8 ± 1.9 9.8 ± 2.0 8.7 ± 2.8 9.8 ± 3.6</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8. Pairwise Significance Tests</head><p>We test pairwise differences between agents within each track and inference mode using two-sided paired sign-flip permutation tests over shared instances, with 100,000 Monte Carlo sign-flip permutations per comparison. We apply Benjamini-Hochberg correction across all pairwise comparisons for the same metric, using q ≤ 0.05 as the significance criterion. Table <ref type="table" target="#tab_3">8</ref> summarizes corrected-significant wins and losses for each metric, track, inference mode, and model. All comparisons use the same 100 paired instances. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Static Rule Examples</head><p>This section shows an additional rule example focused on symbolic propagation to isolate the matching mechanics of a single rule.</p><p>rule γ 1 pattern: $THEME.colors.$PROP 2 options: 3 symbolic _ propagation: true file f 1 const themeColors = theme.colors; 2 const primaryColor = themeColors.primary; // ω1 3 const otherColors = 4 (theme.colors.secondary, theme.colors.ternary); // ω2, ω3</p><p>Figure <ref type="figure">9</ref>. Example OpenGrep rule γ with symbolic propagation on repository R = {f }. Colored tokens show metavariable bindings, e.g., $THEME denotes the bound theme object, while green line highlights show line coverage C. The witnesses are Ω(γ, R) = {ω1, ω2, ω3}, so the match count is M(γ, R) = 3; the coverage contains two source lines because ω2 and ω3 occur on the same line.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Prompts</head><p>In this section, we detail all prompts used for the respective models and tasks.</p><p>The prompts include: (i) scoring prompts used in the data creation and filtering pipeline (Figures 10 and 11), (ii) task generation prompts for the instructed and open tracks (Figures 14 and 15), and (iii) prompts used during evaluation for planning, execution, and oracle plan selection (Figures 12, 13 and 16-19). SONNET 4.5 Commit Message Scoring System You are a precise refactoring change-description classifier. We want to find out whether the change corresponds to a large-scale refactor that exceeds simple replace-all, but does not introduce new features, bug fixes, etc. Given either a commit message or a PR title+body, output ONLY an XML payload with numeric scores in [0,1]. Do not include any prose outside XML.</p><p>Definitions:</p><p>-large _ scale _ refactor _ score: Likelihood this describes a sweeping, project-wide refactor across many files or modules. Indicators: global rename/codemod, API migration, package/module reorg, bulk moves, mass formatting, automated changes. Anti-indicators: single-file tweak, small fix, narrow scope. -true _ refactor _ score: Likelihood changes are behavior-preserving refactoring (no new features, no bug fixes).</p><p>-message _ cohesion _ score: How focused and single-purpose the message is.</p><p>High: one clear goal. Low: laundry list (many unrelated bullets, "misc", "various", repeated "and/also"). -length _ penalty: Penalty for messages suggesting many in-between or multi-topic commits.</p><p>High penalty for very long, multi-issue messages; near 0 for short, focused messages. -trivial _ score: Likelihood that the commit involves only trivial changes, e.g. generated by a single sed command or only involves file moves/renames.</p><p>-uncertainty: An estimate of how uncertain your assessment is, based on ambiguity or lack of detail.</p><p>Clamp to [0,1]. Output format (XML only): &lt;classification&gt; &lt;large _ scale _ refactor _ score&gt;...&lt;/large _ scale _ refactor _ score&gt; &lt;true _ refactor _ score&gt;...&lt;/true _ refactor _ score&gt; &lt;message _ cohesion _ score&gt;...&lt;/message _ cohesion _ score&gt; &lt;length _ penalty&gt;...&lt;/length _ penalty&gt; &lt;uncertainty&gt;...&lt;/uncertainty&gt; &lt;trivial _ score&gt;...&lt;/trivial _ score&gt; &lt;reasoning&gt;One-paragraph justification&lt;/reasoning&gt; &lt;/classification&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User</head><p>Refactor environment, exception handling and jumping in VM ~~Depends on #3053~F</p><p>ixes #2424 This PR refactors environment handling and jumping with break, continues, etc in the VM. Currently the opcodes are very complex, they dynamically search for the environments, for this we also need to keep a lot of state in the `CallFrame`, this has a performance penalty as well as being hard to implement optimizers (since it has to mirror the state, so it does not change behaviour). Since this the bytecompiler has full knowledge of where it needs to jump, how many environments to pop, etc. This PR aims to move that opcode logic to bytecompiler, generating opcodes that are "dumber"/simple, hence easier to optimize ( using #3037 ). ~~This still needs a lot of work!~Ĩ t changes the following:</p><p>-Removes opcodes: `FinallyStart`, `FinallyEnd`, `Break`, `Continue`, `LoopStart`, `LoopEnd`, `LabelledStart`, `LabelledEnd`, `TryStart`, `TryEnd`, ÌteratorLoopStart`,`GeneratorResumeReturn`, `GeneratorSetReturn`, `GeneratorJumpOnResumeKind[</p><p>...] Assistant &lt;classification&gt; &lt;large _ scale _ refactor _ score&gt;0.88&lt;/large _ scale _ refactor _ score&gt; &lt;true _ refactor _ score&gt;0.82&lt;/true _ refactor _ score&gt; &lt;message _ cohesion _ score&gt;0.72&lt;/message _ cohesion _ score&gt; &lt;length _ penalty&gt;0.12&lt;/length _ penalty&gt; &lt;trivial _ score&gt;0.08&lt;/trivial _ score&gt; &lt;uncertainty&gt;0.12&lt;/uncertainty&gt; &lt;reasoning&gt;This is a large-scale architectural refactor of the VM's environment and control-flow handling. The message clearly describes sweeping changes across multiple subsystems: removing 10 opcodes, adding 6 new ones, eliminating the EnvEntry type and env entry stack, removing/modifying CallFrame fields , and restructuring logic from the VM to the bytecompiler. The refactor is explicitly motivated by simplification for optimization, not new features. The message is focused on a single coherent theme despite covering multiple technical details, with a reasonably detailed but not excessive structure. This is unambiguously a true refactor (behavior-preserving rewrite) rather than a trivial rename or bug fix.&lt;/reasoning&gt; &lt;/classification&gt; SONNET 4.5 Diff Scoring</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System</head><p>Your task is to identify whether the unified diff provided is a true, useful large-scale refactoring commit. Given a unified diff (git format), output ONLY an XML payload with numeric scores in [0,1]. Do not include any prose outside XML. Definitions and guidance: -refactor _ likelihood: Likelihood changes are behavior-preserving refactoring (rename/move, code reorganization, function extraction/inlining, variable/method renames, import/namespace changes, signature reshaping, mass formatting). -mixed _ change _ penalty: Penalty if the diff mixes refactors with features/bugfixes or risky changes.</p><p>-risky _ change _ score: Evidence of behavior-altering edits (new logic, feature flags, new APIs).</p><p>-automated _ pattern _ score: Signs that refactoring results from automated tools, linters or similar.</p><p>-uncertainty: Reflects ambiguity, lack of context, or insufficient signal in the diff.</p><p>-complexity: Give an estimate of how complex this refactor is. (0=trivial, 0.5=moderate, 1=extremely complex) -trivial _ score: Indicates the presence of trivial changes (e.g., whitespace, comments).</p><p>Output format (XML only): &lt;classification&gt; &lt;refactor _ likelihood&gt;...&lt;/refactor _ likelihood&gt; &lt;mixed _ change _ penalty&gt;...&lt;/mixed _ change _ penalty&gt; &lt;risky _ change _ score&gt;...&lt;/risky _ change _ score&gt; &lt;automated _ pattern _ score&gt;...&lt;/automated _ pattern _ score&gt; &lt;uncertainty&gt;...&lt;/uncertainty&gt; &lt;reasoning&gt;One-paragraph justification&lt;/reasoning&gt; &lt;complexity&gt;...&lt;/complexity&gt; &lt;trivial _ score&gt;...&lt;/trivial _ score&gt; &lt;/classification&gt; User diff --git a/core/engine/src/builtins/eval/mod.rs b/core/engine/src/builtins/eval/mod.rs index 3e6c905e5fd..55b38f31405 100644 ---a/core/engine/src/builtins/eval/mod.rs +++ b/core/engine/src/builtins/eval/mod.rs @@ -20,7 +20,7 @@ use crate::{ string::StaticJsStrings, -vm::{CallFrame, CallFrameFlags, Constant, Registers}, + vm::{CallFrame, CallFrameFlags, Constant}, @@ -333,8 +333,7 @@ impl Eval { -let register _ count = context.vm.frame().code _ block().register _ count; -let record = context.run(&amp;mut Registers::new(register _ count as usize)); + let record = context.run(); context.vm.pop _ frame(); [...] Assistant &lt;classification&gt; &lt;refactor _ likelihood&gt;0.92&lt;/refactor _ likelihood&gt; &lt;mixed _ change _ penalty&gt;0.05&lt;/mixed _ change _ penalty&gt; &lt;risky _ change _ score&gt;0.25&lt;/risky _ change _ score&gt; &lt;automated _ pattern _ score&gt;0.75&lt;/automated _ pattern _ score&gt; &lt;uncertainty&gt;0.08&lt;/uncertainty&gt; &lt;reasoning&gt;This is a large-scale, systematic refactoring that consolidates VM register and stack management. The `Registers`struct is eliminated and its functionality is merged into a new `Stack`struct. All ~50+ opcode handler functions are consistently updated to remove the `&amp;mut Registers`parameter and access registers through `context.vm`instead. CallFrame methods are refactored to return indices rather than values. The changes are behavior-preserving reorganization with very consistent patterns across all files, showing evidence of automated tooling supplemented by manual coordination. While the structural changes are deep and touch core VM systems (register access, promise capabilities, async generators), the refactoring appears carefully coordinated with no obvious feature additions or bug fixes mixed in.&lt;/reasoning&gt; &lt;complexity&gt;0.85&lt;/complexity&gt; &lt;trivial _ score&gt;0.12&lt;/trivial _ score&gt; &lt;/classification&gt; 2. **DEPS:** Identify and install necessary system-level dependencies using `sudo`(non-interactive) and all project-level dependencies. Ensure any external binaries or drivers required by the test suite (e.g., browser engines, compilers, or database headers) are installed immediately. Anything installed inside `/testbed/`will be wiped on exit! 3. **INTEGRITY:** NEVER modify files in /testbed/ directly, any changes you perform will be wiped after you exit! `/scripts/setup_shell.sh`can setup /testbed directory, however it should NOT modify versioned files in `/testbed/`, i.e. it should only modify files or folders that are explicitly ignored by the version control system (e.g., build artifacts, dependency directories, cache). `git status`must show no changes. 4. **SCRIPTS:** * **Create `/scripts/setup_system.sh`:** Executed with `sudo`prior to running the tests, this script performs runtime system configuration (e.g., starting database services, Redis, or configuring system limits). It should **not** install packages. If no system services are required, create a script that exits 0. * **Create `/scripts/setup_shell.sh`:** When sourced, this script configures the shell environment for the project **and** to run tests: -activate virtual environment if necessary.</p><p>-install local project dependencies and linters.</p><p>-set up all environment variables.</p><p>-selects the correct runtime versions.</p><p>-Project and dependency installations that change files in `/testbed/`MUST be performed in this script. It must **NOT** require `sudo`. It must be idempotent (safe to run multiple times) and avoid redundant installations. * **Create `/scripts/run_tests`:** This script must be self-contained and execute the test suite (or a relatively large and representative subset that finishes in up to 15 minutes).</p><p>It will be invoked as follows: `git clean -xdff &amp;&amp; sudo /scripts/setup_system.sh &amp;&amp; source /scripts/setup_shell.sh &amp;&amp; /scripts/run_tests`. `/scripts/run_tests`must NOT setup the environment, environment variables, shell or similar, it should rely on the previous scripts having been run before. `/scripts/run_testsm ust only run and parse tests. It should be invoked like : `/scripts/setup_shell.sh &amp;&amp; /scripts/run_tests`to run tests in an already setup shell. `/scripts/setup_shell.shs ets up the environment and environment variables.</p><p>* **Portability:** These scripts **must remain functional** even if `/testbed/`is checked out to THE previous commit (in other words: `HEAD~1`). I.e. they should work on HEAD and HEAD~1 without any modifications.</p><p>5. **OUTPUT:** The `/scripts/run_tests`script must output exactly one JSON line as its final `stdout`message: `{"passed": int, "failed": int, "skipped": int, "total": int}`.</p><p>Where the int value corresponds to the number of tests that passed, failed, were skipped, and the total number of representative tests run. You may need to write a wrapper or use a custom test reporter to ensure this exact format is captured. Test results must be **deterministic** and reflect actual test outcomes.</p><p>6. **VERIFICATION:** Always execute `source /scripts/setup_shell.sh &amp;&amp; /scripts/run_tests`in a single shell command (in an environment that is clean -&gt; `git clean -xdff`and has system services running `/scripts/setup_system.sh`) on both the current commit and `HEAD~1`. Confirm the JSON outputs accurately reflect the test results. Your shell doesn't persist environment across shell commands. **Note:** Multiple runtimes (Python, Node, Rust, .NET, Java, GO) and their respective version managers are pre-installed. Any global configurations or runtime versions you install will be preserved across the session. **Note:** You run in a non-interactive terminal; Proceed with these actions without asking for further permission. Take action and perform the installation and changes. ## Final Notes Once you have completed the task, briefly write a concise summary of the testing setup in `/scripts/SUMMARY.md`of the form: # Summary ... ## System Dependencies ... ## PROJECT Environment ... ## Testing Framework ... ## Additional Notes ... (e.g. any obstacles or misconfigurations of the environment you encountered) boa-dev/boa@ac9eb4bc Example Instance Scripts setup _ system.sh #!/bin/bash set -e # No system services required for this Rust project. exit 0 setup _ shell.sh #!/bin/bash set -e cd /testbed if ! command -v cargo-nextest &amp;&gt; /dev/null; then cargo install cargo-nextest --locked fi cargo build --all-targets --profile ci --features annex-b,intl _ bundled,experimental,embedded _ lz4 cargo test --no-run --profile ci --features annex-b,intl _ bundled,experimental,embedded _ lz4 run _ tests #!/bin/bash set -e cd /testbed cargo nextest run --profile ci --cargo-profile ci --features annex-b,intl _ bundled,experimental,embedded _ lz4 2&gt;&amp;1 | tee /tmp/test _ output.txt || true SUMMARY=$(grep -E "^[[:space:]]+Summary" /tmp/test _ output.txt | tail -1 || echo "") TOTAL=$(echo "$SUMMARY" | grep -oP '[0-9]+(?= tests run)' || echo "0") PASSED=$(echo "$SUMMARY" | grep -oP '[0-9]+(?= passed)' || echo "0") FAILED=$(echo "$SUMMARY" | grep -oP '[0-9]+(?= failed)' || echo "0") SKIPPED=$(echo "$SUMMARY"| grep -oP '[0-9]+(?= skipped)'</p><p>|| echo "0") printf '{"passed": %s, "failed": %s, "skipped": %s, "total": %s}\n' "$PASSED" "$FAILED" "$SKIPPED" "$TOTAL"</p><p>Figure <ref type="figure" target="#fig_1">13</ref>. Excerpt of the standardized scripts generated during the setup phase for the boa-dev/boa instance (base commit ac9eb4bc).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ANY AGENT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Open Track: Oracle Multiplan Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conduct IN-DEPTH EXPLORATION and ANALYSIS of the codebase. Generate 5 DISTINCT and DIFFERENT refactoring plans for the following task.</head><p>There can be partial overlap. You operate completely AUTONOMOUSLY in this sandboxed environment. DO NOT ASK FOR CLARIFICATIONS.</p><p>For each approach, create a COMPLETE, CONCRETE and ACTIONABLE refactoring plan. Make ALL the design choices. DO NOT propose broad, multi-stage changes. Each plan must be in markdown format:</p><p>``#</p><p>Title &lt;Summary&gt; ## Changes ... ## Why ... ``-'/output/refactoring _ plans/refactoring _ plan0.md' -'/output/refactoring _ plans/refactoring _ plan1.md' -'/output/refactoring _ plans/refactoring _ plan2.md' -'/output/refactoring _ plans/refactoring _ plan3.md' -'/output/refactoring _ plans/refactoring _ plan4.md' Task: [Task Description] SONNET 4.5 Open Track: Oracle Plan Selection Prompt User You are evaluating multiple refactoring plans for a software engineering task. Your goal is to select the plan that BEST matches the original task description in terms of similarity / overlap. Below is the ORIGINAL TASK DESCRIPTION: ---[ORIGINAL TASK DESCRIPTION] ---Now, here are FIVE CANDIDATE REFACTORING PLANS: PLAN 0: ---[PLAN 0] ---PLAN 1: ---[PLAN 1] ---PLAN 2: ---[PLAN 2] ---PLAN 3: ---[PLAN 3] ---PLAN 4: ---[PLAN 4] ---Based on your analysis, which plan (0, 1, 2, 3, or 4) BEST matches the original task description? Provide your reasoning briefly, then state your final selection clearly as: SELECTED: [plan number] Your selection: Figure 18. Prompt used by the oracle judge to select the candidate plan that best matches the original refactoring description.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Overview of the CODETASTE benchmark pipeline. The workflow follows six key stages: (1) Commit Discovery from GitHub; (2) Generation of Task Descriptions; (3) Build Environment, which creates a reproducible execution environment for tests and agent inference; (4) Rule Generation of static analysis rules that capture refactoring intent; (5) Inference, where the agent generates a patch; and (6) Evaluation of generated patches against static analysis rules and test suites.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 .</head><label>3</label><figDesc>Figure3. Example additive rule γ + and reductive rule γ -from a migration away from a centralized selector helper toward domainspecific store hooks. Lower panels show two distinct candidate patches, X1 and X2, for the same initial repository state. Colored tokens show metavariable bindings, e.g., $HOOK denotes the bound store-hook name, while red/green line highlights show line coverage C. In the shown excerpts, Ω(γ -, R) = {ω - 1 } and Ω(γ + , R • Xi) = {ω + 1 } for i ∈ {1, 2}, so each displayed rule application has match count M = 1; the additive witness in X1 spans several added lines.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. The 100 instances of CODETASTE span 6 different programming languages, focusing on JavaScript, TypeScript, and Go.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Summary statistics for CODETASTE instance metrics. Each instance is assessed by a significant number of rules and requires considerable file changes.</figDesc><graphic coords="6,307.44,67.06,234.35,126.77" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 .</head><label>6</label><figDesc>Figure6. The Open Track of CODETASTE has three distinct inference modes: Direct, in which the agent directly performs the refactoring, Plan, in which the agent drafts a plan before execution, and Multiplan, in which an oracle picks the best-aligned self-drafted plan of the model before execution.</figDesc><graphic coords="6,307.44,67.06,234.35,126.77" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>4.1. Experimental Setup Agent ConfigurationsWe evaluate five coding agents across task specifications. Our evaluated configurations include GPT-5.2 and GPT 5.1 Codex Mini (GPT-5.1 M,<ref type="bibr" target="#b35">Singh et al., 2025)</ref>, Claude 4.5 Sonnet (SONNET 4.5, Anthropic, 2025), the 229B-parameter MiniMax M2.7 (M2.7, MiniMax, 2026), and the instruct version of the opensource Qwen3 Coder 30B A3B (QWEN3, Yang et al., 2025). We use model-developer-recommended agent harnesses where applicable: Codex CLI (OpenAI, 2025b) for the OpenAI models, Claude Code (Code Claude Docs, 2025) for SONNET 4.5 and MINIMAX M2.7, and Qwen Code (QwenLM, 2025) for QWEN3. The Codex CLI is explicitly configured with reasoning effort medium, while Claude Code and Qwen Code use their respective defaults. We use SONNET 4.5 as the judge for plan selection in Oracle Multiplan mode.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure7. Sketch of the evaluation metrics for CODETASTE.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. (Left) On the Instructed Track, GPT-5.2 significantly outperforms other models across IFR, PASS, and A. In terms of A and PASS, QWEN3 significantly underperforms. All models achieve roughly human-level PREC. (Right) In the Open Track, the proposethen-implement strategy (Plan) and oracle selection (Oracle Multiplan) improve IFR and A for GPT-5.2. Functional correctness PASS is rarely impaired, resulting in similar A as IFR. Across all agents, performance is far from human refactoring choices.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>|diffc| |diff| , where |diff c | is the size of the Gzip level 6 compressed diff (excluding file context) in bytes. Stage 3: LLM Scoring In the final step we use a small LLM (CLAUDE 4.5 HAIKU) to analyze the commit messages and code diffs. The prompts for this step can be found in Figures 10 and 11.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 10 .</head><label>10</label><figDesc>Figure 10. Commit message scoring prompt used as a late-stage filter in the data scraping funnel.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 11 .</head><label>11</label><figDesc>Figure 11. Diff scoring prompt used to rank candidate commits by refactoring quality.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure</head><figDesc>Figure 12. Setup Prompt for Environment Configuration</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 17 .</head><label>17</label><figDesc>Figure 17. Prompt used to generate multiple distinct candidate refactoring plans from an open-track instruction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Comparison of related benchmarks by scope and evaluation. Intent Alignment denotes whether the benchmark evaluates how well a generated patch recovers a human refactoring intent that is not provided to the agent. Tests denote execution-based behaviorpreservation checks. Static checks denote task-specific structural or refactoring oracles, excluding generic metrics, parse checks, and coverage diagnostics. * Statistics computed by us. 1 Data is unavailable. 2 Lacks reference solution X * .</figDesc><table><row><cell>Benchmark</cell><cell cols="6"># Languages Mean |FX *  | Mean |LX *  | Intent Alignment Tests Static Checks</cell></row><row><cell>MiniCode [20]</cell><cell>1</cell><cell>-1</cell><cell>-1</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell></row><row><cell>Aider refactor benchmark [1] Can It Edit? [6] RefactorMirror [25] SWE-Refactor [40]</cell><cell>1 1 1 1</cell><cell>1.0 1.0 1.0 1.1  *</cell><cell>-2 13.8  *  25.3  *  52.2  *</cell><cell>✗ ✗ ✓ ✗</cell><cell>✗ ✓ ✓ ✓</cell><cell>✓ ✗ ✗ ✓</cell></row><row><cell>SWE-bench [19] RefactorBench [14]</cell><cell>1 1</cell><cell>1.7 4.3</cell><cell>32.8 68.3  *</cell><cell>✗ ✗</cell><cell>✓ ✗</cell><cell>✗ ✓</cell></row><row><cell>CodeTaste (this work)</cell><cell>6</cell><cell>91.5</cell><cell>2605.4</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row><row><cell>5. Related Work</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">As summarized in Table 1, no prior benchmark targets</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">large, multi-file refactorings with intent-alignment evalu-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ation across multiple languages.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Multi-File Refactoring MiniCode (Kovacic et al., 2025)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">evaluates extracting shared Python code into a library.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">SWE-Refactor (Xu et al., 2026) is a Java-only bench-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">mark for few-file refactorings, with on average only 1.1</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">files. RefactorBench (Gautam et al., 2025) analyzes GPT-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">4o refactorings across on average 4.3 files on a Python</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">dataset using hand-written source-code tests. CODETASTE</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">spans six languages and requires significantly larger edits</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">than prior work, making it a substantially more challeng-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">ing benchmark, even in the Instructed Track.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Repository-level Benchmarks Spearheaded by Jimenez</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">et al. (2024), evaluating coding agents on the autonomous</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">resolution of real-world repository-level tasks was estab-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">lished as the gold standard for assessing LLM capabili-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">ties. While Jimenez et al. (2024) focuses on issue res-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">olution, follow-up work proposed benchmarks on feature</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>addition</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Single-File Refactoring A number of benchmarks measure changes only on single-file and single-language edits. The Aider team(Aider-AI, 2024) and Can It Edit? (Cassano et al., 2023) benchmarked function-level refactoring in Python. RefactorMirror (Liu et al., 2025) and Cordeiro et al. (2024) evaluate single-file Java refactoring using human expert assessment and generic code complexity metrics. Rejiba et al. (2025) measure code complexity metrics on refactored C++ and C files.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Human audit of restrictive additive rules.</figDesc><table><row><cell>Human label</cell><cell cols="2">Gemini keeps rule Gemini filters rule</cell></row><row><cell>Non-restrictive</cell><cell>14</cell><cell>1</cell></row><row><cell>Restrictive</cell><cell>5</cell><cell>10</cell></row><row><cell>Agreement</cell><cell>24/30 (80%)</cell><cell></cell></row><row><cell>Cohen's κ</cell><cell>0.60</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Complete list of used repositories.</figDesc><table><row><cell>99designs/gqlgen</cell><cell>Automattic/wp-calypso</cell><cell>DataDog/datadog-agent</cell></row><row><cell cols="2">NationalSecurityAgency/ghidra PrestaShop/PrestaShop</cell><cell>TanStack/router</cell></row><row><cell>actualbudget/actual</cell><cell>ansible/ansible</cell><cell>antvis/G6</cell></row><row><cell>apache/flink</cell><cell>apache/hadoop</cell><cell>apache/nuttx</cell></row><row><cell>apache/pinot</cell><cell>apache/pulsar</cell><cell>apache/shardingsphere</cell></row><row><cell>apache/shenyu</cell><cell>aquasecurity/tracee</cell><cell>aws/aws-cli</cell></row><row><cell>badges/shields</cell><cell>bentoml/BentoML</cell><cell>bevyengine/bevy</cell></row><row><cell>boa-dev/boa</cell><cell>burn-rs/burn</cell><cell>bytebase/bytebase</cell></row><row><cell>chaos-mesh/chaos-mesh</cell><cell>chroma-core/chroma</cell><cell>cilium/cilium</cell></row><row><cell>clientIO/joint</cell><cell>conan-io/conan</cell><cell>containerd/nerdctl</cell></row><row><cell>cosmos/cosmos-sdk</cell><cell>deepset-ai/haystack</cell><cell>elastic/eui</cell></row><row><cell>etcd-io/etcd</cell><cell>ethereum/go-ethereum</cell><cell>excalidraw/excalidraw</cell></row><row><cell>fabricjs/fabric.js</cell><cell>getsentry/sentry</cell><cell>ggerganov/llama.cpp</cell></row><row><cell>go-gitea/gitea</cell><cell>gohugoio/hugo</cell><cell>golang/go</cell></row><row><cell>golangci/golangci-lint</cell><cell>google/gvisor</cell><cell>google/tink</cell></row><row><cell>gopasspw/gopass</cell><cell>gradle/gradle</cell><cell>graphhopper/graphhopper</cell></row><row><cell>hashicorp/consul</cell><cell>highcharts/highcharts</cell><cell>hrydgard/ppsspp</cell></row><row><cell>huggingface/transformers</cell><cell>immich-app/immich</cell><cell>influxdata/influxdb</cell></row><row><cell>istio/istio</cell><cell>jerryjliu/llama_index</cell><cell>juju/juju</cell></row><row><cell>kedro-org/kedro</cell><cell>knative/serving</cell><cell>koajs/koa</cell></row><row><cell>kubevirt/kubevirt</cell><cell>lima-vm/lima</cell><cell>loft-sh/vcluster</cell></row><row><cell>mne-tools/mne-python</cell><cell>mockito/mockito</cell><cell>mongodb/mongo-go-driver</cell></row><row><cell>monkeytypegame/monkeytype</cell><cell>n8n-io/n8n</cell><cell>netty/netty</cell></row><row><cell>nhost/nhost</cell><cell cols="2">opensearch-project/OpenSearch prisma/prisma</cell></row><row><cell>pulumi/pulumi</cell><cell>pyvista/pyvista</cell><cell>remarkablemark/html-react-parser</cell></row><row><cell>ruffle-rs/ruffle</cell><cell>rust-lang/rust</cell><cell>saleor/saleor</cell></row><row><cell>sanity-io/sanity</cell><cell>scikit-learn/scikit-learn</cell><cell>syncthing/syncthing</cell></row><row><cell>temporalio/temporal</cell><cell>tinymce/tinymce</cell><cell>twosigma/beakerx</cell></row><row><cell>vitessio/vitess</cell><cell>wader/fq</cell><cell>wikimedia/apps-android-wikipedia</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 8 .</head><label>8</label><figDesc>Pairwise significance summary. Each model cell reports corrected-significant wins/losses against the other models in the same metric, track, and mode.</figDesc><table><row><cell>Metric Track</cell><cell>Mode</cell><cell>GPT-5.2 GPT-5.1 M SONNET 4.5 MINIMAX M2.7 QWEN3</cell></row><row><cell>Instructed</cell><cell></cell><cell>4/0</cell></row><row><cell>IFR</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Benchmark, leaderboard, dataset, and code are available at: https://codetaste.logicstar.ai/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>In many real-world refactorings there are edge cases such as unadjusted examples that can prevent a rule from reaching M(γ, R) = 0. Providing witnesses for these matches allows the agent to construct more general patterns by exempting specific outliers.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_2"><p>2/1 1/1 1/2 0/4 Open Direct 0/0 0/0 1/0 0/0 0/1 Open Plan 1/0 1/1 3/0 0/1 0/3 Open Multiplan 4/0 1/1 1/1 1/1 0/4 PASS Instructed 4/0 1/1 1/1 1/1 0/4 Open Direct 3/0 2/0 0/2 0/1 0/2 Open Plan 4/0 1/1 1/1 1/1 0/4 Open Multiplan 4/0 1/1 0/1 1/1 0/3 A Instructed 4/0 1/1 1/1 1/1 0/4 Open Direct 1/0 0/0 0/0 0/0 0/1 Open Plan 2/0 2/0 2/0 0/3 0/3 Open Multiplan 4/0 0/2 2/1 1/1 0/3</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was conducted as part of the grant SAFEAI (Certified Safe, Fair and <rs type="projectName">Robust Artificial Intelligence</rs>). The work has received funding from the <rs type="funder">Swiss State Secretariat for Education, Research and Innovation (SERI)</rs>, contract no. <rs type="grantNumber">MB22.00088</rs>.</p></div>
+<div><head>Impact Statement</head><p>This paper presents work whose goal is to advance the field of <rs type="person">Machine Learning</rs>. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_MErBfzZ">
+					<idno type="grant-number">MB22.00088</idno>
+					<orgName type="project" subtype="full">Robust Artificial Intelligence</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Table 4. Full experimental results across all tracks and models in percents on IFR + (additive instruction-following rate), IFR -(reductive instruction-following rate), and PASS (test pass rate).</p><p>GPT-5.2 GPT-5.1 M SONNET 4.5 MINIMAX M2.7 QWEN3</p><formula xml:id="formula_15">IFR + IFR -PASS IFR + IFR -PASS IFR + IFR -PASS IFR + IFR -PASS IFR + IFR -PASS</formula><p>Instructed Track 89.6 88.7 76.0 75.6 69.0 47.0 79.0 62.6 43.0 75.2 58.9 49.0 56.6 30.6 30.0 Open Track Direct 9.7 10.3 87.0 7.5 9.7 79.0 10.8 12.1 66.0 7.3 11.5 71.0 4.4 6.7 58.0 Open Track Plan 11.2 17.2 87.0 9.8 15.1 66.0 16.8 21.7 57.0 10.5 10.8 63.0 4.1 8.8 35.0 Open Track Multiplan 17.8 26.7 81.0 9.7 14.2 58.0 17.4 18.0 50.0 10.4 15.9 58.0 5.3 7.0 43.0 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6. Oracle Judge Validation</head><p>Oracle Multiplan relies on an LLM-based judge to select one candidate plan from a set of generated plans. To test whether this selection step introduces systematic bias, we run a randomized six-plan control for GPT-5.2 and SONNET 4.5. For each task, the judge is shown the five original Oracle Multiplan candidates together with the single plan from Plan mode, in a deterministic randomized order. We then map the selected shuffled index back to the original candidate identity.</p><p>The stored benchmark outputs contain observed IFR only for two candidates: the original single-plan execution (P ) and the originally selected Multiplan execution (BP ). They do not contain executions for the four Multiplan candidates that were generated but not selected. Therefore, we can directly measure judge accuracy only when the randomized judge selects either P or BP . On non-tie cases where this comparison is evaluable, the judge selects the higher-IFR observed plan in 71.0% of cases overall (73.7% for GPT-5.2 and 68.0% for SONNET 4.5). If cases where the judge selects one of the four unobserved Multiplan candidates are counted as incorrect, the corresponding strict accuracy is 65.5% overall (68.9% for GPT-5.2 and 61.8% for SONNET 4.5).</p><p>This control also helps interpret the SONNET 4.5 Multiplan drop. For GPT-5.2, the full-benchmark average IFR is 16.4% in Plan mode, 25.5% in Oracle Multiplan, and 26.1% under the randomized six-plan judge-implied selection. For SONNET 4.5, the corresponding values are 21.1%, 17.3%, and 21.7%. Thus, when the single-plan candidate is available to the judge, the implied IFR recovers for SONNET 4.5 and remains at least as high for GPT-5.2. We therefore find no evidence that the Oracle Judge introduces systematic bias into plan selection; the lower SONNET 4.5 Multiplan score is more consistent with lower quality among the multiple generated plans than with a biased judge.</p><p>A.7. Language Breakdown Table <ref type="table">7</ref> reports mean alignment score by primary programming language. We do not observe a consistent language-specific trend across settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Open Track Case Studies</head><p>In this section, we present case studies comparing agent outputs against the ground truth refactorings. For each case, we use claude-code with OPUS 4.6 to assist us in parsing the generated patches obtained from GPT-5.2 and SONNET 4.5, their respective evaluation artifacts, and comparing them to the ground truth X * . We then manually review the resulting report, verify the claims, and present the following takeaways. The prompt used in this part can be found in Figure <ref type="figure">20</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1. Mockito</head><p>The refactoring restructures Mockito's flat org.mockito.internal package into five sub-packages (creation, invocation, state, stubbing, verification), renames several core classes and methods (e.g., VerifyingMode to OngoingVerifyingMode, andThrows to andThrow), and updates all imports and cross-references accordingly. The changes span approximately 2,000 lines across the core Mockito source. The precise commit is mockito/mockito@2f7bf91d.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.1. OPEN TRACK</head><p>The task provided to the agents is: Improve internal organization and naming.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Direct Mode.</head><p>In direct mode, none of the agents proceeds to perform a refactoring that resembles the scope of X * , instead they are attracted to fixing tiny, surface-level nitpicks. They preserve and validate functional correctness.</p><p>SONNET 4.5 renamed typo-containing hamcrest matcher classes and removed I prefixes from interface names (IArgumentMatcher to ArgumentMatcher) and runs tests. It achieved an IFR of 0.98%, by coincidentally removing the IAnswer file.</p><p>GPT-5.2 fixed the same typos using a backwards-compatible deprecated-wrapper approach, replaced a wildcard import, cleaned up some parameter names, and runs tests. It performed none of the structural package moves or renames contained in the ground-truth. It achieved an IFR of 0.0%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Plan Mode.</head><p>Both agents resort to a similar set of superficial edits. Both successfully run tests and builds.</p><p>SONNET 4.5 focuses on renaming typo-containing classes. Destructive file renames created duplicate test classes. No structural changes were made. It achieved an IFR of 0.0%.</p><p>GPT-5.2 focuses on fixing typos in class names and improving overall naming. No structural changes were made. It achieved an IFR of 0.98% by coincidentally renaming the field mocksToBeVerifiedInSequence to mocksToVerifyInOrder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multiplan Mode.</head><p>The edits are no longer purely superficial, but address fundamental code quality concerns. Each of the plans created by SONNET 4.5 addresses a basket of issues, resulting in incomplete edits. The plans proposed by GPT-5.2 are more focused resulting in a consistent and correct patch.</p><p>SONNET 4.5 achieved an IFR of 4.9%, the agent addressed state package extraction (1/5 subpackages), performed no type/method renames, yet introduced new unnecessary abstractions (e.g., StateManager interface). The introduction of a partial field update results in missing field errors, causing tests and builds to fail. The agent is not able to recover from this inconsistent state.</p><p>GPT-5.2 achieved an IFR of 22.5%. The agent successfully reorganized all 5 target subpackages with correct import/package updates across 60+ files, but did not attempt any of the type or method renames that account for the remaining 50% of positive rules. The agent successfully builds the updated codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1.2. INSTRUCTED TRACK</head><p>Both agents address the specifications provided in the detailed task description, resulting in a perfect or near perfect IFR of 99% and 100% for SONNET 4.5 and GPT-5.2, respectively. GPT-5.2 uses targeted patches for its edits, resulting in a successful build. SONNET 4.5 makes extensive use of risky replace all sed -i commands on all .java files in the test directory. This results in an inconsistent state and build errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2. AWS CLI</head><p>The refactoring migrates the aws-cli test suite from the third-party mock==1.3.0 package to Python's built-in unittest.mock, updating awscli/testutils.py and tests/ __ init __ .py as centralized re-export points and rewriting imports across 178 test files to use project-idiomatic from tests import mock or from awscli.testutils import mock patterns.</p><p>The precise commit is aws/aws-cli@20315462.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2.1. OPEN TRACK</head><p>The task provided to the agents is: Update test mocking dependencies.</p><p>Direct Mode. SONNET 4.5 achieved an IFR of 15.6% by correctly updating the two infrastructure files and 144 of 178 test files, but used from unittest import mock directly in each file instead of the ground-truth's project-idiomatic from tests import mock / from awscli.testutils import mock convention. The generated patch X is not complete, however the IFR also punishes that the agent did not use the from tests import mock convention, which is a bit harsh.</p><p>GPT-5.2 achieved an IFR of 3.1% by updating only the two infrastructure files and creating a sys.modules compatibility shim (tests/mock.py) to make old import mock statements work transparently, rather than actually migrating any test file imports; the near-zero score accurately reflects that the agent bypassed the refactoring entirely, leaving all 178 test files unchanged with their old-style import patterns intact.</p><p>Plan Mode. Both agents perform a similar set of edits as in the reference refactoring X * . SONNET 4.5 validates its edits by running tests, GPT-5.2 only validates the syntax using python -m compileall. The achieved IFR scores are 60.9% and 81.3% for GPT-5.2 and SONNET 4.5, respectively. The two resulting codebases pass our test suite.</p><p>The behavior in Multiplan Mode and Instructed Track is almost identical. Both agents achieve 81.3%, the non-perfect score stems from using from awscli.testutils import mock instead of from tests import mock.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3. gqlgen</head><p>The refactoring modernizes the entire gqlgen Go codebase by replacing all occurrences of interface{} with Go 1.18's built-in any alias, a purely mechanical refactoring affecting files across library code, templates, tests, and examples, with no behavioral changes. The precise commit is 99designs/gqlgen@d5c9f896.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3.1. OPEN TRACK</head><p>The task provided to the agents is Modernize type declarations across the codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Direct Mode.</head><p>Both agents perform the refactoring to a substantial degree.</p><p>SONNET 4.5 achieved an IFR of 93.3%, successfully replacing interface{} with any across approximately 193 files and passing all 17 additive rules, but left behind interface{} in a small number of locations (6 out of 73 reductive rule violations), including some variable declarations, unmarshal function parameters, and function return types.</p><p>GPT-5.2 achieved a perfect IFR of 100.0%, comprehensively replacing every interface{} occurrence with any across 231 files with zero remaining legacy patterns detected, fully accomplishing the refactoring.</p><p>Plan Mode. SONNET 4.5 achieved IFR of 63.3% by replacing interface{} with any in core runtime, client, config, handler, and plugin source files. It ran go test repeatedly, but did not run go generate to propagate changes to generated code, leaving residues in generated files. GPT-5.2 achieved IFR of 78.9% by replacing interface{} with any across source files and running go generate ./... to propagate template changes to generated code. It never ran tests and exhausted its $11 budget before completion. The resulting patch X contains genuine gaps in hand-written files (e.g., complexity/ package, various Unmarshal signatures) that the agent did not reach before budget exhaustion. Multiplan Mode. SONNET 4.5 achieved an IFR of 100% by performing a comprehensive repository-wide sed-based replacement of interface{} to any across 232 files, and running tests successfully multiple times. GPT-5.2 achieved an IFR of 100% via a perl-based global replacement followed by go generate across 231 files, and preserved functional correctness. It claims to have run tests, but actually did not. C.3.2. INSTRUCTED TRACK SONNET 4.5 achieved IFR of 100% by performing a comprehensive sed -i-based global replacement of interface{} with any across all .go files. It adds a linter rule and verifies correctness via go build and go test.</p><p>GPT-5.2 achieved IFR of 96.7% using perl and gofmt -r to correctly handle most replacements. Three residual occurrences of interface{} in parameter/field declarations remain, however. These violations were not captured by gofmt -r.</p><p>The test suite is passing even though the agent never actually runs go test or go build.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4. Bytebase</head><p>The refactoring standardizes Vue.js route constant naming across 51 files by adding a _ ROUTE _ infix to project route constants, extracting workspace setting route names from hardcoded strings into exported constants, refactoring sidebar components for route-name-based navigation, and creating a reusable WebhookTypeIcon component. The precise commit is bytebase/bytebase@04ac644e.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4.1. OPEN TRACK</head><p>Direct Mode. The task provided to the agents is Refactor routing system.</p><p>SONNET 4.5 refactored the Go backend server routing (middleware extraction, service registry pattern) rather than the intended Vue.js frontend route constants, achieving an IFR of 0.0%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-5.2 removed the legacy routeSlug method and</head><p>RouterSlug type from the frontend router store, which is completely orthogonal to the constant naming standardization addressed in the human refactoring. It achieved an IFR of 0.0%.</p><p>The plans proposed in Plan Mode and Multiplan Mode are larger in scope, but remain orthogonal to the frontend refactoring X * . The IFR achieved for both agents in both modes remains at 0.0%. C.4.2. INSTRUCTED TRACK SONNET 4.5 achieved IFR 100% by successfully applying the core route-constant renaming and setting-route centralization across 43 files. This is 8 fewer files than the golden patch X * . The IFR of 100% is inflated due to binary rule satisfaction constraints as defined in §4.1. The agent uses broad sed -i commands, resulting in much lower cost compared to GPT-5.2. GPT-5.2 achieved IFR 100% by applying the refactoring more broadly than X * , touching 87 files (vs 51 in X * ), adding route constants in files beyond the scope of X * . The agent proceeded using many targeted patches until finally hitting the budget constraint. SONNET 4.5 Task Generation (Instructed Track) System Generate a refactoring task description for the commit described by the user. It should be formatted like a GitHub issue. Restrict yourself to the scope of this commit, do not talk about Follow-Up Tasks, Future or Past Work. Only output the issue description, nothing else. Do not include any explanations. [...] Output Format should be well structured: Title -----&lt;title&gt; Summary -------&lt;summary&gt; Why ---&lt;why&gt; [...] User &lt;repo _ name&gt;boa-dev/boa&lt;/repo _ name&gt; &lt;commit _ message&gt;Refactor registers to use the stack (#4263) * Refactor registers to use the stack * Fix import in doc comment&lt;/commit _ message&gt; &lt;pull _ requests&gt;&lt;pull _ request&gt; &lt;pr _ title&gt;Refactor registers to use the stack&lt;/pr _ title&gt; &lt;pr _ body&gt;This Pull Request changes the following: -Refactor the vm stack into a dedicated struct and implement stack access in functions that are more readable. -Remove the `Registers`data structure and store registers on the stack. &lt;/pr _ body&gt;&lt;/pull _ request&gt; &lt;/pull _ requests&gt; &lt;commit _ diff&gt;diff --git a/core/engine/src/builtins/eval/mod.rs b/core/engine/src/builtins/eval/mod.rs index 3e6c9..55b38 100644 ---a/core/engine/src/builtins/eval/mod.rs +++ b/core/engine/src/builtins/eval/mod.rs @@ -22,3 +22,3 @@ use crate::{ string::StaticJsStrings, -vm::{CallFrame, CallFrameFlags, Constant, Registers}, + vm::{CallFrame, CallFrameFlags, Constant}, Context, JsArgs, JsResult, JsString, JsValue, SpannedSourceText, @@ -335,4 +335,3 @@ impl Eval { -let register _ count = context.vm.frame().code _ block().register _ count; -let record = context.run(&amp;mut Registers::new(register _ count as usize)); + let record = context.run(); [...]&lt;/commit _ diff&gt; Assistant # Title -----Refactor registers to use the stack # Summary -------Refactor VM execution to store registers directly on the stack instead of maintaining a separate `Registers`data structure. Consolidate stack and register management into a single `Stack`type with improved API and readability. # Why ----Eliminate duplication between stack and registers storage -Improve memory efficiency by using single unified structure -Better encapsulation with dedicated `Stack`type and semantic accessor methods -Clearer separation between frame pointer, arguments, and register spaces # Changes ---**Removed `Registers`struct:** -Deleted standalone `Registers`data structure (~50 lines) -Removed `registers.push _ function()`/ `registers.pop _ function()`calls -No more `Registers::new()`or `registers.clone _ current _ frame()* *New `Stack`struct:** -Encapsulates `Vec&lt;JsValue&gt;`with ~200 lines of accessor methods -Methods: `get _ this()`, `get _ function()`, `get _ arguments()`, `get _ register()`, `set _ register()`, ... -Calling convention helpers: `calling _ convention _ pop _ arguments()`, `calling _ convention _ push _ arguments()`, ... -Frame management: `truncate _ to _ frame()`, `split _ off _ frame()-Special register accessors: `get _ promise _ capability()`, `async _ generator _ object()`, ... [...] ``F igure 14. Task description generation prompt used to synthesize an issue-style refactoring task from commit associated metadata. SONNET 4.5 Open Track Task Generation System Turn this description into a generic, high-level, abstract instruction that **doesn't describe what** has to be done. It should leave out design decisions. Limit to one EXTREMELY CONCISE and high-level sentence, phrased as human-like instruction. We want close to NO detail in the instruction, i.e. a very GENERIC instruction, that only slightly nudges in the right direction. Output must be plain text. Example: Refactor ABC and XYZ API User Title -----Refactor registers to use the stack Summary -------[Remainder of Instructed Track Task Description] Assistant Consolidate VM registers and stack  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ANY AGENT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inference Prompt</head><p>Perform the task described below in it's ENTIRETY. You operate completely AUTONOMOUSLY in a sandboxed environment. DO NOT ASK FOR CLARIFICATIONS. You must EDIT the codebase DIRECTLY to complete the task. DO NOT create reports, plans or similar files.</p><p>[Task Description]</p><p>Figure <ref type="figure">19</ref>. Default Prompt used to run inference on an agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OPUS 4.6 claude-code Judge Prompt</head><p>You should create a report comparing the outputs of the two agents (`claude-code-v2.0.76-sonnet45`, `codex-v0.77.0-gpt-5.2`) to the ground-truth refactoring (`golden`). Ignore .venv, .node _ modules, .cargo-home and binary file edits in your report. Give an assesment of whether the score regarding IFR is justified based on the evidence. I.e. does it give an accurate reflection on how much of the true reference refactoring the agent achieved. Additionally, look at the agents performance regarding functional correctness by investigating the test results. Connect the analysis to the inference.out to answer obvious questions, such as did the agent try to run tests or build? Talking or thinking about running a command does not count as evidence. Only the actual commands and their outputs count.</p><p>Explore all files in this folder / subfolders to find evidence for your report, but only edit the `case _ study _ report.md`file. Place the report inside the current directory. It should be a markdown file named `case _ study _ report.md`. ```md</p><p>[Evidence, Reasoning, Claims] ## Dense Summary The refactoring [... 1-2 sentence summary about what the ground-truth refactoring achieves.] claude-code-v2.0.76-sonnet45: [1-2 sentences about what the agent achieved, what IFR score is achieved (why and whether this is reflective), and did the agent preserve functional correctness? Why / why not? Also say what wasn't achieved if relevant.] codex-v0.77.0-gpt-5.2: [1-2 sentences about what the agent achieved, what IFR score is achieved (why and whether this is reflective), and did the agent preserve functional correctness? Why / why not? Also say what wasn't achieved if relevant.] ```F igure 20. Prompt used to run claude-code to assist evaluation of the different tracks in the case studies.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 15 .</head><label>15</label><figDesc>Prompt used to derive the open-track instruction by abstracting away actionable detail from an instructed task description.ANY AGENTOpen Track: Plan PromptConduct IN-DEPTH EXPLORATION and ANALYSIS of the codebase. Refine the following task description into a CONCRETE and ACTIONABLE refactoring plan. Make ALL the design choices. DO NOT propose broad, multi-stage changes. You operate completely AUTONOMOUSLY in this sandboxed environment. DO NOT ASK FOR CLARIFICATIONS. The final plan must be in markdown format: the final plan in this file: '/output/refactoring _ plan.md'. Task: [Task Description]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 16 .</head><label>16</label><figDesc>Prompt used to generate a single concrete refactoring plan from an open-track instruction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Full experimental results across all tracks and models for PASS, A, IFR in percents with 95 % confidence intervals.</figDesc><table><row><cell></cell><cell></cell><cell>PASS (%)</cell><cell>A (%)</cell><cell>A + (%)</cell><cell>A -(%)</cell><cell>IFR (%)</cell><cell cols="2">IFR + (%) IFR -(%)</cell></row><row><cell>GPT-5.2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>76.0 ± 8.5</cell><cell>69.6± 8.2</cell><cell>70.7± 8.6</cell><cell>69.6± 8.4</cell><cell>89.0± 3.3</cell><cell>89.6± 4.0</cell><cell>88.7± 4.0</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>87.0 ± 6.7</cell><cell>7.9± 4.0</cell><cell>6.1± 3.2</cell><cell>7.9± 4.2</cell><cell>10.6± 4.5</cell><cell>9.7± 4.3</cell><cell>10.3± 4.7</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>87.0 ± 6.7</cell><cell>15.1± 5.6</cell><cell>8.9± 4.5</cell><cell>16.1± 6.0</cell><cell>16.4± 5.6</cell><cell>11.2± 5.0</cell><cell>17.2± 6.0</cell></row><row><cell>Open</cell><cell>Multiplan</cell><cell>81.0 ± 7.8</cell><cell>20.6± 6.1</cell><cell>12.9± 4.9</cell><cell>22.2± 6.7</cell><cell>25.5± 6.3</cell><cell>17.8± 5.7</cell><cell>26.7± 6.8</cell></row><row><cell cols="2">GPT-5.1 Codex Mini</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>47.0 ± 10.0</cell><cell>34.4± 8.8</cell><cell>34.2± 9.3</cell><cell>34.7± 9.0</cell><cell>70.4± 7.0</cell><cell>75.6± 6.7</cell><cell>69.0± 7.6</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>79.0 ± 8.1</cell><cell>7.2± 4.1</cell><cell>5.3± 4.0</cell><cell>7.5± 4.3</cell><cell>9.7± 4.6</cell><cell>7.5± 4.6</cell><cell>9.7± 4.7</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>66.0 ± 9.4</cell><cell>9.8± 4.4</cell><cell>6.2± 4.1</cell><cell>10.5± 4.8</cell><cell>14.7± 5.0</cell><cell>9.8± 4.8</cell><cell>15.1± 5.4</cell></row><row><cell>Open</cell><cell>Multiplan</cell><cell>58.0 ± 9.8</cell><cell>4.2± 2.8</cell><cell>2.8± 3.0</cell><cell>4.7± 3.1</cell><cell>13.5± 5.0</cell><cell>9.7± 5.0</cell><cell>14.2± 5.4</cell></row><row><cell cols="2">Claude Sonnet 4.5</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>43.0 ± 9.9</cell><cell>32.1± 8.2</cell><cell>34.6± 9.2</cell><cell>31.4± 8.4</cell><cell>67.0± 6.1</cell><cell>79.0± 5.4</cell><cell>62.6± 7.3</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>66.0 ± 9.4</cell><cell>6.2± 3.6</cell><cell>5.1± 3.6</cell><cell>6.4± 3.8</cell><cell>12.0± 4.7</cell><cell>10.8± 5.0</cell><cell>12.1± 5.0</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>57.0 ± 9.9</cell><cell>10.7± 4.8</cell><cell>6.6± 4.3</cell><cell>11.7± 5.4</cell><cell>21.1± 6.2</cell><cell>16.8± 6.2</cell><cell>21.7± 6.7</cell></row><row><cell>Open</cell><cell>Multiplan</cell><cell>50.0 ± 10.0</cell><cell>10.1± 4.9</cell><cell>8.8± 5.2</cell><cell>10.7± 5.3</cell><cell>17.3± 5.5</cell><cell>17.4± 6.4</cell><cell>18.0± 6.1</cell></row><row><cell>MiniMax M2.7</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>49.0 ± 10.0</cell><cell>30.5± 7.8</cell><cell>36.4± 8.9</cell><cell>29.0± 8.0</cell><cell>62.8± 6.2</cell><cell>75.2± 5.5</cell><cell>58.9± 7.1</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>71.0 ± 9.0</cell><cell>7.0± 4.0</cell><cell>3.3± 3.4</cell><cell>7.6± 4.3</cell><cell>11.1± 4.7</cell><cell>7.3± 4.4</cell><cell>11.5± 5.0</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>63.0 ± 9.6</cell><cell>3.4± 2.6</cell><cell>4.6± 3.5</cell><cell>3.1± 2.6</cell><cell>10.7± 4.6</cell><cell>10.5± 4.8</cell><cell>10.8± 5.0</cell></row><row><cell>Open</cell><cell>Multiplan</cell><cell>58.0 ± 9.8</cell><cell>7.4± 4.0</cell><cell>4.5± 3.3</cell><cell>7.7± 4.4</cell><cell>15.3± 5.2</cell><cell>10.4± 4.7</cell><cell>15.9± 5.8</cell></row><row><cell>Qwen3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>30.0 ± 9.1</cell><cell>10.7± 4.7</cell><cell>17.6± 6.8</cell><cell>8.7± 4.6</cell><cell>36.4± 5.6</cell><cell>56.6± 6.5</cell><cell>30.6± 6.1</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>58.0 ± 9.8</cell><cell>2.0± 2.3</cell><cell>1.1± 1.1</cell><cell>2.2± 2.4</cell><cell>6.5± 3.5</cell><cell>4.4± 3.2</cell><cell>6.7± 3.7</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>35.0 ± 9.5</cell><cell>2.1± 2.2</cell><cell>1.5± 1.3</cell><cell>2.2± 2.3</cell><cell>8.3± 3.9</cell><cell>4.1± 2.8</cell><cell>8.8± 4.4</cell></row><row><cell>Open</cell><cell>Multiplan</cell><cell>43.0 ± 9.9</cell><cell>2.2± 2.3</cell><cell>0.8± 1.0</cell><cell>2.6± 2.6</cell><cell>6.9± 3.3</cell><cell>5.3± 3.3</cell><cell>7.0± 3.6</cell></row><row><cell>Golden Patch</cell><cell></cell><cell>100.0</cell><cell>100.0</cell><cell>100.0</cell><cell>100.0</cell><cell>100.0</cell><cell>100.0</cell><cell>100.0</cell></row><row><cell>Base Commit</cell><cell></cell><cell>100.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 .</head><label>6</label><figDesc>Full experimental results across all tracks and models for PREC in percents with 95 % confidence intervals. We also report average filtered LoC edited |L X | in patches.</figDesc><table><row><cell></cell><cell></cell><cell cols="3">PREC (%) PREC + (%) PREC -(%)</cell><cell>|L X |</cell><cell>|L + X |</cell><cell>|L -X |</cell></row><row><cell>GPT-5.2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>48.4 ± 5.0</cell><cell>41.2± 6.3</cell><cell>56.0± 6.2</cell><cell>1978.4</cell><cell cols="2">974.0 1004.5</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>16.7 ± 5.0</cell><cell>7.6± 4.1</cell><cell>27.0± 7.6</cell><cell>632.0</cell><cell>303.8</cell><cell>328.2</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>15.0 ± 4.4</cell><cell>6.1± 3.6</cell><cell>27.1± 7.0</cell><cell>1671.5</cell><cell>718.9</cell><cell>952.7</cell></row><row><cell>Open</cell><cell cols="2">Multiplan 19.8 ± 4.8</cell><cell>8.8± 4.0</cell><cell>36.8± 7.6</cell><cell>1539.1</cell><cell>811.4</cell><cell>727.8</cell></row><row><cell cols="2">GPT-5.1 Codex Mini</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>50.2 ± 5.6</cell><cell>42.0± 6.8</cell><cell>58.5± 6.5</cell><cell>1045.8</cell><cell>510.0</cell><cell>535.8</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>15.8 ± 5.2</cell><cell>7.0± 4.6</cell><cell>28.9± 8.1</cell><cell>331.2</cell><cell>140.9</cell><cell>190.2</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>15.2 ± 4.6</cell><cell>4.9± 3.2</cell><cell>27.7± 7.4</cell><cell>811.7</cell><cell>419.8</cell><cell>391.9</cell></row><row><cell>Open</cell><cell cols="2">Multiplan 13.9 ± 4.4</cell><cell>4.7± 3.5</cell><cell>27.4± 7.2</cell><cell>544.1</cell><cell>296.6</cell><cell>247.5</cell></row><row><cell cols="2">Claude Sonnet 4.5</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>50.1 ± 5.4</cell><cell>39.2± 6.3</cell><cell>61.1± 6.2</cell><cell cols="2">1522.4 1011.2</cell><cell>511.2</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>13.7 ± 4.4</cell><cell>6.8± 4.1</cell><cell>25.6± 7.4</cell><cell>929.4</cell><cell>462.1</cell><cell>467.3</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>15.8 ± 4.6</cell><cell>9.3± 4.4</cell><cell>27.9± 7.0</cell><cell>2237.4</cell><cell cols="2">911.0 1326.3</cell></row><row><cell>Open</cell><cell cols="2">Multiplan 13.9 ± 4.3</cell><cell>7.6± 3.9</cell><cell>26.7± 6.8</cell><cell cols="2">2549.7 1905.0</cell><cell>644.6</cell></row><row><cell>MiniMax M2.7</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>52.8 ± 5.6</cell><cell>43.3± 6.7</cell><cell>61.4± 6.4</cell><cell>1000.2</cell><cell>539.7</cell><cell>460.5</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>16.3 ± 5.2</cell><cell>7.8± 4.7</cell><cell>24.6± 7.3</cell><cell>293.8</cell><cell>127.2</cell><cell>166.6</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>17.0 ± 5.7</cell><cell>9.7± 5.3</cell><cell>25.0± 7.3</cell><cell>297.5</cell><cell>152.4</cell><cell>145.1</cell></row><row><cell>Open</cell><cell cols="2">Multiplan 17.8 ± 5.2</cell><cell>9.7± 4.9</cell><cell>26.5± 6.9</cell><cell>571.9</cell><cell>369.3</cell><cell>202.6</cell></row><row><cell>Qwen3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Instructed</cell><cell></cell><cell>47.3 ± 6.4</cell><cell>39.9± 7.4</cell><cell>51.7± 7.2</cell><cell>1130.5</cell><cell>784.5</cell><cell>346.1</cell></row><row><cell>Open</cell><cell>Direct</cell><cell>7.7 ± 3.7</cell><cell>5.3± 3.8</cell><cell>10.5± 5.4</cell><cell>1334.7</cell><cell cols="2">101.8 1232.9</cell></row><row><cell>Open</cell><cell>Plan</cell><cell>12.2 ± 4.7</cell><cell>6.1± 4.2</cell><cell>18.8± 6.3</cell><cell>730.9</cell><cell>298.1</cell><cell>432.8</cell></row><row><cell>Open</cell><cell cols="2">Multiplan 10.3 ± 3.9</cell><cell>4.0± 3.4</cell><cell>23.3± 7.2</cell><cell>440.1</cell><cell>183.1</cell><cell>257.0</cell></row><row><cell>Golden Patch</cell><cell></cell><cell>48.5</cell><cell>42.4</cell><cell>54.1</cell><cell>1954.4</cell><cell cols="2">931.1 1023.3</cell></row><row><cell>Base Commit</cell><cell></cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aider-Ai</forename></persName>
+		</author>
+		<ptr target="tps://github.com/Aider-AI/refactor-benchmark" />
+		<title level="m">Aider-AI/refactor-benchmark</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www-cdn.anthropic.com/963" />
+		<title level="m">Claude Sonnet 4.5 system card</title>
+		<imprint>
+			<date type="published" when="2025-09">September 2025</date>
+		</imprint>
+	</monogr>
+	<note>373e433e489a87a10c823c52a0a013e9172dd.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Swe-rebench: An automated pipeline for task collection and decontaminated evaluation of software engineering agents</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Badertdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Golubev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nekrashevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shevtsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karasik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Andriushchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Trofimova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Litvintseva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yangel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.20411" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Semantic grep: Regular expressions+ relational abstraction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">I</forename><surname>Bull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trevors</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Malton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">W</forename><surname>Godfrey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Ninth Working Conference on Reverse Engineering</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2002">2002. 2002</date>
+			<biblScope unit="page" from="267" to="276" />
+		</imprint>
+	</monogr>
+	<note>Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Building a C compiler with a team of parallel</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Carlini</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/engineering/building-c-compiler" />
+	</analytic>
+	<monogr>
+		<title level="j">Claudes</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Can it edit? evaluating the ability of large language models to follow code editing instructions</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sethi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brennan-Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lozhkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guha</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Benchmarking secure vibe coding of AI agents via reconstructing vulnerabilityintroducing scenarios</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Securevibebench</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.22097v4</idno>
+		<ptr target="https://arxiv.org/abs/2509.22097" />
+	</analytic>
+	<monogr>
+		<title level="m">ACL 2026 Main Conference</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<title level="m">Evaluating Large Language Models Trained on Code. arXiv Preprint</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Claude</forename><surname>Code</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Docs</surname></persName>
+		</author>
+		<ptr target="https://code.claude.com/docs/en/overview" />
+		<title level="m">Claude code overview</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">An empirical study on the code refactoring capability of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cordeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Noei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://www.kaggle.com/datasets/donbarbos/github-repos" />
+	</analytic>
+	<monogr>
+		<title level="m">CoRR, 2024. donbarbos. Most popular github repositories (projects)</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Swe-Dev</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.16975" />
+		<title level="m">Evaluating and training autonomous feature-driven software development</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Refactoring: improving the design of existing code</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fowler</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>Addison-Wesley Professional</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Evaluating stateful reasoning in language agents through code</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gautam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zilouchian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Refactorbench ; Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Peng</surname></persName>
+		</author>
+		<ptr target="https://console.cloud.google.com/marketplace/details/github/github-repos" />
+	</analytic>
+	<monogr>
+		<title level="m">b44ee 74539ea77d6a0d50d468724371-Paper-Conference.pd f. GitHub. Github repos public dataset</title>
+		<editor>
+			<persName><forename type="first">F</forename><surname>Sha</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Yu</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2016">2025. 2016</date>
+			<biblScope unit="volume">2025</biblScope>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+	<note>International Conference on Learning Representations</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">I</forename><surname>Grigorik</surname></persName>
+		</author>
+		<ptr target="https://www.gharchive.org/" />
+		<title level="m">Gh archive</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">SWE-Perf: Can language models optimize code performance on real-world repositories?</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ma</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.12415" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Live-CodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">SWE-bench: Can Language Models Resolve Real-world Github Issues? In ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2025. 2024</date>
+		</imprint>
+	</monogr>
+	<note>ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Refactoring codebases through library design</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Kovacic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Chiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">The claude c compiler: What it reveals about the future of software</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lattner</surname></persName>
+		</author>
+		<ptr target="https://www.modular.com/blog/the-claude-c-compiler-what-it-reveals-about-the-future-of-software" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">FEA-bench: A benchmark for evaluating repository-level code generation for feature implementation</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.839</idno>
+		<ptr target="https://aclanthology.org/2025.acl-long.839/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-07">July 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="17160" to="17176" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Can language models replace programmers for coding? repocod says &apos;not yet</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.21647" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://github.com/wilsonzlin/fastrender" />
+		<title level="m">wilsonzlin/fastrender</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Exploring the potential of general purpose llms in automated software refactoring: an empirical study</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Autom. Softw. Eng</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Early echoes of self-evolution</title>
+		<author>
+			<persName><surname>Minimax</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Minimax</surname></persName>
+		</author>
+		<ptr target="https://www.minimax.io/news/minimax-m27-en" />
+		<imprint>
+			<date type="published" when="2026-03">March 2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mündler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vechev</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Swt-Bench</surname></persName>
+		</author>
+		<ptr target="http" />
+		<title level="m">Testing and Validating Real-world Bug-fixes with Code Agents. In NeurIPS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>cc/paper _ files/paper/2024/hash /94f093b41fc2666376fb1f667fe282f3-Abstract-Con ference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mürtz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Müller</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.15846865</idno>
+		<ptr target="https://github.com/logic-star-ai/insights" />
+		<title level="m">Interactive web dashboard. Code available at</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Agents in the wild -dashboard</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Introducing upgrades to codex</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="//openai.com/index/introducing-upgrades-to-codex/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+	<note>ht tps</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">OpenAI/codex: Lightweight coding agent that runs in your terminal</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://github.com/openai/codex" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Slop-CodeBench: Benchmarking how coding agents degrade over long-horizon iterative tasks</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Orlanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Adila</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Albarghouthi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.24755" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Foundations for the study of software architecture</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Perry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Wolf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM SIGSOFT Softw. Eng. Notes</title>
+		<imprint>
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Next-generation refactoring: Combining LLM insights and IDE capabilities for extract method</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pomian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dilhara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Kurbatova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Bogomolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bryksin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSME</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">QwenLM/Qwen3-Coder: Qwen3-Coder is the code version of Qwen3, the large language model series developed by Qwen team, Alibaba Cloud</title>
+		<author>
+			<persName><surname>Qwenlm</surname></persName>
+		</author>
+		<ptr target="https://github.com/QwenLM/Qwen3-Coder" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Research: A tool and workflow for benchmarking llm-based code improvements</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Rejiba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Eidenbenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Borkhoche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGSOFT FSE Companion</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">AI agents, productivity, and higher-order thinking: Early evidence from software development</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Sarkar</surname></persName>
+		</author>
+		<idno>SSRN 5713646</idno>
+		<ptr target="https://ssrn.com/abstract=5713646" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Rule structure syntax</title>
+		<author>
+			<persName><surname>Semgrep</surname></persName>
+		</author>
+		<ptr target="https://semgrep.dev/docs/writing-rules/rule-syntax" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Refactoring programs using large language models with few-shot examples</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shirafuji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Oda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Suzuki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Morishita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Watanobe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">APSEC</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ganesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mclaughlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ananthram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Efremov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Spyra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Baker-Whitcomb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karpenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Makelov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kirchmeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ivanov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.03267" />
+		<title level="m">OpenAI GPT-5 system card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-H</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=caPQXR9eeJ" />
+		<title level="m">SWE-refactor: A repository-aware benchmark for evaluating LLMs on real-world code refactoring</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.09388" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>and Qiu, Z. Qwen3 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Refactoring to pythonic idioms: A hybrid knowledge-driven approach leveraging large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Softw. Eng</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

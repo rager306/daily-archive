@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">The Impact of AI on Developer Productivity: Evidence from GitHub Copilot</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-02-13">13 Feb 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Sida</forename><surname>Peng</surname></persName>
+							<email>sidpeng@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<addrLine>14820 NE 36th St</addrLine>
+									<settlement>Redmond</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Eirini</forename><surname>Kalliamvakou</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">GitHub Inc</orgName>
+								<address>
+									<addrLine>88 Colin P Kelly Jr St</addrLine>
+									<settlement>San Francisco</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Cihon</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">GitHub Inc</orgName>
+								<address>
+									<addrLine>88 Colin P Kelly Jr St</addrLine>
+									<settlement>San Francisco</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mert</forename><surname>Demirer</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">MIT Sloan School of Management</orgName>
+								<address>
+									<addrLine>100 Main Street</addrLine>
+									<settlement>Cambridge</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">The Impact of AI on Developer Productivity: Evidence from GitHub Copilot</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-02-13">13 Feb 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1EBBCB8E81225330E76F6E6E2EF54690</idno>
+					<idno type="arXiv">arXiv:2302.06590v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:25+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Generative AI tools hold promise to increase human productivity. This paper presents results from a controlled experiment with GitHub Copilot, an AI pair programmer. Recruited software developers were asked to implement an HTTP server in JavaScript as quickly as possible. The treatment group, with access to the AI pair programmer, completed the task 55.8% faster than the control group. Observed heterogenous effects show promise for AI pair programmers to help people transition into software development careers.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>Artificial intelligence (AI) applications hold promise to increase human productivity. A variety of AI models have demonstrated human-level capabilities in fields ranging from natural language understanding to image recognition <ref type="bibr" target="#b12">[Zhang et al., 2022]</ref>. As these systems are deployed in the real-world, how do they change labor productivity? While there is a growing literature studying perceptions of AI tools, how people use them, and their implications for security and education <ref type="bibr" target="#b8">[Nguyen and Nadi, 2022</ref><ref type="bibr" target="#b3">, Barke et al., 2022</ref><ref type="bibr" target="#b5">, Finnie-Ansley et al., 2022</ref><ref type="bibr" target="#b10">, Sandoval et al., 2022]</ref> there has been little research on productivity impacts of AI-powered tools in professional contexts, cf. <ref type="bibr" target="#b7">[Mozannar et al., 2022</ref><ref type="bibr" target="#b11">, Vaithilingam et al., 2022</ref><ref type="bibr" target="#b13">, Ziegler et al., 2022]</ref>.</p><p>The potential productivity impacts of AI have major implications for the labor market and firms, including changes in employment, skills, and firm organization <ref type="bibr" target="#b9">[Raj and</ref><ref type="bibr">Seamans, 2018, Agrawal et al., 2019]</ref>.</p><p>This paper studies the productivity effects of AI tools on software development. We present a controlled trial of GitHub Copilot, an AI pair programmer that suggests code and entire functions in real time based on context. GitHub Copilot is powered by OpenAI's generative AI model, <ref type="bibr">Codex [Chen et al., 2021]</ref>. In the trial, programmers were tasked and incentivized to implement an HTTP server in JavaScript as quickly as possible. The treated group had access to GitHub Copilot and watched a brief video explaining how to use the tool. The control group did not have access to GitHub Copilot but was otherwise unconstrained, i.e., they were free to use internet search and Stack Overflow to complete the task.</p><p>The performance difference between treated and control groups are statistically and practically significant: the treated group completed the task 55.8% faster (95% confidence interval: 21-89%). Developers with less programming experience, older programmers, and those who program more hours per day benefited the most. These heterogeneous effects point towards promise for AI-pair programmers in support of expanding access to careers in software development.</p><p>The paper proceeds as follows. We first describe the design of the controlled trial and provide summary statistics. We then present the results. We conclude by a discussion on implications of the study for productivity research on AI-powered tools, its limitations, and future research directions on the broader economic impacts of AI-driven productivity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Study Design</head><p>We conducted a controlled experiment to measure the productivity impact of using GitHub</p><p>Copilot in programming tasks. The experiment began on May 15, 2022 and ended on June 20, 2022, right before GitHub Copilot became generally available. We recruited 95 professional programmers through Upwork, a freelancing platform. Participation in the experiment was advertised on Upwork as a job posting, looking to recruit freelancer developers. Figures <ref type="figure" target="#fig_0">1</ref> and <ref type="figure" target="#fig_1">2</ref> show (respectively) the job posting and the contract that was sent to participants to sign, in accordance with Upwork's policies. Once participants signed the contract, they were randomly split into control and treatment groups.</p><p>Figure <ref type="figure" target="#fig_2">3</ref> shows the instructions sent to each group through email. The treated group was instructed to watch a 1-minute video introducing them to GitHub Copilot. In addition to the instructions, they also received an automated email with installation instructions for GitHub Copilot once granted access to the tool. We verify from telemetry after the experiment that all participants from the treated group have configured GitHub Copilot and accepted recommendations other than five who did not finish the sign up and thus started the experiment without the GitHub Copilot. Both treated and control groups were instructed to complete an entry survey to provide demographic information such as age, gender, location, and educational background.</p><p>Before we began recruitment, we received approval for the study from the Microsoft Research Ethics Review Board.</p><p>Participants were instructed to write an HTTP server in JavaScript-the treatment group would use GitHub Copilot to complete the task, while the control group would not. Besides the use of GitHub Copilot in the treated group, participants were unconstrained in their software development -they could use any sources of information as they normally do, such as internet search and Stack Overflow.</p><p>We calculated two metrics as a measure of performance for each group: task success and task completion time. Task success was measured as the percentage of participants in a group that adequately completed the task. Task completion time was measured as the time from start to end of the task. Using a standardized task provides us with precise measures of performance as it is difficult to measure productivity of software developers.</p><p>To administer the task, we used GitHub Classroom, a platform for teachers to issue and grade coding assignments. In this way, we accurately measured the timing and completion for each participant. The instructions gave participants a link to a particular GitHub Classroom instance with a single assignment referencing a template repository. When joining the assignment, participants received a personal copy of the template repository, with the task description (shown in Figure <ref type="figure" target="#fig_3">4</ref>) and a skeleton codebase for participants to build upon. The creation date and time of that personal copy created a timestamp. Each participant's repository was private to them and visible to the researchers conducting the experiment-but not to other participants.</p><p>We included a test suite in the repository, comprising twelve checks for submission correctness. If a submission passes, all twelve tests we counted are successfully completed. Participants could see the tests but were unable to alter them.</p><p>When participants committed and pushed their changes to GitHub, GitHub Classroom ran the test suite on their submission and reported the number of passing tests. Participants could push as often as they pleased, automatically logging a timestamp each time. The time elapsed between the timestamp of repository creation and the timestamp of the first commit to successfully pass all 12 tests was counted as the participant's task completion time.</p><p>The full history of test suite runs is visible on each repository, enabling researchers to observe partial results for participants that did not fully complete the task. The participants' final compensation is calculated based on their time to completion and the scale we had previously shared with them (shown in Figure <ref type="figure" target="#fig_0">1</ref>).</p><p>After participants had completed the task, we sent them the link to an exit survey. We asked the treatment group how helpful they found GitHub Copilot as they worked on the task, as well as asked them to estimate how much faster they completed the task compared to how long this task would have taken them without using GitHub Copilot. We also asked the control group to estimate the size of the speed gain they would have experienced if they used GitHub Copilot, after showing them a 1-minute demo video.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>A total of 166 offers were sent during the experiment, and 95 were accepted. The 95 developers were randomly assigned into control and treated groups, with 45 in the treated group and 50 in control. Thirty-five developers from both the treated and control groups completed the task and survey. Figure <ref type="figure">5</ref> presents the summary statistics of these participants.</p><p>Most of the participants are in the age group of 25-34 and come from India and Pakistan.</p><p>This group of participants is also characterized by relatively lower income (median yearly income between $10,000-$19,000) compared to US standards but high education level (the majority have a 4-year degree and above). The group has an average coding experience of 6 years and, on average, reported spending 9 hours on coding in a working day.</p><p>Figure <ref type="figure" target="#fig_4">6</ref> plots the distribution between time to completion between treated and control groups. Conditioning on completing the task, the average completion time from the treated group is 71.17 minutes and 160.89 minutes for the control group. This represents a 55.8% reduction in completion time. The p-value for the t-test is 0.0017, and a 95% confidence interval for the improvement is between [21%, 89%]. There are four outliers with time to completion above 300 min. All outliers are in the control group, however our results remain robust if these outliers are dropped. This result suggests that Copilot increases average productivity significantly in our experiment population. We also find that the treated group's success rate is 7 percentage points higher than the control group, but the estimate is not statistically significant, with a 95% confidence interval of [-0.11, 0.25].</p><p>We then investigate whether this effect is heterogeneous across different dimensions including experience, employment status, income, education and software language preference. We assume the treatment effect is a linear function of the covariates of interest. We apply Horvitz-Thomson transformation in <ref type="bibr" target="#b1">[Athey and Imbens, 2015]</ref> (see also <ref type="bibr" target="#b2">[Banerjee and Duflo, 2003]</ref> and <ref type="bibr" target="#b3">Carneiro et al., 2011]</ref>)) and then regress the transformed outcome of interest on observables.</p><formula xml:id="formula_0">[</formula><p>The estimates in Table <ref type="table" target="#tab_0">1</ref> report coefficients from this regression. The results show that less experienced developers (years of professional coding), developers with heavy coding load (hours of coding per day), and older developers (developers aged between 25 and 44) benefit more from Copilot.</p><p>We conducted an exit survey with two questions to learn about the experience of subjects.</p><p>First, we asked them to estimate how much productivity gain or loss (in percentage term) Copilot provided to them for completing the task. While the control group was not exposed to Copi-lot during the task, they were given the tutorial video before answering this question so that they are aware of the features of Copilot. Figure <ref type="figure">7</ref> presents the distribution of the self-reported productivity gain estimates from the control and treated groups. On average, participants in both treated and control groups estimated a 35% increase in productivity, which is an underestimation compared with the 55.8% increase in their revealed productivity.</p><p>In the second question, participants were asked the highest monthly price at which they would be interested in getting notified about the release of GitHub Copilot. The intention is to learn about developers' willingness to pay for Copilot as the answer to this question provides an upper bound for the developers' willingness to pay. Figure <ref type="figure">8</ref> presents the distribution of the irrelevant price separated for the control and treated groups. The average irrelevant price for the treated group is $27.25, and the average irrelevant price for the control group is $16.91, both per month. The difference is statistically significant at the 95% level. This result provides indirect evidence that treated group benefited from Copilot during their task as their willingness to pay is significantly higher than the control group.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Discussion</head><p>This paper presents evidence on the productivity effects of generative AI tools in software development. To the best of our knowledge, it is the first controlled experiment to measure the productivity of AI tools in professional software development. Our results suggest that Copilot has statistically and practically significant impact on productivity: the treated group that has access to GitHub Copilot was able to complete the task 55.8% faster than the control group.</p><p>Further investigations into the productivity impacts of AI-powered tools in software development are warranted. This study examines a standardized programming task in an experiment to obtain a precise measure of productivity, instead of a task where developers collaborate on large projects in professional proprietary and/or open-source settings. Productivity benefits may vary across specific tasks and programming languages, so more research is needed to understand how our results generalizes to other tasks. Finally, this study does not examine the effects of AI on code quality. AI assistance can increase code quality if it suggests code better than the programmer writes, or it can reduce quality if the programmer pays less attention to code. The code quality can have performance and security considerations that can change the real-world impact of AI.</p><p>The heterogeneous effects identified in this study warrant close attention. Our results suggest that less experienced programmers benefit more from Copilot. If this result persists in further studies, the productivity benefits for novice programmers and programmers of older age point to important possibilities for skill initiatives that support job transitions into software development.</p><p>The economic impacts of these models also warrant further research <ref type="bibr" target="#b7">[Manning et al., 2022]</ref>, with particular attention on their implications for labor market. In 2021, over 4.6 million people in the United States worked in computer and mathematical occupations,<ref type="foot" target="#foot_0">foot_0</ref> a Bureau of Labor Statistics category that includes computer programmers, data scientists, and statisticians. These workers earned $464.8 billion or roughly 2% of US GDP. If the results of this study were to be extrapolated to the population level, a 55.8% increase in productivity would imply a significant amount of cost savings in the economy and have a notable impact on GDP growth. It is, as of yet, unclear how such gains would be distributed and how job tasks would change to incorporate AI-powered developer tools. It is important to consider such impacts and to begin research on these implications at the outset <ref type="bibr" target="#b6">[Klinova and Korinek, 2021]</ref>.     </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Upwork job posting Note: Job posting on Upwork starting May 25th 2022. The posting includes the task description, skill requirements and budget information.</figDesc><graphic coords="11,128.94,371.42,351.00,289.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Upwork contractNote: The contract sent to participants through Upwork. Upon accepting the contract, participants were randomized into control and treatment groups and given instructions for the task.</figDesc><graphic coords="12,-51.96,108.86,712.80,550.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Instruction email to participants Note: Email instructions sent to participants in the treatment (top) and control (bottom) groups.</figDesc><graphic coords="13,86.64,380.85,435.60,336.60" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Participants' view of the task descriptionNote: The task description participants saw in the index.js file in the repository that was automatically created for them by GitHub Classroom.</figDesc><graphic coords="14,127.54,211.31,353.81,337.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Time to task completion Note: Distribution of time to task completion between treated (blue) and control (orange) groups</figDesc><graphic coords="17,94.44,225.84,420.00,315.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Heterogeneous Treatment Effects</figDesc><table><row><cell>Estimates</cell><cell>SE</cell><cell>t-Stat</cell><cell>p-Value</cell></row></table><note><p>Note: This table presents the heterogeneous treatment effects. The results suggest developer with less programming experience are more likely to benefit from Copilot, similarly for developers with more daily programming hours and in the age group above 25.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://www.bls.gov/oes/current/oes150000.htm</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0" /><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Summary statistics of the experiment participants</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>From</head><figDesc>left to right on each row see the following distributions: Participant age; Number of different languages used in the last 2 years; Level of education; Employment status; Geographical location; Yearly income; Programming experience; Time spent coding daily.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Self-estimated productivity gainNote: This graph shows the distribution of the estimated productivity improvement when using Copilot. Blue represents the estimation from the treated group and orange represents the estimation from the control group.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Distributing of irrelevant priceNote: This graph shows the distribution of the irrelevant price between the treated (blue) and control (orange) groups.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Artificial intelligence: the ambiguous labor market impact of automating prediction</title>
+		<author>
+			<persName><surname>Agrawal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Perspectives</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="31" to="50" />
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Machine learning methods for estimating heterogeneous causal effects</title>
+		<author>
+			<persName><surname>Athey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Imbens ; Athey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Imbens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">stat</title>
+		<imprint>
+			<biblScope unit="volume">1050</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2015">2015. 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Inequality and growth: What can the data say</title>
+		<author>
+			<persName><forename type="first">Duflo ;</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Duflo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Growth</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="267" to="299" />
+			<date type="published" when="2003">2003. 2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Grounded copilot: How programmers interact with code-generating models</title>
+		<author>
+			<persName><surname>Barke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.15000</idno>
+	</analytic>
+	<monogr>
+		<title level="j">American Economic Review</title>
+		<imprint>
+			<biblScope unit="volume">101</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="2754" to="2781" />
+			<date type="published" when="2011">2022. 2022. 2011. 2011</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Estimating marginal returns to education</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The robots are coming: Exploring the implications of openai codex on introductory programming</title>
+		<author>
+			<persName><surname>Finnie-Ansley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Australasian Computing Education Conference</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+			<biblScope unit="page" from="10" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Ai and shared prosperity</title>
+		<author>
+			<persName><surname>Klinova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Korinek ; Klinova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Korinek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 AAAI/ACM Conference on AI, Ethics, and Society</title>
+		<meeting>the 2021 AAAI/ACM Conference on AI, Ethics, and Society</meeting>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<biblScope unit="page" from="645" to="651" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">A research agenda for assessing the economic impacts of code generation models</title>
+		<author>
+			<persName><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.14306</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Reading between the lines: Modeling user behavior and costs in ai-assisted programming</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022. 2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">An empirical evaluation of github copilot&apos;s code suggestions</title>
+		<author>
+			<persName><forename type="first">Nadi ;</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nadi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Mining Software Repositories</title>
+		<meeting>the 19th International Conference on Mining Software Repositories</meeting>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Artificial intelligence, labor, productivity, and the need for firm-level data</title>
+		<author>
+			<persName><forename type="first">Raj</forename><surname>Seamans ; Raj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seamans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The economics of artificial intelligence: An agenda</title>
+		<imprint>
+			<publisher>University of Chicago Press</publisher>
+			<date type="published" when="2018">2018. 2018</date>
+			<biblScope unit="page" from="553" to="565" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><surname>Sandoval</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.09727</idno>
+		<title level="m">Security implications of large language model code assistants: A user study</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Expectation vs. experience: Evaluating the usability of code generation tools powered by large language models</title>
+		<author>
+			<persName><surname>Vaithilingam</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.03468</idno>
+		<title level="m">The ai index 2022 annual report</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Productivity assessment of neural code completion</title>
+		<author>
+			<persName><surname>Ziegler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming</title>
+		<meeting>the 6th ACM SIGPLAN International Symposium on Machine Programming</meeting>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+			<biblScope unit="page" from="21" to="29" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

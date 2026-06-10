@@ -1,0 +1,2844 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BOAD: DISCOVERING HIERARCHICAL SOFTWARE EN-GINEERING AGENTS VIA BANDIT OPTIMIZATION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-01-01">1 Jan 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Iris</forename><surname>Xu</surname></persName>
+							<email>irisxu@mit.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Guangtao</forename><surname>Zeng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Charles</forename><surname>Jin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aldo</forename><surname>Pareja</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dan</forename><surname>Gutfreund</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhang-Wei</forename><surname>Hong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mit-Ibm</forename><surname>Watson</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Lab</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Umass</forename><surname>Amherst</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Massachusetts Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BOAD: DISCOVERING HIERARCHICAL SOFTWARE EN-GINEERING AGENTS VIA BANDIT OPTIMIZATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-01-01">1 Jan 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9C62D8F817016BD87EB81A7459046F66</idno>
+					<idno type="arXiv">arXiv:2512.23631v2[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T14:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have shown strong reasoning and coding capabilities, yet they struggle to generalize to real-world software engineering (SWE) problems that are long-horizon and out-of-distribution. Existing systems often rely on a single agent to handle the entire workflow-interpreting issues, navigating large codebases, and implementing fixes-within one reasoning chain. Such monolithic designs force the model to retain irrelevant context, leading to spurious correlations and poor generalization. Motivated by how human engineers decompose complex problems, we propose structuring SWE agents as orchestrators coordinating specialized sub-agents for sub-tasks such as localization, editing, and validation. The challenge lies in discovering effective hierarchies automatically: as the number of sub-agents grows, the search space becomes combinatorial, and it is difficult to attribute credit to individual sub-agents within a team. We address these challenges by formulating hierarchy discovery as a multi-armed bandit (MAB) problem, where each arm represents a candidate sub-agent and the reward measures its helpfulness when collaborating with others. This framework, termed Bandit Optimization for Agent Design (BOAD), enables efficient exploration of sub-agent designs under limited evaluation budgets. On SWE-bench-Verified, BOAD outperforms single-agent and manually designed multi-agent systems. On SWE-bench-Live, featuring more recent and out-of-distribution issues, our 36B system ranks second on the leaderboard at the time of evaluation, surpassing larger models such as GPT-4 and Claude. These results demonstrate that automatically discovered hierarchical multi-agent systems significantly improve generalization on challenging long-horizon SWE tasks. Code is available at <ref type="url" target="https://github.com/iamxjy/BOAD-SWE-Agent">https://github.com/iamxjy/BOAD-SWE-Agent</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large language models (LLMs) have achieved remarkable progress in natural language processing <ref type="bibr" target="#b37">[38]</ref> and reasoning <ref type="bibr" target="#b20">[21]</ref>, and are increasingly adopted in solving complex coding problems <ref type="bibr" target="#b57">[58]</ref>. Yet solving real-world software engineering (SWE) problems remains challenging <ref type="bibr" target="#b24">[25]</ref> for LLMs, particularly for issues that fall outside the training distribution <ref type="bibr" target="#b53">[54]</ref>. Despite strong results on SWEbench-Verified <ref type="bibr" target="#b24">[25]</ref>, state-of-the-art systems struggle on more recent and out-of-distribution issues in SWE-bench-Live <ref type="bibr" target="#b53">[54]</ref>.</p><p>We hypothesize that one reason current SWE agents generalize poorly is their reliance on a single agent to solve a problem within a single reasoning chain. Solving a software engineering task requires handling multiple sub-tasks-such as locating relevant files, editing code, and running tests-each of which depends only on a subset of information. For example, during code editing, the model only needs to know which line to modify, not how that file was previously located. Retaining such irrelevant context introduces spurious correlations <ref type="bibr">[57; 36]</ref>, leading models trained on long reasoning chains to overfit to training distributions and degrade on out-of-distribution problems. Motivated by the need to limit irrelevant context during long reasoning processes, we introduce explicit hierarchical structure to LLM-based agents. This design choice mirrors how human engineers Preprint solve complex problems-cognitive science studies show that humans reduce cognitive load by decomposing complex tasks into manageable sub-tasks and integrating their outcomes to form the final solution <ref type="bibr">[32; 37; 33]</ref>. Recent work <ref type="bibr" target="#b54">[55]</ref> demonstrates that decomposing a complex task into smaller sub-tasks improves LLM performance. In software engineering, such decomposition commonly maps to stages like bug reproduction, fault localization, code modification, and validation <ref type="bibr">[45; 24; 31]</ref>.</p><p>This same idea appears as temporal abstraction in hierarchical reinforcement learning (HRL) <ref type="bibr" target="#b10">[11]</ref>: instead of solving problems step by step, the agent delegates control to reusable sub-agents, each defined as a policy for a specific sub-task <ref type="bibr" target="#b39">[40]</ref>. An orchestrator coordinates these sub-agents by selecting which one to activate, and each sub-agent runs until it completes its sub-task <ref type="bibr">[40; 19; 10]</ref>. Planning at the level of sub-agents shortens the effective decision horizon and abstracts away lowlevel details, allowing the orchestrator to focus on high-level structure. This abstraction supports generalization because sub-agents capture task-invariant skills-such as repo navigation, information retrieval, or code modification-that can be recomposed across different tasks and contexts, rather than overfitting to task-specific action sequences.</p><p>Although hierarchical multi-agent systems for SWE tasks appear promising, prior attempts have achieved only limited success. Existing approaches <ref type="bibr">[8; 34; 14]</ref> typically rely on manually constructed systems, where sub-agents are assigned to predefined sub-tasks (e.g., locating faulty files) and coordinated by a human-designed orchestrator. These designs depend heavily on human intuition to decompose tasks and assign agent roles, but such decompositions often fail to align with how LLMbased agents actually reason and behave. Because LLM behavior is difficult to predict, workflows that appear logical to humans can perform poorly in practice (Section 5).</p><p>This motivates automating multi-agent design, which removes the need for manual specification and enables the discovery of effective agent designs that may not be obvious to human designers. While prior work has explored optimizing the design of single-agent SWE systems <ref type="bibr" target="#b50">[51]</ref>, these methods do not address the additional challenges of multi-agent coordination, where agents must interact and share information dynamically. Other approaches optimize fixed, multi-step workflows involving multiple LLM calls <ref type="bibr">[26; 52; 23]</ref>, but they still rely on predefined pipelines. In contrast, SWE agents operate in open-ended environments where execution order and interactions are not fixed in advance.</p><p>Automating multi-agent design introduces two main challenges. First, as the number of sub-agents grows, the design space expands combinatorially, and evaluating each multi-agent design on SWE tasks is far slower than on simpler reasoning benchmarks like multi-hop QA <ref type="bibr" target="#b22">[23]</ref>. Second, the evaluation signal is coarse and noisy-success or failure of the multi-agent system reveals little about each sub-agent's contribution. A team of sub-agents may succeed even if one sub-agent consistently makes mistakes and others compensate, making it difficult to assign credit accurately.</p><p>To address these challenges, we take a bottom-up approach: rather than exhaustively searching over all combinations of sub-agents, we first identify promising sub-agents individually and then compose them into a team. This makes the search space grow linearly instead of exponentially with the number of sub-agents. The key difficulty is credit assignment-a sub-agent's value cannot be measured in isolation since it must collaborate with others to solve an issue (e.g., a localizer alone cannot edit code). Instead of judging success by whether the entire team solves a problem, we estimate each sub-agent's helpfulness, measuring how much it contributes to solving the problem when in combination with other sub-agents. We use LLM-as-a-judge <ref type="bibr" target="#b28">[29]</ref> to assess this contribution from the agent's behavior during the problem-solving trajectory, yielding a more informative signal than a binary success or failure outcome.</p><p>Once helpfulness is defined, the next question is how to efficiently discover effective sub-agents. Evaluating a sub-agent once is insufficient because its performance depends on its teammates and the task instance, both of which vary stochastically. Yet repeatedly testing all sub-agents would be prohibitively expensive. To balance exploration (trying under-tested sub-agents) and exploitation (focusing on those that have performed well), we formulate multi-agent design as a multi-armed bandit (MAB) problem <ref type="bibr">[17; 1; 20; 50]</ref>, where each arm corresponds to a sub-agent and the reward is its helpfulness. Well-established exploration algorithms in multi-armed bandits (MAB) <ref type="bibr" target="#b27">[28]</ref> provide an effective toolkit for adaptively selecting sub-agents to evaluate and efficiently discovering a set of helpful ones. We refer to this framework as Bandit Optimization for Agent Design (BOAD).</p><p>We evaluate our BOAD on SWE-bench-Verified <ref type="bibr" target="#b24">[25]</ref>, a benchmark for software engineering tasks grounded in real GitHub issues. On SWE-bench-Verified, our method consistently outperforms single-agent systems and manually designed multi-agent systems. On SWE-bench-Live <ref type="bibr" target="#b29">[30]</ref>, which includes more recently collected issues and presents out-of-distribution challenges, our system ranked second on the leaderboard at the time of evaluation using a 36B model-outperforming largerscale systems based on Claude and GPT-4. To our best knowledge, our work is the first to show generalization improvements using automatically discovered hierarchical multi-agent systems on challenging long-horizon interactive tasks like SWE-bench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORKS</head><p>Prior works [8; 34; 14] built multi-agent systems for SWE tasks by manually designing the prompts of each sub-agent and the orchestrator that coordinates them. Each sub-agent handled a specific sub-task (e.g., issue localization). While intuitive, these systems required heavy engineering and yielded only marginal gains, leading to limited follow-up work in this direction. Other efforts <ref type="bibr">[30; 53]</ref> leveraged diversity across multiple agents or models to improve accuracy through ensembling, where each agent generated a patch and an aggregator selected the final solution. In contrast, we aim to automatically learn a hierarchical multi-agent system-comprising an orchestrator and multiple sub-agents-without manually defining their roles or coordination.</p><p>Automating multi-agent design is closely related to prior work on optimizing single-agent systems. Existing approaches have focused on improving an agent's prompt <ref type="bibr">[26; 2; 22]</ref> or its scaffold <ref type="bibr" target="#b50">[51]</ref>, including both tools and prompts, by iteratively refining these components based on task performance. These methods typically optimize a single agent for a given task. In contrast, we study the automated design of multi-agent systems, where different agents are specialized for distinct sub-tasks and must coordinate to solve the overall problem. Closer to multi-agent systems, several prior works study how to optimize the workflow among agents. In these approaches, a workflow may be represented as a Python function that orchestrates multiple LLM calls Hu et al. <ref type="bibr" target="#b22">[23]</ref>, or as a graph of agents with distinct roles and prompts <ref type="bibr">[52; 56]</ref>. While effective in their respective settings, such workflow optimization methods have seen limited adoption in SWE tasks. One likely reason is that SWE tasks often demand fine-grained, dynamic coordination that evolves as the task unfolds. In contrast to workflows that are largely specified prior to execution, multi-agent systems for SWE typically require agents to adapt and coordinate on the fly in response to intermediate outcomes and newly discovered information.</p><p>Prior work has explored automatically generating multi-agent systems <ref type="bibr">[16; 15; 49]</ref>, but these approaches typically assume a fixed execution scheme, such as a predefined agent ordering <ref type="bibr">[16; 15]</ref> or parallel aggregation of agent outputs <ref type="bibr" target="#b48">[49]</ref>. In contrast, our work focuses on optimizing how agents coordinate with one another. In addition, existing studies primarily consider simple, inexpensive tasks, whereas we target SWE tasks that involve long-horizon, multi-turn interactions and are costly to evaluate, motivating the need for higher sample efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PRELIMINARIES</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Software engineering agents</head><p>We study the problem of using LLMs to resolve real-world GitHub issues, where each issue consists of a textual description and a corresponding code repository. Since issues are not self-contained, solving them requires identifying and modifying relevant parts of the codebase. In this work, we focus exclusively on agentic methods <ref type="bibr" target="#b47">[48]</ref>, where an LLM interacts with a runtime environment through tool use. Such agents can browse files, execute shell commands, run tests, and edit code directly, giving them the flexibility to tackle long-horizon tasks end-to-end.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Markov Decision Process (MDP)</head><p>We model agent-environment interaction as a finite-horizon Markov decision process (MDP) <ref type="bibr" target="#b34">[35]</ref>, M = (S, A, r, H). At each step t, the agent observes a state s t ∈ S, consisting of the issue description x and the history of prior tool interactions h t-1 = (a 1 , o 1 , . . . , a t-1 , o t-1 ). The agent samples an action a t ∈ A from its policy π(a t | s t ), where A includes all available tools and commands. Executing a t yields an observation o t ∈ O (e.g., logs, diffs, or test results), updating the state to s t+1 . A trajectory τ = (s 0 , a 0 , . . . , s T , y) terminates at T ≤ H when the agent submits a patch y (forced at T = H if none is submitted earlier). Rewards are sparse: r(s t , a t ) = 0 for t &lt; T, r(s T , a T ) = 1 if y passes all tests, 0 otherwise. The agent's goal is to maximize the expected rewards J(π) = E τ ∼π [r(s T , a T )]. With sparse rewards and long horizons, discovering successful trajectories is challenging.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Temporal Abstraction via Semi-MDP (SMDP)</head><p>The Semi-Markov Decision Process (SMDP) framework <ref type="bibr" target="#b38">[39]</ref> is widely used to mitigate long-horizon sparse reward problems. Instead of issuing primitive actions a t ∈ A, the orchestrator selects a temporally extended action (option) ω t ∈ Ω. Each option corresponds to a sub-agent that executes a sequence of actions (a t , . . . , a t+m-1 ) until termination, after which control returns at s t+m , where m denotes the duration of a sub-agent. This reduces decision frequency and simplifies planning.</p><p>Multi-Armed Bandit (MAB) Multi-armed bandit (MAB) <ref type="bibr" target="#b27">[28]</ref> is a special case of an MDP with a single state and no transitions. At each round t, the learner selects an arm a t ∈ A, receives a stochastic reward r t ∈ [0, 1] drawn from an unknown distribution, and seeks to maximize the cumulative reward B t=1 r t over a fixed interaction budget B. The MAB framework captures decision-making under uncertainty when only a limited number of trials are available.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">METHOD: BANDIT OPTIMIZATION FOR AGENT DESIGN (BOAD)</head><p>Our goal is to automatically discover a set of K sub-agents Ω = {ω 1 , . . . , ω K } together with an orchestrator π that maximizes expected task performance (i.e., reward) r. A straightforward approach is to directly optimize over both components using evolutionary <ref type="bibr" target="#b12">[13]</ref> or random search <ref type="bibr" target="#b11">[12]</ref>:</p><formula xml:id="formula_0">max π,Ω E x∼Ddesign,τ ∼π [r(s T , a T )] ,<label>(1)</label></formula><p>where D design denotes a design set of representative problem instances. However, evaluating a candidate pair (π, Ω) requires executing full interaction trajectories τ and repeatedly querying the reward function r. In software engineering (SWE) tasks, such evaluations are long-horizon, multi-turn, and computationally expensive, making naive joint search over (π, Ω) impractical.</p><p>Agent design as a multi-armed bandit. To address this challenge, we reformulate agent discovery as a multi-armed bandit (MAB) problem <ref type="bibr" target="#b27">[28]</ref>. In this formulation, each arm corresponds to a candidate sub-agent ω i , and at each round t, a subset of K sub-agents is selected and evaluated under an orchestrator. Casting agent design as a bandit problem allows us to leverage principled exploration-exploitation strategies <ref type="bibr">[27; 9]</ref>: these algorithms can allocate more evaluations to promising sub-agents while still exploring alternatives. This substantially reduces wasted computation on poor designs and makes automatic discovery of multi-agent systems feasible under the high evaluation costs characteristic of SWE tasks. We present the formal bandit formulation in Section 4.1. Towards this end, we must solve the following problems:</p><p>1. The space of possible orchestrators and sub-agent sets is vast and initially unknown, making it infeasible to pre-enumerate arms, as required by standard bandit algorithms.</p><p>2. Even if we evaluate a sub-agent along with an orchestrator and the other sub-agents, credit assignment is ambiguous: some sub-agents may succeed only by "free-riding" on others, so the observed reward does not necessarily reflect their individual contribution.</p><p>Next, we illustrate how we tackle these challenges in the following sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">AGENT DESIGN AS A MULTI-ARMED BANDIT PROBLEM</head><p>The space of orchestrator-subagent pairs (π, Ω) is vast and infeasible to enumerate. To make the search tractable, we maintain an archive Γ of candidate sub-agents. Instead of treating each subset of sub-agents Ω as an arm, we treat each sub-agent ω ∈ Γ as an arm, enabling information sharing across different sub-agents (will be explained below). At each round t, the algorithm selects a subset Ω t ⊆ Γ by choosing K arms, instantiates an orchestrator π t for Ω t , evaluates (π t , Ω t ) on example problems from a design set, and propagates feedback to all participating sub-agents. Feedback is calculated for each sub-agent independently to tackle the credit assignment problem (details in 4.2). Because sub-agents appear in multiple subsets, each evaluation, even if unsuccessful, provides signal for multiple subsets at the same time. This formulation supports efficient credit assignment, reduces redundant exploration, and progressively refines estimates u ω for each ω ∈ Γ. Algorithm 1 summarizes the procedure, with further details provided below.</p><p>Bootstrapping a sub-agent archive We begin with an initial archive Γ 0 of candidate sub-agents. This archive is generated by prompting an LLM with the template in Appendix A.1.2. However, simply generating sub-agents is insufficient because the orchestrator may not know how to invoke them. We present sub-agents as tools to the orchestrator and adopt the standard tool-calling protocol from SWE-agent <ref type="bibr" target="#b47">[48]</ref>. To call a sub-agent, the orchestrator must parse its docstring to understand the functionality and supply the required inputs. For example, an issue-localizer sub-agent requires the issue summary as input; without it, the sub-agent cannot operate. To ensure this, we introduce a warm-up stage that rewrites each generated sub-agent's docstring into a precise specification of its inputs and outputs, enabling the orchestrator to integrate it correctly. Details are provided in Appendix A.1.1.</p><p>Sub-agent evaluation At each round t, we select a set of K sub-agents Ω t = {ω 1 , . . . , ω K } ⊆ Γ t-1 . Given this set, an orchestrator π t is instantiated by prompting an LLM (see Appendix A.1.3), and the system (π t , Ω t ) is evaluated on a subset of example problems from a design set. This evaluation yields a performance score u ω ∈ [0, 1] for each sub-agent ω ∈ Ω t . A straightforward choice for u ω is the success rate of the system on the design set, but as discussed in Section 4.2, this metric is suboptimal and we propose a more effective alternative.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Balancing exploration and exploitation on sub-agent selection</head><p>After bootstrapping the archive, the next challenge is deciding which sub-agents to evaluate in each round. To balance exploration with exploitation, we adopt the Upper Confidence Bound (UCB) <ref type="bibr" target="#b27">[28]</ref> strategy. For each sub-agent ω ∈ Γ t-1 , we track its empirical mean μω (t) of the performance score of u ω and selection count n ω (t) up to round t. The UCB score of a sub-agent ω at round t is defined as UCB ω (t) = μω (t) + 2 ln t n ω (t) .</p><p>The first term favors sub-agents with high observed performance, while the second term gives an optimism bonus to under-sampled sub-agents (i.e., exploration). At each round t, we select the top-K sub-agents based on their UCB scores, ensuring that evaluations increasingly focus on strong candidates while still allocating time to uncertain ones.</p><p>Expanding the archive A fixed archive risks stagnation: once UCB identifies a few strong subagents, it will repeatedly exploit them, leaving little opportunity to discover new behaviors. To address this, we expand the archive dynamically using a Chinese Restaurant Process (CRP) <ref type="bibr">[3; 44]</ref>. At each round t, we prompt the LLM to generate a new sub-agent distinct from those in the current archive Γ t-1 (see Appendix A.1.2). The probability of introducing a new sub-agent is</p><formula xml:id="formula_1">Pr(new at t) = θ θ + |Γ t-1 | ,</formula><p>where θ &gt; 0 is a concentration parameter. This mechanism ensures diversity: when the archive is small, new sub-agents are frequently added; as the archive grows, the probability decreases, shifting the emphasis toward reuse of existing ones. Over time, the expected number of distinct sub-agents after T rounds grows as O(θ log T ), providing unbounded but controlled expansion. We also run the warmup stage (Appendix A.1.1) to ensure the sub-agent is usable by the orchestrator.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">HINDSIGHT CREDIT ASSIGNMENT</head><p>A central challenge in our framework is defining the performance score u ω of individual sub-agents ω. A simple approach is to set the score of a sub-agent to the success rate of all trajectories that</p><p>Preprint Algorithm 1 Bandit Optimization for Agent Design (BOAD) Require: budget B, number of sub-agents to select K, concentration θ 1: Initialize archive Γ 0 ← BOOTSTRAP. 2: for t = 1, 2, . . . , B do 3: With probability θ θ+|Γt-1| , create a new sub-agent ω new and set Γ t ← Γ t-1 ∪ {ω new }; otherwise set Γ t ← Γ t-1 . 4: for each ω ∈ Γ t do 5: if n ω (t -1) = 0 then 6: UCB ω (t) ← +∞ ▷ force initial exploration 7: else 8: UCB ω (t) ← μω (t -1) + 2 ln t nω(t-1) 9: end if 10: end for 11: Select top-K sub-agents based on UCB scores as a set of sub-agents Ω t . 12:</p><p>Instantiate orchestrator π t conditioned on Ω t .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>13:</head><p>Evaluate (π t , Ω t ) on a subset of training problems; observe performance score u ω ∈ [0, 1] (Sec. 4.2). Update μω (t) and n ω (t) for each ω ∈ Ω t . 15: end for include it:</p><formula xml:id="formula_2">u ω = 1 |T t ω | τ ∈T t ω 1{τ is successful},</formula><p>where T t ω is the set of trajectories at round t in which ω is used by the orchestrator π. However, this suffers from a "free-rider" problem: a sub-agent may appear effective simply because it often co-occurs with strong sub-agents, even if it contributes little itself.</p><p>To overcome this, we adopt a hindsight-based credit assignment strategy. The idea is to reward a sub-agent whenever its actions help the orchestrator make progress toward solving the problem, even if the orchestrator ultimately fails. Thus, sub-agents that provide useful intermediate steps are credited, while those that do not are penalized, regardless of the outcomes. Concretely, let τ = (a 1 , o 1 , . . . , a T , o T ) denote the trajectory of actions and observations produced during problem solving. For each sub-agent ω that appears in τ , we query an LLM judge (Appendix A.1.4) with the trajectory and obtain a binary label ℓ ω (τ ) ∈ {0, 1}, where ℓ ω (τ ) = 1 indicates that the LLM judge deems ω's contribution in the trajectory as helpful. The performance score of sub-agent ω is then defined as the empirical average over all evaluated trajectories:</p><formula xml:id="formula_3">u ω = 1 |T t ω | τ ∈T t ω ℓ ω (τ ).</formula><p>This hindsight-based score u ω ∈ [0, 1] provides a more reliable estimate of the utility of ω than success rates. By directly linking credit to judged contributions, it avoids free-riding effects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS</head><p>Our experiments address the central question: Can properly designed hierarchical multi-agent systems improve the generalization performance of SWE agents? We further analyze how the systems discovered by our algorithm differ from human-designed ones and examine the contribution of each design choice to the overall performance gains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">SETUP</head><p>Task format and datasets. We evaluate on the SWE-BENCH benchmarks: SWE-BENCH VERIFIED (500 instances) <ref type="bibr" target="#b24">[25]</ref> and SWE-BENCH LIVE (300 instances) <ref type="bibr" target="#b53">[54]</ref>. VERIFIED is a curated, frozen set of real GitHub issues, while LIVE continuously adds newly collected, human-verified issues from active repositories, making it more resistant to data contamination <ref type="bibr" target="#b45">[46]</ref> and better suited for testing generalization to out-of-distribution problems. Each instance includes a GitHub issue, a repository-specific container image, and an executable test harness. The agent must interact with the repository (files and, when available, history) and produce a patch that resolves the issue by passing all tests (pass-to-pass and fail-to-pass).</p><p>To avoid overfitting and limit design-time compute, we construct a small yet diverse design set by sampling one random issue per repository (12 total) from VERIFIED, which we find to be sufficient based on an ablation over design-set size (A.3.1). The design set is disjoint from all issues in LIVE.</p><p>All results in Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table" target="#tab_2">3</ref> are reported on VERIFIED and LIVE (lite) splits. We also report the result of BOAD on VERIFIED (HELD OUT) that exclude the 12 issues used in the design set.</p><p>Optimization Details During BOAD optimization, we run B = 20 rounds of the bandit loop (Algorithm 1) (testing on up to 100 rounds shows that sub-agents created after around 20 rounds are generally worse, and 20 iterations is enough to converge to a state where helpful rate and UCB rankings align). Each time a new sub-agent is created, the sub-agent first goes through a warmup process, which uses randomly sampled instances from the design set to iteratively refine the documentation/instance prompt of the sub-agent, ensuring that the sub-agent is usable. We use W = 4 rounds for the warm-up process. Each round samples K = 3 sub-agents and evaluates them on the design set. The optimization took around 12 hours on a machine with 56 CPU cores and 440GB RAM. For running SWE-agent (orchestrator and sub-agent LLM inference), we deploy Seed-OSS-36B-Instruct on one H100 GPU node. Note that by the tenth iteration, the top-2 most helpful subagents are the same as the ones converged on later. Running B = 10 iterations took less than 7 hours.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation.</head><p>All experiments use the SWE-AGENT scaffold with a set of default tools from SWE-agent <ref type="bibr" target="#b47">[48]</ref>: edit anthropic (file viewing/editing), bash (restricted shell commands), and submit. The orchestrator calls sub-agents through the same XML-based tool-calling API, passing information via a context parameter; sub-agents return outputs through this channel without access to the orchestrator's history. We use Claude-4 to generate candidate designs (Section 4.1) with temperature 0.0 and evaluate sub-agent helpfulness (Section 4.2). For execution, both orchestrator and sub-agents use Seed-OSS-36B-Instruct with temperature 0.0, unless specified, a strong instructionfollowing model that is not heavily tuned on SWE tasks. This choice ensures improvements reflect the benefit of orchestration rather than fine-tuning on SWE-task specific data. Each sub-agent is equipped with prompts discovered by BOAD, defined with docstrings and argument specs, and given access to the same default tools as the orchestrator.</p><p>Finally, for evaluation, we use the two subagents with the highest helpfulness score (the hindsightbased score) found during the subagent discovery (Appendix A.2.1). We also ablate by varying k in the top-k selection and by using success rate instead of helpfulness as the ranking metric (Section 5.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">MAIN RESULTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Success Rate</head><p>Table <ref type="table" target="#tab_0">1</ref> shows that with Seed-OSS-36B-Instruct, BOAD resolves 20.0% of issues on LIVE, ranking second on the leaderboard at the time of evaluation and outperforming larger models in popular scaffolds (e.g., GPT-4o, DeepSeek-V3, GLM-4.5-Air, Claude 3.7 Sonnet). This is a 63% improvement over the same model with default SWE-agent tools. On VERIFIED, BOAD achieves 53.12%, surpassing many larger models (e.g., GPT-4o, Claude 3.5 Sonnet OpenHands, DeepSeek-R1, DeepSeek-V3) and setting a new state of the art among smaller models (e.g., Qwen3-Coder-30B-A3B-Instruct, Devstral-Small-2505), with a 13.4% gain over the default SWE-agent. Interestingly, adding manually designed sub-agents (Appendix A.2.4) from prior work [8; 34; 14] lowers performance, indicating that human-crafted roles can be misaligned with LLM behavior. Overall, these results demonstrate that BOAD automatically discovers orchestrator-sub-agent structures that not only boost in-distribution performance but also generalize more effectively to out-of-distribution tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison with Evolutionary Baseline</head><p>We also implement an evolutionary search for a multiagent system adapted from Automated Design of Agentic Systems <ref type="bibr" target="#b22">[23]</ref>, as a baseline to compare BOAD against. Implementation details for the evolutionary search are provided in Appendix A.4.1.</p><p>When using the same number of evaluation instances (i.e., number of SWE-Bench patches generated), we find that the sub-agents generated by the evolutionary search achieve worse performance (17.0% vs 20.0% on SWE-Bench-Live) than BOAD. Additionally, for the same number of iterations, the cost of Claude API calls is more than double that of BOAD due to the need of generating many sub-agents at each iteration, whereas BOAD reuses subagents across iterations.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">ABLATION STUDIES AND ANALYSIS</head><p>Does prompt optimization explain the gains? One possible explanation for BOAD 's performance improvement is that it simply arises from better prompt optimization of SWE-agent. To test this, we introduce a baseline that optimizes the SWE-agent prompt without adding sub-agents (w/o Sub-agent). We run 10 iterations: in each, a new SWE-agent prompt is generated by prompting Claude-4 with the template shown in A.1.5, evaluated on 12 issues (the same setting as BOAD). The first iteration is initialized without history, and from the second onward, prompt generation is conditioned on the top five prompts from previous rounds, ranked by performance. Results in Table <ref type="table" target="#tab_2">3</ref> show that prompt optimization alone does not reach the performance of BOAD, indicating that the gains are not solely due to prompt tuning but from the discovery of effective sub-agents and orchestration. Do more sub-agents improve performance? One might expect performance to improve as more sub-agents are added, since each can specialize. To test this, we vary the number of top-K sub-agents from 1 to 5 based on the helpfulness score (Section 4.2) and evaluate on LIVE. Surprisingly, Table <ref type="table" target="#tab_2">3</ref> shows that performance peaks with exactly two sub-agents, achieving 60/300 (20.0%). A single sub-agent (49/300) fails to leverage specialization, while larger teams of three (49/300), four (50/300), or five (41/300) reduce performance due to communication and coordination overhead. These results suggest that small, focused teams strike the best balance, outperforming both minimal and overly large teams of sub-agents.</p><p>Do we need to customize the orchestrator? We next ask whether gains come solely from sub-agent discovery or if the orchestrator must also adapt to its team. We compare two prompting strategies: (i) a generic prompt encouraging sub-agent calls (Appendix A.1.1), and (ii) a customized prompt generated by Claude-4 that explicitly references the top two sub-agents (selected by helpfulness scores) and outlines a plan for using them. Both settings use the same sub-agent set, but only the customized prompt allows the orchestrator to reason about and plan calls to specific sub-agents. Results in Table <ref type="table" target="#tab_2">3</ref> show the customized orchestrator (w customization) achieves 60/300 (20.0%), versus 50/300 (16.7%) (w/o customization) for the generic one. This indicates that while sub-agents provide new capabilities, the orchestrator must also be specialized to effectively coordinate them.</p><p>Is expanding the sub-agent archive needed? As discussed in Section 4.1, the initial archive may be limited, and adding new sub-agents during the design process could be necessary to discover stronger ones. To test this, we compare orchestrator performance using (i) sub-agents from the initial archive (w/o expansion) and (ii) sub-agents selected at the end of the design process (w expansion). Both settings use two sub-agents, consistent with our best configuration in Section 5.2, and the orchestrator is generated as described in Section 4.1. Results in Table <ref type="table" target="#tab_2">3</ref> show that final sub-agents outperform those from the initial archive, highlighting the importance of expanding the archive over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Is hindsight credit assignment necessary?</head><p>To address free-riding issues in sub-agent selection (Section 4.1), we use a helpfulness score to measure each sub-agent's contribution. To test its importance, we compare orchestrator performance when sub-agents are selected by (i) individual success rate versus (ii) helpfulness score. As shown in Table <ref type="table" target="#tab_2">3</ref>, helpfulness-based selection consistently outperforms success-rate selection, indicating that hindsight credit assignment (Section 4.2) is essential for identifying useful sub-agents.</p><p>Are discovered sub-agents transferable to other models? Since BOAD optimizes sub-agents for a specific model, we ask whether the best sub-agents differ across models and whether effective Preprint sub-agents can transfer. To test this, we apply the sub-agents from Section 5.2 to SWE-agent+Claude-3.7-Sonnet. As shown in Table <ref type="table" target="#tab_2">3</ref>, the discovered sub-agents do transfer to some extent, though the gains are smaller than those achieved with Seed-OSS-36B-Instruct, the model used for sub-agent optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">QUALITATIVE ANALYSIS OF SINGLE-VS MULTI-AGENT OUTCOMES</head><p>We manually inspected trajectories in which the single-and multi-agent systems produced different outcomes. Three recurring patterns emerged:</p><p>1. Over-editing (multi-agent advantage). Single agents frequently produced extremely long patches, including attempts to create new tests and edits outside the scope of the bug. Such patches inflate apply time and increase the chance of failing pass-to-pass, even if the agent is able to address the primary fault. In contrast, the multi-agent system tended to emit short, localized patches, highlighting the advantage of separating phases like localization and editing/testing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Multi-site fixes and coverage (multi-agent advantage).</head><p>When the fix required edits at multiple call sites or modules, the single agent often either over-edited unrelated regions or missed one or more necessary locations. The hierarchical system mitigated both omission and extraneous edits by delegating to a sub-agent for localization, which did a thorough analysis of the repository before making any targeted modifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3.</head><p>Error propagation from unvalidated sub-agent outputs (multi-agent failure mode). In a minority of cases, the multi-agent system failed while the single agent succeeded. Inspecting these outputs, we found that erroneous sub-agent outputs (e.g., incomplete span identification, misinterpretation of the issue) were accepted as ground truth by the orchestrator, leading subsequent steps astray. Because there is no intermediate validation or self-checking, the orchestrator has limited ability to recover from such upstream errors.</p><p>These observations align with our hypothesis: hierarchical delegation constrains edit scope and improves coverage of multi-site fixes, but introduces a new dependency on the quality of sub-agent handoffs. Incorporating lightweight verification (e.g., span cross-checks, invariant tests, or dual-read localization) is a promising mitigation for the third failure mode.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">DISCUSSION &amp; CONCLUSION</head><p>We present BOAD, a framework that formulates hierarchical multi-agent design as a sequential, online decision making problem to automatically discover multi-agent systems for long-horizon software engineering tasks. Our experiments show that automatically discovered sub-agents, when combined with a customized orchestrator, outperform single-agent and manually designed multi-agent systems on both SWE-BENCH VERIFIED and SWE-BENCH LIVE.</p><p>Limitations and Future Work: We find that discovered sub-agents transfer across models only partially and failure cases highlight error propagation when orchestrators unconditionally accept sub-agent outputs. Future work should explore evolution on large models, adaptive team sizing, verification, as well as extending the framework to domains beyond software engineering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preprint</head><p>• Zexue He: Explored the preliminary design of the ideas of this work and helped revise the manuscript.</p><p>• Charles Jin: Assisted and supported the implementation of our method.</p><p>• Aldo Pareja: Assisted and supported writing.</p><p>• Dan Gutfreund: Coordinated the compute and infrastructure.</p><p>• Chuang Gan: Coordinated the compute and infrastructure.</p><p>• Zhang-Wei Hong: Led the writing and ideation of the project, coordinated the team and resources, and explored the preliminary design of the ideas of this work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ETHICS STATEMENT</head><p>Coding agents hold strong promise for automating code generation and bug fixing, but they also carry risks of unintended or harmful outputs. For instance, an LLM-based agent may produce commands that could compromise a system (e.g., downloading unauthorized packages or deleting user files with rm -rf). To mitigate these risks in our study, all experiments were conducted within Docker containers, providing isolated and sandboxed environments that prevent harmful commands from impacting real user devices and substantially reducing the potential for actual harm. Our implementation also builds upon the SWE-Agent framework, which has been previously published and reviewed under established ethical standards. We carefully follow its curated protocols and licensing requirements.</p><p>Nevertheless, as with any AI-based coding agent framework, there remains the risk of deliberate misuse, for example, a malicious user prompting the system to generate harmful or hacking code. While our contribution is centered on advancing the technical design of hierarchical coding agents, we emphasize that real-world deployment should be coupled with responsible auditing and oversight, so that potential misuse and unintended consequences can be effectively mitigated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REPRODUCIBILITY STATEMENT</head><p>For all open-source LLMs (e.g., Seed-OSS-36B-Instruct, Qwen3-Coder-30B-A3B-Instruct), we rely on their official releases. Commercial LLMs and LLM-based tools are accessed through their official APIs and reference implementations. We provide detailed implementation notes of BOAD, including the prompt design for meta-agents, sub-agents, and LLM judges, in Section 5.1. To further support reproducibility and foster future research, we will also release all of our code, used data, and prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A EXPERIMENT DETAILS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 PROMPT TEMPLATES</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.1 PROMPT TEMPLATE FOR REFINING SUB-AGENT DURING WARMUP STAGE Prompt template for refining subagent during warmup stage</head><p>You are improving a subagent's prompts/config for a software engineering (SWE) automation system, based on recent run trajectories. The subagent is used by an AI main agent to address code issues. ↩→ CONTEXT -You will receive trajectory summaries below, starting with the main agent's trajectory, followed by any subagent trajectories in call order. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GOAL</head><p>Analyze the subagent's performance and suggest improvements to make it: 1. More discoverable by the main agent (when appropriate) 2. More reliable in its behavior 3. More useful in its output ANALYSIS FRAMEWORK Consider these questions: -Did the main agent discover and use the subagent when it should have? -Did the subagent behave as expected and return useful information? -Were there missed opportunities or inefficient behaviors?</p><p>IMPROVEMENT TYPES Focus on one or more of these areas: 1. ** docstring ** : Make the subagent easier for the main agent to discover and choose appropriately.</p><p>CRITICAL: Make sure to include "[subagent]" at the beginning of the docstring.</p><p>↩→ 2. ** context_description ** : Improve the description of the 'context' argument (the only argument) to be clearer and more helpful ↩→ 3. ** instance_template ** : Better incorporation of context, clearer framing for each problem instance Note that the docstring and context_description are visible only to the main agent, while the instance_template is visible only to the subagent. ↩→ Thus, if the subagent was not called, you should not edit instance_template. Similarly, if the only issue is the subagent's trajectory, not how it was called, do not edit docstring or context_description. ↩→ ↩→ PRINCIPLES -Make surgical, targeted improvements rather than broad rewrites -Preserve existing style and capabilities. Only edit components that need improvement. -Focus on clarity, discoverability, and reliability -Ensure generality. Avoid repo-or issue-specific assumptions. -CRITICAL: DO NOT WRITE ANYTHING SPECIFIC TO THE PARTICULAR CODEBASE, PROJECT, OR DOMAIN. OUTPUT FORMAT First, explain your reasoning about what issues you noticed with the provided trajectory and what improvements you're making. Then, output the YAML in a code block. ↩→ ** IMPORTANT ** : Only suggest edits when you identify a clear, specific problem. If the entire subagent is working well, use an empty updates dictionary. ↩→ Sample outputs: ** When improvements are needed: ** Explain your reasoning here. ```yaml updates: docstring: "&lt;improved docstring if needed&gt;" context_description: "&lt;improved context argument description if needed&gt;" instance_template: "&lt;improved instance template if needed&gt;" ``R ULES -Only include keys that you intend to change. -Start with `updates:`as the top-level key. If there are no updates to make, the value for `updatess hould be an empty dictionary. ↩→ -You may update any combination of the three fields (docstring, context_description, instance_template), but only include a field if it needs improvement. ↩→ -No explanations or extra content in the YAML -Keep each field concise but complete HEURISTICS -** Discovery issues ** : Strengthen docstring with clear use cases and when to invoke -** Insufficient context passed to subagent ** : Improve context_description with clearer argument explanation ↩→ -** Subagent behavior and output (Incorrect subagent trajectory or return information) ** : Improve instance_template with better instructions and output specifications ↩→ {{TRAJECTORIES}} A.1.2 META AGENT PROMPTS Prompt for generating a new subagent configuration You are an expert at designing custom tools for SWE-agent, an autonomous agent that can resolve code issues in large repositories. ↩→ YOUR TASK Invent a subagent tool for SWE-agent. -The subagent should enable the main agent to better perform its task of automatically resolving code issues in large static repositories. ↩→ -Design for broad applicability across the full workflow. Create broad subagents that are can solve an entire step of the pipeline, such as: ↩→ -code localization -reproducing issues and running scripts/tests -code editing/patching -code testing -The subagents created should ONLY be focused on correctness of the final patch (e.g. style, complexity of code does not matter) ↩→ -PRIORITIZE TOKEN EFFICIENCY: Design concise, focused subagents that use minimal tokens. Avoid verbose explanations or redundant information that wastes tokens. ↩→ -If you see a subagent that looks good but has bad token efficieny, you may generate a similar subagent with the same function but better implementation. ↩→ -The subagent takes a SINGLE argument that is a string, called "context". -BE NOVEL! Think carefully about how to help the main agent perform one of its subtasks. -Example subagents include localize, patch_editor, or code_tester. -Do not create a subagent that overlaps with previous subagents (other than the token efficiency situation). ↩→ -In your reasoning, you must explicitly list which steps the subagent supports (examples: explore, read/search, edit, run, validate) and the expected outputs for each supported step. ↩→ -CRITICAL: Output exactly ONE YAML document with the tool under a single key, which is the name of the tool. ↩→ -The name of the tool should be simple and descriptive. -The docstring for each tool should be comprehensive and describe what the output contains, as well as the state of the repository after the subagent is finished (if files will be edited or not, etc.).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head><p>The structure must be exactly as follows:</p><p>Add reasoning here about WHY you design this subgaent... ```yaml tool_name: signature: "tool_name &lt;context&gt;" docstring: docstring: "comprehensive description of this subagent, the output, and the state of repository on completion. Starts with '[subagent]:" ↩→ arguments:</p><p>-name: context type: string description: "detailed description of what the context parameter should contain" required: true subagent: true ``S ample output: It may be useful to have a patch editor subagent. This would go well with previous subagents and help the main agent more efficiently patch the issue. ↩→ ```yaml patch_editor: signature: "patch_editor &lt;context&gt;" docstring: "[subagent] Fixes a specific part of code that has errors. Outputs the changes made with reasoning. After calling, the correct changes are already implemented in the repository." ↩→ arguments:</p><p>-name: context type: string description: "A string containing the specific file path to make edits in, the lines where edits need to be made, a comprehensive description of the issue with the code (do not assume the subagent has any information about the repository or problem statement), and what to edit."</p><p>↩→ ↩→ required: true subagent: true ``{ {PREVIOUS_ITERATION_FEEBACK}} Prompt for generating subagent templates You are an expert at creating SWE-agent subagent configuration files for automating code-patching tasks in large GitHub repositories. ↩→ Given a description of the subagent, you need to generate the system_template and instance_template parts that will be used in the subagent configuration. ↩→ IMPORTANT FORMATTING RULES: -First output your reasoning that details your thinking process for creating the templates. Then, output a yaml block with both templates. ↩→ -Use MINIMAL spacing -avoid excessive blank lines -Use only SINGLE blank lines between sections (never double or triple spacing) -Keep templates compact and readable without unnecessary whitespace -CRITICAL: Use YAML literal block syntax with | and |-(see example below) -Do NOT use quoted strings -use literal blocks to avoid quotes in output -Replace ONLY text in [] with text specific to the subagent. Do NOT MODIFY any other parts. -Copy EXACTLY the parts other than [], including how to call the functions (e.g. "&lt;function=example_function_here&gt;") ↩→ Output format: [Reasoning here...] ```yaml system_template: | You are a helpful [role] assistant that can interact with a computer to [main task]. &lt;IMPORTANT&gt; * If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it. ↩→ &lt;/IMPORTANT&gt; You have access to the following functions: {{command_docs}} If you choose to call a function, you must ONLY reply in the following format with NO suffix: Provide any reasoning for the function call here. &lt;function=example_function_name&gt; &lt;parameter=example_parameter_1&gt;value_1&lt;/parameter&gt; &lt;parameter=example_parameter_2&gt; This is the value for the second parameter that can span multiple lines &lt;/parameter&gt; &lt;/function&gt; (You must use the exact text function=" and "parameter=" for each function and argument, respectively, e.g. &lt;parameter=command&gt;value&lt;/parameter&gt;) ↩→ &lt;IMPORTANT&gt; Reminder: -Function calls MUST follow the specified format, start with &lt;function= and end with &lt;/function&gt; -Required parameters MUST be specified -CRITICAL: Only call ONE function at a time -Always provide reasoning for your function call in natural language BEFORE the function call (not after) ↩→ &lt;/IMPORTANT&gt; &lt;pr_description&gt; {{problem_statement}} &lt;/pr_description&gt; CRITICAL: Use the submit_subagent function to provide the results when you are finished with your task. ↩→ You are ONLY responsible for your specific assigned task. Do NOT attempt to resolve entire pr_description, only your task. ↩→ Your goal is to complete your task in the MINIMAL NUMBER of steps. Resolve the issue fast and call submit_subagent as soon as possible. ↩→ instance_template: |-Your task: [Provide detailed, step-by-step instructions for your assigned subagent task, tailored to your specific role. The instructions must ONLY reference this subagent's function.] ↩→ [If a context argument is provided, you MUST include its contents by inserting "{{context}}" here and explaining what the parameter is.] ↩→ ** CRITICAL: STAY IN YOUR LANE ** -You are ONLY responsible for your specific assigned task -You are NOT responsible for solving the entire issue -You are NOT responsible for other subagent tasks -Focus EXCLUSIVELY on your assigned task and nothing else -CRITICAL: Call EXACTLY one function in your output! -CRITICAL: When you are finished, immediately call submit_subagent. Do not call any other tools or produce additional output. ↩→ Focus exclusively on your assigned task and strictly follow these instructions. Do not attempt to address unrelated parts of the PR or perform work outside your specific subagent role. ↩→ Use the submit_subagent tool after you are finished with your specific task to provide a clear and complete summary of your findings or changes. ↩→ Your thinking should be thorough and so it's fine if it's very long. ``R ules for generating templates: 1. The system_template should clearly define the subagent's role and capabilities based on the available tools ↩→ 2. The instance_template should provide clear instructions for each task 3. Both templates should maintain consistent formatting with the base template 4. Ensure the templates encourage thorough analysis and clear documentation 5. MUST use literal block syntax: system_template: | and instance_template: |-6. Never use quoted strings for templates 7. You should copy the given system template exactly other than the first sentence. 8. Modify the system template in the spots with []. {{PREVIOUS_ITERATION_FEEDBACK}} A.1.3 CUSTOM ORCHESTRATOR PLAN PROMPT Prompt template for generating a custom orchestrator plan given a set of subagents</p><p>You are a master workflow architect for automated software engineering. Your job is to design innovative, strategic workflows that maximize the effectiveness of available tools. ↩→ CONTEXT: You're designing workflows for an AI assistant that solves coding problems in software repositories. The assistant receives a problem description (like a bug report, feature request, or code issue) and needs to systematically work through the codebase to understand, fix, and validate the solution. The assistant has access to specialized "subagents" -each designed for specific aspects of the coding workflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→ ↩→ ↩→</head><p>You will be given a toolkit of specialized "subagents" -each with unique capabilities. Your challenge is to: ↩→ 1. ** Design ** a comprehensive problem-solving plan that addresses the coding issue systematically 2. ** Integrate ** subagents strategically where they add the most value to your workflow 3. ** Optimize ** the sequence and wording of the plan to minimize the number of steps that the AI assistant takes while remaining effective ↩→ Think like a senior engineer designing a solution strategy. Consider: -What are the key phases needed to solve this type of coding problem? -Which subagents would be most valuable for specific phases? -How can you combine subagent work with direct problem-solving phases? -What's the most logical progression to integrate subagent input and output to solve the issue? -How can you utilize subagents to minimize language model token usage and number of steps? INPUT -The available subagents will be provided inline between the following tags: &lt;available_subagents&gt; {{subagents_overview}} &lt;/available_subagents&gt; The content in &lt;available_subagents&gt; lists each subagent with its name and short docs (summary/description). Treat it as the authoritative source for tool names and purposes. ↩→ WHAT TO OUTPUT -Output ONLY your strategic plan as plain text (no YAML, no code fences, no headers).</p><p>-Each phase MUST start with a number and a period, e.g. "1. ...".</p><p>-For subagent phases, use the exact form: "Use the &lt;name&gt; subagent to ..." -For direct phases, describe the action clearly without mentioning subagents, ensuring that it can be applied to any problem. ↩→ -Be creative and strategic -design workflows that combine different approaches effectively -Keep 3 to 7 steps total, but make each step purposeful and well-reasoned -Make sure the last steps are:</p><p>-After you have solved the issue, delete any test files or temporary files you created.</p><p>-Use the submit tool to submit the changes to the repository. 1. Use the issue_localizer subagent to map the problem space and identify all potentially affected files and code regions. ↩→ 2. Analyze the problem description and examine the identified files to understand the root cause and requirements. ↩→ 3. Use the error_reproducer subagent to create a reproducible test case and capture the exact failure conditions. ↩→ 4. Design and implement the fix based on the analysis, focusing on the specific files and code areas identified. ↩→ 5. Use the code_tester subagent to validate the fix against the original failure case and run regression tests. ↩→ 6. After you have solved the issue, delete any test files or temporary files you created. 7. Use the submit tool to submit the changes to the repository. Now, based on the provided subagents, produce ONLY the numbered plan as plain text:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.4 PROMPT TEMPLATE FOR CHECKING IF A SUB-AGENT WAS HELPFUL IN A GIVEN INSTANCE</head><p>Prompt template for checking if a subagent was helpful in a given instance CONTEXT: These trajectories show a software engineering agent trying to fix a bug or implement a feature. The agent can use various tools including subagents (specialized AI assistants) to help solve the problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TRAJECTORIES: {{TRAJECTORIES}} TOOL TO ANALYZE: {{TOOL_NAME}}</head><p>Your task is to determine if the subagent "{{TOOL_NAME}}" was helpful in this set of trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>A tool is considered helpful if: 1. It was called/invoked by the main agent in the main agent trajectory 2. It provided useful information, analysis, or insights that contributed to solving the problem ↩→ 3. The main agent made progress after using this tool (e.g., identified the issue, made code changes, validated results, etc.)</p><p>↩→ 4. It completed its task as intended (followed proper analysis process, not just got lucky results) ↩→ Look for positive evidence such as: -The subagent being called with appropriate parameters -The subagent providing insights that led to code changes or problem understanding -The main agent referencing or building upon the subagent's output -The subagent's output being used in subsequent reasoning or actions Look for negative evidence such as: -The subagent not being called by the main agent, or called incorrectly -The subagent providing irrelevant or incorrect information that was not later used -The subagent's response was valid but did not move the main agent closer to resolving the problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>-The subagent failed to execute properly or had many errors during the its run.</p><p>-The subagent's output appeared correct, but its trajectory did not actually achieve those results (e.g., claimed to test code but just reported all tests passed).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>-The main agent had to call the subagent over and over again to get the proper results.</p><p>-The subagent trajectory was unnecessarily long or verbose, taking many steps to complete its task ↩→ -The main agent trajectory became inefficient due to excessive subagent calls or overly verbose subagent responses ↩→ -The subagent's results did not actually help the main agent make progress in resolve the issue. If a subagent did not contribute to producing the correct patch, e.g. only improved performance, style, or documentation, this is NOT helpful.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head><p>Respond with YAML format (exactly): ```yaml helpful: true/false reasoning: | Brief explanation of why the tool was or wasn't helpful, including specific evidence from the trajectories ↩→ ``-Always use the block scalar `|`for `reasoning`and indent its text by two spaces. -Only respond with the YAML block; no additional text before or after.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.5 ORCHESTRATOR-ONLY PROMPT Prompt template for generating an orchestrator prompt under orchestrator-only settings</head><p>You are a master workflow architect for automated software engineering. Your job is to design effective workflows that solve coding problems efficiently. ↩→ CONTEXT: You're designing workflows for an AI assistant that solves coding problems in software repositories. The assistant receives a problem description (like a bug report, feature request, or code issue) and needs to work through the codebase to understand, implement changes, and validate the solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→ ↩→</head><p>Your goal is to create workflows that are both effective at solving problems and efficient in their execution. Focus on designing strategic approaches that lead to successful problem resolution. ↩→ CONTEXT FOR PLAN USAGE: Your generated plan will be inserted into this agent template context: ``Ì 've uploaded a python code repository in the directory {{working_dir}}. Consider the following PR description: ↩→ &lt;pr_description&gt; {{problem_statement}} &lt;/pr_description&gt; Can you help me implement the necessary changes to the repository so that the requirements specified in the &lt;pr_description&gt; are met? I've already taken care of all changes to any of the test files described in the &lt;pr_description&gt;. This means you DON'T have to modify the testing logic or any of the tests in any way! Your task is to make the minimal changes to non-test files in the {{working_dir}} directory to ensure the &lt;pr_description&gt; is satisfied. When solving the task, ** first create a plan by breaking the problem into subtasks ** . Think systematically about the steps needed to understand the problem, locate relevant code, implement changes, and verify the solution. Follow this process:</p><p>↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ {{plan}} &lt;--YOUR PLAN GOES HERE You MUST follow the plan exactly. ``À VAILABLE TOOLS: -bash: Execute shell commands for searching, testing, running scripts, exploring codebase structure -str_replace_editor: View, create, and edit files with precise string replacement capabilities -submit: Submit the final solution LEARNING FROM HISTORY: &lt;sampled_templates&gt; {{sampled_templates_summary}} &lt;/sampled_templates&gt; If historical templates are provided above, identify what made the highest-scoring approaches successful and what caused failures. Look for patterns in tool usage, step efficiency, and problem-solving strategies. If no history exists, design breakthrough approaches that challenge conventional software engineering workflows. ↩→ ↩→ ↩→ WHAT TO OUTPUT: -Create a step-by-step plan that an AI agent can execute systematically -Each step must clearly specify tool usage ("Use bash to..." or "Use str_replace_editor to...") and expected outcomes ↩→ -Design for Python repositories and PR-based problem solving -Focus on minimal, targeted changes rather than broad exploration -Structure as numbered steps (1., 2., 3., etc.) with logical flow -Final step must use submit tool to deliver the solution -Make each step actionable and specific enough for precise execution -Output ONLY the numbered plan as plain text (no formatting, headers, or explanations) A.2 SUB-AGENTS A.2.1 BOAD TOP 2 DISCOVERED SUB-AGENT CONFIGURATIONS FOR SEED-OSS-36B-INSTRUCT issue analyzer configuration docstring: [subagent] Analyzes and structures issue descriptions, bug reports, or feature requests to extract key information for systematic resolution planning. Best used at the beginning of issue resolution to understand requirements, extract technical details, and plan investigation approach. Outputs structured analysis including problem summary, affected components, reproduction criteria, success conditions, and recommended investigation approach. Repository state unchanged -only analyzes the provided issue context. ↩→ ↩→ ↩→ ↩→ ↩→ argument: context (string) [required] : The complete issue description, bug report, feature request, or problem statement text that needs to be analyzed and structured. Include the full original text to ensure all requirements, technical details, constraints, and implementation notes are captured for systematic analysis. ↩→ ↩→ ↩→ instance template: Your task: Analyze and structure the provided issue description to extract key information for systematic resolution planning, based on the provided context: {{context}} ↩→ Follow these steps: 1. Parse the issue description to extract core information: -Issue type (bug report, feature request, enhancement, etc.) -Problem statement and symptoms -Expected vs actual behavior -Error messages or failure descriptions -Affected functionality or components ↩→ ↩→ 2. Identify technical details: -File paths, function names, or code references mentioned -Stack traces or error logs -Version information or environment details -Dependencies or configuration issues ↩→ ↩→ 3. Structure reproduction criteria: -Steps to reproduce the issue -Required conditions or setup -Input data or test cases needed -Expected failure modes or symptoms ↩→ 4. Define success conditions: -Clear criteria for issue resolution -Expected behavior after fix -Verification methods or tests needed -Performance or quality requirements5. Recommend investigation approach: -Priority areas to examine first -Suggested debugging or analysis methods -Related components that may be affected -Potential root cause categories. ↩→ ↩→ ↩→ 6. Provide structured analysis including: -Concise problem summary -Categorized technical details -Clear reproduction steps -Measurable success criteria -Systematic investigation plan -Risk assessment and impact analysis ↩→ ↩→ ** CRITICAL: STAY IN YOUR LANE ** -You are ONLY responsible for your specific assigned task-You are NOT responsible for solving the entire issue-You are NOT responsible for other subagent tasks-Focus EXCLUSIVELY on your assigned task and nothing else-↩→ ↩→ CRITICAL: Call EXACTLY one function in your output!-CRITICAL: When you are finished, immediately call submit_subagent. Do not call any other tools or produce additional output.Focus exclusively on your assigned task and strictly follow these instructions. Do not attempt to address unrelated parts of the PR or perform work outside your specific subagent role. ↩→ ↩→ ↩→ Use the submit_subagent tool after you are finished with your specific task to provide a clear and complete summary of your findings or changes. ↩→ Your thinking should be thorough and so it's fine if it's very long.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.3 ALL EVOLUTION DISCOVERED SUB-AGENTS</head><p>Here we report all bundles discovered over 20 iterations of BOAD (one for each iteration). For each sub-agent, we report its iteration number, the generated sub-agents, and the bundle's success rate. Note that sub-agents with the same name across different iterations may have different system/instance templates because sub-agents are not reused. On evaluation, we choose the bundle with the highest success rate (latest bundle if tied).</p><p>Sub-agents focused on problem analysis or file localization-such as issue analyzer (0.968 average helpfulness), code navigator (0.917), and issue reproducer (0.817)-consistently appear more useful. Our observation is that these agents provide value independently of how later stages unfold: even if code editing or testing fails, identifying the correct files and clarifying the underlying issue is almost always beneficial.</p><p>In contrast, sub-agents whose usefulness depends on earlier steps tend to show lower average helpfulness. For example, test analyzer (0.167) is only useful after the system has already identified the faulty files and produced a candidate patch; if either prerequisite fails, it cannot contribute, which naturally lowers its average helpfulness.</p><p>Specialized sub-agents such as dependency resolver (0.250) and config manager (0.000) also have low average helpfulness, largely because dependency or configuration issues appear in only a small fraction of tasks.</p><p>Finally, once core analysis is completed and the faulty files are correctly located, the orchestrator can often complete the remaining code-editing steps on its own. This explains why code-editing sub-agents like code fixer do not exhibit high average helpfulness. -Identify the relevant files and code sections -Make precise edits according to the specification -Maintain code quality and consistency -Output a short, clear report that mentions: -File paths/line numbers edited -What should be tested to verify the fix code tester configuration docstring: A subagent that tests code after edits have been made to verify the fix works correctly.</p><p>Outputs the result of the tests. ↩→ argument: context (string) [required] { A string containing the specific code changes made, file paths, and original error. ↩→ instance template: Code changes made: {{context}} Please test the code after the edits to verify the fix works correctly. You should: Use existing test files if available (prefixed with 'tmp_'), or create new ones as needed -Test the specific functionality that was changed -Determine whether or not the original error is fixed.</p><p>-Output a short, clear report that mentions: -List of tests run and results of the tests -Whether the original error is fixed, and if any new errors were introduced</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>14:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>↩→ -Each summary shows what the agent did, what was observed, and how far it progressed.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>-</head><figDesc>Do not mention any function-call formats or system details EXAMPLE (illustrative only; adapt to the given input) &lt;available_subagents&gt; -name: issue_localizer | Identify files and code regions relevant to the issue. -name: error_reproducer | Reproduce the failing behavior and capture commands/outputs. -name: code_tester | Run tests/commands to verify the fix and regressions. &lt;/available_subagents&gt; Expected output EXAMPLE (plain text only):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Success rate on SWE-BENCH VERIFIED and SWE-BENCH LIVE.</figDesc><table><row><cell>Scale</cell><cell>Model</cell><cell>Scaffold</cell><cell cols="2">Verified Resolved (%) Live Resolved (%)</cell></row><row><cell></cell><cell>GPT-4o [48]</cell><cell>SWE-agent</cell><cell>23.0</cell><cell>10.0</cell></row><row><cell></cell><cell>GPT-4o [47]</cell><cell>Agentless</cell><cell>38.8</cell><cell>11.7</cell></row><row><cell></cell><cell>Claude 3.5 Sonnet [5]</cell><cell>Agentless</cell><cell>50.8</cell><cell>-</cell></row><row><cell></cell><cell>Claude 3.5 Sonnet [5]</cell><cell>OpenHands</cell><cell>53.0</cell><cell>-</cell></row><row><cell>Large</cell><cell>Claude 3.7 Sonnet [4] Claude 4.0 Sonnet [6]</cell><cell>SWE-agent SWE-agent</cell><cell>62.4 66.8</cell><cell>13.7 1 -</cell></row><row><cell></cell><cell>Claude 4.0 Sonnet [6]</cell><cell>OpenHands</cell><cell>70.4</cell><cell>-</cell></row><row><cell></cell><cell>DeepSeek-R1 [21]</cell><cell>Agentless</cell><cell>49.2</cell><cell>-</cell></row><row><cell></cell><cell>DeepSeek-V3 [18]</cell><cell>Agentless</cell><cell>42.0</cell><cell>13.3</cell></row><row><cell></cell><cell>GLM-4.5-Air [41]</cell><cell>OpenHands</cell><cell>57.6</cell><cell>-</cell></row><row><cell></cell><cell>GLM-4.5-Air [41]</cell><cell>SWE-Agent</cell><cell>-</cell><cell>17.7</cell></row><row><cell></cell><cell cols="2">Qwen3-Coder 480B/A35B Instruct [43] OpenHands</cell><cell>69.6</cell><cell>24.7</cell></row><row><cell></cell><cell>Qwen3-Coder-30B-A3B-Instruct [43]</cell><cell>SWE-agent</cell><cell>-</cell><cell>17.0</cell></row><row><cell>Small</cell><cell>Qwen3-Coder-30B-A3B-Instruct [43]</cell><cell>OpenHands</cell><cell>51.6</cell><cell>-</cell></row><row><cell></cell><cell>Devstral-Small-2505 [7]</cell><cell>OpenHands</cell><cell>46.8</cell><cell>-</cell></row><row><cell></cell><cell>Seed-OSS-36B-Instruct [42]</cell><cell>SWE-agent (baseline)</cell><cell>49.8</cell><cell>12.3</cell></row><row><cell></cell><cell>Seed-OSS-36B-Instruct [42]</cell><cell>SWE-agent + Manual Sub-agent</cell><cell>47.4</cell><cell>14.0</cell></row><row><cell></cell><cell>Seed-OSS-36B-Instruct [42]</cell><cell>SWE-agent + Evolutionary Search</cell><cell>46.0</cell><cell>17.0</cell></row><row><cell></cell><cell>Seed-OSS-36B-Instruct [42]</cell><cell>SWE-agent + BOAD</cell><cell>53.2 2</cell><cell>20.0</cell></row></table><note><p>Token Analysis</p><p>In addition to success rate, we analyze the test-time token usage of the hierarchical multi-agent system discovered by BOAD in comparison to the default single-agent system. Hierarchical multi-agent systems introduce communication overhead, since agents must exchange information, but they can also reduce context length: sub-agents focus on specialized sub-tasks while the orchestrator handles high-level coordination without low-level details. Table2</p><p>compares token usage between SWE-agent and BOAD. Total tokens refer to the average sum of input and output tokens per issue, while max input tokens capture the average maximum input length per instance. Surprisingly, the total token count is comparable-and even lower on SWE-bench-live-than in the original SWE-agent. Moreover, BOAD consistently reduces input tokens, confirming that task decomposition shortens context length.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Token usage. BOAD lowers input token counts, thus shortening the model's input context length.</figDesc><table><row><cell>Metric</cell><cell>Setting</cell><cell>Verified</cell><cell>Live</cell></row><row><cell>Total tokens (M)</cell><cell>SWE-agent SWE-agent + BOAD</cell><cell>0.92 0.93 (+0.7%)</cell><cell>1.49 1.13 (-23.8%)</cell></row><row><cell>Max input tokens</cell><cell>SWE-agent SWE-agent+BOAD</cell><cell>34.6k 30.5k (-11.6%)</cell><cell>49.0k 36.7k (-25.0%)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Ablation studies and analysis. Each row corresponds to one research question. Results are reported on SWE-bench Live using Seed-OSS-36B-Instruct unless otherwise specified.</figDesc><table><row><cell>Research Question</cell><cell>Configuration</cell><cell>SWE-Bench Live (%)</cell></row><row><cell>Does prompt optimization explain the</cell><cell>w/o Sub-agent</cell><cell>16.3</cell></row><row><cell>gains?</cell><cell>w Sub-agent</cell><cell>20.0</cell></row><row><cell></cell><cell>Top-5 sub-agents</cell><cell>13.7</cell></row><row><cell>Do more sub-agents improve performance?</cell><cell>Top-4 sub-agents Top-3 sub-agents Top-2 sub-agents</cell><cell>16.7 16.3 20.0</cell></row><row><cell></cell><cell>Top-1 sub-agent</cell><cell>16.3</cell></row><row><cell>Do we need to customize the</cell><cell>w/o customization</cell><cell>16.7</cell></row><row><cell>orchestrator?</cell><cell>w customization</cell><cell>20.0</cell></row><row><cell>Is expanding the sub-agent archive</cell><cell>w/o expansion</cell><cell>17.0</cell></row><row><cell>needed?</cell><cell>w expansion</cell><cell>20.0</cell></row><row><cell></cell><cell>Top-3 subagents (success rate)</cell><cell>11.3</cell></row><row><cell>Is hindsight credit assignment</cell><cell>Top-3 subagents (helpfulness)</cell><cell>16.3</cell></row><row><cell>necessary?</cell><cell>Top-2 subagents (success rate)</cell><cell>15.3</cell></row><row><cell></cell><cell>Top-2 subagents (helpfulness)</cell><cell>20.0</cell></row><row><cell>Are discovered sub-agents transferable</cell><cell>Claude 3.7 Sonnet</cell><cell>13.7</cell></row><row><cell>to other models?</cell><cell>+ Top-2 sub-agents (helpfulness)</cell><cell>16.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Sub-agents and success rates per iteration for the evolutionary baseline.A subagent that localizes the issue in the repository. Takes a context string specifying the brief description of the issue. Outputs a brief report about which files and lines are relevant to the issue.Issue description: {{context}}Please identify which files and specific lines or functions are most relevant to this issue. Output a short, clear report that mentions: ↩→ -File paths -Line numbers or function names -A one-sentence explanation for why each location is relevant Keep the report concise and focused on helping later agents work on the correct parts of the repository. ↩→ error reproducer configuration docstring: A subagent that creates and executes test scripts to verify reported errors. Outputs the result of the tests and locations of test files created. ↩→ argument: context (string) [required] { A string containing error details, file paths and line numbers of code relevant to the error, and expected vs actual behavior. ↩→ Please create and execute a temporary reproduction script to verify this error. You should: -Create temporary files (prefixed with 'tmp_') -Include only what's needed to reproduce the error -Report whether the error reproduces exactly as described -Note any deviations from expected behavior Output a short, clear report that mentions: -Result of the tests -Locations of test files created code editor configuration docstring: A subagent that implements specified code changes in the repository. Outputs the specific code changes made, file paths/line numbers edited, and what should be tested to verify the fix. ↩→ argument: context (string) [required] { A string containing the code snippet(s) to modify and file path(s), and the changes to be applied. ↩→ instance template: Context for code changes: {{context}} Please implement the specified code changes in the repository. You should:</figDesc><table><row><cell cols="2">Iteration Sub-agents</cell><cell>Success Rate</cell></row><row><cell>1</cell><cell>issue localizer, issue reproducer, patch editor</cell><cell>0.333</cell></row><row><cell>2</cell><cell>fix validator, fix planner, code explorer</cell><cell>0.500</cell></row><row><cell>3</cell><cell>issue localizer, test runner, code patcher</cell><cell>0.417</cell></row><row><cell>4</cell><cell>repo mapper, code searcher, fix validator</cell><cell>0.500</cell></row><row><cell>5</cell><cell>code editor, issue reproducer, issue localizer</cell><cell>0.182</cell></row><row><cell>6</cell><cell>fix validator, code locator, problem analyzer</cell><cell>0.583</cell></row><row><cell>7</cell><cell>test runner, code editor, code analyzer</cell><cell>0.583</cell></row><row><cell>8</cell><cell>code locator, fix validator, issue reproducer</cell><cell>0.417</cell></row><row><cell>9</cell><cell>code editor, repo analyzer, test runner</cell><cell>0.250</cell></row><row><cell>10</cell><cell>code locator, issue reproducer, solution planner</cell><cell>0.417</cell></row><row><cell>11</cell><cell>code patcher, test validator, repo explorer</cell><cell>0.417</cell></row><row><cell>12</cell><cell>issue reproducer, code locator, fix implementer</cell><cell>0.364</cell></row><row><cell>13</cell><cell>fix validator, code analyzer, code editor</cell><cell>0.500</cell></row><row><cell>14</cell><cell>issue reproducer, code locator, bug analyzer</cell><cell>0.417</cell></row><row><cell>15</cell><cell>test validator, patch editor, repo explorer</cell><cell>0.500</cell></row><row><cell>16</cell><cell>code locator, issue reproducer, bug analyzer</cell><cell>0.455</cell></row><row><cell>17</cell><cell>test validator, patch editor, codebase explorer</cell><cell>0.583</cell></row><row><cell>18</cell><cell>issue reproducer, bug localizer, bug analyzer</cell><cell>0.250</cell></row><row><cell>19</cell><cell>code patcher, fix validator, issue analyzer</cell><cell>0.417</cell></row><row><cell>20</cell><cell>code locator, reproducer, code editor</cell><cell>0.417</cell></row><row><cell cols="2">A.2.4 MANUALLY DESIGNED SUB-AGENT CONFIGURATIONS</cell><cell></cell></row><row><cell cols="2">issue localizer configuration</cell><cell></cell></row></table><note><p>docstring:</p><p>↩→ ↩→ argument: context (string) [required] { A string containing the brief description of the issue.</p><p>instance template:</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The SWE-bench-live leaderboard score was 17.7, based on an earlier issue set from April</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2025" xml:id="foot_1"><p><ref type="bibr" target="#b1">2</ref> 53.1 on the SWE-bench-verified set excluding the 12 issues used in the design set.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>We thank members of the <rs type="institution">Improbable AI Lab at MIT</rs> and <rs type="institution">MIT-IBM Watson AI Lab</rs> for helpful discussions and feedback.</p></div>
+			</div>
+			<div type="contribution">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AUTHOR CONTRIBUTION</head><p>• Iris Xu: Led the project, implemented and designed the core algorithm, conducted all the experiments, and wrote the experiment section.</p><p>• Guangtao Zeng: Implemented the baselines, explored the preliminary design of the ideas of this work, and wrote the related work section.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>code navigator configuration docstring: <ref type="bibr">[subagent]</ref> Explores and maps relevant code structure in large repositories. Outputs structured information about key files, functions, classes, and their relationships. Repository state unchanged -only reads and analyzes code without modifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head><p>argument: context (string) <ref type="bibr">[required]</ref> : A string containing the issue description, error messages, stack traces, or specific code elements to investigate. Should include any relevant file paths, function names, class names, or keywords that might help locate the problematic code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→ ↩→</head><p>instance template: Your task: Explore and map the relevant code structure in the repository based on the provided context: {{context}} ↩→ Follow these steps: 1. Parse the provided context to identify key elements to investigate (file paths, function names, class names, error messages, etc.) ↩→ 2. Navigate through the repository structure to locate relevant files and directories. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.2 ALL BOAD DISCOVERED SUB-AGENTS</head><p>Here we report all sub-agents discovered over 100 iterations of BOAD. For each sub-agent, we report the iteration number where it was first proposed (Generated Iteration), the number of times it was selected during optimization </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3.1 EFFECT OF DESIGN-SET SIZE</head><p>We evaluated whether the size of the design set affects the performance of the discovered sub-agents and found no meaningful impact. We sample 6 unique problems from SWE-Bench-Verified and sample one problem from each to make a small design set of 6 problems, and sample two problems from each to make a large design set of 24 problems. Across different design-set sizes, the resulting sub-agents achieve similar performance as shown in Table <ref type="table" target="#tab_5">6</ref>. </p><formula xml:id="formula_4">Design</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 ADDITIONAL EXPERIMENTAL SETUP DETAILS A.4.1 IMPLEMENTATION DETAILS FOR EVOLUTIONARY BASELINE</head><p>For comparison with BOAD, we implemented an evolutionary multi-agent design baseline where the orchestrator and three sub-agent prompts are bundled together and treated as a single evolutionary individual. We use three sub-agents paired with an orchestrator because BOAD chooses three subagents when optimizing the sub-agents in the experiments (Section 5.2). At each iteration of the evolution, the system generates three new sub-agents sequentially, given the previous round sub-agent configurations and their measured helpfulness and success rates (using the same prompts as BOAD, provided in A.1.2). Next, both the sub-agent warm-up and the orchestrator construction follow the same procedures used in BOAD. The generated orchestrator and sub-agents are then run on the same design set to get the helpfulness and success rate for the next iteration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4.2 API COST COMPARISON WITH BOAD</head><p>The evolutionary baseline also requires Claude calls-both to propose new orchestrator/sub-agent prompts and to perform LLM-as-judge scoring. Under the same setup, each evolution iteration costs $2.33, whereas each BOAD iteration costs $0.96, indicating that evolution is substantially more expensive to run. Evolution incurs higher cost because it mutates the bundle of orchestrator and sub-agents at each iteration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B THE USAGE OF LARGE LANGUAGE MODELS (LLMS)</head><p>In our work, we used large language models (LLMs) for two purposes: (1) as a general writing assistant to check the grammar of the manuscript for readability, and (2) as the model component of our proposed system BOAD, where LLMs function as the evolution engine, meta-/sub-agents, and evaluation judges in experiments with mainstream coding agents. All research ideas, methodological contributions, and conclusions are solely those of the authors, who take full responsibility for the content of this work.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>3 .</head><label>3</label><figDesc>Examine and analyze the identified code elements including: -Key files and their purposes -Important functions and their signatures -Classes and their methods/attributes -Module dependencies and imports -Code relationships and call hierarchies ↩→ ↩→ 4. Map the structure and relationships between different code components 5. Provide structured information including: -File locations and their roles in the codebase -Function/class definitions and their responsibilities -Dependencies between modules/components -Code patterns and architectural insights -Relevant code snippets that relate to the context ↩→ ↩→ ** CRITICAL: When you finish your analysis, immediately call submit_subagent with a comprehensive summary of your findings. ** ↩→ ** CRITICAL: STAY IN YOUR LANE ** -You are ONLY responsible for your specific assigned task -You are NOT responsible for solving the entire issue -You are NOT responsible for other subagent tasks -Focus EXCLUSIVELY on your assigned task and nothing else -Do not attempt to address unrelated parts of the PR or perform work outside your specific subagent role ↩→ ↩→ ↩→ Use submit_subagent to provide a clear and complete summary of your findings when finished.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 4 :</head><label>4</label><figDesc>(n), and its final hindsight helpfulness rate.Sub-agent statistics sorted by exp num after 100 iterations of BOAD</figDesc><table><row><cell>Sub-agent</cell><cell>Generated Iteration</cell><cell>n</cell><cell>Helpfulness</cell></row><row><cell>code navigator</cell><cell>1</cell><cell>1140</cell><cell>0.933</cell></row><row><cell>test runner</cell><cell>1</cell><cell>120</cell><cell>0.625</cell></row><row><cell>code fixer</cell><cell>1</cell><cell>36</cell><cell>0.361</cell></row><row><cell>fix validator</cell><cell>2</cell><cell>36</cell><cell>0.333</cell></row><row><cell>issue reproducer</cell><cell>3</cell><cell>564</cell><cell>0.768</cell></row><row><cell>dependency resolver</cell><cell>5</cell><cell>24</cell><cell>0.125</cell></row><row><cell>test analyzer</cell><cell>6</cell><cell>24</cell><cell>0.083</cell></row><row><cell>issue analyzer</cell><cell>7</cell><cell>1116</cell><cell>0.982</cell></row><row><cell>precision editor</cell><cell>8</cell><cell>120</cell><cell>0.642</cell></row><row><cell>multi file coordinator</cell><cell>10</cell><cell>24</cell><cell>0.042</cell></row><row><cell>code detective</cell><cell>11</cell><cell>60</cell><cell>0.500</cell></row><row><cell>config manager</cell><cell>14</cell><cell>12</cell><cell>0.000</cell></row><row><cell>git resolver</cell><cell>26</cell><cell>12</cell><cell>0.000</cell></row><row><cell>error debugger</cell><cell>32</cell><cell>12</cell><cell>0.000</cell></row><row><cell>api analyzer</cell><cell>36</cell><cell>24</cell><cell>0.208</cell></row><row><cell>performance analyzer</cell><cell>46</cell><cell>36</cell><cell>0.250</cell></row><row><cell>compatibility checker</cell><cell>48</cell><cell>36</cell><cell>0.333</cell></row><row><cell>spec analyzer</cell><cell>53</cell><cell>36</cell><cell>0.361</cell></row><row><cell>data flow analyzer</cell><cell>60</cell><cell>96</cell><cell>0.562</cell></row><row><cell>refactor architect</cell><cell>96</cell><cell>24</cell><cell>0.042</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Performance of discovered sub-agents across different design-set sizes.</figDesc><table><row><cell></cell><cell>Set Size Resolution Rate</cell></row><row><cell>6</cell><cell>21%</cell></row><row><cell>12</cell><cell>20%</cell></row><row><cell>24</cell><cell>19%</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Corralling a band of bandit algorithms</title>
+		<author>
+			<persName><forename type="first">Alekh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haipeng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Behnam</forename><surname>Neyshabur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">E</forename><surname>Schapire</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Learning Theory</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="12" to="38" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Gepa: Reflective prompt evolution can outperform reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Shangyin</forename><surname>Lakshya A Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilara</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Soylu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Ziems</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krista</forename><surname>Khare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Opsahl-Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Herumb</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shandilya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Michael J Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koushik</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandros</forename><forename type="middle">G</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Dimakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Khattab</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.19457" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Exchangeability and related topics</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Aldous</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">École d&apos; Été de Probabilités de Saint-Flour XIII-1983</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="1" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Claude 3.7 sonnet and claude code</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-7-sonnet" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Claude 3.5 sonnet</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Introducing claude 4</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-4" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://mistral.ai/news/devstral" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atharv</forename><surname>Sonwane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nalin</forename><surname>Wadhwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhav</forename><surname>Mehrotra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiteja</forename><surname>Utpala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Bairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Kanade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nagarajan</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Masai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11638</idno>
+		<title level="m">Modular architecture for softwareengineering ai agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">The nonstochastic multiarmed bandit problem</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolo</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Freund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">E</forename><surname>Schapire</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM journal on computing</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="48" to="77" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Recent advances in hierarchical reinforcement learning</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridhar</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mahadevan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Discrete Event Dynamic Systems</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="341" to="379" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Recent advances in hierarchical reinforcement learning. Discrete event dynamic systems</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridhar</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mahadevan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="341" to="379" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Random search for hyper-parameter optimization</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bergstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The journal of machine learning research</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="281" to="305" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Evolution strategies-a comprehensive introduction</title>
+		<author>
+			<persName><forename type="first">Hans-Georg</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hans-Paul</forename><surname>Schwefel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Natural computing</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="3" to="52" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Gang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Cheshkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Aliev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01304</idno>
+		<title level="m">Issue resolving with multi-agent and task graphs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Autoagents: A framework for automatic agent generation</title>
+		<author>
+			<persName><forename type="first">Guangyao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siwei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaward</forename><surname>Sesay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Börje</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yemin</forename><surname>Shi</surname></persName>
+		</author>
+		<ptr target="https://www.ijcai.org/proceedings/2024/3" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence</title>
+		<meeting>the Thirty-Third International Joint Conference on Artificial Intelligence<address><addrLine>Jeju, South Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">August 3-9, 2024. 2024</date>
+			<biblScope unit="volume">2024</biblScope>
+			<biblScope unit="page" from="22" to="30" />
+		</imprint>
+	</monogr>
+	<note>ijcai.org</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsin</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Data-driven online model selection with regret guarantees</title>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Dann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><surname>Gentile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aldo</forename><surname>Pacchiano</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Artificial Intelligence and Statistics</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1531" to="1539" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.19437" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<pubPlace>Ziyang Song</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Ziyi Gao, and Zizheng Pan. Deepseek-v3 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Hierarchical reinforcement learning with the maxq value function decomposition</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dietterich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th International Conference on Machine Learning (ICML)</title>
+		<meeting>the 17th International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<publisher>Morgan Kaufmann</publisher>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="118" to="126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Model selection for contextual bandits</title>
+		<author>
+			<persName><forename type="first">Dylan J</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Krishnamurthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haipeng</forename><surname>Luo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Connecting large language models with evolutionary algorithms yields powerful prompt optimizers</title>
+		<author>
+			<persName><forename type="first">Qingyan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junliang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoqing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=ZG3RaNIsO8" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08435</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Extracting concise bugfixing patches from human-written patches in version control systems</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanyan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 43rd International Conference on Software Engineering (ICSE)</title>
+		<meeting>the 43rd International Conference on Software Engineering (ICSE)</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1351" to="1362" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06770</idno>
+		<title level="m">Swe-bench: Can language models resolve real-world github issues? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Promptbreeder: Selfreferential self-improvement via prompt evolution</title>
+		<author>
+			<persName><forename type="first">Jaehun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Bandit based monte-carlo planning</title>
+		<author>
+			<persName><forename type="first">Levente</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European conference on machine learning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="282" to="293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Tor</forename><surname>Lattimore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Bandit algorithms</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huixue</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyao</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.05579</idno>
+		<title level="m">Llms-as-judges: a comprehensive survey on llm-based evaluation methods</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yantao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.23348</idno>
+		<title level="m">Swe-debate: Competitive multi-agent debate for software issue resolution</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Bears: An extensible java bug benchmark for automatic program repair studies</title>
+		<author>
+			<persName><forename type="first">Fernanda</forename><surname>Madeiral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Durieux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matias</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)</title>
+		<meeting>the 26th IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="468" to="478" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">The magical number seven, plus or minus two: Some limits on our capacity for processing information</title>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">A</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological review</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">81</biblScope>
+			<date type="published" when="1956">1956</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Computer science as empirical inquiry: Symbols and search</title>
+		<author>
+			<persName><forename type="first">Allen</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Herbert</forename><forename type="middle">A</forename><surname>Simon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="113" to="126" />
+			<date type="published" when="1976">1976</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tien</forename><forename type="middle">N</forename><surname>Huy Nhat Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phong</forename><forename type="middle">X</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.16299</idno>
+		<title level="m">Hyperagent: Generalist software engineering agents to solve coding tasks at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Markov decision processes: discrete stochastic dynamic programming</title>
+		<author>
+			<persName><surname>Martin L Puterman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Quantifying language models&apos; sensitivity to spurious features in prompt design or: How i learned to start worrying about prompt formatting</title>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Sclar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulia</forename><surname>Tsvetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11324</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">The structure of ill structured problems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herbert</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Simon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="181" to="201" />
+			<date type="published" when="1973">1973</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Learning to summarize with human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3008" to="3021" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Between mdps and semi-mdps: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Richard S Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="181" to="211" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Between mdps and semi-mdps: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Richard S Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="181" to="211" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinkai</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kedong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingdao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shulin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yean</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhao</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxiao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bosi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Casey</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changpeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chendi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghua</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenhui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoyan</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dazhi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ding</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erle</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gengzheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guo</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoke</forename><surname>Tai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huilong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiamin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiani</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayue</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jijie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingzhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junkai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lekang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lindong</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lintao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingshu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfan</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangde</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangqing</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangtong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoyou</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuxun</forename><surname>Shuang-Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianshu</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Lam Tam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jia ; Yida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yidong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingli</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yipeng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitong</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongkun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunqing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zezhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongpei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoer</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuorui</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zikang</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuodong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenguang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jidong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhai</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.06471" />
+		<editor>Xiaotao Gu, Xiaoying Ling, Xin Wang, Xing Fan, Xingru Pan, Xinyuan Zhang, Xinze Zhang, Xiuqing Fu, Xunkai Zhang, Yabo Xu, Yandong Wu,</editor>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Bin Xu, Minlie Huang, Hongning Wang, Juanzi Li, Yuxiao Dong, and Jie Tang. Glm-4.5: Agentic, reasoning, and coding (arc) foundation models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<ptr target="https://github.com/ByteDance-Seed/seed-oss" />
+		<title level="m">ByteDance Seed Team. Seed-oss open-source models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.09388" />
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Hierarchical dirichlet processes</title>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">J</forename><surname>Beal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the american statistical association</title>
+		<imprint>
+			<biblScope unit="volume">101</biblScope>
+			<biblScope unit="issue">476</biblScope>
+			<biblScope unit="page" from="1566" to="1581" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">A systematic mapping study of bug reproduction and fault localization</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Software Technology</title>
+		<imprint>
+			<biblScope unit="volume">167</biblScope>
+			<biblScope unit="page">107316</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Reasoning or memorization? unreliable results of reinforcement learning due to data contamination</title>
+		<author>
+			<persName><forename type="first">Mingqi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaole</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huijie</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.10532</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Agentless: Demystifying llm-based software engineering agents</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.01489" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="50528" to="50652" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Evoagent: Towards automatic multi-agent generation via evolutionary algorithms</title>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter</title>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6192" to="6217" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Calvin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang-Wei</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aldo</forename><surname>Pacchiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Orso</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.13837</idno>
+		<title level="m">Accelerating reward design via online reward selection and policy optimization</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Darwin godel machine: Open-ended evolution of self-improving agents</title>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.22954</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10762</idno>
+		<title level="m">Automating agentic workflow generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Diversity empowers intelligence: Integrating expertise of software engineering agents</title>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07060</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Linghao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maoquan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Fu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.23419</idno>
+		<title level="m">Swe-bench goes live! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchen</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shariq</forename><surname>Iqbal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Vulić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Korhonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">Ö</forename><surname>Arık</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.02533</idno>
+		<title level="m">Multi-agent design: Optimizing agents with better prompts and topologies</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Explore spurious correlations at the concept level in language models for text classification</title>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furong</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.08648</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Bigcodebench: Benchmarking code generation with diverse function calls and complex instructions</title>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">Chien</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ratnadira</forename><surname>Widyasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imam</forename><surname>Nur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bani</forename><surname>Yusuf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haolan</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Indraneil</forename><surname>Paul</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.15877</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

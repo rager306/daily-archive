@@ -1,7 +1,7 @@
 # Project Trajectory Report
 
 - Verdict: `on_track`
-- Phase: `closeout`
+- Phase: `preflight`
 - Derived, not canonical: true
 - Graph writes: disabled
 - Production import: disabled
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=195 |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=34 |
 | evidence | tracked | none | .gsd/milestones/M050-l8os7p/M050-l8os7p-SUMMARY.md, .gsd/milestones/M051-aaw9j7/M051-aaw9j7-SUMMARY.md, .gsd/milestones/M053-ool5c4/M053-ool5c4-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
@@ -25,7 +25,7 @@
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| info | uncommitted_changes_present | 195 files |
+| info | uncommitted_changes_present | 34 files |
 
 ## Recent milestones
 
