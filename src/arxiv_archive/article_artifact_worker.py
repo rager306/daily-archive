@@ -84,10 +84,11 @@ class ArticleArtifactWorkCompleted:
             "completed_at": self.completed_at,
             "diagnostics": dict(self.diagnostics),
             "result": self.helper_result.to_sanitized_dict(),
-            "import_eligible": False,
-            "production_import_attempted": False,
-            "ladybugdb_written": False,
             "graph_import_allowed": False,
+            "graphdb_written": False,
+            "ladybugdb_written": False,
+            "production_import_attempted": False,
+            "import_eligible": False,
         }
 
 
